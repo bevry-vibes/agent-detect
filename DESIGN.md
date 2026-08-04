@@ -2,7 +2,7 @@
 
 ## problem
 
-AI agents working on Bevry projects must identify their **harness**, **model**, and **provider** before working ([policy.md](https://github.com/bevry-labs/skills/blob/main/policy.md)) and must credit commits with an accurate `Co-authored-by` trailer ([commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md)), inferred fresh per session and per model change. Hard-coded answers rot; manual per-harness techniques documented in markdown rot faster and go unread. This repo provides a single small native binary, `agent-detection`, that infers the identity from live evidence.
+AI agents working on Bevry projects must identify their **harness**, **provider**, and **model** before working ([policy.md](https://github.com/bevry-labs/skills/blob/main/policy.md) — a use-case of this project, not a policy for it) and must credit commits with an accurate `Co-authored-by` trailer ([commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md)) — inferred fresh per session and per model change. Hard-coded answers rot; manual per-harness techniques documented in markdown rot faster and go unread. This repo provides a single small native binary, `agent-detection`, that infers the identity from live evidence.
 
 ## requirements
 
@@ -17,11 +17,46 @@ AI agents working on Bevry projects must identify their **harness**, **model**, 
 
 1. **env markers** → harness (`CLINE_*`, `GOOSE_*`, `KIMI_*`, `MMX_CONFIG_DIR`/`MINIMAX_*`, `PI_CODING_AGENT=true`)
 2. **ancestor process names** → harness fallback (Windows Toolhelp32 snapshot, Linux `/proc`; unsupported on macOS cross-builds)
-3. **harness config store** → live provider + model (per-harness table in [README.md](./README.md))
+3. **harness config store** → live provider + model (per-harness table below)
 4. **own session** (Cline) → nearest ancestor pid with a `running` session under `~/.cline/data/sessions/`, corroborated by `cwd`; fallback: newest `running` session in cwd — parallel sessions exist, so never pick the newest globally
 5. **generation truth** (Cline) → last assistant `modelInfo` in the session's `messages.json`
 
-Secrets hygiene: only the required fields are read; auth tokens are never emitted or persisted. Output modes: text / `--json` / `--trailer`. Exit codes: `0` identified, `2` unable (stop and inform the user).
+Secrets hygiene: provider config files mix auth material with selection state, so only allowlisted fields are read — for recognized provider ids the known token keys (`apiKey`, `token`, `secret`, `password`, `authorization`) are trimmed out, and for unrecognized ids any `key`/`token`/`secret`-looking field is dropped. Auth material is never emitted or persisted.
+
+Emitted fields carry their own provenance: `harness_source` (`env` / `ancestor` / `none`), `model_source` (`providers.json` / `config.yaml` / `config.toml` / `config.json` / `bundle-default` / `env`), `session_resolution` (`ancestry` / `fallback-cwd` / `none`). `model_updated_at` mirrors the Cline provider entry's `lastUpdated`. Output modes: text / `--json` / `--trailer`. Exit codes: `0` identified, `2` unable (stop and inform the user).
+
+Example (Cline CLI session, text output):
+
+```text
+harness: Cline
+harness_id: cline
+harness_source: env
+harness_env: true
+provider: Cline Pass
+provider_id: cline-pass
+model: Kimi K3
+model_id: cline-pass/kimi-k3
+model_source: providers.json
+open_weight: true
+model_updated_at: 2026-08-04T04:37:50.830Z
+session_id: 1785813522727_5ugi8
+session_resolution: ancestry
+session_provider: cline-pass
+session_model: cline-pass/kimi-k3
+last_msg_provider: cline-pass
+last_msg_model: cline-pass/kimi-k3
+trailer: Co-authored-by: Cline - Kimi K3 <cline-kimik3@local>
+```
+
+| harness              | detected by                        | provider + model source                                                                                                                                                                             |
+| -------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cline (CLI)          | `CLINE_*` env, `cline` ancestor    | `~/.cline/data/settings/providers.json` (live), session json, `messages.json`                                                                                                                       |
+| Goose                | `GOOSE_*` env, `goose` ancestor    | `GOOSE_PROVIDER`/`GOOSE_MODEL` env, else `config.yaml` (`active_provider` + `providers.<p>.model`) — `%APPDATA%\Block\goose\config\config.yaml` on Windows, `~/.config/goose/config.yaml` elsewhere |
+| Kimi Code            | `KIMI_*` env, `kimi` ancestor      | `~/.kimi-code/config.toml` `default_model` (`<provider>/<model-id>`)                                                                                                                                |
+| MiniMax Code (`mmx`) | `MMX_CONFIG_DIR` / `MINIMAX_*` env | `~/.mmx/config.json` `defaultTextModel`/`model`, else bundle default `MiniMax-M3`                                                                                                                   |
+| pi                   | `PI_CODING_AGENT=true`             | todo (sessions `model_change` metadata)                                                                                                                                                             |
+
+Extend `harness_rules`, `provider_rules`, and `model_rules` in [`src/main.zig`](./src/main.zig) as new harnesses/providers/models appear.
 
 ## toolchain selection
 
@@ -34,11 +69,24 @@ Secrets hygiene: only the required fields are read; auth tokens are never emitte
 
 zig 0.16 std notes (for future contributors): file/process IO goes through the `std.Io` interface; `main` takes `std.process.Init` (`arena`, `gpa`, `io`, `minimal.args`, `environ_map`); search fns are `std.mem.find*`; Toolhelp32 was removed from `std.os.windows` (externs declared locally in `src/main.zig`); all targets build without libc, which is also why process walking is unsupported on macOS cross-builds (no `posix_spawn`/`sysctl` without the Apple SDK).
 
+## building
+
+Requires [zig](https://ziglang.org) 0.16:
+
+```sh
+zig build                     # native binary -> zig-out/bin/
+zig build dist --prefix .     # all six targets -> bin/
+```
+
+## committing
+
+Follow [commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md) — the `Co-authored-by` trailer comes from `agent-detection --trailer`, built from the harness and model display names (e.g. `Cline - Kimi K3`); the email local part is derived from them (lowercase, alphanumeric, dots → dashes) under `@local`.
+
 ## binary formats ("universal" / fat binaries)
 
 Native executables are OS- and ISA-bound (PE/ELF/Mach-O; x86_64/aarch64); no compiler emits one native file for every OS. Fat formats are per-OS-family:
 
-- **Mach-O Universal 2** (macOS only, N slices) — combinable today on any host via `llvm-lipo -create`; optional future CI step (`agent-detection-macos-universal`).
+- **Mach-O Universal 2** (macOS only, N slices) — combinable on any host via `llvm-lipo -create`; rejected: per-platform binaries suffice.
 - **APE / Cosmopolitan** — one x86_64 file runs on Windows/Linux/macOS/BSD, plus an aarch64 APE for Linux/macOS ARM; requires a C rewrite (`cosmocc`) or Rust tier-3 `*-unknown-linux-cosmo` targets, and loses the Windows Toolhelp32 ancestry walk (POSIX-everywhere model) → degraded to env+cwd detection. Rejected for now: rewrite cost + capability loss.
 - **ARM64X/ARM64EC PE** — Windows 11 ARM only, MSVC toolchain.
 - **FatELF** — never mainlined, dead.
@@ -59,8 +107,7 @@ Binaries were initially committed to `bin/` (they are tiny). Reconsidered: commi
 
 ## future work
 
-- pi model detection
-- universal2 Mach-O via `llvm-lipo` in CI (matrix 6 → 5 files)
-- versioned releases on semantic-version tags (alongside the rolling `nightly`)
+Expanded harness, provider, and model detections:
+
+- pi model detection (sessions `model_change` metadata)
 - Grok Build detection (previously `@todo` in skills/commits.md)
-- optional Rust cosmo/APE spike (2 files per-ISA, every OS) if single-file-per-arch ever becomes a hard requirement
