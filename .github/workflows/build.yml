@@ -11,6 +11,8 @@ permissions: {}
 jobs:
   dist:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # publish release assets
     steps:
       - uses: actions/checkout@v4
 
@@ -24,8 +26,11 @@ jobs:
       - name: smoke test (linux x86_64)
         run: chmod +x bin/agent-detection-linux-x86_64 && ./bin/agent-detection-linux-x86_64 --help
 
-      - uses: actions/upload-artifact@v4
+      - name: publish rolling release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
         with:
-          name: agent-detection-binaries
-          path: bin/*
-          if-no-files-found: error
+          tag_name: nightly
+          name: nightly
+          body: Rolling build of `agent-detection` binaries for all platforms, updated on every push to `main`. Direct downloads via `releases/latest/download/<asset>`.
+          files: bin/*
