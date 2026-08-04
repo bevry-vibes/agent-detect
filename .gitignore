@@ -54,6 +54,7 @@ docs/
 # =====================================
 # CUSTOM
 
-# zig build caches (bin/ is committed intentionally)
+# zig build caches and outputs (binaries ship via CI artifacts, see .github/workflows/build.yml)
 .zig-cache/
 zig-out/
+bin/
