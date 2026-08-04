@@ -1,0 +1,31 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: cross-compile all targets
+        run: zig build dist --prefix .
+
+      - name: smoke test (linux x86_64)
+        run: chmod +x bin/agent-detection-linux-x86_64 && ./bin/agent-detection-linux-x86_64 --help
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-detection-binaries
+          path: bin/*
+          if-no-files-found: error
