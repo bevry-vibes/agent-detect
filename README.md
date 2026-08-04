@@ -4,7 +4,13 @@ Infers the current agent's **harness**, **provider** (LLM provider product), and
 
 ## usage
 
-Download the binary for your platform from [`bin/`](./bin), or build it (see below), then run it inside the agent session:
+Download the binary for your platform from the [latest release](https://github.com/bevry-labs/agent-detection/releases/latest) (per-platform direct URLs in the table below), or [build it](#building), then run it inside the agent session:
+
+```sh
+# example: linux x86_64
+curl -Lo agent-detection https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-linux-x86_64
+chmod +x agent-detection
+```
 
 ```sh
 agent-detection            # human-readable detection report
@@ -57,12 +63,12 @@ Extend `harness_rules`, `model_rules`, and `provider_rules` in [`src/main.zig`](
 
 | binary | os | arch |
 | --- | --- | --- |
-| `agent-detection-windows-x86_64.exe` | Windows | x86_64 |
-| `agent-detection-windows-aarch64.exe` | Windows | ARM64 |
-| `agent-detection-macos-x86_64` | macOS | x86_64 |
-| `agent-detection-macos-aarch64` | macOS | ARM64 |
-| `agent-detection-linux-x86_64` | Linux (static, musl) | x86_64 |
-| `agent-detection-linux-aarch64` | Linux (static, musl) | ARM64 |
+| [`agent-detection-windows-x86_64.exe`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-windows-x86_64.exe) | Windows | x86_64 |
+| [`agent-detection-windows-aarch64.exe`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-windows-aarch64.exe) | Windows | ARM64 |
+| [`agent-detection-macos-x86_64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-macos-x86_64) | macOS | x86_64 |
+| [`agent-detection-macos-aarch64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-macos-aarch64) | macOS | ARM64 |
+| [`agent-detection-linux-x86_64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-linux-x86_64) | Linux (static, musl) | x86_64 |
+| [`agent-detection-linux-aarch64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-linux-aarch64) | Linux (static, musl) | ARM64 |
 
 ## building
 

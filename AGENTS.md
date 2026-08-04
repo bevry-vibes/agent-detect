@@ -13,3 +13,7 @@ If they are not available locally, pull them:
 - <https://raw.githubusercontent.com/bevry-labs/skills/refs/heads/main/commits.md>
 - <https://raw.githubusercontent.com/bevry-labs/skills/refs/heads/main/license.md>
 - <https://raw.githubusercontent.com/bevry-labs/skills/refs/heads/main/conventions.md>
+
+## binary
+
+Download `agent-detection` for your platform from the latest release: <https://github.com/bevry-labs/agent-detection/releases/latest> — direct URLs: `https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-<os>-<arch>[.exe]`

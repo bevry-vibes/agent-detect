@@ -48,7 +48,7 @@ Native executables are OS- and ISA-bound (PE/ELF/Mach-O; x86_64/aarch64); no com
 
 ## distribution: committed binaries → CI artifacts
 
-Binaries were initially committed to `bin/` (they are tiny). Reconsidered: committed binaries still bloat every clone forever, fight source-only review, and desynchronize from source (rebuilds produce binary diffs unrelated to logical changes). **Decision:** GitHub Actions builds all six targets on every push/PR and attaches them as workflow artifacts; `bin/` was purged from git history (filter-branch) and is gitignored. Tags can later publish the same artifacts to GitHub Releases at zero history cost.
+Binaries were initially committed to `bin/` (they are tiny). Reconsidered: committed binaries still bloat every clone forever, fight source-only review, and desynchronize from source (rebuilds produce binary diffs unrelated to logical changes). **Decision:** GitHub Actions builds all six targets on every push to `main` and attaches them to a rolling `nightly` GitHub Release, giving every platform a stable, auth-free direct-download URL: `https://github.com/bevry-labs/agent-detection/releases/latest/download/<asset>`. `bin/` was purged from git history (filter-branch) and is gitignored — no binary ever touches history.
 
 ## platform caveats
 
@@ -61,6 +61,6 @@ Binaries were initially committed to `bin/` (they are tiny). Reconsidered: commi
 
 - pi model detection
 - universal2 Mach-O via `llvm-lipo` in CI (matrix 6 → 5 files)
-- GitHub Releases on tags, attaching the CI artifacts
+- versioned releases on semantic-version tags (alongside the rolling `nightly`)
 - Grok Build detection (previously `@todo` in skills/commits.md)
 - optional Rust cosmo/APE spike (2 files per-ISA, every OS) if single-file-per-arch ever becomes a hard requirement
