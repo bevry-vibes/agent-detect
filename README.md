@@ -38,12 +38,20 @@ trailer: Co-authored-by: Cline - Kimi K3 <cline-kimik3@local>
 
 Least-invasive-first detection ladder:
 
-1. **Environment variables** — `CLINE_*` markers → harness `Cline`; `PI_CODING_AGENT=true` → harness `pi`.
-2. **Live selection** — `~/.cline/data/settings/providers.json`: `lastUsedProvider` + `providers.<id>.settings.model` + `updatedAt`. Auth tokens in that file are never emitted.
-3. **Own session** — process ancestry (Windows: Toolhelp32 snapshot walk; Linux: `/proc` walk; nearest ancestor pid with a `running` session wins, corroborated by `cwd`), reading `~/.cline/data/sessions/<id>/<id>.json`. Fallback: newest `running` session with matching `cwd`. On **macOS** the cross-built binary cannot walk processes (no libc), so only the cwd fallback is used — avoid parallel sessions in one directory there.
-4. **Generation truth** — the last assistant message's `modelInfo.id` / `modelInfo.provider` in the session's `messages.json`.
+1. **Harness** — env markers first (e.g. `CLINE_*`, `GOOSE_*`, `KIMI_CODE_*`, `MMX_CONFIG_DIR`/`MINIMAX_*`, `PI_CODING_AGENT=true`), then ancestor process names (`cline`, `goose`, `kimi`). Windows uses a Toolhelp32 snapshot walk, Linux a `/proc` walk; macOS cross-builds cannot walk processes (no libc), so env markers are required there.
+2. **Live selection** — the harness's config store (see the table below). Auth material in these files is never emitted.
+3. **Own session** (Cline) — the nearest ancestor pid with a `running` session under `~/.cline/data/sessions/` wins, corroborated by `cwd`; fallback: newest `running` session with matching `cwd`.
+4. **Generation truth** (Cline) — the last assistant message's `modelInfo.id` / `modelInfo.provider` in the session's `messages.json`.
 
-Steps 2–4 currently apply to the Cline CLI harness; other harnesses are detected by env only. Extend `cline_markers`, `model_rules`, and `interface_rules` in [`src/main.zig`](./src/main.zig) as new harnesses/models appear.
+| harness | detected by | interface + model source |
+| --- | --- | --- |
+| Cline (CLI) | `CLINE_*` env, `cline` ancestor | `~/.cline/data/settings/providers.json` (live), session json, `messages.json` |
+| Goose | `GOOSE_*` env, `goose` ancestor | `GOOSE_PROVIDER`/`GOOSE_MODEL` env, else `config.yaml` (`active_provider` + `providers.<p>.model`) — `%APPDATA%\Block\goose\config\config.yaml` on Windows, `~/.config/goose/config.yaml` elsewhere |
+| Kimi Code | `KIMI_*` env, `kimi` ancestor | `~/.kimi-code/config.toml` `default_model` (`<provider>/<model-id>`) |
+| MiniMax Code (`mmx`) | `MMX_CONFIG_DIR` / `MINIMAX_*` env | `~/.mmx/config.json` `defaultTextModel`/`model`, else bundle default `MiniMax-M3` |
+| pi | `PI_CODING_AGENT=true` | todo (sessions `model_change` metadata) |
+
+Extend `harness_rules`, `model_rules`, and `interface_rules` in [`src/main.zig`](./src/main.zig) as new harnesses/models appear.
 
 ## platforms
 

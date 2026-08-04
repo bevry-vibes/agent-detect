@@ -22,7 +22,10 @@ const builtin = @import("builtin");
 
 const Detection = struct {
     harness: ?[]const u8 = null, // display name, e.g. "Cline"
+    harness_id: ?[]const u8 = null, // e.g. "cline"
+    harness_source: []const u8 = "none", // "env" | "ancestor" | "none"
     harness_env: bool = false, // harness env vars present
+    model_source: []const u8 = "none", // "providers.json" | "config.yaml" | "config.toml" | "config.json" | "bundle-default" | "env"
     interface_id: ?[]const u8 = null, // e.g. "cline-pass"
     interface: ?[]const u8 = null, // e.g. "Cline Pass"
     model_id: ?[]const u8 = null, // e.g. "cline-pass/kimi-k3"
@@ -50,7 +53,41 @@ const InterfaceRule = struct { id: []const u8, display: []const u8 };
 const interface_rules = [_]InterfaceRule{
     .{ .id = "cline-pass", .display = "Cline Pass" },
     .{ .id = "cline", .display = "Cline" },
+    .{ .id = "minimax", .display = "MiniMax" },
 };
+
+const HarnessRule = struct {
+    id: []const u8,
+    display: []const u8,
+    env_markers: []const []const u8,
+    proc_names: []const []const u8, // lowercase exe names matched against process ancestry
+};
+const cline_env = [_][]const u8{ "CLINE_WRAPPER_PATH", "CLINE_BUILD_ENV", "CLINE_NO_INTERACTIVE", "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH" };
+const goose_env = [_][]const u8{ "GOOSE_WORKING_DIR", "GOOSE_PROVIDER", "GOOSE_MODEL", "GOOSE_TERMINAL", "GOOSE_MODE" };
+const kimi_env = [_][]const u8{ "KIMI_CODE_HOME", "KIMI_API_KEY", "KIMI_BASE_URL" };
+const mmx_env = [_][]const u8{ "MMX_CONFIG_DIR", "MINIMAX_API_KEY" };
+const pi_env = [_][]const u8{"PI_CODING_AGENT"};
+const cline_procs = [_][]const u8{ "cline.exe", "cline" };
+const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
+const kimi_procs = [_][]const u8{ "kimi.exe", "kimi" };
+const harness_rules = [_]HarnessRule{
+    .{ .id = "cline", .display = "Cline", .env_markers = &cline_env, .proc_names = &cline_procs },
+    .{ .id = "goose", .display = "Goose", .env_markers = &goose_env, .proc_names = &goose_procs },
+    .{ .id = "kimi", .display = "Kimi Code", .env_markers = &kimi_env, .proc_names = &kimi_procs },
+    .{ .id = "mmx", .display = "MiniMax Code", .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
+    .{ .id = "pi", .display = "pi", .env_markers = &pi_env, .proc_names = &.{} },
+};
+
+/// normalize model id into display name + open-weight flag
+fn applyModel(a: std.mem.Allocator, d: *Detection, model_id: []const u8) !void {
+    d.model_id = model_id;
+    const lower = try std.ascii.allocLowerString(a, model_id);
+    const slash = std.mem.findScalarLast(u8, lower, '/');
+    const slug = if (slash) |i| lower[i + 1 ..] else lower;
+    const mi = try modelForSlug(a, slug);
+    d.model = mi.display;
+    d.open_weight = mi.open;
+}
 
 fn writeOut(io: std.Io, bytes: []const u8) void {
     std.Io.File.stdout().writeStreamingAll(io, bytes) catch {};
@@ -172,61 +209,87 @@ extern "kernel32" fn CreateToolhelp32Snapshot(dwFlags: u32, th32ProcessID: u32) 
 extern "kernel32" fn Process32FirstW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
 extern "kernel32" fn Process32NextW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
 
-fn ancestorPids(a: std.mem.Allocator, io: std.Io) []const u32 {
-    if (builtin.os.tag == .windows) return ancestorsWindows(a) catch &.{};
-    if (builtin.os.tag == .linux) return ancestorsLinux(a, io) catch &.{};
+const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
+
+fn ancestorInfo(a: std.mem.Allocator, io: std.Io) Ancestry {
+    if (builtin.os.tag == .windows) return ancestorsWindows(a) catch .{};
+    if (builtin.os.tag == .linux) return ancestorsLinux(a, io) catch .{};
     // macOS cross-builds have no libc; process walking unsupported -> cwd fallback
-    return &.{};
+    return .{};
 }
 
-fn ancestorsWindows(a: std.mem.Allocator) ![]const u32 {
-    if (builtin.os.tag != .windows) return &.{};
+/// utf16 exe name -> lowercase ascii (lossy for non-ascii, which is fine for matching)
+fn exeName16(a: std.mem.Allocator, buf: *const [260]u16) ![]const u8 {
+    var list: std.ArrayList(u8) = .empty;
+    for (buf) |c| {
+        if (c == 0) break;
+        try list.append(a, if (c < 128) std.ascii.toLower(@as(u8, @intCast(c))) else '?');
+    }
+    return list.toOwnedSlice(a);
+}
+
+const ProcPair = struct { pid: u32, ppid: u32, name: []const u8 };
+
+fn ancestorsWindows(a: std.mem.Allocator) !Ancestry {
+    if (builtin.os.tag != .windows) return .{};
     const w = std.os.windows;
     const snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     const invalid: w.HANDLE = @ptrFromInt(std.math.maxInt(usize));
     if (snap == invalid) return error.SnapshotFailed;
     defer w.CloseHandle(snap);
-    const ProcPair = struct { pid: u32, ppid: u32 };
     var procs: std.ArrayList(ProcPair) = .empty;
     var entry: PROCESSENTRY32W = .{};
     entry.dwSize = @sizeOf(PROCESSENTRY32W);
     if (Process32FirstW(snap, &entry) != 0) {
         while (true) {
-            try procs.append(a, .{ .pid = entry.th32ProcessID, .ppid = entry.th32ParentProcessID });
+            try procs.append(a, .{
+                .pid = entry.th32ProcessID,
+                .ppid = entry.th32ParentProcessID,
+                .name = try exeName16(a, &entry.szExeFile),
+            });
             if (Process32NextW(snap, &entry) == 0) break;
         }
     }
-    var list: std.ArrayList(u32) = .empty;
+    var pids: std.ArrayList(u32) = .empty;
+    var names: std.ArrayList([]const u8) = .empty;
     var pid: u32 = w.GetCurrentProcessId();
     while (pid != 0) {
-        try list.append(a, pid);
+        try pids.append(a, pid);
+        var name: []const u8 = "";
         var next: u32 = 0;
         for (procs.items) |p| {
             if (p.pid == pid) {
                 next = p.ppid;
+                name = p.name;
                 break;
             }
         }
+        try names.append(a, name);
         pid = next;
     }
-    return list.toOwnedSlice(a);
+    return .{ .pids = try pids.toOwnedSlice(a), .names = try names.toOwnedSlice(a) };
 }
 
-fn ancestorsLinux(a: std.mem.Allocator, io: std.Io) ![]const u32 {
-    if (builtin.os.tag != .linux) return &.{};
-    var list: std.ArrayList(u32) = .empty;
+fn ancestorsLinux(a: std.mem.Allocator, io: std.Io) !Ancestry {
+    if (builtin.os.tag != .linux) return .{};
+    const cwd_dir = std.Io.Dir.cwd();
+    var pids: std.ArrayList(u32) = .empty;
+    var names: std.ArrayList([]const u8) = .empty;
     var pid: u32 = @intCast(std.os.linux.getpid());
     while (pid > 1) {
-        try list.append(a, pid);
+        try pids.append(a, pid);
+        const comm_path = try std.fmt.allocPrint(a, "/proc/{d}/comm", .{pid});
+        const comm = cwd_dir.readFileAlloc(io, comm_path, a, @enumFromInt(4096)) catch "";
+        try names.append(a, try std.ascii.allocLowerString(a, std.mem.trim(u8, comm, " \r\n")));
         const path = try std.fmt.allocPrint(a, "/proc/{d}/stat", .{pid});
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch break;
+        const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch break;
         const close = std.mem.findScalarLast(u8, data, ')') orelse break;
         var tok = std.mem.tokenizeScalar(u8, data[close + 2 ..], ' ');
         _ = tok.next(); // state
         const ppid = tok.next() orelse break;
         pid = std.fmt.parseInt(u32, ppid, 10) catch break;
     }
-    return list.toOwnedSlice(a);
+    return .{ .pids = try pids.toOwnedSlice(a), .names = try names.toOwnedSlice(a) };
 }
 
 // ============================================================================
@@ -317,6 +380,187 @@ fn lastModelInfo(a: std.mem.Allocator, io: std.Io, messages_path: []const u8) La
 }
 
 // ============================================================================
+// per-harness extraction (ladder steps 2-4)
+
+fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8, d: *Detection) !void {
+    if (home.len == 0) return;
+    const cwd_dir = std.Io.Dir.cwd();
+    // step 2: live selection (never emit auth fields)
+    const prov_path = try std.fmt.allocPrint(a, "{s}/.cline/data/settings/providers.json", .{home});
+    if (cwd_dir.readFileAlloc(io, prov_path, a, @enumFromInt(1 << 20)) catch null) |pdata| {
+        if (std.json.parseFromSlice(std.json.Value, a, pdata, .{}) catch null) |parsed| {
+            if (parsed.value == .object) {
+                const root = parsed.value.object;
+                if (jstr(root, "lastUsedProvider")) |iface| {
+                    d.interface_id = iface;
+                    d.interface = interfaceForId(iface) orelse try titleCase(a, iface);
+                    if (root.get("providers")) |pv| {
+                        if (pv == .object) {
+                            if (pv.object.get(iface)) |ev| {
+                                if (ev == .object) {
+                                    const eo = ev.object;
+                                    d.model_updated_at = jstr(eo, "updatedAt");
+                                    if (eo.get("settings")) |sv| {
+                                        if (sv == .object) {
+                                            if (jstr(sv.object, "model")) |mid| {
+                                                try applyModel(a, d, mid);
+                                                d.model_source = "providers.json";
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // step 3: own session (ancestry, then cwd fallback)
+    const sessions_root = try std.fmt.allocPrint(a, "{s}/.cline/data/sessions", .{home});
+    const found = try findOwnSession(a, io, loadSessions(a, io, sessions_root), anc.pids);
+    d.session_resolution = found.how;
+    if (found.s) |s| {
+        d.session_id = s.id;
+        d.session_provider = s.provider;
+        d.session_model = s.model;
+        // step 4: generation truth
+        if (s.messages_path) |mp| {
+            const lm = lastModelInfo(a, io, mp);
+            d.last_msg_model = lm.id;
+            d.last_msg_provider = lm.provider;
+        }
+    }
+}
+
+fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, appdata: []const u8, home: []const u8, d: *Detection) !void {
+    const cwd_dir = std.Io.Dir.cwd();
+    // goose: env vars override the config file
+    var provider: ?[]const u8 = null;
+    var model: ?[]const u8 = null;
+    var src: []const u8 = "none";
+    if (env.get("GOOSE_PROVIDER")) |v| {
+        provider = v;
+        src = "env";
+    }
+    if (env.get("GOOSE_MODEL")) |v| {
+        model = v;
+        src = "env";
+    }
+    const path = if (builtin.os.tag == .windows and appdata.len > 0)
+        try std.fmt.allocPrint(a, "{s}/Block/goose/config/config.yaml", .{appdata})
+    else if (home.len > 0)
+        try std.fmt.allocPrint(a, "{s}/.config/goose/config.yaml", .{home})
+    else
+        return;
+    if (cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch null) |ydata| {
+        // pass 1: active_provider (top-level key)
+        var active: ?[]const u8 = null;
+        var lines = std.mem.splitScalar(u8, ydata, '\n');
+        while (lines.next()) |raw| {
+            const t = std.mem.trim(u8, raw, " \t\r");
+            if (std.mem.startsWith(u8, t, "active_provider:")) {
+                const v = std.mem.trim(u8, t["active_provider:".len..], " ");
+                if (v.len > 0) active = v;
+            }
+        }
+        // pass 2: providers.<active>.model (indent-tracked)
+        if (active) |act| {
+            var in_providers = false;
+            var in_active = false;
+            var lines2 = std.mem.splitScalar(u8, ydata, '\n');
+            while (lines2.next()) |raw| {
+                const line = std.mem.trimEnd(u8, raw, "\r");
+                const t = std.mem.trim(u8, line, " \t");
+                if (t.len == 0 or t[0] == '#') continue;
+                const indent = line.len - std.mem.trimStart(u8, line, " ").len;
+                if (indent == 0) {
+                    in_providers = std.mem.startsWith(u8, t, "providers:");
+                    in_active = false;
+                    continue;
+                }
+                if (!in_providers) continue;
+                if (indent == 2) {
+                    const name = std.mem.trimEnd(u8, t, ":");
+                    in_active = std.mem.eql(u8, name, act);
+                    continue;
+                }
+                if (in_active and indent >= 4 and std.mem.startsWith(u8, t, "model:")) {
+                    if (model == null) {
+                        const v = std.mem.trim(u8, t["model:".len..], " ");
+                        if (v.len > 0) {
+                            model = v;
+                            src = "config.yaml";
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        if (provider == null and active != null) {
+            provider = active;
+            if (std.mem.eql(u8, src, "none")) src = "config.yaml";
+        }
+    }
+    if (provider) |p| {
+        d.interface_id = p;
+        d.interface = interfaceForId(p) orelse try titleCase(a, p);
+    }
+    if (model) |m| {
+        try applyModel(a, d, m);
+        d.model_source = src;
+    }
+}
+
+fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
+    if (home.len == 0) return;
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = try std.fmt.allocPrint(a, "{s}/.kimi-code/config.toml", .{home});
+    if (cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch null) |data| {
+        var lines = std.mem.splitScalar(u8, data, '\n');
+        while (lines.next()) |raw| {
+            const t = std.mem.trim(u8, raw, " \t\r");
+            if (!std.mem.startsWith(u8, t, "default_model")) continue;
+            const q1 = std.mem.findScalar(u8, t, '"') orelse continue;
+            const q2 = std.mem.findScalarPos(u8, t, q1 + 1, '"') orelse continue;
+            const dm = t[q1 + 1 .. q2]; // "<provider>/<model-id>"
+            const slash = std.mem.findScalar(u8, dm, '/');
+            const iface = if (slash) |i| dm[0..i] else dm;
+            d.interface_id = iface;
+            d.interface = interfaceForId(iface) orelse try titleCase(a, iface);
+            try applyModel(a, d, if (slash) |i| dm[i + 1 ..] else dm);
+            d.model_source = "config.toml";
+            break;
+        }
+    }
+}
+
+fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
+    d.interface_id = "minimax";
+    d.interface = "MiniMax";
+    var model: []const u8 = "MiniMax-M3"; // mmx-cli default when no model configured
+    var src: []const u8 = "bundle-default";
+    if (home.len > 0) {
+        const cwd_dir = std.Io.Dir.cwd();
+        const path = try std.fmt.allocPrint(a, "{s}/.mmx/config.json", .{home});
+        if (cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch null) |cdata| {
+            if (std.json.parseFromSlice(std.json.Value, a, cdata, .{}) catch null) |parsed| {
+                if (parsed.value == .object) {
+                    const o = parsed.value.object;
+                    if (jstr(o, "defaultTextModel") orelse jstr(o, "model")) |m| {
+                        model = m;
+                        src = "config.json";
+                    }
+                }
+            }
+        }
+    }
+    try applyModel(a, d, model);
+    d.model_source = src;
+}
+
+// ============================================================================
 // output
 
 const usage =
@@ -372,86 +616,58 @@ pub fn main(init: std.process.Init) !u8 {
 
     var d = Detection{};
 
-    // ladder step 1: environment variables -> harness
+    // ladder step 1: harness — env markers first, then ancestor process names
     const env = init.environ_map;
-    const cline_markers = [_][]const u8{
-        "CLINE_WRAPPER_PATH",      "CLINE_BUILD_ENV",            "CLINE_NO_INTERACTIVE",
-        "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH",
-    };
-    for (cline_markers) |m| {
-        if (env.get(m) != null) {
-            d.harness_env = true;
-            break;
-        }
-    }
-    if (d.harness_env) d.harness = "Cline";
-    if (d.harness == null) {
-        if (env.get("PI_CODING_AGENT")) |v| {
-            if (std.mem.eql(u8, v, "true")) {
-                d.harness = "pi";
-                d.harness_env = true;
+    const anc = ancestorInfo(a, io);
+    var rule: ?HarnessRule = null;
+    var hsrc: []const u8 = "none";
+    scan: for (harness_rules) |r| {
+        for (r.env_markers) |m| {
+            if (env.get(m) != null) {
+                rule = r;
+                hsrc = "env";
+                break :scan;
             }
         }
     }
-
-    const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
-    const cwd_dir = std.Io.Dir.cwd();
-
-    // cline: ladder steps 2-4
-    if (d.harness != null and std.mem.eql(u8, d.harness.?, "Cline") and home.len > 0) {
-        // step 2: live selection (never emit auth fields)
-        const prov_path = try std.fmt.allocPrint(a, "{s}/.cline/data/settings/providers.json", .{home});
-        if (cwd_dir.readFileAlloc(io, prov_path, a, @enumFromInt(1 << 20)) catch null) |pdata| {
-            if (std.json.parseFromSlice(std.json.Value, a, pdata, .{}) catch null) |parsed| {
-                if (parsed.value == .object) {
-                    const root = parsed.value.object;
-                    if (jstr(root, "lastUsedProvider")) |iface| {
-                        d.interface_id = iface;
-                        d.interface = interfaceForId(iface) orelse try titleCase(a, iface);
-                        if (root.get("providers")) |pv| {
-                            if (pv == .object) {
-                                if (pv.object.get(iface)) |ev| {
-                                    if (ev == .object) {
-                                        const eo = ev.object;
-                                        d.model_updated_at = jstr(eo, "updatedAt");
-                                        if (eo.get("settings")) |sv| {
-                                            if (sv == .object) {
-                                                if (jstr(sv.object, "model")) |mid| {
-                                                    d.model_id = mid;
-                                                    const slash = std.mem.findScalar(u8, mid, '/');
-                                                    const slug = if (slash) |i| mid[i + 1 ..] else mid;
-                                                    const mi = try modelForSlug(a, slug);
-                                                    d.model = mi.display;
-                                                    d.open_weight = mi.open;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+    if (rule != null and std.mem.eql(u8, rule.?.id, "pi")) {
+        // pi marker requires an explicit true value
+        const v = env.get("PI_CODING_AGENT") orelse "";
+        if (!std.mem.eql(u8, v, "true")) {
+            rule = null;
+            hsrc = "none";
+        }
+    }
+    if (rule == null) {
+        for (harness_rules) |r| {
+            for (r.proc_names) |pn| {
+                for (anc.names) |n| {
+                    if (std.mem.eql(u8, n, pn)) {
+                        rule = r;
+                        hsrc = "ancestor";
                     }
                 }
             }
         }
-
-        // step 3: own session (ancestry, then cwd fallback)
-        const sessions_root = try std.fmt.allocPrint(a, "{s}/.cline/data/sessions", .{home});
-        const found = try findOwnSession(a, io, loadSessions(a, io, sessions_root), ancestorPids(a, io));
-        d.session_resolution = found.how;
-        if (found.s) |s| {
-            d.session_id = s.id;
-            d.session_provider = s.provider;
-            d.session_model = s.model;
-            // step 4: generation truth
-            if (s.messages_path) |mp| {
-                const lm = lastModelInfo(a, io, mp);
-                d.last_msg_model = lm.id;
-                d.last_msg_provider = lm.provider;
-            }
-        }
     }
 
+    if (rule) |r| {
+        d.harness = r.display;
+        d.harness_id = r.id;
+        d.harness_env = std.mem.eql(u8, hsrc, "env");
+        d.harness_source = hsrc;
+        const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
+        if (std.mem.eql(u8, r.id, "cline")) {
+            try detectCline(a, io, anc, home, &d);
+        } else if (std.mem.eql(u8, r.id, "goose")) {
+            try detectGoose(a, io, env, env.get("APPDATA") orelse "", home, &d);
+        } else if (std.mem.eql(u8, r.id, "kimi")) {
+            try detectKimi(a, io, home, &d);
+        } else if (std.mem.eql(u8, r.id, "mmx")) {
+            try detectMmx(a, io, home, &d);
+        }
+        // pi: model detection not yet implemented (sessions model_change metadata)
+    }
     // co-author trailer (commits.md format)
     if (d.harness != null and d.model != null) {
         const email = try trailerEmail(a, d.harness.?, d.model.?);
@@ -472,11 +688,14 @@ pub fn main(init: std.process.Init) !u8 {
     if (as_json) {
         try buf.appendSlice(a, "{\n");
         try fieldJson(a, &buf, "harness", d.harness, false);
+        try fieldJson(a, &buf, "harness_id", d.harness_id, false);
+        try fieldJson(a, &buf, "harness_source", d.harness_source, false);
         try fieldJson(a, &buf, "harness_env", if (d.harness_env) "true" else "false", false);
         try fieldJson(a, &buf, "interface", d.interface, false);
         try fieldJson(a, &buf, "interface_id", d.interface_id, false);
         try fieldJson(a, &buf, "model", d.model, false);
         try fieldJson(a, &buf, "model_id", d.model_id, false);
+        try fieldJson(a, &buf, "model_source", d.model_source, false);
         try fieldJson(a, &buf, "open_weight", d.open_weight, false);
         try fieldJson(a, &buf, "model_updated_at", d.model_updated_at, false);
         try fieldJson(a, &buf, "session_id", d.session_id, false);
@@ -489,11 +708,14 @@ pub fn main(init: std.process.Init) !u8 {
         try buf.appendSlice(a, "}\n");
     } else {
         try fieldText(a, &buf, "harness", d.harness);
+        try fieldText(a, &buf, "harness_id", d.harness_id);
+        try fieldText(a, &buf, "harness_source", d.harness_source);
         try fieldText(a, &buf, "harness_env", if (d.harness_env) "true" else "false");
         try fieldText(a, &buf, "interface", d.interface);
         try fieldText(a, &buf, "interface_id", d.interface_id);
         try fieldText(a, &buf, "model", d.model);
         try fieldText(a, &buf, "model_id", d.model_id);
+        try fieldText(a, &buf, "model_source", d.model_source);
         try fieldText(a, &buf, "open_weight", d.open_weight);
         try fieldText(a, &buf, "model_updated_at", d.model_updated_at);
         try fieldText(a, &buf, "session_id", d.session_id);
