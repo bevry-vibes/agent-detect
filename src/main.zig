@@ -7,10 +7,10 @@
 // All software distributed under the RPL is provided strictly on an "AS IS"
 // basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
-// agent-detection — infer the current agent harness, interface/provider, and
+// agent-detection — infer the current agent harness, provider, and
 // model from the environment and harness data files, least-invasive first:
 //   1. environment variables        (harness)
-//   2. <harness data>/settings      (live interface + model)
+//   2. <harness data>/settings      (live provider + model)
 //   3. own session via pid ancestry (session snapshot; parallel-safe)
 //   4. session messages.json        (generation truth: last modelInfo)
 // Never prints or persists secrets (auth tokens are never read into output).
@@ -26,8 +26,8 @@ const Detection = struct {
     harness_source: []const u8 = "none", // "env" | "ancestor" | "none"
     harness_env: bool = false, // harness env vars present
     model_source: []const u8 = "none", // "providers.json" | "config.yaml" | "config.toml" | "config.json" | "bundle-default" | "env"
-    interface_id: ?[]const u8 = null, // e.g. "cline-pass"
-    interface: ?[]const u8 = null, // e.g. "Cline Pass"
+    provider_id: ?[]const u8 = null, // e.g. "cline-pass"
+    provider: ?[]const u8 = null, // e.g. "Cline Pass"
     model_id: ?[]const u8 = null, // e.g. "cline-pass/kimi-k3"
     model: ?[]const u8 = null, // e.g. "Kimi K3"
     model_updated_at: ?[]const u8 = null,
@@ -49,8 +49,8 @@ const model_rules = [_]ModelRule{
     .{ .slug = "qwen3.8-max", .display = "Qwen3.8-Max", .open = false }, // closed until its open-weight release lands
 };
 
-const InterfaceRule = struct { id: []const u8, display: []const u8 };
-const interface_rules = [_]InterfaceRule{
+const ProviderRule = struct { id: []const u8, display: []const u8 };
+const provider_rules = [_]ProviderRule{
     .{ .id = "cline-pass", .display = "Cline Pass" },
     .{ .id = "cline", .display = "Cline" },
     .{ .id = "minimax", .display = "MiniMax" },
@@ -129,8 +129,8 @@ fn modelForSlug(a: std.mem.Allocator, slug: []const u8) !ModelOut {
     return .{ .display = try titleCase(a, slug), .open = "unknown" };
 }
 
-fn interfaceForId(id: []const u8) ?[]const u8 {
-    for (interface_rules) |r| {
+fn providerForId(id: []const u8) ?[]const u8 {
+    for (provider_rules) |r| {
         if (std.mem.eql(u8, r.id, id)) return r.display;
     }
     return null;
@@ -391,12 +391,12 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
         if (std.json.parseFromSlice(std.json.Value, a, pdata, .{}) catch null) |parsed| {
             if (parsed.value == .object) {
                 const root = parsed.value.object;
-                if (jstr(root, "lastUsedProvider")) |iface| {
-                    d.interface_id = iface;
-                    d.interface = interfaceForId(iface) orelse try titleCase(a, iface);
+                if (jstr(root, "lastUsedProvider")) |prov| {
+                    d.provider_id = prov;
+                    d.provider = providerForId(prov) orelse try titleCase(a, prov);
                     if (root.get("providers")) |pv| {
                         if (pv == .object) {
-                            if (pv.object.get(iface)) |ev| {
+                            if (pv.object.get(prov)) |ev| {
                                 if (ev == .object) {
                                     const eo = ev.object;
                                     d.model_updated_at = jstr(eo, "updatedAt");
@@ -504,8 +504,8 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         }
     }
     if (provider) |p| {
-        d.interface_id = p;
-        d.interface = interfaceForId(p) orelse try titleCase(a, p);
+        d.provider_id = p;
+        d.provider = providerForId(p) orelse try titleCase(a, p);
     }
     if (model) |m| {
         try applyModel(a, d, m);
@@ -526,9 +526,9 @@ fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection)
             const q2 = std.mem.findScalarPos(u8, t, q1 + 1, '"') orelse continue;
             const dm = t[q1 + 1 .. q2]; // "<provider>/<model-id>"
             const slash = std.mem.findScalar(u8, dm, '/');
-            const iface = if (slash) |i| dm[0..i] else dm;
-            d.interface_id = iface;
-            d.interface = interfaceForId(iface) orelse try titleCase(a, iface);
+            const prov = if (slash) |i| dm[0..i] else dm;
+            d.provider_id = prov;
+            d.provider = providerForId(prov) orelse try titleCase(a, prov);
             try applyModel(a, d, if (slash) |i| dm[i + 1 ..] else dm);
             d.model_source = "config.toml";
             break;
@@ -537,8 +537,8 @@ fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection)
 }
 
 fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
-    d.interface_id = "minimax";
-    d.interface = "MiniMax";
+    d.provider_id = "minimax";
+    d.provider = "MiniMax";
     var model: []const u8 = "MiniMax-M3"; // mmx-cli default when no model configured
     var src: []const u8 = "bundle-default";
     if (home.len > 0) {
@@ -564,7 +564,7 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
 // output
 
 const usage =
-    \\agent-detection — infer harness, interface, and model of the current agent session
+    \\agent-detection — infer harness, provider, and model of the current agent session
     \\
     \\usage: agent-detection [--json] [--trailer]
     \\
@@ -691,8 +691,8 @@ pub fn main(init: std.process.Init) !u8 {
         try fieldJson(a, &buf, "harness_id", d.harness_id, false);
         try fieldJson(a, &buf, "harness_source", d.harness_source, false);
         try fieldJson(a, &buf, "harness_env", if (d.harness_env) "true" else "false", false);
-        try fieldJson(a, &buf, "interface", d.interface, false);
-        try fieldJson(a, &buf, "interface_id", d.interface_id, false);
+        try fieldJson(a, &buf, "provider", d.provider, false);
+        try fieldJson(a, &buf, "provider_id", d.provider_id, false);
         try fieldJson(a, &buf, "model", d.model, false);
         try fieldJson(a, &buf, "model_id", d.model_id, false);
         try fieldJson(a, &buf, "model_source", d.model_source, false);
@@ -711,8 +711,8 @@ pub fn main(init: std.process.Init) !u8 {
         try fieldText(a, &buf, "harness_id", d.harness_id);
         try fieldText(a, &buf, "harness_source", d.harness_source);
         try fieldText(a, &buf, "harness_env", if (d.harness_env) "true" else "false");
-        try fieldText(a, &buf, "interface", d.interface);
-        try fieldText(a, &buf, "interface_id", d.interface_id);
+        try fieldText(a, &buf, "provider", d.provider);
+        try fieldText(a, &buf, "provider_id", d.provider_id);
         try fieldText(a, &buf, "model", d.model);
         try fieldText(a, &buf, "model_id", d.model_id);
         try fieldText(a, &buf, "model_source", d.model_source);

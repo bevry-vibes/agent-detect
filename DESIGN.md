@@ -2,7 +2,7 @@
 
 ## problem
 
-AI agents working on Bevry projects must identify their **harness**, **model**, and **interface** before working ([policy.md](https://github.com/bevry-labs/skills/blob/main/policy.md)) and must credit commits with an accurate `Co-authored-by` trailer ([commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md)), inferred fresh per session and per model change. Hard-coded answers rot; manual per-harness techniques documented in markdown rot faster and go unread. This repo provides a single small native binary, `agent-detection`, that infers the identity from live evidence.
+AI agents working on Bevry projects must identify their **harness**, **model**, and **provider** before working ([policy.md](https://github.com/bevry-labs/skills/blob/main/policy.md)) and must credit commits with an accurate `Co-authored-by` trailer ([commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md)), inferred fresh per session and per model change. Hard-coded answers rot; manual per-harness techniques documented in markdown rot faster and go unread. This repo provides a single small native binary, `agent-detection`, that infers the identity from live evidence.
 
 ## requirements
 
@@ -17,7 +17,7 @@ AI agents working on Bevry projects must identify their **harness**, **model**, 
 
 1. **env markers** → harness (`CLINE_*`, `GOOSE_*`, `KIMI_*`, `MMX_CONFIG_DIR`/`MINIMAX_*`, `PI_CODING_AGENT=true`)
 2. **ancestor process names** → harness fallback (Windows Toolhelp32 snapshot, Linux `/proc`; unsupported on macOS cross-builds)
-3. **harness config store** → live interface + model (per-harness table in [README.md](./README.md))
+3. **harness config store** → live provider + model (per-harness table in [README.md](./README.md))
 4. **own session** (Cline) → nearest ancestor pid with a `running` session under `~/.cline/data/sessions/`, corroborated by `cwd`; fallback: newest `running` session in cwd — parallel sessions exist, so never pick the newest globally
 5. **generation truth** (Cline) → last assistant `modelInfo` in the session's `messages.json`
 

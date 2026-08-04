@@ -1,6 +1,6 @@
 # agent-detection
 
-Infers the current agent's **harness**, **interface** (provider product), and **model** — multi-harness, multi-OS, multi-arch — so AI agents can identify themselves as required by [Bevry's skills](https://github.com/bevry-labs/skills) (`policy.md` identification, `commits.md` co-author trailers).
+Infers the current agent's **harness**, **provider** (LLM provider product), and **model** — multi-harness, multi-OS, multi-arch — so AI agents can identify themselves as required by [Bevry's skills](https://github.com/bevry-labs/skills) (`policy.md` identification, `commits.md` co-author trailers).
 
 ## usage
 
@@ -19,8 +19,8 @@ Example inside a Cline CLI session:
 ```text
 harness: Cline
 harness_env: true
-interface: Cline Pass
-interface_id: cline-pass
+provider: Cline Pass
+provider_id: cline-pass
 model: Kimi K3
 model_id: cline-pass/kimi-k3
 open_weight: true
@@ -43,7 +43,7 @@ Least-invasive-first detection ladder:
 3. **Own session** (Cline) — the nearest ancestor pid with a `running` session under `~/.cline/data/sessions/` wins, corroborated by `cwd`; fallback: newest `running` session with matching `cwd`.
 4. **Generation truth** (Cline) — the last assistant message's `modelInfo.id` / `modelInfo.provider` in the session's `messages.json`.
 
-| harness | detected by | interface + model source |
+| harness | detected by | provider + model source |
 | --- | --- | --- |
 | Cline (CLI) | `CLINE_*` env, `cline` ancestor | `~/.cline/data/settings/providers.json` (live), session json, `messages.json` |
 | Goose | `GOOSE_*` env, `goose` ancestor | `GOOSE_PROVIDER`/`GOOSE_MODEL` env, else `config.yaml` (`active_provider` + `providers.<p>.model`) — `%APPDATA%\Block\goose\config\config.yaml` on Windows, `~/.config/goose/config.yaml` elsewhere |
@@ -51,7 +51,7 @@ Least-invasive-first detection ladder:
 | MiniMax Code (`mmx`) | `MMX_CONFIG_DIR` / `MINIMAX_*` env | `~/.mmx/config.json` `defaultTextModel`/`model`, else bundle default `MiniMax-M3` |
 | pi | `PI_CODING_AGENT=true` | todo (sessions `model_change` metadata) |
 
-Extend `harness_rules`, `model_rules`, and `interface_rules` in [`src/main.zig`](./src/main.zig) as new harnesses/models appear.
+Extend `harness_rules`, `model_rules`, and `provider_rules` in [`src/main.zig`](./src/main.zig) as new harnesses/models appear.
 
 ## platforms
 
