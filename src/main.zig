@@ -69,11 +69,11 @@ const mmx_env = [_][]const u8{ "MMX_CONFIG_DIR", "MINIMAX_API_KEY" };
 const pi_env = [_][]const u8{"PI_CODING_AGENT"};
 const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
-const kimi_procs = [_][]const u8{ "kimi.exe", "kimi" };
+const kimi_procs = [_][]const u8{ "kimi.exe", "kimi", "kimi-code.exe", "kimi-code" };
 const harness_rules = [_]HarnessRule{
     .{ .id = "cline", .display = "Cline", .env_markers = &cline_env, .proc_names = &cline_procs },
     .{ .id = "goose", .display = "Goose", .env_markers = &goose_env, .proc_names = &goose_procs },
-    .{ .id = "kimi", .display = "Kimi Code", .env_markers = &kimi_env, .proc_names = &kimi_procs },
+    .{ .id = "kimi", .display = "Kimi Code CLI", .env_markers = &kimi_env, .proc_names = &kimi_procs },
     .{ .id = "mmx", .display = "MiniMax Code", .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
     .{ .id = "pi", .display = "pi", .env_markers = &pi_env, .proc_names = &.{} },
 };
