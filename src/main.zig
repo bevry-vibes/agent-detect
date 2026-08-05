@@ -34,7 +34,7 @@ const os = @cImport({
 extern "c" fn proc_pidpath(pid: c_int, buffer: [*]u8, buffersize: c_uint) c_int;
 extern "c" fn proc_pidinfo(pid: c_int, flavor: c_int, arg: c_ulong, buffer: [*]u8, buffersize: c_int) c_int;
 
-const Detection = struct {
+pub const Detection = struct {
     harness: ?[]const u8 = null, // display name, e.g. "Cline"
     harness_id: ?[]const u8 = null, // e.g. "cline"
     harness_source: []const u8 = "none", // "env" | "ancestor" | "none"
@@ -53,6 +53,7 @@ const Detection = struct {
     last_msg_model: ?[]const u8 = null,
     last_msg_provider: ?[]const u8 = null,
     trailer: ?[]const u8 = null,
+    raw: RawEvidence = .{},
 };
 
 const ModelRule = struct { slug: []const u8, display: []const u8, open: ?bool };
@@ -70,7 +71,51 @@ const provider_rules = [_]ProviderRule{
     .{ .id = "minimax", .display = "MiniMax" },
 };
 
-const HarnessRule = struct {
+// trim-state types and raw-evidence accumulator
+pub const TrimField = struct {
+    stripped_suffix: ?[]const u8 = null,
+    iterations: u8 = 0,
+};
+pub const TrimSummary = struct {
+    harness: TrimField = .{},
+    model: TrimField = .{},
+};
+
+/// one row in the synthetic-fixture table. Each combination produces three
+/// files in `known/`: `<email-local>` becomes the trailer's email local that
+/// `trailerEmail` produces, and the three files are named against it.
+pub const KnownCase = struct {
+    harness: []const u8, // matches a HarnessRule.id
+    model: []const u8, // model_rules slug or any titleCase-able slug
+};
+
+/// the canonical harness × model combinations whose outputs we keep as
+/// committed fixtures under `known/`. Refresh with `zig build
+/// refresh-known`. `pi` is included even though model detection is TODO:
+/// the fixture documents what the binary would emit if a model resolver
+/// landed — synthesised with model slug `kimi-k3` so the email local
+/// keeps a non-trivial example.
+pub const known_cases = [_]KnownCase{
+    .{ .harness = "cline", .model = "kimi-k3" }, // resolves to "Kimi K3" via model_rules
+    .{ .harness = "kimi", .model = "minimax-m3" }, // resolves to "MiniMax-M3"
+    .{ .harness = "mmx", .model = "minimax-m3" }, // resolves to "MiniMax-M3"
+    .{ .harness = "goose", .model = "claude-sonnet-4" }, // titleCase fallback -> "Claude Sonnet 4"
+    .{ .harness = "pi", .model = "kimi-k3" }, // synthetic; documents partial-detection shape
+};
+const RawEvidence = struct {
+    // populated during detection
+    harness_source_display: ?[]const u8 = null,
+    harness_rule_id: ?[]const u8 = null,
+    harness_proc_names: []const []const u8 = &.{},
+    harness_env_markers: []const []const u8 = &.{},
+    model_source_display: ?[]const u8 = null,
+    model_slug: ?[]const u8 = null,
+    // populated by trimDisplaySuffix at field-assignment time
+    trim_summary: TrimSummary = .{},
+    // re-derived at emit time from anc / rule / env: harness_ancestor_chain, harness_env_marker_hits, argv_marker_found
+};
+
+pub const HarnessRule = struct {
     id: []const u8,
     display: []const u8,
     env_markers: []const []const u8,
@@ -84,22 +129,24 @@ const pi_env = [_][]const u8{"PI_CODING_AGENT"};
 const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
 const kimi_procs = [_][]const u8{ "kimi.exe", "kimi", "kimi-code.exe", "kimi-code" };
-const harness_rules = [_]HarnessRule{
+pub const harness_rules = [_]HarnessRule{
     .{ .id = "cline", .display = "Cline", .env_markers = &cline_env, .proc_names = &cline_procs },
     .{ .id = "goose", .display = "Goose", .env_markers = &goose_env, .proc_names = &goose_procs },
-    .{ .id = "kimi", .display = "Kimi Code CLI", .env_markers = &kimi_env, .proc_names = &kimi_procs },
+    .{ .id = "kimi", .display = "Kimi Code", .env_markers = &kimi_env, .proc_names = &kimi_procs },
     .{ .id = "mmx", .display = "MiniMax Code", .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
     .{ .id = "pi", .display = "pi", .env_markers = &pi_env, .proc_names = &.{} },
 };
 
-/// normalize model id into display name + open-weight flag
-fn applyModel(a: std.mem.Allocator, d: *Detection, model_id: []const u8) !void {
+pub fn applyModel(a: std.mem.Allocator, d: *Detection, model_id: []const u8) !void {
     d.model_id = model_id;
     const lower = try std.ascii.allocLowerString(a, model_id);
     const slash = std.mem.findScalarLast(u8, lower, '/');
     const slug = if (slash) |i| lower[i + 1 ..] else lower;
     const mi = try modelForSlug(a, slug);
-    d.model = mi.display;
+    // raw: pre-trim model display + lowercase slug, before applying trim
+    d.raw.model_source_display = mi.display;
+    d.raw.model_slug = slug;
+    d.model = try trimDisplaySuffix(a, mi.display, &d.raw.trim_summary.model);
     d.open_weight = mi.open;
 }
 
@@ -177,7 +224,7 @@ fn extractAfter(raw: []const u8, from: usize, key: []const u8) ?[]const u8 {
 }
 
 /// lowercase-alphanumeric email local part, e.g. ("Cline","Kimi K3") -> "cline-kimik3@local"
-fn trailerEmail(a: std.mem.Allocator, harness: []const u8, model: []const u8) ![]u8 {
+pub fn trailerEmail(a: std.mem.Allocator, harness: []const u8, model: []const u8) ![]u8 {
     var list: std.ArrayList(u8) = .empty;
     for (harness) |c| {
         if (std.ascii.isAlphanumeric(c)) try list.append(a, std.ascii.toLower(c));
@@ -190,6 +237,62 @@ fn trailerEmail(a: std.mem.Allocator, harness: []const u8, model: []const u8) ![
     return list.toOwnedSlice(a);
 }
 
+/// drop redundant display-name suffixes — platform-mode ("CLI", "TUI",
+/// "GUI", "Desktop") and lifecycle ("Preview", "Beta", "RC"). Both
+/// lists apply to both the harness and the model fields. Matching is
+/// case-insensitive on the suffix word itself and only fires when the
+/// suffix is preceded by a space or a hyphen (so "KimiCLI" stays
+/// untouched, but "Kimi CLI", "kimi cli", "Kimi-CLI", and
+/// "Kimi-CLI Preview" all strip). The loop is recursive — every
+/// successful strip re-runs the matcher against the shorter string, so
+/// a multi-tag display like "Kimi Code CLI Preview" collapses all the
+/// way to "Kimi Code" in one call. Comptime string literals in the
+/// rules tables mean we borrow the slice in the common case;
+/// non-literal displays fall through to an arena dupe so the result
+/// lives as long as `a`. The `summary` parameter is updated in place:
+/// `iterations` counts recursive passes; `stripped_suffix` records the
+/// final suffix word that fired.
+pub fn trimDisplaySuffix(a: std.mem.Allocator, display: []const u8, summary: *TrimField) ![]const u8 {
+    const suffixes = [_][]const u8{
+        // platform-mode (delivery surface)
+        "CLI", "TUI", "GUI", "Desktop",
+        // lifecycle (release tag)
+        "Preview", "Beta", "RC",
+    };
+    var trimmed: []const u8 = display;
+    while (true) {
+        var changed = false;
+        // trim trailing whitespace/dashes at the START of each iteration
+        // so a leftover separator from a prior strip doesn't block the
+        // next suffix match (e.g. "Kimi Code CLI Preview" after stripping
+        // "Preview" leaves "Kimi Code CLI " — we need to drop the trailing
+        // space before trying to match "CLI").
+        var end: usize = trimmed.len;
+        while (end > 0 and (trimmed[end - 1] == ' ' or trimmed[end - 1] == '-')) : (end -= 1) {}
+        if (end != trimmed.len) trimmed = trimmed[0..end];
+
+        for (suffixes) |suffix| {
+            // minimum length is the suffix plus one separator
+            if (trimmed.len <= suffix.len + 1) continue;
+            const start = trimmed.len - suffix.len;
+            const tail = trimmed[start..];
+            const prev: u8 = trimmed[start - 1];
+            if (prev != ' ' and prev != '-') continue;
+            if (!std.ascii.eqlIgnoreCase(tail, suffix)) continue;
+            trimmed = trimmed[0..start];
+            summary.iterations += 1;
+            summary.stripped_suffix = suffix;
+            changed = true;
+        }
+        if (!changed) break;
+    }
+    // always dupe — callers can safely free the result; borrow-fast is
+    // tempting but ambiguous at every call site (the borrow is only safe
+    // when the input was a comptime-constant literal whose lifetime is
+    // forever). For an arena-allocator path, the alloc is cheap.
+    return try a.dupe(u8, trimmed);
+}
+
 fn jsonEscape(a: std.mem.Allocator, s: []const u8) ![]u8 {
     var list: std.ArrayList(u8) = .empty;
     for (s) |c| {
@@ -200,6 +303,52 @@ fn jsonEscape(a: std.mem.Allocator, s: []const u8) ![]u8 {
         }
     }
     return list.toOwnedSlice(a);
+}
+
+/// mirror of `fieldJson` for `[]const []const u8` arrays (e.g. proc_names,
+/// env_markers). Emits `"key": ["a","b"]` or `"key": []`. Uses 4-space
+/// prefix to match the nesting level inside `raw` / `canonical`.
+fn fieldJsonArray(a: std.mem.Allocator, buf: *std.ArrayList(u8), key: []const u8, vals: []const []const u8, last: bool) !void {
+    try buf.appendSlice(a, try std.fmt.allocPrint(a, "    \"{s}\": [", .{key}));
+    for (vals, 0..) |v, i| {
+        if (i > 0) try buf.appendSlice(a, ", ");
+        try buf.appendSlice(a, try std.fmt.allocPrint(a, "\"{s}\"", .{try jsonEscape(a, v)}));
+    }
+    try buf.appendSlice(a, "]");
+    try buf.appendSlice(a, if (last) "\n" else ",\n");
+}
+
+/// emit `"trim_summary": { "harness": {...}, "model": {...} }` indented
+/// 4 spaces; caller is responsible for any trailing comma.
+fn emitTrimSummary(a: std.mem.Allocator, buf: *std.ArrayList(u8), ts: TrimSummary, last_section: bool) !void {
+    try buf.appendSlice(a, "    \"trim_summary\": {\n");
+    // stripped_suffix (string or null) + iterations (number)
+    try emitTrimField(a, buf, "harness", ts.harness, false);
+    try emitTrimField(a, buf, "model", ts.model, true);
+    try buf.appendSlice(a, "    }");
+    try buf.appendSlice(a, if (last_section) "\n" else ",\n");
+}
+
+fn emitTrimField(a: std.mem.Allocator, buf: *std.ArrayList(u8), key: []const u8, tf: TrimField, last: bool) !void {
+    if (tf.stripped_suffix) |s| {
+        try buf.appendSlice(a, try std.fmt.allocPrint(a, "      \"{s}\": {{\"stripped_suffix\":\"{s}\",\"iterations\":{d}}}", .{ key, try jsonEscape(a, s), tf.iterations }));
+    } else {
+        try buf.appendSlice(a, try std.fmt.allocPrint(a, "      \"{s}\": {{\"stripped_suffix\":null,\"iterations\":{d}}}", .{ key, tf.iterations }));
+    }
+    try buf.appendSlice(a, if (last) "\n" else ",\n");
+}
+
+/// emit `"harness_ancestor_chain": [{"pid":N,"name":"..."},...]` at 4-space
+/// indent, terminated with `\n` (caller adds comma if needed).
+fn emitAncestorChain(a: std.mem.Allocator, buf: *std.ArrayList(u8), anc: Ancestry, last_section: bool) !void {
+    try buf.appendSlice(a, "    \"harness_ancestor_chain\": [");
+    for (anc.pids, 0..) |pid, i| {
+        const name: []const u8 = if (i < anc.names.len) anc.names[i] else "";
+        if (i > 0) try buf.appendSlice(a, ", ");
+        try buf.appendSlice(a, try std.fmt.allocPrint(a, "{{\"pid\":{d},\"name\":\"{s}\"}}", .{ pid, try jsonEscape(a, name) }));
+    }
+    try buf.appendSlice(a, "]");
+    try buf.appendSlice(a, if (last_section) "\n" else ",\n");
 }
 
 // ============================================================================
@@ -223,7 +372,7 @@ extern "kernel32" fn CreateToolhelp32Snapshot(dwFlags: u32, th32ProcessID: u32) 
 extern "kernel32" fn Process32FirstW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
 extern "kernel32" fn Process32NextW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
 
-const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
+pub const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
 
 fn ancestorInfo(a: std.mem.Allocator, io: std.Io) Ancestry {
     if (builtin.os.tag == .windows) return ancestorsWindows(a) catch .{};
@@ -656,6 +805,77 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     d.model_source = src;
 }
 
+/// emit text-mode was removed: it duplicated --json in a less structured
+/// form. There is no `buildText` helper. The default output of
+/// `agent-detection` is the JSON mode produced by `buildJson`.
+
+/// emit JSON report for `d` into `buf`. Splits into `raw` (unprocessed
+/// observations) and `canonical` (post-trim, shape-stable) sections.
+/// `env`, `rule`, and `anc` are inputs to parts we re-derive at emit
+/// time rather than store on Detection — env_marker_hits come from
+/// `rule.env_markers` ∩ `env`; the ancestor chain comes from `anc`;
+/// argv_marker_found is detected by scanning `anc.names` for the
+/// "kimi-code" override marker that the macOS walker produces. Used by
+/// main() and by refresh-known for synthetic fixtures.
+pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?HarnessRule, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
+    try buf.appendSlice(a, "{\n");
+
+    // ---- raw section: unprocessed observations ----
+    try buf.appendSlice(a, "  \"raw\": {\n");
+    try fieldJson(a, buf, "harness_source_display", d.raw.harness_source_display, false);
+    try fieldJson(a, buf, "harness_rule_id", d.raw.harness_rule_id, false);
+    try fieldJson(a, buf, "harness_source", d.harness_source, false);
+    try fieldJson(a, buf, "harness_env", if (d.harness_env) "true" else "false", false);
+    try fieldJsonArray(a, buf, "harness_proc_names", d.raw.harness_proc_names, false);
+    try fieldJsonArray(a, buf, "harness_env_markers", d.raw.harness_env_markers, false);
+    var hits = std.ArrayList([]const u8).empty;
+    defer hits.deinit(a);
+    if (rule) |r| {
+        for (r.env_markers) |m| {
+            if (env.get(m) != null) try hits.append(a, m);
+        }
+    }
+    try fieldJsonArray(a, buf, "harness_env_marker_hits", hits.items, false);
+    try emitAncestorChain(a, buf, anc, false);
+    var argv_marker: ?[]const u8 = null;
+    for (anc.names) |n| {
+        if (std.mem.eql(u8, n, "kimi-code")) {
+            argv_marker = "kimi-code";
+            break;
+        }
+    }
+    try fieldJson(a, buf, "argv_marker_found", argv_marker, false);
+    try fieldJson(a, buf, "model_source_display", d.raw.model_source_display, false);
+    try fieldJson(a, buf, "model_slug", d.raw.model_slug, false);
+    try fieldJson(a, buf, "model_source", d.model_source, false);
+    try fieldJson(a, buf, "model_updated_at", d.model_updated_at, false);
+    try emitTrimSummary(a, buf, d.raw.trim_summary, true);
+    try buf.appendSlice(a, "  },\n");
+
+    // ---- canonical section: trimmed, shape-stable downstream fields ----
+    try buf.appendSlice(a, "  \"canonical\": {\n");
+    try fieldJson(a, buf, "harness", d.harness, false);
+    try fieldJson(a, buf, "harness_id", d.harness_id, false);
+    try fieldJson(a, buf, "harness_source", d.harness_source, false);
+    try fieldJson(a, buf, "provider", d.provider, false);
+    try fieldJson(a, buf, "provider_id", d.provider_id, false);
+    try fieldJson(a, buf, "model", d.model, false);
+    try fieldJson(a, buf, "model_id", d.model_id, false);
+    try fieldJson(a, buf, "model_source", d.model_source, false);
+    try fieldJson(a, buf, "open_weight", d.open_weight, false);
+    try fieldJson(a, buf, "model_updated_at", d.model_updated_at, false);
+    try fieldJson(a, buf, "session_id", d.session_id, false);
+    try fieldJson(a, buf, "session_resolution", d.session_resolution, false);
+    try fieldJson(a, buf, "session_provider", d.session_provider, false);
+    try fieldJson(a, buf, "session_model", d.session_model, false);
+    try fieldJson(a, buf, "last_msg_provider", d.last_msg_provider, false);
+    try fieldJson(a, buf, "last_msg_model", d.last_msg_model, false);
+    try fieldJson(a, buf, "trailer", d.trailer, true);
+    try buf.appendSlice(a, "  }\n");
+
+    try buf.appendSlice(a, "}\n");
+}
+
 // ============================================================================
 // output
 
@@ -664,8 +884,7 @@ const usage =
     \\
     \\usage: agent-detection [--json] [--trailer]
     \\
-    \\  (default)    human-readable detection report
-    \\  --json       machine-readable detection report
+    \\  (default)    same as --json; raw + canonical sections (see `zig build known-fixtures` for shape)
     \\  --trailer    print only the Co-authored-by trailer (for git commits)
     \\  --help       this help
     \\
@@ -673,15 +892,15 @@ const usage =
     \\
 ;
 
-fn fieldText(a: std.mem.Allocator, buf: *std.ArrayList(u8), key: []const u8, val: ?[]const u8) !void {
-    try buf.appendSlice(a, try std.fmt.allocPrint(a, "{s}: {s}\n", .{ key, val orelse "unknown" }));
-}
+// fieldText removed: human text-mode was dropped (it duplicated --json
+// in a less structured form). Default output is now the JSON from
+// buildJson; --trailer remains the only other mode.
 
 fn fieldJson(a: std.mem.Allocator, buf: *std.ArrayList(u8), key: []const u8, val: ?[]const u8, last: bool) !void {
     if (val) |v| {
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "  \"{s}\": \"{s}\"", .{ key, try jsonEscape(a, v) }));
+        try buf.appendSlice(a, try std.fmt.allocPrint(a, "    \"{s}\": \"{s}\"", .{ key, try jsonEscape(a, v) }));
     } else {
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "  \"{s}\": null", .{key}));
+        try buf.appendSlice(a, try std.fmt.allocPrint(a, "    \"{s}\": null", .{key}));
     }
     try buf.appendSlice(a, if (last) "\n" else ",\n");
 }
@@ -690,15 +909,19 @@ pub fn main(init: std.process.Init) !u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
-    var as_json = false;
+    // subcommand dispatch: argv[1] == "refresh-known" regenerates `known/`
+    // fixtures. argv on macOS is `[]const [*:0]const u8` (the vector field).
+    if (init.minimal.args.vector.len > 1 and std.mem.eql(u8, std.mem.span(init.minimal.args.vector[1]), "refresh-known")) {
+        try refreshKnown(init);
+        return 0;
+    }
+
     var trailer_only = false;
     var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
     defer args_it.deinit();
     _ = args_it.skip(); // argv0
     while (args_it.next()) |arg| {
-        if (std.mem.eql(u8, arg, "--json")) {
-            as_json = true;
-        } else if (std.mem.eql(u8, arg, "--trailer")) {
+        if (std.mem.eql(u8, arg, "--trailer")) {
             trailer_only = true;
         } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
             writeOut(io, usage);
@@ -709,6 +932,7 @@ pub fn main(init: std.process.Init) !u8 {
             return 2;
         }
     }
+    // No flag: emit JSON (default). --trailer is handled by an early-return below.
 
     var d = Detection{};
 
@@ -748,10 +972,15 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     if (rule) |r| {
-        d.harness = r.display;
+        d.harness = try trimDisplaySuffix(a, r.display, &d.raw.trim_summary.harness);
         d.harness_id = r.id;
         d.harness_env = std.mem.eql(u8, hsrc, "env");
         d.harness_source = hsrc;
+        // raw: what the rule declared, before our trim
+        d.raw.harness_source_display = r.display;
+        d.raw.harness_rule_id = r.id;
+        d.raw.harness_proc_names = r.proc_names;
+        d.raw.harness_env_markers = r.env_markers;
         const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
         if (std.mem.eql(u8, r.id, "cline")) {
             try detectCline(a, io, anc, home, &d);
@@ -781,50 +1010,152 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     var buf: std.ArrayList(u8) = .empty;
-    if (as_json) {
-        try buf.appendSlice(a, "{\n");
-        try fieldJson(a, &buf, "harness", d.harness, false);
-        try fieldJson(a, &buf, "harness_id", d.harness_id, false);
-        try fieldJson(a, &buf, "harness_source", d.harness_source, false);
-        try fieldJson(a, &buf, "harness_env", if (d.harness_env) "true" else "false", false);
-        try fieldJson(a, &buf, "provider", d.provider, false);
-        try fieldJson(a, &buf, "provider_id", d.provider_id, false);
-        try fieldJson(a, &buf, "model", d.model, false);
-        try fieldJson(a, &buf, "model_id", d.model_id, false);
-        try fieldJson(a, &buf, "model_source", d.model_source, false);
-        try fieldJson(a, &buf, "open_weight", d.open_weight, false);
-        try fieldJson(a, &buf, "model_updated_at", d.model_updated_at, false);
-        try fieldJson(a, &buf, "session_id", d.session_id, false);
-        try fieldJson(a, &buf, "session_resolution", d.session_resolution, false);
-        try fieldJson(a, &buf, "session_provider", d.session_provider, false);
-        try fieldJson(a, &buf, "session_model", d.session_model, false);
-        try fieldJson(a, &buf, "last_msg_provider", d.last_msg_provider, false);
-        try fieldJson(a, &buf, "last_msg_model", d.last_msg_model, false);
-        try fieldJson(a, &buf, "trailer", d.trailer, true);
-        try buf.appendSlice(a, "}\n");
-    } else {
-        try fieldText(a, &buf, "harness", d.harness);
-        try fieldText(a, &buf, "harness_id", d.harness_id);
-        try fieldText(a, &buf, "harness_source", d.harness_source);
-        try fieldText(a, &buf, "harness_env", if (d.harness_env) "true" else "false");
-        try fieldText(a, &buf, "provider", d.provider);
-        try fieldText(a, &buf, "provider_id", d.provider_id);
-        try fieldText(a, &buf, "model", d.model);
-        try fieldText(a, &buf, "model_id", d.model_id);
-        try fieldText(a, &buf, "model_source", d.model_source);
-        try fieldText(a, &buf, "open_weight", d.open_weight);
-        try fieldText(a, &buf, "model_updated_at", d.model_updated_at);
-        try fieldText(a, &buf, "session_id", d.session_id);
-        try fieldText(a, &buf, "session_resolution", d.session_resolution);
-        try fieldText(a, &buf, "session_provider", d.session_provider);
-        try fieldText(a, &buf, "session_model", d.session_model);
-        try fieldText(a, &buf, "last_msg_provider", d.last_msg_provider);
-        try fieldText(a, &buf, "last_msg_model", d.last_msg_model);
-        try fieldText(a, &buf, "trailer", d.trailer);
-    }
+    try buildJson(a, &d, env, rule, anc, &buf);
     writeOut(io, buf.items);
 
     const ok = d.harness != null and d.model != null;
     if (!ok) writeErr(io, "unable to fully identify harness/model — stop and inform the user (per policy)\n");
     return if (ok) 0 else 2;
+}
+
+// ============================================================================
+// known/ fixtures + refresh-known step
+//
+// For each entry in `known_cases`, build a synthetic Detection (with
+// `harness_source = "synthetic"` and sentinel model fields populated by
+// `applyModel`), run the same `buildText` / `buildJson` helpers the main
+// detection path uses, and write three files under `known/`. The fixtures
+// become the canonical reference of what each harness × model combination
+// outputs today; the `known_fixtures` test step diffs current output
+// against them.
+
+/// write one synthetic fixture (json / trailer) for a KnownCase.
+/// `dir` is the open `known/` directory; caller is responsible for `dir.close`.
+pub fn renderCase(a: std.mem.Allocator, io: std.Io, dir: std.Io.Dir, kc: KnownCase) !void {
+    // locate harness rule by id
+    var found_rule: ?HarnessRule = null;
+    for (harness_rules) |r| {
+        if (std.mem.eql(u8, r.id, kc.harness)) {
+            found_rule = r;
+            break;
+        }
+    }
+    const r = found_rule orelse {
+        std.debug.print("  skip {s}: no harness rule\n", .{kc.harness});
+        return;
+    };
+
+    var d: Detection = .{};
+    d.harness_source = "synthetic";
+    d.harness_env = false;
+    d.harness_id = r.id;
+    d.raw.harness_source_display = r.display;
+    d.raw.harness_rule_id = r.id;
+    d.raw.harness_proc_names = r.proc_names;
+    d.raw.harness_env_markers = r.env_markers;
+    d.harness = try trimDisplaySuffix(a, r.display, &d.raw.trim_summary.harness);
+
+    // provider defaults: use ids that already exist in provider_rules; do
+    // not invent new brands. Only the names that the walker actually emits.
+    if (std.mem.eql(u8, r.id, "cline")) {
+        d.provider_id = "cline-pass";
+        d.provider = "Cline Pass";
+    } else if (std.mem.eql(u8, r.id, "kimi") or std.mem.eql(u8, r.id, "mmx")) {
+        d.provider_id = "minimax";
+        d.provider = "MiniMax";
+    } else if (std.mem.eql(u8, r.id, "goose")) {
+        d.provider_id = "goose";
+        d.provider = "Goose";
+    }
+
+    if (d.provider_id) |pid| {
+        const model_id = try std.fmt.allocPrint(a, "{s}/{s}", .{ pid, kc.model });
+        try applyModel(a, &d, model_id);
+    }
+    d.model_source = "synthetic";
+
+    // pre-populate trimmed trailer
+    if (d.harness != null and d.model != null) {
+        const email = try trailerEmail(a, d.harness.?, d.model.?);
+        d.trailer = try std.fmt.allocPrint(a, "Co-authored-by: {s} - {s} <{s}>", .{ d.harness.?, d.model.?, email });
+    }
+
+    // for buildJson, an empty env_map and an empty ancestry are sufficient
+    var env_map = std.process.Environ.Map.init(a);
+    defer env_map.deinit();
+    const empty_anc: Ancestry = .{};
+
+    var buf_json: std.ArrayList(u8) = .empty;
+    defer buf_json.deinit(a);
+    try buildJson(a, &d, &env_map, r, empty_anc, &buf_json);
+
+    // derive the fixture filename stem. When harness + model are both set,
+    // the stem is the post-trim email local — the same identifier a real
+    // git-commit trailer would carry. When only harness is set (partial
+    // detection, e.g. pi with model detection still TODO), fall back to
+    // "<harness>-no-model" so the fixture is still keyed uniquely.
+    const stem = stemForFixture(a, &d) catch |err| switch (err) {
+        error.SkipFixture => {
+            std.debug.print("  skip {s}/{s}: no harness resolved\n", .{ kc.harness, kc.model });
+            return;
+        },
+        else => return err,
+    };
+    defer a.free(stem);
+
+    const json_name = try std.fmt.allocPrint(a, "{s}.json.txt", .{stem});
+    try dir.writeFile(io, .{ .sub_path = json_name, .data = buf_json.items });
+
+    // trailer is only available when both harness AND model resolved.
+    // Without a model, real detection exits 2, so we don't write a
+    // trailer fixture — the json alone documents the partial state.
+    if (d.trailer) |t| {
+        var buf_trailer: std.ArrayList(u8) = .empty;
+        defer buf_trailer.deinit(a);
+        try buf_trailer.appendSlice(a, t);
+        try buf_trailer.appendSlice(a, "\n");
+        const trailer_name = try std.fmt.allocPrint(a, "{s}.trailer.txt", .{stem});
+        try dir.writeFile(io, .{ .sub_path = trailer_name, .data = buf_trailer.items });
+        std.debug.print("  wrote {s}, {s}\n", .{ json_name, trailer_name });
+    } else {
+        std.debug.print("  wrote {s} (no trailer — partial detection)\n", .{json_name});
+    }
+}
+
+/// compute the fixture filename stem for a synthetic Detection. Returns
+/// the post-trim email local when both harness and model are set, or a
+/// "<harness>-no-model" fallback when the model is missing. Errors with
+/// `SkipFixture` if even the harness is missing — the case was filtered
+/// out before calling this, but the guard is here for safety.
+pub fn stemForFixture(a: std.mem.Allocator, d: *const Detection) (std.mem.Allocator.Error || error{SkipFixture})![]u8 {
+    if (d.harness == null) return error.SkipFixture;
+    if (d.model == null) return std.fmt.allocPrint(a, "{s}-no-model", .{d.harness.?});
+    const email_full = try trailerEmail(a, d.harness.?, d.model.?);
+    const at_pos = std.mem.indexOf(u8, email_full, "@").?;
+    return a.dupe(u8, email_full[0..at_pos]);
+}
+
+/// regenerate every fixture in `known/`. Invoked by the `refresh-known`
+/// build step. Exits 0 on success; non-zero if the directory is
+/// unwritable or any case errors.
+pub fn refreshKnown(init: std.process.Init) !void {
+    const a = init.arena.allocator();
+    const io = init.io;
+
+    // ensure known/ dir exists (idempotent)
+    std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+        error.PathAlreadyExists => {},
+        else => return err,
+    };
+    const dir = std.Io.Dir.cwd().openDir(io, "known", .{}) catch |err| {
+        std.debug.print("refresh-known: cannot open known/ dir: {t}\n", .{err});
+        return err;
+    };
+    defer dir.close(io);
+
+    std.debug.print("refresh-known: regenerating {d} fixtures\n", .{known_cases.len});
+    for (known_cases) |kc| {
+        try renderCase(a, io, dir, kc);
+    }
+    std.debug.print("refresh-known: done\n", .{});
 }

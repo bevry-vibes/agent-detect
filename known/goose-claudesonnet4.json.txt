@@ -1,0 +1,40 @@
+{
+  "raw": {
+    "harness_source_display": "Goose",
+    "harness_rule_id": "goose",
+    "harness_source": "synthetic",
+    "harness_env": "false",
+    "harness_proc_names": ["goose.exe", "goose", "goosed.exe", "goosed"],
+    "harness_env_markers": ["GOOSE_WORKING_DIR", "GOOSE_PROVIDER", "GOOSE_MODEL", "GOOSE_TERMINAL", "GOOSE_MODE"],
+    "harness_env_marker_hits": [],
+    "harness_ancestor_chain": [],
+    "argv_marker_found": null,
+    "model_source_display": "Claude Sonnet 4",
+    "model_slug": "claude-sonnet-4",
+    "model_source": "synthetic",
+    "model_updated_at": null,
+    "trim_summary": {
+      "harness": {"stripped_suffix":null,"iterations":0},
+      "model": {"stripped_suffix":null,"iterations":0}
+    }
+  },
+  "canonical": {
+    "harness": "Goose",
+    "harness_id": "goose",
+    "harness_source": "synthetic",
+    "provider": "Goose",
+    "provider_id": "goose",
+    "model": "Claude Sonnet 4",
+    "model_id": "goose/claude-sonnet-4",
+    "model_source": "synthetic",
+    "open_weight": "unknown",
+    "model_updated_at": null,
+    "session_id": null,
+    "session_resolution": "none",
+    "session_provider": null,
+    "session_model": null,
+    "last_msg_provider": null,
+    "last_msg_model": null,
+    "trailer": "Co-authored-by: Goose - Claude Sonnet 4 <goose-claudesonnet4@local>"
+  }
+}

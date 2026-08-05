@@ -34,6 +34,35 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(native_exe);
 
+    // `zig build refresh-known` — runs the native `agent-detection refresh-known`
+    // subcommand, which regenerates every fixture in `known/`. Diff in the
+    // same commit as the rule change that motivated it.
+    const refresh_step = b.step("refresh-known", "regenerate known/ fixtures");
+    const refresh_run = b.addRunArtifact(native_exe);
+    refresh_run.addArg("refresh-known");
+    refresh_step.dependOn(&refresh_run.step);
+
+    // `zig build test` — runs every `src/*_test.zig` / `src/*test*.zig` file.
+    // Each test file imports `src/main.zig` to reach `trimDisplaySuffix`,
+    // `buildJson`, etc.
+    const test_step = b.step("test", "run zig tests");
+    const test_files = [_][]const u8{
+        "src/trim_display_suffix.harness.test.zig",
+        "src/trim_display_suffix.model.test.zig",
+        "src/known_fixtures.test.zig",
+    };
+    inline for (test_files) |file| {
+        const test_exe = b.addTest(.{
+            .root_module = b.createModule(.{
+                .root_source_file = b.path(file),
+                .target = native_target,
+                .optimize = optimize,
+            }),
+        });
+        const run = b.addRunArtifact(test_exe);
+        test_step.dependOn(&run.step);
+    }
+
     // `zig build dist` — cross-compile every target into bin/
     const dist_step = b.step("dist", "cross-compile all platform binaries into bin/");
     for (targets) |t| {

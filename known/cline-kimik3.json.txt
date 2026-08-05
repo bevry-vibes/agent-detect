@@ -1,0 +1,40 @@
+{
+  "raw": {
+    "harness_source_display": "Cline",
+    "harness_rule_id": "cline",
+    "harness_source": "synthetic",
+    "harness_env": "false",
+    "harness_proc_names": ["cline.exe", "cline"],
+    "harness_env_markers": ["CLINE_WRAPPER_PATH", "CLINE_BUILD_ENV", "CLINE_NO_INTERACTIVE", "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH"],
+    "harness_env_marker_hits": [],
+    "harness_ancestor_chain": [],
+    "argv_marker_found": null,
+    "model_source_display": "Kimi K3",
+    "model_slug": "kimi-k3",
+    "model_source": "synthetic",
+    "model_updated_at": null,
+    "trim_summary": {
+      "harness": {"stripped_suffix":null,"iterations":0},
+      "model": {"stripped_suffix":null,"iterations":0}
+    }
+  },
+  "canonical": {
+    "harness": "Cline",
+    "harness_id": "cline",
+    "harness_source": "synthetic",
+    "provider": "Cline Pass",
+    "provider_id": "cline-pass",
+    "model": "Kimi K3",
+    "model_id": "cline-pass/kimi-k3",
+    "model_source": "synthetic",
+    "open_weight": "true",
+    "model_updated_at": null,
+    "session_id": null,
+    "session_resolution": "none",
+    "session_provider": null,
+    "session_model": null,
+    "last_msg_provider": null,
+    "last_msg_model": null,
+    "trailer": "Co-authored-by: Cline - Kimi K3 <cline-kimik3@local>"
+  }
+}

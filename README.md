@@ -36,14 +36,14 @@ Once downloaded, the use cases:
 
 ```sh
 # sh (linux, macos)
-./agent-detection         # human-readable
-./agent-detection --json  # machine-readable
+./agent-detection         # same as --json
+./agent-detection --json  # machine-readable JSON
 ```
 
 ```powershell
 # powershell (windows)
-.\agent-detection.exe         # human-readable
-.\agent-detection.exe --json  # machine-readable
+.\agent-detection.exe         # same as --json
+.\agent-detection.exe --json  # machine-readable JSON
 ```
 
 **credit your commits** (per [commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md)) — emit only the `Co-authored-by` trailer:

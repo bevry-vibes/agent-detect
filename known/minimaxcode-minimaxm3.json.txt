@@ -1,0 +1,40 @@
+{
+  "raw": {
+    "harness_source_display": "MiniMax Code",
+    "harness_rule_id": "mmx",
+    "harness_source": "synthetic",
+    "harness_env": "false",
+    "harness_proc_names": [],
+    "harness_env_markers": ["MMX_CONFIG_DIR", "MINIMAX_API_KEY"],
+    "harness_env_marker_hits": [],
+    "harness_ancestor_chain": [],
+    "argv_marker_found": null,
+    "model_source_display": "MiniMax-M3",
+    "model_slug": "minimax-m3",
+    "model_source": "synthetic",
+    "model_updated_at": null,
+    "trim_summary": {
+      "harness": {"stripped_suffix":null,"iterations":0},
+      "model": {"stripped_suffix":null,"iterations":0}
+    }
+  },
+  "canonical": {
+    "harness": "MiniMax Code",
+    "harness_id": "mmx",
+    "harness_source": "synthetic",
+    "provider": "MiniMax",
+    "provider_id": "minimax",
+    "model": "MiniMax-M3",
+    "model_id": "minimax/minimax-m3",
+    "model_source": "synthetic",
+    "open_weight": "true",
+    "model_updated_at": null,
+    "session_id": null,
+    "session_resolution": "none",
+    "session_provider": null,
+    "session_model": null,
+    "last_msg_provider": null,
+    "last_msg_model": null,
+    "trailer": "Co-authored-by: MiniMax Code - MiniMax-M3 <minimaxcode-minimaxm3@local>"
+  }
+}
