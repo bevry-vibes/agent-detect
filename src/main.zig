@@ -20,6 +20,20 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+// macOS process walking (libproc + sysctl). zig 0.16 std has no darwin.zig,
+// so the headers are pulled in directly. `<libproc.h>` is *not* imported
+// via @cInclude because it transitively drags in `<mach/*.h>` opaque types
+// that trip zig's generated static size asserts — those two functions are
+// declared as externs below instead. Available on native macOS builds
+// (which link libSystem by default). Cross-builds still fall through to
+// the empty-ancestry path because the cross-built executable cannot call libc.
+const os = @cImport({
+    @cInclude("sys/sysctl.h");
+    @cInclude("unistd.h");
+});
+extern "c" fn proc_pidpath(pid: c_int, buffer: [*]u8, buffersize: c_uint) c_int;
+extern "c" fn proc_pidinfo(pid: c_int, flavor: c_int, arg: c_ulong, buffer: [*]u8, buffersize: c_int) c_int;
+
 const Detection = struct {
     harness: ?[]const u8 = null, // display name, e.g. "Cline"
     harness_id: ?[]const u8 = null, // e.g. "cline"
@@ -214,7 +228,7 @@ const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = 
 fn ancestorInfo(a: std.mem.Allocator, io: std.Io) Ancestry {
     if (builtin.os.tag == .windows) return ancestorsWindows(a) catch .{};
     if (builtin.os.tag == .linux) return ancestorsLinux(a, io) catch .{};
-    // macOS cross-builds have no libc; process walking unsupported -> cwd fallback
+    if (builtin.os.tag == .macos) return ancestorsMacos(a) catch .{};
     return .{};
 }
 
@@ -291,6 +305,88 @@ fn ancestorsLinux(a: std.mem.Allocator, io: std.Io) !Ancestry {
     }
     return .{ .pids = try pids.toOwnedSlice(a), .names = try names.toOwnedSlice(a) };
 }
+
+/// Walk process ancestors on macOS. For each pid, reads the executable
+/// basename via `proc_pidpath`, and uses `proc_pidinfo` with
+/// `PROC_PIDT_SHORTBSDINFO` (a small fixed-layout struct that begins
+/// with `pid_t pbsi_pid, pbsi_ppid`) to fetch the immediate parent pid.
+/// Stops when the parent is init (pid 1), any syscall fails, or the
+/// chain exceeds 32 hops. Cross-builds still fall through because they
+/// cannot call libc at all.
+const PROC_PIDT_SHORTBSDINFO: c_int = 2;
+
+fn ancestorsMacos(a: std.mem.Allocator) !Ancestry {
+    if (builtin.os.tag != .macos) return .{};
+    var pids: std.ArrayList(u32) = .empty;
+    var names: std.ArrayList([]const u8) = .empty;
+
+    var pid: i32 = os.getpid();
+    var safety: u8 = 0;
+    while (pid > 1 and safety < 32) : (safety += 1) {
+        var info: [4096]u8 = undefined;
+        const filled_raw = proc_pidinfo(pid, PROC_PIDT_SHORTBSDINFO, 0, &info, @intCast(info.len));
+        if (filled_raw < 32) break;
+
+        // `pbsi_pid` / `pbsi_ppid` are read at hard-coded offsets rather than
+        // through the full struct — `PROC_PIDT_SHORTBSDINFO` on macOS 26.x arm64
+        // returns the larger `proc_taskallinfo` (~232 bytes) instead of the
+        // legacy 24-byte `proc_bsdshortinfo`. The leading 12 bytes are filled
+        // with header fields (signature / opaque token), after which `pid_t`
+        // fields appear in the documented order: pid, ppid, pgid, status.
+        const own_pid: u32 = std.mem.readInt(u32, info[12..16], .little);
+        const ppid: u32 = std.mem.readInt(u32, info[16..20], .little);
+
+        var path_buf: [4096]u8 = undefined;
+        const path_len_raw = proc_pidpath(pid, &path_buf, @intCast(path_buf.len));
+        var basename: []const u8 = "";
+        if (path_len_raw > 0) {
+            const path_len: usize = @intCast(path_len_raw);
+            const full = path_buf[0..path_len];
+            basename = std.fs.path.basename(full);
+        }
+
+        // Node.js-launched harnesses (kimi-code, etc.) have executable = `node`
+        // but their argv carries the harness marker (argv[1] = `kimi-code` when
+        // launched with `exec -a "kimi-code" node …`). Probe `KERN_PROCARGS` to
+        // detect the harness and override the ancestor name.
+        if (std.mem.eql(u8, basename, "node")) {
+            if (try kimiArgvOverride(a, pid)) basename = "kimi-code";
+        }
+
+        // sanity: the kernel should echo back our pid at the expected offset.
+        // if it doesn't, the layout shifted; bail out instead of walking bogus ppids.
+        if (own_pid != @as(u32, @intCast(pid))) break;
+        if (ppid == own_pid or ppid == 0) break;
+        try pids.append(a, own_pid);
+        try names.append(a, try std.ascii.allocLowerString(a, basename));
+
+        if (ppid <= 1) break;
+        pid = @intCast(ppid);
+    }
+    return .{ .pids = try pids.toOwnedSlice(a), .names = try names.toOwnedSlice(a) };
+}
+
+/// If the given pid's argv (read via `KERN_PROCARGS`) contains the literal
+/// `kimi-code` substring, return true so the caller can override the
+/// ancestor name. Returns false on any sysctl failure, empty input, or
+/// no match.
+fn kimiArgvOverride(a: std.mem.Allocator, pid: i32) !bool {
+    // CTL_KERN = 1, KERN_PROCARGS = 38 on darwin
+    var mib: [3]c_int = .{ 1, 38, pid };
+    var size: usize = 0;
+    if (os.sysctl(&mib, mib.len, null, &size, null, 0) != 0) return false;
+    if (size == 0) return false;
+    var buf = try a.alloc(u8, size);
+    defer a.free(buf);
+    var read_size: usize = size;
+    if (os.sysctl(&mib, mib.len, buf.ptr, &read_size, null, 0) != 0) return false;
+    return std.mem.indexOf(u8, buf[0..read_size], "kimi-code") != null;
+}
+
+/// `extern "c"` decl for `proc_pidpath` (libproc). Declared at file scope
+/// for `ancestorsMacos` above; pulled out as a comment so future readers
+/// don't reach for `libproc.h` and drag in `<mach/*.h>` opaque types that
+/// trip zig's generated static asserts.
 
 // ============================================================================
 // cline session discovery

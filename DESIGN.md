@@ -16,7 +16,7 @@ AI agents working on Bevry projects must identify their **harness**, **provider*
 ## detection design (least-invasive-first ladder)
 
 1. **env markers** → harness (`CLINE_*`, `GOOSE_*`, `KIMI_*`, `MMX_CONFIG_DIR`/`MINIMAX_*`, `PI_CODING_AGENT=true`)
-2. **ancestor process names** → harness fallback (Windows Toolhelp32 snapshot, Linux `/proc`; unsupported on macOS cross-builds)
+2. **ancestor process names** → harness fallback (Windows Toolhelp32 snapshot, Linux `/proc`, macOS `libproc` + `sysctl`; unsupported on cross-builds without libc)
 3. **harness config store** → live provider + model (per-harness table below)
 4. **own session** (Cline) → nearest ancestor pid with a `running` session under `~/.cline/data/sessions/`, corroborated by `cwd`; fallback: newest `running` session in cwd — parallel sessions exist, so never pick the newest globally
 5. **generation truth** (Cline) → last assistant `modelInfo` in the session's `messages.json`
@@ -126,7 +126,7 @@ Binaries were initially committed to `bin/` (they are tiny). Reconsidered: commi
 
 ## platform caveats
 
-- **macOS** — no-libc cross-builds cannot walk processes; harness detection relies on env markers, and Cline session resolution falls back to cwd+running+newest (avoid parallel sessions in one directory).
+- **macOS** — native builds walk processes via `libproc` (`proc_pidinfo` for parent pid, `proc_pidpath` for the executable basename) and `sysctl` (`KERN_PROCARGS` for the argv blob). Node-launched harnesses (kimi-code CLI, mmx, etc.) have basename `node`, so we additionally scan argv for a per-harness marker (e.g. `kimi-code` in `argv[1]` when launched as `exec -a "kimi-code" node …`). Cross-builds without libc still cannot walk processes; harness detection falls through to env markers, and Cline session resolution falls back to cwd+running+newest (avoid parallel sessions in one directory).
 - **mmx** — node shim, so its ancestor exe name is generic (`node.exe`); detection relies on env markers (`MMX_CONFIG_DIR`, `MINIMAX_*`). Model comes from `~/.mmx/config.json` when present, else the bundle default `MiniMax-M3`.
 - **goose** — Windows config lives at `%APPDATA%\Block\goose\config\config.yaml` (`active_provider` + `providers.<p>.model`); `GOOSE_PROVIDER`/`GOOSE_MODEL` env override it.
 - **pi** — harness env-detected; model detection (sessions `model_change` metadata) is TODO.
