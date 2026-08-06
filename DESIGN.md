@@ -50,19 +50,35 @@ Harness config locations differ per platform (macOS uses
 Windows uses `%APPDATA%\...`). The fixture filename includes the
 `platform_alphanumeric_id` so a CI run on one platform never
 invalidates another platform's committed files. Each platform has
-its own `known/<id>.{json,.trailer.txt}`. The filename contract is
-defined in the `runRefreshKnownCapture` doc comment in `src/main.zig`.
+its own `known/<id>.{agent.json,.trailer.txt}` — the `.agent.json`
+suffix mirrors the `.trailer.txt` sibling so fixtures are distinct
+from the `known/index.jsonl` queue tracker and any non-fixture JSON.
+The filename contract is defined on the `known agent` capture
+(`dev.runKnownAgent`) in `src/main.zig`.
 
-### append-only event log (cross-process coordination)
+### state-store event log (cross-process coordination)
 
-`known/index.jsonl` is append-only. The latest event for a given
-`known_alphanumeric_id` is the current state. Stale (dead runner
-PID, old `generated_at`) and todo (missing `provider_alphanumeric_id`
-/ `model_alphanumeric_id`) are *derivative* properties computed from
-the existing fields; we don't add them as fields to the index. The
-mechanics of appending, deduping on `known_alphanumeric_id`, and
-projecting the latest event live in the `IndexEvent` and
-`appendIndexEvent` doc comments in `src/main.zig`.
+`known/index.jsonl` keeps exactly one event per 4-tuple key — the
+`(harness_alphanumeric_id, provider_alphanumeric_id,
+model_alphanumeric_id, platform_alphanumeric_id)` dims, upserted in
+place — no duplicates, so the file's tail is the whole current state.
+The index stores facts only: the derived
+`known_alphanumeric_id`/`agent_alphanumeric_id` are *not* stored;
+they're recomputed per use (`knownIdFrom`/`agentIdFrom`) for fixture
+naming and messaging. Each dim is nullable (JSON `null`, normalized to
+`""` in memory). Stale (dead runner PID, old `generated_at`) is a
+*derivative* property computed from the existing fields; we don't add
+it as a field to the index.
+
+Rows with one or more missing dims are **seeds** — queue/agent
+placeholders that say "capture something matching these dims". The
+daemon expands seeds over the `knownFixturesForKnownAgents` recipes:
+every recipe whose set dims match and whose harness is available is
+ensured as a full `refresh: true` row, then the seed is removed. Seeds
+with no applicable recipe (unknown ids) are **warned once per run and
+kept**, so a bad seed is visible in logs without spinning. The
+mechanics of upserting and projecting the current event live in the
+`IndexEvent` and `upsertIndexEvent` doc comments in `src/main.zig`.
 
 ### user-only daemon (not the agent)
 

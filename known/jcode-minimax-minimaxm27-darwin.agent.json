@@ -1,0 +1,57 @@
+{
+  "canonical": {
+    "harness_label": "jcode",
+    "harness_short_title": null,
+    "harness_name": "jcode",
+    "harness_alphanumeric_id": "jcode",
+    "harness_license": "MIT",
+    "provider_label": "MiniMax",
+    "provider_name": "minimax",
+    "provider_alphanumeric_id": "minimax",
+    "provider_closed_training": "opt-in",
+    "provider_open_training": "opt-in",
+    "model_label": "MiniMax M2.7",
+    "model_short_title": "M2.7",
+    "model_name": "MiniMax-M2.7",
+    "model_alphanumeric_id": "minimaxm27",
+    "model_reciprocity": "open-weight",
+    "agent_alphanumeric_id": "jcode-minimax-minimaxm27",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: jcode · MiniMax M2.7 <jcode-minimax-minimaxm27@local>"
+  },
+  "raw": {
+    "platform_alphanumeric_id": "darwin",
+    "env": {
+      "JCODE_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 6631,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 5891,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 83120,
+        "name": "bash"
+      }
+    ],
+    "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_known.json": {
+      "model": "MiniMax-M2.7",
+      "provider_key": "minimax"
+    },
+    "harness-urls": [],
+    "provider-urls": [
+      "https://platform.minimax.io/docs/guides/platform/terms-of-service",
+      "https://platform.minimax.io/docs/guides/platform/privacy-policy"
+    ],
+    "model-urls": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.7",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
+    ]
+  }
+}

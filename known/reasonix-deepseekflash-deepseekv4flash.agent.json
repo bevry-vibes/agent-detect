@@ -4,7 +4,7 @@
     "harness_short_title": null,
     "harness_name": "reasonix",
     "harness_alphanumeric_id": "reasonix",
-    "harness_license": null,
+    "harness_license": "MIT",
     "provider_label": "DeepSeek Flash",
     "provider_name": "deepseek-flash",
     "provider_alphanumeric_id": "deepseekflash",

@@ -36,29 +36,34 @@ Once downloaded, the use cases:
 
 ```sh
 # sh (linux, macos)
-./agent-detection         # same as --json
-./agent-detection --json  # machine-readable JSON
+./agent-detection agent   # machine-readable JSON report
 ```
 
 ```powershell
 # powershell (windows)
-.\agent-detection.exe         # same as --json
-.\agent-detection.exe --json  # machine-readable JSON
+.\agent-detection.exe agent   # machine-readable JSON report
 ```
+
+Running `agent-detection` with no arguments prints this help; the JSON
+report is produced by the `agent` action (`--json` is accepted as a
+legacy alias).
 
 **credit your commits** (per [commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md)) — emit only the `Co-authored-by` trailer:
 
 ```sh
 # sh
-git commit --trailer "$(./agent-detection --trailer)"
+git commit --trailer "$(./agent-detection trailer)"
 ```
 
 ```powershell
 # powershell
-git commit --trailer "$(.\agent-detection.exe --trailer)"
+git commit --trailer "$(.\agent-detection.exe trailer)"
 ```
 
 Example trailer: `Co-authored-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>`.
+
+Other actions: `agent-detection help` (also `--help`, `-h`, or no
+arguments) and `agent-detection version` (also `--version`, `-V`).
 
 Exit codes: `0` = identified; `2` = unable to identify — stop and inform the user, never guess.
 

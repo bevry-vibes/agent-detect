@@ -5,7 +5,7 @@
 const std = @import("std");
 const testing = std.testing;
 
-/// Discover every `known/<stem>.json` fixture, returning the stems.
+/// Discover every `known/<stem>.agent.json` fixture, returning the stems.
 fn discoverStems(a: std.mem.Allocator) ![][]u8 {
     var stems: std.ArrayList([]u8) = .empty;
 
@@ -15,11 +15,11 @@ fn discoverStems(a: std.mem.Allocator) ![][]u8 {
     while (it.next(std.testing.io) catch null) |ent| {
         if (ent.kind != .file) continue;
         const name = ent.name;
-        const suffix = ".json";
+        const suffix = ".agent.json";
         if (name.len <= suffix.len) continue;
         const base = name[0 .. name.len - suffix.len];
         if (std.mem.endsWith(u8, name, suffix)) {
-            // filter to *.json so the queue tracker (`index.jsonl`) and any non-fixture files are ignored
+            // filter to *.agent.json so the queue tracker (`index.jsonl`) and any non-fixture files are ignored
             try stems.append(a, try a.dupe(u8, base));
         }
     }
@@ -29,22 +29,22 @@ fn discoverStems(a: std.mem.Allocator) ![][]u8 {
 /// Load a fixture as a parsed JSON value, or return null if the file
 /// is missing (callers should skip such fixtures gracefully).
 fn readFixtureParsed(a: std.mem.Allocator, stem: []const u8) !?std.json.Parsed(std.json.Value) {
-    const path = try std.fmt.allocPrint(a, "known/{s}.json", .{stem});
+    const path = try std.fmt.allocPrint(a, "known/{s}.agent.json", .{stem});
     defer a.free(path);
     const data = std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, a, @enumFromInt(1 << 20)) catch return null;
     defer a.free(data);
     return try std.json.parseFromSlice(std.json.Value, a, data, .{});
 }
 
-test "known: at least one fixture is committed (or refresh-known skipped)" {
+test "known: at least one fixture is committed" {
     const stems = try discoverStems(testing.allocator);
     defer {
         for (stems) |s| testing.allocator.free(s);
         testing.allocator.free(stems);
     }
-    // If this fails, run `zig build refresh-known` inside each harness
-    // session you're targeting, then commit the resulting fixture files
-    // under `known/`.
+    // If this fails, capture new fixtures with `agent-detection-dev
+    // known agent` inside each harness session you're targeting, then
+    // commit the resulting fixture files under `known/`.
     try testing.expect(stems.len >= 1);
 }
 
@@ -249,7 +249,7 @@ test "known: raw.harness-urls / provider-urls / model-urls are arrays of https:/
 }
 
 test "known: every fixture's canonical has all 8 identity fields populated" {
-    // refresh-known refuses to write a fixture with null provider or
+    // The capture refuses to write a fixture with null provider or
     // null model, so every committed fixture has the harness+provider
     // +model triad populated. The four policy fields — harness_license,
     // model_reciprocity, provider_closed_training, provider_open_training
@@ -324,7 +324,7 @@ test "known: raw JSON is pretty-printed (canonical indented, env/process/*-urls 
         testing.allocator.free(stems);
     }
     for (stems) |stem| {
-        const path = try std.fmt.allocPrint(testing.allocator, "known/{s}.json", .{stem});
+        const path = try std.fmt.allocPrint(testing.allocator, "known/{s}.agent.json", .{stem});
         defer testing.allocator.free(path);
         const data = std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, testing.allocator, @enumFromInt(1 << 20)) catch continue;
         defer testing.allocator.free(data);
@@ -348,5 +348,26 @@ test "known: raw JSON is pretty-printed (canonical indented, env/process/*-urls 
         try testing.expect(std.mem.indexOf(u8, data, "\"harness-urls\":") != null);
         try testing.expect(std.mem.indexOf(u8, data, "\"provider-urls\":") != null);
         try testing.expect(std.mem.indexOf(u8, data, "\"model-urls\":") != null);
+    }
+}
+
+test "known: warn on null harness_license (dev should fill in from upstream)" {
+    const stems = try discoverStems(testing.allocator);
+    defer {
+        for (stems) |s| testing.allocator.free(s);
+        testing.allocator.free(stems);
+    }
+    var warnings: usize = 0;
+    for (stems) |stem| {
+        const parsed = (try readFixtureParsed(testing.allocator, stem)) orelse continue;
+        defer parsed.deinit();
+        const canonical = parsed.value.object.get("canonical").?.object;
+        if (canonical.get("harness_license") == null or canonical.get("harness_license").? == .null) {
+            std.debug.print("WARNING: fixture {s} has null harness_license — look up the upstream license and fill it in\n", .{stem});
+            warnings += 1;
+        }
+    }
+    if (warnings > 0) {
+        std.debug.print("WARNING: {d} fixture(s) have null harness_license\n", .{warnings});
     }
 }

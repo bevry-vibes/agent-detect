@@ -1,0 +1,56 @@
+{
+  "canonical": {
+    "harness_label": "Reasonix",
+    "harness_short_title": null,
+    "harness_name": "reasonix",
+    "harness_alphanumeric_id": "reasonix",
+    "harness_license": "MIT",
+    "provider_label": "DeepSeek Flash",
+    "provider_name": "deepseek-flash",
+    "provider_alphanumeric_id": "deepseekflash",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "DeepSeek V4 Flash",
+    "model_short_title": null,
+    "model_name": "deepseek-v4-flash",
+    "model_alphanumeric_id": "deepseekv4flash",
+    "model_reciprocity": "open-weight",
+    "agent_alphanumeric_id": "reasonix-deepseekflash-deepseekv4flash",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>"
+  },
+  "raw": {
+    "platform_alphanumeric_id": "darwin",
+    "env": {
+      "REASONIX_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 6780,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 5891,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 83120,
+        "name": "bash"
+      }
+    ],
+    "<home>/.reasonix/config.toml": {
+      "default_model": "deepseek-flash"
+    },
+    "harness-urls": [],
+    "provider-urls": [
+      "https://api-docs.deepseek.com/quick_start/pricing",
+      "https://platform.deepseek.ai/policies"
+    ],
+    "model-urls": [
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+    ]
+  }
+}

@@ -21,13 +21,14 @@ const targets = [_]struct { name: []const u8, query: std.Target.Query }{
 pub fn build(b: *std.Build) void {
     const optimize = b.option(std.builtin.OptimizeMode, "optimize", "optimization mode") orelse .ReleaseSmall;
 
-    // `--dev` enables the dev-only subcommands (refresh-known, queue
-    // polling, etc.) and the larger code path that gathers raw
-    // observations. Default is `false` for the released binary;
-    // `zig build dev` flips it to `true` for the maintainer-only
-    // `agent-detection-dev` binary. The dev binary is NOT cross-
-    // compiled; `zig build dist` only emits the released binary.
-    const dev = b.option(bool, "dev", "include dev-only subcommands (refresh-known, etc.)") orelse false;
+    // `--dev` enables the dev-only subcommands (the `known` namespace:
+    // daemon, agent, queue, dequeue, purge) and the larger code path
+    // that gathers raw observations. Default is `false` for the
+    // released binary; `zig build dev` flips it to `true` for the
+    // maintainer-only `agent-detection-dev` binary. The dev binary is
+    // NOT cross-compiled; `zig build dist` only emits the released
+    // binary.
+    const dev = b.option(bool, "dev", "include dev-only subcommands (known namespace, etc.)") orelse false;
 
     // Read the project version out of `build.zig.zon` so the binary's
     // `--version` output reflects the actual release tag. The format is
@@ -38,9 +39,9 @@ pub fn build(b: *std.Build) void {
 
     // `--dev` is required when building the dev binary (never read by
     // the released binary target — that one always builds with
-    // `dev=false`). Confusing the two would emit a binary whose
-    //        `subcommands ("refresh-known")` exist in the released
-    // artifact, which is exactly what we're trying to avoid.
+    // `dev=false`). Confusing the two would emit a binary whose dev
+    // subcommands exist in the released artifact, which is exactly
+    // what we're trying to avoid.
     //
     // Build options are exposed to the source via a `build_options`
     // module; main.zig reads `build_options.dev` and
@@ -65,8 +66,8 @@ pub fn build(b: *std.Build) void {
 
     // `zig build dev` — builds the maintainer-only dev binary with
     // `-Ddev=true`. Same source as the released binary, but the
-    // dev-only subcommands (refresh-known, refresh-known-daemon,
-    // refresh-known-all) and the COMBOS table are linked in. The
+    // dev-only subcommands (the `known` namespace + `refresh run`)
+    // and the KnownFixturesForKnownAgents table are linked in. The
     // released binary is unaffected (built with dev=false).
     //
     // The dev binary needs its own `build_options` with `dev=true`,

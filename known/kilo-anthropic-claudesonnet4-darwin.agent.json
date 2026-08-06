@@ -1,0 +1,56 @@
+{
+  "canonical": {
+    "harness_label": "Kilo Code",
+    "harness_short_title": null,
+    "harness_name": "kilo",
+    "harness_alphanumeric_id": "kilo",
+    "harness_license": "MIT",
+    "provider_label": "Anthropic",
+    "provider_name": "anthropic",
+    "provider_alphanumeric_id": "anthropic",
+    "provider_closed_training": "opt-out",
+    "provider_open_training": null,
+    "model_label": "Claude Sonnet 4",
+    "model_short_title": null,
+    "model_name": "claude-sonnet-4",
+    "model_alphanumeric_id": "claudesonnet4",
+    "model_reciprocity": "closed",
+    "agent_alphanumeric_id": "kilo-anthropic-claudesonnet4",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Kilo Code · Claude Sonnet 4 <kilo-anthropic-claudesonnet4@local>"
+  },
+  "raw": {
+    "platform_alphanumeric_id": "darwin",
+    "env": {
+      "KILO_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 6311,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 5891,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 83120,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://www.anthropic.com/legal/commercial-terms",
+      "https://trust.anthropic.com/"
+    ],
+    "model-urls": [
+      "https://www.anthropic.com/claude/sonnet",
+      "https://docs.anthropic.com/en/docs/about-claude/models"
+    ]
+  }
+}

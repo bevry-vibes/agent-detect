@@ -4,7 +4,7 @@
     "harness_short_title": null,
     "harness_name": "omp",
     "harness_alphanumeric_id": "omp",
-    "harness_license": null,
+    "harness_license": "MIT",
     "provider_label": "Minimax Code",
     "provider_name": "minimax-code",
     "provider_alphanumeric_id": "minimaxcode",

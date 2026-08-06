@@ -23,9 +23,10 @@ const builtin = @import("builtin");
 // Build-time option exposed via `build.zig`'s `-Ddev` flag. The released
 // binary builds with `dev=false`; the maintainer-only `agent-detection-dev`
 // is built with `dev=true`. The `if (dev_build)` blocks below contain
-// every dev-only subcommand (refresh-known, refresh-known-daemon,
-// refresh-known-all) and the KnownFixturesForKnownAgents table that drives them. Zig's
-// `comptime` drops the dead code from the released binary at link time.
+// every dev-only subcommand (the `known` namespace: daemon, agent,
+// queue, etc.) and the KnownFixturesForKnownAgents table that drives
+// them. Zig's `comptime` drops the dead code from the released binary
+// at link time.
 const build_options = @import("build_options");
 pub const dev_build = build_options.dev;
 
@@ -96,15 +97,42 @@ const KnownRuleForKnownModel = struct {
     sources: []const []const u8,
 };
 const knownRulesForKnownModels = [_]KnownRuleForKnownModel{
+    // kimi-k3: open-weight — Moonshot's HF card self-describes
+    // "open-weight"; its LICENSE is the custom "Kimi K3 License"
+    // (MIT-style with a large-scale commercial carve-out), not OSI.
     .{ .name = "kimi-k3", .label = "Kimi K3", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K3", "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE" } },
+    // glm-5.2: open-source — zai-org's card tags it "Pure Open: MIT";
+    // MIT is OSI-approved, and the OSAID 1.0 definition is linked as
+    // concurrence for the open-source tier.
     .{ .name = "glm-5.2", .label = "GLM 5.2", .reciprocity = "open-source", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.2", "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE", "https://opensource.org/ai/open-source-ai-definition" } },
+    // minimax-m3: open-weight — shipped under the "MINIMAX COMMUNITY
+    // LICENSE" (non-commercial grant; commercial use past $20M/yr
+    // revenue needs authorization), not OSI; the MiniMax blog post
+    // concurs it is an open-weight model.
     .{ .name = "minimax-m3", .label = "MiniMax M3", .short_title = "M3", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M3", "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE", "https://www.minimax.io/blog/minimax-m3" } },
+    // minimax-m2.7: open-weight — NON-COMMERCIAL LICENSE; the weights
+    // are downloadable but commercial use requires written
+    // authorization, so it is not OSI open-source.
     .{ .name = "minimax-m2.7", .label = "MiniMax M2.7", .short_title = "M2.7", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M2.7", "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE" } },
+    // claude-sonnet-4: closed — API-only (Claude API / Bedrock /
+    // Vertex / Foundry); no weights are published anywhere.
     .{ .name = "claude-sonnet-4", .label = "Claude Sonnet 4", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/sonnet", "https://docs.anthropic.com/en/docs/about-claude/models" } },
-    .{ .name = "qwen3.8-max", .label = "Qwen3.8-Max", .reciprocity = "closed", .sources = &.{ "https://qwen.alibaba.com/", "https://qwen.alibaba.com/qwen3.8-max" } }, // closed until its open-weight release lands
+    // qwen3.8-max: closed — API-only flagship; no official weights
+    // published. qwen.alibaba.com is offline; qwen.ai is the current
+    // brand home (blog id = the model's announcement page).
+    .{ .name = "qwen3.8-max", .label = "Qwen3.8-Max", .reciprocity = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.8-max" } },
+    // deepseek-v4-flash: open-weight — HF card + MIT LICENSE; the
+    // weights are downloadable (MIT is OSI, but open-weight is the
+    // conservative tier for the hosted API alias).
     .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" } },
-    .{ .name = "mistral-large-latest", .label = "Mistral Large (latest)", .reciprocity = "closed", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" } },
-    .{ .name = "qwen3.7-plus", .label = "Qwen3.7-Plus", .reciprocity = "closed", .sources = &.{ "https://qwen.alibaba.com/", "https://qwen.alibaba.com/qwen3.7-plus" } },
+    // mistral-large-latest: open-weight — Mistral's models overview
+    // lists the current "Mistral Large 3" (v25.12) as Apache-2.0
+    // open-weight, and the mistral-large-latest alias resolves to it;
+    // `closed` was only accurate for the Large 1/2 era.
+    .{ .name = "mistral-large-latest", .label = "Mistral Large (latest)", .reciprocity = "open-weight", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" } },
+    // qwen3.7-plus: closed — API-only; no official weights. Same
+    // qwen.ai linkage as qwen3.8-max above.
+    .{ .name = "qwen3.7-plus", .label = "Qwen3.7-Plus", .reciprocity = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.7-plus" } },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -124,41 +152,65 @@ const KnownRuleForKnownProvider = struct {
     sources: []const []const u8,
 };
 const knownRulesForKnownProviders = [_]KnownRuleForKnownProvider{
-    .{ .name = "cline-pass", .label = "Cline Pass", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cline.bot/legal/privacy-policy", "https://cline.bot/legal/terms-of-service" } }, // Cline's ClinePass — does not train on user data
-    .{ .name = "cline", .label = "Cline", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cline.bot/legal/privacy-policy", "https://cline.bot/legal/terms-of-service" } }, // direct Cline provider
-    .{ .name = "minimax", .label = "MiniMax", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.minimax.io/docs/guides/platform/terms-of-service", "https://platform.minimax.io/docs/guides/platform/privacy-policy" } }, // hosted MiniMax-M3 — API tier standard
-    .{ .name = "goose", .label = "Goose", .closed_training = "never", .open_training = "never", .sources = &.{ "https://github.com/aaif-goose/goose", "https://github.com/aaif-goose/goose/blob/main/LICENSE" } }, // open-source harness; does not host or train models itself
-    .{ .name = "deepseek-flash", .label = "DeepSeek Flash", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.ai/policies" } }, // deepseek-flash provider on Reasonix — does not retain data
+    // cline-pass: never/never — Cline's subscription tier. Cline is a
+    // BYO-key client; its privacy notice says requests made with your
+    // own API keys are not collected. Upstream AI model providers have
+    // their own training terms — Cline itself trains on nothing.
+    .{ .name = "cline-pass", .label = "Cline Pass", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cline.bot/privacy", "https://cline.bot/tos" } },
+    // cline: never/never — direct Cline provider; same privacy notice
+    // + terms (cline.bot/privacy, cline.bot/tos).
+    .{ .name = "cline", .label = "Cline", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cline.bot/privacy", "https://cline.bot/tos" } },
+    // minimax: opt-in — MiniMax platform ToS + privacy policy (the
+    // hosted API tier reserves the option to train on usage data).
+    .{ .name = "minimax", .label = "MiniMax", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.minimax.io/docs/guides/terms-of-service", "https://platform.minimax.io/docs/guides/privacy-policy" } },
+    // goose: never/never — Goose is a BYO-key open-source client; it
+    // does not host or train models. Sources are the upstream repo
+    // (block/goose) + its Apache-2.0 LICENSE, as it has no separate
+    // data-policy pages.
+    .{ .name = "goose", .label = "Goose", .closed_training = "never", .open_training = "never", .sources = &.{ "https://github.com/block/goose", "https://github.com/block/goose/blob/main/LICENSE" } },
+    // deepseek-flash: never/never — Reasonix's DeepSeek Flash entry.
+    // Sources are the DeepSeek API pricing page + the platform home
+    // (per DeepSeek's published platform data-handling docs).
+    .{ .name = "deepseek-flash", .label = "DeepSeek Flash", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" } },
     // jcode's openai-compatible transport that fronts `api.minimax.io`
     // is the same upstream as the `minimax` rule above — the
     // openai-compatible interface is transport detail, not a
     // different provider, so jcode resolves to `minimax`.
-    .{ .name = "anthropic", .label = "Anthropic", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://www.anthropic.com/legal/commercial-terms", "https://trust.anthropic.com/" } }, // Anthropic — covered by opt-out where toggled on; open-weight support not yet offered
-    .{ .name = "mistral", .label = "Mistral", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://docs.mistral.ai/legal/terms-of-service/", "https://docs.mistral.ai/legal/acceptable-use-policy/" } }, // Mistral Vibe default provider
-    .{ .name = "hyper", .label = "Charm Hyper", .closed_training = "never", .open_training = "never", .sources = &.{ "https://hyper.charm.land/", "https://github.com/charmbracelet/hyper" } }, // Charm Hyper — open-source router from charmbracelet, no training
+    // anthropic: never/null — Anthropic's Commercial Terms state
+    // "Anthropic may not train models on Customer Content from the
+    // Services" (API tier); no open-weight Anthropic models exist, so
+    // open_training stays null.
+    .{ .name = "anthropic", .label = "Anthropic", .closed_training = "never", .open_training = null, .sources = &.{ "https://www.anthropic.com/legal/commercial-terms", "https://trust.anthropic.com/" } },
+    // mistral: opt-out/opt-out — Mistral ToS + acceptable-use policy
+    // (the default provider for Mistral Vibe).
+    .{ .name = "mistral", .label = "Mistral", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://docs.mistral.ai/legal/terms-of-service/", "https://docs.mistral.ai/legal/acceptable-use-policy/" } },
+    // hyper: never/never — Charm Hyper's ToS states "We do not use your
+    // User Content to train AI models", and its privacy policy
+    // advertises zero data retention (ZDR).
+    .{ .name = "hyper", .label = "Charm Hyper", .closed_training = "never", .open_training = "never", .sources = &.{ "https://hyper.charm.land/terms", "https://hyper.charm.land/privacy" } },
     // omp namespaces its providers with `-code` suffixes (e.g.
     // `minimax-code/MiniMax-M3`). The underlying upstream is the same
     // MiniMax API; this rule mirrors `minimax` so the canonical block
     // picks up the right training policies + URLs.
-    .{ .name = "minimax-code", .label = "Minimax Code", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.minimax.io/docs/guides/platform/terms-of-service", "https://platform.minimax.io/docs/guides/platform/privacy-policy" } }, // omp's namespace alias for minimax
+    .{ .name = "minimax-code", .label = "Minimax Code", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.minimax.io/docs/guides/terms-of-service", "https://platform.minimax.io/docs/guides/privacy-policy" } },
     // crush's "qwen3.7-plus" is a model id used as a provider key by
     // the user's hyper.json. The actual upstream is Alibaba Qwen's
     // hosted tier (qwen3.7-plus is a closed model); no public
     // training-policy page was verified, so policies stay null.
-    .{ .name = "qwen3.7-plus", .label = "Qwen3.7 Plus", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.alibaba.com/", "https://qwen.alibaba.com/qwen3.7-plus" } }, // crush hyper.json — qwen3.7-plus is a closed model id used as provider key
+    .{ .name = "qwen3.7-plus", .label = "Qwen3.7 Plus", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.7-plus" } },
     // jcode's `provider_key: "remote"` is a placeholder for sessions
     // where the model+provider pairing wasn't tagged with a real
     // upstream. Display name + empty sources reflects that this is an
     // unknown placeholder, not a real provider.
-    .{ .name = "remote", .label = "Remote", .closed_training = null, .open_training = null, .sources = &.{} }, // jcode placeholder when upstream isn't tagged
+    .{ .name = "remote", .label = "Remote", .closed_training = null, .open_training = null, .sources = &.{} },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
-// `RawRule` was removed: the data it carried (the harness rule's declared
-// proc names and env-marker names) is static and already lives in
-// `knownRulesForKnownAgents` in the source. The runtime outcome story is fully
-// carried by `raw.env_vars` (matched env-var observations) and
-// `raw.process` (process tree at detection time).
+// Static rule metadata (the harness rule's declared proc names and
+// env-marker names) lives in `knownRulesForKnownAgents`; the runtime
+// observation story is carried by `raw.env_vars` (matched env-var
+// observations) and `raw.process_lineage` (process tree at detection
+// time).
 
 /// one env-var observation. `name` is always emitted (env-var names
 /// are non-secret). `value` is the env-var's content if `present` and
@@ -186,13 +238,10 @@ pub const Ancestor = struct {
 
 /// process-tree observations: the chain of processes at detection
 /// time, ordered most-immediate first (index 0 = the running
-/// process_lineage — the chain of processes at detection time,
-/// ordered most-immediate first (index 0 = the running
 /// `agent-detection`, index 1 = its parent, etc.). Full argv is
 /// deliberately NOT captured — see DESIGN.md for the leak vectors
 /// (tokens, paths, positional-secret parsing). Inlined as a direct
-/// `[]const Ancestor` field of `RawObservation`; the previous
-/// `ProcessObservation` wrapper struct was redundant.
+/// `[]const Ancestor` field of `RawObservation`.
 ///
 /// one field read from a file: a dotted-path pointer (e.g.
 /// "providers.cline-pass.settings.model") + the value observed.
@@ -272,8 +321,10 @@ const pi_env = [_][]const u8{"PI_CODING_AGENT"};
 // harnesses listed in the user's machine but not yet fully integrated;
 // each gets a single, plausibly-shaped env marker that the daemon's
 // runner (see CONTRIBUTING.md) sets in the spawned process's env to
-// fire detection. license stays null until the project's license is
-// verified — a maintainer fills in the SPDX + sources once known.
+// fire detection. Each project's `license`/`license_sources` in
+// knownRulesForKnownAgents is filled in from its upstream repo once
+// verified — a maintainer records the SPDX id + source URLs there, not
+// in the fixtures (fixtures are generated artifacts).
 const qwen_env = [_][]const u8{ "QWEN_API_KEY" };
 const kilo_env = [_][]const u8{ "KILO_API_KEY" };
 const jcode_env = [_][]const u8{ "JCODE_API_KEY" };
@@ -287,30 +338,56 @@ const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
 const kimi_procs = [_][]const u8{ "kimi.exe", "kimi", "kimi-code.exe", "kimi-code" };
 pub const knownRulesForKnownAgents = [_]KnownRuleForKnownAgent{
+    // cline: Apache-2.0 — https://github.com/cline/cline ships an
+    // Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code /
+    // JetBrains agent).
     .{ .name = "cline", .label = "Cline", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/cline/cline", "https://github.com/cline/cline/blob/main/LICENSE" }, .env_markers = &cline_env, .proc_names = &cline_procs },
-    .{ .name = "goose", .label = "Goose", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/aaif-goose/goose", "https://github.com/aaif-goose/goose/blob/main/LICENSE" }, .env_markers = &goose_env, .proc_names = &goose_procs },
+    // goose: Apache-2.0 — upstream is https://github.com/block/goose
+    // (aaif-goose/goose was a mirror); Apache-2.0 per the repo LICENSE
+    // (Copyright Block, Inc.).
+    .{ .name = "goose", .label = "Goose", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/block/goose", "https://github.com/block/goose/blob/main/LICENSE" }, .env_markers = &goose_env, .proc_names = &goose_procs },
+    // kimi-code: MIT — https://github.com/MoonshotAI/kimi-code ships a
+    // MIT LICENSE (Copyright Moonshot AI; the Kimi Code CLI).
     .{ .name = "kimi-code", .label = "Kimi Code", .license = "MIT", .license_sources = &.{ "https://github.com/MoonshotAI/kimi-code", "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE" }, .env_markers = &kimi_env, .proc_names = &kimi_procs },
-    .{ .name = "mmx", .label = "MiniMax CLI", .license = "MIT", .license_sources = &.{ "https://github.com/MiniMax-AI/cli", "https://github.com/MiniMax-AI/cli/blob/main/LICENSE" }, .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
+    // mmx: MIT — https://github.com/MiniMax-AI/cli (npm `mmx-cli`)
+    // declares MIT via its README badge + npm page; the repo has no
+    // LICENSE file committed yet, so the npm page is the second
+    // cross-reference rather than a LICENSE blob.
+    .{ .name = "mmx", .label = "MiniMax CLI", .license = "MIT", .license_sources = &.{ "https://github.com/MiniMax-AI/cli", "https://www.npmjs.com/package/mmx-cli" }, .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
+    // pi: MIT — https://github.com/earendil-works/pi ships a MIT
+    // LICENSE (Copyright Mario Zechner; the Rust terminal coding agent).
     .{ .name = "pi", .label = "Pi", .license = "MIT", .license_sources = &.{ "https://github.com/earendil-works/pi", "https://github.com/earendil-works/pi/blob/main/LICENSE" }, .env_markers = &pi_env, .proc_names = &.{} },
+    // qwen: Apache-2.0 — https://github.com/QwenLM/qwen-code (the Qwen
+    // Code CLI, formerly Apollo) ships an Apache-2.0 LICENSE.
     .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .env_markers = &qwen_env, .proc_names = &.{} },
+    // kilo: MIT — https://github.com/Kilo-Org/kilocode ships a MIT
+    // LICENSE (Kilo Code CLI).
     .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &.{} },
-    // jcode's license is closed-source (subscription-only, no public
-    // LICENSE confirmed). GitHub repo URL discovered but no LICENSE
-    // file linked from it, so license_sources stays empty until a
-    // maintainer verifies the license. harness-urls in raw will be
-    // empty accordingly.
-    .{ .name = "jcode", .label = "jcode", .license = null, .license_sources = &.{}, .env_markers = &jcode_env, .proc_names = &.{} },
-    // omp: binary does not embed a GitHub repo URL. License and source
-    // unconfirmed; leave closed and empty until maintainer research
-    // surfaces the upstream repo.
-    .{ .name = "omp", .label = "omp", .license = null, .license_sources = &.{}, .env_markers = &omp_env, .proc_names = &.{} },
-    // reasonix: binary embeds github.com/esengine/DeepSeek-Reasonix but
-    // no LICENSE file URL was verified. Leave license null.
-    .{ .name = "reasonix", .label = "Reasonix", .license = null, .license_sources = &.{}, .env_markers = &reasonix_env, .proc_names = &.{} },
-    // crush: FSL-1.1-MIT (Functional Source License). Not OSI-approved
-    // open-source; treat as closed for reciprocity purposes.
-    .{ .name = "crush", .label = "Crush", .license = null, .license_sources = &.{}, .env_markers = &crush_env, .proc_names = &.{} },
-    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/main/LICENSE" }, .env_markers = &opencode_env, .proc_names = &.{} },
+    // jcode: MIT — https://github.com/1jehuang/jcode ships a MIT
+    // LICENSE (default branch `master`); verified from the repo's
+    // README license badge and the LICENSE file linked from it.
+    .{ .name = "jcode", .label = "jcode", .license = "MIT", .license_sources = &.{ "https://github.com/1jehuang/jcode", "https://github.com/1jehuang/jcode/blob/master/LICENSE" }, .env_markers = &jcode_env, .proc_names = &.{} },
+    // omp: MIT — https://github.com/can1357/oh-my-pi (omp is the CLI
+    // distribution name of oh-my-pi) ships a MIT LICENSE; verified
+    // from the repo's license badge and the LICENSE file linked from it.
+    .{ .name = "omp", .label = "omp", .license = "MIT", .license_sources = &.{ "https://github.com/can1357/oh-my-pi", "https://github.com/can1357/oh-my-pi/blob/main/LICENSE" }, .env_markers = &omp_env, .proc_names = &.{} },
+    // reasonix: MIT — https://github.com/esengine/DeepSeek-Reasonix
+    // ships a MIT LICENSE (default branch `main-v2`); verified from
+    // the repo's license badge and the LICENSE file linked from it.
+    .{ .name = "reasonix", .label = "Reasonix", .license = "MIT", .license_sources = &.{ "https://github.com/esengine/DeepSeek-Reasonix", "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE" }, .env_markers = &reasonix_env, .proc_names = &.{} },
+    // crush: FSL-1.1-MIT (Functional Source License) —
+    // https://github.com/charmbracelet/crush links its LICENSE.md from
+    // the README's License section; that is the upstream SPDX id.
+    // Not OSI-approved open source, but the license id is non-null, so
+    // `reciprocal` is governed by the model/provider conjuncts rather
+    // than being force-closed by the harness side.
+    .{ .name = "crush", .label = "Crush", .license = "FSL-1.1-MIT", .license_sources = &.{ "https://github.com/charmbracelet/crush", "https://github.com/charmbracelet/crush/blob/main/LICENSE.md" }, .env_markers = &crush_env, .proc_names = &.{} },
+    // opencode: MIT — https://github.com/anomalyco/opencode (formerly
+    // sst/opencode) ships a MIT LICENSE; default branch is `dev`, so
+    // the LICENSE blob URL is branch-qualified.
+    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/dev/LICENSE" }, .env_markers = &opencode_env, .proc_names = &.{} },
+    // vibe: Apache-2.0 — https://github.com/mistralai/mistral-vibe ships
+    // an Apache-2.0 LICENSE (the Vibe CLI for Mistral models).
     .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .env_markers = &vibe_env, .proc_names = &.{} },
 };
 /// env-var names whose values are safe to emit in raw.env_vars. Names NOT
@@ -337,8 +414,8 @@ fn isEnvValueAllowed(name: []const u8) bool {
 /// original string from the config file (e.g. "cline-pass/kimi-k3" or
 /// "minimax/kimi-k3") and is preserved in the corresponding config-file
 /// FileObservation under `d.raw.config_files` for the audit trail. The
-/// provider prefix on the config value is no longer mixed into the
-/// canonical model identity.
+/// provider prefix on the config value stays out of the canonical model
+/// identity.
 pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_input: []const u8) !void {
     d.model_name = name;
     const lower = try std.ascii.allocLowerString(a, name);
@@ -369,6 +446,107 @@ fn writeOut(io: std.Io, bytes: []const u8) void {
 
 fn writeErr(io: std.Io, bytes: []const u8) void {
     std.Io.File.stderr().writeStreamingAll(io, bytes) catch {};
+}
+
+/// optional tee target for daemon output; set by `known daemon --write-log`.
+var daemon_log_file: ?std.Io.File = null;
+
+/// Advisory exclusive lock on `known/index.jsonl` held while a process
+/// does its read-modify-write cycle, so the daemon and CLI commands
+/// (queue/dequeue/purge/agent) never interleave full-file rewrites
+/// (lost updates). The lock is a sidecar file (never truncated), taken
+/// via `flock`-backed `std.Io.File.lock`; it is released automatically
+/// if the process dies. It is reentrant within a process: nested
+/// acquisitions (e.g. `expandSeed` → `upsertIndexEvent`) reuse the
+/// held lock instead of self-deadlocking.
+///
+/// NOTE: the daemon's capture child (`refresh run` → `known agent`)
+/// writes the index from a *separate process*; it takes its own lock.
+/// The daemon must therefore never hold this lock across
+/// `child.wait()` or the child would block forever.
+var index_lock_file: ?std.Io.File = null;
+var index_lock_depth: usize = 0;
+
+const INDEX_LOCK_PATH = "known/index.jsonl.lock";
+
+/// acquire the exclusive index lock (nested-safe).
+fn lockIndex(io: std.Io) !void {
+    if (index_lock_depth > 0) {
+        index_lock_depth += 1;
+        return;
+    }
+    std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+        error.PathAlreadyExists => {},
+        else => return err,
+    };
+    const f = std.Io.Dir.cwd().createFile(io, INDEX_LOCK_PATH, .{ .read = true, .truncate = false, .lock = .exclusive }) catch |err| switch (err) {
+        // FileLocksUnsupported / IO errors: proceed unlocked rather than
+        // block the command (worst case is the pre-lock race).
+        else => return err,
+    };
+    index_lock_file = f;
+    index_lock_depth = 1;
+}
+
+/// release the index lock (nested-safe).
+fn unlockIndex(io: std.Io) void {
+    if (index_lock_depth == 0) return;
+    index_lock_depth -= 1;
+    if (index_lock_depth == 0) {
+        if (index_lock_file) |f| {
+            f.unlock(io);
+            f.close(io);
+        }
+        index_lock_file = null;
+    }
+}
+
+/// write `data` to `index.jsonl` atomically (temp file + rename) so a
+/// concurrent reader never observes a torn or half-written file. Caller
+/// should hold the index lock for read-modify-write cycles.
+fn writeIndexAtomic(io: std.Io, data: []const u8) !void {
+    var atomic = try std.Io.Dir.cwd().createFileAtomic(io, "known/index.jsonl", .{ .replace = true, .make_path = true });
+    defer atomic.deinit(io);
+    try atomic.file.writeStreamingAll(io, data);
+    try atomic.replace(io);
+}
+
+/// true when the last daemon stdout write ended in a newline (or no
+/// write has happened), so a continuation segment does not repeat the
+/// `[sec.ms]` prefix mid-line.
+var daemon_log_out_nl: bool = true;
+var daemon_log_err_nl: bool = true;
+
+fn daemonWrite(io: std.Io, bytes: []const u8) void {
+    var buf: [64]u8 = undefined;
+    const add_prefix = daemon_log_out_nl;
+    if (add_prefix) {
+        const ts = std.Io.Clock.Timestamp.now(io, .real);
+        const sec = ts.raw.toSeconds();
+        const ms = ts.raw.toMilliseconds() - sec * 1000;
+        const prefix = std.fmt.bufPrint(buf[0..], "[{d}.{d}] ", .{sec, ms}) catch return;
+        std.Io.File.stdout().writeStreamingAll(io, prefix) catch {};
+        if (daemon_log_file) |f| f.writeStreamingAll(io, prefix) catch {};
+    }
+    std.Io.File.stdout().writeStreamingAll(io, bytes) catch {};
+    if (daemon_log_file) |f| f.writeStreamingAll(io, bytes) catch {};
+    daemon_log_out_nl = bytes.len == 0 or bytes[bytes.len - 1] == '\n';
+}
+
+fn daemonWriteErr(io: std.Io, bytes: []const u8) void {
+    var buf: [64]u8 = undefined;
+    const add_prefix = daemon_log_err_nl;
+    if (add_prefix) {
+        const ts = std.Io.Clock.Timestamp.now(io, .real);
+        const sec = ts.raw.toSeconds();
+        const ms = ts.raw.toMilliseconds() - sec * 1000;
+        const prefix = std.fmt.bufPrint(buf[0..], "[{d}.{d}] ", .{sec, ms}) catch return;
+        std.Io.File.stderr().writeStreamingAll(io, prefix) catch {};
+        if (daemon_log_file) |f| f.writeStreamingAll(io, prefix) catch {};
+    }
+    std.Io.File.stderr().writeStreamingAll(io, bytes) catch {};
+    if (daemon_log_file) |f| f.writeStreamingAll(io, bytes) catch {};
+    daemon_log_err_nl = bytes.len == 0 or bytes[bytes.len - 1] == '\n';
 }
 
 /// capitalize the first letter of each dash-separated token, join with spaces
@@ -1069,14 +1247,14 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
 // partial-coverage harness detectors — the harnesses in the row of the
 // DESIGN.md harness table that don't have a `detectHarness_<X>` function
 // in this file are not real detectors; their entries below are
-// deliberately minimal so refresh-known can still write a fixture, but
-// the model detection is a "best effort read of whatever the harness
-// happens to keep on disk", and refresh-known relies on the daemon's
-// runner (see CONTRIBUTING.md) to have written plausible config files
-// into the harness's data dir when the binary isn't actually running
-// inside that harness. Without that bootstrap, these detectors fall
-// through to a documented default and the fixture says so in the raw
-// block (provider-urls empty + model-urls from knownRulesForKnownModels).
+// deliberately minimal so a fixture can still be captured, but the model
+// detection is a "best effort read of whatever the harness happens to
+// keep on disk", and the capture relies on the daemon's runner (see
+// CONTRIBUTING.md) to have written plausible config files into the
+// harness's data dir when the binary isn't actually running inside that
+// harness. Without that bootstrap, these detectors fall through to a
+// documented default and the fixture says so in the raw block
+// (provider-urls empty + model-urls from knownRulesForKnownModels).
 //
 // Each function:
 //   - reads the harness's known config file (or env var),
@@ -1362,8 +1540,8 @@ fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     _ = home;
     // kilo doesn't persist "current model" — the model is supplied
     // per-launch via `-m, --model <provider>/<model>`. The
-    // launcher sets KILO_MODEL and KILO_PROVIDER before invoking
-    // refresh-known; we read those here.
+    // launcher sets KILO_MODEL and KILO_PROVIDER before the
+    // capture runs; we read those here.
     _ = io;
     const model_full = env.get("KILO_MODEL") orelse return;
     if (model_full.len == 0) return;
@@ -1441,7 +1619,7 @@ fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 
 fn detectPi(a: std.mem.Allocator, env: *const std.process.Environ.Map, d: *Detection) !void {
     // pi: harness-only by design — model detection is still TODO. To
-    // make the refresh-known fixture write succeed, we read the
+    // make the fixture write succeed, we read the
     // launcher's PI_MODEL/PI_PROVIDER env vars as a stand-in; the
     // canonical fields are populated, but the raw block makes it
     // clear this is a placeholder until proper session
@@ -1473,16 +1651,18 @@ pub fn computeReciprocal(d: *const Detection) bool {
     return false;
 }
 
-/// emit text-mode was removed: it duplicated --json in a less structured
-/// form. There is no `buildText` helper. The default output of
-/// `agent-detection` is the JSON mode produced by `buildJson`.
+/// The detection report is the JSON produced by `buildJson`: the
+/// released binary emits the canonical fields at the root with no
+/// group wrapper; the dev binary emits both groups wrapped as
+/// `canonical` + `raw`.
 
-/// emit JSON report for `d` into `buf`. Splits into `canonical` (shape-
-/// stable, grouped by entity) and `raw` (officially shapeless object
-/// whose top-level keys identify source evidence). Pretty-printed at
-/// 2-space indent via `std.json.Stringify.valueAlloc` — no hand-rolled
-/// formatter, so the output matches whatever std.json produces for
-/// the underlying `std.json.Value` tree.
+/// emit JSON report for `d` into `buf`. The `canonical` section is
+/// shape-stable and grouped by entity; the `raw` section (dev binary
+/// only) is an officially shapeless object whose top-level keys
+/// identify source evidence. Pretty-printed at 2-space indent via
+/// `std.json.Stringify.valueAlloc` — no hand-rolled formatter, so the
+/// output matches whatever std.json produces for the underlying
+/// `std.json.Value` tree.
 pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?KnownRuleForKnownAgent, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
     // Extract the user's home directory once so we can redact it
     // from every emitted string below — fixtures must be portable
@@ -1539,11 +1719,11 @@ pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.proc
     // known/*.json); it has no place in the slim user-facing output.
     var raw: V = .{ .object = .empty };
     if (!dev_build) {
-        // released binary: serialize canonical only, then the root
-        // object. The dev binary continues below to populate `raw`.
-        var slim_root: V = .{ .object = .empty };
-        try slim_root.object.put(a, "canonical", canonical);
-        const slim_bytes = try std.json.Stringify.valueAlloc(a, slim_root, .{ .whitespace = .indent_2 });
+        // released binary: emit the canonical fields at the root, with
+        // no "canonical" group wrapper — the slim user-facing report.
+        // The dev binary continues below to populate `raw` and emits
+        // both groups wrapped (`canonical` + `raw`) for fixtures.
+        const slim_bytes = try std.json.Stringify.valueAlloc(a, canonical, .{ .whitespace = .indent_2 });
         defer a.free(slim_bytes);
         try buf.appendSlice(a, slim_bytes);
         try buf.appendSlice(a, "\n");
@@ -1628,15 +1808,14 @@ pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.proc
     if (d.harness_version) |v| {
         try raw.object.put(a, "harness_version", .{ .string = v });
     }
-    // (harness-env-markers and harness-proc-names were previously
-    // emitted here, but they're static rule data — the same strings
-    // already live in the binary's source as the `knownRulesForKnownAgents`
-    // entry. Re-emitting them in `raw` was redundant and added noise
-    // to the fixture. The runtime observations are enough: `env` shows
-    // which env-markers the runtime actually had, `process` shows the
-    // process tree. No need to also list every possible env-marker or
-    // binary name the rule *could* have matched — that's source code,
-    // not runtime evidence.)
+    // harness-env-markers and harness-proc-names are static rule
+    // data — the same strings already live in the binary's source as
+    // the `knownRulesForKnownAgents` entry, so re-emitting them in
+    // `raw` would be redundant noise. The runtime observations are
+    // enough: `env` shows which env-markers the runtime actually had,
+    // `process` shows the process tree. Listing every possible
+    // marker or binary name the rule *could* have matched would be
+    // source code, not runtime evidence.
 
     // ---- root + stringify ----
     var root: V = .{ .object = .empty };
@@ -1741,12 +1920,15 @@ fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]const u8
 const usage =
     \\agent-detection — infer harness, provider, and model of the current agent session
     \\
-    \\usage: agent-detection [--json] [--trailer] [--version] [--help]
+    \\usage: agent-detection <action>
     \\
-    \\  (default)    same as --json; raw + canonical sections (see CONTRIBUTING.md for fixture refresh)
-    \\  --trailer    print only the Co-authored-by trailer (for git commits)
-    \\  --version    print the agent-detection version and exit
-    \\  --help       this help
+    \\actions:
+    \\  agent        print the detection report as JSON (see CONTRIBUTING.md)
+    \\  [--]trailer  print only the Co-authored-by trailer (for git commits)
+    \\  help         this help (also --help, -h, or no arguments)
+    \\  version      print the agent-detection version and exit (also --version, -V)
+    \\
+    \\legacy aliases: --json prints the JSON report (same as `agent`); --trailer prints the trailer
     \\
     \\exit codes: 0 = identified, 2 = unable to identify (stop and inform the user)
     \\
@@ -1754,15 +1936,15 @@ const usage =
 
 // ============================================================================
 // detection ladder — single source of truth for what `agent-detection`
-// observes in the current session. Called by both `main()` (default JSON
-// output) and `runRefreshKnown()` (the `refresh-known` subcommand).
+// observes in the current session. Called by the `agent` action (both
+// the released JSON report and the dev fixture capture).
 //
-// Fixtures written by `refresh-known` are real-agent captures, not
-// synthetic assemblies: every step reads the actual env / process tree
-// / config files at the current instant.
+// Fixtures are real-agent captures, not synthetic assemblies: every
+// step reads the actual env / process tree / config files at the
+// current instant.
 //
-// Returns `true` when both `harness` and `model` resolved (caller can
-// emit a `trailer`); `false` otherwise.
+// Returns `true` when `harness`, `provider`, and `model` all resolved
+// (caller can emit a `trailer`); `false` otherwise.
 
 pub fn detect(init: std.process.Init, d: *Detection) !bool {
     const a = init.arena.allocator();
@@ -1892,42 +2074,94 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             .{ d.harness_label.?, d.model_label.?, d.agent_alphanumeric_id.? },
         );
     }
-    return d.harness_label != null and d.model_label != null;
+    return d.harness_label != null and d.provider_label != null and d.model_label != null;
 }
 
 // ============================================================================
-// refresh-known — subcommand that captures the current real session into
-// `known/<stem>.json` (and `known/<stem>.trailer.txt` when both
+// known agent — captures the current real session into
+// `known/<stem>.agent.json` (and `known/<stem>.trailer.txt` when both
 // harness and model resolved). Designed to be invoked by an agent harness
 // from inside its own environment: the daemon (see CONTRIBUTING.md)
-// drives per-harness launches that call this.
+// drives per-harness launches that call this via `refresh run`.
 //
 // Contract: a fixture only exists when the current session fully
 // identified harness + provider + model. Anything less (one of them
-// null) is a failure — the binary exits 2 and writes no file. The
-// earlier "<harness>-no-model" fallback path was removed: a fixture
-// representing an incomplete detection is not "evidence of what the
-// session produced", it's a backfill the maintainer would have to
-// justify. Detection code that can't resolve provider or model should
-// be fixed rather than papered over.
+// null) is a failure — the binary exits 2 and writes no file. Such a
+// fixture would not be "evidence of what the session produced", it
+// would be a backfill the maintainer would have to justify. Detection
+// code that can't resolve provider or model should be fixed rather
+// than papered over.
 //
-// The dev binary (built with -Ddev=true) supports these subcommands:
-//   refresh-known <combo-id>     — write request to known/queue.jsonl,
-//                                   wait for the daemon to write the
-//                                   matching result, print fixture path
-//   refresh-known-daemon        — long-running daemon that polls
-//                                   known/queue.jsonl every 5s
-//   refresh-known-all           — probe installed harnesses, write an
-//                                   "all" request, wait for all results
-//
-// The released binary (built with -Ddev=false, the default) has none
-// of these subcommands — its CLI surface is just `--json`,
-// `--trailer`, `--help`, `--version`. The dev binary's capture
-// function (runRefreshKnownCapture) is internal and is invoked by the
-// daemon in-process; the daemon is the dev binary's long-running mode.
+// The dev binary (built with -Ddev=true) is the only one with this
+// capture path. `known daemon` is the long-running user-side mode: it
+// polls known/index.jsonl and, for each refresh:true event, spawns a
+// child `refresh run` that runs the capture (dev.runKnownAgent)
+// in-process with the environment the daemon prepared. The released
+// binary (built with -Ddev=false, the default) has none of this — its
+// CLI surface is the `agent` (JSON report), `[--]trailer`, `help`,
+// and `version` actions; no arguments shows help.
 
 pub const dev = if (build_options.dev) struct {
 
+    /// usage text for the `known` subcommand namespace — printed by
+    /// `known --help`, bare `known`, and `known help`.
+    pub const knownUsage =
+        \\agent-detection known — manage the known-agent fixture store (dev builds)
+        \\
+        \\usage: agent-detection known <subcommand> [flags]
+        \\
+        \\state: known/index.jsonl holds one latest event per 4-tuple
+        \\(harness, provider, model, platform) — nullable dims, no derived
+        \\ids; known/<id>.{agent.json,.trailer.txt} are the generated
+        \\fixtures refreshed from the rules in this source. Rows with
+        \\missing dims are seeds: the daemon expands them over known
+        \\recipes (full combos queued, other seeds warned and kept).
+        \\
+        \\filters (shared by queue/dequeue/purge; at least one required):
+        \\  --known=ID      4-part <h>-<p>-<m>-<platform> id (exact)
+        \\  --agent=ID      3-part <h>-<p>-<m> id (platform unfiltered)
+        \\  --harness=H     constrain harness to H (any of H/P/M/PLAT)
+        \\  --no-X          constrain that dim to null (--no-harness, ...)
+        \\
+        \\scope flags (shared by queue/dequeue/purge; exactly one, and
+        \\they compose with the dim filters above to narrow the set):
+        \\  --all            every index row on this platform
+        \\  --stale          rows whose runner died or whose generated_at
+        \\                   is older than the threshold
+        \\                   [--older-than-days=N] [--older-than-hours=N]
+        \\  --partial        rows with at least one missing dim (seeds)
+        \\  --recipes        every known recipe (host platform)
+        \\  --missing-fixture recipes whose .agent.json/.trailer.txt are
+        \\                   absent from disk
+        \\  --available      modifier: only harnesses whose binary is
+        \\                   installed and answers --version
+        \\
+        \\subcommands:
+        \\  (none), help, --help, -h   this help
+        \\  daemon                     watch known/index.jsonl and capture
+        \\                              refresh:true events (poll 5s) — run
+        \\                              as a user, never inside an agent;
+        \\                              --write-log also writes all daemon
+        \\                              output to known/daemon.log
+        \\  agent                      capture the current session into
+        \\                              known/<id>.agent.json (spawned by the daemon)
+        \\  queue                      set refresh:true on matching rows
+        \\                              (no scope flag → create-or-flip:
+        \\                              matching rows flip, none match →
+        \\                              seed with the positive dims)
+        \\  dequeue                    set refresh:false on matching rows
+        \\  purge                      delete matching rows (filters required)
+        \\
+        \\exit codes: 0 = ok, 2 = bad arguments / unable to resolve
+        \\
+    ;
+
+    /// print the `known` namespace help and exit 0.
+    pub fn runKnownHelp(init: std.process.Init) !u8 {
+        const io = init.io;
+        writeOut(io, knownUsage);
+        return 0;
+    }
 
 const EnvSetup = struct {
     env: []const [2][]const u8,
@@ -1978,6 +2212,84 @@ fn splitAgentAlphanumericId(a: std.mem.Allocator, agent: []const u8) ![3][]u8 {
         try a.dupe(u8, p),
         try a.dupe(u8, m),
     };
+}
+
+/// Split a `known_alphanumeric_id` (the h-p-m-platform composite) into
+/// its four sub-ids. Each returned slice is a fresh allocation the
+/// caller owns. Returns `error.InvalidKnownAlphanumericId` unless the
+/// input has exactly four non-empty `-`-separated segments.
+fn splitKnownAlphanumericId(a: std.mem.Allocator, known: []const u8) ![4][]u8 {
+    var it = std.mem.tokenizeScalar(u8, known, '-');
+    const h = it.next() orelse return error.InvalidKnownAlphanumericId;
+    const p = it.next() orelse return error.InvalidKnownAlphanumericId;
+    const m = it.next() orelse return error.InvalidKnownAlphanumericId;
+    const plat = it.next() orelse return error.InvalidKnownAlphanumericId;
+    if (it.next() != null) return error.InvalidKnownAlphanumericId;
+    if (h.len == 0 or p.len == 0 or m.len == 0 or plat.len == 0) return error.InvalidKnownAlphanumericId;
+    return .{
+        try a.dupe(u8, h),
+        try a.dupe(u8, p),
+        try a.dupe(u8, m),
+        try a.dupe(u8, plat),
+    };
+}
+
+/// Compose an `agent_alphanumeric_id` (h-p-m) from the three dims.
+/// Returns null when any dim is missing (never a fabricated partial
+/// id). Used for fixture naming and messaging only — never stored.
+fn agentIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !?[]u8 {
+    if (h.len == 0 or p.len == 0 or m.len == 0) return null;
+    return @as(?[]u8, try std.fmt.allocPrint(a, "{s}-{s}-{s}", .{ h, p, m }));
+}
+
+/// Compose a `known_alphanumeric_id` (h-p-m-platform) from the four
+/// dims. Returns null when any dim is missing (never a fabricated
+/// partial id). Used for fixture naming and messaging only — never
+/// stored.
+fn knownIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?[]u8 {
+    if (h.len == 0 or p.len == 0 or m.len == 0 or plat.len == 0) return null;
+    return @as(?[]u8, try std.fmt.allocPrint(a, "{s}-{s}-{s}-{s}", .{ h, p, m, plat }));
+}
+
+/// The canonical row-identity key for the four dims, as `h~p~m~plat`
+/// with empty slots for unset dims. The `~` separator cannot appear
+/// in alphanumeric ids (`alphanumericId` strips non-alphanumerics),
+/// so the joined form is unambiguous even for partial rows. Every
+/// upsert/dedupe/lookup operates on this key, not a flattened id.
+fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) ![]u8 {
+    return std.fmt.allocPrint(a, "{s}~{s}~{s}~{s}", .{ h, p, m, plat });
+}
+
+/// Human-readable description of an event for diagnostics. Full rows
+/// render as their known id (`h-p-m-platform`); partial rows render
+/// as a concise dims summary like `seed harness:crush`. Used by the
+/// daemon warnings, queue/dequeue/purge output, and the `known agent`
+/// partial message so wording stays consistent across the refactor.
+fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
+    const h = ev.harness_alphanumeric_id;
+    const p = ev.provider_alphanumeric_id;
+    const m = ev.model_alphanumeric_id;
+    const plat = ev.platform_alphanumeric_id;
+    if (h.len > 0 and p.len > 0 and m.len > 0 and plat.len > 0) {
+        return (try knownIdFrom(a, h, p, m, plat)) orelse try tupleKey(a, h, p, m, plat);
+    }
+    var list: std.ArrayList(u8) = .empty;
+    try list.appendSlice(a, "seed");
+    const dims = [_][2][]const u8{
+        .{ "harness", h },
+        .{ "provider", p },
+        .{ "model", m },
+        .{ "platform", plat },
+    };
+    for (dims) |d| {
+        if (d[1].len > 0) {
+            try list.append(a, ' ');
+            try list.appendSlice(a, d[0]);
+            try list.append(a, ':');
+            try list.appendSlice(a, d[1]);
+        }
+    }
+    return list.toOwnedSlice(a);
 }
 
     pub fn resolveHome(env_map: *const std.process.Environ.Map) []const u8 {
@@ -2359,8 +2671,8 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     }
     return false;
 }
-/// current timestamp in ISO-8601 form. Used as the `ts` field in
-/// queue.jsonl request/result lines.
+/// current timestamp in ISO-8601 form. Used as the `generated_at`
+/// field in known/index.jsonl events.
     pub fn timestampNow(a: std.mem.Allocator) ![]u8 {
         // Zig 0.16 removed std.time.timestamp; emit a stable marker.
         // The daemon doesn't parse this back, only displays it.
@@ -2373,7 +2685,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     }
 
     // ----------------------------------------------------------------
-    // refresh subcommands (replaces the older refresh-known* set)
+    // known fixture subcommands
     // ----------------------------------------------------------------
 
     /// strictly alphanumeric form of the current platform — just the
@@ -2401,18 +2713,20 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return list.toOwnedSlice(a);
     }
 
-    /// one row in `known/index.jsonl`. Append-only log of fixture state.
-    /// The latest event for a given known_alphanumeric_id is the current
-    /// state. `refresh: true` means the daemon should (re)capture; `false`
-    /// means a fixture is on disk. `runner` is the parent PID of the
-    /// process that wrote this row; used by `refresh all` to detect
-    /// orphaned `refresh: true` requests whose writer has died.
+    /// one row in `known/index.jsonl`. State store: exactly one event
+    /// per 4-tuple key (harness, provider, model, platform), upserted
+    /// in place — the event is the current state. Stores facts only:
+    /// `refresh` (daemon should (re)capture), `runner` (parent PID of
+    /// the writer; used to detect orphaned `refresh: true` requests),
+    /// `generated_at`, and the four dimension ids — each nullable in
+    /// JSON, normalized to `""` (unset) in memory. The derived
+    /// `known_alphanumeric_id`/`agent_alphanumeric_id` are *not*
+    /// stored; they're recomputed per use via `knownIdFrom` /
+    /// `agentIdFrom` (fixture naming and messaging only).
     pub const IndexEvent = struct {
         refresh: bool,
         runner: i64,
         generated_at: []const u8,
-        known_alphanumeric_id: []const u8,
-        agent_alphanumeric_id: []const u8,
         harness_alphanumeric_id: []const u8,
         provider_alphanumeric_id: []const u8,
         model_alphanumeric_id: []const u8,
@@ -2439,40 +2753,45 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         } else return null;
 
         ev.generated_at = jstr(obj, "generated_at") orelse return null;
-        ev.known_alphanumeric_id = jstr(obj, "known_alphanumeric_id") orelse return null;
-        ev.agent_alphanumeric_id = jstr(obj, "agent_alphanumeric_id") orelse return null;
-        ev.harness_alphanumeric_id = jstr(obj, "harness_alphanumeric_id") orelse return null;
-        ev.provider_alphanumeric_id = jstr(obj, "provider_alphanumeric_id") orelse return null;
-        ev.model_alphanumeric_id = jstr(obj, "model_alphanumeric_id") orelse return null;
-        ev.platform_alphanumeric_id = jstr(obj, "platform_alphanumeric_id") orelse return null;
+        // dims are nullable: JSON null or a missing key normalize to
+        // "" (unset). Iterates so a single helper handles both.
+        ev.harness_alphanumeric_id = jdim(obj, "harness_alphanumeric_id");
+        ev.provider_alphanumeric_id = jdim(obj, "provider_alphanumeric_id");
+        ev.model_alphanumeric_id = jdim(obj, "model_alphanumeric_id");
+        ev.platform_alphanumeric_id = jdim(obj, "platform_alphanumeric_id");
         return ev;
     }
 
+    /// read a nullable string field: string → value, JSON null or
+    /// missing key → "" (the internal "unset" representation).
+    fn jdim(obj: std.json.ObjectMap, key: []const u8) []const u8 {
+        const v = obj.get(key) orelse return "";
+        return switch (v) {
+            .string => |s| s,
+            else => "",
+        };
+    }
+
     /// serialize one IndexEvent to a JSONL line (no trailing newline;
-    /// the caller appends it). Caller owns the returned slice.
+    /// the caller appends it). Unset dims serialize as JSON `null`.
+    /// Caller owns the returned slice.
     pub fn emitIndexEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
         const ts_q = try jsonString(a, ev.generated_at);
         defer a.free(ts_q);
-        const kn_q = try jsonString(a, ev.known_alphanumeric_id);
-        defer a.free(kn_q);
-        const ag_q = try jsonString(a, ev.agent_alphanumeric_id);
-        defer a.free(ag_q);
-        const h_q = try jsonString(a, ev.harness_alphanumeric_id);
+        const h_q = try jstrOrNull(a, ev.harness_alphanumeric_id);
         defer a.free(h_q);
-        const p_q = try jsonString(a, ev.provider_alphanumeric_id);
+        const p_q = try jstrOrNull(a, ev.provider_alphanumeric_id);
         defer a.free(p_q);
-        const m_q = try jsonString(a, ev.model_alphanumeric_id);
+        const m_q = try jstrOrNull(a, ev.model_alphanumeric_id);
         defer a.free(m_q);
-        const pl_q = try jsonString(a, ev.platform_alphanumeric_id);
+        const pl_q = try jstrOrNull(a, ev.platform_alphanumeric_id);
         defer a.free(pl_q);
         return std.fmt.allocPrint(a,
-            "{{\"refresh\":{s},\"runner\":{d},\"generated_at\":{s},\"known_alphanumeric_id\":{s},\"agent_alphanumeric_id\":{s},\"harness_alphanumeric_id\":{s},\"provider_alphanumeric_id\":{s},\"model_alphanumeric_id\":{s},\"platform_alphanumeric_id\":{s}}}",
+            "{{\"refresh\":{s},\"runner\":{d},\"generated_at\":{s},\"harness_alphanumeric_id\":{s},\"provider_alphanumeric_id\":{s},\"model_alphanumeric_id\":{s},\"platform_alphanumeric_id\":{s}}}",
             .{
                 if (ev.refresh) "true" else "false",
                 ev.runner,
                 ts_q,
-                kn_q,
-                ag_q,
                 h_q,
                 p_q,
                 m_q,
@@ -2481,31 +2800,61 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         );
     }
 
-    /// atomic append a single line to `known/index.jsonl`. The line
-    /// includes its trailing newline so a partial write at the end of
-    /// the file (a half-written line) is detectable as a line that
-    /// doesn't end in `\n`. POSIX `O_APPEND` and Windows
-    /// `FILE_APPEND_DATA` both guarantee the append is atomic for
-    /// writes <= PIPE_BUF (4 KiB); JSONL events are well under that.
-    pub fn appendIndexEvent(a: std.mem.Allocator, io: std.Io, path: []const u8, line: []const u8) !void {
+    /// JSON-encode a string, or emit `null` for the empty/unset
+    /// internal representation. Inverse of `jdim`.
+    fn jstrOrNull(a: std.mem.Allocator, s: []const u8) ![]u8 {
+        if (s.len == 0) return a.dupe(u8, "null");
+        return jsonString(a, s);
+    }
+
+    /// upsert a single line to `known/index.jsonl`: if an entry with
+    /// the same 4-tuple key already exists, replace it; otherwise
+    /// append. The line includes its trailing newline.
+    pub fn upsertIndexEvent(a: std.mem.Allocator, io: std.Io, path: []const u8, line: []const u8) !void {
+        try lockIndex(io);
+        defer unlockIndex(io);
+
         const with_newline = try a.alloc(u8, line.len + 1);
         defer a.free(with_newline);
         @memcpy(with_newline[0..line.len], line);
         with_newline[line.len] = '\n';
-        const file = std.Io.Dir.cwd().openFile(io, path, .{ .mode = .write_only }) catch null;
-        if (file) |f| {
-            defer f.close(io);
-            const st = try f.stat(io);
-            try f.writePositionalAll(io, with_newline, st.size);
+
+        const target_key = blk: {
+            const parsed = parseIndexEvent(a, line) orelse break :blk "";
+            break :blk try tupleKey(a, parsed.harness_alphanumeric_id, parsed.provider_alphanumeric_id, parsed.model_alphanumeric_id, parsed.platform_alphanumeric_id);
+        };
+        if (target_key.len == 0) {
+            try writeIndexAtomic(io, with_newline);
             return;
         }
-        try std.Io.Dir.cwd().writeFile(io, .{ .sub_path = path, .data = with_newline });
+
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch {
+            try writeIndexAtomic(io, with_newline);
+            return;
+        };
+        defer a.free(data);
+
+        var out: std.ArrayList(u8) = .empty;
+        defer out.deinit(a);
+
+        var lines = std.mem.splitScalar(u8, data, '\n');
+        while (lines.next()) |l| {
+            if (l.len == 0) continue;
+            const parsed = parseIndexEvent(a, l) orelse continue;
+            const lkey = try tupleKey(a, parsed.harness_alphanumeric_id, parsed.provider_alphanumeric_id, parsed.model_alphanumeric_id, parsed.platform_alphanumeric_id);
+            if (std.mem.eql(u8, lkey, target_key)) continue;
+            try out.appendSlice(a, l);
+            try out.append(a, '\n');
+        }
+        try out.appendSlice(a, with_newline);
+
+        try writeIndexAtomic(io, out.items);
     }
 
     /// read every event in `known/index.jsonl` and return the latest
-    /// event per known_alphanumeric_id. Returns an empty list if the
-    /// file is missing.
-    pub fn latestEventsPerId(a: std.mem.Allocator, io: std.Io, path: []const u8) !std.StringHashMapUnmanaged(IndexEvent) {
+    /// event per 4-tuple key. Returns an empty map if the file is
+    /// missing.
+    pub fn latestEventsPerTuple(a: std.mem.Allocator, io: std.Io, path: []const u8) !std.StringHashMapUnmanaged(IndexEvent) {
         var out: std.StringHashMapUnmanaged(IndexEvent) = .empty;
         errdefer out.deinit(a);
         const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return out;
@@ -2517,8 +2866,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 // arena-allocated strings inside ev point into `line`,
                 // which is owned by the split iterator. Copy them so
                 // they survive after the function returns.
-                const id = try a.dupe(u8, ev.known_alphanumeric_id);
-                const agent = try a.dupe(u8, ev.agent_alphanumeric_id);
+                const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
                 const h = try a.dupe(u8, ev.harness_alphanumeric_id);
                 const p = try a.dupe(u8, ev.provider_alphanumeric_id);
                 const m = try a.dupe(u8, ev.model_alphanumeric_id);
@@ -2528,15 +2876,332 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                     .refresh = ev.refresh,
                     .runner = ev.runner,
                     .generated_at = ts,
-                    .known_alphanumeric_id = id,
-                    .agent_alphanumeric_id = agent,
                     .harness_alphanumeric_id = h,
                     .provider_alphanumeric_id = p,
                     .model_alphanumeric_id = m,
                     .platform_alphanumeric_id = plat,
                 };
-                try out.put(a, id, stored);
+                try out.put(a, key, stored);
             }
+        }
+        return out;
+    }
+
+    /// shared filter for `known queue` / `known dequeue` / `known
+    /// purge`. Four dimension flags (`--harness=`, `--provider=`,
+    /// `--model=`, `--platform=`) constrain their dim to equality;
+    /// their `--no-*` variants constrain it to null (unset); an
+    /// unmentioned dim is unconstrained (any value, including null).
+    /// `--known=` expands to all four dims (h-p-m-platform);
+    /// `--agent=` expands to h-p-m, leaving platform unconstrained
+    /// unless `--platform=` is also given. `any` is true iff at least
+    /// one option was present.
+    const FilterOptions = struct {
+        harness: []const u8 = "",
+        provider: []const u8 = "",
+        model: []const u8 = "",
+        platform: []const u8 = "",
+        no_harness: bool = false,
+        no_provider: bool = false,
+        no_model: bool = false,
+        no_platform: bool = false,
+        known: ?[]const u8 = null,
+        agent: ?[]const u8 = null,
+        /// scope flags: `--all`/`--stale`/`--partial` target index rows;
+        /// `--recipes`/`--missing-fixture` target the recipe table.
+        /// Exactly one scope flag may be set.
+        all: bool = false,
+        stale: bool = false,
+        partial: bool = false,
+        recipes: bool = false,
+        missing_fixture: bool = false,
+        /// `--available`: narrow candidates to harnesses whose binary is
+        /// available. Modifier only (never a scope flag).
+        available: bool = false,
+        /// stale thresholds (`--older-than-days=`, `--older-than-hours=`).
+        older_than_days: ?i64 = null,
+        older_than_hours: ?i64 = null,
+        any: bool = false,
+        /// true when `--known=` or `--agent=` (the composite ids)
+        /// contributed the equality dims — used for the creation path.
+        composite: bool = false,
+    };
+
+    const FilterError = error{
+        /// no filter option present at all
+        NoFilter,
+        /// `--known=` not a valid 4-part id
+        InvalidKnownId,
+        /// `--agent=` not a valid 3-part id
+        InvalidAgentId,
+        /// `--older-than-days=`/`--older-than-hours=` not an integer
+        InvalidThreshold,
+        /// contradictory or disallowed combination
+        ConflictingFilters,
+        /// allocation failure while expanding composite ids
+        OutOfMemory,
+    };
+
+    /// parse the shared filter flags from argv (expects argv0, "known",
+    /// <subcommand> already consumed). Errors use `FilterError` so the
+    /// caller can emit the command-specific message and usage.
+    fn parseFilters(init: std.process.Init) FilterError!FilterOptions {
+        const a = init.arena.allocator();
+        var f: FilterOptions = .{};
+        var seen_known = false;
+        var seen_agent = false;
+        var seen_harness = false;
+        var seen_provider = false;
+        var seen_model = false;
+        var seen_platform = false;
+
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return FilterError.NoFilter;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "known"
+        _ = args_it.skip(); // "queue"/"dequeue"/"purge"
+        while (args_it.next()) |arg| {
+            if (std.mem.startsWith(u8, arg, "--known=")) {
+                f.known = arg["--known=".len..];
+                seen_known = true;
+            } else if (std.mem.startsWith(u8, arg, "--agent=")) {
+                f.agent = arg["--agent=".len..];
+                seen_agent = true;
+            } else if (std.mem.startsWith(u8, arg, "--harness=")) {
+                f.harness = arg["--harness=".len..];
+                seen_harness = true;
+            } else if (std.mem.startsWith(u8, arg, "--provider=")) {
+                f.provider = arg["--provider=".len..];
+                seen_provider = true;
+            } else if (std.mem.startsWith(u8, arg, "--model=")) {
+                f.model = arg["--model=".len..];
+                seen_model = true;
+            } else if (std.mem.startsWith(u8, arg, "--platform=")) {
+                f.platform = arg["--platform=".len..];
+                seen_platform = true;
+            } else if (std.mem.eql(u8, arg, "--no-harness")) {
+                f.no_harness = true;
+            } else if (std.mem.eql(u8, arg, "--no-provider")) {
+                f.no_provider = true;
+            } else if (std.mem.eql(u8, arg, "--no-model")) {
+                f.no_model = true;
+            } else if (std.mem.eql(u8, arg, "--no-platform")) {
+                f.no_platform = true;
+            } else if (std.mem.eql(u8, arg, "--all")) {
+                f.all = true;
+            } else if (std.mem.eql(u8, arg, "--stale")) {
+                f.stale = true;
+            } else if (std.mem.eql(u8, arg, "--partial")) {
+                f.partial = true;
+            } else if (std.mem.eql(u8, arg, "--recipes")) {
+                f.recipes = true;
+            } else if (std.mem.eql(u8, arg, "--missing-fixture")) {
+                f.missing_fixture = true;
+            } else if (std.mem.eql(u8, arg, "--available")) {
+                f.available = true;
+            } else if (std.mem.startsWith(u8, arg, "--older-than-days=")) {
+                f.older_than_days = std.fmt.parseInt(i64, arg["--older-than-days=".len..], 10) catch return FilterError.InvalidThreshold;
+            } else if (std.mem.startsWith(u8, arg, "--older-than-hours=")) {
+                f.older_than_hours = std.fmt.parseInt(i64, arg["--older-than-hours=".len..], 10) catch return FilterError.InvalidThreshold;
+            }
+        }
+
+        // scope flags: exactly one allowed
+        const scope_count = @as(usize, @intFromBool(f.all)) + @as(usize, @intFromBool(f.stale)) +
+            @as(usize, @intFromBool(f.partial)) + @as(usize, @intFromBool(f.recipes)) +
+            @as(usize, @intFromBool(f.missing_fixture));
+        if (scope_count > 1) return FilterError.ConflictingFilters;
+
+        // stale thresholds are only meaningful with --stale
+        if ((f.older_than_days != null or f.older_than_hours != null) and !f.stale) return FilterError.ConflictingFilters;
+
+        // --available is a modifier: requires a scope flag
+        if (f.available and scope_count == 0) return FilterError.ConflictingFilters;
+
+        f.any = seen_known or seen_agent or seen_harness or seen_provider or
+            seen_model or seen_platform or f.no_harness or f.no_provider or
+            f.no_model or f.no_platform or scope_count > 0 or f.available;
+        if (!f.any) return FilterError.NoFilter;
+
+        // contradiction: a dim cannot be both equality- and null-constrained
+        if (seen_harness and f.no_harness) return FilterError.ConflictingFilters;
+        if (seen_provider and f.no_provider) return FilterError.ConflictingFilters;
+        if (seen_model and f.no_model) return FilterError.ConflictingFilters;
+        if (seen_platform and f.no_platform) return FilterError.ConflictingFilters;
+
+        if (seen_known) {
+            // `--known=` supplies all four dims and may not combine
+            // with `--agent=` or any `--X=`; `--platform=` is allowed
+            // but must be identical to the known id's platform part.
+            if (seen_agent or seen_harness or seen_provider or seen_model) return FilterError.ConflictingFilters;
+            const parts = splitKnownAlphanumericId(a, f.known.?) catch return FilterError.InvalidKnownId;
+            defer {
+                a.free(parts[0]);
+                a.free(parts[1]);
+                a.free(parts[2]);
+                a.free(parts[3]);
+            }
+            // dupe: `parts` are freed on return, but the filter must
+            // outlive parseFilters (it's returned to the caller)
+            f.harness = a.dupe(u8, parts[0]) catch return FilterError.OutOfMemory;
+            f.provider = a.dupe(u8, parts[1]) catch return FilterError.OutOfMemory;
+            f.model = a.dupe(u8, parts[2]) catch return FilterError.OutOfMemory;
+            if (seen_platform and !std.mem.eql(u8, f.platform, parts[3])) return FilterError.ConflictingFilters;
+            f.platform = a.dupe(u8, parts[3]) catch return FilterError.OutOfMemory;
+            f.composite = true;
+        } else if (seen_agent) {
+            // `--agent=` supplies h-p-m; `--platform=` may supplement it
+            // (identical to `--known=` when combined). No `--X=` other
+            // than `--platform=` may combine with `--agent=`.
+            if (seen_harness or seen_provider or seen_model) return FilterError.ConflictingFilters;
+            const parts = splitAgentAlphanumericId(a, f.agent.?) catch return FilterError.InvalidAgentId;
+            defer {
+                a.free(parts[0]);
+                a.free(parts[1]);
+                a.free(parts[2]);
+            }
+            // dupe: `parts` are freed on return; the filter outlives it
+            f.harness = a.dupe(u8, parts[0]) catch return FilterError.OutOfMemory;
+            f.provider = a.dupe(u8, parts[1]) catch return FilterError.OutOfMemory;
+            f.model = a.dupe(u8, parts[2]) catch return FilterError.OutOfMemory;
+            f.composite = true;
+        }
+        // a `--no-*` contradicts any dim forced by a composite id
+        if (f.composite and
+            ((f.harness.len > 0 and f.no_harness) or
+                (f.provider.len > 0 and f.no_provider) or
+                (f.model.len > 0 and f.no_model) or
+                (f.platform.len > 0 and f.no_platform)))
+        {
+            return FilterError.ConflictingFilters;
+        }
+        return f;
+    }
+
+    /// true iff every dimension constraint in `f` holds for `ev`.
+    /// Equality (`--X=`) requires the field to equal the value;
+    /// `--no-X` requires the field to be unset; unmentioned dims are
+    /// free.
+    fn matchesFilter(ev: IndexEvent, f: FilterOptions) bool {
+        if (f.harness.len > 0 and !std.mem.eql(u8, ev.harness_alphanumeric_id, f.harness)) return false;
+        if (f.provider.len > 0 and !std.mem.eql(u8, ev.provider_alphanumeric_id, f.provider)) return false;
+        if (f.model.len > 0 and !std.mem.eql(u8, ev.model_alphanumeric_id, f.model)) return false;
+        if (f.platform.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, f.platform)) return false;
+        if (f.no_harness and ev.harness_alphanumeric_id.len != 0) return false;
+        if (f.no_provider and ev.provider_alphanumeric_id.len != 0) return false;
+        if (f.no_model and ev.model_alphanumeric_id.len != 0) return false;
+        if (f.no_platform and ev.platform_alphanumeric_id.len != 0) return false;
+        return true;
+    }
+
+    /// how many scope flags are set (exactly one is allowed).
+    fn scopeCount(f: FilterOptions) usize {
+        return @as(usize, @intFromBool(f.all)) + @as(usize, @intFromBool(f.stale)) +
+            @as(usize, @intFromBool(f.partial)) + @as(usize, @intFromBool(f.recipes)) +
+            @as(usize, @intFromBool(f.missing_fixture));
+    }
+
+    /// true if the row has all four dims set (the daemon's notion of a
+    /// "full" row); partial rows are seeds/actions.
+    fn fullEvent(ev: IndexEvent) bool {
+        return ev.harness_alphanumeric_id.len > 0 and
+            ev.provider_alphanumeric_id.len > 0 and
+            ev.model_alphanumeric_id.len > 0 and
+            ev.platform_alphanumeric_id.len > 0;
+    }
+
+    /// the scope candidate set for `f`, as events:
+    /// - row-scope (`--all`/`--stale`/`--partial`): matching existing
+    ///   index rows (host platform; `--available` requires full h-p-m +
+    ///   an available harness).
+    /// - recipe-scope (`--recipes`/`--missing-fixture`): full events on
+    ///   the host platform built from the recipe table
+    ///   (`knownFixturesForKnownAgents`); `--missing-fixture` only
+    ///   yields recipes whose `.agent.json`/`.trailer.txt` files are
+    ///   absent. Dim filters narrow both kinds; `--available` gates the
+    ///   harness probe. Returns null on allocation failure.
+    fn scopeCandidates(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !std.ArrayListUnmanaged(IndexEvent) {
+        var out: std.ArrayListUnmanaged(IndexEvent) = .empty;
+        const host = platformAlphanumericId();
+
+        if (f.recipes or f.missing_fixture) {
+            for (knownFixturesForKnownAgents) |c| {
+                if (f.available and !harnessAvailable(io, c.agent_alphanumeric_id)) continue;
+                const parts = try splitAgentAlphanumericId(a, c.agent_alphanumeric_id);
+                defer {
+                    a.free(parts[0]);
+                    a.free(parts[1]);
+                    a.free(parts[2]);
+                }
+                var ev: IndexEvent = .{
+                    .refresh = true,
+                    .runner = 0,
+                    .generated_at = "",
+                    .harness_alphanumeric_id = parts[0],
+                    .provider_alphanumeric_id = parts[1],
+                    .model_alphanumeric_id = parts[2],
+                    .platform_alphanumeric_id = host,
+                };
+                if (!matchesFilter(ev, f)) continue;
+                // dupe: `parts` are freed at the end of this iteration,
+                // so the stored event must own its strings (arena).
+                ev.harness_alphanumeric_id = try a.dupe(u8, parts[0]);
+                ev.provider_alphanumeric_id = try a.dupe(u8, parts[1]);
+                ev.model_alphanumeric_id = try a.dupe(u8, parts[2]);
+                ev.platform_alphanumeric_id = try a.dupe(u8, host);
+                if (f.missing_fixture) {
+                    const known_aid = try knownAlphanumericId(a, c.agent_alphanumeric_id);
+                    defer a.free(known_aid);
+                    const json_path = try std.fmt.allocPrint(a, "known/{s}.agent.json", .{known_aid});
+                    defer a.free(json_path);
+                    var json_exists = false;
+                    if (std.Io.Dir.cwd().statFile(io, json_path, .{})) |_| {
+                        json_exists = true;
+                    } else |_| {}
+                    const trailer_path = try std.fmt.allocPrint(a, "known/{s}.trailer.txt", .{known_aid});
+                    defer a.free(trailer_path);
+                    var trailer_exists = false;
+                    if (std.Io.Dir.cwd().statFile(io, trailer_path, .{})) |_| {
+                        trailer_exists = true;
+                    } else |_| {}
+                    if (json_exists and trailer_exists) continue;
+                }
+                try out.append(a, ev);
+            }
+            return out;
+        }
+
+        // row-scope
+        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+        const threshold_hours = (f.older_than_days orelse 7) * 24 + (f.older_than_hours orelse 0);
+        var it = existing.iterator();
+        while (it.next()) |entry| {
+            const ev = entry.value_ptr.*;
+            if (ev.platform_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) continue;
+            if (f.stale) {
+                const stale = (ev.refresh and !pidIsAlive(ev.runner)) or olderThanThreshold(ev.generated_at, threshold_hours);
+                if (!stale) continue;
+            } else if (f.partial and fullEvent(ev)) {
+                continue;
+            }
+            if (!matchesFilter(ev, f)) continue;
+            if (f.available) {
+                const agent = (try agentIdFrom(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id)) orelse continue;
+                if (!harnessAvailable(io, agent)) continue;
+            }
+            // dupe: `existing` is deinit'd before the caller consumes
+            // the list, so the returned events must own their strings.
+            // The arena backs them for the process lifetime.
+            try out.append(a, .{
+                .refresh = ev.refresh,
+                .runner = ev.runner,
+                .generated_at = try a.dupe(u8, ev.generated_at),
+                .harness_alphanumeric_id = try a.dupe(u8, ev.harness_alphanumeric_id),
+                .provider_alphanumeric_id = try a.dupe(u8, ev.provider_alphanumeric_id),
+                .model_alphanumeric_id = try a.dupe(u8, ev.model_alphanumeric_id),
+                .platform_alphanumeric_id = try a.dupe(u8, ev.platform_alphanumeric_id),
+            });
         }
         return out;
     }
@@ -2554,13 +3219,19 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     /// child after preparing the env for a target harness.
     ///
     /// **Filename contract** — the fixture is written as
-    /// `known/<known_alphanumeric_id>.{json,.trailer.txt}` where
+    /// `known/<known_alphanumeric_id>.{agent.json,.trailer.txt}` where
     /// `known_alphanumeric_id = agent_alphanumeric_id +
     /// "-" + platform_alphanumeric_id` (e.g.
     /// `cline-clinepass-kimik3-darwin`). The `-<platform>` suffix
     /// keeps per-platform config paths from churning each other
     /// across CI runs; see DESIGN.md "per-platform fixtures" for the
     /// rationale.
+    // Note on partial detection (the seed path): a daemon-spawned
+    // child that partially fails on a full combo writes a partial seed
+    // with a *different* tuple than the combo row; the combo row stays
+    // `refresh:true` (retry) and the seed re-enters expansion on the
+    // daemon's next poll — a bounded retry loop surfaced by the daemon
+    // warning. No extra bookkeeping is needed.
     pub fn runKnownAgent(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -2568,18 +3239,42 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         var d = Detection{};
         _ = try detect(init, &d);
 
-        const harness_aid = d.harness_alphanumeric_id orelse {
-            writeErr(io, "known agent: harness did not resolve — extend the detector\n");
+        const harness_aid = d.harness_alphanumeric_id;
+        const provider_aid = d.provider_alphanumeric_id;
+        const model_aid = d.model_alphanumeric_id;
+
+        const resolved = (if (harness_aid != null) @as(usize, 1) else 0) +
+            (if (provider_aid != null) @as(usize, 1) else 0) +
+            (if (model_aid != null) @as(usize, 1) else 0);
+
+        // partial detection with >=1 resolved dim: record a seed row
+        // (resolved dims, others null, refresh:true), write no fixture,
+        // exit 2. Nothing is written if zero dims resolve.
+        if (resolved >= 1 and resolved < 3) {
+            const ts = try timestampNow(a);
+            defer a.free(ts);
+            const seed: IndexEvent = .{
+                .refresh = true,
+                .runner = getParentPid(),
+                .generated_at = ts,
+                .harness_alphanumeric_id = harness_aid orelse "",
+                .provider_alphanumeric_id = provider_aid orelse "",
+                .model_alphanumeric_id = model_aid orelse "",
+                .platform_alphanumeric_id = platformAlphanumericId(),
+            };
+            const line = try emitIndexEvent(a, seed);
+            defer a.free(line);
+            try upsertIndexEvent(a, io, "known/index.jsonl", line);
+            writeErr(io, "known agent: partial detection — recorded ");
+            writeErr(io, try describeEvent(a, seed));
+            writeErr(io, " with refresh:true, no fixture written (exit 2)\n");
             return 2;
-        };
-        const provider_aid = d.provider_alphanumeric_id orelse {
-            writeErr(io, "known agent: provider did not resolve\n");
+        }
+        if (resolved == 0) {
+            writeErr(io, "known agent: harness/provider/model did not resolve — nothing recorded\n");
             return 2;
-        };
-        const model_aid = d.model_alphanumeric_id orelse {
-            writeErr(io, "known agent: model did not resolve\n");
-            return 2;
-        };
+        }
+
         const agent_aid = d.agent_alphanumeric_id orelse {
             writeErr(io, "known agent: agent_alphanumeric_id did not compute\n");
             return 2;
@@ -2600,7 +3295,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
 
         var buf: std.ArrayList(u8) = .empty;
         try buildJson(a, &d, init.environ_map, null, .{}, &buf);
-        const json_name = try std.fmt.allocPrint(a, "{s}.json", .{known_aid});
+        const json_name = try std.fmt.allocPrint(a, "{s}.agent.json", .{known_aid});
         try dir.writeFile(io, .{ .sub_path = json_name, .data = buf.items });
 
         if (d.trailer) |t| {
@@ -2615,16 +3310,14 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             .refresh = false,
             .runner = getParentPid(),
             .generated_at = ts,
-            .known_alphanumeric_id = known_aid,
-            .agent_alphanumeric_id = agent_aid,
-            .harness_alphanumeric_id = harness_aid,
-            .provider_alphanumeric_id = provider_aid,
-            .model_alphanumeric_id = model_aid,
+            .harness_alphanumeric_id = harness_aid orelse unreachable,
+            .provider_alphanumeric_id = provider_aid orelse unreachable,
+            .model_alphanumeric_id = model_aid orelse unreachable,
             .platform_alphanumeric_id = platformAlphanumericId(),
         };
         const line = try emitIndexEvent(a, ev);
         defer a.free(line);
-        try appendIndexEvent(a, io, "known/index.jsonl", line);
+        try upsertIndexEvent(a, io, "known/index.jsonl", line);
 
         writeOut(io, "known agent: wrote known/");
         writeOut(io, json_name);
@@ -2632,171 +3325,176 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return 0;
     }
 
-    /// `known queue --harness=X [--provider=Y] [--model=Z]` — append
-    /// a refresh:true event to known/index.jsonl. The `--provider`
-    /// and `--model` flags are optional; omitting them turns the
-    /// entry into a todo — it sits in the index as a record that
-    /// "someone wants this harness captured but doesn't know the
-    /// provider/model yet". Todos replace the previous DESIGN.md
-    /// pending-detection queue: they're inline in the index,
-    /// queryable by `tail known/index.jsonl`.
+    /// `known queue [scope] <filters>` — set `refresh:true` on a set of
+    /// rows. Without a scope flag, the generic path is create-or-flip:
+    /// with the shared dim filters (`--known=`, `--agent=`, `--harness=`,
+    /// `--provider=`, `--model=`, `--platform=`, `--no-*`), if any
+    /// existing row matches, flip them all to `refresh:true` (dims and
+    /// runner preserved, `generated_at` refreshes). If none match,
+    /// create a **seed** row: the positive dims set, the remaining dims
+    /// `null`, `refresh:true`. Unknown ids are allowed — that is the
+    /// seed path (the daemon expands seeds over known recipes; see
+    /// `runKnownDaemon`).
     ///
-    /// The daemon does *not* need to be running when this is invoked.
-    /// The daemon picks the entry up on its next 5-second poll,
-    /// possibly minutes, hours, or days later. If the daemon never
-    /// runs, the entry just sits in the file.
+    /// With a scope flag (`--all`/`--stale`/`--partial`/`--recipes`/
+    /// `--missing-fixture`) the target set is computed instead (see
+    /// `scopeCandidates`) and every candidate is queued (recipe-scope
+    /// candidates are created as full `refresh:true` rows). `--available`
+    /// narrows candidates to harnesses whose binary is available.
     ///
-    /// **No-duplicate rule:** before appending, walk known/index.jsonl
-    /// and look for any existing event with the same
-    /// `known_alphanumeric_id`. If one exists, do not append — this
-    /// is idempotent.
+    /// At least one filter option or scope flag is required (else exit
+    /// 2). A `--no-*`-only call is not a valid seed — at least one
+    /// positive dim, `--agent=`, or `--known=` is required for creation.
     ///
-    /// Validation (only when `--provider` and `--model` are given):
-    /// - The `harness` ID must match one of the `knownRulesForKnownAgents`.
-    /// - The `provider` ID must match one of the `knownRulesForKnownProviders`.
-    /// - The `model` ID must match one of the `knownRulesForKnownModels`.
+    /// Idempotent: re-running a seed request re-matches the existing
+    /// seed and takes the flip path, so no duplicate row is written.
     pub fn runKnownQueue(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
-        // parse --harness, --provider, --model, --platform from argv
-        var harness_aid: ?[]const u8 = null;
-        var provider_aid: ?[]const u8 = null;
-        var model_aid: ?[]const u8 = null;
-        var platform_aid_arg: ?[]const u8 = null;
-
-        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
-        defer args_it.deinit();
-        _ = args_it.skip(); // argv0
-        _ = args_it.skip(); // "known"
-        _ = args_it.skip(); // "queue"
-        while (args_it.next()) |arg| {
-            if (std.mem.startsWith(u8, arg, "--harness=")) {
-                harness_aid = arg["--harness=".len..];
-            } else if (std.mem.startsWith(u8, arg, "--provider=")) {
-                provider_aid = arg["--provider=".len..];
-            } else if (std.mem.startsWith(u8, arg, "--model=")) {
-                model_aid = arg["--model=".len..];
-            } else if (std.mem.startsWith(u8, arg, "--platform=")) {
-                platform_aid_arg = arg["--platform=".len..];
+        const f = parseFilters(init) catch |err| {
+            switch (err) {
+                error.NoFilter => writeErr(io, "known queue: at least one filter or scope flag is required (--known=, --agent=, --X=, --no-X, --all, --stale, --partial, --recipes, or --missing-fixture)\n"),
+                error.InvalidKnownId => writeErr(io, "known queue: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
+                error.InvalidAgentId => writeErr(io, "known queue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
+                error.InvalidThreshold => writeErr(io, "known queue: --older-than-days=/--older-than-hours= must be integers\n"),
+                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known queue: conflicting filters (see --help)\n"),
             }
-        }
-
-        const h = harness_aid orelse {
-            writeErr(io, "known queue: --harness=<id> is required\n");
+            writeOut(io, knownUsage);
             return 2;
         };
-        // --provider, --model, --platform are optional. If
-        // --provider or --model is missing, the entry is a todo.
-        const p = provider_aid orelse "";
-        const m = model_aid orelse "";
-        // --platform defaults to the current host's platform. Override
-        // it to queue a request for a different platform (e.g. queue
-        // a windows fixture from a mac).
-        const plat = platform_aid_arg orelse platformAlphanumericId();
 
-        if (!harnessIdKnown(h)) {
-            writeErr(io, "known queue: unknown harness id\n");
-            return 2;
+        if (scopeCount(f) > 0) {
+            return runKnownQueueScope(init, f);
         }
-        if (p.len > 0 and !providerIdKnown(p)) {
-            writeErr(io, "known queue: unknown provider id\n");
-            return 2;
-        }
-        if (m.len > 0 and !modelIdKnown(m)) {
-            writeErr(io, "known queue: unknown model id\n");
+
+        // a `--no-*`-only filter has no positive dims to seed with
+        const positive = f.harness.len > 0 or f.provider.len > 0 or
+            f.model.len > 0 or f.platform.len > 0 or f.composite;
+        if (!positive) {
+            writeErr(io, "known queue: a seed needs at least one positive dim, --agent=, or --known=\n");
+            writeOut(io, knownUsage);
             return 2;
         }
 
-        // If provider and model are both given, build the full
-        // agent/known id. Otherwise the entry is a todo — the
-        // known_alphanumeric_id falls back to just the harness.
-        const agent_aid = if (p.len > 0 and m.len > 0)
-            try std.fmt.allocPrint(a, "{s}-{s}-{s}", .{ h, p, m })
-        else
-            try a.dupe(u8, h);
-        const known_aid = if (p.len > 0 and m.len > 0)
-            try knownAlphanumericId(a, agent_aid)
-        else
-            try a.dupe(u8, agent_aid);
-
-        // dedupe logic
-        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+        // gather matching rows (tuple-identity via the filter predicate)
+        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
         defer existing.deinit(a);
-        if (existing.get(known_aid)) |prev| {
-            if (prev.refresh) {
-                writeOut(io, "known queue: ");
-                writeOut(io, known_aid);
-                writeOut(io, " already queued, skipping\n");
-                return 0;
+
+        var matches: std.ArrayListUnmanaged(IndexEvent) = .empty;
+        defer matches.deinit(a);
+        {
+            var it = existing.iterator();
+            while (it.next()) |entry| {
+                if (matchesFilter(entry.value_ptr.*, f)) try matches.append(a, entry.value_ptr.*);
             }
-            writeOut(io, "known queue: bumping ");
-            writeOut(io, known_aid);
-            writeOut(io, " from refresh:false to refresh:true\n");
         }
 
-        // append refresh:true event
+        if (matches.items.len >= 1) {
+            // flip path: preserve each row's dims/runner, refresh
+            // generated_at, set refresh:true
+            const ts = try timestampNow(a);
+            defer a.free(ts);
+            for (matches.items) |ev| {
+                const new_ev: IndexEvent = .{
+                    .refresh = true,
+                    .runner = ev.runner,
+                    .generated_at = ts,
+                    .harness_alphanumeric_id = ev.harness_alphanumeric_id,
+                    .provider_alphanumeric_id = ev.provider_alphanumeric_id,
+                    .model_alphanumeric_id = ev.model_alphanumeric_id,
+                    .platform_alphanumeric_id = ev.platform_alphanumeric_id,
+                };
+                const line = try emitIndexEvent(a, new_ev);
+                defer a.free(line);
+                try upsertIndexEvent(a, io, "known/index.jsonl", line);
+            }
+            var n_buf: [16]u8 = undefined;
+            writeOut(io, "known queue: queued ");
+            writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{matches.items.len}));
+            writeOut(io, "\n");
+            return 0;
+        }
+
+        // create path: seed with the positive dims, others null
+        const h = if (f.no_harness) "" else f.harness;
+        const p = if (f.no_provider) "" else f.provider;
+        const m = if (f.no_model) "" else f.model;
+        const plat = if (f.no_platform) "" else f.platform;
         const ts = try timestampNow(a);
         defer a.free(ts);
-        const ev: IndexEvent = .{
+        const seed: IndexEvent = .{
             .refresh = true,
             .runner = getParentPid(),
             .generated_at = ts,
-            .known_alphanumeric_id = known_aid,
-            .agent_alphanumeric_id = agent_aid,
             .harness_alphanumeric_id = h,
             .provider_alphanumeric_id = p,
             .model_alphanumeric_id = m,
             .platform_alphanumeric_id = plat,
         };
-        const line = try emitIndexEvent(a, ev);
+        const line = try emitIndexEvent(a, seed);
         defer a.free(line);
-        try appendIndexEvent(a, io, "known/index.jsonl", line);
+        try upsertIndexEvent(a, io, "known/index.jsonl", line);
 
-        if (p.len == 0 or m.len == 0) {
-            writeOut(io, "known queue: queued todo ");
-            writeOut(io, h);
-            writeOut(io, " (provider/model not yet known)\n");
-        } else {
-            writeOut(io, "known queue: queued ");
-            writeOut(io, known_aid);
-            writeOut(io, " on platform ");
-            writeOut(io, plat);
-            writeOut(io, "\n");
-        }
+        writeOut(io, "known queue: queued ");
+        writeOut(io, try describeEvent(a, seed));
+        writeOut(io, "\n");
         return 0;
     }
 
-    /// true if `id` is the alphanumeric form of some harness display
-    /// in `knownRulesForKnownAgents`. (Per the refresh-queue contract, callers
-    /// pass the alphanumeric form, not the regular id.)
-    fn harnessIdKnown(id: []const u8) bool {
-        for (knownRulesForKnownAgents) |r| {
-            const a = alphanumericId(std.heap.page_allocator, r.label) catch continue;
-            defer std.heap.page_allocator.free(a);
-            if (std.mem.eql(u8, a, id)) return true;
+    /// `known queue <scope> [filters]` — queue every event in the scope
+    /// candidate set (see `scopeCandidates`). Recipe-scope candidates
+    /// are created/refreshed as full `refresh:true` rows; row-scope
+    /// candidates are flipped in place. Dedupes mirror the removed
+    /// subcommands: `--recipes` skips rows already `refresh:false`,
+    /// `--missing-fixture` skips rows already `refresh:true`.
+    fn runKnownQueueScope(init: std.process.Init, f: FilterOptions) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        var candidates = try scopeCandidates(a, io, f);
+        defer candidates.deinit(a);
+
+        // dedupe needs the pre-upsert index state
+        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+
+        const ts = try timestampNow(a);
+        defer a.free(ts);
+        const my_pid = getParentPid();
+
+        var queued: usize = 0;
+        for (candidates.items) |ev| {
+            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+            if (f.recipes) {
+                if (existing.get(key)) |prev| {
+                    if (!prev.refresh) continue;
+                }
+            } else if (f.missing_fixture) {
+                if (existing.get(key)) |prev| {
+                    if (prev.refresh) continue;
+                }
+            }
+            const new_ev: IndexEvent = .{
+                .refresh = true,
+                .runner = my_pid,
+                .generated_at = ts,
+                .harness_alphanumeric_id = ev.harness_alphanumeric_id,
+                .provider_alphanumeric_id = ev.provider_alphanumeric_id,
+                .model_alphanumeric_id = ev.model_alphanumeric_id,
+                .platform_alphanumeric_id = ev.platform_alphanumeric_id,
+            };
+            const line = try emitIndexEvent(a, new_ev);
+            defer a.free(line);
+            try upsertIndexEvent(a, io, "known/index.jsonl", line);
+            queued += 1;
         }
-        return false;
-    }
-    /// true if `id` is the alphanumeric form of some provider display
-    /// in `knownRulesForKnownProviders`.
-    fn providerIdKnown(id: []const u8) bool {
-        for (knownRulesForKnownProviders) |r| {
-            const a = alphanumericId(std.heap.page_allocator, r.label) catch continue;
-            defer std.heap.page_allocator.free(a);
-            if (std.mem.eql(u8, a, id)) return true;
-        }
-        return false;
-    }
-    /// true if `id` is the alphanumeric form of some model display
-    /// in `knownRulesForKnownModels`.
-    fn modelIdKnown(id: []const u8) bool {
-        for (knownRulesForKnownModels) |r| {
-            const a = alphanumericId(std.heap.page_allocator, r.label) catch continue;
-            defer std.heap.page_allocator.free(a);
-            if (std.mem.eql(u8, a, id)) return true;
-        }
-        return false;
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known queue: queued ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
+        writeOut(io, "\n");
+        return 0;
     }
 
     /// portable getppid. POSIX has `getppid(2)`; Windows uses
@@ -2841,262 +3539,6 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return @intFromEnum(e) != 3; // not ESRCH → exists
     }
 
-    /// `known queue-stale` — re-queue every entry whose freshness
-    /// check fails. Stale means EITHER:
-    ///   1. refresh:true AND the runner PPID is no longer alive
-    /// `known queue-stale [--older-than-days=N] [--older-than-hours=M]`
-    /// — re-queue every entry whose freshness check fails. Stale
-    /// means EITHER:
-    ///   1. refresh:true AND the runner PPID is no longer alive
-    ///      (the process that queued the request has died before
-    ///      the daemon could process it)
-    ///   2. generated_at is older than the threshold (default
-    ///      7 days, configurable via --older-than-days and
-    ///      --older-than-hours; both can be combined — total hours
-    ///      = days*24 + hours)
-    /// Stale is a *derivative* property — it is computed from
-    /// `runner` and `generated_at`; we don't add a `stale: true`
-    /// field to the index. The daemon does NOT run this check; it
-    /// only processes `refresh: true` events.
-    pub fn runKnownQueueStale(init: std.process.Init) !u8 {
-        const a = init.arena.allocator();
-        const io = init.io;
-
-        // parse --older-than-days, --older-than-hours from argv
-        var days_opt: ?i64 = null;
-        var hours_opt: ?i64 = null;
-        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
-        defer args_it.deinit();
-        _ = args_it.skip(); // argv0
-        _ = args_it.skip(); // "known"
-        _ = args_it.skip(); // "queue-stale"
-        while (args_it.next()) |arg| {
-            if (std.mem.startsWith(u8, arg, "--older-than-days=")) {
-                const v = std.fmt.parseInt(i64, arg["--older-than-days=".len..], 10) catch {
-                    writeErr(io, "queue-stale: invalid --older-than-days value\n");
-                    return 2;
-                };
-                days_opt = v;
-            } else if (std.mem.startsWith(u8, arg, "--older-than-hours=")) {
-                const v = std.fmt.parseInt(i64, arg["--older-than-hours=".len..], 10) catch {
-                    writeErr(io, "queue-stale: invalid --older-than-hours value\n");
-                    return 2;
-                };
-                hours_opt = v;
-            }
-        }
-        const threshold_hours = (days_opt orelse 7) * 24 + (hours_opt orelse 0);
-
-        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-
-        var it = existing.iterator();
-        var queued: usize = 0;
-        var skipped: usize = 0;
-        while (it.next()) |entry| {
-            const ev = entry.value_ptr.*;
-            const stale = (ev.refresh and !pidIsAlive(ev.runner)) or
-                olderThanThreshold(ev.generated_at, threshold_hours);
-            if (!stale) continue;
-            const current_platform = platformAlphanumericId();
-            if (!std.mem.eql(u8, ev.platform_alphanumeric_id, current_platform)) {
-                writeErr(io, "skipped: ");
-                writeErr(io, ev.known_alphanumeric_id);
-                writeErr(io, " (wrong platform)\n");
-                skipped += 1;
-                continue;
-            }
-            if (!harnessAvailable(io, ev.agent_alphanumeric_id)) {
-                writeErr(io, "skipped: ");
-                writeErr(io, ev.known_alphanumeric_id);
-                writeErr(io, " (harness not available)\n");
-                skipped += 1;
-                continue;
-            }
-            try queueEventFrom(a, io, ev);
-            queued += 1;
-        }
-
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known queue-stale: queued ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
-        writeOut(io, ", skipped ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{skipped}));
-        writeOut(io, "\n");
-        return 0;
-    }
-
-    /// `known queue-all` — re-queue every entry in known/index.jsonl
-    /// on the current platform whose harness is available. The daemon
-    /// will pick them up on its next poll.
-    pub fn runKnownQueueAll(init: std.process.Init) !u8 {
-        const a = init.arena.allocator();
-        const io = init.io;
-
-        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-
-        var it = existing.iterator();
-        var queued: usize = 0;
-        while (it.next()) |entry| {
-            const ev = entry.value_ptr.*;
-            const current_platform = platformAlphanumericId();
-            if (!std.mem.eql(u8, ev.platform_alphanumeric_id, current_platform)) continue;
-            if (!harnessAvailable(io, ev.agent_alphanumeric_id)) continue;
-            try queueEventFrom(a, io, ev);
-            queued += 1;
-        }
-
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known queue-all: queued ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
-        writeOut(io, "\n");
-        return 0;
-    }
-
-    /// `known queue-missing` — for each `KnownFixturesForKnownAgents`
-    /// row whose `known/<known_alphanumeric_id>.json` (or `.trailer.txt`)
-    /// is missing on disk, queue a `refresh: true` event. Useful after
-    /// a fresh clone, or after a manual `rm` of a fixture file. Skips
-    /// rows that are pure todos (no provider/model).
-    pub fn runKnownQueueMissing(init: std.process.Init) !u8 {
-        const a = init.arena.allocator();
-        const io = init.io;
-
-        const current_platform = platformAlphanumericId();
-        var queued: usize = 0;
-        var checked: usize = 0;
-        for (knownFixturesForKnownAgents) |c| {
-            const parts = splitAgentAlphanumericId(a, c.agent_alphanumeric_id) catch continue;
-            defer a.free(parts[0]);
-            defer a.free(parts[1]);
-            defer a.free(parts[2]);
-            const h_aid = parts[0];
-            const p_aid = parts[1];
-            const m_aid = parts[2];
-            const agent_aid = c.agent_alphanumeric_id;
-            const known_aid = try knownAlphanumericId(a, agent_aid);
-            defer a.free(known_aid);
-            checked += 1;
-
-            // is the fixture file present?
-            const json_path = try std.fmt.allocPrint(a, "known/{s}.json", .{known_aid});
-            defer a.free(json_path);
-            var json_exists = false;
-            if (std.Io.Dir.cwd().statFile(io, json_path, .{})) |_| {
-                json_exists = true;
-            } else |_| {
-                json_exists = false;
-            }
-            const trailer_path = try std.fmt.allocPrint(a, "known/{s}.trailer.txt", .{known_aid});
-            defer a.free(trailer_path);
-            var trailer_exists = false;
-            if (std.Io.Dir.cwd().statFile(io, trailer_path, .{})) |_| {
-                trailer_exists = true;
-            } else |_| {
-                trailer_exists = false;
-            }
-            if (json_exists and trailer_exists) continue;
-
-            // dedupe: if there's a refresh:true event already, skip
-            var existing = try latestEventsPerId(a, io, "known/index.jsonl");
-            defer existing.deinit(a);
-            if (existing.get(known_aid)) |prev| {
-                if (prev.refresh) continue;
-            }
-
-            const ts = try timestampNow(a);
-            defer a.free(ts);
-            const ev: IndexEvent = .{
-                .refresh = true,
-                .runner = getParentPid(),
-                .generated_at = ts,
-                .known_alphanumeric_id = known_aid,
-                .agent_alphanumeric_id = agent_aid,
-                .harness_alphanumeric_id = h_aid,
-                .provider_alphanumeric_id = p_aid,
-                .model_alphanumeric_id = m_aid,
-                .platform_alphanumeric_id = current_platform,
-            };
-            const line = try emitIndexEvent(a, ev);
-            defer a.free(line);
-            try appendIndexEvent(a, io, "known/index.jsonl", line);
-            writeErr(io, "queue-missing: noticed ");
-            writeErr(io, known_aid);
-            if (!json_exists) writeErr(io, " (no .json)");
-            if (!trailer_exists) writeErr(io, " (no .trailer.txt)");
-            writeErr(io, "\n");
-            queued += 1;
-        }
-
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known queue-missing: checked ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{checked}));
-        writeOut(io, ", queued ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
-        writeOut(io, "\n");
-        return 0;
-    }
-
-    /// `known queue-fixtures` — for each `KnownFixturesForKnownAgents`
-    /// entry on the current platform, queue a refresh:true event
-    /// (one per fixture). Re-uses `knownAlphanumericId` to compute the
-    /// `known_alphanumeric_id` for the event. Useful after a fresh
-    /// clone, or for a bulk re-queue.
-    pub fn runKnownQueueFixtures(init: std.process.Init) !u8 {
-        const a = init.arena.allocator();
-        const io = init.io;
-
-        const current_platform = platformAlphanumericId();
-        var queued: usize = 0;
-        for (knownFixturesForKnownAgents) |c| {
-            if (!harnessAvailable(io, c.agent_alphanumeric_id)) continue;
-            const parts = splitAgentAlphanumericId(a, c.agent_alphanumeric_id) catch continue;
-            defer a.free(parts[0]);
-            defer a.free(parts[1]);
-            defer a.free(parts[2]);
-            const h_aid = parts[0];
-            const p_aid = parts[1];
-            const m_aid = parts[2];
-            const agent_aid = c.agent_alphanumeric_id;
-            const known_aid = try knownAlphanumericId(a, agent_aid);
-
-            // dedupe: don't queue if there's a refresh:false event already
-            var existing = try latestEventsPerId(a, io, "known/index.jsonl");
-            defer existing.deinit(a);
-            if (existing.get(known_aid)) |prev| {
-                if (!prev.refresh) {
-                    // already fresh, skip
-                    continue;
-                }
-            }
-
-            const ts = try timestampNow(a);
-            defer a.free(ts);
-            const ev: IndexEvent = .{
-                .refresh = true,
-                .runner = getParentPid(),
-                .generated_at = ts,
-                .known_alphanumeric_id = known_aid,
-                .agent_alphanumeric_id = agent_aid,
-                .harness_alphanumeric_id = h_aid,
-                .provider_alphanumeric_id = p_aid,
-                .model_alphanumeric_id = m_aid,
-                .platform_alphanumeric_id = current_platform,
-            };
-            const line = try emitIndexEvent(a, ev);
-            defer a.free(line);
-            try appendIndexEvent(a, io, "known/index.jsonl", line);
-            queued += 1;
-        }
-
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known queue-fixtures: queued ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
-        writeOut(io, "\n");
-        return 0;
-    }
-
     /// true if the agent's harness binary (per `KnownFixturesForKnownAgents`)
     /// is installed and runs --version successfully. Looks up the row
     /// by its composite `agent_alphanumeric_id` so callers can pass
@@ -3124,8 +3566,6 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             .refresh = true,
             .runner = getParentPid(),
             .generated_at = ts,
-            .known_alphanumeric_id = ev.known_alphanumeric_id,
-            .agent_alphanumeric_id = ev.agent_alphanumeric_id,
             .harness_alphanumeric_id = ev.harness_alphanumeric_id,
             .provider_alphanumeric_id = ev.provider_alphanumeric_id,
             .model_alphanumeric_id = ev.model_alphanumeric_id,
@@ -3133,7 +3573,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         };
         const line = try emitIndexEvent(a, new_ev);
         defer a.free(line);
-        try appendIndexEvent(a, io, "known/index.jsonl", line);
+        try upsertIndexEvent(a, io, "known/index.jsonl", line);
     }
 
     /// is `ts` (a unix-seconds-as-string) older than
@@ -3147,105 +3587,54 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return false;
     }
 
-    /// `known dequeue [--known=<id>] [--harness=<id>]
-    /// [--provider=<id>] [--model=<id>] [--platform=<id>]` — for every
-    /// event matching the filters, append a new `refresh: false`
-    /// event (re-emitting the same sub-ids). The latest event for a
-    /// `known_alphanumeric_id` is the one `latestEventsPerId` returns,
-    /// so the new event overrides any prior state in lookup. This is
-    /// the inverse of `known queue`: it tells the daemon "I have a
-    /// fresh fixture for this, don't recapture." Existing events are
-    /// NOT removed — the index is append-only, and an accidental call
-    /// can't wipe the audit log.
-    /// With no filters, dequeue every event. With `--known=<id>`,
-    /// dequeue that exact entry. Otherwise, dequeue every entry
-    /// whose `harness_alphanumeric_id`, `provider_alphanumeric_id`,
-    /// `model_alphanumeric_id`, and `platform_alphanumeric_id` all
-    /// match the provided values (empty = "any"). Nothing is
-    /// deleted from the index.
+    /// `known dequeue [scope] <filters>` — for every event matching the
+    /// shared filters (or the scope candidate set), upsert a
+    /// `refresh: false` event (re-emitting the same dims). The index
+    /// keeps one event per 4-tuple key, so the upserted event replaces
+    /// the prior one that `latestEventsPerTuple` returns. This is the
+    /// inverse of `known queue`: it tells the daemon "I have a fresh
+    /// fixture for this, don't recapture." At least one filter or scope
+    /// flag is required (the old "no filters = dequeue everything"
+    /// behavior is gone); nothing is deleted from the index.
     pub fn runKnownDequeue(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
-        // parse args
-        var known_opt: ?[]const u8 = null;
-        var harness_opt: ?[]const u8 = null;
-        var provider_opt: ?[]const u8 = null;
-        var model_opt: ?[]const u8 = null;
-        var platform_opt: ?[]const u8 = null;
-
-        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
-        defer args_it.deinit();
-        _ = args_it.skip(); // argv0
-        _ = args_it.skip(); // "known"
-        _ = args_it.skip(); // "dequeue"
-        while (args_it.next()) |arg| {
-            if (std.mem.startsWith(u8, arg, "--known=")) {
-                known_opt = arg["--known=".len..];
-            } else if (std.mem.startsWith(u8, arg, "--harness=")) {
-                harness_opt = arg["--harness=".len..];
-            } else if (std.mem.startsWith(u8, arg, "--provider=")) {
-                provider_opt = arg["--provider=".len..];
-            } else if (std.mem.startsWith(u8, arg, "--model=")) {
-                model_opt = arg["--model=".len..];
-            } else if (std.mem.startsWith(u8, arg, "--platform=")) {
-                platform_opt = arg["--platform=".len..];
+        const f = parseFilters(init) catch |err| {
+            switch (err) {
+                error.NoFilter => writeErr(io, "known dequeue: at least one filter or scope flag is required (--known=, --agent=, --X=, --no-X, --all, --stale, --partial, --recipes, or --missing-fixture)\n"),
+                error.InvalidKnownId => writeErr(io, "known dequeue: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
+                error.InvalidAgentId => writeErr(io, "known dequeue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
+                error.InvalidThreshold => writeErr(io, "known dequeue: --older-than-days=/--older-than-hours= must be integers\n"),
+                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known dequeue: conflicting filters (see --help)\n"),
             }
-        }
-
-        // if --known is given, take that exact id; otherwise
-        // filter-by-attribute. An empty filter ("any") matches
-        // anything; a non-empty filter requires equality.
-        const filter_event: ?IndexEvent = blk: {
-            if (known_opt != null) break :blk null;
-            if (harness_opt == null and provider_opt == null and
-                model_opt == null and platform_opt == null) break :blk null;
-            break :blk .{
-                .refresh = false,
-                .runner = 0,
-                .generated_at = "",
-                .known_alphanumeric_id = "",
-                .agent_alphanumeric_id = "",
-                .harness_alphanumeric_id = harness_opt orelse "",
-                .provider_alphanumeric_id = provider_opt orelse "",
-                .model_alphanumeric_id = model_opt orelse "",
-                .platform_alphanumeric_id = platform_opt orelse "",
-            };
+            writeOut(io, knownUsage);
+            return 2;
         };
+
+        if (scopeCount(f) > 0) {
+            return runKnownDequeueScope(init, f);
+        }
 
         const ts = try timestampNow(a);
         defer a.free(ts);
         const my_pid = getParentPid();
 
-        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
         defer existing.deinit(a);
         var dequeued: usize = 0;
         var it = existing.iterator();
         while (it.next()) |entry| {
-            const id = entry.key_ptr.*;
             const ev = entry.value_ptr.*;
-            if (known_opt) |k| {
-                if (!std.mem.eql(u8, id, k)) continue;
-            } else if (filter_event) |f| {
-                if (f.harness_alphanumeric_id.len > 0 and
-                    !std.mem.eql(u8, ev.harness_alphanumeric_id, f.harness_alphanumeric_id)) continue;
-                if (f.provider_alphanumeric_id.len > 0 and
-                    !std.mem.eql(u8, ev.provider_alphanumeric_id, f.provider_alphanumeric_id)) continue;
-                if (f.model_alphanumeric_id.len > 0 and
-                    !std.mem.eql(u8, ev.model_alphanumeric_id, f.model_alphanumeric_id)) continue;
-                if (f.platform_alphanumeric_id.len > 0 and
-                    !std.mem.eql(u8, ev.platform_alphanumeric_id, f.platform_alphanumeric_id)) continue;
-            }
-            // re-emit the same sub-ids with refresh:false. The
-            // append-only log means the latest event for this id
-            // is now refresh:false, which latestEventsPerId will
-            // return on the next read.
+            if (!matchesFilter(ev, f)) continue;
+            // re-emit the same dims with refresh:false. The upsert
+            // replaces the prior event for this tuple, so the latest
+            // event is now refresh:false, which
+            // latestEventsPerTuple will return on the next read.
             const new_ev: IndexEvent = .{
                 .refresh = false,
                 .runner = my_pid,
                 .generated_at = ts,
-                .known_alphanumeric_id = ev.known_alphanumeric_id,
-                .agent_alphanumeric_id = ev.agent_alphanumeric_id,
                 .harness_alphanumeric_id = ev.harness_alphanumeric_id,
                 .provider_alphanumeric_id = ev.provider_alphanumeric_id,
                 .model_alphanumeric_id = ev.model_alphanumeric_id,
@@ -3253,7 +3642,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             };
             const line = try emitIndexEvent(a, new_ev);
             defer a.free(line);
-            try appendIndexEvent(a, io, "known/index.jsonl", line);
+            try upsertIndexEvent(a, io, "known/index.jsonl", line);
             dequeued += 1;
         }
 
@@ -3264,40 +3653,177 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return 0;
     }
 
+    /// `known dequeue <scope> [filters]` — set `refresh:false` on the
+    /// existing rows in the scope candidate set (see `scopeCandidates`).
+    fn runKnownDequeueScope(init: std.process.Init, f: FilterOptions) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        var candidates = try scopeCandidates(a, io, f);
+        defer candidates.deinit(a);
+
+        const ts = try timestampNow(a);
+        defer a.free(ts);
+        const my_pid = getParentPid();
+
+        // map candidate events by their tuple key: dequeue only touches
+        // rows that already exist in the index.
+        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+
+        var dequeued: usize = 0;
+        for (candidates.items) |ev| {
+            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+            // recipe-scope candidates may describe a recipe with no row
+            // yet — only flip rows that exist.
+            const prev = existing.get(key) orelse continue;
+            const new_ev: IndexEvent = .{
+                .refresh = false,
+                .runner = my_pid,
+                .generated_at = ts,
+                .harness_alphanumeric_id = prev.harness_alphanumeric_id,
+                .provider_alphanumeric_id = prev.provider_alphanumeric_id,
+                .model_alphanumeric_id = prev.model_alphanumeric_id,
+                .platform_alphanumeric_id = prev.platform_alphanumeric_id,
+            };
+            const line = try emitIndexEvent(a, new_ev);
+            defer a.free(line);
+            try upsertIndexEvent(a, io, "known/index.jsonl", line);
+            dequeued += 1;
+        }
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known dequeue: dequeued ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{dequeued}));
+        writeOut(io, " event(s)\n");
+        return 0;
+    }
+
+    /// `known purge <filters>` — delete every matching row from
+    /// `known/index.jsonl` (rewriting the file without their tuple
+    /// keys). At least one filter is required. The old implicit
+    /// "purge incomplete rows" mode is removed — partial rows are
+    /// first-class seeds now. The fixture sweep for malformed files is
+    /// kept: non-object `*.agent.json` files and fixtures missing
+    /// canonical harness/provider/model names are deleted (trailers
+    /// too).
     pub fn runKnownPurge(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
+        const f = parseFilters(init) catch |err| {
+            switch (err) {
+                error.NoFilter => writeErr(io, "known purge: at least one filter or scope flag is required (--known=, --agent=, --X=, --no-X, --all, --stale, --partial, --recipes, or --missing-fixture)\n"),
+                error.InvalidKnownId => writeErr(io, "known purge: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
+                error.InvalidAgentId => writeErr(io, "known purge: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
+                error.InvalidThreshold => writeErr(io, "known purge: --older-than-days=/--older-than-hours= must be integers\n"),
+                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known purge: conflicting filters (see --help)\n"),
+            }
+            writeOut(io, knownUsage);
+            return 2;
+        };
+
         const index_path = "known/index.jsonl";
-        var existing = try latestEventsPerId(a, io, index_path);
+        const deleted = if (scopeCount(f) > 0)
+            try deleteIndexKeys(a, io, index_path, f)
+        else
+            try deleteIndexEvents(a, io, index_path, f);
+        const fixture_purged = purgeMalformedFixtures(a, io);
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known purge: removed ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{deleted}));
+        writeOut(io, " event(s), fixture scan removed ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{fixture_purged}));
+        writeOut(io, "\n");
+        return 0;
+    }
+
+    /// delete every event in `path` matching `f`; rewrites the file
+    /// with the rest and returns the count removed. Held under the
+    /// index lock so a concurrent daemon write can't be lost.
+    fn deleteIndexEvents(a: std.mem.Allocator, io: std.Io, path: []const u8, f: FilterOptions) !usize {
+        try lockIndex(io);
+        defer unlockIndex(io);
+
+        var existing = try latestEventsPerTuple(a, io, path);
         defer existing.deinit(a);
 
         var keep = std.ArrayList([]u8).empty;
         defer keep.deinit(a);
-        var index_purged: usize = 0;
+        var removed: usize = 0;
         var it = existing.iterator();
         while (it.next()) |entry| {
             const ev = entry.value_ptr.*;
-            const incomplete = ev.harness_alphanumeric_id.len == 0 or
-                ev.provider_alphanumeric_id.len == 0 or
-                ev.model_alphanumeric_id.len == 0;
-            if (incomplete) {
-                index_purged += 1;
+            if (matchesFilter(ev, f)) {
+                removed += 1;
                 continue;
             }
             try keep.append(a, try emitIndexEvent(a, ev));
         }
 
-        // rewrite index
         var new_content: std.ArrayList(u8) = .empty;
         defer new_content.deinit(a);
         for (keep.items) |line| {
             try new_content.appendSlice(a, line);
             try new_content.append(a, '\n');
         }
-        try std.Io.Dir.cwd().writeFile(io, .{ .sub_path = index_path, .data = new_content.items });
+        try writeIndexAtomic(io, new_content.items);
+        return removed;
+    }
 
-        // purge incomplete fixtures
+    /// delete every event in `path` whose tuple key belongs to the
+    /// scope candidate set (see `scopeCandidates`); rewrites the file
+    /// with the rest and returns the count removed. Held under the
+    /// index lock so a concurrent daemon write can't be lost.
+    fn deleteIndexKeys(a: std.mem.Allocator, io: std.Io, path: []const u8, f: FilterOptions) !usize {
+        try lockIndex(io);
+        defer unlockIndex(io);
+
+        var candidates = try scopeCandidates(a, io, f);
+        defer candidates.deinit(a);
+
+        // candidate tuple keys (arena-backed)
+        var keys: std.StringHashMapUnmanaged(void) = .empty;
+        defer keys.deinit(a);
+        for (candidates.items) |ev| {
+            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+            try keys.put(a, key, {});
+        }
+
+        var existing = try latestEventsPerTuple(a, io, path);
+        defer existing.deinit(a);
+
+        var keep = std.ArrayList([]u8).empty;
+        defer keep.deinit(a);
+        var removed: usize = 0;
+        var it = existing.iterator();
+        while (it.next()) |entry| {
+            const ev = entry.value_ptr.*;
+            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+            if (keys.contains(key)) {
+                removed += 1;
+                continue;
+            }
+            try keep.append(a, try emitIndexEvent(a, ev));
+        }
+
+        var new_content: std.ArrayList(u8) = .empty;
+        defer new_content.deinit(a);
+        for (keep.items) |line| {
+            try new_content.appendSlice(a, line);
+            try new_content.append(a, '\n');
+        }
+        try writeIndexAtomic(io, new_content.items);
+        return removed;
+    }
+
+    /// sweep fixtures for malformed files (kept from the original
+    /// `purge`): delete `*.agent.json` files that don't parse as a
+    /// JSON object, or whose `canonical` block is missing the
+    /// harness/provider/model names. Trailer siblings are deleted
+    /// too. Returns the count removed.
+    fn purgeMalformedFixtures(a: std.mem.Allocator, io: std.Io) usize {
         var fixture_purged: usize = 0;
         var json_path_buf: [4096]u8 = undefined;
         const cwd = std.Io.Dir.cwd();
@@ -3305,28 +3831,28 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         while (dir_it.next(io) catch null) |ent| {
             if (ent.kind != .file) continue;
             const name = ent.name;
-            if (!std.mem.endsWith(u8, name, ".json")) continue;
-            if (std.mem.eql(u8, name, "index.jsonl")) continue;
+            if (!std.mem.endsWith(u8, name, ".agent.json")) continue;
             const full_path = std.fmt.bufPrint(&json_path_buf, "known/{s}", .{name}) catch continue;
             const data = std.Io.Dir.cwd().readFileAlloc(io, full_path, a, @enumFromInt(1 << 20)) catch continue;
             defer a.free(data);
             const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch continue;
             defer parsed.deinit();
+            var bad = false;
             if (parsed.value != .object) {
-                std.Io.Dir.cwd().deleteFile(io, full_path) catch {};
-                var trailer_path_buf: [4096]u8 = undefined;
-                const tname = std.fmt.bufPrint(&trailer_path_buf, "known/{s}.trailer.txt", .{name}) catch continue;
-                std.Io.Dir.cwd().deleteFile(io, tname) catch {};
-                fixture_purged += 1;
-                continue;
+                bad = true;
+            } else if (parsed.value.object.get("canonical")) |canon| {
+                if (canon != .object) {
+                    bad = true;
+                } else {
+                    const cob = canon.object;
+                    bad = (cob.get("harness_name") == null) or
+                        (cob.get("provider_name") == null) or
+                        (cob.get("model_name") == null);
+                }
+            } else {
+                bad = true;
             }
-            const canon = parsed.value.object.get("canonical") orelse continue;
-            if (canon != .object) continue;
-            const cob = canon.object;
-            const incomplete = (cob.get("harness_name") == null) or
-                (cob.get("provider_name") == null) or
-                (cob.get("model_name") == null);
-            if (incomplete) {
+            if (bad) {
                 std.Io.Dir.cwd().deleteFile(io, full_path) catch {};
                 var trailer_path_buf: [4096]u8 = undefined;
                 const tname = std.fmt.bufPrint(&trailer_path_buf, "known/{s}.trailer.txt", .{name}) catch continue;
@@ -3334,14 +3860,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 fixture_purged += 1;
             }
         }
-
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known purge: index=");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{index_purged}));
-        writeOut(io, " fixture=");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{fixture_purged}));
-        writeOut(io, "\n");
-        return 0;
+        return fixture_purged;
     }
 
     /// `known daemon` — long-running. Polls known/index.jsonl every
@@ -3349,7 +3868,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     /// platform whose harness is available, sets up the env from the
     /// KnownFixturesForKnownAgents recipe and spawns `agent-detection-dev refresh run`
     /// as a child. **No stale detection** — the daemon only processes
-    /// refresh:true events. Stale detection is `known queue-stale`'s
+    /// refresh:true events. Stale detection is `known queue --stale`'s
     /// job.
     ///
     /// **USER-ONLY**: refuses to start if running inside an agent
@@ -3366,65 +3885,242 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         const a = init.arena.allocator();
         const io = init.io;
 
+        // parse --write-log (tee daemon output to known/daemon.log)
+        var write_log = false;
+        {
+            var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+            defer args_it.deinit();
+            _ = args_it.skip(); // argv0
+            _ = args_it.skip(); // "known"
+            _ = args_it.skip(); // "daemon"
+            while (args_it.next()) |arg| {
+                if (std.mem.eql(u8, arg, "--write-log")) write_log = true;
+            }
+        }
+        var daemon_log_file_owned: ?std.Io.File = null;
+        if (write_log) {
+            std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+                error.PathAlreadyExists => {},
+                else => return err,
+            };
+            const log_file = std.Io.Dir.cwd().createFile(io, "known/daemon.log", .{}) catch |err| {
+                daemonWriteErr(io, "daemon: cannot open known/daemon.log: ");
+                daemonWriteErr(io, @errorName(err));
+                daemonWriteErr(io, "\n");
+                return 2;
+            };
+            daemon_log_file = log_file;
+            daemon_log_file_owned = log_file;
+        }
+        defer {
+            if (daemon_log_file_owned) |log_file| log_file.close(io);
+            daemon_log_file = null;
+        }
+
         try assertNotInAgent(a, init);
 
-        writeOut(io, "agent-detection-dev known daemon: running\n");
-        writeOut(io, "  poll rate: 5s\n");
-        writeOut(io, "  index file: known/index.jsonl\n");
-        writeOut(io, "  press Ctrl+C to stop\n\n");
+        var msg_buf: [256]u8 = undefined;
+
+        daemonWrite(io, "agent-detection-dev known daemon: running\n");
+        daemonWrite(io, "  poll rate: 5s\n");
+        daemonWrite(io, "  index file: known/index.jsonl\n");
+        if (write_log) daemonWrite(io, "  log file: known/daemon.log\n");
+        daemonWrite(io, "  press Ctrl+C to stop\n");
 
         var processed: std.StringHashMapUnmanaged(void) = .empty;
         defer processed.deinit(a);
+        var warned: std.StringHashMapUnmanaged(void) = .empty;
+        defer warned.deinit(a);
 
-        // pre-seed: process everything already in the file on
+        var queue: std.ArrayListUnmanaged(IndexEvent) = .empty;
+        errdefer queue.deinit(a);
+        var queued: std.StringHashMapUnmanaged(void) = .empty;
+        defer queued.deinit(a);
+
+        // pre-seed: enqueue everything already in the file on
         // startup. New entries appended after startup are picked up
         // by the polling loop.
-        try processIndexFile(a, io, init, &processed);
+        try enqueuePending(a, io, &processed, &queued, &queue);
+        {
+            const msg = std.fmt.bufPrint(msg_buf[0..], "daemon: queued {d} items\n", .{queue.items.len}) catch "daemon: queued 0 items\n";
+            daemonWrite(io, msg);
+        }
         while (true) {
+            if (queue.items.len > 0) {
+                const ev = queue.items[0];
+                const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+                _ = queue.orderedRemove(0);
+                _ = queued.remove(key);
+                const desc = try describeEvent(a, ev);
+                {
+                    const msg = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s} ({d} remaining)\n", .{desc, queue.items.len}) catch "daemon: processing\n";
+                    daemonWrite(io, msg);
+                }
+                // full row → recipe capture; partial row (seed) → expand
+                const full = ev.harness_alphanumeric_id.len > 0 and
+                    ev.provider_alphanumeric_id.len > 0 and
+                    ev.model_alphanumeric_id.len > 0 and
+                    ev.platform_alphanumeric_id.len > 0;
+                if (full) {
+                    try runOneCombo(a, io, init, ev);
+                } else {
+                    try expandSeed(a, io, ev, &warned, &processed);
+                }
+                try processed.put(a, key, {});
+            } else {
+                daemonWrite(io, "daemon: idle, queue empty, sleeping 5s\n");
+            }
             try std.Io.sleep(io, .{ .nanoseconds = 5 * std.time.ns_per_s }, .boot);
-            try processIndexFile(a, io, init, &processed);
+            try enqueuePending(a, io, &processed, &queued, &queue);
         }
     }
 
-    /// one pass over known/index.jsonl: for every refresh:true event
-    /// whose known_aid we haven't processed yet, look up the KnownFixturesForKnownAgents
-    /// recipe, set up the env, and spawn `refresh run` as a child.
-    /// The child writes the fixture and appends a refresh:false event.
-    fn processIndexFile(a: std.mem.Allocator, io: std.Io, init: std.process.Init, processed: *std.StringHashMapUnmanaged(void)) !void {
-        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+    fn enqueuePending(a: std.mem.Allocator, io: std.Io, processed: *std.StringHashMapUnmanaged(void), queued: *std.StringHashMapUnmanaged(void), queue: *std.ArrayListUnmanaged(IndexEvent)) !void {
+        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
         defer existing.deinit(a);
+        const host = platformAlphanumericId();
         var it = existing.iterator();
         while (it.next()) |entry| {
             const ev = entry.value_ptr.*;
             if (!ev.refresh) continue;
-            // The `processed` map survives across poll cycles, so
-            // its keys must be owned by `processed` itself, not
-            // borrowed from `existing` (which is freed at the end
-            // of this function). Copy the key.
-            const own_id = try a.dupe(u8, ev.known_alphanumeric_id);
-            if (processed.contains(own_id)) {
-                a.free(own_id);
-                continue;
-            }
-            // only process events for the current platform
-            if (!std.mem.eql(u8, ev.platform_alphanumeric_id, platformAlphanumericId())) {
-                a.free(own_id);
-                continue;
-            }
-            writeOut(io, "daemon: noticed refresh:true for ");
-            writeOut(io, ev.known_alphanumeric_id);
-            writeOut(io, " — spawning worker\n");
-            try runOneCombo(a, io, init, ev);
-            try processed.put(a, own_id, {});
+            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+            if (processed.contains(key)) continue;
+            if (queued.contains(key)) continue;
+            // only skip non-host platforms when the platform is set;
+            // null-platform seeds flow through to expandSeed
+            if (ev.platform_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) continue;
+            const cloned: IndexEvent = .{
+                .refresh = ev.refresh,
+                .runner = ev.runner,
+                .generated_at = try a.dupe(u8, ev.generated_at),
+                .harness_alphanumeric_id = try a.dupe(u8, ev.harness_alphanumeric_id),
+                .provider_alphanumeric_id = try a.dupe(u8, ev.provider_alphanumeric_id),
+                .model_alphanumeric_id = try a.dupe(u8, ev.model_alphanumeric_id),
+                .platform_alphanumeric_id = try a.dupe(u8, ev.platform_alphanumeric_id),
+            };
+            try queue.append(a, cloned);
+            try queued.put(a, key, {});
         }
+    }
+
+    /// inner loop predicate: does every dim that `ev` has set equal
+    /// the recipe's dims? seed rows have missing dims, which are
+    /// filled from the recipe.
+    fn recipeMatchesEv(a: std.mem.Allocator, ev: IndexEvent, combo: KnownFixturesForKnownAgents, host: []const u8) !bool {
+        const parts = try splitAgentAlphanumericId(a, combo.agent_alphanumeric_id);
+        defer {
+            a.free(parts[0]);
+            a.free(parts[1]);
+            a.free(parts[2]);
+        }
+        if (ev.harness_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.harness_alphanumeric_id, parts[0])) return false;
+        if (ev.provider_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.provider_alphanumeric_id, parts[1])) return false;
+        if (ev.model_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.model_alphanumeric_id, parts[2])) return false;
+        if (ev.platform_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) return false;
+        return true;
+    }
+
+    /// expand a partial (seed) row over the `knownFixturesForKnownAgents`
+    /// recipes. A seed is an action: "capture every applicable combo
+    /// matching these dims". Every applicable recipe (set dims equal,
+    /// platform empty or host, harness available) is re-queued as a full
+    /// `refresh:true` row — refreshing existing `refresh:false` entries
+    /// and adding missing combos — then the seed row is deleted. The
+    /// re-queued combo keys are removed from the daemon's per-run
+    /// `processed` set so `enqueuePending` re-enqueues them this run even
+    /// if they were captured earlier. Warnings (no applicable recipe /
+    /// unknown id) leave the entry unchanged and are emitted once per
+    /// tuple key per daemon run (tracked in `warned`).
+    fn expandSeed(a: std.mem.Allocator, io: std.Io, ev: IndexEvent, warned: *std.StringHashMapUnmanaged(void), processed: *std.StringHashMapUnmanaged(void)) !void {
+        const seed_key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+        const host = platformAlphanumericId();
+
+        var applicable: std.ArrayListUnmanaged(KnownFixturesForKnownAgents) = .empty;
+        defer applicable.deinit(a);
+        for (knownFixturesForKnownAgents) |c| {
+            if (!try recipeMatchesEv(a, ev, c, host)) continue;
+            if (!harnessAvailable(io, c.agent_alphanumeric_id)) continue;
+            try applicable.append(a, c);
+        }
+
+        if (applicable.items.len == 0) {
+            if (!warned.contains(seed_key)) {
+                daemonWriteErr(io, "daemon: warning: no capture recipe applicable for ");
+                daemonWriteErr(io, try describeEvent(a, ev));
+                daemonWriteErr(io, "\n");
+                try warned.put(a, try a.dupe(u8, seed_key), {});
+            }
+            return;
+        }
+
+        // refresh every applicable combo (existing refresh:false entries
+        // and missing combos alike); combos are captured one per poll by
+        // the existing loop and carry their own retry state.
+        const ts = try timestampNow(a);
+        defer a.free(ts);
+        for (applicable.items) |c| {
+            const parts = try splitAgentAlphanumericId(a, c.agent_alphanumeric_id);
+            defer {
+                a.free(parts[0]);
+                a.free(parts[1]);
+                a.free(parts[2]);
+            }
+            const combo_key = try tupleKey(a, parts[0], parts[1], parts[2], host);
+            const combo_ev: IndexEvent = .{
+                .refresh = true,
+                .runner = getParentPid(),
+                .generated_at = ts,
+                .harness_alphanumeric_id = parts[0],
+                .provider_alphanumeric_id = parts[1],
+                .model_alphanumeric_id = parts[2],
+                .platform_alphanumeric_id = host,
+            };
+            const line = try emitIndexEvent(a, combo_ev);
+            defer a.free(line);
+            try upsertIndexEvent(a, io, "known/index.jsonl", line);
+            // a seed is an action: re-enqueue this combo even if it was
+            // already processed earlier in this daemon run.
+            _ = processed.remove(combo_key);
+        }
+
+        // delete the seed row (its tuple key)
+        try deleteTupleKey(a, io, "known/index.jsonl", seed_key);
+    }
+
+    /// delete every event in `path` whose tuple key equals `key`.
+    fn deleteTupleKey(a: std.mem.Allocator, io: std.Io, path: []const u8, key: []const u8) !void {
+        try lockIndex(io);
+        defer unlockIndex(io);
+
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+        defer a.free(data);
+        var out: std.ArrayList(u8) = .empty;
+        defer out.deinit(a);
+        var lines = std.mem.splitScalar(u8, data, '\n');
+        while (lines.next()) |l| {
+            if (l.len == 0) continue;
+            const parsed = parseIndexEvent(a, l) orelse continue;
+            const lkey = try tupleKey(a, parsed.harness_alphanumeric_id, parsed.provider_alphanumeric_id, parsed.model_alphanumeric_id, parsed.platform_alphanumeric_id);
+            if (std.mem.eql(u8, lkey, key)) continue;
+            try out.appendSlice(a, l);
+            try out.append(a, '\n');
+        }
+        try writeIndexAtomic(io, out.items);
     }
 
     /// spawn `agent-detection-dev refresh run` for a single
     /// queued combo. The child inherits the daemon's env, which
     /// is the user's terminal — not the dev harness.
     fn runOneCombo(a: std.mem.Allocator, io: std.Io, init: std.process.Init, ev: IndexEvent) !void {
-        // 1. find the KnownFixturesForKnownAgents entry for the harness
-        const target_agent_aid = ev.agent_alphanumeric_id;
+        // 1. find the KnownFixturesForKnownAgents entry for the harness.
+        // The derived agent id is never stored — recompute from dims.
+        const target_agent_aid = (try agentIdFrom(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id)) orelse {
+            const desc = try describeEvent(a, ev);
+            daemonWriteErr(io, "daemon: no recipe applicable for ");
+            daemonWriteErr(io, desc);
+            daemonWriteErr(io, " — skipping\n");
+            return;
+        };
         var combo: ?KnownFixturesForKnownAgents = null;
         for (knownFixturesForKnownAgents) |c| {
             if (std.mem.eql(u8, c.agent_alphanumeric_id, target_agent_aid)) {
@@ -3433,9 +4129,9 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             }
         }
         const c = combo orelse {
-            writeErr(io, "daemon: no KnownFixturesForKnownAgents recipe for ");
-            writeErr(io, target_agent_aid);
-            writeErr(io, " — skipping\n");
+            daemonWriteErr(io, "daemon: no KnownFixturesForKnownAgents recipe for ");
+            daemonWriteErr(io, target_agent_aid);
+            daemonWriteErr(io, " — skipping\n");
             return;
         };
 
@@ -3448,9 +4144,9 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             try env_map.put(kv.key_ptr.*, kv.value_ptr.*);
         }
         const setup = c.buildEnv(a, init.environ_map, io, &c) catch |err| {
-            writeErr(io, "daemon: buildEnv failed: ");
-            writeErr(io, @errorName(err));
-            writeErr(io, "\n");
+            daemonWriteErr(io, "daemon: buildEnv failed: ");
+            daemonWriteErr(io, @errorName(err));
+            daemonWriteErr(io, "\n");
             return;
         };
         for (setup.env) |kv| {
@@ -3463,21 +4159,21 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
                     error.PathAlreadyExists => {},
                     else => {
-                        writeErr(io, "daemon: createDirPath failed for ");
-                        writeErr(io, dir);
-                        writeErr(io, ": ");
-                        writeErr(io, @errorName(err));
-                        writeErr(io, "\n");
+                        daemonWriteErr(io, "daemon: createDirPath failed for ");
+                        daemonWriteErr(io, dir);
+                        daemonWriteErr(io, ": ");
+                        daemonWriteErr(io, @errorName(err));
+                        daemonWriteErr(io, "\n");
                         return;
                     },
                 };
             }
             std.Io.Dir.cwd().writeFile(io, .{ .sub_path = w.path, .data = w.content }) catch |err| {
-                writeErr(io, "daemon: writeFile failed for ");
-                writeErr(io, w.path);
-                writeErr(io, ": ");
-                writeErr(io, @errorName(err));
-                writeErr(io, "\n");
+                daemonWriteErr(io, "daemon: writeFile failed for ");
+                daemonWriteErr(io, w.path);
+                daemonWriteErr(io, ": ");
+                daemonWriteErr(io, @errorName(err));
+                daemonWriteErr(io, "\n");
                 return;
             };
         }
@@ -3498,9 +4194,9 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         // need to chdir.
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const self_path_len = std.process.executablePath(io, &self_path_buf) catch |err| {
-            writeErr(io, "daemon: executablePath failed: ");
-            writeErr(io, @errorName(err));
-            writeErr(io, "\n");
+            daemonWriteErr(io, "daemon: executablePath failed: ");
+            daemonWriteErr(io, @errorName(err));
+            daemonWriteErr(io, "\n");
             return;
         };
         const argv0 = self_path_buf[0..self_path_len];
@@ -3511,11 +4207,11 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             .stdout = .ignore,
             .stderr = .pipe,
         }) catch |err| {
-            writeErr(io, "daemon: spawn failed: ");
-            writeErr(io, @errorName(err));
-            writeErr(io, " (argv0=");
-            writeErr(io, argv0);
-            writeErr(io, ")\n");
+            daemonWriteErr(io, "daemon: spawn failed: ");
+            daemonWriteErr(io, @errorName(err));
+            daemonWriteErr(io, " (argv0=");
+            daemonWriteErr(io, argv0);
+            daemonWriteErr(io, ")\n");
             return;
         };
         // Drain worker stderr before wait() — wait() closes the pipe,
@@ -3531,41 +4227,37 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             stderr_capture.shrinkRetainingCapacity(stderr_capture.items.len + n);
         }
         const term = child.wait(io) catch |err| {
-            writeErr(io, "daemon: child wait failed: ");
-            writeErr(io, @errorName(err));
-            writeErr(io, "\n");
+            daemonWriteErr(io, "daemon: child wait failed: ");
+            daemonWriteErr(io, @errorName(err));
+            daemonWriteErr(io, "\n");
             return;
         };
         switch (term) {
             .exited => |code| {
                 if (code != 0) {
-                    // Child failed (e.g. detection couldn't resolve
-                    // harness/provider/model). Don't append a
-                    // refresh:false event — leave the refresh:true
-                    // in place so the user can re-queue after
-                    // fixing the detector, and so `known purge`
-                    // can clean it up if it's truly stale.
-                    writeErr(io, "daemon: worker failed for ");
-                    writeErr(io, ev.known_alphanumeric_id);
-                    writeErr(io, " (exit code ");
+                    daemonWriteErr(io, "daemon: worker failed for ");
+                    daemonWriteErr(io, try describeEvent(a, ev));
+                    daemonWriteErr(io, " (exit code ");
                     var n_buf: [16]u8 = undefined;
-                    writeErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{code}));
-                    writeErr(io, ") — leaving refresh:true in index\n");
+                    daemonWriteErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{code}));
+                    daemonWriteErr(io, ") — leaving refresh:true in index\n");
                     if (stderr_capture.items.len > 0) {
-                        writeErr(io, "  worker stderr: ");
-                        writeErr(io, stderr_capture.items);
-                        if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') writeErr(io, "\n");
+                        daemonWriteErr(io, "  worker stderr: ");
+                        daemonWriteErr(io, stderr_capture.items);
+                        if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
                     }
                     return;
                 }
-                writeOut(io, "daemon: captured ");
-                writeOut(io, ev.known_alphanumeric_id);
-                writeOut(io, "\n");
+                {
+                    var msg_buf: [256]u8 = undefined;
+                    const msg = std.fmt.bufPrint(msg_buf[0..], "daemon: captured {s}\n", .{try describeEvent(a, ev)}) catch "daemon: captured\n";
+                    daemonWrite(io, msg);
+                }
             },
             else => {
-                writeErr(io, "daemon: child terminated abnormally for ");
-                writeErr(io, ev.known_alphanumeric_id);
-                writeErr(io, "\n");
+                daemonWriteErr(io, "daemon: child terminated abnormally for ");
+                daemonWriteErr(io, try describeEvent(a, ev));
+                daemonWriteErr(io, "\n");
                 return;
             },
         }
@@ -3591,9 +4283,9 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         while (it.next()) |kv| {
             for (env_markers) |m| {
                 if (std.mem.eql(u8, kv.key_ptr.*, m)) {
-                    writeErr(io, "known daemon: refusing to start — env marker ");
-                    writeErr(io, m);
-                    writeErr(io, " is set. This command must be run by a user, not inside an agent.\n");
+                    daemonWriteErr(io, "known daemon: refusing to start — env marker ");
+                    daemonWriteErr(io, m);
+                    daemonWriteErr(io, " is set. This command must be run by a user, not inside an agent.\n");
                     return error.RunningInAgent;
                 }
             }
@@ -3619,9 +4311,9 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         for (anc.names) |n| {
             for (proc_names) |p| {
                 if (std.mem.eql(u8, n, p)) {
-                    writeErr(io, "known daemon: refusing to start — ancestor process ");
-                    writeErr(io, n);
-                    writeErr(io, " is a known agent. This command must be run by a user, not inside an agent.\n");
+                    daemonWriteErr(io, "known daemon: refusing to start — ancestor process ");
+                    daemonWriteErr(io, n);
+                    daemonWriteErr(io, " is a known agent. This command must be run by a user, not inside an agent.\n");
                     return error.RunningInAgent;
                 }
             }
@@ -3638,13 +4330,14 @@ pub fn main(init: std.process.Init) !u8 {
     const io = init.io;
 
     // subcommand dispatch. The dev binary (built with -Ddev=true)
-    // accepts a `known` subcommand namespace: `known daemon`,
-    // `known agent`, `known queue [--harness=...] [--provider=...] [--model=...]`,
-    // `known queue-stale`, `known queue-all`, `known queue-fixtures`,
-    // `known remove`, `known purge`. The released binary's argv[1]
-    // is ignored entirely when `dev_build` is false: the dispatch
-    // below is ignored at compile time, so the released binary's
-    // CLI is strictly `agent-detection [--json] [--trailer] [--help]`.
+    // accepts a `known` subcommand namespace: `known --help`,
+    // `known daemon`, `known agent`, `known queue [--harness=...]
+    // [--provider=...] [--model=...]`, `known queue --recipes`,
+    // `known dequeue`, `known purge`, plus `refresh run`. The
+    // `known`/`refresh` dispatch is compiled out of the released
+    // binary (dev_build is false) — the released and dev binaries both
+    // run the action parser below: `agent`, `[--]trailer`, `help`,
+    // `version` (with no arguments showing help).
     if (dev_build) {
         var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
         defer sub_iter.deinit();
@@ -3652,24 +4345,26 @@ pub fn main(init: std.process.Init) !u8 {
         const cmd = sub_iter.next() orelse "";
         const sub = sub_iter.next() orelse "";
         if (std.mem.eql(u8, cmd, "known")) {
-            if (std.mem.eql(u8, sub, "daemon")) {
+            if (sub.len == 0 or
+                std.mem.eql(u8, sub, "--help") or
+                std.mem.eql(u8, sub, "-h") or
+                std.mem.eql(u8, sub, "help"))
+            {
+                return dev.runKnownHelp(init);
+            } else if (std.mem.eql(u8, sub, "daemon")) {
                 return dev.runKnownDaemon(init);
             } else if (std.mem.eql(u8, sub, "agent")) {
                 return dev.runKnownAgent(init);
-            } else if (std.mem.eql(u8, sub, "queue-stale")) {
-                return dev.runKnownQueueStale(init);
-            } else if (std.mem.eql(u8, sub, "queue-all")) {
-                return dev.runKnownQueueAll(init);
-            } else if (std.mem.eql(u8, sub, "queue-fixtures")) {
-                return dev.runKnownQueueFixtures(init);
-            } else if (std.mem.eql(u8, sub, "queue-missing")) {
-                return dev.runKnownQueueMissing(init);
             } else if (std.mem.eql(u8, sub, "queue")) {
                 return dev.runKnownQueue(init);
             } else if (std.mem.eql(u8, sub, "dequeue")) {
                 return dev.runKnownDequeue(init);
             } else if (std.mem.eql(u8, sub, "purge")) {
                 return dev.runKnownPurge(init);
+            } else {
+                writeErr(io, "known: unknown subcommand — run `known --help`\n");
+                writeOut(io, dev.knownUsage);
+                return 2;
             }
         } else if (std.mem.eql(u8, cmd, "refresh") and std.mem.eql(u8, sub, "run")) {
             // `refresh run` — invoked by the daemon as a child to
@@ -3682,51 +4377,70 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
 
-    var trailer_only = false;
+    // action parser. The canonical spellings are the bare words
+    // `agent`, `trailer`, `help`, and `version`; the `--json`,
+    // `--trailer`, `--help`, and `--version` / `-V` forms are legacy
+    // aliases kept for existing callers. No arguments prints help.
+    var action: []const u8 = ""; // "", "json", "trailer", "help", "version"
     var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
     defer args_it.deinit();
     _ = args_it.skip(); // argv0
     while (args_it.next()) |arg| {
-        if (std.mem.eql(u8, arg, "--trailer")) {
-            trailer_only = true;
-        } else if (std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
-            // Version is plumbed in at compile time from
-            // `build.zig.zon`'s `.version` field via `build_options`.
-            // Same value is baked into the released binary, the dev
-            // binary, and every `zig build dist` cross-compile target.
-            writeOut(io, "agent-detection ");
-            writeOut(io, build_options.version);
-            writeOut(io, "\n");
-            return 0;
-        } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
-            writeOut(io, usage);
-            return 0;
-        } else {
+        const act = if (std.mem.eql(u8, arg, "agent") or std.mem.eql(u8, arg, "--json"))
+            "json"
+        else if (std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "--trailer"))
+            "trailer"
+        else if (std.mem.eql(u8, arg, "help") or std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h"))
+            "help"
+        else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V"))
+            "version"
+        else {
             writeErr(io, "unknown argument\n");
             writeOut(io, usage);
             return 2;
+        };
+        if (action.len != 0 and !std.mem.eql(u8, action, act)) {
+            writeErr(io, "conflicting arguments\n");
+            writeOut(io, usage);
+            return 2;
         }
+        action = act;
     }
-    // No flag: emit JSON (default). --trailer is handled by an early-return below.
+
+    if (action.len == 0 or std.mem.eql(u8, action, "help")) {
+        writeOut(io, usage);
+        return 0;
+    }
+
+    if (std.mem.eql(u8, action, "version")) {
+        // Version is plumbed in at compile time from
+        // `build.zig.zon`'s `.version` field via `build_options`.
+        // Same value is baked into the released binary, the dev
+        // binary, and every `zig build dist` cross-compile target.
+        writeOut(io, "agent-detection ");
+        writeOut(io, build_options.version);
+        writeOut(io, "\n");
+        return 0;
+    }
 
     var d = Detection{};
     const ok = try detect(init, &d);
 
-    if (trailer_only) {
+    if (std.mem.eql(u8, action, "trailer")) {
         if (d.trailer) |t| {
             writeOut(io, t);
             writeOut(io, "\n");
             return 0;
         }
-        writeErr(io, "unable to determine trailer (harness/model unidentified) — stop and inform the user\n");
+        writeErr(io, "unable to determine trailer (harness/provider/model unidentified) — stop and inform the user\n");
         return 2;
     }
-
+    // action == "json": the detection report.
     var buf: std.ArrayList(u8) = .empty;
     try buildJson(a, &d, init.environ_map, null, .{}, &buf);
     writeOut(io, buf.items);
 
-    if (!ok) writeErr(io, "unable to fully identify harness/model — stop and inform the user (per policy)\n");
+    if (!ok) writeErr(io, "unable to fully identify harness/provider/model — stop and inform the user (per policy)\n");
     return if (ok) 0 else 2;
 }
 
