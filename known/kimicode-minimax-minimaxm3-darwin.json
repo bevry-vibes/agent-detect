@@ -1,0 +1,67 @@
+{
+  "canonical": {
+    "harness_label": "Kimi Code",
+    "harness_short_title": null,
+    "harness_name": "kimi-code",
+    "harness_alphanumeric_id": "kimicode",
+    "harness_license": "MIT",
+    "provider_label": "MiniMax",
+    "provider_name": "minimax",
+    "provider_alphanumeric_id": "minimax",
+    "provider_closed_training": "opt-in",
+    "provider_open_training": "opt-in",
+    "model_label": "MiniMax M3",
+    "model_short_title": "M3",
+    "model_name": "minimax-m3",
+    "model_alphanumeric_id": "minimaxm3",
+    "model_reciprocity": "open-weight",
+    "agent_alphanumeric_id": "kimicode-minimax-minimaxm3",
+    "reciprocal": true,
+    "trailer": "Co-authored-by: Kimi Code - MiniMax M3 <kimicode-minimaxm3@local>"
+  },
+  "raw": {
+    "platform_alphanumeric_id": "darwin",
+    "env": {
+      "KIMI_CODE_HOME": {
+        "value": "/Users/balupton/.kimi-code",
+        "present": true
+      },
+      "KIMI_API_KEY": {
+        "present": false
+      },
+      "KIMI_BASE_URL": {
+        "present": true
+      }
+    },
+    "/Users/balupton/.kimi-code/config.toml": {
+      "default_model": "minimax/minimax-m3"
+    },
+    "harness-urls": [
+      "https://github.com/MoonshotAI/kimi-code",
+      "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://platform.minimax.io/docs/guides/platform/terms-of-service",
+      "https://platform.minimax.io/docs/guides/platform/privacy-policy"
+    ],
+    "model-urls": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+      "https://www.minimax.io/blog/minimax-m3"
+    ],
+    "process_lineage": [
+      {
+        "pid": 93784,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 93484,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 80964,
+        "name": "bash"
+      }
+    ]
+  }
+}

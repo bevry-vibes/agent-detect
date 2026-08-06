@@ -58,13 +58,16 @@ git commit --trailer "$(./agent-detection --trailer)"
 git commit --trailer "$(.\agent-detection.exe --trailer)"
 ```
 
-Example trailer: `Co-authored-by: Cline - Kimi K3 <cline-kimik3@local>`. For the full report fields, see [DESIGN.md](./DESIGN.md).
+Example trailer: `Co-authored-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>`.
 
 Exit codes: `0` = identified; `2` = unable to identify — stop and inform the user, never guess.
 
 ## contributing
 
-If your platform is not detected, or the agent-detection CLI failed, you will need to contribute a patch. Refer to @./DESIGN.md
+If your platform is not detected, or the agent-detection CLI failed,
+you will need to contribute a patch. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for refresh / add-rule /
+cut-a-release workflows.
 
 <!-- LICENSE/ -->
 

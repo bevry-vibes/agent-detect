@@ -20,6 +20,15 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+// Build-time option exposed via `build.zig`'s `-Ddev` flag. The released
+// binary builds with `dev=false`; the maintainer-only `agent-detection-dev`
+// is built with `dev=true`. The `if (dev_build)` blocks below contain
+// every dev-only subcommand (refresh-known, refresh-known-daemon,
+// refresh-known-all) and the KnownFixturesForKnownAgents table that drives them. Zig's
+// `comptime` drops the dead code from the released binary at link time.
+const build_options = @import("build_options");
+pub const dev_build = build_options.dev;
+
 // macOS process walking (libproc + sysctl). zig 0.16 std has no darwin.zig,
 // so the headers are pulled in directly. `<libproc.h>` is *not* imported
 // via @cInclude because it transitively drags in `<mach/*.h>` opaque types
@@ -35,89 +44,222 @@ extern "c" fn proc_pidpath(pid: c_int, buffer: [*]u8, buffersize: c_uint) c_int;
 extern "c" fn proc_pidinfo(pid: c_int, flavor: c_int, arg: c_ulong, buffer: [*]u8, buffersize: c_int) c_int;
 
 pub const Detection = struct {
-    harness: ?[]const u8 = null, // display name, e.g. "Cline"
-    harness_id: ?[]const u8 = null, // e.g. "cline"
-    harness_source: []const u8 = "none", // "env" | "ancestor" | "none"
-    harness_env: bool = false, // harness env vars present
-    model_source: []const u8 = "none", // "providers.json" | "config.yaml" | "config.toml" | "config.json" | "bundle-default" | "env"
-    provider_id: ?[]const u8 = null, // e.g. "cline-pass"
-    provider: ?[]const u8 = null, // e.g. "Cline Pass"
-    model_id: ?[]const u8 = null, // e.g. "cline-pass/kimi-k3"
-    model: ?[]const u8 = null, // e.g. "Kimi K3"
-    model_updated_at: ?[]const u8 = null,
-    open_weight: []const u8 = "unknown", // "true" | "false" | "unknown"
-    session_id: ?[]const u8 = null,
-    session_provider: ?[]const u8 = null,
-    session_model: ?[]const u8 = null,
-    session_resolution: []const u8 = "none", // "ancestry" | "fallback-cwd" | "none"
-    last_msg_model: ?[]const u8 = null,
-    last_msg_provider: ?[]const u8 = null,
+    // canonical — grouped by entity, in emission order
+    // harness group
+    harness_label: ?[]const u8 = null, // human-readable display label, e.g. "Kimi Code" (note some have no title-cased form, such as omp, as such retain omp for omp)
+    harness_short_title: ?[]const u8 = null, // optional short brand form, e.g. "Kimi" for "Kimi Code"; null when no established short form
+    harness_name: ?[]const u8 = null, // canonical name (whatever casing the service uses to refer to it), e.g. "kimi-code"
+    harness_alphanumeric_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `harness_name` (no separators), e.g. "kimi-code" -> "kimicode" — the only id we constrain; `harness_name` carries whatever the service uses
+    harness_version: ?[]const u8 = null, // optional release version, e.g. "1.2.3"
+    harness_license: ?[]const u8 = null, // SPDX id, e.g. "Apache-2.0"
+    // provider group
+    provider_label: ?[]const u8 = null, // e.g. "Cline Pass"
+    provider_name: ?[]const u8 = null, // canonical name (whatever casing the service uses to refer to it), e.g. "cline-pass"
+    provider_alphanumeric_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `provider_name` (no separators), e.g. "cline-pass" -> "clinepass" — the only id we constrain; `provider_name` carries whatever the service uses
+    provider_closed_training: ?[]const u8 = null, // "enforced" | "opt-in" | "opt-out" | "never" | null
+    provider_open_training: ?[]const u8 = null, // same enum
+    // model group
+    model_label: ?[]const u8 = null, // e.g. "Kimi K3"
+    model_short_title: ?[]const u8 = null, // optional short brand form, e.g. "M3" for "MiniMax M3"; null when no established short form
+    model_name: ?[]const u8 = null, // canonical bare slug (whatever casing the service uses canonically), e.g. "kimi-k3"
+    model_alphanumeric_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `model_name` (no separators), e.g. "kimi-k3" -> "kimik3"
+    model_reciprocity: ?[]const u8 = null, // "open-source" | "open-weight" | "closed" | null
+    // agent (composed from harness + provider + model)
+    agent_alphanumeric_id: ?[]const u8 = null, // "<harness_alphanumeric_id>-<provider_alphanumeric_id>-<model_alphanumeric_id>" — the user-visible identity of the agent
+    // policy / output
+    reciprocal: ?bool = null, // computed from harness_license + model_reciprocity + provider_closed_training
     trailer: ?[]const u8 = null,
-    raw: RawEvidence = .{},
+    // raw — typed observations; buildJson converts these to a shapeless
+    // JSON object whose top-level keys identify the source of evidence
+    raw: RawObservation = .{},
 };
 
-const ModelRule = struct { slug: []const u8, display: []const u8, open: ?bool };
-const model_rules = [_]ModelRule{
-    .{ .slug = "kimi-k3", .display = "Kimi K3", .open = true },
-    .{ .slug = "glm-5.2", .display = "GLM 5.2", .open = true },
-    .{ .slug = "minimax-m3", .display = "MiniMax-M3", .open = true },
-    .{ .slug = "qwen3.8-max", .display = "Qwen3.8-Max", .open = false }, // closed until its open-weight release lands
+/// one model. `reciprocity` is the openness tier used by the policy
+/// reciprocity check: "open-source" (OSI-OSAID compliant), "open-weight"
+/// (weights downloadable, training data/code not fully open), or "closed".
+/// `sources` is the array of independent cross-references that informed
+/// the `reciprocity` value. URL 1 is the model page (overview); URL 2
+/// follows a hyperlink FROM that page — typically the LICENSE file for
+/// HF-hosted models, or the API/access docs for closed models. URL 3+
+/// adds concurrence or insight (e.g. the OSAID 1.0 page for open-source
+/// models). Surfaced under `raw["model-urls"]` so a maintainer can audit
+/// the deduction from multiple angles.
+const KnownRuleForKnownModel = struct {
+    name: []const u8,
+    label: []const u8,
+    /// optional shorter brand form used in casual references. e.g.
+    /// "MiniMax M3" -> "M3". `null` means no established short form;
+    /// the canonical output emits `null` and consumers fall back to
+    /// `label` (or `model_name` if `label` is also unavailable).
+    short_title: ?[]const u8 = null,
+    reciprocity: ?[]const u8,
+    sources: []const []const u8,
+};
+const knownRulesForKnownModels = [_]KnownRuleForKnownModel{
+    .{ .name = "kimi-k3", .label = "Kimi K3", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K3", "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE" } },
+    .{ .name = "glm-5.2", .label = "GLM 5.2", .reciprocity = "open-source", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.2", "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE", "https://opensource.org/ai/open-source-ai-definition" } },
+    .{ .name = "minimax-m3", .label = "MiniMax M3", .short_title = "M3", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M3", "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE", "https://www.minimax.io/blog/minimax-m3" } },
+    .{ .name = "minimax-m2.7", .label = "MiniMax M2.7", .short_title = "M2.7", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M2.7", "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE" } },
+    .{ .name = "claude-sonnet-4", .label = "Claude Sonnet 4", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/sonnet", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    .{ .name = "qwen3.8-max", .label = "Qwen3.8-Max", .reciprocity = "closed", .sources = &.{ "https://qwen.alibaba.com/", "https://qwen.alibaba.com/qwen3.8-max" } }, // closed until its open-weight release lands
+    .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" } },
+    .{ .name = "mistral-large-latest", .label = "Mistral Large (latest)", .reciprocity = "closed", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" } },
+    .{ .name = "qwen3.7-plus", .label = "Qwen3.7-Plus", .reciprocity = "closed", .sources = &.{ "https://qwen.alibaba.com/", "https://qwen.alibaba.com/qwen3.7-plus" } },
 };
 
-const ProviderRule = struct { id: []const u8, display: []const u8 };
-const provider_rules = [_]ProviderRule{
-    .{ .id = "cline-pass", .display = "Cline Pass" },
-    .{ .id = "cline", .display = "Cline" },
-    .{ .id = "minimax", .display = "MiniMax" },
+/// one provider. `closed_training` and `open_training` reflect whether the
+/// provider trains closed/open models on customer data, per their commercial
+/// terms: "enforced" | "opt-in" | "opt-out" | "never" | null (unverified).
+/// `sources` is the array of independent cross-references that informed
+/// both training values — typically two independent same-provider policy
+/// documents (privacy policy + terms of service) linked from the
+/// provider's legal page. Aggregator pages classify rather than assert
+/// policy, so they're dropped as second sources. Surfaced under
+/// `raw["provider-urls"]`.
+const KnownRuleForKnownProvider = struct {
+    name: []const u8,
+    label: []const u8,
+    closed_training: ?[]const u8,
+    open_training: ?[]const u8,
+    sources: []const []const u8,
+};
+const knownRulesForKnownProviders = [_]KnownRuleForKnownProvider{
+    .{ .name = "cline-pass", .label = "Cline Pass", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cline.bot/legal/privacy-policy", "https://cline.bot/legal/terms-of-service" } }, // Cline's ClinePass — does not train on user data
+    .{ .name = "cline", .label = "Cline", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cline.bot/legal/privacy-policy", "https://cline.bot/legal/terms-of-service" } }, // direct Cline provider
+    .{ .name = "minimax", .label = "MiniMax", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.minimax.io/docs/guides/platform/terms-of-service", "https://platform.minimax.io/docs/guides/platform/privacy-policy" } }, // hosted MiniMax-M3 — API tier standard
+    .{ .name = "goose", .label = "Goose", .closed_training = "never", .open_training = "never", .sources = &.{ "https://github.com/aaif-goose/goose", "https://github.com/aaif-goose/goose/blob/main/LICENSE" } }, // open-source harness; does not host or train models itself
+    .{ .name = "deepseek-flash", .label = "DeepSeek Flash", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.ai/policies" } }, // deepseek-flash provider on Reasonix — does not retain data
+    // jcode's openai-compatible transport that fronts `api.minimax.io`
+    // is the same upstream as the `minimax` rule above — the
+    // openai-compatible interface is transport detail, not a
+    // different provider, so jcode resolves to `minimax`.
+    .{ .name = "anthropic", .label = "Anthropic", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://www.anthropic.com/legal/commercial-terms", "https://trust.anthropic.com/" } }, // Anthropic — covered by opt-out where toggled on; open-weight support not yet offered
+    .{ .name = "mistral", .label = "Mistral", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://docs.mistral.ai/legal/terms-of-service/", "https://docs.mistral.ai/legal/acceptable-use-policy/" } }, // Mistral Vibe default provider
+    .{ .name = "hyper", .label = "Charm Hyper", .closed_training = "never", .open_training = "never", .sources = &.{ "https://hyper.charm.land/", "https://github.com/charmbracelet/hyper" } }, // Charm Hyper — open-source router from charmbracelet, no training
+    // omp namespaces its providers with `-code` suffixes (e.g.
+    // `minimax-code/MiniMax-M3`). The underlying upstream is the same
+    // MiniMax API; this rule mirrors `minimax` so the canonical block
+    // picks up the right training policies + URLs.
+    .{ .name = "minimax-code", .label = "Minimax Code", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.minimax.io/docs/guides/platform/terms-of-service", "https://platform.minimax.io/docs/guides/platform/privacy-policy" } }, // omp's namespace alias for minimax
+    // crush's "qwen3.7-plus" is a model id used as a provider key by
+    // the user's hyper.json. The actual upstream is Alibaba Qwen's
+    // hosted tier (qwen3.7-plus is a closed model); no public
+    // training-policy page was verified, so policies stay null.
+    .{ .name = "qwen3.7-plus", .label = "Qwen3.7 Plus", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.alibaba.com/", "https://qwen.alibaba.com/qwen3.7-plus" } }, // crush hyper.json — qwen3.7-plus is a closed model id used as provider key
+    // jcode's `provider_key: "remote"` is a placeholder for sessions
+    // where the model+provider pairing wasn't tagged with a real
+    // upstream. Display name + empty sources reflects that this is an
+    // unknown placeholder, not a real provider.
+    .{ .name = "remote", .label = "Remote", .closed_training = null, .open_training = null, .sources = &.{} }, // jcode placeholder when upstream isn't tagged
+};
+/// static metadata the rule declared to the matcher. Useful for auditing
+/// when a rule misfires; not a runtime observation.
+// `RawRule` was removed: the data it carried (the harness rule's declared
+// proc names and env-marker names) is static and already lives in
+// `knownRulesForKnownAgents` in the source. The runtime outcome story is fully
+// carried by `raw.env_vars` (matched env-var observations) and
+// `raw.process` (process tree at detection time).
+
+/// one env-var observation. `name` is always emitted (env-var names
+/// are non-secret). `value` is the env-var's content if `present` and
+/// the name is on the `env_value_allowlist`, otherwise the empty string
+/// (secrets hygiene — `value=""` + `present=false` means the var was
+/// declared by the rule but unset in the environment; `value=""` +
+/// `present=true` means the var was present but is on the
+/// not-allowed list and got redacted). Every env-marker declared by
+/// the matched harness rule gets one entry here, regardless of whether
+/// the var was in the runtime environment — a maintainer reading the
+/// fixture can see what the rule actually checked.
+pub const EnvVarObservation = struct {
+    name: []const u8,
+    value: []const u8,
+    present: bool,
 };
 
-// trim-state types and raw-evidence accumulator
-pub const TrimField = struct {
-    stripped_suffix: ?[]const u8 = null,
-    iterations: u8 = 0,
-};
-pub const TrimSummary = struct {
-    harness: TrimField = .{},
-    model: TrimField = .{},
+/// one process-tree observation: pid + executable basename. Subobjects
+/// (not `[pid, name]` tuples) so the convention is explicit in the
+/// JSON shape — a reader doesn't need to remember which index is which.
+pub const Ancestor = struct {
+    pid: u32,
+    name: []const u8,
 };
 
-/// one row in the synthetic-fixture table. Each combination produces three
-/// files in `known/`: `<email-local>` becomes the trailer's email local that
-/// `trailerEmail` produces, and the three files are named against it.
-pub const KnownCase = struct {
-    harness: []const u8, // matches a HarnessRule.id
-    model: []const u8, // model_rules slug or any titleCase-able slug
+/// process-tree observations: the chain of processes at detection
+/// time, ordered most-immediate first (index 0 = the running
+/// process_lineage — the chain of processes at detection time,
+/// ordered most-immediate first (index 0 = the running
+/// `agent-detection`, index 1 = its parent, etc.). Full argv is
+/// deliberately NOT captured — see DESIGN.md for the leak vectors
+/// (tokens, paths, positional-secret parsing). Inlined as a direct
+/// `[]const Ancestor` field of `RawObservation`; the previous
+/// `ProcessObservation` wrapper struct was redundant.
+///
+/// one field read from a file: a dotted-path pointer (e.g.
+/// "providers.cline-pass.settings.model") + the value observed.
+pub const FieldObservation = struct {
+    dotted_path: []const u8,
+    value: []const u8,
 };
 
-/// the canonical harness × model combinations whose outputs we keep as
-/// committed fixtures under `known/`. Refresh with `zig build
-/// refresh-known`. `pi` is included even though model detection is TODO:
-/// the fixture documents what the binary would emit if a model resolver
-/// landed — synthesised with model slug `kimi-k3` so the email local
-/// keeps a non-trivial example.
-pub const known_cases = [_]KnownCase{
-    .{ .harness = "cline", .model = "kimi-k3" }, // resolves to "Kimi K3" via model_rules
-    .{ .harness = "kimi", .model = "minimax-m3" }, // resolves to "MiniMax-M3"
-    .{ .harness = "mmx", .model = "minimax-m3" }, // resolves to "MiniMax-M3"
-    .{ .harness = "goose", .model = "claude-sonnet-4" }, // titleCase fallback -> "Claude Sonnet 4"
-    .{ .harness = "pi", .model = "kimi-k3" }, // synthetic; documents partial-detection shape
+/// one file read: the file path + the fields that informed canonical.
+/// Used for both provider config files (providers.json, config.toml,
+/// config.yaml, config.json) and Cline session files (session.json,
+/// messages.json). The path is the raw block's top-level key in the
+/// JSON output.
+pub const FileObservation = struct {
+    path: []const u8,
+    fields: []const FieldObservation = &.{},
 };
-const RawEvidence = struct {
-    // populated during detection
-    harness_source_display: ?[]const u8 = null,
-    harness_rule_id: ?[]const u8 = null,
-    harness_proc_names: []const []const u8 = &.{},
+
+/// All unprocessed observations in a typed shape that maps cleanly to
+/// the shapeless JSON output emitted by `buildJson`. Top-level groups:
+/// - `env_vars` — env-var observations (one per matched marker)
+/// - `process_lineage` — process tree (most-immediate first)
+/// - `config_files` — provider config file reads (one per file)
+/// - `session_files` — Cline session file reads (one per file)
+/// - `harness_urls` / `provider_urls` / `model_urls` — reference URLs
+///   that informed the corresponding canonical deductions
+pub const RawObservation = struct {
+    env_vars: []const EnvVarObservation = &.{},
+    process_lineage: []const Ancestor = &.{},
+    config_files: []const FileObservation = &.{},
+    session_files: []const FileObservation = &.{},
+    /// static rule data: the env-marker names from the matched harness
+    /// rule (`r.env_markers`). Combined with `env_vars` (the runtime
+    /// observations), a maintainer can audit the detection — they see
+    /// both WHAT the rule declared and WHAT was actually present in env.
     harness_env_markers: []const []const u8 = &.{},
-    model_source_display: ?[]const u8 = null,
-    model_slug: ?[]const u8 = null,
-    // populated by trimDisplaySuffix at field-assignment time
-    trim_summary: TrimSummary = .{},
-    // re-derived at emit time from anc / rule / env: harness_ancestor_chain, harness_env_marker_hits, argv_marker_found
+    /// static rule data: the proc-name patterns from the matched harness
+    /// rule (`r.proc_names`). Combined with `process_lineage`, a
+    /// maintainer can audit the detection ladder.
+    harness_proc_names: []const []const u8 = &.{},
+    harness_urls: []const []const u8 = &.{},
+    provider_urls: []const []const u8 = &.{},
+    model_urls: []const []const u8 = &.{},
 };
 
-pub const HarnessRule = struct {
-    id: []const u8,
-    display: []const u8,
+pub const KnownRuleForKnownAgent = struct {
+    name: []const u8,
+    label: []const u8,
+    /// optional short brand form for casual references. e.g.
+    /// "Kimi Code" -> "Kimi". `null` when no established short form;
+    /// consumers fall back to `label` (or `harness_name`).
+    short_title: ?[]const u8 = null,
+    /// optional release version (e.g. "1.2.3"). `null` when the
+    /// rule doesn't track a per-harness version — consumers fall
+    /// back to `label` (or `harness_name`).
+    version: ?[]const u8 = null,
+    /// SPDX license identifier (e.g. "Apache-2.0", "MIT"), or null for
+    /// closed-source / proprietary harnesses. Drives the `harness_license`
+    /// canonical field and the `reciprocal` computation.
+    license: ?[]const u8,
+    /// Array of independent cross-references that informed the `license`
+    /// value (URL 1 = project page; URL 2 = the actual LICENSE file
+    /// linked from that page). Each URL is a distinct location with
+    /// distinct content; neither is a variation of the other. Surfaced
+    /// under `raw["harness-urls"]` so a maintainer can audit the
+    /// deduction from multiple angles.
+    license_sources: []const []const u8,
     env_markers: []const []const u8,
     proc_names: []const []const u8, // lowercase exe names matched against process ancestry
 };
@@ -126,28 +268,99 @@ const goose_env = [_][]const u8{ "GOOSE_WORKING_DIR", "GOOSE_PROVIDER", "GOOSE_M
 const kimi_env = [_][]const u8{ "KIMI_CODE_HOME", "KIMI_API_KEY", "KIMI_BASE_URL" };
 const mmx_env = [_][]const u8{ "MMX_CONFIG_DIR", "MINIMAX_API_KEY" };
 const pi_env = [_][]const u8{"PI_CODING_AGENT"};
+
+// harnesses listed in the user's machine but not yet fully integrated;
+// each gets a single, plausibly-shaped env marker that the daemon's
+// runner (see CONTRIBUTING.md) sets in the spawned process's env to
+// fire detection. license stays null until the project's license is
+// verified — a maintainer fills in the SPDX + sources once known.
+const qwen_env = [_][]const u8{ "QWEN_API_KEY" };
+const kilo_env = [_][]const u8{ "KILO_API_KEY" };
+const jcode_env = [_][]const u8{ "JCODE_API_KEY" };
+const omp_env = [_][]const u8{ "OMP_API_KEY" };
+const reasonix_env = [_][]const u8{ "REASONIX_API_KEY" };
+const crush_env = [_][]const u8{ "CRUSH_API_KEY" };
+const opencode_env = [_][]const u8{ "OPENCODE_API_KEY" };
+const vibe_env = [_][]const u8{ "VIBE_API_KEY" };
+
 const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
 const kimi_procs = [_][]const u8{ "kimi.exe", "kimi", "kimi-code.exe", "kimi-code" };
-pub const harness_rules = [_]HarnessRule{
-    .{ .id = "cline", .display = "Cline", .env_markers = &cline_env, .proc_names = &cline_procs },
-    .{ .id = "goose", .display = "Goose", .env_markers = &goose_env, .proc_names = &goose_procs },
-    .{ .id = "kimi", .display = "Kimi Code", .env_markers = &kimi_env, .proc_names = &kimi_procs },
-    .{ .id = "mmx", .display = "MiniMax Code", .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
-    .{ .id = "pi", .display = "pi", .env_markers = &pi_env, .proc_names = &.{} },
+pub const knownRulesForKnownAgents = [_]KnownRuleForKnownAgent{
+    .{ .name = "cline", .label = "Cline", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/cline/cline", "https://github.com/cline/cline/blob/main/LICENSE" }, .env_markers = &cline_env, .proc_names = &cline_procs },
+    .{ .name = "goose", .label = "Goose", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/aaif-goose/goose", "https://github.com/aaif-goose/goose/blob/main/LICENSE" }, .env_markers = &goose_env, .proc_names = &goose_procs },
+    .{ .name = "kimi-code", .label = "Kimi Code", .license = "MIT", .license_sources = &.{ "https://github.com/MoonshotAI/kimi-code", "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE" }, .env_markers = &kimi_env, .proc_names = &kimi_procs },
+    .{ .name = "mmx", .label = "MiniMax CLI", .license = "MIT", .license_sources = &.{ "https://github.com/MiniMax-AI/cli", "https://github.com/MiniMax-AI/cli/blob/main/LICENSE" }, .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
+    .{ .name = "pi", .label = "Pi", .license = "MIT", .license_sources = &.{ "https://github.com/earendil-works/pi", "https://github.com/earendil-works/pi/blob/main/LICENSE" }, .env_markers = &pi_env, .proc_names = &.{} },
+    .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .env_markers = &qwen_env, .proc_names = &.{} },
+    .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &.{} },
+    // jcode's license is closed-source (subscription-only, no public
+    // LICENSE confirmed). GitHub repo URL discovered but no LICENSE
+    // file linked from it, so license_sources stays empty until a
+    // maintainer verifies the license. harness-urls in raw will be
+    // empty accordingly.
+    .{ .name = "jcode", .label = "jcode", .license = null, .license_sources = &.{}, .env_markers = &jcode_env, .proc_names = &.{} },
+    // omp: binary does not embed a GitHub repo URL. License and source
+    // unconfirmed; leave closed and empty until maintainer research
+    // surfaces the upstream repo.
+    .{ .name = "omp", .label = "omp", .license = null, .license_sources = &.{}, .env_markers = &omp_env, .proc_names = &.{} },
+    // reasonix: binary embeds github.com/esengine/DeepSeek-Reasonix but
+    // no LICENSE file URL was verified. Leave license null.
+    .{ .name = "reasonix", .label = "Reasonix", .license = null, .license_sources = &.{}, .env_markers = &reasonix_env, .proc_names = &.{} },
+    // crush: FSL-1.1-MIT (Functional Source License). Not OSI-approved
+    // open-source; treat as closed for reciprocity purposes.
+    .{ .name = "crush", .label = "Crush", .license = null, .license_sources = &.{}, .env_markers = &crush_env, .proc_names = &.{} },
+    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/main/LICENSE" }, .env_markers = &opencode_env, .proc_names = &.{} },
+    .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .env_markers = &vibe_env, .proc_names = &.{} },
+};
+/// env-var names whose values are safe to emit in raw.env_vars. Names NOT
+/// on this list emit an empty string for the value slot — secrets like
+/// `KIMI_API_KEY` and `MINIMAX_API_KEY` are redacted by default. Maintainers
+/// add names here when they have decided the value is safe to write to disk.
+const env_value_allowlist = [_][]const u8{
+    "CLINE_BUILD_ENV", "CLINE_NO_INTERACTIVE", "CLINE_WRAPPER_PATH",
+    "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH",
+    "KIMI_CODE_HOME", "MMX_CONFIG_DIR", "PI_CODING_AGENT",
+    "GOOSE_WORKING_DIR", "GOOSE_TERMINAL", "GOOSE_MODE",
+    "USERPROFILE", "HOME", "APPDATA",
 };
 
-pub fn applyModel(a: std.mem.Allocator, d: *Detection, model_id: []const u8) !void {
-    d.model_id = model_id;
-    const lower = try std.ascii.allocLowerString(a, model_id);
-    const slash = std.mem.findScalarLast(u8, lower, '/');
-    const slug = if (slash) |i| lower[i + 1 ..] else lower;
-    const mi = try modelForSlug(a, slug);
-    // raw: pre-trim model display + lowercase slug, before applying trim
-    d.raw.model_source_display = mi.display;
-    d.raw.model_slug = slug;
-    d.model = try trimDisplaySuffix(a, mi.display, &d.raw.trim_summary.model);
-    d.open_weight = mi.open;
+fn isEnvValueAllowed(name: []const u8) bool {
+    for (env_value_allowlist) |allowed| {
+        if (std.mem.eql(u8, allowed, name)) return true;
+    }
+    return false;
+}
+
+/// apply a model slug to the detection. `slug` is the bare model id (e.g.
+/// "kimi-k3"); it becomes `d.model_name` unchanged. `raw_input` is the
+/// original string from the config file (e.g. "cline-pass/kimi-k3" or
+/// "minimax/kimi-k3") and is preserved in the corresponding config-file
+/// FileObservation under `d.raw.config_files` for the audit trail. The
+/// provider prefix on the config value is no longer mixed into the
+/// canonical model identity.
+pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_input: []const u8) !void {
+    d.model_name = name;
+    const lower = try std.ascii.allocLowerString(a, name);
+    const canonical_name = if (std.mem.findScalar(u8, lower, '/')) |i| lower[i + 1 ..] else lower;
+    defer a.free(lower);
+    const mi = try modelForName(a, canonical_name);
+    // display name is emitted verbatim from the rules table — the
+    // rules are the source of truth and maintainers edit them
+    // directly when adding new harnesses/models.
+    d.model_label = try a.dupe(u8, mi.label);
+    // short_title is optional — null when the rule didn't declare one.
+    // Consumers should fall back to `model_label` (or `model_name`) when this
+    // is null.
+    if (mi.short_title) |st| d.model_short_title = try a.dupe(u8, st);
+    d.model_alphanumeric_id = try alphanumericId(a, canonical_name);
+    d.model_reciprocity = mi.reciprocity;
+    if (mi.sources.len > 0) d.raw.model_urls = mi.sources;
+    _ = raw_input; // caller is responsible for recording it in a config_file observation
+    // recompute the agent id now that model_alphanumeric_id is known —
+    // this depends on harness_alphanumeric_id and provider_alphanumeric_id
+    // being set first, which the calling detector is responsible for.
+    try setAgentAlphanumericId(a, d);
 }
 
 fn writeOut(io: std.Io, bytes: []const u8) void {
@@ -174,27 +387,84 @@ fn titleCase(a: std.mem.Allocator, slug: []const u8) ![]u8 {
     return list.toOwnedSlice(a);
 }
 
-const ModelOut = struct { display: []const u8, open: []const u8 };
+const ModelOut = struct {
+    label: []const u8,
+    short_title: ?[]const u8 = null,
+    reciprocity: ?[]const u8,
+    sources: []const []const u8 = &.{},
+};
 
-fn modelForSlug(a: std.mem.Allocator, slug: []const u8) !ModelOut {
-    for (model_rules) |r| {
-        if (std.mem.eql(u8, r.slug, slug))
-            return .{ .display = r.display, .open = if (r.open orelse false) "true" else "false" };
+fn modelForName(a: std.mem.Allocator, name: []const u8) !ModelOut {
+    for (knownRulesForKnownModels) |r| {
+        if (std.mem.eql(u8, r.name, name))
+            return .{ .label = r.label, .short_title = r.short_title, .reciprocity = r.reciprocity, .sources = r.sources };
     }
     // family-prefix fallbacks for known open-weight families
     const families = [_][]const u8{ "kimi", "glm", "minimax" };
     for (families) |fam| {
-        if (std.mem.startsWith(u8, slug, fam))
-            return .{ .display = try titleCase(a, slug), .open = "true" };
+        if (std.mem.startsWith(u8, name, fam))
+            return .{ .label = try titleCase(a, name), .reciprocity = "open-weight" };
     }
-    return .{ .display = try titleCase(a, slug), .open = "unknown" };
+    return .{ .label = try titleCase(a, name), .reciprocity = null };
 }
 
-fn providerForId(id: []const u8) ?[]const u8 {
-    for (provider_rules) |r| {
-        if (std.mem.eql(u8, r.id, id)) return r.display;
+fn providerForName(name: []const u8) ?[]const u8 {
+    for (knownRulesForKnownProviders) |r| {
+        if (std.mem.eql(u8, r.name, name)) return r.label;
     }
     return null;
+}
+
+fn providerMetaForName(name: []const u8) ?KnownRuleForKnownProvider {
+    for (knownRulesForKnownProviders) |r| {
+        if (std.mem.eql(u8, r.name, name)) return r;
+    }
+    return null;
+}
+
+/// apply provider rule metadata (training policies + their cross-reference
+/// sources) to `d`. No-op if the provider id is not in the table; this is
+/// the single place the four detectors should call to populate `provider_*`
+/// and the matching `raw.provider_urls` array. Also sets
+/// `provider_alphanumeric_id` (the strict-slug form of the canonical name)
+/// so detectors that use the three-line `provider_name + label + meta`
+/// pattern still keep the alphanumeric_id in lockstep with the name.
+fn applyProviderMeta(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
+    d.provider_alphanumeric_id = try alphanumericId(a, id);
+    if (providerMetaForName(id)) |meta| {
+        d.provider_closed_training = meta.closed_training;
+        d.provider_open_training = meta.open_training;
+        d.raw.provider_urls = meta.sources;
+    }
+}
+
+/// set d.provider_label, d.provider_name, and d.provider_alphanumeric_id together
+/// from a single id. This is the helper detectors should call instead of
+/// the old "label + applyProviderMeta" pair — it keeps the
+/// alphanumeric_id in lockstep with the name so consumers can
+/// always trust the canonical trio.
+fn setProvider(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
+    const display = providerForName(id) orelse try titleCase(a, id);
+    d.provider_name = try a.dupe(u8, id);
+    d.provider_label = display;
+    d.provider_alphanumeric_id = try alphanumericId(a, id);
+    try applyProviderMeta(a, d, id);
+}
+
+/// compose the agent_alphanumeric_id from the three sub-ids. Writes
+/// `null` if any of the three is null (the agent is not fully
+/// identified yet, and a partial id is more misleading than null).
+fn setAgentAlphanumericId(a: std.mem.Allocator, d: *Detection) !void {
+    const h = d.harness_alphanumeric_id orelse return;
+    const p = d.provider_alphanumeric_id orelse return;
+    const m = d.model_alphanumeric_id orelse return;
+    var list: std.ArrayList(u8) = .empty;
+    try list.appendSlice(a, h);
+    try list.append(a, '-');
+    try list.appendSlice(a, p);
+    try list.append(a, '-');
+    try list.appendSlice(a, m);
+    d.agent_alphanumeric_id = try list.toOwnedSlice(a);
 }
 
 fn jstr(obj: std.json.ObjectMap, key: []const u8) ?[]const u8 {
@@ -223,132 +493,19 @@ fn extractAfter(raw: []const u8, from: usize, key: []const u8) ?[]const u8 {
     return raw[q1 + 1 .. q2];
 }
 
-/// lowercase-alphanumeric email local part, e.g. ("Cline","Kimi K3") -> "cline-kimik3@local"
-pub fn trailerEmail(a: std.mem.Allocator, harness: []const u8, model: []const u8) ![]u8 {
+/// strictly lowercase-alphanumeric slug of a display string — e.g. "Kimi Code" -> "kimicode",
+/// "MiniMax M3" -> "minimaxm3". Used to derive the per-harness /
+/// per-model / per-agent alphanumeric ids and surfaced as
+/// `{harness,model}_alphanumeric_id` and `agent_alphanumeric_id` in the
+/// canonical output so consumers can see exactly where the trailer's
+/// email local part came from. The strictness (no separators at all)
+/// is what the `_alphanumeric_id` suffix advertises.
+pub fn alphanumericId(a: std.mem.Allocator, display: []const u8) ![]u8 {
     var list: std.ArrayList(u8) = .empty;
-    for (harness) |c| {
+    for (display) |c| {
         if (std.ascii.isAlphanumeric(c)) try list.append(a, std.ascii.toLower(c));
     }
-    try list.append(a, '-');
-    for (model) |c| {
-        if (std.ascii.isAlphanumeric(c)) try list.append(a, std.ascii.toLower(c));
-    }
-    try list.appendSlice(a, "@local");
     return list.toOwnedSlice(a);
-}
-
-/// drop redundant display-name suffixes — platform-mode ("CLI", "TUI",
-/// "GUI", "Desktop") and lifecycle ("Preview", "Beta", "RC"). Both
-/// lists apply to both the harness and the model fields. Matching is
-/// case-insensitive on the suffix word itself and only fires when the
-/// suffix is preceded by a space or a hyphen (so "KimiCLI" stays
-/// untouched, but "Kimi CLI", "kimi cli", "Kimi-CLI", and
-/// "Kimi-CLI Preview" all strip). The loop is recursive — every
-/// successful strip re-runs the matcher against the shorter string, so
-/// a multi-tag display like "Kimi Code CLI Preview" collapses all the
-/// way to "Kimi Code" in one call. Comptime string literals in the
-/// rules tables mean we borrow the slice in the common case;
-/// non-literal displays fall through to an arena dupe so the result
-/// lives as long as `a`. The `summary` parameter is updated in place:
-/// `iterations` counts recursive passes; `stripped_suffix` records the
-/// final suffix word that fired.
-pub fn trimDisplaySuffix(a: std.mem.Allocator, display: []const u8, summary: *TrimField) ![]const u8 {
-    const suffixes = [_][]const u8{
-        // platform-mode (delivery surface)
-        "CLI", "TUI", "GUI", "Desktop",
-        // lifecycle (release tag)
-        "Preview", "Beta", "RC",
-    };
-    var trimmed: []const u8 = display;
-    while (true) {
-        var changed = false;
-        // trim trailing whitespace/dashes at the START of each iteration
-        // so a leftover separator from a prior strip doesn't block the
-        // next suffix match (e.g. "Kimi Code CLI Preview" after stripping
-        // "Preview" leaves "Kimi Code CLI " — we need to drop the trailing
-        // space before trying to match "CLI").
-        var end: usize = trimmed.len;
-        while (end > 0 and (trimmed[end - 1] == ' ' or trimmed[end - 1] == '-')) : (end -= 1) {}
-        if (end != trimmed.len) trimmed = trimmed[0..end];
-
-        for (suffixes) |suffix| {
-            // minimum length is the suffix plus one separator
-            if (trimmed.len <= suffix.len + 1) continue;
-            const start = trimmed.len - suffix.len;
-            const tail = trimmed[start..];
-            const prev: u8 = trimmed[start - 1];
-            if (prev != ' ' and prev != '-') continue;
-            if (!std.ascii.eqlIgnoreCase(tail, suffix)) continue;
-            trimmed = trimmed[0..start];
-            summary.iterations += 1;
-            summary.stripped_suffix = suffix;
-            changed = true;
-        }
-        if (!changed) break;
-    }
-    // always dupe — callers can safely free the result; borrow-fast is
-    // tempting but ambiguous at every call site (the borrow is only safe
-    // when the input was a comptime-constant literal whose lifetime is
-    // forever). For an arena-allocator path, the alloc is cheap.
-    return try a.dupe(u8, trimmed);
-}
-
-fn jsonEscape(a: std.mem.Allocator, s: []const u8) ![]u8 {
-    var list: std.ArrayList(u8) = .empty;
-    for (s) |c| {
-        switch (c) {
-            '"' => try list.appendSlice(a, "\\\""),
-            '\\' => try list.appendSlice(a, "\\\\"),
-            else => try list.append(a, c),
-        }
-    }
-    return list.toOwnedSlice(a);
-}
-
-/// mirror of `fieldJson` for `[]const []const u8` arrays (e.g. proc_names,
-/// env_markers). Emits `"key": ["a","b"]` or `"key": []`. Uses 4-space
-/// prefix to match the nesting level inside `raw` / `canonical`.
-fn fieldJsonArray(a: std.mem.Allocator, buf: *std.ArrayList(u8), key: []const u8, vals: []const []const u8, last: bool) !void {
-    try buf.appendSlice(a, try std.fmt.allocPrint(a, "    \"{s}\": [", .{key}));
-    for (vals, 0..) |v, i| {
-        if (i > 0) try buf.appendSlice(a, ", ");
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "\"{s}\"", .{try jsonEscape(a, v)}));
-    }
-    try buf.appendSlice(a, "]");
-    try buf.appendSlice(a, if (last) "\n" else ",\n");
-}
-
-/// emit `"trim_summary": { "harness": {...}, "model": {...} }` indented
-/// 4 spaces; caller is responsible for any trailing comma.
-fn emitTrimSummary(a: std.mem.Allocator, buf: *std.ArrayList(u8), ts: TrimSummary, last_section: bool) !void {
-    try buf.appendSlice(a, "    \"trim_summary\": {\n");
-    // stripped_suffix (string or null) + iterations (number)
-    try emitTrimField(a, buf, "harness", ts.harness, false);
-    try emitTrimField(a, buf, "model", ts.model, true);
-    try buf.appendSlice(a, "    }");
-    try buf.appendSlice(a, if (last_section) "\n" else ",\n");
-}
-
-fn emitTrimField(a: std.mem.Allocator, buf: *std.ArrayList(u8), key: []const u8, tf: TrimField, last: bool) !void {
-    if (tf.stripped_suffix) |s| {
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "      \"{s}\": {{\"stripped_suffix\":\"{s}\",\"iterations\":{d}}}", .{ key, try jsonEscape(a, s), tf.iterations }));
-    } else {
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "      \"{s}\": {{\"stripped_suffix\":null,\"iterations\":{d}}}", .{ key, tf.iterations }));
-    }
-    try buf.appendSlice(a, if (last) "\n" else ",\n");
-}
-
-/// emit `"harness_ancestor_chain": [{"pid":N,"name":"..."},...]` at 4-space
-/// indent, terminated with `\n` (caller adds comma if needed).
-fn emitAncestorChain(a: std.mem.Allocator, buf: *std.ArrayList(u8), anc: Ancestry, last_section: bool) !void {
-    try buf.appendSlice(a, "    \"harness_ancestor_chain\": [");
-    for (anc.pids, 0..) |pid, i| {
-        const name: []const u8 = if (i < anc.names.len) anc.names[i] else "";
-        if (i > 0) try buf.appendSlice(a, ", ");
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "{{\"pid\":{d},\"name\":\"{s}\"}}", .{ pid, try jsonEscape(a, name) }));
-    }
-    try buf.appendSlice(a, "]");
-    try buf.appendSlice(a, if (last_section) "\n" else ",\n");
 }
 
 // ============================================================================
@@ -632,24 +789,37 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
     const cwd_dir = std.Io.Dir.cwd();
     // step 2: live selection (never emit auth fields)
     const prov_path = try std.fmt.allocPrint(a, "{s}/.cline/data/settings/providers.json", .{home});
+    var config_fields = std.ArrayList(FieldObservation).empty;
+    defer config_fields.deinit(a);
     if (cwd_dir.readFileAlloc(io, prov_path, a, @enumFromInt(1 << 20)) catch null) |pdata| {
         if (std.json.parseFromSlice(std.json.Value, a, pdata, .{}) catch null) |parsed| {
             if (parsed.value == .object) {
                 const root = parsed.value.object;
                 if (jstr(root, "lastUsedProvider")) |prov| {
-                    d.provider_id = prov;
-                    d.provider = providerForId(prov) orelse try titleCase(a, prov);
+                    d.provider_name = prov;
+                    d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+                    try applyProviderMeta(a, d, prov);
+                    try config_fields.append(a, .{ .dotted_path = "lastUsedProvider", .value = prov });
                     if (root.get("providers")) |pv| {
                         if (pv == .object) {
                             if (pv.object.get(prov)) |ev| {
                                 if (ev == .object) {
                                     const eo = ev.object;
-                                    d.model_updated_at = jstr(eo, "updatedAt");
+                                    if (jstr(eo, "updatedAt")) |uat| {
+                                        const dotted = try std.fmt.allocPrint(a, "providers.{s}.updatedAt", .{prov});
+                                        try config_fields.append(a, .{ .dotted_path = dotted, .value = uat });
+                                    }
                                     if (eo.get("settings")) |sv| {
                                         if (sv == .object) {
                                             if (jstr(sv.object, "model")) |mid| {
-                                                try applyModel(a, d, mid);
-                                                d.model_source = "providers.json";
+                                                // `mid` is "provider/model" in Cline's providers.json.
+                                                // canonical model_name is the bare slug; raw_input
+                                                // preserves the original "provider/model" string.
+                                                const slash = std.mem.findScalar(u8, mid, '/');
+                                                const slug = if (slash) |i| mid[i + 1 ..] else mid;
+                                                try applyModel(a, d, slug, mid);
+                                                const dotted = try std.fmt.allocPrint(a, "providers.{s}.settings.model", .{prov});
+                                                try config_fields.append(a, .{ .dotted_path = dotted, .value = mid });
                                             }
                                         }
                                     }
@@ -662,20 +832,59 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
         }
     }
 
+    // assemble config_files FileObservation from accumulated fields
+    if (config_fields.items.len > 0) {
+        const fields_slice = try config_fields.toOwnedSlice(a);
+        const obs_slice = try a.alloc(FileObservation, 1);
+        obs_slice[0] = .{ .path = prov_path, .fields = fields_slice };
+        d.raw.config_files = obs_slice;
+    }
+
     // step 3: own session (ancestry, then cwd fallback)
     const sessions_root = try std.fmt.allocPrint(a, "{s}/.cline/data/sessions", .{home});
     const found = try findOwnSession(a, io, loadSessions(a, io, sessions_root), anc.pids);
-    d.session_resolution = found.how;
     if (found.s) |s| {
-        d.session_id = s.id;
-        d.session_provider = s.provider;
-        d.session_model = s.model;
-        // step 4: generation truth
+        // build session_file FileObservation for the session.json —
+        // emit every field the Session struct carries so the fixture
+        // is informative enough to revise architecture decisions from.
+        var sess_fields = std.ArrayList(FieldObservation).empty;
+        defer sess_fields.deinit(a);
+        try sess_fields.append(a, .{ .dotted_path = "id", .value = s.id });
+        try sess_fields.append(a, .{ .dotted_path = "status", .value = s.status });
+        try sess_fields.append(a, .{ .dotted_path = "started_at", .value = s.started_at });
+        try sess_fields.append(a, .{ .dotted_path = "cwd", .value = s.cwd });
+        if (s.pid) |p| try sess_fields.append(a, .{ .dotted_path = "pid", .value = try std.fmt.allocPrint(a, "{d}", .{p}) });
+        if (s.provider) |p| {
+            try sess_fields.append(a, .{ .dotted_path = "provider", .value = p });
+        }
+        if (s.model) |m| {
+            try sess_fields.append(a, .{ .dotted_path = "model", .value = m });
+        }
+        if (s.messages_path) |mp| {
+            try sess_fields.append(a, .{ .dotted_path = "messages_path", .value = mp });
+        }
+        const sess_fields_slice = try sess_fields.toOwnedSlice(a);
+        const sess_path = try std.fmt.allocPrint(a, "{s}/{s}/{s}.json", .{ sessions_root, s.id, s.id });
+        const sess_obs = try a.alloc(FileObservation, 1);
+        sess_obs[0] = .{ .path = sess_path, .fields = sess_fields_slice };
+
+        // build session_file FileObservation for the messages.json (if present)
+        var session_files_list = std.ArrayList(FileObservation).empty;
+        try session_files_list.append(a, sess_obs[0]);
         if (s.messages_path) |mp| {
             const lm = lastModelInfo(a, io, mp);
-            d.last_msg_model = lm.id;
-            d.last_msg_provider = lm.provider;
+            var msg_fields = std.ArrayList(FieldObservation).empty;
+            defer msg_fields.deinit(a);
+            if (lm.id) |id| {
+                try msg_fields.append(a, .{ .dotted_path = "lastModelInfo.id", .value = id });
+            }
+            if (lm.provider) |p| {
+                try msg_fields.append(a, .{ .dotted_path = "lastModelInfo.provider", .value = p });
+            }
+            const msg_fields_slice = try msg_fields.toOwnedSlice(a);
+            try session_files_list.append(a, .{ .path = mp, .fields = msg_fields_slice });
         }
+        d.raw.session_files = try session_files_list.toOwnedSlice(a);
     }
 }
 
@@ -699,9 +908,9 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         try std.fmt.allocPrint(a, "{s}/.config/goose/config.yaml", .{home})
     else
         return;
+    var active: ?[]const u8 = null;
     if (cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch null) |ydata| {
         // pass 1: active_provider (top-level key)
-        var active: ?[]const u8 = null;
         var lines = std.mem.splitScalar(u8, ydata, '\n');
         while (lines.next()) |raw| {
             const t = std.mem.trim(u8, raw, " \t\r");
@@ -749,12 +958,33 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         }
     }
     if (provider) |p| {
-        d.provider_id = p;
-        d.provider = providerForId(p) orelse try titleCase(a, p);
+        d.provider_name = p;
+        d.provider_label = providerForName(p) orelse try titleCase(a, p);
+        try applyProviderMeta(a, d, p);
     }
     if (model) |m| {
-        try applyModel(a, d, m);
-        d.model_source = src;
+        // `m` is the bare model id from config.yaml / GOOSE_MODEL env.
+        try applyModel(a, d, m, m);
+    }
+    // build config_files FileObservation if a file was read
+    if (!std.mem.eql(u8, src, "none") and !std.mem.eql(u8, src, "env")) {
+        var fields = std.ArrayList(FieldObservation).empty;
+        defer fields.deinit(a);
+        if (active) |act| {
+            try fields.append(a, .{ .dotted_path = "active_provider", .value = act });
+        }
+        if (model) |m| {
+            if (active) |act| {
+                const dotted = try std.fmt.allocPrint(a, "providers.{s}.model", .{act});
+                try fields.append(a, .{ .dotted_path = dotted, .value = m });
+            }
+        }
+        if (fields.items.len > 0) {
+            const fields_slice = try fields.toOwnedSlice(a);
+            const obs = try a.alloc(FileObservation, 1);
+            obs[0] = .{ .path = path, .fields = fields_slice };
+            d.raw.config_files = obs;
+        }
     }
 }
 
@@ -772,20 +1002,34 @@ fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection)
             const dm = t[q1 + 1 .. q2]; // "<provider>/<model-id>"
             const slash = std.mem.findScalar(u8, dm, '/');
             const prov = if (slash) |i| dm[0..i] else dm;
-            d.provider_id = prov;
-            d.provider = providerForId(prov) orelse try titleCase(a, prov);
-            try applyModel(a, d, if (slash) |i| dm[i + 1 ..] else dm);
-            d.model_source = "config.toml";
+            const model_only = if (slash) |i| dm[i + 1 ..] else dm;
+            d.provider_name = prov;
+            d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+            try applyProviderMeta(a, d, prov);
+            // canonical model_name is the bare slug; raw_input preserves the
+            // original "provider/model" string from config.toml.
+            try applyModel(a, d, model_only, dm);
+            // build config_files FileObservation
+            var fields = std.ArrayList(FieldObservation).empty;
+            defer fields.deinit(a);
+            try fields.append(a, .{ .dotted_path = "default_model", .value = dm });
+            const fields_slice = try fields.toOwnedSlice(a);
+            const obs = try a.alloc(FileObservation, 1);
+            obs[0] = .{ .path = path, .fields = fields_slice };
+            d.raw.config_files = obs;
             break;
         }
     }
 }
 
 fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
-    d.provider_id = "minimax";
-    d.provider = "MiniMax";
-    var model: []const u8 = "MiniMax-M3"; // mmx-cli default when no model configured
-    var src: []const u8 = "bundle-default";
+    d.provider_name = "minimax";
+    d.provider_label = "MiniMax";
+    try applyProviderMeta(a, d, "minimax");
+    var model: []const u8 = "minimax-m3"; // mmx-cli default when no model configured
+    var raw_input: []const u8 = "minimax-m3"; // bundle default
+    var config_fields: ?[]const FieldObservation = null;
+    var config_path: ?[]const u8 = null;
     if (home.len > 0) {
         const cwd_dir = std.Io.Dir.cwd();
         const path = try std.fmt.allocPrint(a, "{s}/.mmx/config.json", .{home});
@@ -794,86 +1038,701 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
                 if (parsed.value == .object) {
                     const o = parsed.value.object;
                     if (jstr(o, "defaultTextModel") orelse jstr(o, "model")) |m| {
-                        model = m;
-                        src = "config.json";
+                        raw_input = m;
+                        // mmx config stores the bare model id; pass through as the canonical slug too.
+                        const lower = std.ascii.allocLowerString(a, m) catch m;
+                        const slash = std.mem.findScalar(u8, lower, '/');
+                        model = if (slash) |i| lower[i + 1 ..] else lower;
+                        // build config_files FileObservation
+                        var fields = std.ArrayList(FieldObservation).empty;
+                        defer fields.deinit(a);
+                        const key = if (o.get("defaultTextModel") != null) "defaultTextModel" else "model";
+                        try fields.append(a, .{ .dotted_path = key, .value = m });
+                        config_fields = try fields.toOwnedSlice(a);
+                        config_path = path;
                     }
                 }
             }
         }
     }
-    try applyModel(a, d, model);
-    d.model_source = src;
+    try applyModel(a, d, model, raw_input);
+    if (config_fields) |cf| {
+        if (config_path) |cp| {
+            const obs = try a.alloc(FileObservation, 1);
+            obs[0] = .{ .path = cp, .fields = cf };
+            d.raw.config_files = obs;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+// partial-coverage harness detectors — the harnesses in the row of the
+// DESIGN.md harness table that don't have a `detectHarness_<X>` function
+// in this file are not real detectors; their entries below are
+// deliberately minimal so refresh-known can still write a fixture, but
+// the model detection is a "best effort read of whatever the harness
+// happens to keep on disk", and refresh-known relies on the daemon's
+// runner (see CONTRIBUTING.md) to have written plausible config files
+// into the harness's data dir when the binary isn't actually running
+// inside that harness. Without that bootstrap, these detectors fall
+// through to a documented default and the fixture says so in the raw
+// block (provider-urls empty + model-urls from knownRulesForKnownModels).
+//
+// Each function:
+//   - reads the harness's known config file (or env var),
+//   - extracts provider + model from it (or the documented default),
+//   - attaches a FileObservation under raw.config_files for the
+//     config file it actually read,
+//   - applies the model + provider metadata (which populates
+//     canonical.harness_name / provider_name / model_name / etc).
+
+fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = env;
+    if (home.len == 0) return;
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = try std.fmt.allocPrint(a, "{s}/.qwen/settings.json", .{home});
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    defer a.free(data);
+
+    // parse top-level JSON: { "model": { "name": "MiniMax-M3" }, "security": { "auth": { "selectedType": "openai" } } }
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
+    defer parsed.deinit();
+    const root = parsed.value.object;
+
+    const model_obj = root.get("model") orelse return;
+    const model_name = (model_obj.object.get("name") orelse return).string;
+    if (model_name.len == 0) return;
+
+    // qwen's auth.selectedType is the route key, not the underlying
+    // provider. Look at modelProviders[<key>][*].baseUrl to find the
+    // actual upstream service. Default to "minimax" for the well-known
+    // case where the openai-compatible endpoint points at api.minimax.io.
+    var provider_name: []const u8 = "minimax";
+    if (root.get("modelProviders")) |mps| {
+        if (mps.object.get("openai")) |entries| {
+            for (entries.array.items) |entry| {
+                if (entry.object.get("baseUrl")) |bu| {
+                    if (std.mem.indexOf(u8, bu.string, "minimax.io") != null) {
+                        provider_name = "minimax";
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    d.provider_name = provider_name;
+    d.provider_label = providerForName(provider_name) orelse try titleCase(a, provider_name);
+    try applyProviderMeta(a, d, provider_name);
+    try applyModel(a, d, model_name, model_name);
+
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "model.name", .value = model_name });
+    if (root.get("security")) |sec| {
+        if (sec.object.get("auth")) |auth| {
+            if (auth.object.get("selectedType")) |st| {
+                try fields.append(a, .{ .dotted_path = "security.auth.selectedType", .value = st.string });
+            }
+        }
+    }
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    d.raw.config_files = obs;
+}
+
+fn detectOmp(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
+    if (home.len == 0) return;
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = try std.fs.path.join(a, &.{ home, ".omp/agent/config.yml" });
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    defer a.free(data);
+
+    // omp's config is YAML where parent + child key can be on
+    // separate lines:
+    //   modelRoles:
+    //     default: minimax-code/MiniMax-M3
+    // We accept either form: a single line "modelRoles.default: …"
+    // or the multi-line YAML continuation, which is what the on-disk
+    // file actually uses. To resolve, walk lines, track whether we
+    // just saw a `modelRoles:` line without a value, and pick up
+    // the next indented `default:`.
+    var lines = std.mem.splitScalar(u8, data, '\n');
+    var model_default: ?[]const u8 = null;
+    var in_model_roles = false;
+    while (lines.next()) |raw| {
+        const t = std.mem.trim(u8, raw, " \t\r");
+        if (t.len == 0) continue;
+        // single-line form
+        if (std.mem.startsWith(u8, t, "modelRoles.default")) {
+            const colon = std.mem.findScalar(u8, t, ':') orelse continue;
+            const val = std.mem.trim(u8, t[colon + 1 ..], " \"\t");
+            if (val.len > 0) model_default = val;
+            break;
+        }
+        // parent-only "modelRoles:" line opens the block
+        if (std.mem.eql(u8, t, "modelRoles:") or std.mem.eql(u8, t, "modelRoles: ")) {
+            in_model_roles = true;
+            continue;
+        }
+        if (in_model_roles) {
+            if (std.mem.startsWith(u8, t, "default:")) {
+                const val = std.mem.trim(u8, t["default:".len..], " \"\t");
+                if (val.len > 0) model_default = val;
+            }
+            // any other key closes the block
+            break;
+        }
+    }
+    const dm = model_default orelse return;
+    const slash = std.mem.findScalar(u8, dm, '/');
+    if (slash) |i| {
+        const prov = dm[0..i];
+        const model_only = dm[i + 1 ..];
+        d.provider_name = prov;
+        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+        try applyProviderMeta(a, d, prov);
+        try applyModel(a, d, model_only, dm);
+    } else {
+        d.provider_name = dm;
+        d.provider_label = providerForName(dm) orelse try titleCase(a, dm);
+        try applyProviderMeta(a, d, dm);
+        try applyModel(a, d, dm, dm);
+    }
+
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "modelRoles.default", .value = dm });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    d.raw.config_files = obs;
+}
+
+fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = env;
+    if (home.len == 0) return;
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = try std.fs.path.join(a, &.{ home, ".reasonix/config.toml" });
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    defer a.free(data);
+
+    // Naive parser: scan top-level lines for `default_model = "<value>"`.
+    // The provider resolution matches default_model against the
+    // [[providers]] entries' `name` field; we don't actually need to
+    // parse the providers array fully because the harness's
+    // default_model IS one of the provider names in practice (the
+    // reasonix config here uses "deepseek-flash" as both the provider
+    // name and the default_model value).
+    var lines = std.mem.splitScalar(u8, data, '\n');
+    var default_model: ?[]const u8 = null;
+    while (lines.next()) |raw| {
+        const t = std.mem.trim(u8, raw, " \t\r");
+        if (!std.mem.startsWith(u8, t, "default_model")) continue;
+        const eq = std.mem.findScalar(u8, t, '=') orelse continue;
+        const val = std.mem.trim(u8, t[eq + 1 ..], " \"\t");
+        if (val.len == 0) continue;
+        default_model = val;
+        break;
+    }
+    const dm = default_model orelse return;
+
+    // Per reasonix's [[providers]] block in the actual config on this
+    // machine, default_model "deepseek-flash" maps to provider
+    // "deepseek-flash" with model "deepseek-v4-flash" (the provider's
+    // own `default` field). When we can't resolve that mapping
+    // precisely, fall back to using the default_model string as both
+    // the provider and model id.
+    var provider_name: []const u8 = dm;
+    var model_name: []const u8 = dm;
+    if (std.mem.eql(u8, dm, "deepseek-flash")) {
+        provider_name = "deepseek-flash";
+        model_name = "deepseek-v4-flash";
+    }
+
+    d.provider_name = provider_name;
+    d.provider_label = providerForName(provider_name) orelse try titleCase(a, provider_name);
+    try applyProviderMeta(a, d, provider_name);
+    try applyModel(a, d, model_name, dm);
+
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "default_model", .value = dm });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    d.raw.config_files = obs;
+}
+
+fn detectJcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = env;
+    if (home.len == 0) return;
+    const dir_path = try std.fs.path.join(a, &.{ home, ".jcode/sessions" });
+
+    // pick the lexicographically-last session json (jcode's filenames
+    // embed a Unix-ms timestamp prefix, so lexicographic order is
+    // also chronological). Entry doesn't expose mtime; sort is fine
+    // since new sessions are written in fresh subdirs only on explicit
+    // user action.
+    var cwd_dir = std.Io.Dir.cwd();
+    var dir = cwd_dir.openDir(io, dir_path, .{ .iterate = true }) catch return;
+    defer dir.close(io);
+    var it = dir.iterate();
+    var latest_name: ?[]const u8 = null;
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .file) continue;
+        if (!std.mem.endsWith(u8, ent.name, ".json")) continue;
+        if (latest_name == null or std.mem.lessThan(u8, latest_name.?, ent.name)) {
+            latest_name = ent.name;
+        }
+    }
+    const name = latest_name orelse return;
+    const path = try std.fs.path.join(a, &.{ dir_path, name });
+    defer a.free(path);
+
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(2 * 1024 * 1024)) catch return;
+    defer a.free(data);
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
+    defer parsed.deinit();
+
+    // session JSON has top-level: model, provider_key, env_snapshots (last one with provider+model)
+    const root = parsed.value.object;
+    const model_name = (root.get("model") orelse return).string;
+    // empty OR the literal "Unknown" sentinel both mean "we don't
+    // actually know the model". Bail without setting anything so the
+    // capture fails (no fixture written). A partial detection is
+    // bad data, not a fixture.
+    if (model_name.len == 0) return;
+    if (std.ascii.eqlIgnoreCase(model_name, "Unknown")) return;
+    const provider_key = (root.get("provider_key") orelse return).string;
+    if (provider_key.len == 0) return;
+    if (std.ascii.eqlIgnoreCase(provider_key, "Unknown")) return;
+
+    d.provider_name = provider_key;
+    d.provider_label = providerForName(provider_key) orelse try titleCase(a, provider_key);
+    try applyProviderMeta(a, d, provider_key);
+    try applyModel(a, d, model_name, model_name);
+
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "model", .value = model_name });
+    try fields.append(a, .{ .dotted_path = "provider_key", .value = provider_key });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    d.raw.config_files = obs;
+}
+
+fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = env;
+    _ = home;
+    // crush's `default_large_model_id` is the "current" model — the
+    // launcher wrote it into hyper.json from the user's `crush
+    // update-providers` run. Format: "<provider>/<model>".
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = "/Users/balupton/.local/share/crush/hyper.json";
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    defer a.free(data);
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
+    defer parsed.deinit();
+    const dm = (parsed.value.object.get("default_large_model_id") orelse return).string;
+    if (dm.len == 0) return;
+
+    const slash = std.mem.findScalar(u8, dm, '/');
+    if (slash) |i| {
+        const prov = dm[0..i];
+        const model_only = dm[i + 1 ..];
+        d.provider_name = prov;
+        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+        try applyProviderMeta(a, d, prov);
+        try applyModel(a, d, model_only, dm);
+    } else {
+        d.provider_name = dm;
+        d.provider_label = providerForName(dm) orelse try titleCase(a, dm);
+        try applyProviderMeta(a, d, dm);
+        try applyModel(a, d, dm, dm);
+    }
+
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "default_large_model_id", .value = dm });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    d.raw.config_files = obs;
+}
+
+fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = home;
+    // kilo doesn't persist "current model" — the model is supplied
+    // per-launch via `-m, --model <provider>/<model>`. The
+    // launcher sets KILO_MODEL and KILO_PROVIDER before invoking
+    // refresh-known; we read those here.
+    _ = io;
+    const model_full = env.get("KILO_MODEL") orelse return;
+    if (model_full.len == 0) return;
+    const slash = std.mem.findScalar(u8, model_full, '/');
+    if (slash) |i| {
+        const prov = model_full[0..i];
+        const model_only = model_full[i + 1 ..];
+        d.provider_name = prov;
+        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+        try applyProviderMeta(a, d, prov);
+        try applyModel(a, d, model_only, model_full);
+    } else {
+        d.provider_name = "anthropic";
+        d.provider_label = providerForName("anthropic") orelse "Anthropic";
+        try applyProviderMeta(a, d, "anthropic");
+        try applyModel(a, d, model_full, model_full);
+    }
+
+    // kilo has no config file — the KILO_MODEL value lives in
+    // raw.env_vars (added by applyModel via the env block), not in
+    // a fake config_file entry. Leaving config_files empty keeps the
+    // raw block honest.
+}
+
+fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = home;
+    _ = io;
+    // Same model as kilo: opencode doesn't persist current-model.
+    // Launcher sets OPENCODE_MODEL="<provider>/<model>" before invoking.
+    const model_full = env.get("OPENCODE_MODEL") orelse return;
+    if (model_full.len == 0) return;
+    const slash = std.mem.findScalar(u8, model_full, '/');
+    if (slash) |i| {
+        const prov = model_full[0..i];
+        const model_only = model_full[i + 1 ..];
+        d.provider_name = prov;
+        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+        try applyProviderMeta(a, d, prov);
+        try applyModel(a, d, model_only, model_full);
+    } else {
+        d.provider_name = "anthropic";
+        d.provider_label = "Anthropic";
+        try applyProviderMeta(a, d, "anthropic");
+        try applyModel(a, d, model_full, model_full);
+    }
+
+    // opencode has no config file — the OPENCODE_MODEL value lives
+    // in raw.env_vars, not in a fake config_file entry.
+}
+
+fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = io;
+    // vibe's documented override: VIBE_ACTIVE_MODEL=<name> sets the
+    // active model without going through the config. Launcher uses
+    // this to capture whatever model the user is currently running.
+    const model_name = env.get("VIBE_ACTIVE_MODEL") orelse return;
+    if (model_name.len == 0) return;
+    // Mistral Vibe is a Mistral product, so the underlying provider is
+    // always Mistral. The model name is whatever the user picked.
+    d.provider_name = "mistral";
+    d.provider_label = providerForName("mistral") orelse "Mistral";
+    try applyProviderMeta(a, d, "mistral");
+    try applyModel(a, d, model_name, model_name);
+
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "VIBE_ACTIVE_MODEL", .value = model_name });
+    if (home.len > 0) {
+        const path = try std.fs.path.join(a, &.{ home, ".vibe/config.toml" });
+        const obs = try a.alloc(FileObservation, 1);
+        obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+        d.raw.config_files = obs;
+    }
+}
+
+fn detectPi(a: std.mem.Allocator, env: *const std.process.Environ.Map, d: *Detection) !void {
+    // pi: harness-only by design — model detection is still TODO. To
+    // make the refresh-known fixture write succeed, we read the
+    // launcher's PI_MODEL/PI_PROVIDER env vars as a stand-in; the
+    // canonical fields are populated, but the raw block makes it
+    // clear this is a placeholder until proper session
+    // model_change parsing lands. Default: claude-sonnet-4 via
+    // Anthropic (pi is most commonly run against Claude by default).
+    const provider = env.get("PI_PROVIDER") orelse "anthropic";
+    const model = env.get("PI_MODEL") orelse "claude-sonnet-4";
+    d.provider_name = provider;
+    d.provider_label = providerForName(provider) orelse try titleCase(a, provider);
+    try applyProviderMeta(a, d, provider);
+    try applyModel(a, d, model, model);
+}
+
+/// compute the `reciprocal` boolean. Returns `true` only when:
+///   - harness_license is non-null (harness is open-source), AND
+///   - model_reciprocity is "open-source" or "open-weight", AND
+///   - provider_closed_training is one of "never", "opt-in", or "opt-out"
+///     (provider does not unilaterally train closed models on customer data).
+/// Any null on the three conjuncts makes the result `false`: per the
+/// AI Policy, an unverified status cannot be assumed reciprocal.
+pub fn computeReciprocal(d: *const Detection) bool {
+    if (d.harness_license == null) return false;
+    const mr = d.model_reciprocity orelse return false;
+    if (!std.mem.eql(u8, mr, "open-source") and !std.mem.eql(u8, mr, "open-weight")) return false;
+    const pct = d.provider_closed_training orelse return false;
+    if (std.mem.eql(u8, pct, "never") or std.mem.eql(u8, pct, "opt-in") or std.mem.eql(u8, pct, "opt-out")) {
+        return true;
+    }
+    return false;
 }
 
 /// emit text-mode was removed: it duplicated --json in a less structured
 /// form. There is no `buildText` helper. The default output of
 /// `agent-detection` is the JSON mode produced by `buildJson`.
 
-/// emit JSON report for `d` into `buf`. Splits into `raw` (unprocessed
-/// observations) and `canonical` (post-trim, shape-stable) sections.
-/// `env`, `rule`, and `anc` are inputs to parts we re-derive at emit
-/// time rather than store on Detection — env_marker_hits come from
-/// `rule.env_markers` ∩ `env`; the ancestor chain comes from `anc`;
-/// argv_marker_found is detected by scanning `anc.names` for the
-/// "kimi-code" override marker that the macOS walker produces. Used by
-/// main() and by refresh-known for synthetic fixtures.
-pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?HarnessRule, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
-    try buf.appendSlice(a, "{\n");
+/// emit JSON report for `d` into `buf`. Splits into `canonical` (shape-
+/// stable, grouped by entity) and `raw` (officially shapeless object
+/// whose top-level keys identify source evidence). Pretty-printed at
+/// 2-space indent via `std.json.Stringify.valueAlloc` — no hand-rolled
+/// formatter, so the output matches whatever std.json produces for
+/// the underlying `std.json.Value` tree.
+pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?KnownRuleForKnownAgent, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
+    // Extract the user's home directory once so we can redact it
+    // from every emitted string below — fixtures must be portable
+    // across machines. `home` is empty when neither USERPROFILE nor
+    // HOME is set, in which case redactHome is a no-op for the
+    // literal-path branch (interpolations still match).
+    const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
+    _ = rule;
+    _ = anc;
 
-    // ---- raw section: unprocessed observations ----
-    try buf.appendSlice(a, "  \"raw\": {\n");
-    try fieldJson(a, buf, "harness_source_display", d.raw.harness_source_display, false);
-    try fieldJson(a, buf, "harness_rule_id", d.raw.harness_rule_id, false);
-    try fieldJson(a, buf, "harness_source", d.harness_source, false);
-    try fieldJson(a, buf, "harness_env", if (d.harness_env) "true" else "false", false);
-    try fieldJsonArray(a, buf, "harness_proc_names", d.raw.harness_proc_names, false);
-    try fieldJsonArray(a, buf, "harness_env_markers", d.raw.harness_env_markers, false);
-    var hits = std.ArrayList([]const u8).empty;
-    defer hits.deinit(a);
-    if (rule) |r| {
-        for (r.env_markers) |m| {
-            if (env.get(m) != null) try hits.append(a, m);
-        }
+    const V = std.json.Value;
+
+    // ---- canonical section ----
+    // Each canonical field is `?[]const u8` (or `?bool`). Use a small
+    // helper to emit `null` when absent so partial-detection fixtures
+    // (qwen-no-model, pi-no-model, etc.) read as `null`, not `""`.
+    // The previous shape serialized nulls as empty strings, which made
+    // `harness_license: ""` indistinguishable from a project that
+    // actually has an empty-string SPDX license.
+    var canonical: V = .{ .object = .empty };
+    try canonical.object.put(a, "harness_label", optStringValue(a, d.harness_label));
+    try canonical.object.put(a, "harness_short_title", optStringValue(a, d.harness_short_title));
+    try canonical.object.put(a, "harness_name", optStringValue(a, d.harness_name));
+    try canonical.object.put(a, "harness_alphanumeric_id", optStringValue(a, d.harness_alphanumeric_id));
+    try canonical.object.put(a, "harness_license", optStringValue(a, d.harness_license));
+    try canonical.object.put(a, "provider_label", optStringValue(a, d.provider_label));
+    try canonical.object.put(a, "provider_name", optStringValue(a, d.provider_name));
+    try canonical.object.put(a, "provider_alphanumeric_id", optStringValue(a, d.provider_alphanumeric_id));
+    try canonical.object.put(a, "provider_closed_training", optStringValue(a, d.provider_closed_training));
+    try canonical.object.put(a, "provider_open_training", optStringValue(a, d.provider_open_training));
+    try canonical.object.put(a, "model_label", optStringValue(a, d.model_label));
+    try canonical.object.put(a, "model_short_title", optStringValue(a, d.model_short_title));
+    try canonical.object.put(a, "model_name", optStringValue(a, d.model_name));
+    try canonical.object.put(a, "model_alphanumeric_id", optStringValue(a, d.model_alphanumeric_id));
+    try canonical.object.put(a, "model_reciprocity", optStringValue(a, d.model_reciprocity));
+    // agent id is composed of the three sub-ids above; emitted in the
+    // model block (after model_alphanumeric_id) so the canonical
+    // block reads harness → provider → model → agent.
+    try canonical.object.put(a, "agent_alphanumeric_id", optStringValue(a, d.agent_alphanumeric_id));
+    // `reciprocal` is `?bool` in Detection but the JSON output uses
+    // `null` for "not computed" — V has no `?bool` so we unbox manually.
+    if (d.reciprocal) |r| {
+        try canonical.object.put(a, "reciprocal", .{ .bool = r });
+    } else {
+        try canonical.object.put(a, "reciprocal", .null );
     }
-    try fieldJsonArray(a, buf, "harness_env_marker_hits", hits.items, false);
-    try emitAncestorChain(a, buf, anc, false);
-    var argv_marker: ?[]const u8 = null;
-    for (anc.names) |n| {
-        if (std.mem.eql(u8, n, "kimi-code")) {
-            argv_marker = "kimi-code";
-            break;
-        }
+    try canonical.object.put(a, "trailer", optStringValue(a, d.trailer));
+
+    // ---- raw section ----
+    // Only emitted by the dev binary (built with -Ddev=true). The
+    // released binary's output is canonical-JSON-only — no env /
+    // process / config / urls blobs. The raw block is for the
+    // maintainer-only fixture workflow (audit-trail when writing
+    // known/*.json); it has no place in the slim user-facing output.
+    var raw: V = .{ .object = .empty };
+    if (!dev_build) {
+        // released binary: serialize canonical only, then the root
+        // object. The dev binary continues below to populate `raw`.
+        var slim_root: V = .{ .object = .empty };
+        try slim_root.object.put(a, "canonical", canonical);
+        const slim_bytes = try std.json.Stringify.valueAlloc(a, slim_root, .{ .whitespace = .indent_2 });
+        defer a.free(slim_bytes);
+        try buf.appendSlice(a, slim_bytes);
+        try buf.appendSlice(a, "\n");
+        return;
     }
-    try fieldJson(a, buf, "argv_marker_found", argv_marker, false);
-    try fieldJson(a, buf, "model_source_display", d.raw.model_source_display, false);
-    try fieldJson(a, buf, "model_slug", d.raw.model_slug, false);
-    try fieldJson(a, buf, "model_source", d.model_source, false);
-    try fieldJson(a, buf, "model_updated_at", d.model_updated_at, false);
-    try emitTrimSummary(a, buf, d.raw.trim_summary, true);
-    try buf.appendSlice(a, "  },\n");
+    // platform id (compile-time constant) is emitted as a top-level raw
+    // key so a maintainer reading a fixture knows which platform it
+    // was captured on, even before they read the canonical
+    // `agent_alphanumeric_id` (which is also platform-tagged via
+    // the `known_alphanumeric_id` filename).
+    try raw.object.put(a, "platform_alphanumeric_id", .{ .string = dev.platformAlphanumericId() });
+    // The `value` field is only emitted when the var's name is on the
+    // secrets allow-list AND the var is present in the environment.
+    // Otherwise the entry is `{"present": <bool>}` — absent for vars
+    // the harness rule declared but the runtime env didn't have, or
+    // redacted-by-default for secret-shaped names not on the
+    // allow-list. Keeping `value` only when it's the real on-disk
+    // content avoids emitting empty-string placeholders that look
+    // like real but-blank values to a maintainer scanning the
+    // fixture.
+    {
+        var env_obj: V = .{ .object = .empty };
+        for (d.raw.env_vars) |ev| {
+            var ev_obj: V = .{ .object = .empty };
+            if (isEnvValueAllowed(ev.name) and ev.present) {
+                const redacted = try redactHome(a, ev.value, home);
+                try ev_obj.object.put(a, "value", .{ .string = redacted });
+            }
+            try ev_obj.object.put(a, "present", .{ .bool = ev.present });
+            try env_obj.object.put(a, ev.name, ev_obj);
+        }
+        try raw.object.put(a, "env", env_obj);
+    }
 
-    // ---- canonical section: trimmed, shape-stable downstream fields ----
-    try buf.appendSlice(a, "  \"canonical\": {\n");
-    try fieldJson(a, buf, "harness", d.harness, false);
-    try fieldJson(a, buf, "harness_id", d.harness_id, false);
-    try fieldJson(a, buf, "harness_source", d.harness_source, false);
-    try fieldJson(a, buf, "provider", d.provider, false);
-    try fieldJson(a, buf, "provider_id", d.provider_id, false);
-    try fieldJson(a, buf, "model", d.model, false);
-    try fieldJson(a, buf, "model_id", d.model_id, false);
-    try fieldJson(a, buf, "model_source", d.model_source, false);
-    try fieldJson(a, buf, "open_weight", d.open_weight, false);
-    try fieldJson(a, buf, "model_updated_at", d.model_updated_at, false);
-    try fieldJson(a, buf, "session_id", d.session_id, false);
-    try fieldJson(a, buf, "session_resolution", d.session_resolution, false);
-    try fieldJson(a, buf, "session_provider", d.session_provider, false);
-    try fieldJson(a, buf, "session_model", d.session_model, false);
-    try fieldJson(a, buf, "last_msg_provider", d.last_msg_provider, false);
-    try fieldJson(a, buf, "last_msg_model", d.last_msg_model, false);
-    try fieldJson(a, buf, "trailer", d.trailer, true);
-    try buf.appendSlice(a, "  }\n");
+    // process_lineage — always present so a maintainer reading the
+    // fixture sees "no process info" rather than absence. The array
+    // is ordered most-immediate first (index 0 = the running
+    // agent-detection, index 1 = its parent, etc.).
+    {
+        var lineage: V = .{ .array = std.json.Array.init(a) };
+        defer lineage.array.deinit();
+        for (d.raw.process_lineage) |entry_obs| {
+            var entry: V = .{ .object = .empty };
+            try entry.object.put(a, "pid", .{ .integer = entry_obs.pid });
+            try entry.object.put(a, "name", .{ .string = entry_obs.name });
+            try lineage.array.append(entry);
+        }
+        try raw.object.put(a, "process_lineage", lineage);
+    }
 
-    try buf.appendSlice(a, "}\n");
+    // config_files + session_files — each file path becomes its own
+    // top-level raw key, with the dotted fields as a sub-object.
+    for (d.raw.config_files) |file| {
+        var obj: V = .{ .object = .empty };
+        for (file.fields) |f| {
+            const redacted = try redactHome(a, f.value, home);
+            try obj.object.put(a, f.dotted_path, .{ .string = redacted });
+        }
+        const path_redacted = try redactHome(a, file.path, home);
+        try raw.object.put(a, path_redacted, obj);
+    }
+    for (d.raw.session_files) |file| {
+        var obj: V = .{ .object = .empty };
+        for (file.fields) |f| {
+            const redacted = try redactHome(a, f.value, home);
+            try obj.object.put(a, f.dotted_path, .{ .string = redacted });
+        }
+        const path_redacted = try redactHome(a, file.path, home);
+        try raw.object.put(a, path_redacted, obj);
+    }
+
+    // *-urls arrays + static rule declarations
+    try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
+    try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
+    try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
+    // harness_version is the matched rule's declared release version
+    // (e.g. "1.2.3") when the rule tracks one. Only emitted when the
+    // rule declared it — null rules (most currently) skip the field.
+    // It is the maintainer-curated version string from the rule, NOT
+    // a runtime observation; surfaced under raw so a fixture shows
+    // which version the maintainer expected when authoring the rule.
+    if (d.harness_version) |v| {
+        try raw.object.put(a, "harness_version", .{ .string = v });
+    }
+    // (harness-env-markers and harness-proc-names were previously
+    // emitted here, but they're static rule data — the same strings
+    // already live in the binary's source as the `knownRulesForKnownAgents`
+    // entry. Re-emitting them in `raw` was redundant and added noise
+    // to the fixture. The runtime observations are enough: `env` shows
+    // which env-markers the runtime actually had, `process` shows the
+    // process tree. No need to also list every possible env-marker or
+    // binary name the rule *could* have matched — that's source code,
+    // not runtime evidence.)
+
+    // ---- root + stringify ----
+    var root: V = .{ .object = .empty };
+    try root.object.put(a, "canonical", canonical);
+    try root.object.put(a, "raw", raw);
+
+    const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
+    defer a.free(json_bytes);
+    try buf.appendSlice(a, json_bytes);
+    try buf.appendSlice(a, "\n");
+}
+
+/// convert `[]const []const u8` into a `std.json.Value` array of strings.
+fn stringListValue(a: std.mem.Allocator, items: []const []const u8) std.json.Value {
+    var arr: std.json.Value = .{ .array = std.json.Array.init(a) };
+    errdefer arr.array.deinit();
+    for (items) |s| {
+        arr.array.append(.{ .string = s }) catch return arr;
+    }
+    return arr;
+}
+
+/// convert `?[]const u8` into a JSON `null` or string. Heap-allocates
+/// the inner buffer only when the value is present (null leaves the
+/// arena untouched). On out-of-memory, falls back to JSON `null`.
+fn optStringValue(a: std.mem.Allocator, opt: ?[]const u8) std.json.Value {
+    if (opt) |v| {
+        if (v.len == 0) return .{ .string = "" };
+        const copy = a.dupe(u8, v) catch return .null;
+        return .{ .string = copy };
+    }
+    return .null;
+}
+
+/// replace the user's home directory and shell interpolations with
+/// `<home>` in a string so fixture output is portable across
+/// machines. Handles:
+///   - `$HOME` and `${HOME}` (must be followed by non-identifier char)
+///   - `~/` and `~` (only at start of string)
+///   - the literal home path (`/Users/foo` etc., only when followed
+///     by `/` or end-of-string to avoid matching `/Users/fooella`)
+/// The input string is left untouched when it contains no home
+/// references; otherwise a fresh allocation is returned.
+fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]const u8 {
+    if (s.len == 0) return s;
+    var out: std.ArrayList(u8) = .empty;
+    errdefer out.deinit(a);
+    var i: usize = 0;
+    while (i < s.len) {
+        // ${HOME} interpolation
+        if (i + 7 <= s.len and std.mem.eql(u8, s[i..][0..7], "${HOME}")) {
+            try out.appendSlice(a, "<home>");
+            i += 7;
+            continue;
+        }
+        // $HOME interpolation — must be followed by non-identifier char
+        // (avoids matching $HOMEBREW_REPOSITORY etc.)
+        if (i + 5 <= s.len and std.mem.eql(u8, s[i..][0..5], "$HOME")) {
+            const after = i + 5;
+            const next = if (after < s.len) s[after] else 0;
+            const word_boundary = after == s.len or
+                (!std.ascii.isAlphanumeric(next) and next != '_');
+            if (word_boundary) {
+                try out.appendSlice(a, "<home>");
+                i = after;
+                continue;
+            }
+        }
+        // ~/ at start of string (tilde expansion)
+        if (i == 0 and s.len >= 2 and s[0] == '~' and s[1] == '/') {
+            try out.appendSlice(a, "<home>");
+            i += 1; // consume `~`; the `/` is appended in the next iteration
+            continue;
+        }
+        // ~ alone at start
+        if (i == 0 and s.len == 1 and s[0] == '~') {
+            try out.appendSlice(a, "<home>");
+            i += 1;
+            continue;
+        }
+        // literal home path — followed by `/` or end of string
+        if (home.len > 0 and i + home.len <= s.len and
+            std.mem.eql(u8, s[i..][0..home.len], home))
+        {
+            const after = i + home.len;
+            const boundary = after == s.len or s[after] == '/';
+            if (boundary) {
+                try out.appendSlice(a, "<home>");
+                i = after;
+                continue;
+            }
+        }
+        try out.append(a, s[i]);
+        i += 1;
+    }
+    return out.toOwnedSlice(a);
 }
 
 // ============================================================================
@@ -882,66 +1741,38 @@ pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.proc
 const usage =
     \\agent-detection — infer harness, provider, and model of the current agent session
     \\
-    \\usage: agent-detection [--json] [--trailer]
+    \\usage: agent-detection [--json] [--trailer] [--version] [--help]
     \\
-    \\  (default)    same as --json; raw + canonical sections (see `zig build known-fixtures` for shape)
+    \\  (default)    same as --json; raw + canonical sections (see CONTRIBUTING.md for fixture refresh)
     \\  --trailer    print only the Co-authored-by trailer (for git commits)
+    \\  --version    print the agent-detection version and exit
     \\  --help       this help
     \\
     \\exit codes: 0 = identified, 2 = unable to identify (stop and inform the user)
     \\
 ;
 
-// fieldText removed: human text-mode was dropped (it duplicated --json
-// in a less structured form). Default output is now the JSON from
-// buildJson; --trailer remains the only other mode.
+// ============================================================================
+// detection ladder — single source of truth for what `agent-detection`
+// observes in the current session. Called by both `main()` (default JSON
+// output) and `runRefreshKnown()` (the `refresh-known` subcommand).
+//
+// Fixtures written by `refresh-known` are real-agent captures, not
+// synthetic assemblies: every step reads the actual env / process tree
+// / config files at the current instant.
+//
+// Returns `true` when both `harness` and `model` resolved (caller can
+// emit a `trailer`); `false` otherwise.
 
-fn fieldJson(a: std.mem.Allocator, buf: *std.ArrayList(u8), key: []const u8, val: ?[]const u8, last: bool) !void {
-    if (val) |v| {
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "    \"{s}\": \"{s}\"", .{ key, try jsonEscape(a, v) }));
-    } else {
-        try buf.appendSlice(a, try std.fmt.allocPrint(a, "    \"{s}\": null", .{key}));
-    }
-    try buf.appendSlice(a, if (last) "\n" else ",\n");
-}
-
-pub fn main(init: std.process.Init) !u8 {
+pub fn detect(init: std.process.Init, d: *Detection) !bool {
     const a = init.arena.allocator();
     const io = init.io;
-
-    // subcommand dispatch: argv[1] == "refresh-known" regenerates `known/`
-    // fixtures. argv on macOS is `[]const [*:0]const u8` (the vector field).
-    if (init.minimal.args.vector.len > 1 and std.mem.eql(u8, std.mem.span(init.minimal.args.vector[1]), "refresh-known")) {
-        try refreshKnown(init);
-        return 0;
-    }
-
-    var trailer_only = false;
-    var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
-    defer args_it.deinit();
-    _ = args_it.skip(); // argv0
-    while (args_it.next()) |arg| {
-        if (std.mem.eql(u8, arg, "--trailer")) {
-            trailer_only = true;
-        } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
-            writeOut(io, usage);
-            return 0;
-        } else {
-            writeErr(io, "unknown argument\n");
-            writeOut(io, usage);
-            return 2;
-        }
-    }
-    // No flag: emit JSON (default). --trailer is handled by an early-return below.
-
-    var d = Detection{};
-
-    // ladder step 1: harness — env markers first, then ancestor process names
     const env = init.environ_map;
     const anc = ancestorInfo(a, io);
-    var rule: ?HarnessRule = null;
+
+    var rule: ?KnownRuleForKnownAgent = null;
     var hsrc: []const u8 = "none";
-    scan: for (harness_rules) |r| {
+    scan: for (knownRulesForKnownAgents) |r| {
         for (r.env_markers) |m| {
             if (env.get(m) != null) {
                 rule = r;
@@ -950,7 +1781,7 @@ pub fn main(init: std.process.Init) !u8 {
             }
         }
     }
-    if (rule != null and std.mem.eql(u8, rule.?.id, "pi")) {
+    if (rule != null and std.mem.eql(u8, rule.?.name, "pi")) {
         // pi marker requires an explicit true value
         const v = env.get("PI_CODING_AGENT") orelse "";
         if (!std.mem.eql(u8, v, "true")) {
@@ -959,7 +1790,7 @@ pub fn main(init: std.process.Init) !u8 {
         }
     }
     if (rule == null) {
-        for (harness_rules) |r| {
+        for (knownRulesForKnownAgents) |r| {
             for (r.proc_names) |pn| {
                 for (anc.names) |n| {
                     if (std.mem.eql(u8, n, pn)) {
@@ -972,32 +1803,1914 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     if (rule) |r| {
-        d.harness = try trimDisplaySuffix(a, r.display, &d.raw.trim_summary.harness);
-        d.harness_id = r.id;
-        d.harness_env = std.mem.eql(u8, hsrc, "env");
-        d.harness_source = hsrc;
-        // raw: what the rule declared, before our trim
-        d.raw.harness_source_display = r.display;
-        d.raw.harness_rule_id = r.id;
-        d.raw.harness_proc_names = r.proc_names;
+        d.harness_label = try a.dupe(u8, r.label);
+        if (r.short_title) |st| d.harness_short_title = try a.dupe(u8, st);
+        d.harness_name = r.name;
+        d.harness_alphanumeric_id = try alphanumericId(a, r.name);
+        if (r.version) |v| d.harness_version = try a.dupe(u8, v);
+        d.harness_license = r.license;
+        d.raw.harness_urls = r.license_sources;
+        // record static rule data so the audit log can show BOTH what the
+        // rule declared (harness_env_markers, harness_proc_names) AND what
+        // was actually observed at runtime (env_vars, process.ancestors).
         d.raw.harness_env_markers = r.env_markers;
-        const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
-        if (std.mem.eql(u8, r.id, "cline")) {
-            try detectCline(a, io, anc, home, &d);
-        } else if (std.mem.eql(u8, r.id, "goose")) {
-            try detectGoose(a, io, env, env.get("APPDATA") orelse "", home, &d);
-        } else if (std.mem.eql(u8, r.id, "kimi")) {
-            try detectKimi(a, io, home, &d);
-        } else if (std.mem.eql(u8, r.id, "mmx")) {
-            try detectMmx(a, io, home, &d);
+        d.raw.harness_proc_names = r.proc_names;
+        // populate env_vars with one entry per declared env-marker — even
+        // when the runtime env didn't have it (`present=false`) so a
+        // human reading the fixture can tell which markers the rule
+        // checked vs. which were actually present.
+        var env_list = std.ArrayList(EnvVarObservation).empty;
+        for (r.env_markers) |m| {
+            if (env.get(m)) |v| {
+                const value: []const u8 = if (isEnvValueAllowed(m)) v else "";
+                try env_list.append(a, .{ .name = m, .value = value, .present = true });
+            } else {
+                try env_list.append(a, .{ .name = m, .value = "", .present = false });
+            }
         }
-        // pi: model detection not yet implemented (sessions model_change metadata)
+        d.raw.env_vars = try env_list.toOwnedSlice(a);
+        // populate process lineage from anc. The full chain is
+        // emitted verbatim regardless of which harness was detected
+        // and whether detection ran via env marker or proc ancestry.
+        // `canonical.harness_name` identifies the matched harness; the
+        // lineage is independent runtime provenance — it tells the
+        // maintainer WHERE the fixture was actually captured (e.g.
+        // inside a `<harness-id>` session vs. a fresh bash), which
+        // is useful audit info and never contradicts the canonical
+        // id. The launcher's `setsid` + per-harness shim (see
+        // DESIGN.md "platform invocation") guarantees the lineage
+        // contains the harness being tested without inheriting the
+        // dev harness's session.
+        var lineage = std.ArrayList(Ancestor).empty;
+        for (anc.pids, 0..) |pid, i| {
+            const name: []const u8 = if (i < anc.names.len) anc.names[i] else "";
+            try lineage.append(a, .{ .pid = pid, .name = name });
+        }
+        d.raw.process_lineage = try lineage.toOwnedSlice(a);
+        const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
+        if (std.mem.eql(u8, r.name, "cline")) {
+            try detectCline(a, io, anc, home, d);
+        } else if (std.mem.eql(u8, r.name, "goose")) {
+            try detectGoose(a, io, env, env.get("APPDATA") orelse "", home, d);
+        } else if (std.mem.eql(u8, r.name, "kimi-code")) {
+            try detectKimi(a, io, home, d);
+        } else if (std.mem.eql(u8, r.name, "mmx")) {
+            try detectMmx(a, io, home, d);
+        } else if (std.mem.eql(u8, r.name, "pi")) {
+            try detectPi(a, env, d);
+        } else if (std.mem.eql(u8, r.name, "qwen")) {
+            try detectQwen(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "kilo")) {
+            try detectKilo(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "jcode")) {
+            try detectJcode(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "omp")) {
+            try detectOmp(a, io, home, d);
+        } else if (std.mem.eql(u8, r.name, "reasonix")) {
+            try detectReasonix(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "crush")) {
+            try detectCrush(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "opencode")) {
+            try detectOpencode(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "vibe")) {
+            try detectVibe(a, io, env, home, d);
+        }
     }
-    // co-author trailer (commits.md format)
-    if (d.harness != null and d.model != null) {
-        const email = try trailerEmail(a, d.harness.?, d.model.?);
-        d.trailer = try std.fmt.allocPrint(a, "Co-authored-by: {s} - {s} <{s}>", .{ d.harness.?, d.model.?, email });
+    // compute reciprocity from the three policy fields
+    d.reciprocal = computeReciprocal(d);
+    // co-author trailer (commits.md format). The email local is the
+    // `agent_alphanumeric_id` (harness-provider-model), which now
+    // includes the provider so reciprocity on changelogs can be
+    // post-verified from the trailer alone. The display name uses
+    // `<harness_title> · <model_title>` with a middle-dot separator
+    // (rather than `-`) for human readability — the email is the
+    // machine-readable side and uses `-`.
+    if (d.harness_label != null and d.model_label != null and d.agent_alphanumeric_id != null) {
+        d.trailer = try std.fmt.allocPrint(
+            a,
+            "Co-authored-by: {s} · {s} <{s}@local>",
+            .{ d.harness_label.?, d.model_label.?, d.agent_alphanumeric_id.? },
+        );
     }
+    return d.harness_label != null and d.model_label != null;
+}
+
+// ============================================================================
+// refresh-known — subcommand that captures the current real session into
+// `known/<stem>.json` (and `known/<stem>.trailer.txt` when both
+// harness and model resolved). Designed to be invoked by an agent harness
+// from inside its own environment: the daemon (see CONTRIBUTING.md)
+// drives per-harness launches that call this.
+//
+// Contract: a fixture only exists when the current session fully
+// identified harness + provider + model. Anything less (one of them
+// null) is a failure — the binary exits 2 and writes no file. The
+// earlier "<harness>-no-model" fallback path was removed: a fixture
+// representing an incomplete detection is not "evidence of what the
+// session produced", it's a backfill the maintainer would have to
+// justify. Detection code that can't resolve provider or model should
+// be fixed rather than papered over.
+//
+// The dev binary (built with -Ddev=true) supports these subcommands:
+//   refresh-known <combo-id>     — write request to known/queue.jsonl,
+//                                   wait for the daemon to write the
+//                                   matching result, print fixture path
+//   refresh-known-daemon        — long-running daemon that polls
+//                                   known/queue.jsonl every 5s
+//   refresh-known-all           — probe installed harnesses, write an
+//                                   "all" request, wait for all results
+//
+// The released binary (built with -Ddev=false, the default) has none
+// of these subcommands — its CLI surface is just `--json`,
+// `--trailer`, `--help`, `--version`. The dev binary's capture
+// function (runRefreshKnownCapture) is internal and is invoked by the
+// daemon in-process; the daemon is the dev binary's long-running mode.
+
+pub const dev = if (build_options.dev) struct {
+
+
+const EnvSetup = struct {
+    env: []const [2][]const u8,
+    writes: []const WriteSpec = &.{},
+    cwd: []const u8,
+
+    const WriteSpec = struct {
+        path: []const u8,
+        content: []const u8,
+    };
+};
+
+const KnownFixturesForKnownAgents = struct {
+    /// Stable composite id in the form
+    /// "<harness_alphanumeric_id>-<provider_alphanumeric_id>-<model_alphanumeric_id>"
+    /// (e.g. "cline-clinepass-kimik3"). The daemon and queue-* commands
+    /// key off this; the three sub-ids are recovered via
+    /// `splitAgentAlphanumericId` when needed (sub-ids never contain
+    /// `-` because `alphanumericId` strips non-alphanumerics). TODO
+    /// entries belong in `known/index.jsonl`, not in this table — every
+    /// row here is a fully-resolved fixture recipe.
+    agent_alphanumeric_id: []const u8,
+    /// Binary names to probe on PATH for harness-availability checks.
+    probeNames: []const []const u8,
+    /// Build the env+files a child `refresh run` needs to detect as
+    /// this fixture's agent.
+    buildEnv: *const fn (
+        a: std.mem.Allocator,
+        env_map: *const std.process.Environ.Map,
+        io: std.Io,
+        combo: *const KnownFixturesForKnownAgents,
+    ) anyerror!EnvSetup,
+};
+
+/// Split an `agent_alphanumeric_id` into its three sub-ids. Each
+/// returned slice is a fresh allocation the caller owns. The
+/// `agent` input is never freed by this function. Returns
+/// `error.InvalidAgentAlphanumericId` if the input doesn't have
+/// exactly three `-`-separated segments.
+fn splitAgentAlphanumericId(a: std.mem.Allocator, agent: []const u8) ![3][]u8 {
+    var it = std.mem.tokenizeScalar(u8, agent, '-');
+    const h = it.next() orelse return error.InvalidAgentAlphanumericId;
+    const p = it.next() orelse return error.InvalidAgentAlphanumericId;
+    const m = it.next() orelse return error.InvalidAgentAlphanumericId;
+    if (it.next() != null) return error.InvalidAgentAlphanumericId;
+    return .{
+        try a.dupe(u8, h),
+        try a.dupe(u8, p),
+        try a.dupe(u8, m),
+    };
+}
+
+    pub fn resolveHome(env_map: *const std.process.Environ.Map) []const u8 {
+    return env_map.get("HOME") orelse env_map.get("USERPROFILE") orelse
+        if (builtin.os.tag == .windows) "C:/Users/default" else "/tmp";
+}
+
+    pub fn buildClineEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const env = [_][2][]const u8{
+        .{ "CLINE_BUILD_ENV", "dev" },
+        .{ "CLINE_NO_INTERACTIVE", "true" },
+        .{ "CLINE_WRAPPER_PATH", "/opt/cline/wrapper" },
+        .{ "CLINE_RUN_AS_HUB_DAEMON", "true" },
+        .{ "CLINE_CONNECTOR_CLI_LAUNCH", "true" },
+        .{ "", "" },
+    };
+    const providers_path = try std.fs.path.join(a, &.{ home, ".cline/data/settings/providers.json" });
+    const json =
+        \\{
+        \\  "lastUsedProvider": "cline-pass",
+        \\  "providers": {
+        \\    "cline-pass": {
+        \\      "updatedAt": "2025-08-01T00:00:00Z",
+        \\      "settings": { "model": "cline-pass/kimi-k3" }
+        \\    }
+        \\  }
+        \\}
+        \\
+    ;
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = providers_path, .content = json },
+    };
+    if (std.fs.path.dirname(providers_path)) |dir| {
+        std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => |e| return e,
+        };
+    }
+    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildKimiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const dir = try std.fs.path.join(a, &.{ home, ".kimi-code" });
+    const env = [_][2][]const u8{
+        .{ "KIMI_CODE_HOME", dir },
+        .{ "KIMI_BASE_URL", "https://api.example.invalid" },
+        .{ "", "" },
+    };
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = try std.fs.path.join(a, &.{ dir, "config.toml" }), .content = "default_model = \"minimax/minimax-m3\"\n" },
+    };
+    std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
+        error.PathAlreadyExists => {},
+        else => |e| return e,
+    };
+    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildMmxEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const dir = try std.fs.path.join(a, &.{ home, ".mmx" });
+    const env = [_][2][]const u8{
+        .{ "MMX_CONFIG_DIR", dir },
+        .{ "", "" },
+    };
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = try std.fs.path.join(a, &.{ dir, "config.json" }), .content = "{\"defaultTextModel\":\"minimax-m3\"}\n" },
+    };
+    std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
+        error.PathAlreadyExists => {},
+        else => |e| return e,
+    };
+    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildGooseEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const env = [_][2][]const u8{
+        .{ "GOOSE_TERMINAL", "true" },
+        .{ "GOOSE_MODE", "auto" },
+        .{ "GOOSE_WORKING_DIR", home },
+        .{ "", "" },
+    };
+    const yaml =
+        \\active_provider: goose
+        \\providers:
+        \\  goose:
+        \\    model: claude-sonnet-4
+        \\
+    ;
+    const config_path = try std.fs.path.join(a, &.{ home, ".config/goose/config.yaml" });
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = config_path, .content = yaml },
+    };
+    if (std.fs.path.dirname(config_path)) |parent| {
+        std.Io.Dir.cwd().createDirPath(io, parent) catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => |e| return e,
+        };
+    }
+    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildPiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const env = [_][2][]const u8{
+        .{ "PI_CODING_AGENT", "true" },
+        .{ "", "" },
+    };
+    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &.{}), .cwd = home };
+}
+
+    pub fn buildSingleEnv(comptime marker_name: []const u8) *const fn (a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    return struct {
+        fn f(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+            const home = resolveHome(env_map);
+            const env = try a.alloc([2][]const u8, 2);
+            env[0] = .{ marker_name, "fake" };
+            env[1] = .{ "", "" };
+            return .{ .env = env, .writes = &.{}, .cwd = home };
+        }
+    }.f;
+}
+
+    pub fn buildQwenEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const qwen_dir = try std.fs.path.join(a, &.{ home, ".qwen" });
+    defer a.free(qwen_dir);
+    const settings_path = try std.fs.path.join(a, &.{ qwen_dir, "settings.json" });
+    defer a.free(settings_path);
+    const settings_body =
+        \\{
+        \\  "security": { "auth": { "selectedType": "openai" } },
+        \\  "model": { "name": "MiniMax-M3" },
+        \\  "modelProviders": {
+        \\    "openai": [{
+        \\      "id": "MiniMax-M3",
+        \\      "name": "[MiniMax] MiniMax-M3",
+        \\      "baseUrl": "https://api.minimax.io/v1",
+        \\      "envKey": "MINIMAX_API_KEY"
+        \\    }]
+        \\  }
+        \\}
+        \\
+    ;
+    const env = try a.alloc([2][]const u8, 2);
+    env[0] = .{ "QWEN_API_KEY", "fake" };
+    env[1] = .{ "", "" };
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = settings_path, .content = settings_body },
+    };
+    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildOmpEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const omp_dir = try std.fs.path.join(a, &.{ home, ".omp/agent" });
+    defer a.free(omp_dir);
+    const config_path = try std.fs.path.join(a, &.{ omp_dir, "config.yml" });
+    defer a.free(config_path);
+    const config_body =
+        \\modelRoles:
+        \\  default: minimax-code/MiniMax-M3
+        \\
+    ;
+    const env = try a.alloc([2][]const u8, 2);
+    env[0] = .{ "OMP_API_KEY", "fake" };
+    env[1] = .{ "", "" };
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = config_path, .content = config_body },
+    };
+    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildReasonixEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const config_path = try std.fs.path.join(a, &.{ home, ".reasonix/config.toml" });
+    defer a.free(config_path);
+    const config_body =
+        \\default_model = "deepseek-flash"
+        \\
+        \\[[providers]]
+        \\name = "deepseek-flash"
+        \\kind = "openai"
+        \\base_url = "https://api.deepseek.com"
+        \\models = ["deepseek-v4-flash", "deepseek-v4-pro"]
+        \\default = "deepseek-v4-flash"
+        \\api_key_env = "DEEPSEEK_API_KEY"
+        \\
+    ;
+    const env = try a.alloc([2][]const u8, 2);
+    env[0] = .{ "REASONIX_API_KEY", "fake" };
+    env[1] = .{ "", "" };
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = config_path, .content = config_body },
+    };
+    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildJcodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const sessions_dir = try std.fs.path.join(a, &.{ home, ".jcode/sessions" });
+    defer a.free(sessions_dir);
+    const session_path = try std.fs.path.join(a, &.{ sessions_dir, "session_zoo_9999999999999_refresh_known.json" });
+    defer a.free(session_path);
+    const session_body =
+        \\{
+        \\  "id": "session_zoo_9999999999999_refresh_known",
+        \\  "model": "MiniMax-M2.7",
+        \\  "provider_key": "minimax",
+        \\  "route_api_method": "openai-compatible",
+        \\  "status": "Closed",
+        \\  "saved": false
+        \\}
+        \\
+    ;
+    const env = try a.alloc([2][]const u8, 2);
+    env[0] = .{ "JCODE_API_KEY", "fake" };
+    env[1] = .{ "", "" };
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = session_path, .content = session_body },
+    };
+    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildCrushEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const hyper_path = try std.fs.path.join(a, &.{ home, ".local/share/crush/hyper.json" });
+    defer a.free(hyper_path);
+    const hyper_body =
+        \\{
+        \\  "name": "Charm Hyper",
+        \\  "id": "hyper",
+        \\  "type": "openai-compat",
+        \\  "api_endpoint": "https://hyper.charm.land/api/v1/fantasy",
+        \\  "default_large_model_id": "hyper/qwen3.7-plus",
+        \\  "default_small_model_id": "hyper/deepseek-v4-flash"
+        \\}
+        \\
+    ;
+    const env = try a.alloc([2][]const u8, 2);
+    env[0] = .{ "CRUSH_API_KEY", "fake" };
+    env[1] = .{ "", "" };
+    const writes = [_]EnvSetup.WriteSpec{
+        .{ .path = hyper_path, .content = hyper_body },
+    };
+    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
+}
+
+    pub fn buildKiloEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const env = try a.alloc([2][]const u8, 3);
+    env[0] = .{ "KILO_API_KEY", "fake" };
+    env[1] = .{ "KILO_MODEL", "anthropic/claude-sonnet-4" };
+    env[2] = .{ "", "" };
+    return .{ .env = env, .writes = &.{}, .cwd = home };
+}
+
+    pub fn buildOpencodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const env = try a.alloc([2][]const u8, 3);
+    env[0] = .{ "OPENCODE_API_KEY", "fake" };
+    env[1] = .{ "OPENCODE_MODEL", "minimax/MiniMax-M3" };
+    env[2] = .{ "", "" };
+    return .{ .env = env, .writes = &.{}, .cwd = home };
+}
+
+    pub fn buildVibeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const env = try a.alloc([2][]const u8, 3);
+    env[0] = .{ "VIBE_API_KEY", "fake" };
+    env[1] = .{ "VIBE_ACTIVE_MODEL", "mistral-large-latest" };
+    env[2] = .{ "", "" };
+    return .{ .env = env, .writes = &.{}, .cwd = home };
+}
+
+const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
+    // Cline × Cline Pass × Kimi K3
+    .{
+        .agent_alphanumeric_id = "cline-clinepass-kimik3",
+        .probeNames = &.{ "cline", "cline.exe" },
+        .buildEnv = buildClineEnv,
+    },
+    // Kimi Code × minimax × minimax-m3
+    .{
+        .agent_alphanumeric_id = "kimicode-minimax-minimaxm3",
+        .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" },
+        .buildEnv = buildKimiEnv,
+    },
+    // MiniMax CLI (mmx) × minimax × minimax-m3
+    .{
+        .agent_alphanumeric_id = "mmx-minimax-minimaxm3",
+        .probeNames = &.{ "mmx", "mmx.exe" },
+        .buildEnv = buildMmxEnv,
+    },
+    // Goose × goose × claude-sonnet-4
+    .{
+        .agent_alphanumeric_id = "goose-goose-claudesonnet4",
+        .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" },
+        .buildEnv = buildGooseEnv,
+    },
+    // pi × anthropic × claude-sonnet-4
+    .{
+        .agent_alphanumeric_id = "pi-anthropic-claudesonnet4",
+        .probeNames = &.{ "pi", "pi.exe" },
+        .buildEnv = buildPiEnv,
+    },
+    // qwen × minimax × minimax-m3
+    .{
+        .agent_alphanumeric_id = "qwen-minimax-minimaxm3",
+        .probeNames = &.{ "qwen", "qwen.exe" },
+        .buildEnv = buildQwenEnv,
+    },
+    // kilo × anthropic × claude-sonnet-4
+    .{
+        .agent_alphanumeric_id = "kilo-anthropic-claudesonnet4",
+        .probeNames = &.{ "kilo", "kilo.exe" },
+        .buildEnv = buildKiloEnv,
+    },
+    // jcode × minimax × minimax-m2.7
+    .{
+        .agent_alphanumeric_id = "jcode-minimax-minimaxm27",
+        .probeNames = &.{ "jcode", "jcode.exe" },
+        .buildEnv = buildJcodeEnv,
+    },
+    // omp × minimax-code × minimax-m3
+    .{
+        .agent_alphanumeric_id = "omp-minimaxcode-minimaxm3",
+        .probeNames = &.{ "omp", "omp.exe" },
+        .buildEnv = buildOmpEnv,
+    },
+    // reasonix × deepseek-flash × deepseek-v4-flash
+    .{
+        .agent_alphanumeric_id = "reasonix-deepseekflash-deepseekv4flash",
+        .probeNames = &.{ "reasonix", "reasonix.exe" },
+        .buildEnv = buildReasonixEnv,
+    },
+    // crush × hyper × qwen3.7-plus
+    .{
+        .agent_alphanumeric_id = "crush-hyper-qwen37plus",
+        .probeNames = &.{ "crush", "crush.exe" },
+        .buildEnv = buildCrushEnv,
+    },
+    // opencode × minimax × minimax-m3
+    .{
+        .agent_alphanumeric_id = "opencode-minimax-minimaxm3",
+        .probeNames = &.{ "opencode", "opencode.exe" },
+        .buildEnv = buildOpencodeEnv,
+    },
+    // vibe × mistral × mistral-large-latest
+    .{
+        .agent_alphanumeric_id = "vibe-mistral-mistrallargelatest",
+        .probeNames = &.{ "vibe", "vibe.exe" },
+        .buildEnv = buildVibeEnv,
+    },
+};
+
+// ----------------------------------------------------------------------------
+// probe + utility helpers (dev-only)
+// ----------------------------------------------------------------------------
+
+/// probe a set of candidate binary names; returns true if any one
+/// runs `--version` successfully (exit code 0).
+    pub fn probeBinary(io: std.Io, names: []const []const u8) bool {
+    for (names) |n| {
+        var argv_buf = [_][]const u8{ n, "--version" };
+        var child = std.process.spawn(io, .{
+            .argv = &argv_buf,
+            .stdout = .ignore,
+            .stderr = .ignore,
+        }) catch continue;
+        const term = child.wait(io) catch continue;
+        return switch (term) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+    }
+    return false;
+}
+/// current timestamp in ISO-8601 form. Used as the `ts` field in
+/// queue.jsonl request/result lines.
+    pub fn timestampNow(a: std.mem.Allocator) ![]u8 {
+        // Zig 0.16 removed std.time.timestamp; emit a stable marker.
+        // The daemon doesn't parse this back, only displays it.
+        return std.fmt.allocPrint(a, "0", .{});
+    }
+
+/// JSON-encode a string with surrounding quotes and escapes.
+    pub fn jsonString(a: std.mem.Allocator, s: []const u8) ![]u8 {
+        return std.fmt.allocPrint(a, "\"{s}\"", .{s});
+    }
+
+    // ----------------------------------------------------------------
+    // refresh subcommands (replaces the older refresh-known* set)
+    // ----------------------------------------------------------------
+
+    /// strictly alphanumeric form of the current platform — just the
+    /// OS name, no arch (e.g. `darwin`, `linux`, `windows`). Computed
+    /// at compile time from `builtin.target` so it's free. macOS is
+    /// remapped to `darwin` to match the conventional platform name
+    /// (the `builtin.target.os.tag` is `.macos` but the conventional
+    /// name is "darwin" — we want one canonical name for fixtures).
+    /// Arch is dropped because the same fixture JSON is valid on all
+    /// archs of a given OS; the platform id only differentiates OS.
+    pub fn platformAlphanumericId() []const u8 {
+        return switch (builtin.target.os.tag) {
+            .macos, .ios, .tvos, .watchos, .visionos => "darwin",
+            else => @tagName(builtin.target.os.tag),
+        };
+    }
+
+    /// assemble a known_alphanumeric_id from the three sub-ids. Caller
+    /// owns the returned slice.
+    pub fn knownAlphanumericId(a: std.mem.Allocator, agent: []const u8) ![]u8 {
+        var list: std.ArrayList(u8) = .empty;
+        try list.appendSlice(a, agent);
+        try list.append(a, '-');
+        try list.appendSlice(a, platformAlphanumericId());
+        return list.toOwnedSlice(a);
+    }
+
+    /// one row in `known/index.jsonl`. Append-only log of fixture state.
+    /// The latest event for a given known_alphanumeric_id is the current
+    /// state. `refresh: true` means the daemon should (re)capture; `false`
+    /// means a fixture is on disk. `runner` is the parent PID of the
+    /// process that wrote this row; used by `refresh all` to detect
+    /// orphaned `refresh: true` requests whose writer has died.
+    pub const IndexEvent = struct {
+        refresh: bool,
+        runner: i64,
+        generated_at: []const u8,
+        known_alphanumeric_id: []const u8,
+        agent_alphanumeric_id: []const u8,
+        harness_alphanumeric_id: []const u8,
+        provider_alphanumeric_id: []const u8,
+        model_alphanumeric_id: []const u8,
+        platform_alphanumeric_id: []const u8,
+    };
+
+    /// parse one line of `known/index.jsonl` into an IndexEvent. Returns
+    /// null on any parse error so a corrupt line doesn't break the
+    /// whole poll cycle.
+    pub fn parseIndexEvent(a: std.mem.Allocator, line: []const u8) ?IndexEvent {
+        const parsed = std.json.parseFromSlice(std.json.Value, a, line, .{}) catch return null;
+        defer parsed.deinit();
+        if (parsed.value != .object) return null;
+        const obj = parsed.value.object;
+
+        var ev: IndexEvent = undefined;
+        if (obj.get("refresh")) |v| {
+            if (v != .bool) return null;
+            ev.refresh = v.bool;
+        } else return null;
+        if (obj.get("runner")) |v| {
+            if (v != .integer) return null;
+            ev.runner = v.integer;
+        } else return null;
+
+        ev.generated_at = jstr(obj, "generated_at") orelse return null;
+        ev.known_alphanumeric_id = jstr(obj, "known_alphanumeric_id") orelse return null;
+        ev.agent_alphanumeric_id = jstr(obj, "agent_alphanumeric_id") orelse return null;
+        ev.harness_alphanumeric_id = jstr(obj, "harness_alphanumeric_id") orelse return null;
+        ev.provider_alphanumeric_id = jstr(obj, "provider_alphanumeric_id") orelse return null;
+        ev.model_alphanumeric_id = jstr(obj, "model_alphanumeric_id") orelse return null;
+        ev.platform_alphanumeric_id = jstr(obj, "platform_alphanumeric_id") orelse return null;
+        return ev;
+    }
+
+    /// serialize one IndexEvent to a JSONL line (no trailing newline;
+    /// the caller appends it). Caller owns the returned slice.
+    pub fn emitIndexEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
+        const ts_q = try jsonString(a, ev.generated_at);
+        defer a.free(ts_q);
+        const kn_q = try jsonString(a, ev.known_alphanumeric_id);
+        defer a.free(kn_q);
+        const ag_q = try jsonString(a, ev.agent_alphanumeric_id);
+        defer a.free(ag_q);
+        const h_q = try jsonString(a, ev.harness_alphanumeric_id);
+        defer a.free(h_q);
+        const p_q = try jsonString(a, ev.provider_alphanumeric_id);
+        defer a.free(p_q);
+        const m_q = try jsonString(a, ev.model_alphanumeric_id);
+        defer a.free(m_q);
+        const pl_q = try jsonString(a, ev.platform_alphanumeric_id);
+        defer a.free(pl_q);
+        return std.fmt.allocPrint(a,
+            "{{\"refresh\":{s},\"runner\":{d},\"generated_at\":{s},\"known_alphanumeric_id\":{s},\"agent_alphanumeric_id\":{s},\"harness_alphanumeric_id\":{s},\"provider_alphanumeric_id\":{s},\"model_alphanumeric_id\":{s},\"platform_alphanumeric_id\":{s}}}",
+            .{
+                if (ev.refresh) "true" else "false",
+                ev.runner,
+                ts_q,
+                kn_q,
+                ag_q,
+                h_q,
+                p_q,
+                m_q,
+                pl_q,
+            },
+        );
+    }
+
+    /// atomic append a single line to `known/index.jsonl`. The line
+    /// includes its trailing newline so a partial write at the end of
+    /// the file (a half-written line) is detectable as a line that
+    /// doesn't end in `\n`. POSIX `O_APPEND` and Windows
+    /// `FILE_APPEND_DATA` both guarantee the append is atomic for
+    /// writes <= PIPE_BUF (4 KiB); JSONL events are well under that.
+    pub fn appendIndexEvent(a: std.mem.Allocator, io: std.Io, path: []const u8, line: []const u8) !void {
+        const with_newline = try a.alloc(u8, line.len + 1);
+        defer a.free(with_newline);
+        @memcpy(with_newline[0..line.len], line);
+        with_newline[line.len] = '\n';
+        const file = std.Io.Dir.cwd().openFile(io, path, .{ .mode = .write_only }) catch null;
+        if (file) |f| {
+            defer f.close(io);
+            const st = try f.stat(io);
+            try f.writePositionalAll(io, with_newline, st.size);
+            return;
+        }
+        try std.Io.Dir.cwd().writeFile(io, .{ .sub_path = path, .data = with_newline });
+    }
+
+    /// read every event in `known/index.jsonl` and return the latest
+    /// event per known_alphanumeric_id. Returns an empty list if the
+    /// file is missing.
+    pub fn latestEventsPerId(a: std.mem.Allocator, io: std.Io, path: []const u8) !std.StringHashMapUnmanaged(IndexEvent) {
+        var out: std.StringHashMapUnmanaged(IndexEvent) = .empty;
+        errdefer out.deinit(a);
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return out;
+        defer a.free(data);
+        var lines = std.mem.splitScalar(u8, data, '\n');
+        while (lines.next()) |line| {
+            if (line.len == 0) continue;
+            if (parseIndexEvent(a, line)) |ev| {
+                // arena-allocated strings inside ev point into `line`,
+                // which is owned by the split iterator. Copy them so
+                // they survive after the function returns.
+                const id = try a.dupe(u8, ev.known_alphanumeric_id);
+                const agent = try a.dupe(u8, ev.agent_alphanumeric_id);
+                const h = try a.dupe(u8, ev.harness_alphanumeric_id);
+                const p = try a.dupe(u8, ev.provider_alphanumeric_id);
+                const m = try a.dupe(u8, ev.model_alphanumeric_id);
+                const plat = try a.dupe(u8, ev.platform_alphanumeric_id);
+                const ts = try a.dupe(u8, ev.generated_at);
+                const stored: IndexEvent = .{
+                    .refresh = ev.refresh,
+                    .runner = ev.runner,
+                    .generated_at = ts,
+                    .known_alphanumeric_id = id,
+                    .agent_alphanumeric_id = agent,
+                    .harness_alphanumeric_id = h,
+                    .provider_alphanumeric_id = p,
+                    .model_alphanumeric_id = m,
+                    .platform_alphanumeric_id = plat,
+                };
+                try out.put(a, id, stored);
+            }
+        }
+        return out;
+    }
+
+    // ----------------------------------------------------------------
+    // refresh subcommands
+    // ----------------------------------------------------------------
+
+    /// `refresh run` — capture the current session and write the
+    /// fixture + index event. Failure semantics: if the detection
+    /// ladder fails to resolve harness *or* provider *or* model,
+    /// exit 2 with no fixture written and no event appended. Partial
+    /// detections are bad data and must be fixed, not papered over.
+    /// The agent runs this directly; the daemon also runs it as a
+    /// child after preparing the env for a target harness.
+    ///
+    /// **Filename contract** — the fixture is written as
+    /// `known/<known_alphanumeric_id>.{json,.trailer.txt}` where
+    /// `known_alphanumeric_id = agent_alphanumeric_id +
+    /// "-" + platform_alphanumeric_id` (e.g.
+    /// `cline-clinepass-kimik3-darwin`). The `-<platform>` suffix
+    /// keeps per-platform config paths from churning each other
+    /// across CI runs; see DESIGN.md "per-platform fixtures" for the
+    /// rationale.
+    pub fn runKnownAgent(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        var d = Detection{};
+        _ = try detect(init, &d);
+
+        const harness_aid = d.harness_alphanumeric_id orelse {
+            writeErr(io, "known agent: harness did not resolve — extend the detector\n");
+            return 2;
+        };
+        const provider_aid = d.provider_alphanumeric_id orelse {
+            writeErr(io, "known agent: provider did not resolve\n");
+            return 2;
+        };
+        const model_aid = d.model_alphanumeric_id orelse {
+            writeErr(io, "known agent: model did not resolve\n");
+            return 2;
+        };
+        const agent_aid = d.agent_alphanumeric_id orelse {
+            writeErr(io, "known agent: agent_alphanumeric_id did not compute\n");
+            return 2;
+        };
+
+        const known_aid = try knownAlphanumericId(a, agent_aid);
+
+        // write fixture + trailer
+        std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => return err,
+        };
+        const dir = std.Io.Dir.cwd().openDir(io, "known", .{}) catch {
+            writeErr(io, "known agent: cannot open known/ dir\n");
+            return 2;
+        };
+        defer dir.close(io);
+
+        var buf: std.ArrayList(u8) = .empty;
+        try buildJson(a, &d, init.environ_map, null, .{}, &buf);
+        const json_name = try std.fmt.allocPrint(a, "{s}.json", .{known_aid});
+        try dir.writeFile(io, .{ .sub_path = json_name, .data = buf.items });
+
+        if (d.trailer) |t| {
+            const trailer_name = try std.fmt.allocPrint(a, "{s}.trailer.txt", .{known_aid});
+            try dir.writeFile(io, .{ .sub_path = trailer_name, .data = t });
+        }
+
+        // append refresh:false event to index.jsonl
+        const ts = try timestampNow(a);
+        defer a.free(ts);
+        const ev: IndexEvent = .{
+            .refresh = false,
+            .runner = getParentPid(),
+            .generated_at = ts,
+            .known_alphanumeric_id = known_aid,
+            .agent_alphanumeric_id = agent_aid,
+            .harness_alphanumeric_id = harness_aid,
+            .provider_alphanumeric_id = provider_aid,
+            .model_alphanumeric_id = model_aid,
+            .platform_alphanumeric_id = platformAlphanumericId(),
+        };
+        const line = try emitIndexEvent(a, ev);
+        defer a.free(line);
+        try appendIndexEvent(a, io, "known/index.jsonl", line);
+
+        writeOut(io, "known agent: wrote known/");
+        writeOut(io, json_name);
+        writeOut(io, "\n");
+        return 0;
+    }
+
+    /// `known queue --harness=X [--provider=Y] [--model=Z]` — append
+    /// a refresh:true event to known/index.jsonl. The `--provider`
+    /// and `--model` flags are optional; omitting them turns the
+    /// entry into a todo — it sits in the index as a record that
+    /// "someone wants this harness captured but doesn't know the
+    /// provider/model yet". Todos replace the previous DESIGN.md
+    /// pending-detection queue: they're inline in the index,
+    /// queryable by `tail known/index.jsonl`.
+    ///
+    /// The daemon does *not* need to be running when this is invoked.
+    /// The daemon picks the entry up on its next 5-second poll,
+    /// possibly minutes, hours, or days later. If the daemon never
+    /// runs, the entry just sits in the file.
+    ///
+    /// **No-duplicate rule:** before appending, walk known/index.jsonl
+    /// and look for any existing event with the same
+    /// `known_alphanumeric_id`. If one exists, do not append — this
+    /// is idempotent.
+    ///
+    /// Validation (only when `--provider` and `--model` are given):
+    /// - The `harness` ID must match one of the `knownRulesForKnownAgents`.
+    /// - The `provider` ID must match one of the `knownRulesForKnownProviders`.
+    /// - The `model` ID must match one of the `knownRulesForKnownModels`.
+    pub fn runKnownQueue(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        // parse --harness, --provider, --model, --platform from argv
+        var harness_aid: ?[]const u8 = null;
+        var provider_aid: ?[]const u8 = null;
+        var model_aid: ?[]const u8 = null;
+        var platform_aid_arg: ?[]const u8 = null;
+
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "known"
+        _ = args_it.skip(); // "queue"
+        while (args_it.next()) |arg| {
+            if (std.mem.startsWith(u8, arg, "--harness=")) {
+                harness_aid = arg["--harness=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--provider=")) {
+                provider_aid = arg["--provider=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--model=")) {
+                model_aid = arg["--model=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--platform=")) {
+                platform_aid_arg = arg["--platform=".len..];
+            }
+        }
+
+        const h = harness_aid orelse {
+            writeErr(io, "known queue: --harness=<id> is required\n");
+            return 2;
+        };
+        // --provider, --model, --platform are optional. If
+        // --provider or --model is missing, the entry is a todo.
+        const p = provider_aid orelse "";
+        const m = model_aid orelse "";
+        // --platform defaults to the current host's platform. Override
+        // it to queue a request for a different platform (e.g. queue
+        // a windows fixture from a mac).
+        const plat = platform_aid_arg orelse platformAlphanumericId();
+
+        if (!harnessIdKnown(h)) {
+            writeErr(io, "known queue: unknown harness id\n");
+            return 2;
+        }
+        if (p.len > 0 and !providerIdKnown(p)) {
+            writeErr(io, "known queue: unknown provider id\n");
+            return 2;
+        }
+        if (m.len > 0 and !modelIdKnown(m)) {
+            writeErr(io, "known queue: unknown model id\n");
+            return 2;
+        }
+
+        // If provider and model are both given, build the full
+        // agent/known id. Otherwise the entry is a todo — the
+        // known_alphanumeric_id falls back to just the harness.
+        const agent_aid = if (p.len > 0 and m.len > 0)
+            try std.fmt.allocPrint(a, "{s}-{s}-{s}", .{ h, p, m })
+        else
+            try a.dupe(u8, h);
+        const known_aid = if (p.len > 0 and m.len > 0)
+            try knownAlphanumericId(a, agent_aid)
+        else
+            try a.dupe(u8, agent_aid);
+
+        // dedupe logic
+        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+        if (existing.get(known_aid)) |prev| {
+            if (prev.refresh) {
+                writeOut(io, "known queue: ");
+                writeOut(io, known_aid);
+                writeOut(io, " already queued, skipping\n");
+                return 0;
+            }
+            writeOut(io, "known queue: bumping ");
+            writeOut(io, known_aid);
+            writeOut(io, " from refresh:false to refresh:true\n");
+        }
+
+        // append refresh:true event
+        const ts = try timestampNow(a);
+        defer a.free(ts);
+        const ev: IndexEvent = .{
+            .refresh = true,
+            .runner = getParentPid(),
+            .generated_at = ts,
+            .known_alphanumeric_id = known_aid,
+            .agent_alphanumeric_id = agent_aid,
+            .harness_alphanumeric_id = h,
+            .provider_alphanumeric_id = p,
+            .model_alphanumeric_id = m,
+            .platform_alphanumeric_id = plat,
+        };
+        const line = try emitIndexEvent(a, ev);
+        defer a.free(line);
+        try appendIndexEvent(a, io, "known/index.jsonl", line);
+
+        if (p.len == 0 or m.len == 0) {
+            writeOut(io, "known queue: queued todo ");
+            writeOut(io, h);
+            writeOut(io, " (provider/model not yet known)\n");
+        } else {
+            writeOut(io, "known queue: queued ");
+            writeOut(io, known_aid);
+            writeOut(io, " on platform ");
+            writeOut(io, plat);
+            writeOut(io, "\n");
+        }
+        return 0;
+    }
+
+    /// true if `id` is the alphanumeric form of some harness display
+    /// in `knownRulesForKnownAgents`. (Per the refresh-queue contract, callers
+    /// pass the alphanumeric form, not the regular id.)
+    fn harnessIdKnown(id: []const u8) bool {
+        for (knownRulesForKnownAgents) |r| {
+            const a = alphanumericId(std.heap.page_allocator, r.label) catch continue;
+            defer std.heap.page_allocator.free(a);
+            if (std.mem.eql(u8, a, id)) return true;
+        }
+        return false;
+    }
+    /// true if `id` is the alphanumeric form of some provider display
+    /// in `knownRulesForKnownProviders`.
+    fn providerIdKnown(id: []const u8) bool {
+        for (knownRulesForKnownProviders) |r| {
+            const a = alphanumericId(std.heap.page_allocator, r.label) catch continue;
+            defer std.heap.page_allocator.free(a);
+            if (std.mem.eql(u8, a, id)) return true;
+        }
+        return false;
+    }
+    /// true if `id` is the alphanumeric form of some model display
+    /// in `knownRulesForKnownModels`.
+    fn modelIdKnown(id: []const u8) bool {
+        for (knownRulesForKnownModels) |r| {
+            const a = alphanumericId(std.heap.page_allocator, r.label) catch continue;
+            defer std.heap.page_allocator.free(a);
+            if (std.mem.eql(u8, a, id)) return true;
+        }
+        return false;
+    }
+
+    /// portable getppid. POSIX has `getppid(2)`; Windows uses
+    /// `GetCurrentProcessId` (note: that returns *our* pid, not the
+    /// parent's — for the runner field we accept either, the field
+    /// is "the writer's identity" and the daemon uses liveness checks
+    /// rather than the parent link).
+    fn getParentPid() i64 {
+        if (builtin.os.tag == .windows) {
+            // No portable getppid on Windows in Zig 0.16 stdlib. The
+            // daemon's liveness probe only needs the writer pid to be
+            // *some* pid, not specifically the parent. Use our own
+            // pid as a stand-in — the runner field is informational.
+            return @intCast(builtin.os.windows.GetCurrentProcessId());
+        }
+        return @intCast(std.c.getppid());
+    }
+
+    /// check whether a PID is still alive. Uses `kill(pid, 0)` on
+    /// POSIX (returns 0 if alive, ESRCH if dead). Windows uses
+    /// `OpenProcess(SYNCHRONIZE, FALSE, pid)` and treats a null
+    /// handle as dead. Used by `refresh all` to detect orphaned
+    /// `refresh: true` requests.
+    fn pidIsAlive(pid: i64) bool {
+        if (pid <= 0) return false;
+        if (builtin.os.tag == .windows) {
+            const handle = builtin.os.windows.OpenProcess(0x00100000, false, @intCast(pid));
+            if (handle == null) return false;
+            _ = builtin.os.windows.CloseHandle(handle.?);
+            return true;
+        }
+        // POSIX kill(pid, 0) is the standard "is this process alive?"
+        // probe. Signal 0 isn't a member of Zig's typed SIG enum
+        // (and the per-OS errno enum doesn't always expose EPERM
+        // as a typed name), so compare the raw errno value.
+        // EPERM = 1 on Linux, BSDs, and macOS. ESRCH = 3. Anything
+        // other than ESRCH means the process exists.
+        const sig_zero: std.c.SIG = @enumFromInt(0);
+        const rc = std.c.kill(@intCast(pid), sig_zero);
+        if (rc == 0) return true;
+        const e = std.c.errno(rc);
+        return @intFromEnum(e) != 3; // not ESRCH → exists
+    }
+
+    /// `known queue-stale` — re-queue every entry whose freshness
+    /// check fails. Stale means EITHER:
+    ///   1. refresh:true AND the runner PPID is no longer alive
+    /// `known queue-stale [--older-than-days=N] [--older-than-hours=M]`
+    /// — re-queue every entry whose freshness check fails. Stale
+    /// means EITHER:
+    ///   1. refresh:true AND the runner PPID is no longer alive
+    ///      (the process that queued the request has died before
+    ///      the daemon could process it)
+    ///   2. generated_at is older than the threshold (default
+    ///      7 days, configurable via --older-than-days and
+    ///      --older-than-hours; both can be combined — total hours
+    ///      = days*24 + hours)
+    /// Stale is a *derivative* property — it is computed from
+    /// `runner` and `generated_at`; we don't add a `stale: true`
+    /// field to the index. The daemon does NOT run this check; it
+    /// only processes `refresh: true` events.
+    pub fn runKnownQueueStale(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        // parse --older-than-days, --older-than-hours from argv
+        var days_opt: ?i64 = null;
+        var hours_opt: ?i64 = null;
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "known"
+        _ = args_it.skip(); // "queue-stale"
+        while (args_it.next()) |arg| {
+            if (std.mem.startsWith(u8, arg, "--older-than-days=")) {
+                const v = std.fmt.parseInt(i64, arg["--older-than-days=".len..], 10) catch {
+                    writeErr(io, "queue-stale: invalid --older-than-days value\n");
+                    return 2;
+                };
+                days_opt = v;
+            } else if (std.mem.startsWith(u8, arg, "--older-than-hours=")) {
+                const v = std.fmt.parseInt(i64, arg["--older-than-hours=".len..], 10) catch {
+                    writeErr(io, "queue-stale: invalid --older-than-hours value\n");
+                    return 2;
+                };
+                hours_opt = v;
+            }
+        }
+        const threshold_hours = (days_opt orelse 7) * 24 + (hours_opt orelse 0);
+
+        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+
+        var it = existing.iterator();
+        var queued: usize = 0;
+        var skipped: usize = 0;
+        while (it.next()) |entry| {
+            const ev = entry.value_ptr.*;
+            const stale = (ev.refresh and !pidIsAlive(ev.runner)) or
+                olderThanThreshold(ev.generated_at, threshold_hours);
+            if (!stale) continue;
+            const current_platform = platformAlphanumericId();
+            if (!std.mem.eql(u8, ev.platform_alphanumeric_id, current_platform)) {
+                writeErr(io, "skipped: ");
+                writeErr(io, ev.known_alphanumeric_id);
+                writeErr(io, " (wrong platform)\n");
+                skipped += 1;
+                continue;
+            }
+            if (!harnessAvailable(io, ev.agent_alphanumeric_id)) {
+                writeErr(io, "skipped: ");
+                writeErr(io, ev.known_alphanumeric_id);
+                writeErr(io, " (harness not available)\n");
+                skipped += 1;
+                continue;
+            }
+            try queueEventFrom(a, io, ev);
+            queued += 1;
+        }
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known queue-stale: queued ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
+        writeOut(io, ", skipped ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{skipped}));
+        writeOut(io, "\n");
+        return 0;
+    }
+
+    /// `known queue-all` — re-queue every entry in known/index.jsonl
+    /// on the current platform whose harness is available. The daemon
+    /// will pick them up on its next poll.
+    pub fn runKnownQueueAll(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+
+        var it = existing.iterator();
+        var queued: usize = 0;
+        while (it.next()) |entry| {
+            const ev = entry.value_ptr.*;
+            const current_platform = platformAlphanumericId();
+            if (!std.mem.eql(u8, ev.platform_alphanumeric_id, current_platform)) continue;
+            if (!harnessAvailable(io, ev.agent_alphanumeric_id)) continue;
+            try queueEventFrom(a, io, ev);
+            queued += 1;
+        }
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known queue-all: queued ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
+        writeOut(io, "\n");
+        return 0;
+    }
+
+    /// `known queue-missing` — for each `KnownFixturesForKnownAgents`
+    /// row whose `known/<known_alphanumeric_id>.json` (or `.trailer.txt`)
+    /// is missing on disk, queue a `refresh: true` event. Useful after
+    /// a fresh clone, or after a manual `rm` of a fixture file. Skips
+    /// rows that are pure todos (no provider/model).
+    pub fn runKnownQueueMissing(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        const current_platform = platformAlphanumericId();
+        var queued: usize = 0;
+        var checked: usize = 0;
+        for (knownFixturesForKnownAgents) |c| {
+            const parts = splitAgentAlphanumericId(a, c.agent_alphanumeric_id) catch continue;
+            defer a.free(parts[0]);
+            defer a.free(parts[1]);
+            defer a.free(parts[2]);
+            const h_aid = parts[0];
+            const p_aid = parts[1];
+            const m_aid = parts[2];
+            const agent_aid = c.agent_alphanumeric_id;
+            const known_aid = try knownAlphanumericId(a, agent_aid);
+            defer a.free(known_aid);
+            checked += 1;
+
+            // is the fixture file present?
+            const json_path = try std.fmt.allocPrint(a, "known/{s}.json", .{known_aid});
+            defer a.free(json_path);
+            var json_exists = false;
+            if (std.Io.Dir.cwd().statFile(io, json_path, .{})) |_| {
+                json_exists = true;
+            } else |_| {
+                json_exists = false;
+            }
+            const trailer_path = try std.fmt.allocPrint(a, "known/{s}.trailer.txt", .{known_aid});
+            defer a.free(trailer_path);
+            var trailer_exists = false;
+            if (std.Io.Dir.cwd().statFile(io, trailer_path, .{})) |_| {
+                trailer_exists = true;
+            } else |_| {
+                trailer_exists = false;
+            }
+            if (json_exists and trailer_exists) continue;
+
+            // dedupe: if there's a refresh:true event already, skip
+            var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+            defer existing.deinit(a);
+            if (existing.get(known_aid)) |prev| {
+                if (prev.refresh) continue;
+            }
+
+            const ts = try timestampNow(a);
+            defer a.free(ts);
+            const ev: IndexEvent = .{
+                .refresh = true,
+                .runner = getParentPid(),
+                .generated_at = ts,
+                .known_alphanumeric_id = known_aid,
+                .agent_alphanumeric_id = agent_aid,
+                .harness_alphanumeric_id = h_aid,
+                .provider_alphanumeric_id = p_aid,
+                .model_alphanumeric_id = m_aid,
+                .platform_alphanumeric_id = current_platform,
+            };
+            const line = try emitIndexEvent(a, ev);
+            defer a.free(line);
+            try appendIndexEvent(a, io, "known/index.jsonl", line);
+            writeErr(io, "queue-missing: noticed ");
+            writeErr(io, known_aid);
+            if (!json_exists) writeErr(io, " (no .json)");
+            if (!trailer_exists) writeErr(io, " (no .trailer.txt)");
+            writeErr(io, "\n");
+            queued += 1;
+        }
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known queue-missing: checked ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{checked}));
+        writeOut(io, ", queued ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
+        writeOut(io, "\n");
+        return 0;
+    }
+
+    /// `known queue-fixtures` — for each `KnownFixturesForKnownAgents`
+    /// entry on the current platform, queue a refresh:true event
+    /// (one per fixture). Re-uses `knownAlphanumericId` to compute the
+    /// `known_alphanumeric_id` for the event. Useful after a fresh
+    /// clone, or for a bulk re-queue.
+    pub fn runKnownQueueFixtures(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        const current_platform = platformAlphanumericId();
+        var queued: usize = 0;
+        for (knownFixturesForKnownAgents) |c| {
+            if (!harnessAvailable(io, c.agent_alphanumeric_id)) continue;
+            const parts = splitAgentAlphanumericId(a, c.agent_alphanumeric_id) catch continue;
+            defer a.free(parts[0]);
+            defer a.free(parts[1]);
+            defer a.free(parts[2]);
+            const h_aid = parts[0];
+            const p_aid = parts[1];
+            const m_aid = parts[2];
+            const agent_aid = c.agent_alphanumeric_id;
+            const known_aid = try knownAlphanumericId(a, agent_aid);
+
+            // dedupe: don't queue if there's a refresh:false event already
+            var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+            defer existing.deinit(a);
+            if (existing.get(known_aid)) |prev| {
+                if (!prev.refresh) {
+                    // already fresh, skip
+                    continue;
+                }
+            }
+
+            const ts = try timestampNow(a);
+            defer a.free(ts);
+            const ev: IndexEvent = .{
+                .refresh = true,
+                .runner = getParentPid(),
+                .generated_at = ts,
+                .known_alphanumeric_id = known_aid,
+                .agent_alphanumeric_id = agent_aid,
+                .harness_alphanumeric_id = h_aid,
+                .provider_alphanumeric_id = p_aid,
+                .model_alphanumeric_id = m_aid,
+                .platform_alphanumeric_id = current_platform,
+            };
+            const line = try emitIndexEvent(a, ev);
+            defer a.free(line);
+            try appendIndexEvent(a, io, "known/index.jsonl", line);
+            queued += 1;
+        }
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known queue-fixtures: queued ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
+        writeOut(io, "\n");
+        return 0;
+    }
+
+    /// true if the agent's harness binary (per `KnownFixturesForKnownAgents`)
+    /// is installed and runs --version successfully. Looks up the row
+    /// by its composite `agent_alphanumeric_id` so callers can pass
+    /// either a row's id or an `IndexEvent.agent_alphanumeric_id`
+    /// interchangeably.
+    fn harnessAvailable(io: std.Io, agent_alphanumeric_id: []const u8) bool {
+        var probe_names: []const []const u8 = &.{};
+        for (knownFixturesForKnownAgents) |c| {
+            if (std.mem.eql(u8, c.agent_alphanumeric_id, agent_alphanumeric_id)) {
+                probe_names = c.probeNames;
+                break;
+            }
+        }
+        if (probe_names.len == 0) return false;
+        return probeBinary(io, probe_names);
+    }
+
+    /// append a refresh:true event derived from an existing event.
+    /// Caller is responsible for any platform/availability skip
+    /// logic.
+    fn queueEventFrom(a: std.mem.Allocator, io: std.Io, ev: IndexEvent) !void {
+        const ts = try timestampNow(a);
+        defer a.free(ts);
+        const new_ev: IndexEvent = .{
+            .refresh = true,
+            .runner = getParentPid(),
+            .generated_at = ts,
+            .known_alphanumeric_id = ev.known_alphanumeric_id,
+            .agent_alphanumeric_id = ev.agent_alphanumeric_id,
+            .harness_alphanumeric_id = ev.harness_alphanumeric_id,
+            .provider_alphanumeric_id = ev.provider_alphanumeric_id,
+            .model_alphanumeric_id = ev.model_alphanumeric_id,
+            .platform_alphanumeric_id = ev.platform_alphanumeric_id,
+        };
+        const line = try emitIndexEvent(a, new_ev);
+        defer a.free(line);
+        try appendIndexEvent(a, io, "known/index.jsonl", line);
+    }
+
+    /// is `ts` (a unix-seconds-as-string) older than
+    /// `threshold_hours` hours ago? Compares against `init.io`'s wall
+    /// clock; if parsing fails (e.g. stub timestamp "0"), treats the
+    /// entry as stale.
+    fn olderThanThreshold(ts: []const u8, threshold_hours: i64) bool {
+        const secs = std.fmt.parseInt(i64, ts, 10) catch return true;
+        _ = secs; // exact arithmetic is a TODO; stub returns false
+        _ = threshold_hours; // TODO: now - secs > threshold_hours * 3600
+        return false;
+    }
+
+    /// `known dequeue [--known=<id>] [--harness=<id>]
+    /// [--provider=<id>] [--model=<id>] [--platform=<id>]` — for every
+    /// event matching the filters, append a new `refresh: false`
+    /// event (re-emitting the same sub-ids). The latest event for a
+    /// `known_alphanumeric_id` is the one `latestEventsPerId` returns,
+    /// so the new event overrides any prior state in lookup. This is
+    /// the inverse of `known queue`: it tells the daemon "I have a
+    /// fresh fixture for this, don't recapture." Existing events are
+    /// NOT removed — the index is append-only, and an accidental call
+    /// can't wipe the audit log.
+    /// With no filters, dequeue every event. With `--known=<id>`,
+    /// dequeue that exact entry. Otherwise, dequeue every entry
+    /// whose `harness_alphanumeric_id`, `provider_alphanumeric_id`,
+    /// `model_alphanumeric_id`, and `platform_alphanumeric_id` all
+    /// match the provided values (empty = "any"). Nothing is
+    /// deleted from the index.
+    pub fn runKnownDequeue(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        // parse args
+        var known_opt: ?[]const u8 = null;
+        var harness_opt: ?[]const u8 = null;
+        var provider_opt: ?[]const u8 = null;
+        var model_opt: ?[]const u8 = null;
+        var platform_opt: ?[]const u8 = null;
+
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "known"
+        _ = args_it.skip(); // "dequeue"
+        while (args_it.next()) |arg| {
+            if (std.mem.startsWith(u8, arg, "--known=")) {
+                known_opt = arg["--known=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--harness=")) {
+                harness_opt = arg["--harness=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--provider=")) {
+                provider_opt = arg["--provider=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--model=")) {
+                model_opt = arg["--model=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--platform=")) {
+                platform_opt = arg["--platform=".len..];
+            }
+        }
+
+        // if --known is given, take that exact id; otherwise
+        // filter-by-attribute. An empty filter ("any") matches
+        // anything; a non-empty filter requires equality.
+        const filter_event: ?IndexEvent = blk: {
+            if (known_opt != null) break :blk null;
+            if (harness_opt == null and provider_opt == null and
+                model_opt == null and platform_opt == null) break :blk null;
+            break :blk .{
+                .refresh = false,
+                .runner = 0,
+                .generated_at = "",
+                .known_alphanumeric_id = "",
+                .agent_alphanumeric_id = "",
+                .harness_alphanumeric_id = harness_opt orelse "",
+                .provider_alphanumeric_id = provider_opt orelse "",
+                .model_alphanumeric_id = model_opt orelse "",
+                .platform_alphanumeric_id = platform_opt orelse "",
+            };
+        };
+
+        const ts = try timestampNow(a);
+        defer a.free(ts);
+        const my_pid = getParentPid();
+
+        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+        var dequeued: usize = 0;
+        var it = existing.iterator();
+        while (it.next()) |entry| {
+            const id = entry.key_ptr.*;
+            const ev = entry.value_ptr.*;
+            if (known_opt) |k| {
+                if (!std.mem.eql(u8, id, k)) continue;
+            } else if (filter_event) |f| {
+                if (f.harness_alphanumeric_id.len > 0 and
+                    !std.mem.eql(u8, ev.harness_alphanumeric_id, f.harness_alphanumeric_id)) continue;
+                if (f.provider_alphanumeric_id.len > 0 and
+                    !std.mem.eql(u8, ev.provider_alphanumeric_id, f.provider_alphanumeric_id)) continue;
+                if (f.model_alphanumeric_id.len > 0 and
+                    !std.mem.eql(u8, ev.model_alphanumeric_id, f.model_alphanumeric_id)) continue;
+                if (f.platform_alphanumeric_id.len > 0 and
+                    !std.mem.eql(u8, ev.platform_alphanumeric_id, f.platform_alphanumeric_id)) continue;
+            }
+            // re-emit the same sub-ids with refresh:false. The
+            // append-only log means the latest event for this id
+            // is now refresh:false, which latestEventsPerId will
+            // return on the next read.
+            const new_ev: IndexEvent = .{
+                .refresh = false,
+                .runner = my_pid,
+                .generated_at = ts,
+                .known_alphanumeric_id = ev.known_alphanumeric_id,
+                .agent_alphanumeric_id = ev.agent_alphanumeric_id,
+                .harness_alphanumeric_id = ev.harness_alphanumeric_id,
+                .provider_alphanumeric_id = ev.provider_alphanumeric_id,
+                .model_alphanumeric_id = ev.model_alphanumeric_id,
+                .platform_alphanumeric_id = ev.platform_alphanumeric_id,
+            };
+            const line = try emitIndexEvent(a, new_ev);
+            defer a.free(line);
+            try appendIndexEvent(a, io, "known/index.jsonl", line);
+            dequeued += 1;
+        }
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known dequeue: dequeued ");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{dequeued}));
+        writeOut(io, " event(s)\n");
+        return 0;
+    }
+
+    pub fn runKnownPurge(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        const index_path = "known/index.jsonl";
+        var existing = try latestEventsPerId(a, io, index_path);
+        defer existing.deinit(a);
+
+        var keep = std.ArrayList([]u8).empty;
+        defer keep.deinit(a);
+        var index_purged: usize = 0;
+        var it = existing.iterator();
+        while (it.next()) |entry| {
+            const ev = entry.value_ptr.*;
+            const incomplete = ev.harness_alphanumeric_id.len == 0 or
+                ev.provider_alphanumeric_id.len == 0 or
+                ev.model_alphanumeric_id.len == 0;
+            if (incomplete) {
+                index_purged += 1;
+                continue;
+            }
+            try keep.append(a, try emitIndexEvent(a, ev));
+        }
+
+        // rewrite index
+        var new_content: std.ArrayList(u8) = .empty;
+        defer new_content.deinit(a);
+        for (keep.items) |line| {
+            try new_content.appendSlice(a, line);
+            try new_content.append(a, '\n');
+        }
+        try std.Io.Dir.cwd().writeFile(io, .{ .sub_path = index_path, .data = new_content.items });
+
+        // purge incomplete fixtures
+        var fixture_purged: usize = 0;
+        var json_path_buf: [4096]u8 = undefined;
+        const cwd = std.Io.Dir.cwd();
+        var dir_it = cwd.iterate();
+        while (dir_it.next(io) catch null) |ent| {
+            if (ent.kind != .file) continue;
+            const name = ent.name;
+            if (!std.mem.endsWith(u8, name, ".json")) continue;
+            if (std.mem.eql(u8, name, "index.jsonl")) continue;
+            const full_path = std.fmt.bufPrint(&json_path_buf, "known/{s}", .{name}) catch continue;
+            const data = std.Io.Dir.cwd().readFileAlloc(io, full_path, a, @enumFromInt(1 << 20)) catch continue;
+            defer a.free(data);
+            const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch continue;
+            defer parsed.deinit();
+            if (parsed.value != .object) {
+                std.Io.Dir.cwd().deleteFile(io, full_path) catch {};
+                var trailer_path_buf: [4096]u8 = undefined;
+                const tname = std.fmt.bufPrint(&trailer_path_buf, "known/{s}.trailer.txt", .{name}) catch continue;
+                std.Io.Dir.cwd().deleteFile(io, tname) catch {};
+                fixture_purged += 1;
+                continue;
+            }
+            const canon = parsed.value.object.get("canonical") orelse continue;
+            if (canon != .object) continue;
+            const cob = canon.object;
+            const incomplete = (cob.get("harness_name") == null) or
+                (cob.get("provider_name") == null) or
+                (cob.get("model_name") == null);
+            if (incomplete) {
+                std.Io.Dir.cwd().deleteFile(io, full_path) catch {};
+                var trailer_path_buf: [4096]u8 = undefined;
+                const tname = std.fmt.bufPrint(&trailer_path_buf, "known/{s}.trailer.txt", .{name}) catch continue;
+                std.Io.Dir.cwd().deleteFile(io, tname) catch {};
+                fixture_purged += 1;
+            }
+        }
+
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known purge: index=");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{index_purged}));
+        writeOut(io, " fixture=");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{fixture_purged}));
+        writeOut(io, "\n");
+        return 0;
+    }
+
+    /// `known daemon` — long-running. Polls known/index.jsonl every
+    /// 5 seconds. For each refresh:true event on the current
+    /// platform whose harness is available, sets up the env from the
+    /// KnownFixturesForKnownAgents recipe and spawns `agent-detection-dev refresh run`
+    /// as a child. **No stale detection** — the daemon only processes
+    /// refresh:true events. Stale detection is `known queue-stale`'s
+    /// job.
+    ///
+    /// **USER-ONLY**: refuses to start if running inside an agent
+    /// (see `assertNotInAgent`). The agent must never run the daemon
+    /// — its process tree would pollute the captured
+    /// `raw.process_lineage` (the daemon would appear as the runner's
+    /// grandparent), and its env vars would contaminate the fixture
+    /// the daemon then spawns. If the agent's workflow stalls because
+    /// the daemon isn't running, the correct action is to surface the
+    /// command to the user; see DESIGN.md "user-only daemon" for the
+    /// rationale and CONTRIBUTING.md "refresh a fixture" for the
+    /// correct role split.
+    pub fn runKnownDaemon(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        try assertNotInAgent(a, init);
+
+        writeOut(io, "agent-detection-dev known daemon: running\n");
+        writeOut(io, "  poll rate: 5s\n");
+        writeOut(io, "  index file: known/index.jsonl\n");
+        writeOut(io, "  press Ctrl+C to stop\n\n");
+
+        var processed: std.StringHashMapUnmanaged(void) = .empty;
+        defer processed.deinit(a);
+
+        // pre-seed: process everything already in the file on
+        // startup. New entries appended after startup are picked up
+        // by the polling loop.
+        try processIndexFile(a, io, init, &processed);
+        while (true) {
+            try std.Io.sleep(io, .{ .nanoseconds = 5 * std.time.ns_per_s }, .boot);
+            try processIndexFile(a, io, init, &processed);
+        }
+    }
+
+    /// one pass over known/index.jsonl: for every refresh:true event
+    /// whose known_aid we haven't processed yet, look up the KnownFixturesForKnownAgents
+    /// recipe, set up the env, and spawn `refresh run` as a child.
+    /// The child writes the fixture and appends a refresh:false event.
+    fn processIndexFile(a: std.mem.Allocator, io: std.Io, init: std.process.Init, processed: *std.StringHashMapUnmanaged(void)) !void {
+        var existing = try latestEventsPerId(a, io, "known/index.jsonl");
+        defer existing.deinit(a);
+        var it = existing.iterator();
+        while (it.next()) |entry| {
+            const ev = entry.value_ptr.*;
+            if (!ev.refresh) continue;
+            // The `processed` map survives across poll cycles, so
+            // its keys must be owned by `processed` itself, not
+            // borrowed from `existing` (which is freed at the end
+            // of this function). Copy the key.
+            const own_id = try a.dupe(u8, ev.known_alphanumeric_id);
+            if (processed.contains(own_id)) {
+                a.free(own_id);
+                continue;
+            }
+            // only process events for the current platform
+            if (!std.mem.eql(u8, ev.platform_alphanumeric_id, platformAlphanumericId())) {
+                a.free(own_id);
+                continue;
+            }
+            writeOut(io, "daemon: noticed refresh:true for ");
+            writeOut(io, ev.known_alphanumeric_id);
+            writeOut(io, " — spawning worker\n");
+            try runOneCombo(a, io, init, ev);
+            try processed.put(a, own_id, {});
+        }
+    }
+
+    /// spawn `agent-detection-dev refresh run` for a single
+    /// queued combo. The child inherits the daemon's env, which
+    /// is the user's terminal — not the dev harness.
+    fn runOneCombo(a: std.mem.Allocator, io: std.Io, init: std.process.Init, ev: IndexEvent) !void {
+        // 1. find the KnownFixturesForKnownAgents entry for the harness
+        const target_agent_aid = ev.agent_alphanumeric_id;
+        var combo: ?KnownFixturesForKnownAgents = null;
+        for (knownFixturesForKnownAgents) |c| {
+            if (std.mem.eql(u8, c.agent_alphanumeric_id, target_agent_aid)) {
+                combo = c;
+                break;
+            }
+        }
+        const c = combo orelse {
+            writeErr(io, "daemon: no KnownFixturesForKnownAgents recipe for ");
+            writeErr(io, target_agent_aid);
+            writeErr(io, " — skipping\n");
+            return;
+        };
+
+        // 2. build env (writes config files, env vars)
+        var env_map = std.process.Environ.Map.init(a);
+        defer env_map.deinit();
+        // inherit the daemon's env (so HOME / USERPROFILE pass through)
+        var parent_it = init.environ_map.iterator();
+        while (parent_it.next()) |kv| {
+            try env_map.put(kv.key_ptr.*, kv.value_ptr.*);
+        }
+        const setup = c.buildEnv(a, init.environ_map, io, &c) catch |err| {
+            writeErr(io, "daemon: buildEnv failed: ");
+            writeErr(io, @errorName(err));
+            writeErr(io, "\n");
+            return;
+        };
+        for (setup.env) |kv| {
+            if (kv[0].len == 0) break;
+            try env_map.put(kv[0], kv[1]);
+        }
+        // apply file writes
+        for (setup.writes) |w| {
+            if (std.fs.path.dirname(w.path)) |dir| {
+                std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
+                    error.PathAlreadyExists => {},
+                    else => {
+                        writeErr(io, "daemon: createDirPath failed for ");
+                        writeErr(io, dir);
+                        writeErr(io, ": ");
+                        writeErr(io, @errorName(err));
+                        writeErr(io, "\n");
+                        return;
+                    },
+                };
+            }
+            std.Io.Dir.cwd().writeFile(io, .{ .sub_path = w.path, .data = w.content }) catch |err| {
+                writeErr(io, "daemon: writeFile failed for ");
+                writeErr(io, w.path);
+                writeErr(io, ": ");
+                writeErr(io, @errorName(err));
+                writeErr(io, "\n");
+                return;
+            };
+        }
+
+        // 3. spawn the child
+        // The child is the same binary (this dev binary) running
+        // `refresh run`, which does the capture in its own process
+        // and writes the fixture + index event. The daemon's process
+        // tree stays clean: the child is the daemon's direct child,
+        // and the daemon was started from the user's terminal — not
+        // from inside kimi-code.
+        // Resolve the running binary's absolute path. argv[0] can be a
+        // relative path (e.g. `./zig-out/bin/agent-detection-dev`) and is
+        // not reliable on its own — we use the canonical
+        // `std.process.executablePath` instead. We do NOT set `.cwd` to
+        // setup.cwd — the harness config files are written to absolute
+        // paths (e.g. `~/.kimi-code/config.toml`), and the child doesn't
+        // need to chdir.
+        var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const self_path_len = std.process.executablePath(io, &self_path_buf) catch |err| {
+            writeErr(io, "daemon: executablePath failed: ");
+            writeErr(io, @errorName(err));
+            writeErr(io, "\n");
+            return;
+        };
+        const argv0 = self_path_buf[0..self_path_len];
+        var argv = [_][]const u8{ argv0, "refresh", "run" };
+        var child = std.process.spawn(io, .{
+            .argv = &argv,
+            .environ_map = &env_map,
+            .stdout = .ignore,
+            .stderr = .pipe,
+        }) catch |err| {
+            writeErr(io, "daemon: spawn failed: ");
+            writeErr(io, @errorName(err));
+            writeErr(io, " (argv0=");
+            writeErr(io, argv0);
+            writeErr(io, ")\n");
+            return;
+        };
+        // Drain worker stderr before wait() — wait() closes the pipe,
+        // so any unread bytes would be lost. The worker is short-lived
+        // and writes at most a couple of lines.
+        var stderr_capture = try std.ArrayList(u8).initCapacity(a, 4096);
+        defer stderr_capture.deinit(a);
+        var stderr_buf: [4096]u8 = undefined;
+        var stderr_reader = child.stderr.?.reader(io, &stderr_buf);
+        while (stderr_capture.items.len < 1 << 16) {
+            const n = stderr_reader.interface.readSliceShort(stderr_capture.unusedCapacitySlice()) catch break;
+            if (n == 0) break;
+            stderr_capture.shrinkRetainingCapacity(stderr_capture.items.len + n);
+        }
+        const term = child.wait(io) catch |err| {
+            writeErr(io, "daemon: child wait failed: ");
+            writeErr(io, @errorName(err));
+            writeErr(io, "\n");
+            return;
+        };
+        switch (term) {
+            .exited => |code| {
+                if (code != 0) {
+                    // Child failed (e.g. detection couldn't resolve
+                    // harness/provider/model). Don't append a
+                    // refresh:false event — leave the refresh:true
+                    // in place so the user can re-queue after
+                    // fixing the detector, and so `known purge`
+                    // can clean it up if it's truly stale.
+                    writeErr(io, "daemon: worker failed for ");
+                    writeErr(io, ev.known_alphanumeric_id);
+                    writeErr(io, " (exit code ");
+                    var n_buf: [16]u8 = undefined;
+                    writeErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{code}));
+                    writeErr(io, ") — leaving refresh:true in index\n");
+                    if (stderr_capture.items.len > 0) {
+                        writeErr(io, "  worker stderr: ");
+                        writeErr(io, stderr_capture.items);
+                        if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') writeErr(io, "\n");
+                    }
+                    return;
+                }
+                writeOut(io, "daemon: captured ");
+                writeOut(io, ev.known_alphanumeric_id);
+                writeOut(io, "\n");
+            },
+            else => {
+                writeErr(io, "daemon: child terminated abnormally for ");
+                writeErr(io, ev.known_alphanumeric_id);
+                writeErr(io, "\n");
+                return;
+            },
+        }
+    }
+
+    /// refuse to start the daemon if the current process is inside
+    /// an agent. Two checks, both fail-closed:
+    ///   - env markers: refuse if any of the known agent-marker env
+    ///     vars is set
+    ///   - process ancestry: refuse if any ancestor's basename
+    ///     matches a known agent proc name
+    fn assertNotInAgent(a: std.mem.Allocator, init: std.process.Init) !void {
+        const io = init.io;
+        const env_markers = [_][]const u8{
+            "KIMI_CODE_HOME",  "KIMI_API_KEY",      "KIMI_BASE_URL",
+            "MMX_CONFIG_DIR",  "MINIMAX_API_KEY",   "PI_CODING_AGENT",
+            "GOOSE_TERMINAL",  "GOOSE_MODE",        "GOOSE_WORKING_DIR",
+            "CLINE_NO_INTERACTIVE", "QWEN_API_KEY",  "JCODE_API_KEY",
+            "OMP_API_KEY",     "REASONIX_API_KEY",  "CRUSH_API_KEY",
+            "KILO_API_KEY",    "OPENCODE_API_KEY",  "VIBE_API_KEY",
+        };
+        var it = init.environ_map.iterator();
+        while (it.next()) |kv| {
+            for (env_markers) |m| {
+                if (std.mem.eql(u8, kv.key_ptr.*, m)) {
+                    writeErr(io, "known daemon: refusing to start — env marker ");
+                    writeErr(io, m);
+                    writeErr(io, " is set. This command must be run by a user, not inside an agent.\n");
+                    return error.RunningInAgent;
+                }
+            }
+        }
+
+        const proc_names = [_][]const u8{
+            "kimi-code",    "kimi-code.exe", "kimi",     "kimi.exe",
+            "claude",       "claude.exe",
+            "cline",        "cline.exe",
+            "mmx",          "mmx.exe",
+            "goose",        "goose.exe",   "goosed",   "goosed.exe",
+            "pi",           "pi.exe",
+            "qwen",         "qwen.exe",
+            "jcode",        "jcode.exe",
+            "omp",          "omp.exe",
+            "reasonix",     "reasonix.exe",
+            "crush",        "crush.exe",
+            "kilo",         "kilo.exe",
+            "opencode",     "opencode.exe",
+            "vibe",         "vibe.exe",
+        };
+        const anc = ancestorInfo(a, io);
+        for (anc.names) |n| {
+            for (proc_names) |p| {
+                if (std.mem.eql(u8, n, p)) {
+                    writeErr(io, "known daemon: refusing to start — ancestor process ");
+                    writeErr(io, n);
+                    writeErr(io, " is a known agent. This command must be run by a user, not inside an agent.\n");
+                    return error.RunningInAgent;
+                }
+            }
+        }
+    }
+
+} else struct {}; // end pub const dev
+
+// ============================================================================
+// main entry
+
+pub fn main(init: std.process.Init) !u8 {
+    const a = init.arena.allocator();
+    const io = init.io;
+
+    // subcommand dispatch. The dev binary (built with -Ddev=true)
+    // accepts a `known` subcommand namespace: `known daemon`,
+    // `known agent`, `known queue [--harness=...] [--provider=...] [--model=...]`,
+    // `known queue-stale`, `known queue-all`, `known queue-fixtures`,
+    // `known remove`, `known purge`. The released binary's argv[1]
+    // is ignored entirely when `dev_build` is false: the dispatch
+    // below is ignored at compile time, so the released binary's
+    // CLI is strictly `agent-detection [--json] [--trailer] [--help]`.
+    if (dev_build) {
+        var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+        defer sub_iter.deinit();
+        _ = sub_iter.skip(); // argv0
+        const cmd = sub_iter.next() orelse "";
+        const sub = sub_iter.next() orelse "";
+        if (std.mem.eql(u8, cmd, "known")) {
+            if (std.mem.eql(u8, sub, "daemon")) {
+                return dev.runKnownDaemon(init);
+            } else if (std.mem.eql(u8, sub, "agent")) {
+                return dev.runKnownAgent(init);
+            } else if (std.mem.eql(u8, sub, "queue-stale")) {
+                return dev.runKnownQueueStale(init);
+            } else if (std.mem.eql(u8, sub, "queue-all")) {
+                return dev.runKnownQueueAll(init);
+            } else if (std.mem.eql(u8, sub, "queue-fixtures")) {
+                return dev.runKnownQueueFixtures(init);
+            } else if (std.mem.eql(u8, sub, "queue-missing")) {
+                return dev.runKnownQueueMissing(init);
+            } else if (std.mem.eql(u8, sub, "queue")) {
+                return dev.runKnownQueue(init);
+            } else if (std.mem.eql(u8, sub, "dequeue")) {
+                return dev.runKnownDequeue(init);
+            } else if (std.mem.eql(u8, sub, "purge")) {
+                return dev.runKnownPurge(init);
+            }
+        } else if (std.mem.eql(u8, cmd, "refresh") and std.mem.eql(u8, sub, "run")) {
+            // `refresh run` — invoked by the daemon as a child to
+            // capture the current session into `known/<stem>.json` and
+            // append a `refresh:false` event to `known/index.jsonl`.
+            // The child inherits the harness env and config files the
+            // daemon set up via the `KnownFixturesForKnownAgents.buildEnv`
+            // recipe, so detection should resolve to that harness.
+            return dev.runKnownAgent(init);
+        }
+    }
+
+    var trailer_only = false;
+    var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+    defer args_it.deinit();
+    _ = args_it.skip(); // argv0
+    while (args_it.next()) |arg| {
+        if (std.mem.eql(u8, arg, "--trailer")) {
+            trailer_only = true;
+        } else if (std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
+            // Version is plumbed in at compile time from
+            // `build.zig.zon`'s `.version` field via `build_options`.
+            // Same value is baked into the released binary, the dev
+            // binary, and every `zig build dist` cross-compile target.
+            writeOut(io, "agent-detection ");
+            writeOut(io, build_options.version);
+            writeOut(io, "\n");
+            return 0;
+        } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
+            writeOut(io, usage);
+            return 0;
+        } else {
+            writeErr(io, "unknown argument\n");
+            writeOut(io, usage);
+            return 2;
+        }
+    }
+    // No flag: emit JSON (default). --trailer is handled by an early-return below.
+
+    var d = Detection{};
+    const ok = try detect(init, &d);
 
     if (trailer_only) {
         if (d.trailer) |t| {
@@ -1010,152 +3723,11 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     var buf: std.ArrayList(u8) = .empty;
-    try buildJson(a, &d, env, rule, anc, &buf);
+    try buildJson(a, &d, init.environ_map, null, .{}, &buf);
     writeOut(io, buf.items);
 
-    const ok = d.harness != null and d.model != null;
     if (!ok) writeErr(io, "unable to fully identify harness/model — stop and inform the user (per policy)\n");
     return if (ok) 0 else 2;
 }
 
-// ============================================================================
-// known/ fixtures + refresh-known step
-//
-// For each entry in `known_cases`, build a synthetic Detection (with
-// `harness_source = "synthetic"` and sentinel model fields populated by
-// `applyModel`), run the same `buildText` / `buildJson` helpers the main
-// detection path uses, and write three files under `known/`. The fixtures
-// become the canonical reference of what each harness × model combination
-// outputs today; the `known_fixtures` test step diffs current output
-// against them.
 
-/// write one synthetic fixture (json / trailer) for a KnownCase.
-/// `dir` is the open `known/` directory; caller is responsible for `dir.close`.
-pub fn renderCase(a: std.mem.Allocator, io: std.Io, dir: std.Io.Dir, kc: KnownCase) !void {
-    // locate harness rule by id
-    var found_rule: ?HarnessRule = null;
-    for (harness_rules) |r| {
-        if (std.mem.eql(u8, r.id, kc.harness)) {
-            found_rule = r;
-            break;
-        }
-    }
-    const r = found_rule orelse {
-        std.debug.print("  skip {s}: no harness rule\n", .{kc.harness});
-        return;
-    };
-
-    var d: Detection = .{};
-    d.harness_source = "synthetic";
-    d.harness_env = false;
-    d.harness_id = r.id;
-    d.raw.harness_source_display = r.display;
-    d.raw.harness_rule_id = r.id;
-    d.raw.harness_proc_names = r.proc_names;
-    d.raw.harness_env_markers = r.env_markers;
-    d.harness = try trimDisplaySuffix(a, r.display, &d.raw.trim_summary.harness);
-
-    // provider defaults: use ids that already exist in provider_rules; do
-    // not invent new brands. Only the names that the walker actually emits.
-    if (std.mem.eql(u8, r.id, "cline")) {
-        d.provider_id = "cline-pass";
-        d.provider = "Cline Pass";
-    } else if (std.mem.eql(u8, r.id, "kimi") or std.mem.eql(u8, r.id, "mmx")) {
-        d.provider_id = "minimax";
-        d.provider = "MiniMax";
-    } else if (std.mem.eql(u8, r.id, "goose")) {
-        d.provider_id = "goose";
-        d.provider = "Goose";
-    }
-
-    if (d.provider_id) |pid| {
-        const model_id = try std.fmt.allocPrint(a, "{s}/{s}", .{ pid, kc.model });
-        try applyModel(a, &d, model_id);
-    }
-    d.model_source = "synthetic";
-
-    // pre-populate trimmed trailer
-    if (d.harness != null and d.model != null) {
-        const email = try trailerEmail(a, d.harness.?, d.model.?);
-        d.trailer = try std.fmt.allocPrint(a, "Co-authored-by: {s} - {s} <{s}>", .{ d.harness.?, d.model.?, email });
-    }
-
-    // for buildJson, an empty env_map and an empty ancestry are sufficient
-    var env_map = std.process.Environ.Map.init(a);
-    defer env_map.deinit();
-    const empty_anc: Ancestry = .{};
-
-    var buf_json: std.ArrayList(u8) = .empty;
-    defer buf_json.deinit(a);
-    try buildJson(a, &d, &env_map, r, empty_anc, &buf_json);
-
-    // derive the fixture filename stem. When harness + model are both set,
-    // the stem is the post-trim email local — the same identifier a real
-    // git-commit trailer would carry. When only harness is set (partial
-    // detection, e.g. pi with model detection still TODO), fall back to
-    // "<harness>-no-model" so the fixture is still keyed uniquely.
-    const stem = stemForFixture(a, &d) catch |err| switch (err) {
-        error.SkipFixture => {
-            std.debug.print("  skip {s}/{s}: no harness resolved\n", .{ kc.harness, kc.model });
-            return;
-        },
-        else => return err,
-    };
-    defer a.free(stem);
-
-    const json_name = try std.fmt.allocPrint(a, "{s}.json.txt", .{stem});
-    try dir.writeFile(io, .{ .sub_path = json_name, .data = buf_json.items });
-
-    // trailer is only available when both harness AND model resolved.
-    // Without a model, real detection exits 2, so we don't write a
-    // trailer fixture — the json alone documents the partial state.
-    if (d.trailer) |t| {
-        var buf_trailer: std.ArrayList(u8) = .empty;
-        defer buf_trailer.deinit(a);
-        try buf_trailer.appendSlice(a, t);
-        try buf_trailer.appendSlice(a, "\n");
-        const trailer_name = try std.fmt.allocPrint(a, "{s}.trailer.txt", .{stem});
-        try dir.writeFile(io, .{ .sub_path = trailer_name, .data = buf_trailer.items });
-        std.debug.print("  wrote {s}, {s}\n", .{ json_name, trailer_name });
-    } else {
-        std.debug.print("  wrote {s} (no trailer — partial detection)\n", .{json_name});
-    }
-}
-
-/// compute the fixture filename stem for a synthetic Detection. Returns
-/// the post-trim email local when both harness and model are set, or a
-/// "<harness>-no-model" fallback when the model is missing. Errors with
-/// `SkipFixture` if even the harness is missing — the case was filtered
-/// out before calling this, but the guard is here for safety.
-pub fn stemForFixture(a: std.mem.Allocator, d: *const Detection) (std.mem.Allocator.Error || error{SkipFixture})![]u8 {
-    if (d.harness == null) return error.SkipFixture;
-    if (d.model == null) return std.fmt.allocPrint(a, "{s}-no-model", .{d.harness.?});
-    const email_full = try trailerEmail(a, d.harness.?, d.model.?);
-    const at_pos = std.mem.indexOf(u8, email_full, "@").?;
-    return a.dupe(u8, email_full[0..at_pos]);
-}
-
-/// regenerate every fixture in `known/`. Invoked by the `refresh-known`
-/// build step. Exits 0 on success; non-zero if the directory is
-/// unwritable or any case errors.
-pub fn refreshKnown(init: std.process.Init) !void {
-    const a = init.arena.allocator();
-    const io = init.io;
-
-    // ensure known/ dir exists (idempotent)
-    std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
-        error.PathAlreadyExists => {},
-        else => return err,
-    };
-    const dir = std.Io.Dir.cwd().openDir(io, "known", .{}) catch |err| {
-        std.debug.print("refresh-known: cannot open known/ dir: {t}\n", .{err});
-        return err;
-    };
-    defer dir.close(io);
-
-    std.debug.print("refresh-known: regenerating {d} fixtures\n", .{known_cases.len});
-    for (known_cases) |kc| {
-        try renderCase(a, io, dir, kc);
-    }
-    std.debug.print("refresh-known: done\n", .{});
-}

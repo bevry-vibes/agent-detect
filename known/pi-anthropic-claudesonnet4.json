@@ -1,0 +1,49 @@
+{
+  "canonical": {
+    "harness_label": "Pi",
+    "harness_short_title": null,
+    "harness_name": "pi",
+    "harness_alphanumeric_id": "pi",
+    "harness_license": "MIT",
+    "provider_label": "Anthropic",
+    "provider_name": "anthropic",
+    "provider_alphanumeric_id": "anthropic",
+    "provider_closed_training": "opt-out",
+    "provider_open_training": null,
+    "model_label": "Claude Sonnet 4",
+    "model_short_title": null,
+    "model_name": "claude-sonnet-4",
+    "model_alphanumeric_id": "claudesonnet4",
+    "model_reciprocity": "closed",
+    "agent_alphanumeric_id": "pi-anthropic-claudesonnet4",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Pi - Claude Sonnet 4 <pi-claudesonnet4@local>"
+  },
+  "raw": {
+    "env": {
+      "PI_CODING_AGENT": {
+        "value": "true",
+        "present": true
+      }
+    },
+    "harness-urls": [
+      "https://github.com/earendil-works/pi",
+      "https://github.com/earendil-works/pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://www.anthropic.com/legal/commercial-terms",
+      "https://trust.anthropic.com/"
+    ],
+    "model-urls": [
+      "https://www.anthropic.com/claude/sonnet",
+      "https://docs.anthropic.com/en/docs/about-claude/models"
+    ],
+    "platform_alphanumeric_id": "darwinaarch64",
+    "process_lineage": [
+      {
+        "pid": 23925,
+        "name": "agent-detection"
+      }
+    ]
+  }
+}

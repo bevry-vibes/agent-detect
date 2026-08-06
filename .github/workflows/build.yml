@@ -3,13 +3,45 @@ name: build
 on:
   push:
     branches: [main]
+    # Calver tags match `<year>.<month>.<day>-<revision>` (e.g.
+    # `2026.8.6-1`, `2026.8.6-2`). Pushing such a tag publishes a
+    # release that is marked `latest`. See DESIGN.md "distribution /
+    # versioned releases" for the maintainer runbook.
+    tags: ['*.*.*-*']
   pull_request:
   workflow_dispatch:
 
 permissions: {}
 
 jobs:
-  dist:
+  # PRs and manual dispatches (without a tag) only verify the build —
+  # they do not publish any release assets. This keeps `latest`
+  # untouched while still giving reviewers a green/red signal.
+  smoke:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: cross-compile all targets
+        run: zig build dist --prefix .
+
+      - name: smoke test (linux x86_64)
+        run: |
+          chmod +x bin/agent-detection-linux-x86_64
+          ./bin/agent-detection-linux-x86_64 --help
+          ./bin/agent-detection-linux-x86_64 --version
+
+  # Every push to `main` overwrites the `nightly` rolling release so
+  # WIP consumers can pin to `releases/tag/nightly/download/<asset>`.
+  # Marked `prerelease: true` and `latest: false` so it never becomes
+  # `latest` (which is reserved for tagged releases).
+  nightly:
+    if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: write # publish release assets
@@ -24,13 +56,53 @@ jobs:
         run: zig build dist --prefix .
 
       - name: smoke test (linux x86_64)
-        run: chmod +x bin/agent-detection-linux-x86_64 && ./bin/agent-detection-linux-x86_64 --help
+        run: |
+          chmod +x bin/agent-detection-linux-x86_64
+          ./bin/agent-detection-linux-x86_64 --version
 
       - name: publish rolling release
-        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: nightly
           name: nightly
-          body: Rolling build of `agent-detection` binaries for all platforms, updated on every push to `main`. Direct downloads via `releases/latest/download/<asset>`.
+          prerelease: true
+          latest: false
+          body: |
+            Rolling build of `agent-detection` binaries for all platforms, updated on every push to `main`. Pin WIP consumers to `releases/tag/nightly/download/<asset>`; stable consumers should use `releases/latest/download/<asset>` instead (which only updates when a calver tag is pushed).
+          files: bin/*
+
+  # Pushing a calver-shaped tag (`<year>.<month>.<day>-<revision>`)
+  # publishes the release and marks it `latest: true`, which is what
+  # `releases/latest/download/<asset>` resolves to. The tag name
+  # matches the version embedded in `build.zig.zon` exactly (no `v`
+  # prefix).
+  release:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # publish release assets
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+
+      - name: cross-compile all targets
+        run: zig build dist --prefix .
+
+      - name: smoke test (linux x86_64)
+        run: |
+          chmod +x bin/agent-detection-linux-x86_64
+          ./bin/agent-detection-linux-x86_64 --version
+
+      - name: publish tagged release as latest
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          prerelease: false
+          latest: true
+          body: |
+            Stable release `agent-detection ${{ github.ref_name }}`. Cut from `main` — see DESIGN.md "distribution / versioned releases" for the runbook. Direct downloads via `releases/latest/download/<asset>` (this release IS `latest`).
           files: bin/*

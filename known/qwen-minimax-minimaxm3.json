@@ -1,0 +1,53 @@
+{
+  "canonical": {
+    "harness_label": "Qwen Code",
+    "harness_short_title": null,
+    "harness_name": "qwen",
+    "harness_alphanumeric_id": "qwen",
+    "harness_license": "Apache-2.0",
+    "provider_label": "MiniMax",
+    "provider_name": "minimax",
+    "provider_alphanumeric_id": "minimax",
+    "provider_closed_training": "opt-in",
+    "provider_open_training": "opt-in",
+    "model_label": "MiniMax M3",
+    "model_short_title": "M3",
+    "model_name": "MiniMax-M3",
+    "model_alphanumeric_id": "minimaxm3",
+    "model_reciprocity": "open-weight",
+    "agent_alphanumeric_id": "qwen-minimax-minimaxm3",
+    "reciprocal": true,
+    "trailer": "Co-authored-by: Qwen Code - MiniMax M3 <qwencode-minimaxm3@local>"
+  },
+  "raw": {
+    "env": {
+      "QWEN_API_KEY": {
+        "present": true
+      }
+    },
+    "/Users/balupton/.qwen/settings.json": {
+      "model.name": "MiniMax-M3",
+      "security.auth.selectedType": "openai"
+    },
+    "harness-urls": [
+      "https://github.com/QwenLM/qwen-code",
+      "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://platform.minimax.io/docs/guides/platform/terms-of-service",
+      "https://platform.minimax.io/docs/guides/platform/privacy-policy"
+    ],
+    "model-urls": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+      "https://www.minimax.io/blog/minimax-m3"
+    ],
+    "platform_alphanumeric_id": "darwinaarch64",
+    "process_lineage": [
+      {
+        "pid": 23926,
+        "name": "agent-detection"
+      }
+    ]
+  }
+}

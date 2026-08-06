@@ -1,0 +1,72 @@
+{
+  "canonical": {
+    "harness_label": "MiniMax CLI",
+    "harness_short_title": null,
+    "harness_name": "mmx",
+    "harness_alphanumeric_id": "mmx",
+    "harness_license": "MIT",
+    "provider_label": "MiniMax",
+    "provider_name": "minimax",
+    "provider_alphanumeric_id": "minimax",
+    "provider_closed_training": "opt-in",
+    "provider_open_training": "opt-in",
+    "model_label": "MiniMax M3",
+    "model_short_title": "M3",
+    "model_name": "minimax-m3",
+    "model_alphanumeric_id": "minimaxm3",
+    "model_reciprocity": "open-weight",
+    "agent_alphanumeric_id": "mmx-minimax-minimaxm3",
+    "reciprocal": true,
+    "trailer": "Co-authored-by: MiniMax CLI - MiniMax M3 <minimaxcli-minimaxm3@local>"
+  },
+  "raw": {
+    "env": {
+      "MMX_CONFIG_DIR": {
+        "value": "fake",
+        "present": true
+      },
+      "MINIMAX_API_KEY": {
+        "present": false
+      }
+    },
+    "/Users/balupton/.mmx/config.json": {
+      "defaultTextModel": "minimax-m3"
+    },
+    "harness-urls": [
+      "https://github.com/MiniMax-AI/cli",
+      "https://github.com/MiniMax-AI/cli/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://platform.minimax.io/docs/guides/platform/terms-of-service",
+      "https://platform.minimax.io/docs/guides/platform/privacy-policy"
+    ],
+    "model-urls": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+      "https://www.minimax.io/blog/minimax-m3"
+    ],
+    "platform_alphanumeric_id": "darwinaarch64",
+    "process_lineage": [
+      {
+        "pid": 54920,
+        "name": "agent-detection"
+      },
+      {
+        "pid": 54919,
+        "name": "bash"
+      },
+      {
+        "pid": 54916,
+        "name": "bash"
+      },
+      {
+        "pid": 51336,
+        "name": "kimi-code"
+      },
+      {
+        "pid": 81450,
+        "name": "bash"
+      }
+    ]
+  }
+}

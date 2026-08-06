@@ -1,0 +1,65 @@
+{
+  "canonical": {
+    "harness_label": "Goose",
+    "harness_short_title": null,
+    "harness_name": "goose",
+    "harness_alphanumeric_id": "goose",
+    "harness_license": "Apache-2.0",
+    "provider_label": "Goose",
+    "provider_name": "goose",
+    "provider_alphanumeric_id": "goose",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "Claude Sonnet 4",
+    "model_short_title": null,
+    "model_name": "claude-sonnet-4",
+    "model_alphanumeric_id": "claudesonnet4",
+    "model_reciprocity": "closed",
+    "agent_alphanumeric_id": "goose-goose-claudesonnet4",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Goose - Claude Sonnet 4 <goose-claudesonnet4@local>"
+  },
+  "raw": {
+    "env": {
+      "GOOSE_WORKING_DIR": {
+        "present": false
+      },
+      "GOOSE_PROVIDER": {
+        "present": false
+      },
+      "GOOSE_MODEL": {
+        "present": false
+      },
+      "GOOSE_TERMINAL": {
+        "value": "fake",
+        "present": true
+      },
+      "GOOSE_MODE": {
+        "present": false
+      }
+    },
+    "/Users/balupton/.config/goose/config.yaml": {
+      "active_provider": "goose",
+      "providers.goose.model": "claude-sonnet-4"
+    },
+    "harness-urls": [
+      "https://github.com/aaif-goose/goose",
+      "https://github.com/aaif-goose/goose/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://github.com/aaif-goose/goose",
+      "https://github.com/aaif-goose/goose/blob/main/LICENSE"
+    ],
+    "model-urls": [
+      "https://www.anthropic.com/claude/sonnet",
+      "https://docs.anthropic.com/en/docs/about-claude/models"
+    ],
+    "platform_alphanumeric_id": "darwinaarch64",
+    "process_lineage": [
+      {
+        "pid": 23924,
+        "name": "agent-detection"
+      }
+    ]
+  }
+}
