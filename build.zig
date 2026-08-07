@@ -21,14 +21,15 @@ const targets = [_]struct { name: []const u8, query: std.Target.Query }{
 pub fn build(b: *std.Build) void {
     const optimize = b.option(std.builtin.OptimizeMode, "optimize", "optimization mode") orelse .ReleaseSmall;
 
-    // `--dev` enables the dev-only subcommands (the `known` namespace:
-    // daemon, agent, queue, dequeue, purge) and the larger code path
+    // `--dev` enables the dev-only subcommands (the `fixtures` namespace:
+    // daemon, capture, queue, dequeue, plus the standalone `raw` action)
+    // and the larger code path
     // that gathers raw observations. Default is `false` for the
     // released binary; `zig build dev` flips it to `true` for the
-    // maintainer-only `agent-detection-dev` binary. The dev binary is
+    // maintainer-only `agent-detect-dev` binary. The dev binary is
     // NOT cross-compiled; `zig build dist` only emits the released
     // binary.
-    const dev = b.option(bool, "dev", "include dev-only subcommands (known namespace, etc.)") orelse false;
+    const dev = b.option(bool, "dev", "include dev-only subcommands (fixtures namespace, raw, etc.)") orelse false;
 
     // Read the project version out of `build.zig.zon` so the binary's
     // `--version` output reflects the actual release tag. The format is
@@ -53,7 +54,7 @@ pub fn build(b: *std.Build) void {
     // default: native build into zig-out — the released binary
     const native_target = b.standardTargetOptions(.{});
     const native_exe = b.addExecutable(.{
-        .name = "agent-detection",
+        .name = "agent-detect",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = native_target,
@@ -66,8 +67,9 @@ pub fn build(b: *std.Build) void {
 
     // `zig build dev` — builds the maintainer-only dev binary with
     // `-Ddev=true`. Same source as the released binary, but the
-    // dev-only subcommands (the `known` namespace + `refresh run`)
-    // and the KnownFixturesForKnownAgents table are linked in. The
+    // dev-only subcommands (the `fixtures` namespace + `refresh run`
+    // + the standalone `raw` action)
+    // and the RecipesForFixtures table are linked in. The
     // released binary is unaffected (built with dev=false).
     //
     // The dev binary needs its own `build_options` with `dev=true`,
@@ -78,7 +80,7 @@ pub fn build(b: *std.Build) void {
     dev_options.addOption(bool, "dev", true);
     dev_options.addOption([]const u8, "version", version);
     const dev_exe = b.addExecutable(.{
-        .name = "agent-detection-dev",
+        .name = "agent-detect-dev",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = native_target,
@@ -94,7 +96,7 @@ pub fn build(b: *std.Build) void {
     // RUN the binary: the maintainer invokes it from their own
     // terminal to avoid process-tree pollution from this dev
     // environment.
-    const dev_step = b.step("dev", "install agent-detection-dev (maintainer-only, with dev subcommands)");
+    const dev_step = b.step("dev", "install agent-detect-dev (maintainer-only, with dev subcommands)");
     dev_step.dependOn(&b.addInstallArtifact(dev_exe, .{}).step);
 
     // `zig build test` — runs every `src/*_test.zig` / `src/*test*.zig` file.
@@ -117,12 +119,12 @@ pub fn build(b: *std.Build) void {
     }
 
     // `zig build dist` — cross-compile every target into bin/. Only
-    // the released binary is emitted; `agent-detection-dev` is not
+    // the released binary is emitted; `agent-detect-dev` is not
     // distributed.
     const dist_step = b.step("dist", "cross-compile all platform binaries into bin/");
     for (targets) |t| {
         const exe = b.addExecutable(.{
-            .name = b.fmt("agent-detection-{s}", .{t.name}),
+            .name = b.fmt("agent-detect-{s}", .{t.name}),
             .root_module = b.createModule(.{
                 .root_source_file = b.path("src/main.zig"),
                 .target = b.resolveTargetQuery(t.query),
@@ -131,7 +133,7 @@ pub fn build(b: *std.Build) void {
             }),
         });
         exe.root_module.addImport("build_options", build_options.createModule());
-        // run as `zig build dist --prefix .` to emit bin/agent-detection-<os>-<arch>[.exe]
+        // run as `zig build dist --prefix .` to emit bin/agent-detect-<os>-<arch>[.exe]
         const install = b.addInstallArtifact(exe, .{});
         dist_step.dependOn(&install.step);
     }

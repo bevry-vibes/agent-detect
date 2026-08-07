@@ -60,13 +60,13 @@ docs/
 zig-out/
 bin/
 
-# dev daemon telemetry (written by `known daemon --write-log`; already
+# dev daemon telemetry (written by `fixtures daemon --write-log`; already
 # covered by **/*.log above, listed explicitly for discoverability)
-known/daemon.log
+fixtures/daemon.log
 
-# SQLite index/queue DB (written/read via the `sqlite3` CLI; carries
+# SQLite fixtures/queue DB (written/read via the `sqlite3` CLI; carries
 # per-host queue state and fixture history — never committed)
-known/*.sqlite3
-known/*.sqlite3-journal
-known/*.sqlite3-wal
-known/*.sqlite3-shm
+fixtures/*.sqlite3
+fixtures/*.sqlite3-journal
+fixtures/*.sqlite3-wal
+fixtures/*.sqlite3-shm

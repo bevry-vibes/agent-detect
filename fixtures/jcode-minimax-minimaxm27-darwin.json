@@ -1,26 +1,36 @@
 {
-  "canonical": {
+  "cooked": {
     "harness_label": "jcode",
     "harness_short_title": null,
     "harness_name": "jcode",
-    "harness_alphanumeric_id": "jcode",
+    "harness_id": "jcode",
     "harness_license": "MIT",
     "provider_label": "MiniMax",
     "provider_name": "minimax",
-    "provider_alphanumeric_id": "minimax",
+    "provider_id": "minimax",
     "provider_closed_training": "opt-in",
     "provider_open_training": "opt-in",
     "model_label": "MiniMax M2.7",
     "model_short_title": "M2.7",
     "model_name": "MiniMax-M2.7",
-    "model_alphanumeric_id": "minimaxm27",
+    "model_id": "minimaxm27",
     "model_reciprocity": "open-weight",
-    "agent_alphanumeric_id": "jcode-minimax-minimaxm27",
+    "agent_id": "jcode-minimax-minimaxm27",
     "reciprocal": false,
     "trailer": "Co-authored-by: jcode · MiniMax M2.7 <jcode-minimax-minimaxm27@local>"
   },
   "raw": {
-    "platform_alphanumeric_id": "darwin",
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
     "env": {
       "JCODE_API_KEY": {
         "present": true
@@ -53,5 +63,6 @@
       "https://huggingface.co/MiniMaxAI/MiniMax-M2.7",
       "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
     ]
-  }
+  },
+  "trailer": "Co-authored-by: jcode · MiniMax M2.7 <jcode-minimax-minimaxm27@local>"
 }

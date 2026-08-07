@@ -1,0 +1,74 @@
+{
+  "cooked": {
+    "harness_label": "Kilo Code",
+    "harness_short_title": null,
+    "harness_name": "kilo",
+    "harness_id": "kilo",
+    "harness_license": "MIT",
+    "provider_label": "DeepSeek",
+    "provider_name": "deepseek",
+    "provider_id": "deepseek",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "DeepSeek V4 Flash",
+    "model_short_title": null,
+    "model_name": "deepseek-v4-flash",
+    "model_id": "deepseekv4flash",
+    "model_reciprocity": "open-weight",
+    "agent_id": "kilo-deepseek-deepseekv4flash",
+    "reciprocal": true,
+    "trailer": "Co-authored-by: Kilo Code · DeepSeek V4 Flash <kilo-deepseek-deepseekv4flash@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "KILO_API_KEY": {
+        "present": false
+      },
+      "KILO": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 25869,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 25868,
+        "name": "bash"
+      },
+      {
+        "pid": 24896,
+        "name": "kilo"
+      },
+      {
+        "pid": 83120,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://api-docs.deepseek.com/quick_start/pricing",
+      "https://platform.deepseek.com"
+    ],
+    "model-urls": [
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+    ]
+  },
+  "trailer": "Co-authored-by: Kilo Code · DeepSeek V4 Flash <kilo-deepseek-deepseekv4flash@local>"
+}

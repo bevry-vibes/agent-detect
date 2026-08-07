@@ -1,26 +1,36 @@
 {
-  "canonical": {
+  "cooked": {
     "harness_label": "Qwen Code",
     "harness_short_title": null,
     "harness_name": "qwen",
-    "harness_alphanumeric_id": "qwen",
+    "harness_id": "qwen",
     "harness_license": "Apache-2.0",
     "provider_label": "MiniMax",
     "provider_name": "minimax",
-    "provider_alphanumeric_id": "minimax",
+    "provider_id": "minimax",
     "provider_closed_training": "opt-in",
     "provider_open_training": "opt-in",
     "model_label": "MiniMax M3",
     "model_short_title": "M3",
     "model_name": "MiniMax-M3",
-    "model_alphanumeric_id": "minimaxm3",
+    "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
-    "agent_alphanumeric_id": "qwen-minimax-minimaxm3",
+    "agent_id": "qwen-minimax-minimaxm3",
     "reciprocal": true,
     "trailer": "Co-authored-by: Qwen Code · MiniMax M3 <qwen-minimax-minimaxm3@local>"
   },
   "raw": {
-    "platform_alphanumeric_id": "darwin",
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
     "env": {
       "QWEN_API_KEY": {
         "present": true
@@ -57,5 +67,6 @@
       "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
       "https://www.minimax.io/blog/minimax-m3"
     ]
-  }
+  },
+  "trailer": "Co-authored-by: Qwen Code · MiniMax M3 <qwen-minimax-minimaxm3@local>"
 }

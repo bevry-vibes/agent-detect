@@ -32,9 +32,9 @@ jobs:
 
       - name: smoke test (linux x86_64)
         run: |
-          chmod +x bin/agent-detection-linux-x86_64
-          ./bin/agent-detection-linux-x86_64 --help
-          ./bin/agent-detection-linux-x86_64 --version
+          chmod +x bin/agent-detect-linux-x86_64
+          ./bin/agent-detect-linux-x86_64 --help
+          ./bin/agent-detect-linux-x86_64 --version
 
   # Every push to `main` overwrites the `nightly` rolling release so
   # WIP consumers can pin to `releases/tag/nightly/download/<asset>`.
@@ -57,8 +57,8 @@ jobs:
 
       - name: smoke test (linux x86_64)
         run: |
-          chmod +x bin/agent-detection-linux-x86_64
-          ./bin/agent-detection-linux-x86_64 --version
+          chmod +x bin/agent-detect-linux-x86_64
+          ./bin/agent-detect-linux-x86_64 --version
 
       - name: publish rolling release
         uses: softprops/action-gh-release@v2
@@ -68,7 +68,7 @@ jobs:
           prerelease: true
           latest: false
           body: |
-            Rolling build of `agent-detection` binaries for all platforms, updated on every push to `main`. Pin WIP consumers to `releases/tag/nightly/download/<asset>`; stable consumers should use `releases/latest/download/<asset>` instead (which only updates when a calver tag is pushed).
+            Rolling build of `agent-detect` binaries for all platforms, updated on every push to `main`. Pin WIP consumers to `releases/tag/nightly/download/<asset>`; stable consumers should use `releases/latest/download/<asset>` instead (which only updates when a calver tag is pushed).
           files: bin/*
 
   # Pushing a calver-shaped tag (`<year>.<month>.<day>-<revision>`)
@@ -93,8 +93,8 @@ jobs:
 
       - name: smoke test (linux x86_64)
         run: |
-          chmod +x bin/agent-detection-linux-x86_64
-          ./bin/agent-detection-linux-x86_64 --version
+          chmod +x bin/agent-detect-linux-x86_64
+          ./bin/agent-detect-linux-x86_64 --version
 
       - name: publish tagged release as latest
         uses: softprops/action-gh-release@v2
@@ -104,5 +104,5 @@ jobs:
           prerelease: false
           latest: true
           body: |
-            Stable release `agent-detection ${{ github.ref_name }}`. Cut from `main` — see DESIGN.md "distribution / versioned releases" for the runbook. Direct downloads via `releases/latest/download/<asset>` (this release IS `latest`).
+            Stable release `agent-detect ${{ github.ref_name }}`. Cut from `main` — see DESIGN.md "distribution / versioned releases" for the runbook. Direct downloads via `releases/latest/download/<asset>` (this release IS `latest`).
           files: bin/*

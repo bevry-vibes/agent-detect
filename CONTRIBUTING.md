@@ -1,53 +1,61 @@
 # contributing
 
-How to maintain `agent-detection` as an agent or human. Read this when
+How to maintain `agent-detect` as an agent or human. Read this when
 you need to *do* something — refresh a fixture, add a harness rule, add
 a model or provider rule, cut a release. For the *why* behind the
 design, see [DESIGN.md](./DESIGN.md).
 
 ## refresh a fixture
 
-A fixture is `known/<known_alphanumeric_id>.agent.json` plus its matching
-`known/<known_alphanumeric_id>.trailer.txt`, where the id encodes
-`<harness>-<provider>-<model>` and is suffixed with `-<platform>`
-(e.g. `cline-clinepass-kimik3-darwin`). The binary is the only thing
-that writes fixtures — agents never hand-author them.
+A fixture is a single `fixtures/<fixture_id>.json` file with three
+top-level keys: `cooked` (the 18-field canonical object), `raw` (the
+runtime observations), and `trailer` (the `Co-authored-by` string).
+`fixture_id` encodes `<harness>-<provider>-<model>` and is suffixed
+with `-<platform>` (e.g. `cline-clinepass-kimik3-darwin`). The binary
+is the only thing that writes fixtures — agents never hand-author them.
 
-`known/index.sqlite3` is the state store (a single SQLite database read
-and written via the system `sqlite3` CLI). It has two tables:
+`fixtures/index.sqlite3` is the state store (a single SQLite database
+read and written via the system `sqlite3` CLI). It has two tables:
 `fixtures` (one row per captured 4-tuple `(harness, provider, model,
-platform)`, `platform` always the host) and `actions` (the work queue:
-dims + scope columns + `available` probe status). Rows in `actions`
+platform)`, `platform` always the host) and `queue` (the work queue:
+dims + scope columns + `available` probe status). Rows in `queue`
 with missing dims are **seeds**: the daemon expands them over the known
-recipes (`knownFixturesForKnownAgents`), queuing each applicable full
-combo. Rows the daemon cannot expand are warned once per run and left
+recipes (`recipesForFixtures`), queuing each applicable full combo.
+Rows the daemon cannot expand are warned once per run and left
 unchanged.
+
+**Tooling note:** the `fixtures` workflow requires the system `sqlite3`
+CLI on PATH (every OS ships one); the *released* binary has zero
+runtime dependencies — sqlite3 is only a maintainer-tooling
+requirement.
 
 The refresh flow uses two binaries with strict role separation:
 
-- **`agent-detection-dev known daemon`** — only the *user* runs this,
-  never the agent. It pops one `actions` row per poll, expands seeds
-  over known recipes first, then spawns captures for full combos.
-- **`agent-detection-dev known agent`** — runs *inside an agent*
-  session; captures the current session into a fixture and upserts a
-  `fixtures` row. **Fixtures only** — a partial detection exits 2 with
-  no store change (never writes `actions`).
-- **`agent-detection-dev known queue`** — **enumerate + upsert only, no
-  evaluation.** With a scope flag it upserts each candidate into
-  `actions`; without one it creates a seed row with the positive dims
+- **`agent-detect-dev fixtures daemon`** — only the *user* runs this,
+  never the agent. It pops one `queue` row per poll, expands seeds
+  over known recipes first, lazily backfills the `fixtures` row from
+  any valid committed `fixtures/<id>.json`, then spawns captures for
+  full combos that still need them.
+- **`agent-detect-dev fixtures capture`** — runs *inside an agent*
+  session; captures the current session into a single
+  `fixtures/<id>.json` and upserts a `fixtures` row. **Fixtures
+  only** — a partial detection exits 2 with no store change (never
+  writes `queue`).
+- **`agent-detect-dev fixtures queue`** — **enumerate + upsert only,
+  no evaluation.** With a scope flag it upserts each candidate into
+  `queue`; without one it creates a seed row with the positive dims
   (`--harness=`, `--provider=`, `--model=`, `--platform=`, or the
-  composite `--agent=`/`--known=`) and the rest `null`.
-- **`agent-detection-dev known dequeue`** — **DELETE only.** Deletes the
-  matching `actions` rows; never touches `fixtures`.
+  composite `--agent=`/`--fixture=`) and the rest `null`.
+- **`agent-detect-dev fixtures dequeue`** — **DELETE only.** Deletes
+  the matching `queue` rows; never touches `fixtures`.
 
 The shared filters (at least one required for `queue`/`dequeue`):
 `--harness=H`, `--provider=P`, `--model=M`, `--platform=PLAT` constrain
-their dim to equality; `--known=<h>-<p>-<m>-<plat>` is an
-exact 4-part id; `--agent=<h>-<p>-<m>` sets h-p-m (platform may be
-added with `--platform=`). Dim filters compose (AND) with the scope
-flags below. (`--no-harness`/`--no-provider`/`--no-model`/
-`--no-platform` were removed — an unset dim is expressed by simply
-omitting it.)
+their dim to equality; `--fixture=<h>-<p>-<m>-<plat>` is an exact
+4-part id; `--agent=<h>-<p>-<m>` sets h-p-m (platform may be added
+with `--platform=`). Dim filters compose (AND) with the scope flags
+below. (There are no `--no-*` flags — an unset dim is expressed by
+simply omitting it.)
 
 The scope flags (exactly one per call, shared by `queue`/`dequeue`)
 select a candidate set instead of a dim filter:
@@ -55,12 +63,12 @@ select a candidate set instead of a dim filter:
 - `--stale` — `fixtures` rows older than the threshold
   (`--stale-by-days=N`, `--stale-by-minutes=N`; `--stale` is an alias
   for `--stale-by-days=7`).
-- `--partial` — `actions` rows with at least one missing dim (seeds).
-- `--recipes` — every known recipe (`knownFixturesForKnownAgents`,
+- `--partial` — `queue` rows with at least one missing dim (seeds).
+- `--recipes` — every known recipe (`recipesForFixtures`,
   host platform).
-- `--missing-fixture` — recipes whose `known/<id>.agent.json` and/or
-  `.trailer.txt` are absent from disk.
-`queue` upserts the candidates into `actions`; `dequeue` deletes them.
+- `--missing-fixture` — recipes whose `fixtures/<id>.json` is absent
+  from disk.
+`queue` upserts the candidates into `queue`; `dequeue` deletes them.
 By default nothing is gated on harness availability; `--available` (a
 modifier, combinable with any single scope flag) probes each
 candidate's harness and records `1` (available) or `0` (unavailable)
@@ -72,36 +80,56 @@ To refresh one fixture end-to-end:
 
 1. The user starts the daemon in a separate terminal:
    ```sh
-   ./zig-out/bin/agent-detection-dev known daemon
+   ./zig-out/bin/agent-detect-dev fixtures daemon
    ```
 2. From inside an agent session for the harness to capture:
    ```sh
-   ./zig-out/bin/agent-detection-dev known queue \
-     --harness=<harness_alphanumeric_id> \
-     --provider=<provider_alphanumeric_id> \
-     --model=<model_alphanumeric_id> \
+   ./zig-out/bin/agent-detect-dev fixtures queue \
+     --harness=<harness_id> \
+     --provider=<provider_id> \
+     --model=<model_id> \
      --platform=darwin
    ```
-3. The daemon pops the action, spawns `known agent`, which writes the
-   fixture file and upserts the matching `fixtures` row.
+3. The daemon pops the queue row, spawns `fixtures capture`, which
+   writes the single `fixtures/<id>.json` and upserts the matching
+   `fixtures` row. If a valid committed `fixtures/<id>.json` already
+   exists, the daemon backfills the row from it instead of
+   re-capturing.
 
-For batch refreshes: `known queue --all` re-queues every row in
-`fixtures`, `known queue --stale [--stale-by-days=N]
+For batch refreshes: `fixtures queue --all` re-queues every row in
+`fixtures`, `fixtures queue --stale [--stale-by-days=N]
 [--stale-by-minutes=N]` queues only rows older than the threshold,
-`known queue --recipes` re-queues every committed recipe, and
-`known queue --missing-fixture` queues recipes whose fixture files are
-missing. Add `--available` to probe-and-record harness availability
-instead of dropping unavailable harnesses.
+`fixtures queue --recipes` re-queues every committed recipe, and
+`fixtures queue --missing-fixture` queues recipes whose fixture files
+are missing. Add `--available` to probe-and-record harness
+availability instead of dropping unavailable harnesses.
+
+## recipe-mode cooked / trailer (hard-to-detect agents)
+
+`cooked` and `trailer` accept a complete combo to emit a report
+without live detection:
+
+```sh
+./zig-out/bin/agent-detect cooked --harness=cline --provider=clinepass --model=kimik3
+./zig-out/bin/agent-detect trailer --harness=cline --provider=clinepass --model=kimik3
+```
+
+All three of `--harness=`, `--provider=`, `--model=` are required (or
+none — then live detection runs). A partial combo or an id not in the
+rule tables exits 2. Ids may be given in canonical or strict-slug form
+(`cline-pass` or `clinepass`). This is how a harness whose
+provider/model can't be auto-detected still gets a cooked report and
+trailer.
 
 ## add a new harness rule
 
-Add a `KnownRuleForKnownAgent` entry to the
-`knownRulesForKnownAgents` array in `src/main.zig`. Required fields:
+Add a `HarnessRule` entry to the `rulesForHarnesses` array in
+`src/main.zig`. Required fields:
 
 | field             | how to fill                                                                                                |
 | ----------------- | ---------------------------------------------------------------------------------------------------------- |
 | `name`            | strictly lowercase alphanumeric — what the harness calls itself canonically (e.g. `kimi-code`)              |
-| `label`           | the human-readable brand form (e.g. `Kimi Code`); used to derive `harness_alphanumeric_id`                 |
+| `label`           | the human-readable brand form (e.g. `Kimi Code`); used to derive `harness_id`                              |
 | `license`         | SPDX id (e.g. `Apache-2.0`, `MIT`), or `null` for closed-source harnesses                                  |
 | `license_sources` | two URLs: the project page + the LICENSE file linked from it. `null` license keeps this empty              |
 | `env_markers`     | env-var names unique to this harness (one or more). Run the harness' `--help` and inspect its config to discover |
@@ -115,14 +143,15 @@ After adding the rule:
 
 If the harness is closed-source and you can't verify the SPDX license,
 leave `license: null` and `license_sources: &.{}` — a maintainer fills
-them in once verified.
+them in once verified. If the harness' provider/model can't be
+auto-detected at all, the rule alone is enough for recipe-mode
+`cooked`/`trailer` (see above) — you don't need a live capture.
 
 ## add a new model or provider rule
 
 Model and provider rules live alongside the harness rules in
-`src/main.zig` as `knownRulesForKnownModels` and
-`knownRulesForKnownProviders` arrays. Their structs are
-`KnownRuleForKnownModel` and `KnownRuleForKnownProvider`.
+`src/main.zig` as `rulesForModels` and `rulesForProviders` arrays.
+Their structs are `ModelRule` and `ProviderRule`.
 
 **Model rule fields:**
 
@@ -182,8 +211,8 @@ After the runbook, verify locally that the freshly built binary prints
 the expected version:
 
 ```sh
-zig build && ./zig-out/bin/agent-detection --version
-# → agent-detection <new_version>
+zig build && ./zig-out/bin/agent-detect --version
+# → agent-detect <new_version>
 ```
 
 ### release channels
@@ -202,8 +231,10 @@ touch the `nightly` channel, which is marked `prerelease: true` and
 The list of harnesses we want this binary to support. Append a
 markdown task-list bullet here when a new harness is wanted. The
 binary itself won't act on it (the `harness_name` must be in
-`knownRulesForKnownAgents` for the daemon to recognize), but the
-bullet is the maintainer's next-session list.
+`rulesForHarnesses` for the daemon to recognize), but the bullet is the
+maintainer's next-session list. When a pending harness gets its rule
+added, remember the daemon's recipe table (`recipesForFixtures`) must
+contain the harness before seed expansion will queue captures for it.
 
 - [ ] **claude** — VS Code-embedded Claude Code agent.
 - [ ] **continue / cody / windsurf** — other VS Code-embedded agents

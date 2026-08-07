@@ -7,7 +7,7 @@
 // All software distributed under the RPL is provided strictly on an "AS IS"
 // basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
-// agent-detection — infer the current agent harness, provider, and
+// agent-detect — infer the current agent harness, provider, and
 // model from the environment and harness data files, least-invasive first:
 //   1. environment variables        (harness)
 //   2. <harness data>/settings      (live provider + model)
@@ -21,10 +21,10 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 // Build-time option exposed via `build.zig`'s `-Ddev` flag. The released
-// binary builds with `dev=false`; the maintainer-only `agent-detection-dev`
+// binary builds with `dev=false`; the maintainer-only `agent-detect-dev`
 // is built with `dev=true`. The `if (dev_build)` blocks below contain
-// every dev-only subcommand (the `known` namespace: daemon, agent,
-// queue, etc.) and the KnownFixturesForKnownAgents table that drives
+// every dev-only subcommand (the `fixtures` namespace: daemon, agent,
+// queue, etc.) and the RecipesForFixtures table that drives
 // them. Zig's `comptime` drops the dead code from the released binary
 // at link time.
 const build_options = @import("build_options");
@@ -50,29 +50,34 @@ pub const Detection = struct {
     harness_label: ?[]const u8 = null, // human-readable display label, e.g. "Kimi Code" (note some have no title-cased form, such as omp, as such retain omp for omp)
     harness_short_title: ?[]const u8 = null, // optional short brand form, e.g. "Kimi" for "Kimi Code"; null when no established short form
     harness_name: ?[]const u8 = null, // canonical name (whatever casing the service uses to refer to it), e.g. "kimi-code"
-    harness_alphanumeric_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `harness_name` (no separators), e.g. "kimi-code" -> "kimicode" — the only id we constrain; `harness_name` carries whatever the service uses
+    harness_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `harness_name` (no separators), e.g. "kimi-code" -> "kimicode" — the only id we constrain; `harness_name` carries whatever the service uses
     harness_version: ?[]const u8 = null, // optional release version, e.g. "1.2.3"
     harness_license: ?[]const u8 = null, // SPDX id, e.g. "Apache-2.0"
     // provider group
     provider_label: ?[]const u8 = null, // e.g. "Cline Pass"
     provider_name: ?[]const u8 = null, // canonical name (whatever casing the service uses to refer to it), e.g. "cline-pass"
-    provider_alphanumeric_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `provider_name` (no separators), e.g. "cline-pass" -> "clinepass" — the only id we constrain; `provider_name` carries whatever the service uses
+    provider_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `provider_name` (no separators), e.g. "cline-pass" -> "clinepass" — the only id we constrain; `provider_name` carries whatever the service uses
     provider_closed_training: ?[]const u8 = null, // "enforced" | "opt-in" | "opt-out" | "never" | null
     provider_open_training: ?[]const u8 = null, // same enum
     // model group
     model_label: ?[]const u8 = null, // e.g. "Kimi K3"
     model_short_title: ?[]const u8 = null, // optional short brand form, e.g. "M3" for "MiniMax M3"; null when no established short form
     model_name: ?[]const u8 = null, // canonical bare slug (whatever casing the service uses canonically), e.g. "kimi-k3"
-    model_alphanumeric_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `model_name` (no separators), e.g. "kimi-k3" -> "kimik3"
+    model_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `model_name` (no separators), e.g. "kimi-k3" -> "kimik3"
     model_reciprocity: ?[]const u8 = null, // "open-source" | "open-weight" | "closed" | null
     // agent (composed from harness + provider + model)
-    agent_alphanumeric_id: ?[]const u8 = null, // "<harness_alphanumeric_id>-<provider_alphanumeric_id>-<model_alphanumeric_id>" — the user-visible identity of the agent
+    agent_id: ?[]const u8 = null, // "<harness_id>-<provider_id>-<model_id>" — the user-visible identity of the agent
     // policy / output
     reciprocal: ?bool = null, // computed from harness_license + model_reciprocity + provider_closed_training
     trailer: ?[]const u8 = null,
-    // raw — typed observations; buildJson converts these to a shapeless
+    // raw — typed observations; buildRaw converts these to a shapeless
     // JSON object whose top-level keys identify the source of evidence
     raw: RawObservation = .{},
+    // the dims this run's detection ladder (or recipe) *could* resolve;
+    // a stale per-capture record of what landed in the raw block's
+    // `detectable` key. `detected` is derived post-hoc from which
+    // canonical dims actually populated `cooked`.
+    detectable: []const []const u8 = &.{},
 };
 
 /// one model. `reciprocity` is the openness tier used by the policy
@@ -85,7 +90,7 @@ pub const Detection = struct {
 /// adds concurrence or insight (e.g. the OSAID 1.0 page for open-source
 /// models). Surfaced under `raw["model-urls"]` so a maintainer can audit
 /// the deduction from multiple angles.
-const KnownRuleForKnownModel = struct {
+const ModelRule = struct {
     name: []const u8,
     label: []const u8,
     /// optional shorter brand form used in casual references. e.g.
@@ -96,7 +101,7 @@ const KnownRuleForKnownModel = struct {
     reciprocity: ?[]const u8,
     sources: []const []const u8,
 };
-const knownRulesForKnownModels = [_]KnownRuleForKnownModel{
+const rulesForModels = [_]ModelRule{
     // kimi-k3: open-weight — Moonshot's HF card self-describes
     // "open-weight"; its LICENSE is the custom "Kimi K3 License"
     // (MIT-style with a large-scale commercial carve-out), not OSI.
@@ -144,14 +149,14 @@ const knownRulesForKnownModels = [_]KnownRuleForKnownModel{
 /// provider's legal page. Aggregator pages classify rather than assert
 /// policy, so they're dropped as second sources. Surfaced under
 /// `raw["provider-urls"]`.
-const KnownRuleForKnownProvider = struct {
+const ProviderRule = struct {
     name: []const u8,
     label: []const u8,
     closed_training: ?[]const u8,
     open_training: ?[]const u8,
     sources: []const []const u8,
 };
-const knownRulesForKnownProviders = [_]KnownRuleForKnownProvider{
+const rulesForProviders = [_]ProviderRule{
     // cline-pass: never/never — Cline's subscription tier. Cline is a
     // BYO-key client; its privacy notice says requests made with your
     // own API keys are not collected. Upstream AI model providers have
@@ -172,6 +177,11 @@ const knownRulesForKnownProviders = [_]KnownRuleForKnownProvider{
     // Sources are the DeepSeek API pricing page + the platform home
     // (per DeepSeek's published platform data-handling docs).
     .{ .name = "deepseek-flash", .label = "DeepSeek Flash", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" } },
+    // deepseek: never/never — the direct DeepSeek platform provider
+    // (api.deepseek.com, the upstream the openai/anthropic-compatible
+    // transport fronts). Same data-handling policy as `deepseek-flash`;
+    // mirrors it so the direct provider id resolves the same policies.
+    .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" } },
     // jcode's openai-compatible transport that fronts `api.minimax.io`
     // is the same upstream as the `minimax` rule above — the
     // openai-compatible interface is transport detail, not a
@@ -207,10 +217,11 @@ const knownRulesForKnownProviders = [_]KnownRuleForKnownProvider{
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
 // Static rule metadata (the harness rule's declared proc names and
-// env-marker names) lives in `knownRulesForKnownAgents`; the runtime
+// env-marker names) lives in `rulesForHarnesses`; the runtime
 // observation story is carried by `raw.env_vars` (matched env-var
 // observations) and `raw.process_lineage` (process tree at detection
-// time).
+// time). The raw block intentionally does NOT duplicate that static
+// data (see DESIGN.md "18-field canonical fixture contract").
 
 /// one env-var observation. `name` is always emitted (env-var names
 /// are non-secret). `value` is the env-var's content if `present` and
@@ -238,7 +249,7 @@ pub const Ancestor = struct {
 
 /// process-tree observations: the chain of processes at detection
 /// time, ordered most-immediate first (index 0 = the running
-/// `agent-detection`, index 1 = its parent, etc.). Full argv is
+/// `agent-detect`, index 1 = its parent, etc.). Full argv is
 /// deliberately NOT captured — see DESIGN.md for the leak vectors
 /// (tokens, paths, positional-secret parsing). Inlined as a direct
 /// `[]const Ancestor` field of `RawObservation`.
@@ -261,7 +272,7 @@ pub const FileObservation = struct {
 };
 
 /// All unprocessed observations in a typed shape that maps cleanly to
-/// the shapeless JSON output emitted by `buildJson`. Top-level groups:
+/// the shapeless JSON output emitted by `buildRaw`. Top-level groups:
 /// - `env_vars` — env-var observations (one per matched marker)
 /// - `process_lineage` — process tree (most-immediate first)
 /// - `config_files` — provider config file reads (one per file)
@@ -273,21 +284,12 @@ pub const RawObservation = struct {
     process_lineage: []const Ancestor = &.{},
     config_files: []const FileObservation = &.{},
     session_files: []const FileObservation = &.{},
-    /// static rule data: the env-marker names from the matched harness
-    /// rule (`r.env_markers`). Combined with `env_vars` (the runtime
-    /// observations), a maintainer can audit the detection — they see
-    /// both WHAT the rule declared and WHAT was actually present in env.
-    harness_env_markers: []const []const u8 = &.{},
-    /// static rule data: the proc-name patterns from the matched harness
-    /// rule (`r.proc_names`). Combined with `process_lineage`, a
-    /// maintainer can audit the detection ladder.
-    harness_proc_names: []const []const u8 = &.{},
     harness_urls: []const []const u8 = &.{},
     provider_urls: []const []const u8 = &.{},
     model_urls: []const []const u8 = &.{},
 };
 
-pub const KnownRuleForKnownAgent = struct {
+pub const HarnessRule = struct {
     name: []const u8,
     label: []const u8,
     /// optional short brand form for casual references. e.g.
@@ -322,7 +324,7 @@ const pi_env = [_][]const u8{"PI_CODING_AGENT"};
 // each gets a single, plausibly-shaped env marker that the daemon's
 // runner (see CONTRIBUTING.md) sets in the spawned process's env to
 // fire detection. Each project's `license`/`license_sources` in
-// knownRulesForKnownAgents is filled in from its upstream repo once
+// rulesForHarnesses is filled in from its upstream repo once
 // verified — a maintainer records the SPDX id + source URLs there, not
 // in the fixtures (fixtures are generated artifacts).
 const qwen_env = [_][]const u8{ "QWEN_API_KEY" };
@@ -338,7 +340,7 @@ const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
 const kimi_procs = [_][]const u8{ "kimi.exe", "kimi", "kimi-code.exe", "kimi-code" };
 const kilo_procs = [_][]const u8{ "kilo.exe", "kilo" };
-pub const knownRulesForKnownAgents = [_]KnownRuleForKnownAgent{
+pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an
     // Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code /
     // JetBrains agent).
@@ -431,14 +433,14 @@ pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_inp
     // Consumers should fall back to `model_label` (or `model_name`) when this
     // is null.
     if (mi.short_title) |st| d.model_short_title = try a.dupe(u8, st);
-    d.model_alphanumeric_id = try alphanumericId(a, canonical_name);
+    d.model_id = try slugId(a, canonical_name);
     d.model_reciprocity = mi.reciprocity;
     if (mi.sources.len > 0) d.raw.model_urls = mi.sources;
     _ = raw_input; // caller is responsible for recording it in a config_file observation
-    // recompute the agent id now that model_alphanumeric_id is known —
-    // this depends on harness_alphanumeric_id and provider_alphanumeric_id
+    // recompute the agent id now that model_id is fixtures —
+    // this depends on harness_id and provider_id
     // being set first, which the calling detector is responsible for.
-    try setAgentAlphanumericId(a, d);
+    try setAgentId(a, d);
 }
 
 fn writeOut(io: std.Io, bytes: []const u8) void {
@@ -449,68 +451,8 @@ fn writeErr(io: std.Io, bytes: []const u8) void {
     std.Io.File.stderr().writeStreamingAll(io, bytes) catch {};
 }
 
-/// optional tee target for daemon output; set by `known daemon --write-log`.
+/// optional tee target for daemon output; set by `fixtures daemon --write-log`.
 var daemon_log_file: ?std.Io.File = null;
-
-/// Advisory exclusive lock on `known/index.jsonl` held while a process
-/// does its read-modify-write cycle, so the daemon and CLI commands
-/// (queue/dequeue/purge/agent) never interleave full-file rewrites
-/// (lost updates). The lock is a sidecar file (never truncated), taken
-/// via `flock`-backed `std.Io.File.lock`; it is released automatically
-/// if the process dies. It is reentrant within a process: nested
-/// acquisitions (e.g. `expandSeed` → `upsertIndexEvent`) reuse the
-/// held lock instead of self-deadlocking.
-///
-/// NOTE: the daemon's capture child (`refresh run` → `known agent`)
-/// writes the index from a *separate process*; it takes its own lock.
-/// The daemon must therefore never hold this lock across
-/// `child.wait()` or the child would block forever.
-var index_lock_file: ?std.Io.File = null;
-var index_lock_depth: usize = 0;
-
-const INDEX_LOCK_PATH = "known/index.jsonl.lock";
-
-/// acquire the exclusive index lock (nested-safe).
-fn lockIndex(io: std.Io) !void {
-    if (index_lock_depth > 0) {
-        index_lock_depth += 1;
-        return;
-    }
-    std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
-        error.PathAlreadyExists => {},
-        else => return err,
-    };
-    const f = std.Io.Dir.cwd().createFile(io, INDEX_LOCK_PATH, .{ .read = true, .truncate = false, .lock = .exclusive }) catch |err| switch (err) {
-        // FileLocksUnsupported / IO errors: proceed unlocked rather than
-        // block the command (worst case is the pre-lock race).
-        else => return err,
-    };
-    index_lock_file = f;
-    index_lock_depth = 1;
-}
-
-/// release the index lock (nested-safe).
-fn unlockIndex(io: std.Io) void {
-    if (index_lock_depth == 0) return;
-    index_lock_depth -= 1;
-    if (index_lock_depth == 0) {
-        if (index_lock_file) |f| {
-            f.unlock(io);
-            f.close(io);
-        }
-        index_lock_file = null;
-    }
-}
-
-/// write `data` to `index.jsonl` atomically (temp file + rename) so a
-/// concurrent reader never observes a torn or half-written file. Caller
-/// should hold the index lock for read-modify-write cycles.
-fn writeIndexAtomic(io: std.Io, data: []const u8) !void {
-    var atomic = try std.Io.Dir.cwd().createFileAtomic(io, "known/index.jsonl", .{ .replace = true, .make_path = true });
-    defer atomic.deinit(io);
-    try atomic.file.writeStreamingAll(io, data);
-    try atomic.replace(io);
-}
 
 /// true when the last daemon stdout write ended in a newline (or no
 /// write has happened), so a continuation segment does not repeat the
@@ -574,11 +516,11 @@ const ModelOut = struct {
 };
 
 fn modelForName(a: std.mem.Allocator, name: []const u8) !ModelOut {
-    for (knownRulesForKnownModels) |r| {
+    for (rulesForModels) |r| {
         if (std.mem.eql(u8, r.name, name))
             return .{ .label = r.label, .short_title = r.short_title, .reciprocity = r.reciprocity, .sources = r.sources };
     }
-    // family-prefix fallbacks for known open-weight families
+    // family-prefix fallbacks for fixtures open-weight families
     const families = [_][]const u8{ "kimi", "glm", "minimax" };
     for (families) |fam| {
         if (std.mem.startsWith(u8, name, fam))
@@ -588,28 +530,57 @@ fn modelForName(a: std.mem.Allocator, name: []const u8) !ModelOut {
 }
 
 fn providerForName(name: []const u8) ?[]const u8 {
-    for (knownRulesForKnownProviders) |r| {
+    for (rulesForProviders) |r| {
         if (std.mem.eql(u8, r.name, name)) return r.label;
     }
     return null;
 }
 
-fn providerMetaForName(name: []const u8) ?KnownRuleForKnownProvider {
-    for (knownRulesForKnownProviders) |r| {
+fn providerMetaForName(name: []const u8) ?ProviderRule {
+    for (rulesForProviders) |r| {
         if (std.mem.eql(u8, r.name, name)) return r;
     }
     return null;
+}
+
+/// look up a harness rule by its canonical `name` id. Returns the
+/// whole rule (label, license, license_sources, env markers, etc.) or
+/// null when the id isn't in the harness registry. Used by recipe-mode
+/// cooked/trailer resolution — the live ladder matches harnesses via
+/// env markers / process ancestry, but recipe mode has only the id.
+fn harnessRuleForName(name: []const u8) ?HarnessRule {
+    for (rulesForHarnesses) |r| {
+        if (std.mem.eql(u8, r.name, name)) return r;
+    }
+    return null;
+}
+
+/// does `input` name the rule whose canonical `name` is `rule_name`?
+/// Accepts either the canonical spelling (e.g. `kimi-code`) or the
+/// strict slug (`kimicode`) — recipe-mode combos are typically given
+/// in slug form (as in the `agent_id`/`fixture_id` composites).
+fn ruleIdMatches(rule_name: []const u8, input: []const u8) bool {
+    if (std.mem.eql(u8, rule_name, input)) return true;
+    // slug form: lowercase-alphanumeric of the canonical name
+    var i: usize = 0;
+    for (rule_name) |c| {
+        if (!std.ascii.isAlphanumeric(c)) continue;
+        if (i >= input.len) return false;
+        if (std.ascii.toLower(c) != input[i]) return false;
+        i += 1;
+    }
+    return i == input.len;
 }
 
 /// apply provider rule metadata (training policies + their cross-reference
 /// sources) to `d`. No-op if the provider id is not in the table; this is
 /// the single place the four detectors should call to populate `provider_*`
 /// and the matching `raw.provider_urls` array. Also sets
-/// `provider_alphanumeric_id` (the strict-slug form of the canonical name)
+/// `provider_id` (the strict-slug form of the canonical name)
 /// so detectors that use the three-line `provider_name + label + meta`
-/// pattern still keep the alphanumeric_id in lockstep with the name.
+/// pattern still keep the slug id in lockstep with the name.
 fn applyProviderMeta(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
-    d.provider_alphanumeric_id = try alphanumericId(a, id);
+    d.provider_id = try slugId(a, id);
     if (providerMetaForName(id)) |meta| {
         d.provider_closed_training = meta.closed_training;
         d.provider_open_training = meta.open_training;
@@ -617,33 +588,33 @@ fn applyProviderMeta(a: std.mem.Allocator, d: *Detection, id: []const u8) !void 
     }
 }
 
-/// set d.provider_label, d.provider_name, and d.provider_alphanumeric_id together
+/// set d.provider_label, d.provider_name, and d.provider_id together
 /// from a single id. This is the helper detectors should call instead of
 /// the old "label + applyProviderMeta" pair — it keeps the
-/// alphanumeric_id in lockstep with the name so consumers can
+/// slug id in lockstep with the name so consumers can
 /// always trust the canonical trio.
 fn setProvider(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
     const display = providerForName(id) orelse try titleCase(a, id);
     d.provider_name = try a.dupe(u8, id);
     d.provider_label = display;
-    d.provider_alphanumeric_id = try alphanumericId(a, id);
+    d.provider_id = try slugId(a, id);
     try applyProviderMeta(a, d, id);
 }
 
-/// compose the agent_alphanumeric_id from the three sub-ids. Writes
+/// compose the agent_id from the three sub-ids. Writes
 /// `null` if any of the three is null (the agent is not fully
 /// identified yet, and a partial id is more misleading than null).
-fn setAgentAlphanumericId(a: std.mem.Allocator, d: *Detection) !void {
-    const h = d.harness_alphanumeric_id orelse return;
-    const p = d.provider_alphanumeric_id orelse return;
-    const m = d.model_alphanumeric_id orelse return;
+fn setAgentId(a: std.mem.Allocator, d: *Detection) !void {
+    const h = d.harness_id orelse return;
+    const p = d.provider_id orelse return;
+    const m = d.model_id orelse return;
     var list: std.ArrayList(u8) = .empty;
     try list.appendSlice(a, h);
     try list.append(a, '-');
     try list.appendSlice(a, p);
     try list.append(a, '-');
     try list.appendSlice(a, m);
-    d.agent_alphanumeric_id = try list.toOwnedSlice(a);
+    d.agent_id = try list.toOwnedSlice(a);
 }
 
 fn jstr(obj: std.json.ObjectMap, key: []const u8) ?[]const u8 {
@@ -674,12 +645,12 @@ fn extractAfter(raw: []const u8, from: usize, key: []const u8) ?[]const u8 {
 
 /// strictly lowercase-alphanumeric slug of a display string — e.g. "Kimi Code" -> "kimicode",
 /// "MiniMax M3" -> "minimaxm3". Used to derive the per-harness /
-/// per-model / per-agent alphanumeric ids and surfaced as
-/// `{harness,model}_alphanumeric_id` and `agent_alphanumeric_id` in the
+/// per-model / per-agent ids and surfaced as
+/// `{harness,model}_id` and `agent_id` in the
 /// canonical output so consumers can see exactly where the trailer's
 /// email local part came from. The strictness (no separators at all)
-/// is what the `_alphanumeric_id` suffix advertises.
-pub fn alphanumericId(a: std.mem.Allocator, display: []const u8) ![]u8 {
+/// is what the `_id` suffix advertises.
+pub fn slugId(a: std.mem.Allocator, display: []const u8) ![]u8 {
     var list: std.ArrayList(u8) = .empty;
     for (display) |c| {
         if (std.ascii.isAlphanumeric(c)) try list.append(a, std.ascii.toLower(c));
@@ -1255,10 +1226,10 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
 // harness's data dir when the binary isn't actually running inside that
 // harness. Without that bootstrap, these detectors fall through to a
 // documented default and the fixture says so in the raw block
-// (provider-urls empty + model-urls from knownRulesForKnownModels).
+// (provider-urls empty + model-urls from rulesForModels).
 //
 // Each function:
-//   - reads the harness's known config file (or env var),
+//   - reads the harness's fixtures config file (or env var),
 //   - extracts provider + model from it (or the documented default),
 //   - attaches a FileObservation under raw.config_files for the
 //     config file it actually read,
@@ -1284,7 +1255,7 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 
     // qwen's auth.selectedType is the route key, not the underlying
     // provider. Look at modelProviders[<key>][*].baseUrl to find the
-    // actual upstream service. Default to "minimax" for the well-known
+    // actual upstream service. Default to "minimax" for the well-fixtures
     // case where the openai-compatible endpoint points at api.minimax.io.
     var provider_name: []const u8 = "minimax";
     if (root.get("modelProviders")) |mps| {
@@ -1618,6 +1589,9 @@ fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.En
 }
 
 /// spawn `sqlite3 -json <db> <sql>`; return stdout (caller frees).
+/// Deliberate mirror of the dev-only `dev.sqliteRun` — this one takes
+/// a db-path arg and ships in the released binary (Kilo DB reads);
+/// `dev.sqliteRun` is fixed to `fixtures/index.sqlite3` and dev-gated.
 fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
     const db_z = try a.dupeZ(u8, db);
     defer a.free(db_z);
@@ -1744,178 +1718,80 @@ pub fn computeReciprocal(d: *const Detection) bool {
     return false;
 }
 
-/// The detection report is the JSON produced by `buildJson`: the
-/// released binary emits the canonical fields at the root with no
-/// group wrapper; the dev binary emits both groups wrapped as
-/// `canonical` + `raw`.
+/// The detection report is a JSON object assembled from three
+/// components:
+/// - `buildCooked` — the shape-stable 18-field canonical object,
+///   grouped by entity (harness / provider / model / agent).
+/// - `buildRaw` — the shapeless raw observations object (dev binary
+///   only), whose top-level keys identify source evidence.
+/// - `buildTrailer` — the `Co-authored-by` string.
+/// The released binary's `cooked` action serializes `buildCooked` at
+/// the root; the dev binary's fixture format embeds all three as
+/// `{cooked, raw, trailer}`.
 
-/// emit JSON report for `d` into `buf`. The `canonical` section is
-/// shape-stable and grouped by entity; the `raw` section (dev binary
-/// only) is an officially shapeless object whose top-level keys
-/// identify source evidence. Pretty-printed at 2-space indent via
-/// `std.json.Stringify.valueAlloc` — no hand-rolled formatter, so the
-/// output matches whatever std.json produces for the underlying
-/// `std.json.Value` tree.
-pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?KnownRuleForKnownAgent, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
-    // Extract the user's home directory once so we can redact it
-    // from every emitted string below — fixtures must be portable
-    // across machines. `home` is empty when neither USERPROFILE nor
-    // HOME is set, in which case redactHome is a no-op for the
-    // literal-path branch (interpolations still match).
-    const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
-    _ = rule;
-    _ = anc;
+/// Extract the user's home directory once so we can redact it from
+/// every emitted string — fixtures must be portable across machines.
+/// `home` is empty when neither USERPROFILE nor HOME is set, in which
+/// case redactHome is a no-op for the literal-path branch.
+fn reporterHome(env: *const std.process.Environ.Map) []const u8 {
+    return env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
+}
 
+/// Build the canonical `cooked` object (18 fields, grouped by entity).
+/// Returns a heap-allocated `std.json.Value` the caller owns.
+fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     const V = std.json.Value;
-
-    // ---- canonical section ----
     // Each canonical field is `?[]const u8` (or `?bool`). Use a small
     // helper to emit `null` when absent so partial-detection fixtures
-    // (qwen-no-model, pi-no-model, etc.) read as `null`, not `""`.
-    // The previous shape serialized nulls as empty strings, which made
-    // `harness_license: ""` indistinguishable from a project that
-    // actually has an empty-string SPDX license.
+    // read as `null`, not `""`. The previous shape serialized nulls as
+    // empty strings, which made `harness_license: ""`
+    // indistinguishable from a project that actually has an
+    // empty-string SPDX license.
     var canonical: V = .{ .object = .empty };
     try canonical.object.put(a, "harness_label", optStringValue(a, d.harness_label));
     try canonical.object.put(a, "harness_short_title", optStringValue(a, d.harness_short_title));
     try canonical.object.put(a, "harness_name", optStringValue(a, d.harness_name));
-    try canonical.object.put(a, "harness_alphanumeric_id", optStringValue(a, d.harness_alphanumeric_id));
+    try canonical.object.put(a, "harness_id", optStringValue(a, d.harness_id));
     try canonical.object.put(a, "harness_license", optStringValue(a, d.harness_license));
     try canonical.object.put(a, "provider_label", optStringValue(a, d.provider_label));
     try canonical.object.put(a, "provider_name", optStringValue(a, d.provider_name));
-    try canonical.object.put(a, "provider_alphanumeric_id", optStringValue(a, d.provider_alphanumeric_id));
+    try canonical.object.put(a, "provider_id", optStringValue(a, d.provider_id));
     try canonical.object.put(a, "provider_closed_training", optStringValue(a, d.provider_closed_training));
     try canonical.object.put(a, "provider_open_training", optStringValue(a, d.provider_open_training));
     try canonical.object.put(a, "model_label", optStringValue(a, d.model_label));
     try canonical.object.put(a, "model_short_title", optStringValue(a, d.model_short_title));
     try canonical.object.put(a, "model_name", optStringValue(a, d.model_name));
-    try canonical.object.put(a, "model_alphanumeric_id", optStringValue(a, d.model_alphanumeric_id));
+    try canonical.object.put(a, "model_id", optStringValue(a, d.model_id));
     try canonical.object.put(a, "model_reciprocity", optStringValue(a, d.model_reciprocity));
     // agent id is composed of the three sub-ids above; emitted in the
-    // model block (after model_alphanumeric_id) so the canonical
+    // model block (after model_id) so the canonical
     // block reads harness → provider → model → agent.
-    try canonical.object.put(a, "agent_alphanumeric_id", optStringValue(a, d.agent_alphanumeric_id));
+    try canonical.object.put(a, "agent_id", optStringValue(a, d.agent_id));
     // `reciprocal` is `?bool` in Detection but the JSON output uses
     // `null` for "not computed" — V has no `?bool` so we unbox manually.
     if (d.reciprocal) |r| {
         try canonical.object.put(a, "reciprocal", .{ .bool = r });
     } else {
-        try canonical.object.put(a, "reciprocal", .null );
+        try canonical.object.put(a, "reciprocal", .null);
     }
     try canonical.object.put(a, "trailer", optStringValue(a, d.trailer));
+    return canonical;
+}
 
-    // ---- raw section ----
-    // Only emitted by the dev binary (built with -Ddev=true). The
-    // released binary's output is canonical-JSON-only — no env /
-    // process / config / urls blobs. The raw block is for the
-    // maintainer-only fixture workflow (audit-trail when writing
-    // known/*.json); it has no place in the slim user-facing output.
-    var raw: V = .{ .object = .empty };
-    if (!dev_build) {
-        // released binary: emit the canonical fields at the root, with
-        // no "canonical" group wrapper — the slim user-facing report.
-        // The dev binary continues below to populate `raw` and emits
-        // both groups wrapped (`canonical` + `raw`) for fixtures.
-        const slim_bytes = try std.json.Stringify.valueAlloc(a, canonical, .{ .whitespace = .indent_2 });
-        defer a.free(slim_bytes);
-        try buf.appendSlice(a, slim_bytes);
-        try buf.appendSlice(a, "\n");
-        return;
-    }
-    // platform id (compile-time constant) is emitted as a top-level raw
-    // key so a maintainer reading a fixture knows which platform it
-    // was captured on, even before they read the canonical
-    // `agent_alphanumeric_id` (which is also platform-tagged via
-    // the `known_alphanumeric_id` filename).
-    try raw.object.put(a, "platform_alphanumeric_id", .{ .string = dev.platformAlphanumericId() });
-    // The `value` field is only emitted when the var's name is on the
-    // secrets allow-list AND the var is present in the environment.
-    // Otherwise the entry is `{"present": <bool>}` — absent for vars
-    // the harness rule declared but the runtime env didn't have, or
-    // redacted-by-default for secret-shaped names not on the
-    // allow-list. Keeping `value` only when it's the real on-disk
-    // content avoids emitting empty-string placeholders that look
-    // like real but-blank values to a maintainer scanning the
-    // fixture.
-    {
-        var env_obj: V = .{ .object = .empty };
-        for (d.raw.env_vars) |ev| {
-            var ev_obj: V = .{ .object = .empty };
-            if (isEnvValueAllowed(ev.name) and ev.present) {
-                const redacted = try redactHome(a, ev.value, home);
-                try ev_obj.object.put(a, "value", .{ .string = redacted });
-            }
-            try ev_obj.object.put(a, "present", .{ .bool = ev.present });
-            try env_obj.object.put(a, ev.name, ev_obj);
-        }
-        try raw.object.put(a, "env", env_obj);
-    }
+/// the trailer string for `d`, if one was computed. Delegates to the
+/// stored `d.trailer` (set by `detect` / recipe resolution).
+pub fn buildTrailer(d: *const Detection) ?[]const u8 {
+    return d.trailer;
+}
 
-    // process_lineage — always present so a maintainer reading the
-    // fixture sees "no process info" rather than absence. The array
-    // is ordered most-immediate first (index 0 = the running
-    // agent-detection, index 1 = its parent, etc.).
-    {
-        var lineage: V = .{ .array = std.json.Array.init(a) };
-        defer lineage.array.deinit();
-        for (d.raw.process_lineage) |entry_obs| {
-            var entry: V = .{ .object = .empty };
-            try entry.object.put(a, "pid", .{ .integer = entry_obs.pid });
-            try entry.object.put(a, "name", .{ .string = entry_obs.name });
-            try lineage.array.append(entry);
-        }
-        try raw.object.put(a, "process_lineage", lineage);
-    }
-
-    // config_files + session_files — each file path becomes its own
-    // top-level raw key, with the dotted fields as a sub-object.
-    for (d.raw.config_files) |file| {
-        var obj: V = .{ .object = .empty };
-        for (file.fields) |f| {
-            const redacted = try redactHome(a, f.value, home);
-            try obj.object.put(a, f.dotted_path, .{ .string = redacted });
-        }
-        const path_redacted = try redactHome(a, file.path, home);
-        try raw.object.put(a, path_redacted, obj);
-    }
-    for (d.raw.session_files) |file| {
-        var obj: V = .{ .object = .empty };
-        for (file.fields) |f| {
-            const redacted = try redactHome(a, f.value, home);
-            try obj.object.put(a, f.dotted_path, .{ .string = redacted });
-        }
-        const path_redacted = try redactHome(a, file.path, home);
-        try raw.object.put(a, path_redacted, obj);
-    }
-
-    // *-urls arrays + static rule declarations
-    try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
-    try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
-    try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
-    // harness_version is the matched rule's declared release version
-    // (e.g. "1.2.3") when the rule tracks one. Only emitted when the
-    // rule declared it — null rules (most currently) skip the field.
-    // It is the maintainer-curated version string from the rule, NOT
-    // a runtime observation; surfaced under raw so a fixture shows
-    // which version the maintainer expected when authoring the rule.
-    if (d.harness_version) |v| {
-        try raw.object.put(a, "harness_version", .{ .string = v });
-    }
-    // harness-env-markers and harness-proc-names are static rule
-    // data — the same strings already live in the binary's source as
-    // the `knownRulesForKnownAgents` entry, so re-emitting them in
-    // `raw` would be redundant noise. The runtime observations are
-    // enough: `env` shows which env-markers the runtime actually had,
-    // `process` shows the process tree. Listing every possible
-    // marker or binary name the rule *could* have matched would be
-    // source code, not runtime evidence.
-
-    // ---- root + stringify ----
-    var root: V = .{ .object = .empty };
-    try root.object.put(a, "canonical", canonical);
-    try root.object.put(a, "raw", raw);
-
-    const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
+/// emit the slim released JSON report (canonical fields at the root,
+/// no `raw` block) into `buf`. The `cooked` action uses this directly.
+pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?HarnessRule, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
+    _ = env;
+    _ = rule;
+    _ = anc;
+    const cooked = try buildCooked(a, d);
+    const json_bytes = try std.json.Stringify.valueAlloc(a, cooked, .{ .whitespace = .indent_2 });
     defer a.free(json_bytes);
     try buf.appendSlice(a, json_bytes);
     try buf.appendSlice(a, "\n");
@@ -2011,25 +1887,27 @@ fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]const u8
 // output
 
 const usage =
-    \\agent-detection — infer harness, provider, and model of the current agent session
+    \\agent-detect — infer harness, provider, and model of the current agent session
     \\
-    \\usage: agent-detection <action>
+    \\usage: agent-detect <action> [--harness=H --provider=P --model=M]
     \\
     \\actions:
-    \\  agent        print the detection report as JSON (see CONTRIBUTING.md)
-    \\  [--]trailer  print only the Co-authored-by trailer (for git commits)
+    \\  cooked       print the detection report as JSON (see CONTRIBUTING.md);
+    \\               with a full combo --harness=H --provider=P --model=M,
+    \\               resolve the report from the rule tables instead of live
+    \\               detection (all three required or none)
+    \\  trailer      print only the Co-authored-by trailer (for git commits);
+    \\               with a full combo, resolve it from the rule tables
     \\  help         this help (also --help, -h, or no arguments)
-    \\  version      print the agent-detection version and exit (also --version, -V)
-    \\
-    \\legacy aliases: --json prints the JSON report (same as `agent`); --trailer prints the trailer
+    \\  version      print the agent-detect version and exit (also --version, -V)
     \\
     \\exit codes: 0 = identified, 2 = unable to identify (stop and inform the user)
     \\
 ;
 
 // ============================================================================
-// detection ladder — single source of truth for what `agent-detection`
-// observes in the current session. Called by the `agent` action (both
+// detection ladder — single source of truth for what `agent-detect`
+// observes in the current session. Called by the `cooked` action (both
 // the released JSON report and the dev fixture capture).
 //
 // Fixtures are real-agent captures, not synthetic assemblies: every
@@ -2039,15 +1917,95 @@ const usage =
 // Returns `true` when `harness`, `provider`, and `model` all resolved
 // (caller can emit a `trailer`); `false` otherwise.
 
+// Recipe-mode resolution — produce a fully-shaped `Detection` for a
+// known `(harness, provider, model)` combo WITHOUT running the live
+// detection ladder. Used by `cooked --harness=H --provider=P
+// --model=M` and `trailer --harness=H --provider=P --model=M`, which
+// must emit output for hard-to-detect agents purely from the rule
+// tables (no env markers / config files needed).
+//
+// Returns `null` when any of the three ids is not a known harness /
+// provider / model rule — the combo is not a valid recipe and the
+// caller exits 2. The `detectable` list is fully populated (a full
+// known combo implies all three dims are resolvable); `detected` is
+// derived in buildRaw from whatever landed in the canonical fields.
+pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !?Detection {
+    // All three ids must be known rules — an unknown dim is an invalid
+    // combo (caller exits 2). Combos may be given in either the
+    // canonical spelling or the strict slug form (`cline-pass` vs
+    // `clinepass`), so every lookup matches both.
+    const harness = harnessRuleForName(h) orelse blk: {
+        var found: ?HarnessRule = null;
+        for (rulesForHarnesses) |r| {
+            if (ruleIdMatches(r.name, h)) {
+                found = r;
+                break;
+            }
+        }
+        break :blk found orelse return null;
+    };
+    const provider = providerMetaForName(p) orelse blk: {
+        var found: ?ProviderRule = null;
+        for (rulesForProviders) |r| {
+            if (ruleIdMatches(r.name, p)) {
+                found = r;
+                break;
+            }
+        }
+        break :blk found orelse return null;
+    };
+    var model_rule: ?ModelRule = null;
+    for (rulesForModels) |r| {
+        if (ruleIdMatches(r.name, m)) {
+            model_rule = r;
+            break;
+        }
+    }
+    const model = model_rule orelse return null;
+
+    var d = Detection{};
+    d.harness_label = try a.dupe(u8, harness.label);
+    if (harness.short_title) |st| d.harness_short_title = try a.dupe(u8, st);
+    d.harness_name = harness.name;
+    d.harness_id = try slugId(a, harness.name);
+    if (harness.version) |v| d.harness_version = try a.dupe(u8, v);
+    d.harness_license = harness.license;
+    d.raw.harness_urls = harness.license_sources;
+    // A full known recipe implies all three dims are resolvable.
+    d.detectable = &.{ "harness", "provider", "model" };
+    d.provider_name = provider.name;
+    d.provider_label = provider.label;
+    d.provider_id = try slugId(a, provider.name);
+    d.provider_closed_training = provider.closed_training;
+    d.provider_open_training = provider.open_training;
+    d.raw.provider_urls = provider.sources;
+    d.model_label = try a.dupe(u8, model.label);
+    if (model.short_title) |st| d.model_short_title = try a.dupe(u8, st);
+    d.model_name = model.name;
+    d.model_id = try slugId(a, model.name);
+    d.model_reciprocity = model.reciprocity;
+    d.raw.model_urls = model.sources;
+    try setAgentId(a, &d);
+    d.reciprocal = computeReciprocal(&d);
+    if (d.harness_label != null and d.model_label != null and d.agent_id != null) {
+        d.trailer = try std.fmt.allocPrint(
+            a,
+            "Co-authored-by: {s} · {s} <{s}@local>",
+            .{ d.harness_label.?, d.model_label.?, d.agent_id.? },
+        );
+    }
+    return d;
+}
+
 pub fn detect(init: std.process.Init, d: *Detection) !bool {
     const a = init.arena.allocator();
     const io = init.io;
     const env = init.environ_map;
     const anc = ancestorInfo(a, io);
 
-    var rule: ?KnownRuleForKnownAgent = null;
+    var rule: ?HarnessRule = null;
     var hsrc: []const u8 = "none";
-    scan: for (knownRulesForKnownAgents) |r| {
+    scan: for (rulesForHarnesses) |r| {
         for (r.env_markers) |m| {
             if (env.get(m) != null) {
                 rule = r;
@@ -2065,7 +2023,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         }
     }
     if (rule == null) {
-        for (knownRulesForKnownAgents) |r| {
+        for (rulesForHarnesses) |r| {
             for (r.proc_names) |pn| {
                 for (anc.names) |n| {
                     if (std.mem.eql(u8, n, pn)) {
@@ -2081,15 +2039,10 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         d.harness_label = try a.dupe(u8, r.label);
         if (r.short_title) |st| d.harness_short_title = try a.dupe(u8, st);
         d.harness_name = r.name;
-        d.harness_alphanumeric_id = try alphanumericId(a, r.name);
+        d.harness_id = try slugId(a, r.name);
         if (r.version) |v| d.harness_version = try a.dupe(u8, v);
         d.harness_license = r.license;
         d.raw.harness_urls = r.license_sources;
-        // record static rule data so the audit log can show BOTH what the
-        // rule declared (harness_env_markers, harness_proc_names) AND what
-        // was actually observed at runtime (env_vars, process.ancestors).
-        d.raw.harness_env_markers = r.env_markers;
-        d.raw.harness_proc_names = r.proc_names;
         // populate env_vars with one entry per declared env-marker — even
         // when the runtime env didn't have it (`present=false`) so a
         // human reading the fixture can tell which markers the rule
@@ -2154,26 +2107,35 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
     // compute reciprocity from the three policy fields
     d.reciprocal = computeReciprocal(d);
     // co-author trailer (commits.md format). The email local is the
-    // `agent_alphanumeric_id` (harness-provider-model), which now
+    // `agent_id` (harness-provider-model), which now
     // includes the provider so reciprocity on changelogs can be
     // post-verified from the trailer alone. The display name uses
     // `<harness_title> · <model_title>` with a middle-dot separator
     // (rather than `-`) for human readability — the email is the
     // machine-readable side and uses `-`.
-    if (d.harness_label != null and d.model_label != null and d.agent_alphanumeric_id != null) {
+    if (d.harness_label != null and d.model_label != null and d.agent_id != null) {
         d.trailer = try std.fmt.allocPrint(
             a,
             "Co-authored-by: {s} · {s} <{s}@local>",
-            .{ d.harness_label.?, d.model_label.?, d.agent_alphanumeric_id.? },
+            .{ d.harness_label.?, d.model_label.?, d.agent_id.? },
         );
     }
+    // `detectable` — the dims this run's ladder *could* resolve (from
+    // the env-marker/process-ancestry match + the per-harness config
+    // read). `detected` is derived from the canonical fields post-hoc
+    // in buildRaw; here we record only the capability.
+    var detectable = std.ArrayList([]const u8).empty;
+    if (d.harness_id != null) try detectable.append(a, "harness");
+    if (d.provider_id != null) try detectable.append(a, "provider");
+    if (d.model_id != null) try detectable.append(a, "model");
+    d.detectable = try detectable.toOwnedSlice(a);
     return d.harness_label != null and d.provider_label != null and d.model_label != null;
 }
 
 // ============================================================================
-// known agent — captures the current real session into
-// `known/<stem>.agent.json` (and `known/<stem>.trailer.txt` when both
-// harness and model resolved). Designed to be invoked by an agent harness
+// fixtures agent — captures the current real session into
+// `fixtures/<stem>.json` (single `{cooked, raw, trailer}` file).
+// Designed to be invoked by an agent harness
 // from inside its own environment: the daemon (see CONTRIBUTING.md)
 // drives per-harness launches that call this via `refresh run`.
 //
@@ -2186,34 +2148,34 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
 // than papered over.
 //
 // The dev binary (built with -Ddev=true) is the only one with this
-// capture path. `known daemon` is the long-running user-side mode: it
-// polls known/index.jsonl and, for each refresh:true event, spawns a
-// child `refresh run` that runs the capture (dev.runKnownAgent)
+// capture path. `fixtures daemon` is the long-running user-side mode: it
+// watches the sqlite `queue` table and, for each queue row, spawns
+// a child `refresh run` that runs the capture (dev.runFixturesCapture)
 // in-process with the environment the daemon prepared. The released
 // binary (built with -Ddev=false, the default) has none of this — its
-// CLI surface is the `agent` (JSON report), `[--]trailer`, `help`,
-// and `version` actions; no arguments shows help.
+// CLI surface is `cooked` (JSON report), `trailer`, `help`, and
+// `version`; no arguments shows help.
 
 pub const dev = if (build_options.dev) struct {
 
-    /// usage text for the `known` subcommand namespace — printed by
-    /// `known --help`, bare `known`, and `known help`.
-    pub const knownUsage =
-        \\agent-detection known — manage the known-agent fixture store (dev builds)
+    /// usage text for the `fixtures` subcommand namespace — printed by
+    /// `fixtures --help`, bare `fixtures`, and `fixtures help`.
+    pub const fixturesUsage =
+        \\agent-detect fixtures — manage the fixtures-agent fixture store (dev builds)
         \\
-        \\usage: agent-detection known <subcommand> [flags]
+        \\usage: agent-detect fixtures <subcommand> [flags]
         \\
-        \\state: known/index.sqlite3 holds two tables — `fixtures` (one row
-        \\per captured 4-tuple harness/provider/model/platform) and `actions`
-        \\(the work queue). known/<id>.{agent.json,.trailer.txt} are the
-        \\generated fixtures. Action rows with missing dims are seeds: the
-        \\daemon expands them over known recipes (full combos queued, other
-        \\seeds warned and kept).
+        \\state: fixtures/index.sqlite3 holds two tables — `fixtures` (one row
+        \\per captured 4-tuple harness/provider/model/platform) and `queue`
+        \\(the work queue). fixtures/<id>.json are the generated fixtures
+        \\(single file, top-level `cooked`/`raw`/`trailer` keys). Queue rows
+        \\with missing dims are seeds: the daemon expands them over fixtures
+        \\recipes (full combos queued, other seeds warned and kept).
         \\
         \\filters (shared by queue/dequeue; at least one required):
-        \\  --known=ID      4-part <h>-<p>-<m>-<platform> id (exact)
-        \\  --agent=ID      3-part <h>-<p>-<m> id (platform unfiltered)
-        \\  --harness=H     constrain harness to H (any of H/P/M/PLAT)
+        \\  --fixture=ID  4-part <h>-<p>-<m>-<platform> id (exact)
+        \\  --agent=ID    3-part <h>-<p>-<m> id (platform unfiltered)
+        \\  --harness=H   constrain harness to H (any of H/P/M/PLAT)
         \\
         \\scope flags (shared by queue/dequeue; exactly one, and they
         \\compose with the dim filters above to narrow the set):
@@ -2221,10 +2183,10 @@ pub const dev = if (build_options.dev) struct {
         \\  --stale          fixture rows older than the threshold
         \\                   [--stale-by-days=N] [--stale-by-minutes=N]
         \\                   (--stale is an alias for --stale-by-days=7)
-        \\  --partial        action rows with at least one missing dim (seeds)
+        \\  --partial        queue rows with at least one missing dim (seeds)
         \\  --recipes        every known recipe (host platform)
-        \\  --missing-fixture recipes whose .agent.json/.trailer.txt are
-        \\                   absent from disk
+        \\  --missing-fixture recipes whose fixtures/<id>.json is absent
+        \\                   from disk
         \\  --available      modifier: probe each candidate's harness and
         \\                   record 1/0 into the available column (unavailable
         \\                   rows stay queued as handoff for another platform)
@@ -2233,42 +2195,166 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\subcommands:
         \\  (none), help, --help, -h   this help
-        \\  daemon                     pop actions from known/index.sqlite3 and
+        \\  daemon                     pop queue rows from fixtures/index.sqlite3 and
         \\                              capture (poll 5s) — run as a user,
         \\                              never inside an agent; --write-log also
-        \\                              writes all daemon output to known/daemon.log
-        \\  agent                      capture the current session into
-        \\                              known/<id>.agent.json + a fixtures row
+        \\                              writes all daemon output to fixtures/daemon.log
+        \\  capture                    capture the current session into a single
+        \\                              fixtures/<id>.json + a fixtures row
         \\                              (spawned by the daemon; fixtures only)
-        \\  queue                      enumerate + upsert action rows (no
+        \\  queue                      enumerate + upsert queue rows (no
         \\                              evaluation; no scope flag → seed with
         \\                              the positive dims)
-        \\  dequeue                    DELETE matching action rows (filters
+        \\  dequeue                    DELETE matching queue rows (filters
         \\                              required; never touches fixtures)
         \\
         \\exit codes: 0 = ok, 2 = bad arguments / unable to resolve
         \\
     ;
 
-    /// print the `known` namespace help and exit 0.
-    pub fn runKnownHelp(init: std.process.Init) !u8 {
+    /// print the `fixtures` namespace help and exit 0.
+    pub fn runFixturesHelp(init: std.process.Init) !u8 {
         const io = init.io;
-        writeOut(io, knownUsage);
+        writeOut(io, fixturesUsage);
+        return 0;
+    }
+
+    /// which of the three detection dims actually populated `d`'s
+    /// canonical fields (harness_id / provider_id / model_id non-null).
+    fn detectedDims(a: std.mem.Allocator, d: *const Detection) ![]const []const u8 {
+        var list: std.ArrayList([]const u8) = .empty;
+        if (d.harness_id != null) try list.append(a, "harness");
+        if (d.provider_id != null) try list.append(a, "provider");
+        if (d.model_id != null) try list.append(a, "model");
+        return list.toOwnedSlice(a);
+    }
+
+    /// build the `raw` observations object (dev binary only). Top-level
+    /// keys: `platform_id`, then the `detectable` + `detected` dimension
+    /// arrays adjacent to it, then the shapeless runtime observations.
+    /// Returns a heap-allocated `std.json.Value`; the caller owns it.
+    fn buildRaw(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map) !std.json.Value {
+        const V = std.json.Value;
+        const home = reporterHome(env);
+        var raw: V = .{ .object = .empty };
+        // platform id (compile-time constant) is emitted as a top-level
+        // raw key so a maintainer reading a fixture knows which
+        // platform it was captured on, even before they read the
+        // canonical `agent_id` (which is also platform-tagged via the
+        // `fixture_id` filename).
+        try raw.object.put(a, "platform_id", .{ .string = platformId() });
+        // `detectable` — the dims this run's ladder/recipe *could*
+        // resolve; `detected` — the subset that actually landed in
+        // `cooked`. Emitted adjacent to each other so a reader
+        // instantly sees what the fixture claims without scanning
+        // `cooked`.
+        try raw.object.put(a, "detectable", stringListValue(a, d.detectable));
+        try raw.object.put(a, "detected", stringListValue(a, try detectedDims(a, d)));
+        // The `value` field is only emitted when the var's name is on
+        // the secrets allow-list AND the var is present in the
+        // environment. Otherwise the entry is `{"present": <bool>}` —
+        // absent for vars the harness rule declared but the runtime env
+        // didn't have, or redacted-by-default for secret-shaped names
+        // not on the allow-list. Keeping `value` only when it's the
+        // real on-disk content avoids emitting empty-string
+        // placeholders that look like real but-blank values to a
+        // maintainer scanning the fixture.
+        {
+            var env_obj: V = .{ .object = .empty };
+            for (d.raw.env_vars) |ev| {
+                var ev_obj: V = .{ .object = .empty };
+                if (isEnvValueAllowed(ev.name) and ev.present) {
+                    const redacted = try redactHome(a, ev.value, home);
+                    try ev_obj.object.put(a, "value", .{ .string = redacted });
+                }
+                try ev_obj.object.put(a, "present", .{ .bool = ev.present });
+                try env_obj.object.put(a, ev.name, ev_obj);
+            }
+            try raw.object.put(a, "env", env_obj);
+        }
+
+        // process_lineage — always present so a maintainer reading the
+        // fixture sees "no process info" rather than absence. The array
+        // is ordered most-immediate first (index 0 = the running
+        // agent-detect, index 1 = its parent, etc.).
+    {
+        var lineage: V = .{ .array = std.json.Array.init(a) };
+        for (d.raw.process_lineage) |entry_obs| {
+            var entry: V = .{ .object = .empty };
+            try entry.object.put(a, "pid", .{ .integer = entry_obs.pid });
+            try entry.object.put(a, "name", .{ .string = entry_obs.name });
+            try lineage.array.append(entry);
+        }
+        try raw.object.put(a, "process_lineage", lineage);
+    }
+
+        // config_files + session_files — each file path becomes its own
+        // top-level raw key, with the dotted fields as a sub-object.
+        for (d.raw.config_files) |file| {
+            var obj: V = .{ .object = .empty };
+            for (file.fields) |f| {
+                const redacted = try redactHome(a, f.value, home);
+                try obj.object.put(a, f.dotted_path, .{ .string = redacted });
+            }
+            const path_redacted = try redactHome(a, file.path, home);
+            try raw.object.put(a, path_redacted, obj);
+        }
+        for (d.raw.session_files) |file| {
+            var obj: V = .{ .object = .empty };
+            for (file.fields) |f| {
+                const redacted = try redactHome(a, f.value, home);
+                try obj.object.put(a, f.dotted_path, .{ .string = redacted });
+            }
+            const path_redacted = try redactHome(a, file.path, home);
+            try raw.object.put(a, path_redacted, obj);
+        }
+
+        // *-urls arrays + static rule declarations
+        try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
+        try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
+        try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
+        // harness_version is the matched rule's declared release version
+        // (e.g. "1.2.3") when the rule tracks one. Only emitted when
+        // the rule declared it — null rules (most currently) skip the
+        // field. It is the maintainer-curated version string from the
+        // rule, NOT a runtime observation; surfaced under raw so a
+        // fixture shows which version the maintainer expected when
+        // authoring the rule.
+        if (d.harness_version) |v| {
+            try raw.object.put(a, "harness_version", .{ .string = v });
+        }
+        return raw;
+    }
+
+    /// dev-only `raw` action — emit only the raw observations block
+    /// (standalone, with `detectable` + `detected`).
+    pub fn runRawAction(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+        var d = Detection{};
+        _ = try detect(init, &d);
+        const raw_v = try buildRaw(a, &d, init.environ_map);
+        const json_bytes = try std.json.Stringify.valueAlloc(a, raw_v, .{ .whitespace = .indent_2 });
+        defer a.free(json_bytes);
+        writeOut(io, json_bytes);
+        writeOut(io, "\n");
         return 0;
     }
 
     // ------------------------------------------------------------------
-    // SQLite storage via the `sqlite3` CLI (two tables: fixtures + actions)
+    // SQLite storage via the `sqlite3` CLI (two tables: fixtures + queue)
     // ------------------------------------------------------------------
 
-    /// The SQLite index/queue database. Replaces the abandoned
-    /// `known/index.jsonl` store. Writes/reads shell out to the
-    /// system `sqlite3` binary (single-file `known/index.sqlite3`).
-    const INDEX_DB_PATH = "known/index.sqlite3";
+    /// Writes/reads shell out to the
+    /// system `sqlite3` binary (single-file `fixtures/index.sqlite3`).
+    const INDEX_DB_PATH = "fixtures/index.sqlite3";
 
     /// Spawn `sqlite3 -json <db> <sql>` and return its stdout. Empty for
     /// statements that return no rows. Caller owns the returned slice.
     /// Does NOT create the dir or ensure the schema (see `sqliteQuery`).
+    /// Deliberate mirror of the released-binary `kiloSqliteJson` — this
+    /// one is fixed to `fixtures/index.sqlite3` and compiled out of the
+    /// released binary via the dev-gated block.
     fn sqliteRun(a: std.mem.Allocator, io: std.Io, sql: []const u8) ![]u8 {
         var argv_buf = [_][]const u8{ "sqlite3", "-json", "-batch", INDEX_DB_PATH, sql };
         var child = std.process.spawn(io, .{
@@ -2295,10 +2381,10 @@ pub const dev = if (build_options.dev) struct {
         return out.toOwnedSlice(a);
     }
 
-    /// Ensure the `known/` dir and the two-table schema exist (idempotent).
+    /// Ensure the `fixtures/` dir and the two-table schema exist (idempotent).
     /// Called before every query.
     fn ensureSchema(a: std.mem.Allocator, io: std.Io) !void {
-        std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+        std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
             error.PathAlreadyExists => {},
             else => return err,
         };
@@ -2313,7 +2399,7 @@ pub const dev = if (build_options.dev) struct {
             \\    generated_at            INTEGER NOT NULL,
             \\    PRIMARY KEY (harness, provider, model, platform)
             \\);
-            \\CREATE TABLE IF NOT EXISTS actions (
+            \\CREATE TABLE IF NOT EXISTS queue (
             \\    harness              TEXT,
             \\    provider             TEXT,
             \\    model                TEXT,
@@ -2325,16 +2411,15 @@ pub const dev = if (build_options.dev) struct {
             \\    stale_by_days        INTEGER,
             \\    stale_by_minutes     INTEGER,
             \\    available            INTEGER,
-            \\    action               TEXT NOT NULL DEFAULT 'capture',
             \\    runner               INTEGER NOT NULL,
             \\    created_at           INTEGER NOT NULL
             \\);
-            \\CREATE UNIQUE INDEX IF NOT EXISTS actions_dedupe
-            \\    ON actions (COALESCE(harness,''), COALESCE(provider,''), COALESCE(model,''),
+            \\CREATE UNIQUE INDEX IF NOT EXISTS queue_dedupe
+            \\    ON queue (COALESCE(harness,''), COALESCE(provider,''), COALESCE(model,''),
             \\                COALESCE(platform,''), COALESCE(scope_all,0), COALESCE(scope_partial,0),
             \\                COALESCE(scope_recipes,0), COALESCE(scope_missing_fixture,0),
             \\                COALESCE(stale_by_days,0), COALESCE(stale_by_minutes,0),
-            \\                COALESCE(available,0), action);
+            \\                COALESCE(available,0));
             \\
         );
     }
@@ -2346,8 +2431,8 @@ pub const dev = if (build_options.dev) struct {
         return sqliteRun(a, io, sql);
     }
 
-    /// One row in the `actions` queue.
-    const ActionRow = struct {
+    /// One row in the `queue` table.
+    const QueueRow = struct {
         harness: ?[]const u8 = null,
         provider: ?[]const u8 = null,
         model: ?[]const u8 = null,
@@ -2359,7 +2444,6 @@ pub const dev = if (build_options.dev) struct {
         stale_by_days: ?i64 = null,
         stale_by_minutes: ?i64 = null,
         available: ?i64 = null,
-        action: []const u8 = "capture",
         runner: i64 = 0,
         created_at: i64 = 0,
     };
@@ -2408,8 +2492,8 @@ pub const dev = if (build_options.dev) struct {
         return a.dupe(u8, "NULL");
     }
 
-    /// `INSERT OR REPLACE INTO actions` — idempotent via `actions_dedupe`.
-    fn upsertAction(a: std.mem.Allocator, io: std.Io, row: ActionRow) !void {
+    /// `INSERT OR REPLACE INTO queue` — idempotent via `queue_dedupe`.
+    fn upsertQueueRow(a: std.mem.Allocator, io: std.Io, row: QueueRow) !void {
         const h = try sqlOptStr(a, row.harness);
         defer a.free(h);
         const p = try sqlOptStr(a, row.provider);
@@ -2432,17 +2516,15 @@ pub const dev = if (build_options.dev) struct {
         defer a.free(smin);
         const av = try sqlOptInt(a, row.available);
         defer a.free(av);
-        const act = try sqlQuote(a, row.action);
-        defer a.free(act);
         const sql = try std.fmt.allocPrint(a,
-            "INSERT OR REPLACE INTO actions(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,action,runner,created_at) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d})",
-            .{ h, p, m, pl, sa, sp, sr, sm, sd, smin, av, act, row.runner, row.created_at },
+            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d})",
+            .{ h, p, m, pl, sa, sp, sr, sm, sd, smin, av, row.runner, row.created_at },
         );
         defer a.free(sql);
         _ = try sqliteQuery(a, io, sql);
     }
 
-    /// `INSERT OR REPLACE INTO fixtures` — state, written only by `known
+    /// `INSERT OR REPLACE INTO fixtures` — state, written only by `fixtures
     /// agent` and the daemon. No `available` column.
     fn upsertFixture(a: std.mem.Allocator, io: std.Io, f: FixtureRow) !void {
         const sql = try std.fmt.allocPrint(a,
@@ -2485,31 +2567,31 @@ pub const dev = if (build_options.dev) struct {
         return rows.toOwnedSlice(a);
     }
 
-    /// every `actions` row whose dims are all NULL (seeds) — for `--partial`.
-    fn selectSeedActions(a: std.mem.Allocator, io: std.Io) ![]ActionRow {
+    /// every `queue` row whose dims are all NULL (seeds) — for `--partial`.
+    fn selectSeedQueueRows(a: std.mem.Allocator, io: std.Io) ![]QueueRow {
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,action,runner,created_at FROM actions WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
         );
         defer a.free(out);
         if (out.len == 0) return &.{};
         const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return &.{};
-        return jsonToActions(a, parsed.value);
+        return jsonToQueueRows(a, parsed.value);
     }
 
-    fn jsonToActions(a: std.mem.Allocator, v: std.json.Value) ![]ActionRow {
+    fn jsonToQueueRows(a: std.mem.Allocator, v: std.json.Value) ![]QueueRow {
         if (v != .array) return &.{};
-        var rows: std.ArrayListUnmanaged(ActionRow) = .empty;
+        var rows: std.ArrayListUnmanaged(QueueRow) = .empty;
         errdefer rows.deinit(a);
         for (v.array.items) |item| {
             if (item != .object) continue;
             const o = item.object;
-            const row = jsonToActionObj(o) catch continue;
+            const row = jsonToQueueRow(o) catch continue;
             try rows.append(a, row);
         }
         return rows.toOwnedSlice(a);
     }
 
-    fn jsonToActionObj(o: std.json.ObjectMap) !ActionRow {
+    fn jsonToQueueRow(o: std.json.ObjectMap) !QueueRow {
         return .{
             .harness = sjoptstr(o, "harness"),
             .provider = sjoptstr(o, "provider"),
@@ -2522,7 +2604,6 @@ pub const dev = if (build_options.dev) struct {
             .stale_by_days = sjoptint(o, "stale_by_days"),
             .stale_by_minutes = sjoptint(o, "stale_by_minutes"),
             .available = sjoptint(o, "available"),
-            .action = sjstr(o, "action"),
             .runner = sjint(o, "runner"),
             .created_at = sjint(o, "created_at"),
         };
@@ -2591,23 +2672,23 @@ pub const dev = if (build_options.dev) struct {
         return rows[0];
     }
 
-    /// atomically pop the oldest pending action. Returns null when empty.
-    fn popPendingAction(a: std.mem.Allocator, io: std.Io) !?ActionRow {
+    /// atomically pop the oldest pending queue row. Returns null when empty.
+    fn popQueueRow(a: std.mem.Allocator, io: std.Io) !?QueueRow {
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,action,runner,created_at FROM actions ORDER BY created_at,rowid LIMIT 1",
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at FROM queue ORDER BY created_at,rowid LIMIT 1",
         );
         defer a.free(out);
-        var row: ?ActionRow = null;
+        var row: ?QueueRow = null;
         if (out.len > 0) {
             const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
-            const rows = try jsonToActions(a, parsed.value);
+            const rows = try jsonToQueueRows(a, parsed.value);
             if (rows.len > 0) row = rows[0];
         }
         // delete the row we just read (single consumer per host; the daemon
         // is the only evaluator). Use generated_at as a tie-break handle.
         if (row) |_| {
             const sql = try std.fmt.allocPrint(a,
-                "DELETE FROM actions WHERE rowid = (SELECT rowid FROM actions ORDER BY created_at,rowid LIMIT 1)",
+                "DELETE FROM queue WHERE rowid = (SELECT rowid FROM queue ORDER BY created_at,rowid LIMIT 1)",
                 .{},
             );
             defer a.free(sql);
@@ -2616,8 +2697,8 @@ pub const dev = if (build_options.dev) struct {
         return row;
     }
 
-    /// `DELETE FROM actions` matching the filter. Returns rows deleted.
-    fn deleteActions(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !usize {
+    /// `DELETE FROM queue` matching the filter. Returns rows deleted.
+    fn deleteQueueRows(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !usize {
         var where = std.ArrayList(u8).empty;
         defer where.deinit(a);
         try where.appendSlice(a, "WHERE 1=1");
@@ -2634,7 +2715,7 @@ pub const dev = if (build_options.dev) struct {
         if (f.unavailable) try where.appendSlice(a, " AND available=0");
         // DELETE + SELECT changes() in ONE sqlite3 invocation so the count is
         // connection-local (changes() in a fresh process would read 0).
-        const sql = try std.fmt.allocPrint(a, "DELETE FROM actions {s}; SELECT changes() AS c;", .{where.items});
+        const sql = try std.fmt.allocPrint(a, "DELETE FROM queue {s}; SELECT changes() AS c;", .{where.items});
         defer a.free(sql);
         const out = try sqliteRun(a, io, sql);
         defer a.free(out);
@@ -2663,33 +2744,32 @@ pub const dev = if (build_options.dev) struct {
 
     /// the shared validator — single source of truth for valid filter
     /// combinations. Called by BOTH writer paths and the daemon reader.
-    fn validateActionRow(row: ActionRow) !void {
+    fn validateQueueRow(row: QueueRow) !void {
         const scope_count = @as(usize, @intFromBool(row.scope_all != null and row.scope_all.? == 1)) +
             @as(usize, @intFromBool(row.scope_partial != null and row.scope_partial.? == 1)) +
             @as(usize, @intFromBool(row.scope_recipes != null and row.scope_recipes.? == 1)) +
             @as(usize, @intFromBool(row.scope_missing_fixture != null and row.scope_missing_fixture.? == 1)) +
             @as(usize, @intFromBool(row.stale_by_days != null or row.stale_by_minutes != null));
-        if (scope_count > 1) return error.InvalidActionRow;
-        if (row.stale_by_days != null and row.stale_by_minutes != null) return error.InvalidActionRow;
-        if (row.stale_by_days != null and row.stale_by_days.? < 1) return error.InvalidActionRow;
-        if (row.stale_by_minutes != null and row.stale_by_minutes.? < 1) return error.InvalidActionRow;
-        if (row.available != null and (row.available.? != 0 and row.available.? != 1)) return error.InvalidActionRow;
-        if (row.available != null and scope_count == 0) return error.InvalidActionRow;
-        if (!std.mem.eql(u8, row.action, "capture")) return error.InvalidActionRow;
+        if (scope_count > 1) return error.InvalidQueueRow;
+        if (row.stale_by_days != null and row.stale_by_minutes != null) return error.InvalidQueueRow;
+        if (row.stale_by_days != null and row.stale_by_days.? < 1) return error.InvalidQueueRow;
+        if (row.stale_by_minutes != null and row.stale_by_minutes.? < 1) return error.InvalidQueueRow;
+        if (row.available != null and (row.available.? != 0 and row.available.? != 1)) return error.InvalidQueueRow;
+        if (row.available != null and scope_count == 0) return error.InvalidQueueRow;
         const scopes = [_]?i64{ row.scope_all, row.scope_partial, row.scope_recipes, row.scope_missing_fixture };
         for (scopes) |s| {
-            if (s != null and (s.? != 0 and s.? != 1)) return error.InvalidActionRow;
+            if (s != null and (s.? != 0 and s.? != 1)) return error.InvalidQueueRow;
         }
     }
 
-    /// human-readable description of an action row for diagnostics.
-    fn describeAction(a: std.mem.Allocator, row: ActionRow) ![]u8 {
+    /// human-readable description of a queue row for diagnostics.
+    fn describeQueueRow(a: std.mem.Allocator, row: QueueRow) ![]u8 {
         const h = row.harness orelse "";
         const p = row.provider orelse "";
         const m = row.model orelse "";
         const plat = row.platform orelse "";
         if (h.len > 0 and p.len > 0 and m.len > 0 and plat.len > 0) {
-            return (try knownIdFrom(a, h, p, m, plat)) orelse try tupleKey(a, h, p, m, plat);
+            return (try fixtureIdFrom(a, h, p, m, plat)) orelse try tupleKey(a, h, p, m, plat);
         }
         var list: std.ArrayList(u8) = .empty;
         try list.appendSlice(a, "seed");
@@ -2710,80 +2790,6 @@ pub const dev = if (build_options.dev) struct {
         return list.toOwnedSlice(a);
     }
 
-    /// count rows in a table (migration guard).
-    fn tableCount(a: std.mem.Allocator, io: std.Io, table: []const u8) !i64 {
-        const sql = try std.fmt.allocPrint(a, "SELECT COUNT(*) AS c FROM {s}", .{table});
-        defer a.free(sql);
-        const out = try sqliteQuery(a, io, sql);
-        defer a.free(out);
-        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return 0;
-        if (parsed.value != .array or parsed.value.array.items.len == 0) return 0;
-        const o = parsed.value.array.items[0];
-        if (o != .object) return 0;
-        return sjint(o.object, "c");
-    }
-
-    /// one-time, best-effort migration of the legacy `known/index.jsonl`.
-    fn migrateIndexJsonl(a: std.mem.Allocator, io: std.Io) !usize {
-        const data = std.Io.Dir.cwd().readFileAlloc(io, "known/index.jsonl", a, @enumFromInt(1 << 20)) catch return 0;
-        defer a.free(data);
-        const host = platformAlphanumericId();
-        var imported: usize = 0;
-        var lines = std.mem.splitScalar(u8, data, '\n');
-        while (lines.next()) |line| {
-            if (line.len == 0) continue;
-            const ev = parseIndexEvent(a, line) orelse continue;
-            const full = ev.harness_alphanumeric_id.len > 0 and
-                ev.provider_alphanumeric_id.len > 0 and
-                ev.model_alphanumeric_id.len > 0 and
-                ev.platform_alphanumeric_id.len > 0;
-            if (full and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) continue;
-            const gen = std.fmt.parseInt(i64, ev.generated_at, 10) catch 0;
-            if (!ev.refresh and full) {
-                try upsertFixture(a, io, .{
-                    .harness = ev.harness_alphanumeric_id,
-                    .provider = ev.provider_alphanumeric_id,
-                    .model = ev.model_alphanumeric_id,
-                    .platform = ev.platform_alphanumeric_id,
-                    .runner = ev.runner,
-                    .generated_at = gen,
-                });
-            } else {
-                try upsertAction(a, io, .{
-                    .harness = if (ev.harness_alphanumeric_id.len > 0) ev.harness_alphanumeric_id else null,
-                    .provider = if (ev.provider_alphanumeric_id.len > 0) ev.provider_alphanumeric_id else null,
-                    .model = if (ev.model_alphanumeric_id.len > 0) ev.model_alphanumeric_id else null,
-                    .platform = if (ev.platform_alphanumeric_id.len > 0) ev.platform_alphanumeric_id else null,
-                    .runner = ev.runner,
-                    .created_at = gen,
-                });
-            }
-            imported += 1;
-        }
-        return imported;
-    }
-
-    /// run the one-time migration if the legacy file exists AND both tables
-    /// are empty; then delete the legacy file + lock. Called at DB init.
-    fn ensureMigrated(a: std.mem.Allocator, io: std.Io) !void {
-        const index_exists = blk: {
-            if (std.Io.Dir.cwd().statFile(io, "known/index.jsonl", .{})) |_| {
-                break :blk true;
-            } else |_| break :blk false;
-        };
-        if (!index_exists) return;
-        const actions = try tableCount(a, io, "actions");
-        const fixtures = try tableCount(a, io, "fixtures");
-        if (actions > 0 or fixtures > 0) return;
-        const imported = try migrateIndexJsonl(a, io);
-        std.Io.Dir.cwd().deleteFile(io, "known/index.jsonl") catch {};
-        std.Io.Dir.cwd().deleteFile(io, "known/index.jsonl.lock") catch {};
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known: migrated legacy index.jsonl (");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{imported}));
-        writeOut(io, " rows) into known/index.sqlite3\n");
-    }
-
 const EnvSetup = struct {
     env: []const [2][]const u8,
     writes: []const WriteSpec = &.{},
@@ -2795,16 +2801,15 @@ const EnvSetup = struct {
     };
 };
 
-const KnownFixturesForKnownAgents = struct {
+const RecipesForFixtures = struct {
     /// Stable composite id in the form
-    /// "<harness_alphanumeric_id>-<provider_alphanumeric_id>-<model_alphanumeric_id>"
+    /// "<harness_id>-<provider_id>-<model_id>"
     /// (e.g. "cline-clinepass-kimik3"). The daemon and queue-* commands
     /// key off this; the three sub-ids are recovered via
-    /// `splitAgentAlphanumericId` when needed (sub-ids never contain
-    /// `-` because `alphanumericId` strips non-alphanumerics). TODO
-    /// entries belong in `known/index.jsonl`, not in this table — every
+    /// `splitAgentId` when needed (sub-ids never contain
+    /// `-` because `slugId` strips non-alphanumerics). Every
     /// row here is a fully-resolved fixture recipe.
-    agent_alphanumeric_id: []const u8,
+    agent_id: []const u8,
     /// Binary names to probe on PATH for harness-availability checks.
     probeNames: []const []const u8,
     /// Build the env+files a child `refresh run` needs to detect as
@@ -2813,21 +2818,21 @@ const KnownFixturesForKnownAgents = struct {
         a: std.mem.Allocator,
         env_map: *const std.process.Environ.Map,
         io: std.Io,
-        combo: *const KnownFixturesForKnownAgents,
+        combo: *const RecipesForFixtures,
     ) anyerror!EnvSetup,
 };
 
-/// Split an `agent_alphanumeric_id` into its three sub-ids. Each
+/// Split an `agent_id` into its three sub-ids. Each
 /// returned slice is a fresh allocation the caller owns. The
 /// `agent` input is never freed by this function. Returns
-/// `error.InvalidAgentAlphanumericId` if the input doesn't have
+/// `error.InvalidAgentId` if the input doesn't have
 /// exactly three `-`-separated segments.
-fn splitAgentAlphanumericId(a: std.mem.Allocator, agent: []const u8) ![3][]u8 {
+fn splitAgentId(a: std.mem.Allocator, agent: []const u8) ![3][]u8 {
     var it = std.mem.tokenizeScalar(u8, agent, '-');
-    const h = it.next() orelse return error.InvalidAgentAlphanumericId;
-    const p = it.next() orelse return error.InvalidAgentAlphanumericId;
-    const m = it.next() orelse return error.InvalidAgentAlphanumericId;
-    if (it.next() != null) return error.InvalidAgentAlphanumericId;
+    const h = it.next() orelse return error.InvalidAgentId;
+    const p = it.next() orelse return error.InvalidAgentId;
+    const m = it.next() orelse return error.InvalidAgentId;
+    if (it.next() != null) return error.InvalidAgentId;
     return .{
         try a.dupe(u8, h),
         try a.dupe(u8, p),
@@ -2835,18 +2840,18 @@ fn splitAgentAlphanumericId(a: std.mem.Allocator, agent: []const u8) ![3][]u8 {
     };
 }
 
-/// Split a `known_alphanumeric_id` (the h-p-m-platform composite) into
+/// Split a `fixture_id` (the h-p-m-platform composite) into
 /// its four sub-ids. Each returned slice is a fresh allocation the
-/// caller owns. Returns `error.InvalidKnownAlphanumericId` unless the
+/// caller owns. Returns `error.InvalidFixtureId` unless the
 /// input has exactly four non-empty `-`-separated segments.
-fn splitKnownAlphanumericId(a: std.mem.Allocator, known: []const u8) ![4][]u8 {
-    var it = std.mem.tokenizeScalar(u8, known, '-');
-    const h = it.next() orelse return error.InvalidKnownAlphanumericId;
-    const p = it.next() orelse return error.InvalidKnownAlphanumericId;
-    const m = it.next() orelse return error.InvalidKnownAlphanumericId;
-    const plat = it.next() orelse return error.InvalidKnownAlphanumericId;
-    if (it.next() != null) return error.InvalidKnownAlphanumericId;
-    if (h.len == 0 or p.len == 0 or m.len == 0 or plat.len == 0) return error.InvalidKnownAlphanumericId;
+fn splitFixtureId(a: std.mem.Allocator, fixtures: []const u8) ![4][]u8 {
+    var it = std.mem.tokenizeScalar(u8, fixtures, '-');
+    const h = it.next() orelse return error.InvalidFixtureId;
+    const p = it.next() orelse return error.InvalidFixtureId;
+    const m = it.next() orelse return error.InvalidFixtureId;
+    const plat = it.next() orelse return error.InvalidFixtureId;
+    if (it.next() != null) return error.InvalidFixtureId;
+    if (h.len == 0 or p.len == 0 or m.len == 0 or plat.len == 0) return error.InvalidFixtureId;
     return .{
         try a.dupe(u8, h),
         try a.dupe(u8, p),
@@ -2855,7 +2860,7 @@ fn splitKnownAlphanumericId(a: std.mem.Allocator, known: []const u8) ![4][]u8 {
     };
 }
 
-/// Compose an `agent_alphanumeric_id` (h-p-m) from the three dims.
+/// Compose an `agent_id` (h-p-m) from the three dims.
 /// Returns null when any dim is missing (never a fabricated partial
 /// id). Used for fixture naming and messaging only — never stored.
 fn agentIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !?[]u8 {
@@ -2863,54 +2868,22 @@ fn agentIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8
     return @as(?[]u8, try std.fmt.allocPrint(a, "{s}-{s}-{s}", .{ h, p, m }));
 }
 
-/// Compose a `known_alphanumeric_id` (h-p-m-platform) from the four
+/// Compose a `fixture_id` (h-p-m-platform) from the four
 /// dims. Returns null when any dim is missing (never a fabricated
 /// partial id). Used for fixture naming and messaging only — never
 /// stored.
-fn knownIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?[]u8 {
+fn fixtureIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?[]u8 {
     if (h.len == 0 or p.len == 0 or m.len == 0 or plat.len == 0) return null;
     return @as(?[]u8, try std.fmt.allocPrint(a, "{s}-{s}-{s}-{s}", .{ h, p, m, plat }));
 }
 
 /// The canonical row-identity key for the four dims, as `h~p~m~plat`
 /// with empty slots for unset dims. The `~` separator cannot appear
-/// in alphanumeric ids (`alphanumericId` strips non-alphanumerics),
+/// in alphanumeric ids (`slugId` strips non-alphanumerics),
 /// so the joined form is unambiguous even for partial rows. Every
 /// upsert/dedupe/lookup operates on this key, not a flattened id.
 fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) ![]u8 {
     return std.fmt.allocPrint(a, "{s}~{s}~{s}~{s}", .{ h, p, m, plat });
-}
-
-/// Human-readable description of an event for diagnostics. Full rows
-/// render as their known id (`h-p-m-platform`); partial rows render
-/// as a concise dims summary like `seed harness:crush`. Used by the
-/// daemon warnings, queue/dequeue/purge output, and the `known agent`
-/// partial message so wording stays consistent across the refactor.
-fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
-    const h = ev.harness_alphanumeric_id;
-    const p = ev.provider_alphanumeric_id;
-    const m = ev.model_alphanumeric_id;
-    const plat = ev.platform_alphanumeric_id;
-    if (h.len > 0 and p.len > 0 and m.len > 0 and plat.len > 0) {
-        return (try knownIdFrom(a, h, p, m, plat)) orelse try tupleKey(a, h, p, m, plat);
-    }
-    var list: std.ArrayList(u8) = .empty;
-    try list.appendSlice(a, "seed");
-    const dims = [_][2][]const u8{
-        .{ "harness", h },
-        .{ "provider", p },
-        .{ "model", m },
-        .{ "platform", plat },
-    };
-    for (dims) |d| {
-        if (d[1].len > 0) {
-            try list.append(a, ' ');
-            try list.appendSlice(a, d[0]);
-            try list.append(a, ':');
-            try list.appendSlice(a, d[1]);
-        }
-    }
-    return list.toOwnedSlice(a);
 }
 
     pub fn resolveHome(env_map: *const std.process.Environ.Map) []const u8 {
@@ -2918,7 +2891,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
         if (builtin.os.tag == .windows) "C:/Users/default" else "/tmp";
 }
 
-    pub fn buildClineEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildClineEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const env = [_][2][]const u8{
         .{ "CLINE_BUILD_ENV", "dev" },
@@ -2953,7 +2926,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildKimiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildKimiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const dir = try std.fs.path.join(a, &.{ home, ".kimi-code" });
     const env = [_][2][]const u8{
@@ -2971,7 +2944,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildMmxEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildMmxEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const dir = try std.fs.path.join(a, &.{ home, ".mmx" });
     const env = [_][2][]const u8{
@@ -2988,7 +2961,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildGooseEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildGooseEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const env = [_][2][]const u8{
         .{ "GOOSE_TERMINAL", "true" },
@@ -3016,7 +2989,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildPiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildPiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const env = [_][2][]const u8{
         .{ "PI_CODING_AGENT", "true" },
@@ -3025,9 +2998,9 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &.{}), .cwd = home };
 }
 
-    pub fn buildSingleEnv(comptime marker_name: []const u8) *const fn (a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildSingleEnv(comptime marker_name: []const u8) *const fn (a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     return struct {
-        fn f(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+        fn f(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
             const home = resolveHome(env_map);
             const env = try a.alloc([2][]const u8, 2);
             env[0] = .{ marker_name, "fake" };
@@ -3037,7 +3010,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     }.f;
 }
 
-    pub fn buildQwenEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildQwenEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const qwen_dir = try std.fs.path.join(a, &.{ home, ".qwen" });
     defer a.free(qwen_dir);
@@ -3067,7 +3040,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildOmpEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildOmpEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const omp_dir = try std.fs.path.join(a, &.{ home, ".omp/agent" });
     defer a.free(omp_dir);
@@ -3087,7 +3060,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildReasonixEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildReasonixEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const config_path = try std.fs.path.join(a, &.{ home, ".reasonix/config.toml" });
     defer a.free(config_path);
@@ -3112,15 +3085,15 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildJcodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildJcodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const sessions_dir = try std.fs.path.join(a, &.{ home, ".jcode/sessions" });
     defer a.free(sessions_dir);
-    const session_path = try std.fs.path.join(a, &.{ sessions_dir, "session_zoo_9999999999999_refresh_known.json" });
+    const session_path = try std.fs.path.join(a, &.{ sessions_dir, "session_zoo_9999999999999_refresh_fixtures.json" });
     defer a.free(session_path);
     const session_body =
         \\{
-        \\  "id": "session_zoo_9999999999999_refresh_known",
+        \\  "id": "session_zoo_9999999999999_refresh_fixtures",
         \\  "model": "MiniMax-M2.7",
         \\  "provider_key": "minimax",
         \\  "route_api_method": "openai-compatible",
@@ -3138,7 +3111,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildCrushEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildCrushEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const hyper_path = try std.fs.path.join(a, &.{ home, ".local/share/crush/hyper.json" });
     defer a.free(hyper_path);
@@ -3162,7 +3135,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildKiloEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildKiloEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const env = try a.alloc([2][]const u8, 3);
     env[0] = .{ "KILO_API_KEY", "fake" };
@@ -3171,7 +3144,7 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = &.{}, .cwd = home };
 }
 
-    pub fn buildOpencodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildOpencodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const env = try a.alloc([2][]const u8, 3);
     env[0] = .{ "OPENCODE_API_KEY", "fake" };
@@ -3180,7 +3153,16 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = &.{}, .cwd = home };
 }
 
-    pub fn buildVibeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const KnownFixturesForKnownAgents) anyerror!EnvSetup {
+    pub fn buildKiloDeepseekEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const env = try a.alloc([2][]const u8, 3);
+    env[0] = .{ "KILO_API_KEY", "fake" };
+    env[1] = .{ "KILO_MODEL", "deepseek/deepseek-v4-flash" };
+    env[2] = .{ "", "" };
+    return .{ .env = env, .writes = &.{}, .cwd = home };
+}
+
+    pub fn buildVibeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const env = try a.alloc([2][]const u8, 3);
     env[0] = .{ "VIBE_API_KEY", "fake" };
@@ -3189,82 +3171,88 @@ fn describeEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
     return .{ .env = env, .writes = &.{}, .cwd = home };
 }
 
-const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
+const recipesForFixtures = [_]RecipesForFixtures{
     // Cline × Cline Pass × Kimi K3
     .{
-        .agent_alphanumeric_id = "cline-clinepass-kimik3",
+        .agent_id = "cline-clinepass-kimik3",
         .probeNames = &.{ "cline", "cline.exe" },
         .buildEnv = buildClineEnv,
     },
     // Kimi Code × minimax × minimax-m3
     .{
-        .agent_alphanumeric_id = "kimicode-minimax-minimaxm3",
+        .agent_id = "kimicode-minimax-minimaxm3",
         .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" },
         .buildEnv = buildKimiEnv,
     },
     // MiniMax CLI (mmx) × minimax × minimax-m3
     .{
-        .agent_alphanumeric_id = "mmx-minimax-minimaxm3",
+        .agent_id = "mmx-minimax-minimaxm3",
         .probeNames = &.{ "mmx", "mmx.exe" },
         .buildEnv = buildMmxEnv,
     },
     // Goose × goose × claude-sonnet-4
     .{
-        .agent_alphanumeric_id = "goose-goose-claudesonnet4",
+        .agent_id = "goose-goose-claudesonnet4",
         .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" },
         .buildEnv = buildGooseEnv,
     },
     // pi × anthropic × claude-sonnet-4
     .{
-        .agent_alphanumeric_id = "pi-anthropic-claudesonnet4",
+        .agent_id = "pi-anthropic-claudesonnet4",
         .probeNames = &.{ "pi", "pi.exe" },
         .buildEnv = buildPiEnv,
     },
     // qwen × minimax × minimax-m3
     .{
-        .agent_alphanumeric_id = "qwen-minimax-minimaxm3",
+        .agent_id = "qwen-minimax-minimaxm3",
         .probeNames = &.{ "qwen", "qwen.exe" },
         .buildEnv = buildQwenEnv,
     },
     // kilo × anthropic × claude-sonnet-4
     .{
-        .agent_alphanumeric_id = "kilo-anthropic-claudesonnet4",
+        .agent_id = "kilo-anthropic-claudesonnet4",
         .probeNames = &.{ "kilo", "kilo.exe" },
         .buildEnv = buildKiloEnv,
     },
+    // kilo × deepseek × deepseek-v4-flash
+    .{
+        .agent_id = "kilo-deepseek-deepseekv4flash",
+        .probeNames = &.{ "kilo", "kilo.exe" },
+        .buildEnv = buildKiloDeepseekEnv,
+    },
     // jcode × minimax × minimax-m2.7
     .{
-        .agent_alphanumeric_id = "jcode-minimax-minimaxm27",
+        .agent_id = "jcode-minimax-minimaxm27",
         .probeNames = &.{ "jcode", "jcode.exe" },
         .buildEnv = buildJcodeEnv,
     },
     // omp × minimax-code × minimax-m3
     .{
-        .agent_alphanumeric_id = "omp-minimaxcode-minimaxm3",
+        .agent_id = "omp-minimaxcode-minimaxm3",
         .probeNames = &.{ "omp", "omp.exe" },
         .buildEnv = buildOmpEnv,
     },
     // reasonix × deepseek-flash × deepseek-v4-flash
     .{
-        .agent_alphanumeric_id = "reasonix-deepseekflash-deepseekv4flash",
+        .agent_id = "reasonix-deepseekflash-deepseekv4flash",
         .probeNames = &.{ "reasonix", "reasonix.exe" },
         .buildEnv = buildReasonixEnv,
     },
     // crush × hyper × qwen3.7-plus
     .{
-        .agent_alphanumeric_id = "crush-hyper-qwen37plus",
+        .agent_id = "crush-hyper-qwen37plus",
         .probeNames = &.{ "crush", "crush.exe" },
         .buildEnv = buildCrushEnv,
     },
     // opencode × minimax × minimax-m3
     .{
-        .agent_alphanumeric_id = "opencode-minimax-minimaxm3",
+        .agent_id = "opencode-minimax-minimaxm3",
         .probeNames = &.{ "opencode", "opencode.exe" },
         .buildEnv = buildOpencodeEnv,
     },
     // vibe × mistral × mistral-large-latest
     .{
-        .agent_alphanumeric_id = "vibe-mistral-mistrallargelatest",
+        .agent_id = "vibe-mistral-mistrallargelatest",
         .probeNames = &.{ "vibe", "vibe.exe" },
         .buildEnv = buildVibeEnv,
     },
@@ -3292,21 +3280,8 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     }
     return false;
 }
-/// current timestamp in ISO-8601 form. Used as the `generated_at`
-/// field in known/index.jsonl events.
-    pub fn timestampNow(a: std.mem.Allocator) ![]u8 {
-        // Zig 0.16 removed std.time.timestamp; emit a stable marker.
-        // The daemon doesn't parse this back, only displays it.
-        return std.fmt.allocPrint(a, "0", .{});
-    }
-
-/// JSON-encode a string with surrounding quotes and escapes.
-    pub fn jsonString(a: std.mem.Allocator, s: []const u8) ![]u8 {
-        return std.fmt.allocPrint(a, "\"{s}\"", .{s});
-    }
-
     // ----------------------------------------------------------------
-    // known fixture subcommands
+    // fixtures fixture subcommands
     // ----------------------------------------------------------------
 
     /// strictly alphanumeric form of the current platform — just the
@@ -3317,203 +3292,28 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     /// name is "darwin" — we want one canonical name for fixtures).
     /// Arch is dropped because the same fixture JSON is valid on all
     /// archs of a given OS; the platform id only differentiates OS.
-    pub fn platformAlphanumericId() []const u8 {
+    pub fn platformId() []const u8 {
         return switch (builtin.target.os.tag) {
             .macos, .ios, .tvos, .watchos, .visionos => "darwin",
             else => @tagName(builtin.target.os.tag),
         };
     }
 
-    /// assemble a known_alphanumeric_id from the three sub-ids. Caller
+    /// assemble a fixture_id from the three sub-ids. Caller
     /// owns the returned slice.
-    pub fn knownAlphanumericId(a: std.mem.Allocator, agent: []const u8) ![]u8 {
+    pub fn fixtureId(a: std.mem.Allocator, agent: []const u8) ![]u8 {
         var list: std.ArrayList(u8) = .empty;
         try list.appendSlice(a, agent);
         try list.append(a, '-');
-        try list.appendSlice(a, platformAlphanumericId());
+        try list.appendSlice(a, platformId());
         return list.toOwnedSlice(a);
     }
 
-    /// one row in `known/index.jsonl`. State store: exactly one event
-    /// per 4-tuple key (harness, provider, model, platform), upserted
-    /// in place — the event is the current state. Stores facts only:
-    /// `refresh` (daemon should (re)capture), `runner` (parent PID of
-    /// the writer; used to detect orphaned `refresh: true` requests),
-    /// `generated_at`, and the four dimension ids — each nullable in
-    /// JSON, normalized to `""` (unset) in memory. The derived
-    /// `known_alphanumeric_id`/`agent_alphanumeric_id` are *not*
-    /// stored; they're recomputed per use via `knownIdFrom` /
-    /// `agentIdFrom` (fixture naming and messaging only).
-    pub const IndexEvent = struct {
-        refresh: bool,
-        runner: i64,
-        generated_at: []const u8,
-        harness_alphanumeric_id: []const u8,
-        provider_alphanumeric_id: []const u8,
-        model_alphanumeric_id: []const u8,
-        platform_alphanumeric_id: []const u8,
-    };
-
-    /// parse one line of `known/index.jsonl` into an IndexEvent. Returns
-    /// null on any parse error so a corrupt line doesn't break the
-    /// whole poll cycle.
-    pub fn parseIndexEvent(a: std.mem.Allocator, line: []const u8) ?IndexEvent {
-        const parsed = std.json.parseFromSlice(std.json.Value, a, line, .{}) catch return null;
-        defer parsed.deinit();
-        if (parsed.value != .object) return null;
-        const obj = parsed.value.object;
-
-        var ev: IndexEvent = undefined;
-        if (obj.get("refresh")) |v| {
-            if (v != .bool) return null;
-            ev.refresh = v.bool;
-        } else return null;
-        if (obj.get("runner")) |v| {
-            if (v != .integer) return null;
-            ev.runner = v.integer;
-        } else return null;
-
-        ev.generated_at = jstr(obj, "generated_at") orelse return null;
-        // dims are nullable: JSON null or a missing key normalize to
-        // "" (unset). Iterates so a single helper handles both.
-        ev.harness_alphanumeric_id = jdim(obj, "harness_alphanumeric_id");
-        ev.provider_alphanumeric_id = jdim(obj, "provider_alphanumeric_id");
-        ev.model_alphanumeric_id = jdim(obj, "model_alphanumeric_id");
-        ev.platform_alphanumeric_id = jdim(obj, "platform_alphanumeric_id");
-        return ev;
-    }
-
-    /// read a nullable string field: string → value, JSON null or
-    /// missing key → "" (the internal "unset" representation).
-    fn jdim(obj: std.json.ObjectMap, key: []const u8) []const u8 {
-        const v = obj.get(key) orelse return "";
-        return switch (v) {
-            .string => |s| s,
-            else => "",
-        };
-    }
-
-    /// serialize one IndexEvent to a JSONL line (no trailing newline;
-    /// the caller appends it). Unset dims serialize as JSON `null`.
-    /// Caller owns the returned slice.
-    pub fn emitIndexEvent(a: std.mem.Allocator, ev: IndexEvent) ![]u8 {
-        const ts_q = try jsonString(a, ev.generated_at);
-        defer a.free(ts_q);
-        const h_q = try jstrOrNull(a, ev.harness_alphanumeric_id);
-        defer a.free(h_q);
-        const p_q = try jstrOrNull(a, ev.provider_alphanumeric_id);
-        defer a.free(p_q);
-        const m_q = try jstrOrNull(a, ev.model_alphanumeric_id);
-        defer a.free(m_q);
-        const pl_q = try jstrOrNull(a, ev.platform_alphanumeric_id);
-        defer a.free(pl_q);
-        return std.fmt.allocPrint(a,
-            "{{\"refresh\":{s},\"runner\":{d},\"generated_at\":{s},\"harness_alphanumeric_id\":{s},\"provider_alphanumeric_id\":{s},\"model_alphanumeric_id\":{s},\"platform_alphanumeric_id\":{s}}}",
-            .{
-                if (ev.refresh) "true" else "false",
-                ev.runner,
-                ts_q,
-                h_q,
-                p_q,
-                m_q,
-                pl_q,
-            },
-        );
-    }
-
-    /// JSON-encode a string, or emit `null` for the empty/unset
-    /// internal representation. Inverse of `jdim`.
-    fn jstrOrNull(a: std.mem.Allocator, s: []const u8) ![]u8 {
-        if (s.len == 0) return a.dupe(u8, "null");
-        return jsonString(a, s);
-    }
-
-    /// upsert a single line to `known/index.jsonl`: if an entry with
-    /// the same 4-tuple key already exists, replace it; otherwise
-    /// append. The line includes its trailing newline.
-    pub fn upsertIndexEvent(a: std.mem.Allocator, io: std.Io, path: []const u8, line: []const u8) !void {
-        try lockIndex(io);
-        defer unlockIndex(io);
-
-        const with_newline = try a.alloc(u8, line.len + 1);
-        defer a.free(with_newline);
-        @memcpy(with_newline[0..line.len], line);
-        with_newline[line.len] = '\n';
-
-        const target_key = blk: {
-            const parsed = parseIndexEvent(a, line) orelse break :blk "";
-            break :blk try tupleKey(a, parsed.harness_alphanumeric_id, parsed.provider_alphanumeric_id, parsed.model_alphanumeric_id, parsed.platform_alphanumeric_id);
-        };
-        if (target_key.len == 0) {
-            try writeIndexAtomic(io, with_newline);
-            return;
-        }
-
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch {
-            try writeIndexAtomic(io, with_newline);
-            return;
-        };
-        defer a.free(data);
-
-        var out: std.ArrayList(u8) = .empty;
-        defer out.deinit(a);
-
-        var lines = std.mem.splitScalar(u8, data, '\n');
-        while (lines.next()) |l| {
-            if (l.len == 0) continue;
-            const parsed = parseIndexEvent(a, l) orelse continue;
-            const lkey = try tupleKey(a, parsed.harness_alphanumeric_id, parsed.provider_alphanumeric_id, parsed.model_alphanumeric_id, parsed.platform_alphanumeric_id);
-            if (std.mem.eql(u8, lkey, target_key)) continue;
-            try out.appendSlice(a, l);
-            try out.append(a, '\n');
-        }
-        try out.appendSlice(a, with_newline);
-
-        try writeIndexAtomic(io, out.items);
-    }
-
-    /// read every event in `known/index.jsonl` and return the latest
-    /// event per 4-tuple key. Returns an empty map if the file is
-    /// missing.
-    pub fn latestEventsPerTuple(a: std.mem.Allocator, io: std.Io, path: []const u8) !std.StringHashMapUnmanaged(IndexEvent) {
-        var out: std.StringHashMapUnmanaged(IndexEvent) = .empty;
-        errdefer out.deinit(a);
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return out;
-        defer a.free(data);
-        var lines = std.mem.splitScalar(u8, data, '\n');
-        while (lines.next()) |line| {
-            if (line.len == 0) continue;
-            if (parseIndexEvent(a, line)) |ev| {
-                // arena-allocated strings inside ev point into `line`,
-                // which is owned by the split iterator. Copy them so
-                // they survive after the function returns.
-                const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
-                const h = try a.dupe(u8, ev.harness_alphanumeric_id);
-                const p = try a.dupe(u8, ev.provider_alphanumeric_id);
-                const m = try a.dupe(u8, ev.model_alphanumeric_id);
-                const plat = try a.dupe(u8, ev.platform_alphanumeric_id);
-                const ts = try a.dupe(u8, ev.generated_at);
-                const stored: IndexEvent = .{
-                    .refresh = ev.refresh,
-                    .runner = ev.runner,
-                    .generated_at = ts,
-                    .harness_alphanumeric_id = h,
-                    .provider_alphanumeric_id = p,
-                    .model_alphanumeric_id = m,
-                    .platform_alphanumeric_id = plat,
-                };
-                try out.put(a, key, stored);
-            }
-        }
-        return out;
-    }
-
-    /// shared filter for `known queue` / `known dequeue` / `known
-    /// purge`. Four dimension flags (`--harness=`, `--provider=`,
-    /// `--model=`, `--platform=`) constrain their dim to equality;
-    /// their `--no-*` variants constrain it to null (unset); an
-    /// unmentioned dim is unconstrained (any value, including null).
-    /// `--known=` expands to all four dims (h-p-m-platform);
+    /// shared filter for `fixtures queue` / `fixtures dequeue`. Four dimension
+    /// flags (`--harness=`, `--provider=`, `--model=`, `--platform=`)
+    /// constrain their dim to equality; an unmentioned dim is
+    /// unconstrained (any value, including null).
+    /// `--fixture=` expands to all four dims (h-p-m-platform);
     /// `--agent=` expands to h-p-m, leaving platform unconstrained
     /// unless `--platform=` is also given. `any` is true iff at least
     /// one option was present.
@@ -3522,7 +3322,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         provider: []const u8 = "",
         model: []const u8 = "",
         platform: []const u8 = "",
-        known: ?[]const u8 = null,
+        fixture: ?[]const u8 = null,
         agent: ?[]const u8 = null,
         /// scope flags: `--all`/`--stale`/`--partial` target index rows;
         /// `--recipes`/`--missing-fixture` target the recipe table.
@@ -3542,7 +3342,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         stale_by_days: ?i64 = null,
         stale_by_minutes: ?i64 = null,
         any: bool = false,
-        /// true when `--known=` or `--agent=` (the composite ids)
+        /// true when `--fixture=` or `--agent=` (the composite ids)
         /// contributed the equality dims — used for the creation path.
         composite: bool = false,
     };
@@ -3550,8 +3350,8 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     const FilterError = error{
         /// no filter option present at all
         NoFilter,
-        /// `--known=` not a valid 4-part id
-        InvalidKnownId,
+        /// `--fixture=` not a valid 4-part id
+        InvalidFixtureId,
         /// `--agent=` not a valid 3-part id
         InvalidAgentId,
         /// `--stale-by-days=`/`--stale-by-minutes=` not an integer
@@ -3562,13 +3362,13 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         OutOfMemory,
     };
 
-    /// parse the shared filter flags from argv (expects argv0, "known",
+    /// parse the shared filter flags from argv (expects argv0, "fixtures",
     /// <subcommand> already consumed). Errors use `FilterError` so the
     /// caller can emit the command-specific message and usage.
     fn parseFilters(init: std.process.Init) FilterError!FilterOptions {
         const a = init.arena.allocator();
         var f: FilterOptions = .{};
-        var seen_known = false;
+        var seen_fixture = false;
         var seen_agent = false;
         var seen_harness = false;
         var seen_provider = false;
@@ -3578,12 +3378,12 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return FilterError.NoFilter;
         defer args_it.deinit();
         _ = args_it.skip(); // argv0
-        _ = args_it.skip(); // "known"
-        _ = args_it.skip(); // "queue"/"dequeue"/"purge"
+        _ = args_it.skip(); // "fixtures"
+        _ = args_it.skip(); // "queue"/"dequeue"
         while (args_it.next()) |arg| {
-            if (std.mem.startsWith(u8, arg, "--known=")) {
-                f.known = arg["--known=".len..];
-                seen_known = true;
+            if (std.mem.startsWith(u8, arg, "--fixture=")) {
+                f.fixture = arg["--fixture=".len..];
+                seen_fixture = true;
             } else if (std.mem.startsWith(u8, arg, "--agent=")) {
                 f.agent = arg["--agent=".len..];
                 seen_agent = true;
@@ -3639,16 +3439,16 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         if ((f.available or f.unavailable) and scope_count == 0) return FilterError.ConflictingFilters;
         if (f.available and f.unavailable) return FilterError.ConflictingFilters;
 
-        f.any = seen_known or seen_agent or seen_harness or seen_provider or
+        f.any = seen_fixture or seen_agent or seen_harness or seen_provider or
             seen_model or seen_platform or scope_count > 0 or f.available or f.unavailable;
         if (!f.any) return FilterError.NoFilter;
 
-        if (seen_known) {
-            // `--known=` supplies all four dims and may not combine
+        if (seen_fixture) {
+            // `--fixture=` supplies all four dims and may not combine
             // with `--agent=` or any `--X=`; `--platform=` is allowed
-            // but must be identical to the known id's platform part.
+            // but must be identical to the fixtures id's platform part.
             if (seen_agent or seen_harness or seen_provider or seen_model) return FilterError.ConflictingFilters;
-            const parts = splitKnownAlphanumericId(a, f.known.?) catch return FilterError.InvalidKnownId;
+            const parts = splitFixtureId(a, f.fixture.?) catch return FilterError.InvalidFixtureId;
             defer {
                 a.free(parts[0]);
                 a.free(parts[1]);
@@ -3665,10 +3465,10 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             f.composite = true;
         } else if (seen_agent) {
             // `--agent=` supplies h-p-m; `--platform=` may supplement it
-            // (identical to `--known=` when combined). No `--X=` other
+            // (identical to `--fixture=` when combined). No `--X=` other
             // than `--platform=` may combine with `--agent=`.
             if (seen_harness or seen_provider or seen_model) return FilterError.ConflictingFilters;
-            const parts = splitAgentAlphanumericId(a, f.agent.?) catch return FilterError.InvalidAgentId;
+            const parts = splitAgentId(a, f.agent.?) catch return FilterError.InvalidAgentId;
             defer {
                 a.free(parts[0]);
                 a.free(parts[1]);
@@ -3683,17 +3483,6 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return f;
     }
 
-    /// true iff every dimension constraint in `f` holds for `ev`.
-    /// Equality (`--X=`) requires the field to equal the value;
-    /// unmentioned dims are free.
-    fn matchesFilter(ev: IndexEvent, f: FilterOptions) bool {
-        if (f.harness.len > 0 and !std.mem.eql(u8, ev.harness_alphanumeric_id, f.harness)) return false;
-        if (f.provider.len > 0 and !std.mem.eql(u8, ev.provider_alphanumeric_id, f.provider)) return false;
-        if (f.model.len > 0 and !std.mem.eql(u8, ev.model_alphanumeric_id, f.model)) return false;
-        if (f.platform.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, f.platform)) return false;
-        return true;
-    }
-
     /// how many scope flags are set (exactly one is allowed).
     fn scopeCount(f: FilterOptions) usize {
         return @as(usize, @intFromBool(f.all)) + @as(usize, @intFromBool(f.stale)) +
@@ -3701,15 +3490,15 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             @as(usize, @intFromBool(f.missing_fixture));
     }
 
-    /// the scope candidate set for `f`, as actions:
-    fn scopeCandidates(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !std.ArrayListUnmanaged(ActionRow) {
-        var out: std.ArrayListUnmanaged(ActionRow) = .empty;
-        const host = platformAlphanumericId();
+    /// the scope candidate set for `f`, as queue rows:
+    fn scopeCandidates(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !std.ArrayListUnmanaged(QueueRow) {
+        var out: std.ArrayListUnmanaged(QueueRow) = .empty;
+        const host = platformId();
         const now = unixNow(io);
 
         if (f.recipes or f.missing_fixture) {
-            for (knownFixturesForKnownAgents) |c| {
-                const parts = try splitAgentAlphanumericId(a, c.agent_alphanumeric_id);
+            for (recipesForFixtures) |c| {
+                const parts = try splitAgentId(a, c.agent_id);
                 defer {
                     a.free(parts[0]);
                     a.free(parts[1]);
@@ -3720,23 +3509,17 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 if (f.model.len > 0 and !std.mem.eql(u8, f.model, parts[2])) continue;
                 if (f.platform.len > 0 and !std.mem.eql(u8, f.platform, host)) continue;
                 if (f.missing_fixture) {
-                    const known_aid = try knownAlphanumericId(a, c.agent_alphanumeric_id);
-                    defer a.free(known_aid);
-                    const json_path = try std.fmt.allocPrint(a, "known/{s}.agent.json", .{known_aid});
+                    const fixture_id_v = try fixtureId(a, c.agent_id);
+                    defer a.free(fixture_id_v);
+                    const json_path = try std.fmt.allocPrint(a, "fixtures/{s}.json", .{fixture_id_v});
                     defer a.free(json_path);
                     var json_exists = false;
                     if (std.Io.Dir.cwd().statFile(io, json_path, .{})) |_| {
                         json_exists = true;
                     } else |_| {}
-                    const trailer_path = try std.fmt.allocPrint(a, "known/{s}.trailer.txt", .{known_aid});
-                    defer a.free(trailer_path);
-                    var trailer_exists = false;
-                    if (std.Io.Dir.cwd().statFile(io, trailer_path, .{})) |_| {
-                        trailer_exists = true;
-                    } else |_| {}
-                    if (json_exists and trailer_exists) continue;
+                    if (json_exists) continue;
                 }
-                var row: ActionRow = .{
+                var row: QueueRow = .{
                     .harness = try a.dupe(u8, parts[0]),
                     .provider = try a.dupe(u8, parts[1]),
                     .model = try a.dupe(u8, parts[2]),
@@ -3747,16 +3530,16 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 if (f.recipes) row.scope_recipes = 1;
                 if (f.missing_fixture) row.scope_missing_fixture = 1;
                 if (f.available) {
-                    row.available = if (harnessAvailable(io, c.agent_alphanumeric_id)) 1 else 0;
+                    row.available = if (harnessAvailable(io, c.agent_id)) 1 else 0;
                 }
-                try validateActionRow(row);
+                try validateQueueRow(row);
                 try out.append(a, row);
             }
             return out;
         }
 
         if (f.partial) {
-            const seeds = try selectSeedActions(a, io);
+            const seeds = try selectSeedQueueRows(a, io);
             for (seeds) |s| {
                 if (f.harness.len > 0 and !std.mem.eql(u8, s.harness orelse "", f.harness)) continue;
                 if (f.provider.len > 0 and !std.mem.eql(u8, s.provider orelse "", f.provider)) continue;
@@ -3766,7 +3549,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 row.scope_partial = 1;
                 row.runner = getParentPid();
                 row.created_at = now;
-                try validateActionRow(row);
+                try validateQueueRow(row);
                 try out.append(a, row);
             }
             return out;
@@ -3786,7 +3569,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 const threshold_minutes = f.stale_by_minutes orelse (f.stale_by_days.? * 24 * 60);
                 if (!isStale(io, fx.generated_at, threshold_minutes)) continue;
             }
-            var row: ActionRow = .{
+            var row: QueueRow = .{
                 .harness = try a.dupe(u8, fx.harness),
                 .provider = try a.dupe(u8, fx.provider),
                 .model = try a.dupe(u8, fx.model),
@@ -3803,7 +3586,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 const agent = (try agentIdFrom(a, fx.harness, fx.provider, fx.model)) orelse continue;
                 row.available = if (harnessAvailable(io, agent)) 1 else 0;
             }
-            try validateActionRow(row);
+            try validateQueueRow(row);
             try out.append(a, row);
         }
         return out;
@@ -3814,18 +3597,17 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     // ----------------------------------------------------------------
 
     /// `refresh run` — capture the current session and write the
-    /// fixture + index event. Failure semantics: if the detection
-    /// ladder fails to resolve harness *or* provider *or* model,
-    /// exit 2 with no fixture written and no event appended. Partial
-    /// detections are bad data and must be fixed, not papered over.
-    /// The agent runs this directly; the daemon also runs it as a
-    /// child after preparing the env for a target harness.
+    /// fixture + upsert the matching fixtures row. Failure semantics:
+    /// if the detection ladder fails to resolve harness *or* provider
+    /// *or* model, exit 2 with no fixture written and no store change.
+    /// Partial detections are bad data and must be fixed, not papered
+    /// over. The agent runs this directly; the daemon also runs it as
+    /// a child after preparing the env for a target harness.
     ///
-    /// **Filename contract** — the fixture is written as
-    /// `known/<known_alphanumeric_id>.{agent.json,.trailer.txt}` where
-    /// `known_alphanumeric_id = agent_alphanumeric_id +
-    /// "-" + platform_alphanumeric_id` (e.g.
-    /// `cline-clinepass-kimik3-darwin`). The `-<platform>` suffix
+    /// **Filename contract** — the fixture is written as a single
+    /// `fixtures/<fixture_id>.json` with top-level keys `cooked`, `raw`,
+    /// and `trailer`, where `fixture_id = agent_id + "-" + platform_id`
+    /// (e.g. `cline-clinepass-kimik3-darwin`). The `-<platform>` suffix
     /// keeps per-platform config paths from churning each other
     /// across CI runs; see DESIGN.md "per-platform fixtures" for the
     /// rationale.
@@ -3835,18 +3617,16 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     // `refresh:true` (retry) and the seed re-enters expansion on the
     // daemon's next poll — a bounded retry loop surfaced by the daemon
     // warning. No extra bookkeeping is needed.
-    pub fn runKnownAgent(init: std.process.Init) !u8 {
+    pub fn runFixturesCapture(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
-
-        try ensureMigrated(a, io);
 
         var d = Detection{};
         _ = try detect(init, &d);
 
-        const harness_aid = d.harness_alphanumeric_id;
-        const provider_aid = d.provider_alphanumeric_id;
-        const model_aid = d.model_alphanumeric_id;
+        const harness_aid = d.harness_id;
+        const provider_aid = d.provider_id;
+        const model_aid = d.model_id;
 
         const resolved = (if (harness_aid != null) @as(usize, 1) else 0) +
             (if (provider_aid != null) @as(usize, 1) else 0) +
@@ -3854,73 +3634,78 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
 
         // partial detection (1 or 2 dims): partial is bad data per DESIGN —
         // report + exit 2, NO store change. Seeds are only created via
-        // `known queue`. Nothing is written if zero dims resolve.
+        // `fixtures queue`. Nothing is written if zero dims resolve.
         if (resolved >= 1 and resolved < 3) {
-            writeErr(io, "known agent: partial detection (");
+            writeErr(io, "fixtures capture: partial detection (");
             var n_buf: [16]u8 = undefined;
             writeErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{resolved}));
             writeErr(io, "/3 dims) — no fixture written, no store change (exit 2)\n");
             return 2;
         }
         if (resolved == 0) {
-            writeErr(io, "known agent: harness/provider/model did not resolve — nothing recorded\n");
+            writeErr(io, "fixtures capture: harness/provider/model did not resolve — nothing recorded\n");
             return 2;
         }
 
-        const agent_aid = d.agent_alphanumeric_id orelse {
-            writeErr(io, "known agent: agent_alphanumeric_id did not compute\n");
+        const agent_aid = d.agent_id orelse {
+            writeErr(io, "fixtures capture: agent_id did not compute\n");
             return 2;
         };
 
-        const known_aid = try knownAlphanumericId(a, agent_aid);
+        const fixture_id = try fixtureId(a, agent_aid);
 
-        // write fixture + trailer
-        std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+        // assemble the single `{cooked, raw, trailer}` fixture file.
+        const cooked = try buildCooked(a, &d);
+        const raw = try buildRaw(a, &d, init.environ_map);
+        var root = std.json.Value{ .object = .empty };
+        try root.object.put(a, "cooked", cooked);
+        try root.object.put(a, "raw", raw);
+        if (d.trailer) |t| {
+            try root.object.put(a, "trailer", .{ .string = t });
+        }
+        const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
+        defer a.free(json_bytes);
+
+        // write fixture
+        std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
             error.PathAlreadyExists => {},
             else => return err,
         };
-        const dir = std.Io.Dir.cwd().openDir(io, "known", .{}) catch {
-            writeErr(io, "known agent: cannot open known/ dir\n");
+        const dir = std.Io.Dir.cwd().openDir(io, "fixtures", .{}) catch {
+            writeErr(io, "fixtures capture: cannot open fixtures/ dir\n");
             return 2;
         };
         defer dir.close(io);
 
-        var buf: std.ArrayList(u8) = .empty;
-        try buildJson(a, &d, init.environ_map, null, .{}, &buf);
-        const json_name = try std.fmt.allocPrint(a, "{s}.agent.json", .{known_aid});
-        try dir.writeFile(io, .{ .sub_path = json_name, .data = buf.items });
+        const json_name = try std.fmt.allocPrint(a, "{s}.json", .{fixture_id});
+        try dir.writeFile(io, .{ .sub_path = json_name, .data = json_bytes });
 
-        if (d.trailer) |t| {
-            const trailer_name = try std.fmt.allocPrint(a, "{s}.trailer.txt", .{known_aid});
-            try dir.writeFile(io, .{ .sub_path = trailer_name, .data = t });
-        }
-
-        // fixtures only: upsert the state row (never touches `actions`).
+        // fixtures only: upsert the state row (never touches `queue`).
         try upsertFixture(a, io, .{
             .harness = harness_aid orelse unreachable,
             .provider = provider_aid orelse unreachable,
             .model = model_aid orelse unreachable,
-            .platform = platformAlphanumericId(),
+            .platform = platformId(),
             .runner = getParentPid(),
             .generated_at = unixNow(io),
         });
 
-        writeOut(io, "known agent: wrote known/");
+        writeOut(io, "fixtures capture: wrote fixtures/");
         writeOut(io, json_name);
         writeOut(io, "\n");
         return 0;
     }
 
-    /// `known queue [scope] <filters>` — set `refresh:true` on a set of
+    /// `fixtures queue [scope] <filters>` — set `refresh:true` on a set of
     /// rows. Without a scope flag, the generic path is create-or-flip:
-    /// with the shared dim filters (`--known=`, `--agent=`, `--harness=`,
-    /// `--provider=`, `--model=`, `--platform=`, `--no-*`), if any
+    /// with the shared dim filters (`--fixture=`, `--agent=`, `--harness=`,
+    /// `--provider=`, `--model=`, `--platform=`), if any
     /// existing row matches, flip them all to `refresh:true` (dims and
     /// runner preserved, `generated_at` refreshes). If none match,
     /// create a **seed** row: the positive dims set, the remaining dims
     /// `null`, `refresh:true`. Unknown ids are allowed — that is the
-    /// seed path (the daemon expands seeds over known recipes; see
-    /// `runKnownDaemon`).
+    /// seed path (the daemon expands seeds over fixtures recipes; see
+    /// `runFixturesDaemon`).
     ///
     /// With a scope flag (`--all`/`--stale`/`--partial`/`--recipes`/
     /// `--missing-fixture`) the target set is computed instead (see
@@ -3929,43 +3714,41 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     /// narrows candidates to harnesses whose binary is available.
     ///
     /// At least one filter option or scope flag is required (else exit
-    /// 2). A `--no-*`-only call is not a valid seed — at least one
-    /// positive dim, `--agent=`, or `--known=` is required for creation.
+    /// 2). A dimless call is not a valid seed — at least one positive
+    /// dim, `--agent=`, or `--fixture=` is required for creation.
     ///
     /// Idempotent: re-running a seed request re-matches the existing
     /// seed and takes the flip path, so no duplicate row is written.
-    pub fn runKnownQueue(init: std.process.Init) !u8 {
+    pub fn runFixturesQueue(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
-        try ensureMigrated(a, io);
-
         const f = parseFilters(init) catch |err| {
             switch (err) {
-                error.NoFilter => writeErr(io, "known queue: at least one filter or scope flag is required (--known=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
-                error.InvalidKnownId => writeErr(io, "known queue: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
-                error.InvalidAgentId => writeErr(io, "known queue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
-                error.InvalidThreshold => writeErr(io, "known queue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
-                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known queue: conflicting filters (see --help)\n"),
+                error.NoFilter => writeErr(io, "fixtures queue: at least one filter or scope flag is required (--fixture=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
+                error.InvalidFixtureId => writeErr(io, "fixtures queue: --fixture=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
+                error.InvalidAgentId => writeErr(io, "fixtures queue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
+                error.InvalidThreshold => writeErr(io, "fixtures queue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
+                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "fixtures queue: conflicting filters (see --help)\n"),
             }
-            writeOut(io, knownUsage);
+            writeOut(io, fixturesUsage);
             return 2;
         };
 
         if (scopeCount(f) > 0) {
-            return runKnownQueueScope(init, f);
+            return runFixturesQueueScope(init, f);
         }
 
-        // bare dims / --agent= / --known=: create a seed row (no scope).
+        // bare dims / --agent= / --fixture=: create a seed row (no scope).
         const positive = f.harness.len > 0 or f.provider.len > 0 or
             f.model.len > 0 or f.platform.len > 0 or f.composite;
         if (!positive) {
-            writeErr(io, "known queue: a seed needs at least one positive dim, --agent=, or --known=\n");
-            writeOut(io, knownUsage);
+            writeErr(io, "fixtures queue: a seed needs at least one positive dim, --agent=, or --fixture=\n");
+            writeOut(io, fixturesUsage);
             return 2;
         }
 
-        const row: ActionRow = .{
+        const row: QueueRow = .{
             .harness = if (f.harness.len > 0) f.harness else null,
             .provider = if (f.provider.len > 0) f.provider else null,
             .model = if (f.model.len > 0) f.model else null,
@@ -3973,18 +3756,18 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             .runner = getParentPid(),
             .created_at = unixNow(io),
         };
-        try validateActionRow(row);
-        try upsertAction(a, io, row);
+        try validateQueueRow(row);
+        try upsertQueueRow(a, io, row);
 
-        writeOut(io, "known queue: queued ");
-        writeOut(io, try describeAction(a, row));
+        writeOut(io, "fixtures queue: queued ");
+        writeOut(io, try describeQueueRow(a, row));
         writeOut(io, "\n");
         return 0;
     }
 
-    /// `known queue <scope> [filters]` — enumerate the scope candidate set
-    /// (see `scopeCandidates`) and upsert each into `actions`.
-    fn runKnownQueueScope(init: std.process.Init, f: FilterOptions) !u8 {
+    /// `fixtures queue <scope> [filters]` — enumerate the scope candidate set
+    /// (see `scopeCandidates`) and upsert each into `queue`.
+    fn runFixturesQueueScope(init: std.process.Init, f: FilterOptions) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
@@ -3993,12 +3776,12 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
 
         var queued: usize = 0;
         for (candidates.items) |row| {
-            try upsertAction(a, io, row);
+            try upsertQueueRow(a, io, row);
             queued += 1;
         }
 
         var n_buf: [16]u8 = undefined;
-        writeOut(io, "known queue: queued ");
+        writeOut(io, "fixtures queue: queued ");
         writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
         writeOut(io, "\n");
         return 0;
@@ -4020,41 +3803,14 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return @intCast(std.c.getppid());
     }
 
-    /// check whether a PID is still alive. Uses `kill(pid, 0)` on
-    /// POSIX (returns 0 if alive, ESRCH if dead). Windows uses
-    /// `OpenProcess(SYNCHRONIZE, FALSE, pid)` and treats a null
-    /// handle as dead. Used by `refresh all` to detect orphaned
-    /// `refresh: true` requests.
-    fn pidIsAlive(pid: i64) bool {
-        if (pid <= 0) return false;
-        if (builtin.os.tag == .windows) {
-            const handle = builtin.os.windows.OpenProcess(0x00100000, false, @intCast(pid));
-            if (handle == null) return false;
-            _ = builtin.os.windows.CloseHandle(handle.?);
-            return true;
-        }
-        // POSIX kill(pid, 0) is the standard "is this process alive?"
-        // probe. Signal 0 isn't a member of Zig's typed SIG enum
-        // (and the per-OS errno enum doesn't always expose EPERM
-        // as a typed name), so compare the raw errno value.
-        // EPERM = 1 on Linux, BSDs, and macOS. ESRCH = 3. Anything
-        // other than ESRCH means the process exists.
-        const sig_zero: std.c.SIG = @enumFromInt(0);
-        const rc = std.c.kill(@intCast(pid), sig_zero);
-        if (rc == 0) return true;
-        const e = std.c.errno(rc);
-        return @intFromEnum(e) != 3; // not ESRCH → exists
-    }
-
-    /// true if the agent's harness binary (per `KnownFixturesForKnownAgents`)
+    /// true if the agent's harness binary (per `RecipesForFixtures`)
     /// is installed and runs --version successfully. Looks up the row
-    /// by its composite `agent_alphanumeric_id` so callers can pass
-    /// either a row's id or an `IndexEvent.agent_alphanumeric_id`
-    /// interchangeably.
-    fn harnessAvailable(io: std.Io, agent_alphanumeric_id: []const u8) bool {
+    /// by its composite `agent_id` so callers can pass either a
+    /// recipe's id or a daemon-split id interchangeably.
+    fn harnessAvailable(io: std.Io, agent_id: []const u8) bool {
         var probe_names: []const []const u8 = &.{};
-        for (knownFixturesForKnownAgents) |c| {
-            if (std.mem.eql(u8, c.agent_alphanumeric_id, agent_alphanumeric_id)) {
+        for (recipesForFixtures) |c| {
+            if (std.mem.eql(u8, c.agent_id, agent_id)) {
                 probe_names = c.probeNames;
                 break;
             }
@@ -4063,46 +3819,40 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return probeBinary(io, probe_names);
     }
 
-    /// append a refresh:true event derived from an existing event.
-    /// Caller is responsible for any platform/availability skip
-    /// logic.
-    /// `known dequeue [scope] <filters>` — **DELETE only; shared validator.**
+    /// `fixtures dequeue [scope] <filters>` — **DELETE only; shared validator.**
     /// Builds the WHERE from dims + scope columns (three-valued predicate)
-    /// + optional available match and deletes matching `actions` rows. No
+    /// + optional available match and deletes matching `queue` rows. No
     /// staleness/file checks; no fixture mutation. At least one filter or
     /// scope flag is required.
-    pub fn runKnownDequeue(init: std.process.Init) !u8 {
+    pub fn runFixturesDequeue(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
-        try ensureMigrated(a, io);
-
         const f = parseFilters(init) catch |err| {
             switch (err) {
-                error.NoFilter => writeErr(io, "known dequeue: at least one filter or scope flag is required (--known=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
-                error.InvalidKnownId => writeErr(io, "known dequeue: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
-                error.InvalidAgentId => writeErr(io, "known dequeue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
-                error.InvalidThreshold => writeErr(io, "known dequeue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
-                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known dequeue: conflicting filters (see --help)\n"),
+                error.NoFilter => writeErr(io, "fixtures dequeue: at least one filter or scope flag is required (--fixture=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
+                error.InvalidFixtureId => writeErr(io, "fixtures dequeue: --fixture=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
+                error.InvalidAgentId => writeErr(io, "fixtures dequeue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
+                error.InvalidThreshold => writeErr(io, "fixtures dequeue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
+                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "fixtures dequeue: conflicting filters (see --help)\n"),
             }
-            writeOut(io, knownUsage);
+            writeOut(io, fixturesUsage);
             return 2;
         };
 
-        const deleted = try deleteActions(a, io, f);
+        const deleted = try deleteQueueRows(a, io, f);
 
         var n_buf: [16]u8 = undefined;
-        writeOut(io, "known dequeue: deleted ");
+        writeOut(io, "fixtures dequeue: deleted ");
         writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{deleted}));
         writeOut(io, " action(s)\n");
         return 0;
     }
 
-    /// sweep fixtures for malformed files (kept from the original
-    /// `purge`): delete `*.agent.json` files that don't parse as a
-    /// JSON object, or whose `canonical` block is missing the
-    /// harness/provider/model names. Trailer siblings are deleted
-    /// too. Returns the count removed.
+    /// sweep fixtures for malformed files: delete `fixtures/*.json`
+    /// files that don't parse as a JSON object with a `cooked` block
+    /// carrying the harness/provider/model names. Single-file format —
+    /// no trailer sibling. Returns the count removed.
     fn purgeMalformedFixtures(a: std.mem.Allocator, io: std.Io) usize {
         var fixture_purged: usize = 0;
         var json_path_buf: [4096]u8 = undefined;
@@ -4111,8 +3861,11 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         while (dir_it.next(io) catch null) |ent| {
             if (ent.kind != .file) continue;
             const name = ent.name;
-            if (!std.mem.endsWith(u8, name, ".agent.json")) continue;
-            const full_path = std.fmt.bufPrint(&json_path_buf, "known/{s}", .{name}) catch continue;
+            if (!std.mem.endsWith(u8, name, ".json")) continue;
+            // skip the sqlite store — it lives beside the fixtures and
+            // is not JSON content.
+            if (std.mem.endsWith(u8, name, "index.sqlite3")) continue;
+            const full_path = std.fmt.bufPrint(&json_path_buf, "fixtures/{s}", .{name}) catch continue;
             const data = std.Io.Dir.cwd().readFileAlloc(io, full_path, a, @enumFromInt(1 << 20)) catch continue;
             defer a.free(data);
             const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch continue;
@@ -4120,11 +3873,11 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             var bad = false;
             if (parsed.value != .object) {
                 bad = true;
-            } else if (parsed.value.object.get("canonical")) |canon| {
-                if (canon != .object) {
+            } else if (parsed.value.object.get("cooked")) |cooked| {
+                if (cooked != .object) {
                     bad = true;
                 } else {
-                    const cob = canon.object;
+                    const cob = cooked.object;
                     bad = (cob.get("harness_name") == null) or
                         (cob.get("provider_name") == null) or
                         (cob.get("model_name") == null);
@@ -4134,16 +3887,13 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             }
             if (bad) {
                 std.Io.Dir.cwd().deleteFile(io, full_path) catch {};
-                var trailer_path_buf: [4096]u8 = undefined;
-                const tname = std.fmt.bufPrint(&trailer_path_buf, "known/{s}.trailer.txt", .{name}) catch continue;
-                std.Io.Dir.cwd().deleteFile(io, tname) catch {};
                 fixture_purged += 1;
             }
         }
         return fixture_purged;
     }
 
-    /// `known daemon` — long-running. **Owns all evaluation.** Every poll
+    /// `fixtures daemon` — long-running. **Owns all evaluation.** Every poll
     /// it atomically pops one pending action, runs the SHARED validator on
     /// it (warn + drop if invalid), then decides by the row's scope columns
     /// + dims + current `fixtures`/filesystem: expand seeds (any NULL dim),
@@ -4163,17 +3913,17 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     /// command to the user; see DESIGN.md "user-only daemon" for the
     /// rationale and CONTRIBUTING.md "refresh a fixture" for the
     /// correct role split.
-    pub fn runKnownDaemon(init: std.process.Init) !u8 {
+    pub fn runFixturesDaemon(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
-        // parse --write-log (tee daemon output to known/daemon.log)
+        // parse --write-log (tee daemon output to fixtures/daemon.log)
         var write_log = false;
         {
             var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
             defer args_it.deinit();
             _ = args_it.skip(); // argv0
-            _ = args_it.skip(); // "known"
+            _ = args_it.skip(); // "fixtures"
             _ = args_it.skip(); // "daemon"
             while (args_it.next()) |arg| {
                 if (std.mem.eql(u8, arg, "--write-log")) write_log = true;
@@ -4181,12 +3931,12 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         }
         var daemon_log_file_owned: ?std.Io.File = null;
         if (write_log) {
-            std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+            std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
                 error.PathAlreadyExists => {},
                 else => return err,
             };
-            const log_file = std.Io.Dir.cwd().createFile(io, "known/daemon.log", .{}) catch |err| {
-                daemonWriteErr(io, "daemon: cannot open known/daemon.log: ");
+            const log_file = std.Io.Dir.cwd().createFile(io, "fixtures/daemon.log", .{}) catch |err| {
+                daemonWriteErr(io, "daemon: cannot open fixtures/daemon.log: ");
                 daemonWriteErr(io, @errorName(err));
                 daemonWriteErr(io, "\n");
                 return 2;
@@ -4200,24 +3950,23 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         }
 
         try assertNotInAgent(a, init);
-        try ensureMigrated(a, io);
 
-        daemonWrite(io, "agent-detection-dev known daemon: running\n");
+        daemonWrite(io, "agent-detect-dev fixtures daemon: running\n");
         daemonWrite(io, "  poll rate: 5s\n");
-        daemonWrite(io, "  index file: known/index.sqlite3\n");
-        if (write_log) daemonWrite(io, "  log file: known/daemon.log\n");
+        daemonWrite(io, "  index file: fixtures/index.sqlite3\n");
+        if (write_log) daemonWrite(io, "  log file: fixtures/daemon.log\n");
         daemonWrite(io, "  press Ctrl+C to stop\n");
 
         while (true) {
-            const row = try popPendingAction(a, io);
+            const row = try popQueueRow(a, io);
             if (row) |action| {
-                const desc = try describeAction(a, action);
+                const desc = try describeQueueRow(a, action);
                 var msg_buf: [256]u8 = undefined;
                 const m = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s}\n", .{desc}) catch "daemon: processing\n";
                 daemonWrite(io, m);
 
                 // shared validator: invalid → warn + drop (already popped).
-                validateActionRow(action) catch {
+                validateQueueRow(action) catch {
                     daemonWriteErr(io, "daemon: invalid action row — dropping: ");
                     daemonWriteErr(io, desc);
                     daemonWriteErr(io, "\n");
@@ -4238,10 +3987,29 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
 
                 // skip-and-complete if a fresh fixture exists (unless scope_all=1)
                 if (action.scope_all == null or action.scope_all.? != 1) {
+                    // 1. sqlite says a row already exists → nothing to do.
                     if (try fixtureExists(a, io, h, p, m_d, plat)) {
                         daemonWrite(io, "daemon: fresh fixture exists for ");
                         daemonWrite(io, desc);
                         daemonWrite(io, " — completing without re-capture\n");
+                        continue;
+                    }
+                    // 2. no sqlite row yet, but a valid committed
+                    // `fixtures/<id>.json` exists → lazy backfill: upsert
+                    // the fixtures row from the committed capture and
+                    // complete without spawning a child.
+                    if (committedFixtureValid(a, io, h, p, m_d, plat)) {
+                        try upsertFixture(a, io, .{
+                            .harness = h,
+                            .provider = p,
+                            .model = m_d,
+                            .platform = plat,
+                            .runner = getParentPid(),
+                            .generated_at = unixNow(io),
+                        });
+                        daemonWrite(io, "daemon: committed fixture for ");
+                        daemonWrite(io, desc);
+                        daemonWrite(io, " is valid — backfilled fixtures row without re-capture\n");
                         continue;
                     }
                 }
@@ -4268,7 +4036,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                         daemonWrite(io, " — re-queued as handoff for the next agent/platform\n");
                         var requeue = action;
                         requeue.available = 0;
-                        try upsertAction(a, io, requeue);
+                        try upsertQueueRow(a, io, requeue);
                         continue;
                     }
                 }
@@ -4291,7 +4059,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                         const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
                         requeue.available = if (harnessAvailable(io, agent)) 1 else 0;
                     }
-                    try upsertAction(a, io, requeue);
+                    try upsertQueueRow(a, io, requeue);
                 }
             } else {
                 daemonWrite(io, "daemon: idle, queue empty, sleeping 5s\n");
@@ -4307,37 +4075,68 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return now - generated_at > threshold_minutes * 60;
     }
 
-    /// expand a partial (seed) action over the `knownFixturesForKnownAgents`
-    /// recipes. A seed is an action: "capture every applicable recipe
+    /// Lazy file-based backfill (replaces the removed JSONL migration).
+    /// Given a full combo `(h, p, m, plat)`, returns true when a valid
+    /// committed `fixtures/<fixture_id>.json` exists whose `cooked`
+    /// block parses AND carries the exact dims. The caller (daemon
+    /// skip-and-complete) then upserts the `fixtures` row from the
+    /// file's state and completes without spawning a capture — the
+    /// `refresh:false` / already-captured semantics. No timestamps are
+    /// preserved from the file (fixtures carry none); the row records
+    /// `runner = getParentPid()` and `generated_at = unixNow()`.
+    fn committedFixtureValid(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) bool {
+        _ = plat;
+        const agent = (agentIdFrom(a, h, p, m) catch return false) orelse return false;
+        defer a.free(agent);
+        const f_id = fixtureId(a, agent) catch return false;
+        defer a.free(f_id);
+        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return false;
+        defer a.free(path);
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return false;
+        defer a.free(data);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return false;
+        defer parsed.deinit();
+        if (parsed.value != .object) return false;
+        const cooked = parsed.value.object.get("cooked") orelse return false;
+        if (cooked != .object) return false;
+        const cob = cooked.object;
+        const ch = sjstr(cob, "harness_id");
+        const cp = sjstr(cob, "provider_id");
+        const cm = sjstr(cob, "model_id");
+        return std.mem.eql(u8, ch, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m);
+    }
+
+    /// expand a partial (seed) action over the `recipesForFixtures`
+    /// recipes. A seed is a queue row: "capture every applicable recipe
     /// matching these dims". Every applicable recipe (set dims equal,
     /// platform empty or host) is queued as a full action, then the seed is
     /// dropped (already popped).
-    fn expandSeed(a: std.mem.Allocator, io: std.Io, seed: ActionRow) !void {
-        const host = platformAlphanumericId();
+    fn expandSeed(a: std.mem.Allocator, io: std.Io, seed: QueueRow) !void {
+        const host = platformId();
         const now = unixNow(io);
 
-        var applicable: std.ArrayListUnmanaged(KnownFixturesForKnownAgents) = .empty;
+        var applicable: std.ArrayListUnmanaged(RecipesForFixtures) = .empty;
         defer applicable.deinit(a);
-        for (knownFixturesForKnownAgents) |c| {
+        for (recipesForFixtures) |c| {
             if (!recipeMatchesAction(seed, c, host)) continue;
             try applicable.append(a, c);
         }
 
         if (applicable.items.len == 0) {
             daemonWriteErr(io, "daemon: warning: no capture recipe applicable for ");
-            daemonWriteErr(io, try describeAction(a, seed));
+            daemonWriteErr(io, try describeQueueRow(a, seed));
             daemonWriteErr(io, "\n");
             return;
         }
 
         for (applicable.items) |c| {
-            const parts = try splitAgentAlphanumericId(a, c.agent_alphanumeric_id);
+            const parts = try splitAgentId(a, c.agent_id);
             defer {
                 a.free(parts[0]);
                 a.free(parts[1]);
                 a.free(parts[2]);
             }
-            var combo: ActionRow = .{
+            var combo: QueueRow = .{
                 .harness = parts[0],
                 .provider = parts[1],
                 .model = parts[2],
@@ -4346,16 +4145,16 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 .created_at = now,
             };
             if (seed.available != null) {
-                combo.available = if (harnessAvailable(io, c.agent_alphanumeric_id)) 1 else 0;
+                combo.available = if (harnessAvailable(io, c.agent_id)) 1 else 0;
             }
-            try validateActionRow(combo);
-            try upsertAction(a, io, combo);
+            try validateQueueRow(combo);
+            try upsertQueueRow(a, io, combo);
         }
     }
 
     /// does every dim that `seed` has set equal the recipe's dims?
-    fn recipeMatchesAction(seed: ActionRow, combo: KnownFixturesForKnownAgents, host: []const u8) bool {
-        const parts = splitAgentAlphanumericId(std.heap.page_allocator, combo.agent_alphanumeric_id) catch return false;
+    fn recipeMatchesAction(seed: QueueRow, combo: RecipesForFixtures, host: []const u8) bool {
+        const parts = splitAgentId(std.heap.page_allocator, combo.agent_id) catch return false;
         defer {
             std.heap.page_allocator.free(parts[0]);
             std.heap.page_allocator.free(parts[1]);
@@ -4376,10 +4175,10 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return true;
     }
 
-    /// spawn `agent-detection-dev refresh run` for a single queued combo.
+    /// spawn `agent-detect-dev refresh run` for a single queued combo.
     /// Returns true on successful capture (exit 0). The child inherits the
     /// daemon's env, which is the user's terminal — not the dev harness.
-    fn runOneComboResult(a: std.mem.Allocator, io: std.Io, init: std.process.Init, action: ActionRow) !bool {
+    fn runOneComboResult(a: std.mem.Allocator, io: std.Io, init: std.process.Init, action: QueueRow) !bool {
         const h = action.harness orelse return false;
         const p = action.provider orelse return false;
         const m_d = action.model orelse return false;
@@ -4387,19 +4186,19 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         // 1. find the recipe for the harness.
         const target_agent_aid = (try agentIdFrom(a, h, p, m_d)) orelse {
             daemonWriteErr(io, "daemon: no recipe applicable for ");
-            daemonWriteErr(io, try describeAction(a, action));
+            daemonWriteErr(io, try describeQueueRow(a, action));
             daemonWriteErr(io, " — skipping\n");
             return false;
         };
-        var combo: ?KnownFixturesForKnownAgents = null;
-        for (knownFixturesForKnownAgents) |c| {
-            if (std.mem.eql(u8, c.agent_alphanumeric_id, target_agent_aid)) {
+        var combo: ?RecipesForFixtures = null;
+        for (recipesForFixtures) |c| {
+            if (std.mem.eql(u8, c.agent_id, target_agent_aid)) {
                 combo = c;
                 break;
             }
         }
         const c = combo orelse {
-            daemonWriteErr(io, "daemon: no KnownFixturesForKnownAgents recipe for ");
+            daemonWriteErr(io, "daemon: no RecipesForFixtures recipe for ");
             daemonWriteErr(io, target_agent_aid);
             daemonWriteErr(io, " — skipping\n");
             return false;
@@ -4446,7 +4245,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             };
         }
 
-        // 3. spawn the child (`refresh run` / `known agent`)
+        // 3. spawn the child (`refresh run` / `fixtures agent`)
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const self_path_len = std.process.executablePath(io, &self_path_buf) catch |err| {
             daemonWriteErr(io, "daemon: executablePath failed: ");
@@ -4488,7 +4287,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             .exited => |code| {
                 if (code != 0) {
                     daemonWriteErr(io, "daemon: worker failed for ");
-                    daemonWriteErr(io, try describeAction(a, action));
+                    daemonWriteErr(io, try describeQueueRow(a, action));
                     daemonWriteErr(io, " (exit code ");
                     var n_buf: [16]u8 = undefined;
                     daemonWriteErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{code}));
@@ -4502,14 +4301,14 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 }
                 {
                     var buf2: [256]u8 = undefined;
-                    const msg = std.fmt.bufPrint(buf2[0..], "daemon: captured {s}\n", .{try describeAction(a, action)}) catch "daemon: captured\n";
+                    const msg = std.fmt.bufPrint(buf2[0..], "daemon: captured {s}\n", .{try describeQueueRow(a, action)}) catch "daemon: captured\n";
                     daemonWrite(io, msg);
                 }
                 return true;
             },
             else => {
                 daemonWriteErr(io, "daemon: child terminated abnormally for ");
-                daemonWriteErr(io, try describeAction(a, action));
+                daemonWriteErr(io, try describeQueueRow(a, action));
                 daemonWriteErr(io, "\n");
                 return false;
             },
@@ -4518,10 +4317,10 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
 
     /// refuse to start the daemon if the current process is inside
     /// an agent. Two checks, both fail-closed:
-    ///   - env markers: refuse if any of the known agent-marker env
+    ///   - env markers: refuse if any of the fixtures agent-marker env
     ///     vars is set
     ///   - process ancestry: refuse if any ancestor's basename
-    ///     matches a known agent proc name
+    ///     matches a fixtures agent proc name
     fn assertNotInAgent(a: std.mem.Allocator, init: std.process.Init) !void {
         const io = init.io;
         const env_markers = [_][]const u8{
@@ -4536,7 +4335,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         while (it.next()) |kv| {
             for (env_markers) |m| {
                 if (std.mem.eql(u8, kv.key_ptr.*, m)) {
-                    daemonWriteErr(io, "known daemon: refusing to start — env marker ");
+                    daemonWriteErr(io, "fixtures daemon: refusing to start — env marker ");
                     daemonWriteErr(io, m);
                     daemonWriteErr(io, " is set. This command must be run by a user, not inside an agent.\n");
                     return error.RunningInAgent;
@@ -4564,9 +4363,9 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         for (anc.names) |n| {
             for (proc_names) |p| {
                 if (std.mem.eql(u8, n, p)) {
-                    daemonWriteErr(io, "known daemon: refusing to start — ancestor process ");
+                    daemonWriteErr(io, "fixtures daemon: refusing to start — ancestor process ");
                     daemonWriteErr(io, n);
-                    daemonWriteErr(io, " is a known agent. This command must be run by a user, not inside an agent.\n");
+                    daemonWriteErr(io, " is a fixtures agent. This command must be run by a user, not inside an agent.\n");
                     return error.RunningInAgent;
                 }
             }
@@ -4578,84 +4377,104 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
 // ============================================================================
 // main entry
 
+/// register a CLI action, rejecting a second distinct action (the
+/// canonical spellings cooked/trailer/help/version).
+fn registerAction(io: std.Io, current: *[]const u8, act: []const u8) !void {
+    if (current.*.len != 0 and !std.mem.eql(u8, current.*, act)) {
+        writeErr(io, "conflicting arguments\n");
+        writeOut(io, usage);
+        return error.ConflictingAction;
+    }
+    current.* = act;
+}
+
 pub fn main(init: std.process.Init) !u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
     // subcommand dispatch. The dev binary (built with -Ddev=true)
-    // accepts a `known` subcommand namespace: `known --help`,
-    // `known daemon`, `known agent`, `known queue [--harness=...]
-    // [--provider=...] [--model=...]`, `known queue --recipes`,
-    // `known dequeue`, `known purge`, plus `refresh run`. The
-    // `known`/`refresh` dispatch is compiled out of the released
-    // binary (dev_build is false) — the released and dev binaries both
-    // run the action parser below: `agent`, `[--]trailer`, `help`,
-    // `version` (with no arguments showing help).
+    // accepts a `raw` action (standalone raw block) plus a `fixtures`
+    // subcommand namespace: `fixtures --help`, `fixtures daemon`,
+    // `fixtures capture`, `fixtures queue [--harness=...]
+    // [--provider=...] [--model=...]`, `fixtures queue --recipes`,
+    // `fixtures dequeue`, plus `refresh run`. The
+    // `raw`/`fixtures`/`refresh` dispatch is compiled out of the
+    // released binary (dev_build is false) — the released and dev
+    // binaries both run the action parser below: `cooked`, `trailer`,
+    // `help`, `version` (with no arguments showing help).
     if (dev_build) {
         var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
         defer sub_iter.deinit();
         _ = sub_iter.skip(); // argv0
         const cmd = sub_iter.next() orelse "";
         const sub = sub_iter.next() orelse "";
-        if (std.mem.eql(u8, cmd, "known")) {
+        if (std.mem.eql(u8, cmd, "fixtures")) {
             if (sub.len == 0 or
                 std.mem.eql(u8, sub, "--help") or
                 std.mem.eql(u8, sub, "-h") or
                 std.mem.eql(u8, sub, "help"))
             {
-                return dev.runKnownHelp(init);
+                return dev.runFixturesHelp(init);
             } else if (std.mem.eql(u8, sub, "daemon")) {
-                return dev.runKnownDaemon(init);
-            } else if (std.mem.eql(u8, sub, "agent")) {
-                return dev.runKnownAgent(init);
+                return dev.runFixturesDaemon(init);
+            } else if (std.mem.eql(u8, sub, "capture")) {
+                return dev.runFixturesCapture(init);
             } else if (std.mem.eql(u8, sub, "queue")) {
-                return dev.runKnownQueue(init);
+                return dev.runFixturesQueue(init);
             } else if (std.mem.eql(u8, sub, "dequeue")) {
-                return dev.runKnownDequeue(init);
+                return dev.runFixturesDequeue(init);
             } else {
-                writeErr(io, "known: unknown subcommand — run `known --help`\n");
-                writeOut(io, dev.knownUsage);
+                writeErr(io, "fixtures: unknown subcommand — run `fixtures --help`\n");
+                writeOut(io, dev.fixturesUsage);
                 return 2;
             }
         } else if (std.mem.eql(u8, cmd, "refresh") and std.mem.eql(u8, sub, "run")) {
             // `refresh run` — invoked by the daemon as a child to
-            // capture the current session into `known/<stem>.json` and
-            // append a `refresh:false` event to `known/index.jsonl`.
-            // The child inherits the harness env and config files the
-            // daemon set up via the `KnownFixturesForKnownAgents.buildEnv`
-            // recipe, so detection should resolve to that harness.
-            return dev.runKnownAgent(init);
+            // capture the current session into a single
+            // `fixtures/<fixture_id>.json` and upsert the matching
+            // fixtures row. The child inherits the harness env and
+            // config files the daemon set up via the
+            // `RecipesForFixtures.buildEnv` recipe, so detection should
+            // resolve to that harness.
+            return dev.runFixturesCapture(init);
+        } else if (std.mem.eql(u8, cmd, "raw")) {
+            return dev.runRawAction(init);
         }
     }
 
     // action parser. The canonical spellings are the bare words
-    // `agent`, `trailer`, `help`, and `version`; the `--json`,
-    // `--trailer`, `--help`, and `--version` / `-V` forms are legacy
-    // aliases kept for existing callers. No arguments prints help.
-    var action: []const u8 = ""; // "", "json", "trailer", "help", "version"
+    // `cooked`, `trailer`, `help`, and `version`; the `--help` and
+    // `--version` / `-V` forms are aliases. No arguments prints help.
+    // `cooked` and `trailer` accept an optional complete combo
+    // (`--harness=H --provider=P --model=M` — all three or none)
+    // for recipe-mode output.
+    var action: []const u8 = ""; // "", "cooked", "trailer", "help", "version"
+    var combo_h: []const u8 = "";
+    var combo_p: []const u8 = "";
+    var combo_m: []const u8 = "";
     var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
     defer args_it.deinit();
     _ = args_it.skip(); // argv0
     while (args_it.next()) |arg| {
-        const act = if (std.mem.eql(u8, arg, "agent") or std.mem.eql(u8, arg, "--json"))
-            "json"
-        else if (std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "--trailer"))
-            "trailer"
-        else if (std.mem.eql(u8, arg, "help") or std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h"))
-            "help"
-        else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V"))
-            "version"
-        else {
+        if (std.mem.eql(u8, arg, "cooked")) {
+            try registerAction(io, &action, "cooked");
+        } else if (std.mem.eql(u8, arg, "trailer")) {
+            try registerAction(io, &action, "trailer");
+        } else if (std.mem.eql(u8, arg, "help") or std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
+            try registerAction(io, &action, "help");
+        } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
+            try registerAction(io, &action, "version");
+        } else if (std.mem.startsWith(u8, arg, "--harness=")) {
+            combo_h = arg["--harness=".len..];
+        } else if (std.mem.startsWith(u8, arg, "--provider=")) {
+            combo_p = arg["--provider=".len..];
+        } else if (std.mem.startsWith(u8, arg, "--model=")) {
+            combo_m = arg["--model=".len..];
+        } else {
             writeErr(io, "unknown argument\n");
             writeOut(io, usage);
             return 2;
-        };
-        if (action.len != 0 and !std.mem.eql(u8, action, act)) {
-            writeErr(io, "conflicting arguments\n");
-            writeOut(io, usage);
-            return 2;
         }
-        action = act;
     }
 
     if (action.len == 0 or std.mem.eql(u8, action, "help")) {
@@ -4668,9 +4487,38 @@ pub fn main(init: std.process.Init) !u8 {
         // `build.zig.zon`'s `.version` field via `build_options`.
         // Same value is baked into the released binary, the dev
         // binary, and every `zig build dist` cross-compile target.
-        writeOut(io, "agent-detection ");
+        writeOut(io, "agent-detect ");
         writeOut(io, build_options.version);
         writeOut(io, "\n");
+        return 0;
+    }
+
+    // recipe mode: a complete combo resolves against the rule tables,
+    // skipping live detection. Partial combos are rejected.
+    const has_combo = combo_h.len > 0 or combo_p.len > 0 or combo_m.len > 0;
+    if (has_combo) {
+        if (combo_h.len == 0 or combo_p.len == 0 or combo_m.len == 0) {
+            writeErr(io, "recipe-mode needs all three of --harness=, --provider=, --model= (or none)\n");
+            writeOut(io, usage);
+            return 2;
+        }
+        const d = (try resolveRecipe(a, combo_h, combo_p, combo_m)) orelse {
+            writeErr(io, "unknown combo — not a known harness/provider/model recipe\n");
+            return 2;
+        };
+        if (std.mem.eql(u8, action, "trailer")) {
+            if (d.trailer) |t| {
+                writeOut(io, t);
+                writeOut(io, "\n");
+                return 0;
+            }
+            writeErr(io, "unable to determine trailer for the combo\n");
+            return 2;
+        }
+        // cooked in recipe mode: emit the canonical object.
+        var buf: std.ArrayList(u8) = .empty;
+        try buildJson(a, &d, init.environ_map, null, .{}, &buf);
+        writeOut(io, buf.items);
         return 0;
     }
 
@@ -4686,7 +4534,7 @@ pub fn main(init: std.process.Init) !u8 {
         writeErr(io, "unable to determine trailer (harness/provider/model unidentified) — stop and inform the user\n");
         return 2;
     }
-    // action == "json": the detection report.
+    // action == "cooked": the detection report (canonical at root).
     var buf: std.ArrayList(u8) = .empty;
     try buildJson(a, &d, init.environ_map, null, .{}, &buf);
     writeOut(io, buf.items);

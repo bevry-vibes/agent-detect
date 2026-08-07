@@ -1,35 +1,44 @@
 {
-  "canonical": {
-    "harness_label": "Pi",
+  "cooked": {
+    "harness_label": "Kilo Code",
     "harness_short_title": null,
-    "harness_name": "pi",
-    "harness_alphanumeric_id": "pi",
+    "harness_name": "kilo",
+    "harness_id": "kilo",
     "harness_license": "MIT",
     "provider_label": "Anthropic",
     "provider_name": "anthropic",
-    "provider_alphanumeric_id": "anthropic",
+    "provider_id": "anthropic",
     "provider_closed_training": "opt-out",
     "provider_open_training": null,
     "model_label": "Claude Sonnet 4",
     "model_short_title": null,
     "model_name": "claude-sonnet-4",
-    "model_alphanumeric_id": "claudesonnet4",
+    "model_id": "claudesonnet4",
     "model_reciprocity": "closed",
-    "agent_alphanumeric_id": "pi-anthropic-claudesonnet4",
+    "agent_id": "kilo-anthropic-claudesonnet4",
     "reciprocal": false,
-    "trailer": "Co-authored-by: Pi · Claude Sonnet 4 <pi-anthropic-claudesonnet4@local>"
+    "trailer": "Co-authored-by: Kilo Code · Claude Sonnet 4 <kilo-anthropic-claudesonnet4@local>"
   },
   "raw": {
-    "platform_alphanumeric_id": "darwin",
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
     "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
+      "KILO_API_KEY": {
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 6568,
+        "pid": 6311,
         "name": "agent-detection-dev"
       },
       {
@@ -42,8 +51,8 @@
       }
     ],
     "harness-urls": [
-      "https://github.com/earendil-works/pi",
-      "https://github.com/earendil-works/pi/blob/main/LICENSE"
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
     ],
     "provider-urls": [
       "https://www.anthropic.com/legal/commercial-terms",
@@ -53,5 +62,6 @@
       "https://www.anthropic.com/claude/sonnet",
       "https://docs.anthropic.com/en/docs/about-claude/models"
     ]
-  }
+  },
+  "trailer": "Co-authored-by: Kilo Code · Claude Sonnet 4 <kilo-anthropic-claudesonnet4@local>"
 }

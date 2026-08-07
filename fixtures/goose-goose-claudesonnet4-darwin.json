@@ -1,28 +1,40 @@
 {
-  "canonical": {
+  "cooked": {
     "harness_label": "Goose",
     "harness_short_title": null,
     "harness_name": "goose",
-    "harness_alphanumeric_id": "goose",
+    "harness_id": "goose",
     "harness_license": "Apache-2.0",
     "provider_label": "Goose",
     "provider_name": "goose",
-    "provider_alphanumeric_id": "goose",
+    "provider_id": "goose",
     "provider_closed_training": "never",
     "provider_open_training": "never",
     "model_label": "Claude Sonnet 4",
     "model_short_title": null,
     "model_name": "claude-sonnet-4",
-    "model_alphanumeric_id": "claudesonnet4",
+    "model_id": "claudesonnet4",
     "model_reciprocity": "closed",
-    "agent_alphanumeric_id": "goose-goose-claudesonnet4",
+    "agent_id": "goose-goose-claudesonnet4",
     "reciprocal": false,
-    "trailer": "Co-authored-by: Goose - Claude Sonnet 4 <goose-claudesonnet4@local>"
+    "trailer": "Co-authored-by: Goose · Claude Sonnet 4 <goose-goose-claudesonnet4@local>"
   },
   "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
     "env": {
       "GOOSE_WORKING_DIR": {
-        "present": false
+        "value": "<home>",
+        "present": true
       },
       "GOOSE_PROVIDER": {
         "present": false
@@ -31,14 +43,29 @@
         "present": false
       },
       "GOOSE_TERMINAL": {
-        "value": "fake",
+        "value": "true",
         "present": true
       },
       "GOOSE_MODE": {
-        "present": false
+        "value": "auto",
+        "present": true
       }
     },
-    "/Users/balupton/.config/goose/config.yaml": {
+    "process_lineage": [
+      {
+        "pid": 6522,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 5891,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 83120,
+        "name": "bash"
+      }
+    ],
+    "<home>/.config/goose/config.yaml": {
       "active_provider": "goose",
       "providers.goose.model": "claude-sonnet-4"
     },
@@ -53,13 +80,7 @@
     "model-urls": [
       "https://www.anthropic.com/claude/sonnet",
       "https://docs.anthropic.com/en/docs/about-claude/models"
-    ],
-    "platform_alphanumeric_id": "darwinaarch64",
-    "process_lineage": [
-      {
-        "pid": 23924,
-        "name": "agent-detection"
-      }
     ]
-  }
+  },
+  "trailer": "Co-authored-by: Goose · Claude Sonnet 4 <goose-goose-claudesonnet4@local>"
 }

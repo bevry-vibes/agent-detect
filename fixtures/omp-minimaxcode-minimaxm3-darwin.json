@@ -1,31 +1,56 @@
 {
-  "canonical": {
+  "cooked": {
     "harness_label": "omp",
     "harness_short_title": null,
     "harness_name": "omp",
-    "harness_alphanumeric_id": "omp",
+    "harness_id": "omp",
     "harness_license": "MIT",
     "provider_label": "Minimax Code",
     "provider_name": "minimax-code",
-    "provider_alphanumeric_id": "minimaxcode",
+    "provider_id": "minimaxcode",
     "provider_closed_training": "opt-in",
     "provider_open_training": "opt-in",
     "model_label": "MiniMax M3",
     "model_short_title": "M3",
     "model_name": "MiniMax-M3",
-    "model_alphanumeric_id": "minimaxm3",
+    "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
-    "agent_alphanumeric_id": "omp-minimaxcode-minimaxm3",
+    "agent_id": "omp-minimaxcode-minimaxm3",
     "reciprocal": false,
-    "trailer": "Co-authored-by: omp - MiniMax M3 <omp-minimaxm3@local>"
+    "trailer": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>"
   },
   "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
     "env": {
       "OMP_API_KEY": {
         "present": true
       }
     },
-    "/Users/balupton/.omp/agent/config.yml": {
+    "process_lineage": [
+      {
+        "pid": 6235,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 5891,
+        "name": "agent-detection-dev"
+      },
+      {
+        "pid": 83120,
+        "name": "bash"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
       "modelRoles.default": "minimax-code/MiniMax-M3"
     },
     "harness-urls": [],
@@ -37,13 +62,7 @@
       "https://huggingface.co/MiniMaxAI/MiniMax-M3",
       "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
       "https://www.minimax.io/blog/minimax-m3"
-    ],
-    "platform_alphanumeric_id": "darwinaarch64",
-    "process_lineage": [
-      {
-        "pid": 23929,
-        "name": "agent-detection"
-      }
     ]
-  }
+  },
+  "trailer": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>"
 }

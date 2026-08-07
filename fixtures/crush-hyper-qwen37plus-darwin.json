@@ -1,26 +1,36 @@
 {
-  "canonical": {
+  "cooked": {
     "harness_label": "Crush",
     "harness_short_title": null,
     "harness_name": "crush",
-    "harness_alphanumeric_id": "crush",
+    "harness_id": "crush",
     "harness_license": "FSL-1.1-MIT",
     "provider_label": "Charm Hyper",
     "provider_name": "hyper",
-    "provider_alphanumeric_id": "hyper",
+    "provider_id": "hyper",
     "provider_closed_training": "never",
     "provider_open_training": "never",
     "model_label": "Qwen3.7-Plus",
     "model_short_title": null,
     "model_name": "qwen3.7-plus",
-    "model_alphanumeric_id": "qwen37plus",
+    "model_id": "qwen37plus",
     "model_reciprocity": "closed",
-    "agent_alphanumeric_id": "crush-hyper-qwen37plus",
+    "agent_id": "crush-hyper-qwen37plus",
     "reciprocal": false,
     "trailer": "Co-authored-by: Crush · Qwen3.7-Plus <crush-hyper-qwen37plus@local>"
   },
   "raw": {
-    "platform_alphanumeric_id": "darwin",
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
     "env": {
       "CRUSH_API_KEY": {
         "present": true
@@ -55,5 +65,6 @@
       "https://qwen.ai/",
       "https://qwen.ai/blog?id=qwen3.7-plus"
     ]
-  }
+  },
+  "trailer": "Co-authored-by: Crush · Qwen3.7-Plus <crush-hyper-qwen37plus@local>"
 }
