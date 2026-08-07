@@ -63,3 +63,10 @@ bin/
 # dev daemon telemetry (written by `known daemon --write-log`; already
 # covered by **/*.log above, listed explicitly for discoverability)
 known/daemon.log
+
+# SQLite index/queue DB (written/read via the `sqlite3` CLI; carries
+# per-host queue state and fixture history — never committed)
+known/*.sqlite3
+known/*.sqlite3-journal
+known/*.sqlite3-wal
+known/*.sqlite3-shm

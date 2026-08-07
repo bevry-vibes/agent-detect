@@ -13,58 +13,60 @@ A fixture is `known/<known_alphanumeric_id>.agent.json` plus its matching
 (e.g. `cline-clinepass-kimik3-darwin`). The binary is the only thing
 that writes fixtures — agents never hand-author them.
 
-`known/index.jsonl` is a state store: exactly one event per 4-tuple
-`(harness, provider, model, platform)`, each dim nullable, with the
-derived `known_/agent_alphanumeric_id` *not* stored. Rows with missing
-dims are **seeds**: the daemon expands them over the known recipes
-(`knownFixturesForKnownAgents`), ensuring each applicable full combo is
-queued as `refresh: true` and removing the seed. Rows the daemon cannot
-expand are warned once per run and left unchanged.
+`known/index.sqlite3` is the state store (a single SQLite database read
+and written via the system `sqlite3` CLI). It has two tables:
+`fixtures` (one row per captured 4-tuple `(harness, provider, model,
+platform)`, `platform` always the host) and `actions` (the work queue:
+dims + scope columns + `available` probe status). Rows in `actions`
+with missing dims are **seeds**: the daemon expands them over the known
+recipes (`knownFixturesForKnownAgents`), queuing each applicable full
+combo. Rows the daemon cannot expand are warned once per run and left
+unchanged.
 
 The refresh flow uses two binaries with strict role separation:
 
 - **`agent-detection-dev known daemon`** — only the *user* runs this,
-  never the agent. It polls `known/index.jsonl` every few seconds and
-  spawns captures for entries with `refresh: true`, expanding seeds
-  over known recipes first.
+  never the agent. It pops one `actions` row per poll, expands seeds
+  over known recipes first, then spawns captures for full combos.
 - **`agent-detection-dev known agent`** — runs *inside an agent*
   session; captures the current session into a fixture and upserts a
-  `refresh: false` event for it in the index. A partial detection
-  records a `refresh: true` seed instead of a fixture and exits 2.
-- **`agent-detection-dev known queue`** — create-or-flip: existing rows
-  matching the shared filters flip to `refresh: true`; if none match, a
-  seed row is created with the positive dims (`--harness=`, `--provider=`,
-  `--model=`, `--platform=`, or the composite `--agent=`/`--known=`)
-  and the rest `null`.
-- **`agent-detection-dev known dequeue`** — sets `refresh: false` on
-  every row matching the shared filters (does not remove them).
-- **`agent-detection-dev known purge`** — deletes the matching rows.
+  `fixtures` row. **Fixtures only** — a partial detection exits 2 with
+  no store change (never writes `actions`).
+- **`agent-detection-dev known queue`** — **enumerate + upsert only, no
+  evaluation.** With a scope flag it upserts each candidate into
+  `actions`; without one it creates a seed row with the positive dims
+  (`--harness=`, `--provider=`, `--model=`, `--platform=`, or the
+  composite `--agent=`/`--known=`) and the rest `null`.
+- **`agent-detection-dev known dequeue`** — **DELETE only.** Deletes the
+  matching `actions` rows; never touches `fixtures`.
 
-The shared filters (at least one required for `queue`/`dequeue`/`purge`):
+The shared filters (at least one required for `queue`/`dequeue`):
 `--harness=H`, `--provider=P`, `--model=M`, `--platform=PLAT` constrain
-their dim to equality; `--no-harness`, `--no-provider`, `--no-model`,
-`--no-platform` constrain it to null; `--known=<h>-<p>-<m>-<plat>` is an
+their dim to equality; `--known=<h>-<p>-<m>-<plat>` is an
 exact 4-part id; `--agent=<h>-<p>-<m>` sets h-p-m (platform may be
 added with `--platform=`). Dim filters compose (AND) with the scope
-flags below.
+flags below. (`--no-harness`/`--no-provider`/`--no-model`/
+`--no-platform` were removed — an unset dim is expressed by simply
+omitting it.)
 
-The scope flags (exactly one per call, shared by `queue`/`dequeue`/
-`purge`) select a candidate set instead of a dim filter:
-- `--all` — every index row on this platform.
-- `--stale` — rows whose runner died or whose `generated_at` is older
-  than the threshold (`--older-than-days=N`, `--older-than-hours=N`;
-  default 7 days).
-- `--partial` — rows with at least one missing dim (seeds).
+The scope flags (exactly one per call, shared by `queue`/`dequeue`)
+select a candidate set instead of a dim filter:
+- `--all` — every `fixtures` row on this platform.
+- `--stale` — `fixtures` rows older than the threshold
+  (`--stale-by-days=N`, `--stale-by-minutes=N`; `--stale` is an alias
+  for `--stale-by-days=7`).
+- `--partial` — `actions` rows with at least one missing dim (seeds).
 - `--recipes` — every known recipe (`knownFixturesForKnownAgents`,
   host platform).
 - `--missing-fixture` — recipes whose `known/<id>.agent.json` and/or
   `.trailer.txt` are absent from disk.
-`queue` creates/flips `refresh:true` rows for the candidates,
-`dequeue` sets `refresh:false` on existing candidates, and `purge`
-deletes them. By default nothing is gated on harness availability;
-`--available` (a modifier, combinable with any single scope flag)
-narrows candidates to harnesses whose binary is installed and answers
-`--version`.
+`queue` upserts the candidates into `actions`; `dequeue` deletes them.
+By default nothing is gated on harness availability; `--available` (a
+modifier, combinable with any single scope flag) probes each
+candidate's harness and records `1` (available) or `0` (unavailable)
+into the `available` column. Unavailable rows are **kept queued** as
+handoff work for the next agent/platform; `--unavailable` (dequeue
+only, alias `--available=0`) matches those `available=0` rows.
 
 To refresh one fixture end-to-end:
 
@@ -80,16 +82,16 @@ To refresh one fixture end-to-end:
      --model=<model_alphanumeric_id> \
      --platform=darwin
    ```
-3. The daemon polls the index, sees `refresh: true`, spawns
-   `known agent`, which writes the fixture file and appends a
-   `refresh: false` event.
+3. The daemon pops the action, spawns `known agent`, which writes the
+   fixture file and upserts the matching `fixtures` row.
 
-For batch refreshes: `known queue --all` re-queues every entry in
-`known/index.jsonl`, `known queue --stale [--older-than-days=N]
-[--older-than-hours=N]` queues entries older than the threshold,
+For batch refreshes: `known queue --all` re-queues every row in
+`fixtures`, `known queue --stale [--stale-by-days=N]
+[--stale-by-minutes=N]` queues only rows older than the threshold,
 `known queue --recipes` re-queues every committed recipe, and
 `known queue --missing-fixture` queues recipes whose fixture files are
-missing. Add `--available` to skip harnesses that aren't installed.
+missing. Add `--available` to probe-and-record harness availability
+instead of dropping unavailable harnesses.
 
 ## add a new harness rule
 

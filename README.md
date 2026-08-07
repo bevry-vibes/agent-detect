@@ -6,14 +6,14 @@ Infers the current agent's **harness**, **provider**, and **model** — multi-ha
 
 Identify the binary for your platform from the [latest release](https://github.com/bevry-labs/agent-detection/releases/latest):
 
-| binary                                                                                                                                              | os                   | arch   |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------ |
-| [`agent-detection-windows-x86_64.exe`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-windows-x86_64.exe)   | Windows              | x86_64 |
-| [`agent-detection-windows-aarch64.exe`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-windows-aarch64.exe) | Windows              | ARM64  |
-| [`agent-detection-macos-x86_64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-macos-x86_64)               | macOS                | x86_64 |
-| [`agent-detection-macos-aarch64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-macos-aarch64)             | macOS                | ARM64  |
-| [`agent-detection-linux-x86_64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-linux-x86_64)               | Linux (static, musl) | x86_64 |
-| [`agent-detection-linux-aarch64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-linux-aarch64)             | Linux (static, musl) | ARM64  |
+| binary                                                                                                                                              | os                   | arch   | size  |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------ | ----- |
+| [`agent-detection-windows-x86_64.exe`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-windows-x86_64.exe)   | Windows              | x86_64 | 535K  |
+| [`agent-detection-windows-aarch64.exe`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-windows-aarch64.exe) | Windows              | ARM64  | 479K  |
+| [`agent-detection-macos-x86_64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-macos-x86_64)               | macOS                | x86_64 | 222K  |
+| [`agent-detection-macos-aarch64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-macos-aarch64)             | macOS                | ARM64  | 268K  |
+| [`agent-detection-linux-x86_64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-linux-x86_64)               | Linux (static, musl) | x86_64 | 248K  |
+| [`agent-detection-linux-aarch64`](https://github.com/bevry-labs/agent-detection/releases/latest/download/agent-detection-linux-aarch64)             | Linux (static, musl) | ARM64  | 237K  |
 
 > If your platform is not supported, skip ahead to [contributing](#contributing).
 

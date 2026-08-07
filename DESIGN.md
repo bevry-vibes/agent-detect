@@ -52,33 +52,45 @@ Windows uses `%APPDATA%\...`). The fixture filename includes the
 invalidates another platform's committed files. Each platform has
 its own `known/<id>.{agent.json,.trailer.txt}` — the `.agent.json`
 suffix mirrors the `.trailer.txt` sibling so fixtures are distinct
-from the `known/index.jsonl` queue tracker and any non-fixture JSON.
+from the `known/index.sqlite3` queue tracker (the SQLite state store) and
+any non-fixture JSON.
 The filename contract is defined on the `known agent` capture
 (`dev.runKnownAgent`) in `src/main.zig`.
 
-### state-store event log (cross-process coordination)
+### SQLite state store (cross-process coordination)
 
-`known/index.jsonl` keeps exactly one event per 4-tuple key — the
-`(harness_alphanumeric_id, provider_alphanumeric_id,
-model_alphanumeric_id, platform_alphanumeric_id)` dims, upserted in
-place — no duplicates, so the file's tail is the whole current state.
-The index stores facts only: the derived
-`known_alphanumeric_id`/`agent_alphanumeric_id` are *not* stored;
-they're recomputed per use (`knownIdFrom`/`agentIdFrom`) for fixture
-naming and messaging. Each dim is nullable (JSON `null`, normalized to
-`""` in memory). Stale (dead runner PID, old `generated_at`) is a
-*derivative* property computed from the existing fields; we don't add
-it as a field to the index.
+The store is a single SQLite database, `known/index.sqlite3`, accessed
+by shelling out to the system `sqlite3` CLI. It has **two tables**:
+
+- `fixtures` — one row per captured 4-tuple
+  `(harness, provider, model, platform)`, all four dims NOT NULL,
+  with `platform` always the host platform. This is **state**: what has
+  been captured and when (`generated_at`). Written only by `known agent`
+  and the daemon.
+- `actions` — the work **queue**: "capture <these dims> [under this
+  scope]". Dims are nullable (NULL = unset seed); each scope filter is
+  its own three-valued column (`1` active / `0` explicit-off / `NULL`
+  undeclared); `stale_by_days`/`stale_by_minutes` carry a staleness
+  threshold; `available` is a three-valued probe-status column (`1`
+  probed available, `0` probed unavailable — a queued handoff for the
+  next agent/platform, `NULL` not probed). Written by `known queue`.
+
+The derived `known_alphanumeric_id`/`agent_alphanumeric_id` are *not*
+stored; they're recomputed per use (`knownIdFrom`/`agentIdFrom`) for
+fixture naming and messaging, so a queue row stays a pure
+dims+scope instruction. Idempotency on `actions` is enforced by the
+`actions_dedupe` unique index (create-or-flip without a key string).
 
 Rows with one or more missing dims are **seeds** — queue/agent
 placeholders that say "capture something matching these dims". The
 daemon expands seeds over the `knownFixturesForKnownAgents` recipes:
-every recipe whose set dims match and whose harness is available is
-ensured as a full `refresh: true` row, then the seed is removed. Seeds
-with no applicable recipe (unknown ids) are **warned once per run and
-kept**, so a bad seed is visible in logs without spinning. The
-mechanics of upserting and projecting the current event live in the
-`IndexEvent` and `upsertIndexEvent` doc comments in `src/main.zig`.
+every recipe whose set dims match is queued as a full action, then the
+seed is dropped. Seeds with no applicable recipe (unknown ids) are
+**warned once per run and kept**, so a bad seed is visible in logs
+without spinning. `known agent` never touches `actions`; it only writes
+a `fixtures` row (partial detection exits 2 with no store change per
+the "never guess" rule). `known dequeue` is a pure **DELETE** of
+matching `actions` rows — it never mutates `fixtures`.
 
 ### user-only daemon (not the agent)
 

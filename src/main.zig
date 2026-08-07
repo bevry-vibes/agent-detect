@@ -326,7 +326,7 @@ const pi_env = [_][]const u8{"PI_CODING_AGENT"};
 // verified — a maintainer records the SPDX id + source URLs there, not
 // in the fixtures (fixtures are generated artifacts).
 const qwen_env = [_][]const u8{ "QWEN_API_KEY" };
-const kilo_env = [_][]const u8{ "KILO_API_KEY" };
+const kilo_env = [_][]const u8{ "KILO_API_KEY", "KILO" };
 const jcode_env = [_][]const u8{ "JCODE_API_KEY" };
 const omp_env = [_][]const u8{ "OMP_API_KEY" };
 const reasonix_env = [_][]const u8{ "REASONIX_API_KEY" };
@@ -337,6 +337,7 @@ const vibe_env = [_][]const u8{ "VIBE_API_KEY" };
 const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
 const kimi_procs = [_][]const u8{ "kimi.exe", "kimi", "kimi-code.exe", "kimi-code" };
+const kilo_procs = [_][]const u8{ "kilo.exe", "kilo" };
 pub const knownRulesForKnownAgents = [_]KnownRuleForKnownAgent{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an
     // Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code /
@@ -362,7 +363,7 @@ pub const knownRulesForKnownAgents = [_]KnownRuleForKnownAgent{
     .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .env_markers = &qwen_env, .proc_names = &.{} },
     // kilo: MIT — https://github.com/Kilo-Org/kilocode ships a MIT
     // LICENSE (Kilo Code CLI).
-    .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &.{} },
+    .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &kilo_procs },
     // jcode: MIT — https://github.com/1jehuang/jcode ships a MIT
     // LICENSE (default branch `master`); verified from the repo's
     // README license badge and the LICENSE file linked from it.
@@ -1537,33 +1538,125 @@ fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
 }
 
 fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    _ = home;
-    // kilo doesn't persist "current model" — the model is supplied
-    // per-launch via `-m, --model <provider>/<model>`. The
-    // launcher sets KILO_MODEL and KILO_PROVIDER before the
-    // capture runs; we read those here.
-    _ = io;
-    const model_full = env.get("KILO_MODEL") orelse return;
-    if (model_full.len == 0) return;
+    // Launcher sets KILO_MODEL=<provider>/<model> before capture runs;
+    // prefer that (matches the committed-trailer provider naming). Fall
+    // back to reading the live Kilo session DB for the `trailer`/`agent`
+    // actions run directly under the Kilo CLI, where KILO_MODEL is unset.
+    const model_full = env.get("KILO_MODEL") orelse {
+        return detectKiloFromDb(a, io, env, home, d);
+    };
+    if (model_full.len == 0) return detectKiloFromDb(a, io, env, home, d);
     const slash = std.mem.findScalar(u8, model_full, '/');
     if (slash) |i| {
         const prov = model_full[0..i];
         const model_only = model_full[i + 1 ..];
-        d.provider_name = prov;
-        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
-        try applyProviderMeta(a, d, prov);
+        try setProvider(a, d, prov);
         try applyModel(a, d, model_only, model_full);
     } else {
-        d.provider_name = "anthropic";
-        d.provider_label = providerForName("anthropic") orelse "Anthropic";
-        try applyProviderMeta(a, d, "anthropic");
+        try setProvider(a, d, "anthropic");
         try applyModel(a, d, model_full, model_full);
     }
-
     // kilo has no config file — the KILO_MODEL value lives in
     // raw.env_vars (added by applyModel via the env block), not in
     // a fake config_file entry. Leaving config_files empty keeps the
     // raw block honest.
+}
+
+/// Kilo does not export the active model to child processes, but it
+/// records it in the session store `~/.local/share/kilo/kilo.db`
+/// (`session.model`, JSON with `id` + `providerID`). Read that read-only
+/// via the `sqlite3` CLI: the newest session row whose `directory`
+/// matches the current working directory. Partial/absent → no-op (the
+/// caller falls back to leaving detection unresolved).
+fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    if (home.len == 0) return;
+    const dir = env.get("PWD") orelse return;
+    if (dir.len == 0) return;
+    const db = try std.fs.path.join(a, &.{ home, ".local/share/kilo/kilo.db" });
+    defer a.free(db);
+    if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return;
+
+    // quote dir into a SQL string literal (single-quote doubling)
+    var dir_lit: std.ArrayList(u8) = .empty;
+    defer dir_lit.deinit(a);
+    try dir_lit.append(a, '\'');
+    for (dir) |c| {
+        if (c == '\'') try dir_lit.append(a, '\'');
+        try dir_lit.append(a, c);
+    }
+    try dir_lit.append(a, '\'');
+    const sql = try std.fmt.allocPrint(a, "SELECT model FROM session WHERE directory={s} ORDER BY time_updated DESC LIMIT 1", .{dir_lit.items});
+    defer a.free(sql);
+
+    const out = kiloSqliteJson(a, io, db, sql) catch return;
+    defer a.free(out);
+    if (out.len == 0) return;
+    const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return;
+    if (outer.value != .array or outer.value.array.items.len == 0) return;
+    const row = outer.value.array.items[0];
+    if (row != .object) return;
+    const model_str = switch (row.object.get("model") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    // model JSON: {"id":"deepseek-v4-flash-0731","providerID":"hyper"}
+    const inner = std.json.parseFromSlice(std.json.Value, a, model_str, .{}) catch return;
+    const inner_obj = switch (inner.value) {
+        .object => |o| o,
+        else => return,
+    };
+    const provider_id = switch (inner_obj.get("providerID") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    const model_full = switch (inner_obj.get("id") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    try setProvider(a, d, provider_id);
+    try applyModel(a, d, stripBuildStamp(a, model_full), model_full);
+}
+
+/// spawn `sqlite3 -json <db> <sql>`; return stdout (caller frees).
+fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
+    const db_z = try a.dupeZ(u8, db);
+    defer a.free(db_z);
+    var argv_buf = [_][]const u8{ "sqlite3", "-json", "-batch", db_z, sql };
+    var child = std.process.spawn(io, .{
+        .argv = &argv_buf,
+        .stdout = .pipe,
+        .stderr = .ignore,
+    }) catch return error.SqliteSpawnFailed;
+    var out: std.ArrayList(u8) = .empty;
+    defer out.deinit(a);
+    try out.ensureTotalCapacity(a, 2048);
+    var buf: [8192]u8 = undefined;
+    var reader = child.stdout.?.reader(io, &buf);
+    while (true) {
+        var chunk: [8192]u8 = undefined;
+        const n = reader.interface.readSliceShort(&chunk) catch break;
+        if (n == 0) break;
+        try out.appendSlice(a, chunk[0..n]);
+    }
+    const term = child.wait(io) catch return error.SqliteSpawnFailed;
+    switch (term) {
+        .exited => |code| if (code != 0) return error.SqliteError,
+        else => return error.SqliteError,
+    }
+    return out.toOwnedSlice(a);
+}
+
+/// strip a trailing `-NNN` build stamp (e.g. `deepseek-v4-flash-0731` →
+/// `deepseek-v4-flash`) so the id matches the model rule. No-op when the
+/// last dash-segment isn't 1+ digits.
+fn stripBuildStamp(a: std.mem.Allocator, name: []const u8) []const u8 {
+    const dash = std.mem.lastIndexOfScalar(u8, name, '-') orelse return name;
+    const stamp = name[dash + 1 ..];
+    if (stamp.len == 0) return name;
+    for (stamp) |c| {
+        if (!std.ascii.isDigit(c)) return name;
+    }
+    return a.dupe(u8, name[0..dash]) catch name;
 }
 
 fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -2110,47 +2203,48 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\usage: agent-detection known <subcommand> [flags]
         \\
-        \\state: known/index.jsonl holds one latest event per 4-tuple
-        \\(harness, provider, model, platform) — nullable dims, no derived
-        \\ids; known/<id>.{agent.json,.trailer.txt} are the generated
-        \\fixtures refreshed from the rules in this source. Rows with
-        \\missing dims are seeds: the daemon expands them over known
-        \\recipes (full combos queued, other seeds warned and kept).
+        \\state: known/index.sqlite3 holds two tables — `fixtures` (one row
+        \\per captured 4-tuple harness/provider/model/platform) and `actions`
+        \\(the work queue). known/<id>.{agent.json,.trailer.txt} are the
+        \\generated fixtures. Action rows with missing dims are seeds: the
+        \\daemon expands them over known recipes (full combos queued, other
+        \\seeds warned and kept).
         \\
-        \\filters (shared by queue/dequeue/purge; at least one required):
+        \\filters (shared by queue/dequeue; at least one required):
         \\  --known=ID      4-part <h>-<p>-<m>-<platform> id (exact)
         \\  --agent=ID      3-part <h>-<p>-<m> id (platform unfiltered)
         \\  --harness=H     constrain harness to H (any of H/P/M/PLAT)
-        \\  --no-X          constrain that dim to null (--no-harness, ...)
         \\
-        \\scope flags (shared by queue/dequeue/purge; exactly one, and
-        \\they compose with the dim filters above to narrow the set):
-        \\  --all            every index row on this platform
-        \\  --stale          rows whose runner died or whose generated_at
-        \\                   is older than the threshold
-        \\                   [--older-than-days=N] [--older-than-hours=N]
-        \\  --partial        rows with at least one missing dim (seeds)
+        \\scope flags (shared by queue/dequeue; exactly one, and they
+        \\compose with the dim filters above to narrow the set):
+        \\  --all            every fixture row on this platform
+        \\  --stale          fixture rows older than the threshold
+        \\                   [--stale-by-days=N] [--stale-by-minutes=N]
+        \\                   (--stale is an alias for --stale-by-days=7)
+        \\  --partial        action rows with at least one missing dim (seeds)
         \\  --recipes        every known recipe (host platform)
         \\  --missing-fixture recipes whose .agent.json/.trailer.txt are
         \\                   absent from disk
-        \\  --available      modifier: only harnesses whose binary is
-        \\                   installed and answers --version
+        \\  --available      modifier: probe each candidate's harness and
+        \\                   record 1/0 into the available column (unavailable
+        \\                   rows stay queued as handoff for another platform)
+        \\  --unavailable    modifier (dequeue only): match available=0 rows
+        \\                   (alias --available=0)
         \\
         \\subcommands:
         \\  (none), help, --help, -h   this help
-        \\  daemon                     watch known/index.jsonl and capture
-        \\                              refresh:true events (poll 5s) — run
-        \\                              as a user, never inside an agent;
-        \\                              --write-log also writes all daemon
-        \\                              output to known/daemon.log
+        \\  daemon                     pop actions from known/index.sqlite3 and
+        \\                              capture (poll 5s) — run as a user,
+        \\                              never inside an agent; --write-log also
+        \\                              writes all daemon output to known/daemon.log
         \\  agent                      capture the current session into
-        \\                              known/<id>.agent.json (spawned by the daemon)
-        \\  queue                      set refresh:true on matching rows
-        \\                              (no scope flag → create-or-flip:
-        \\                              matching rows flip, none match →
-        \\                              seed with the positive dims)
-        \\  dequeue                    set refresh:false on matching rows
-        \\  purge                      delete matching rows (filters required)
+        \\                              known/<id>.agent.json + a fixtures row
+        \\                              (spawned by the daemon; fixtures only)
+        \\  queue                      enumerate + upsert action rows (no
+        \\                              evaluation; no scope flag → seed with
+        \\                              the positive dims)
+        \\  dequeue                    DELETE matching action rows (filters
+        \\                              required; never touches fixtures)
         \\
         \\exit codes: 0 = ok, 2 = bad arguments / unable to resolve
         \\
@@ -2161,6 +2255,533 @@ pub const dev = if (build_options.dev) struct {
         const io = init.io;
         writeOut(io, knownUsage);
         return 0;
+    }
+
+    // ------------------------------------------------------------------
+    // SQLite storage via the `sqlite3` CLI (two tables: fixtures + actions)
+    // ------------------------------------------------------------------
+
+    /// The SQLite index/queue database. Replaces the abandoned
+    /// `known/index.jsonl` store. Writes/reads shell out to the
+    /// system `sqlite3` binary (single-file `known/index.sqlite3`).
+    const INDEX_DB_PATH = "known/index.sqlite3";
+
+    /// Spawn `sqlite3 -json <db> <sql>` and return its stdout. Empty for
+    /// statements that return no rows. Caller owns the returned slice.
+    /// Does NOT create the dir or ensure the schema (see `sqliteQuery`).
+    fn sqliteRun(a: std.mem.Allocator, io: std.Io, sql: []const u8) ![]u8 {
+        var argv_buf = [_][]const u8{ "sqlite3", "-json", "-batch", INDEX_DB_PATH, sql };
+        var child = std.process.spawn(io, .{
+            .argv = &argv_buf,
+            .stdout = .pipe,
+            .stderr = .ignore,
+        }) catch return error.SqliteSpawnFailed;
+        var out: std.ArrayList(u8) = .empty;
+        defer out.deinit(a);
+        try out.ensureTotalCapacity(a, 4096);
+        var buf: [8192]u8 = undefined;
+        var reader = child.stdout.?.reader(io, &buf);
+        while (true) {
+            var chunk: [8192]u8 = undefined;
+            const n = reader.interface.readSliceShort(&chunk) catch break;
+            if (n == 0) break;
+            try out.appendSlice(a, chunk[0..n]);
+        }
+        const term = child.wait(io) catch return error.SqliteSpawnFailed;
+        switch (term) {
+            .exited => |code| if (code != 0) return error.SqliteError,
+            else => return error.SqliteError,
+        }
+        return out.toOwnedSlice(a);
+    }
+
+    /// Ensure the `known/` dir and the two-table schema exist (idempotent).
+    /// Called before every query.
+    fn ensureSchema(a: std.mem.Allocator, io: std.Io) !void {
+        std.Io.Dir.cwd().createDirPath(io, "known") catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => return err,
+        };
+        _ = try sqliteRun(a, io,
+            \\PRAGMA busy_timeout = 5000;
+            \\CREATE TABLE IF NOT EXISTS fixtures (
+            \\    harness                 TEXT NOT NULL,
+            \\    provider                TEXT NOT NULL,
+            \\    model                   TEXT NOT NULL,
+            \\    platform                TEXT NOT NULL,
+            \\    runner                  INTEGER NOT NULL,
+            \\    generated_at            INTEGER NOT NULL,
+            \\    PRIMARY KEY (harness, provider, model, platform)
+            \\);
+            \\CREATE TABLE IF NOT EXISTS actions (
+            \\    harness              TEXT,
+            \\    provider             TEXT,
+            \\    model                TEXT,
+            \\    platform             TEXT,
+            \\    scope_all            INTEGER,
+            \\    scope_partial        INTEGER,
+            \\    scope_recipes        INTEGER,
+            \\    scope_missing_fixture INTEGER,
+            \\    stale_by_days        INTEGER,
+            \\    stale_by_minutes     INTEGER,
+            \\    available            INTEGER,
+            \\    action               TEXT NOT NULL DEFAULT 'capture',
+            \\    runner               INTEGER NOT NULL,
+            \\    created_at           INTEGER NOT NULL
+            \\);
+            \\CREATE UNIQUE INDEX IF NOT EXISTS actions_dedupe
+            \\    ON actions (COALESCE(harness,''), COALESCE(provider,''), COALESCE(model,''),
+            \\                COALESCE(platform,''), COALESCE(scope_all,0), COALESCE(scope_partial,0),
+            \\                COALESCE(scope_recipes,0), COALESCE(scope_missing_fixture,0),
+            \\                COALESCE(stale_by_days,0), COALESCE(stale_by_minutes,0),
+            \\                COALESCE(available,0), action);
+            \\
+        );
+    }
+
+    /// Ensure schema, then run `sql` and return its stdout (JSON for
+    /// SELECT). Caller owns the returned slice.
+    fn sqliteQuery(a: std.mem.Allocator, io: std.Io, sql: []const u8) ![]u8 {
+        try ensureSchema(a, io);
+        return sqliteRun(a, io, sql);
+    }
+
+    /// One row in the `actions` queue.
+    const ActionRow = struct {
+        harness: ?[]const u8 = null,
+        provider: ?[]const u8 = null,
+        model: ?[]const u8 = null,
+        platform: ?[]const u8 = null,
+        scope_all: ?i64 = null,
+        scope_partial: ?i64 = null,
+        scope_recipes: ?i64 = null,
+        scope_missing_fixture: ?i64 = null,
+        stale_by_days: ?i64 = null,
+        stale_by_minutes: ?i64 = null,
+        available: ?i64 = null,
+        action: []const u8 = "capture",
+        runner: i64 = 0,
+        created_at: i64 = 0,
+    };
+
+    /// One row in the `fixtures` state table (always full; platform = host).
+    const FixtureRow = struct {
+        harness: []const u8,
+        provider: []const u8,
+        model: []const u8,
+        platform: []const u8,
+        runner: i64,
+        generated_at: i64,
+    };
+
+    /// current unix epoch seconds (staleness source / queue order).
+    fn unixNow(io: std.Io) i64 {
+        const ts = std.Io.Clock.Timestamp.now(io, .real);
+        return ts.raw.toSeconds();
+    }
+
+    /// SQL-escape a string literal (single-quote doubling). Dims are
+    /// alphanumeric so this is mostly defensive.
+    fn sqlQuote(a: std.mem.Allocator, s: []const u8) ![]u8 {
+        if (std.mem.indexOfScalar(u8, s, '\'') == null) {
+            return std.fmt.allocPrint(a, "'{s}'", .{s});
+        }
+        var out: std.ArrayList(u8) = .empty;
+        try out.append(a, '\'');
+        for (s) |c| {
+            if (c == '\'') try out.append(a, '\'');
+            try out.append(a, c);
+        }
+        try out.append(a, '\'');
+        return out.toOwnedSlice(a);
+    }
+
+    /// render an optional string as a quoted literal or NULL.
+    fn sqlOptStr(a: std.mem.Allocator, opt: ?[]const u8) ![]u8 {
+        if (opt) |s| return sqlQuote(a, s);
+        return a.dupe(u8, "NULL");
+    }
+
+    /// render an optional integer as its value or NULL (allocated).
+    fn sqlOptInt(a: std.mem.Allocator, v: ?i64) ![]u8 {
+        if (v) |x| return std.fmt.allocPrint(a, "{d}", .{x});
+        return a.dupe(u8, "NULL");
+    }
+
+    /// `INSERT OR REPLACE INTO actions` — idempotent via `actions_dedupe`.
+    fn upsertAction(a: std.mem.Allocator, io: std.Io, row: ActionRow) !void {
+        const h = try sqlOptStr(a, row.harness);
+        defer a.free(h);
+        const p = try sqlOptStr(a, row.provider);
+        defer a.free(p);
+        const m = try sqlOptStr(a, row.model);
+        defer a.free(m);
+        const pl = try sqlOptStr(a, row.platform);
+        defer a.free(pl);
+        const sa = try sqlOptInt(a, row.scope_all);
+        defer a.free(sa);
+        const sp = try sqlOptInt(a, row.scope_partial);
+        defer a.free(sp);
+        const sr = try sqlOptInt(a, row.scope_recipes);
+        defer a.free(sr);
+        const sm = try sqlOptInt(a, row.scope_missing_fixture);
+        defer a.free(sm);
+        const sd = try sqlOptInt(a, row.stale_by_days);
+        defer a.free(sd);
+        const smin = try sqlOptInt(a, row.stale_by_minutes);
+        defer a.free(smin);
+        const av = try sqlOptInt(a, row.available);
+        defer a.free(av);
+        const act = try sqlQuote(a, row.action);
+        defer a.free(act);
+        const sql = try std.fmt.allocPrint(a,
+            "INSERT OR REPLACE INTO actions(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,action,runner,created_at) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d})",
+            .{ h, p, m, pl, sa, sp, sr, sm, sd, smin, av, act, row.runner, row.created_at },
+        );
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
+    }
+
+    /// `INSERT OR REPLACE INTO fixtures` — state, written only by `known
+    /// agent` and the daemon. No `available` column.
+    fn upsertFixture(a: std.mem.Allocator, io: std.Io, f: FixtureRow) !void {
+        const sql = try std.fmt.allocPrint(a,
+            "INSERT OR REPLACE INTO fixtures(harness,provider,model,platform,runner,generated_at) VALUES({s},{s},{s},{s},{d},{d})",
+            .{
+                try sqlQuote(a, f.harness), try sqlQuote(a, f.provider),
+                try sqlQuote(a, f.model), try sqlQuote(a, f.platform),
+                f.runner, f.generated_at,
+            },
+        );
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
+    }
+
+    /// every `fixtures` row (for `--all` / `--stale` enumeration).
+    fn selectFixtures(a: std.mem.Allocator, io: std.Io) ![]FixtureRow {
+        const out = try sqliteQuery(a, io, "SELECT harness,provider,model,platform,runner,generated_at FROM fixtures");
+        defer a.free(out);
+        if (out.len == 0) return &.{};
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return &.{};
+        return jsonToFixtures(a, parsed.value);
+    }
+
+    fn jsonToFixtures(a: std.mem.Allocator, v: std.json.Value) ![]FixtureRow {
+        if (v != .array) return &.{};
+        var rows: std.ArrayListUnmanaged(FixtureRow) = .empty;
+        errdefer rows.deinit(a);
+        for (v.array.items) |item| {
+            if (item != .object) continue;
+            const o = item.object;
+            rows.append(a, .{
+                .harness = sjstr(o, "harness"),
+                .provider = sjstr(o, "provider"),
+                .model = sjstr(o, "model"),
+                .platform = sjstr(o, "platform"),
+                .runner = sjint(o, "runner"),
+                .generated_at = sjint(o, "generated_at"),
+            }) catch continue;
+        }
+        return rows.toOwnedSlice(a);
+    }
+
+    /// every `actions` row whose dims are all NULL (seeds) — for `--partial`.
+    fn selectSeedActions(a: std.mem.Allocator, io: std.Io) ![]ActionRow {
+        const out = try sqliteQuery(a, io,
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,action,runner,created_at FROM actions WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
+        );
+        defer a.free(out);
+        if (out.len == 0) return &.{};
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return &.{};
+        return jsonToActions(a, parsed.value);
+    }
+
+    fn jsonToActions(a: std.mem.Allocator, v: std.json.Value) ![]ActionRow {
+        if (v != .array) return &.{};
+        var rows: std.ArrayListUnmanaged(ActionRow) = .empty;
+        errdefer rows.deinit(a);
+        for (v.array.items) |item| {
+            if (item != .object) continue;
+            const o = item.object;
+            const row = jsonToActionObj(o) catch continue;
+            try rows.append(a, row);
+        }
+        return rows.toOwnedSlice(a);
+    }
+
+    fn jsonToActionObj(o: std.json.ObjectMap) !ActionRow {
+        return .{
+            .harness = sjoptstr(o, "harness"),
+            .provider = sjoptstr(o, "provider"),
+            .model = sjoptstr(o, "model"),
+            .platform = sjoptstr(o, "platform"),
+            .scope_all = sjoptint(o, "scope_all"),
+            .scope_partial = sjoptint(o, "scope_partial"),
+            .scope_recipes = sjoptint(o, "scope_recipes"),
+            .scope_missing_fixture = sjoptint(o, "scope_missing_fixture"),
+            .stale_by_days = sjoptint(o, "stale_by_days"),
+            .stale_by_minutes = sjoptint(o, "stale_by_minutes"),
+            .available = sjoptint(o, "available"),
+            .action = sjstr(o, "action"),
+            .runner = sjint(o, "runner"),
+            .created_at = sjint(o, "created_at"),
+        };
+    }
+
+    /// string field; missing → "".
+    fn sjstr(o: std.json.ObjectMap, key: []const u8) []const u8 {
+        const v = o.get(key) orelse return "";
+        return switch (v) {
+            .string => |s| s,
+            else => "",
+        };
+    }
+    /// int field; missing/non-int → 0.
+    fn sjint(o: std.json.ObjectMap, key: []const u8) i64 {
+        const v = o.get(key) orelse return 0;
+        return switch (v) {
+            .integer => |x| x,
+            else => 0,
+        };
+    }
+    /// optional string field; null/missing → null.
+    fn sjoptstr(o: std.json.ObjectMap, key: []const u8) ?[]const u8 {
+        const v = o.get(key) orelse return null;
+        return switch (v) {
+            .string => |s| s,
+            else => null,
+        };
+    }
+    fn sjoptint(o: std.json.ObjectMap, key: []const u8) ?i64 {
+        const v = o.get(key) orelse return null;
+        return switch (v) {
+            .integer => |x| x,
+            else => null,
+        };
+    }
+
+    /// true iff a `fixtures` row exists for the given dims.
+    fn fixtureExists(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !bool {
+        const sql = try std.fmt.allocPrint(a,
+            "SELECT COUNT(*) AS c FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
+            .{ try sqlQuote(a, h), try sqlQuote(a, p), try sqlQuote(a, m), try sqlQuote(a, plat) },
+        );
+        defer a.free(sql);
+        const out = try sqliteQuery(a, io, sql);
+        defer a.free(out);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return false;
+        if (parsed.value != .array or parsed.value.array.items.len == 0) return false;
+        const o = parsed.value.array.items[0];
+        if (o != .object) return false;
+        return sjint(o.object, "c") > 0;
+    }
+
+    /// the `fixtures` row for the given dims, or null if absent.
+    fn fixtureRow(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?FixtureRow {
+        const sql = try std.fmt.allocPrint(a,
+            "SELECT harness,provider,model,platform,runner,generated_at FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
+            .{ try sqlQuote(a, h), try sqlQuote(a, p), try sqlQuote(a, m), try sqlQuote(a, plat) },
+        );
+        defer a.free(sql);
+        const out = try sqliteQuery(a, io, sql);
+        defer a.free(out);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
+        const rows = try jsonToFixtures(a, parsed.value);
+        if (rows.len == 0) return null;
+        return rows[0];
+    }
+
+    /// atomically pop the oldest pending action. Returns null when empty.
+    fn popPendingAction(a: std.mem.Allocator, io: std.Io) !?ActionRow {
+        const out = try sqliteQuery(a, io,
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,action,runner,created_at FROM actions ORDER BY created_at,rowid LIMIT 1",
+        );
+        defer a.free(out);
+        var row: ?ActionRow = null;
+        if (out.len > 0) {
+            const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
+            const rows = try jsonToActions(a, parsed.value);
+            if (rows.len > 0) row = rows[0];
+        }
+        // delete the row we just read (single consumer per host; the daemon
+        // is the only evaluator). Use generated_at as a tie-break handle.
+        if (row) |_| {
+            const sql = try std.fmt.allocPrint(a,
+                "DELETE FROM actions WHERE rowid = (SELECT rowid FROM actions ORDER BY created_at,rowid LIMIT 1)",
+                .{},
+            );
+            defer a.free(sql);
+            _ = try sqliteQuery(a, io, sql);
+        }
+        return row;
+    }
+
+    /// `DELETE FROM actions` matching the filter. Returns rows deleted.
+    fn deleteActions(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !usize {
+        var where = std.ArrayList(u8).empty;
+        defer where.deinit(a);
+        try where.appendSlice(a, "WHERE 1=1");
+        if (f.harness.len > 0) try where.appendSlice(a, appendCond(a, "harness", f.harness) catch return 0);
+        if (f.provider.len > 0) try where.appendSlice(a, appendCond(a, "provider", f.provider) catch return 0);
+        if (f.model.len > 0) try where.appendSlice(a, appendCond(a, "model", f.model) catch return 0);
+        if (f.platform.len > 0) try where.appendSlice(a, appendCond(a, "platform", f.platform) catch return 0);
+        if (f.all) try where.appendSlice(a, " AND scope_all=1");
+        if (f.partial) try where.appendSlice(a, " AND scope_partial=1");
+        if (f.recipes) try where.appendSlice(a, " AND scope_recipes=1");
+        if (f.missing_fixture) try where.appendSlice(a, " AND scope_missing_fixture=1");
+        if (f.stale) try where.appendSlice(a, " AND (stale_by_days IS NOT NULL OR stale_by_minutes IS NOT NULL)");
+        if (f.available) try where.appendSlice(a, " AND available=1");
+        if (f.unavailable) try where.appendSlice(a, " AND available=0");
+        // DELETE + SELECT changes() in ONE sqlite3 invocation so the count is
+        // connection-local (changes() in a fresh process would read 0).
+        const sql = try std.fmt.allocPrint(a, "DELETE FROM actions {s}; SELECT changes() AS c;", .{where.items});
+        defer a.free(sql);
+        const out = try sqliteRun(a, io, sql);
+        defer a.free(out);
+        return parseJsonCount(a, out) catch 0;
+    }
+
+    /// parse the `[{"c":N}]` JSON produced by `SELECT changes() AS c`.
+    fn parseJsonCount(a: std.mem.Allocator, json: []const u8) !usize {
+        if (json.len == 0) return 0;
+        var it = std.mem.splitScalar(u8, json, '\n');
+        while (it.next()) |chunk| {
+            if (chunk.len == 0) continue;
+            const parsed = std.json.parseFromSlice(std.json.Value, a, chunk, .{}) catch continue;
+            if (parsed.value != .array or parsed.value.array.items.len == 0) continue;
+            const o = parsed.value.array.items[0];
+            if (o != .object) continue;
+            return @intCast(@max(sjint(o.object, "c"), 0));
+        }
+        return 0;
+    }
+
+    fn appendCond(a: std.mem.Allocator, col: []const u8, v: []const u8) ![]u8 {
+        const q = try sqlQuote(a, v);
+        return std.fmt.allocPrint(a, " AND {s}={s}", .{ col, q });
+    }
+
+    /// the shared validator — single source of truth for valid filter
+    /// combinations. Called by BOTH writer paths and the daemon reader.
+    fn validateActionRow(row: ActionRow) !void {
+        const scope_count = @as(usize, @intFromBool(row.scope_all != null and row.scope_all.? == 1)) +
+            @as(usize, @intFromBool(row.scope_partial != null and row.scope_partial.? == 1)) +
+            @as(usize, @intFromBool(row.scope_recipes != null and row.scope_recipes.? == 1)) +
+            @as(usize, @intFromBool(row.scope_missing_fixture != null and row.scope_missing_fixture.? == 1)) +
+            @as(usize, @intFromBool(row.stale_by_days != null or row.stale_by_minutes != null));
+        if (scope_count > 1) return error.InvalidActionRow;
+        if (row.stale_by_days != null and row.stale_by_minutes != null) return error.InvalidActionRow;
+        if (row.stale_by_days != null and row.stale_by_days.? < 1) return error.InvalidActionRow;
+        if (row.stale_by_minutes != null and row.stale_by_minutes.? < 1) return error.InvalidActionRow;
+        if (row.available != null and (row.available.? != 0 and row.available.? != 1)) return error.InvalidActionRow;
+        if (row.available != null and scope_count == 0) return error.InvalidActionRow;
+        if (!std.mem.eql(u8, row.action, "capture")) return error.InvalidActionRow;
+        const scopes = [_]?i64{ row.scope_all, row.scope_partial, row.scope_recipes, row.scope_missing_fixture };
+        for (scopes) |s| {
+            if (s != null and (s.? != 0 and s.? != 1)) return error.InvalidActionRow;
+        }
+    }
+
+    /// human-readable description of an action row for diagnostics.
+    fn describeAction(a: std.mem.Allocator, row: ActionRow) ![]u8 {
+        const h = row.harness orelse "";
+        const p = row.provider orelse "";
+        const m = row.model orelse "";
+        const plat = row.platform orelse "";
+        if (h.len > 0 and p.len > 0 and m.len > 0 and plat.len > 0) {
+            return (try knownIdFrom(a, h, p, m, plat)) orelse try tupleKey(a, h, p, m, plat);
+        }
+        var list: std.ArrayList(u8) = .empty;
+        try list.appendSlice(a, "seed");
+        const dims = [_][2][]const u8{
+            .{ "harness", h },
+            .{ "provider", p },
+            .{ "model", m },
+            .{ "platform", plat },
+        };
+        for (dims) |d| {
+            if (d[1].len > 0) {
+                try list.append(a, ' ');
+                try list.appendSlice(a, d[0]);
+                try list.append(a, ':');
+                try list.appendSlice(a, d[1]);
+            }
+        }
+        return list.toOwnedSlice(a);
+    }
+
+    /// count rows in a table (migration guard).
+    fn tableCount(a: std.mem.Allocator, io: std.Io, table: []const u8) !i64 {
+        const sql = try std.fmt.allocPrint(a, "SELECT COUNT(*) AS c FROM {s}", .{table});
+        defer a.free(sql);
+        const out = try sqliteQuery(a, io, sql);
+        defer a.free(out);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return 0;
+        if (parsed.value != .array or parsed.value.array.items.len == 0) return 0;
+        const o = parsed.value.array.items[0];
+        if (o != .object) return 0;
+        return sjint(o.object, "c");
+    }
+
+    /// one-time, best-effort migration of the legacy `known/index.jsonl`.
+    fn migrateIndexJsonl(a: std.mem.Allocator, io: std.Io) !usize {
+        const data = std.Io.Dir.cwd().readFileAlloc(io, "known/index.jsonl", a, @enumFromInt(1 << 20)) catch return 0;
+        defer a.free(data);
+        const host = platformAlphanumericId();
+        var imported: usize = 0;
+        var lines = std.mem.splitScalar(u8, data, '\n');
+        while (lines.next()) |line| {
+            if (line.len == 0) continue;
+            const ev = parseIndexEvent(a, line) orelse continue;
+            const full = ev.harness_alphanumeric_id.len > 0 and
+                ev.provider_alphanumeric_id.len > 0 and
+                ev.model_alphanumeric_id.len > 0 and
+                ev.platform_alphanumeric_id.len > 0;
+            if (full and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) continue;
+            const gen = std.fmt.parseInt(i64, ev.generated_at, 10) catch 0;
+            if (!ev.refresh and full) {
+                try upsertFixture(a, io, .{
+                    .harness = ev.harness_alphanumeric_id,
+                    .provider = ev.provider_alphanumeric_id,
+                    .model = ev.model_alphanumeric_id,
+                    .platform = ev.platform_alphanumeric_id,
+                    .runner = ev.runner,
+                    .generated_at = gen,
+                });
+            } else {
+                try upsertAction(a, io, .{
+                    .harness = if (ev.harness_alphanumeric_id.len > 0) ev.harness_alphanumeric_id else null,
+                    .provider = if (ev.provider_alphanumeric_id.len > 0) ev.provider_alphanumeric_id else null,
+                    .model = if (ev.model_alphanumeric_id.len > 0) ev.model_alphanumeric_id else null,
+                    .platform = if (ev.platform_alphanumeric_id.len > 0) ev.platform_alphanumeric_id else null,
+                    .runner = ev.runner,
+                    .created_at = gen,
+                });
+            }
+            imported += 1;
+        }
+        return imported;
+    }
+
+    /// run the one-time migration if the legacy file exists AND both tables
+    /// are empty; then delete the legacy file + lock. Called at DB init.
+    fn ensureMigrated(a: std.mem.Allocator, io: std.Io) !void {
+        const index_exists = blk: {
+            if (std.Io.Dir.cwd().statFile(io, "known/index.jsonl", .{})) |_| {
+                break :blk true;
+            } else |_| break :blk false;
+        };
+        if (!index_exists) return;
+        const actions = try tableCount(a, io, "actions");
+        const fixtures = try tableCount(a, io, "fixtures");
+        if (actions > 0 or fixtures > 0) return;
+        const imported = try migrateIndexJsonl(a, io);
+        std.Io.Dir.cwd().deleteFile(io, "known/index.jsonl") catch {};
+        std.Io.Dir.cwd().deleteFile(io, "known/index.jsonl.lock") catch {};
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, "known: migrated legacy index.jsonl (");
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{imported}));
+        writeOut(io, " rows) into known/index.sqlite3\n");
     }
 
 const EnvSetup = struct {
@@ -2901,10 +3522,6 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         provider: []const u8 = "",
         model: []const u8 = "",
         platform: []const u8 = "",
-        no_harness: bool = false,
-        no_provider: bool = false,
-        no_model: bool = false,
-        no_platform: bool = false,
         known: ?[]const u8 = null,
         agent: ?[]const u8 = null,
         /// scope flags: `--all`/`--stale`/`--partial` target index rows;
@@ -2915,12 +3532,15 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         partial: bool = false,
         recipes: bool = false,
         missing_fixture: bool = false,
-        /// `--available`: narrow candidates to harnesses whose binary is
-        /// available. Modifier only (never a scope flag).
+        /// `--available`: probe-and-record harness availability into the
+        /// `available` column (1/0). Modifier only (never a scope flag).
         available: bool = false,
-        /// stale thresholds (`--older-than-days=`, `--older-than-hours=`).
-        older_than_days: ?i64 = null,
-        older_than_hours: ?i64 = null,
+        /// `--unavailable` / `--available=0`: dequeue match for available=0
+        /// handoff rows. Modifier only.
+        unavailable: bool = false,
+        /// stale thresholds. `--stale` is an alias for `stale_by_days=7`.
+        stale_by_days: ?i64 = null,
+        stale_by_minutes: ?i64 = null,
         any: bool = false,
         /// true when `--known=` or `--agent=` (the composite ids)
         /// contributed the equality dims — used for the creation path.
@@ -2934,7 +3554,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         InvalidKnownId,
         /// `--agent=` not a valid 3-part id
         InvalidAgentId,
-        /// `--older-than-days=`/`--older-than-hours=` not an integer
+        /// `--stale-by-days=`/`--stale-by-minutes=` not an integer
         InvalidThreshold,
         /// contradictory or disallowed combination
         ConflictingFilters,
@@ -2979,14 +3599,6 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             } else if (std.mem.startsWith(u8, arg, "--platform=")) {
                 f.platform = arg["--platform=".len..];
                 seen_platform = true;
-            } else if (std.mem.eql(u8, arg, "--no-harness")) {
-                f.no_harness = true;
-            } else if (std.mem.eql(u8, arg, "--no-provider")) {
-                f.no_provider = true;
-            } else if (std.mem.eql(u8, arg, "--no-model")) {
-                f.no_model = true;
-            } else if (std.mem.eql(u8, arg, "--no-platform")) {
-                f.no_platform = true;
             } else if (std.mem.eql(u8, arg, "--all")) {
                 f.all = true;
             } else if (std.mem.eql(u8, arg, "--stale")) {
@@ -2999,12 +3611,23 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 f.missing_fixture = true;
             } else if (std.mem.eql(u8, arg, "--available")) {
                 f.available = true;
-            } else if (std.mem.startsWith(u8, arg, "--older-than-days=")) {
-                f.older_than_days = std.fmt.parseInt(i64, arg["--older-than-days=".len..], 10) catch return FilterError.InvalidThreshold;
-            } else if (std.mem.startsWith(u8, arg, "--older-than-hours=")) {
-                f.older_than_hours = std.fmt.parseInt(i64, arg["--older-than-hours=".len..], 10) catch return FilterError.InvalidThreshold;
+            } else if (std.mem.eql(u8, arg, "--unavailable") or std.mem.eql(u8, arg, "--available=0")) {
+                f.unavailable = true;
+            } else if (std.mem.startsWith(u8, arg, "--stale-by-days=")) {
+                f.stale_by_days = std.fmt.parseInt(i64, arg["--stale-by-days=".len..], 10) catch return FilterError.InvalidThreshold;
+            } else if (std.mem.startsWith(u8, arg, "--stale-by-minutes=")) {
+                f.stale_by_minutes = std.fmt.parseInt(i64, arg["--stale-by-minutes=".len..], 10) catch return FilterError.InvalidThreshold;
             }
         }
+
+        // `--stale` is an alias for `--stale-by-days=7`.
+        if (f.stale and f.stale_by_days == null and f.stale_by_minutes == null) f.stale_by_days = 7;
+        // a stale threshold implies the `--stale` scope.
+        if (f.stale_by_days != null or f.stale_by_minutes != null) f.stale = true;
+        // only one of days/minutes may be set
+        if (f.stale_by_days != null and f.stale_by_minutes != null) return FilterError.ConflictingFilters;
+        if ((f.stale_by_days != null and f.stale_by_days.? < 1) or
+            (f.stale_by_minutes != null and f.stale_by_minutes.? < 1)) return FilterError.ConflictingFilters;
 
         // scope flags: exactly one allowed
         const scope_count = @as(usize, @intFromBool(f.all)) + @as(usize, @intFromBool(f.stale)) +
@@ -3012,22 +3635,13 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             @as(usize, @intFromBool(f.missing_fixture));
         if (scope_count > 1) return FilterError.ConflictingFilters;
 
-        // stale thresholds are only meaningful with --stale
-        if ((f.older_than_days != null or f.older_than_hours != null) and !f.stale) return FilterError.ConflictingFilters;
-
-        // --available is a modifier: requires a scope flag
-        if (f.available and scope_count == 0) return FilterError.ConflictingFilters;
+        // --available / --unavailable are modifiers: require a scope flag
+        if ((f.available or f.unavailable) and scope_count == 0) return FilterError.ConflictingFilters;
+        if (f.available and f.unavailable) return FilterError.ConflictingFilters;
 
         f.any = seen_known or seen_agent or seen_harness or seen_provider or
-            seen_model or seen_platform or f.no_harness or f.no_provider or
-            f.no_model or f.no_platform or scope_count > 0 or f.available;
+            seen_model or seen_platform or scope_count > 0 or f.available or f.unavailable;
         if (!f.any) return FilterError.NoFilter;
-
-        // contradiction: a dim cannot be both equality- and null-constrained
-        if (seen_harness and f.no_harness) return FilterError.ConflictingFilters;
-        if (seen_provider and f.no_provider) return FilterError.ConflictingFilters;
-        if (seen_model and f.no_model) return FilterError.ConflictingFilters;
-        if (seen_platform and f.no_platform) return FilterError.ConflictingFilters;
 
         if (seen_known) {
             // `--known=` supplies all four dims and may not combine
@@ -3066,31 +3680,17 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             f.model = a.dupe(u8, parts[2]) catch return FilterError.OutOfMemory;
             f.composite = true;
         }
-        // a `--no-*` contradicts any dim forced by a composite id
-        if (f.composite and
-            ((f.harness.len > 0 and f.no_harness) or
-                (f.provider.len > 0 and f.no_provider) or
-                (f.model.len > 0 and f.no_model) or
-                (f.platform.len > 0 and f.no_platform)))
-        {
-            return FilterError.ConflictingFilters;
-        }
         return f;
     }
 
     /// true iff every dimension constraint in `f` holds for `ev`.
     /// Equality (`--X=`) requires the field to equal the value;
-    /// `--no-X` requires the field to be unset; unmentioned dims are
-    /// free.
+    /// unmentioned dims are free.
     fn matchesFilter(ev: IndexEvent, f: FilterOptions) bool {
         if (f.harness.len > 0 and !std.mem.eql(u8, ev.harness_alphanumeric_id, f.harness)) return false;
         if (f.provider.len > 0 and !std.mem.eql(u8, ev.provider_alphanumeric_id, f.provider)) return false;
         if (f.model.len > 0 and !std.mem.eql(u8, ev.model_alphanumeric_id, f.model)) return false;
         if (f.platform.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, f.platform)) return false;
-        if (f.no_harness and ev.harness_alphanumeric_id.len != 0) return false;
-        if (f.no_provider and ev.provider_alphanumeric_id.len != 0) return false;
-        if (f.no_model and ev.model_alphanumeric_id.len != 0) return false;
-        if (f.no_platform and ev.platform_alphanumeric_id.len != 0) return false;
         return true;
     }
 
@@ -3101,54 +3701,24 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             @as(usize, @intFromBool(f.missing_fixture));
     }
 
-    /// true if the row has all four dims set (the daemon's notion of a
-    /// "full" row); partial rows are seeds/actions.
-    fn fullEvent(ev: IndexEvent) bool {
-        return ev.harness_alphanumeric_id.len > 0 and
-            ev.provider_alphanumeric_id.len > 0 and
-            ev.model_alphanumeric_id.len > 0 and
-            ev.platform_alphanumeric_id.len > 0;
-    }
-
-    /// the scope candidate set for `f`, as events:
-    /// - row-scope (`--all`/`--stale`/`--partial`): matching existing
-    ///   index rows (host platform; `--available` requires full h-p-m +
-    ///   an available harness).
-    /// - recipe-scope (`--recipes`/`--missing-fixture`): full events on
-    ///   the host platform built from the recipe table
-    ///   (`knownFixturesForKnownAgents`); `--missing-fixture` only
-    ///   yields recipes whose `.agent.json`/`.trailer.txt` files are
-    ///   absent. Dim filters narrow both kinds; `--available` gates the
-    ///   harness probe. Returns null on allocation failure.
-    fn scopeCandidates(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !std.ArrayListUnmanaged(IndexEvent) {
-        var out: std.ArrayListUnmanaged(IndexEvent) = .empty;
+    /// the scope candidate set for `f`, as actions:
+    fn scopeCandidates(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !std.ArrayListUnmanaged(ActionRow) {
+        var out: std.ArrayListUnmanaged(ActionRow) = .empty;
         const host = platformAlphanumericId();
+        const now = unixNow(io);
 
         if (f.recipes or f.missing_fixture) {
             for (knownFixturesForKnownAgents) |c| {
-                if (f.available and !harnessAvailable(io, c.agent_alphanumeric_id)) continue;
                 const parts = try splitAgentAlphanumericId(a, c.agent_alphanumeric_id);
                 defer {
                     a.free(parts[0]);
                     a.free(parts[1]);
                     a.free(parts[2]);
                 }
-                var ev: IndexEvent = .{
-                    .refresh = true,
-                    .runner = 0,
-                    .generated_at = "",
-                    .harness_alphanumeric_id = parts[0],
-                    .provider_alphanumeric_id = parts[1],
-                    .model_alphanumeric_id = parts[2],
-                    .platform_alphanumeric_id = host,
-                };
-                if (!matchesFilter(ev, f)) continue;
-                // dupe: `parts` are freed at the end of this iteration,
-                // so the stored event must own its strings (arena).
-                ev.harness_alphanumeric_id = try a.dupe(u8, parts[0]);
-                ev.provider_alphanumeric_id = try a.dupe(u8, parts[1]);
-                ev.model_alphanumeric_id = try a.dupe(u8, parts[2]);
-                ev.platform_alphanumeric_id = try a.dupe(u8, host);
+                if (f.harness.len > 0 and !std.mem.eql(u8, f.harness, parts[0])) continue;
+                if (f.provider.len > 0 and !std.mem.eql(u8, f.provider, parts[1])) continue;
+                if (f.model.len > 0 and !std.mem.eql(u8, f.model, parts[2])) continue;
+                if (f.platform.len > 0 and !std.mem.eql(u8, f.platform, host)) continue;
                 if (f.missing_fixture) {
                     const known_aid = try knownAlphanumericId(a, c.agent_alphanumeric_id);
                     defer a.free(known_aid);
@@ -3166,42 +3736,75 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                     } else |_| {}
                     if (json_exists and trailer_exists) continue;
                 }
-                try out.append(a, ev);
+                var row: ActionRow = .{
+                    .harness = try a.dupe(u8, parts[0]),
+                    .provider = try a.dupe(u8, parts[1]),
+                    .model = try a.dupe(u8, parts[2]),
+                    .platform = try a.dupe(u8, host),
+                    .runner = getParentPid(),
+                    .created_at = now,
+                };
+                if (f.recipes) row.scope_recipes = 1;
+                if (f.missing_fixture) row.scope_missing_fixture = 1;
+                if (f.available) {
+                    row.available = if (harnessAvailable(io, c.agent_alphanumeric_id)) 1 else 0;
+                }
+                try validateActionRow(row);
+                try out.append(a, row);
             }
             return out;
         }
 
-        // row-scope
-        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-        const threshold_hours = (f.older_than_days orelse 7) * 24 + (f.older_than_hours orelse 0);
-        var it = existing.iterator();
-        while (it.next()) |entry| {
-            const ev = entry.value_ptr.*;
-            if (ev.platform_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) continue;
+        if (f.partial) {
+            const seeds = try selectSeedActions(a, io);
+            for (seeds) |s| {
+                if (f.harness.len > 0 and !std.mem.eql(u8, s.harness orelse "", f.harness)) continue;
+                if (f.provider.len > 0 and !std.mem.eql(u8, s.provider orelse "", f.provider)) continue;
+                if (f.model.len > 0 and !std.mem.eql(u8, s.model orelse "", f.model)) continue;
+                if (f.platform.len > 0 and !std.mem.eql(u8, s.platform orelse "", f.platform)) continue;
+                var row = s;
+                row.scope_partial = 1;
+                row.runner = getParentPid();
+                row.created_at = now;
+                try validateActionRow(row);
+                try out.append(a, row);
+            }
+            return out;
+        }
+
+        // --all / --stale: enumerate fixtures
+        const fixtures = try selectFixtures(a, io);
+        for (fixtures) |fx| {
+            if (f.harness.len > 0 and !std.mem.eql(u8, f.harness, fx.harness)) continue;
+            if (f.provider.len > 0 and !std.mem.eql(u8, f.provider, fx.provider)) continue;
+            if (f.model.len > 0 and !std.mem.eql(u8, f.model, fx.model)) continue;
+            if (f.platform.len > 0 and !std.mem.eql(u8, f.platform, fx.platform)) continue;
+            // --stale: only queue fixtures actually older than the threshold
+            // (snapshot at queue time; the daemon re-validates with the stored
+            // threshold later).
             if (f.stale) {
-                const stale = (ev.refresh and !pidIsAlive(ev.runner)) or olderThanThreshold(ev.generated_at, threshold_hours);
-                if (!stale) continue;
-            } else if (f.partial and fullEvent(ev)) {
-                continue;
+                const threshold_minutes = f.stale_by_minutes orelse (f.stale_by_days.? * 24 * 60);
+                if (!isStale(io, fx.generated_at, threshold_minutes)) continue;
             }
-            if (!matchesFilter(ev, f)) continue;
+            var row: ActionRow = .{
+                .harness = try a.dupe(u8, fx.harness),
+                .provider = try a.dupe(u8, fx.provider),
+                .model = try a.dupe(u8, fx.model),
+                .platform = try a.dupe(u8, fx.platform),
+                .runner = getParentPid(),
+                .created_at = now,
+            };
+            if (f.all) row.scope_all = 1;
+            if (f.stale) {
+                row.stale_by_days = f.stale_by_days;
+                row.stale_by_minutes = f.stale_by_minutes;
+            }
             if (f.available) {
-                const agent = (try agentIdFrom(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id)) orelse continue;
-                if (!harnessAvailable(io, agent)) continue;
+                const agent = (try agentIdFrom(a, fx.harness, fx.provider, fx.model)) orelse continue;
+                row.available = if (harnessAvailable(io, agent)) 1 else 0;
             }
-            // dupe: `existing` is deinit'd before the caller consumes
-            // the list, so the returned events must own their strings.
-            // The arena backs them for the process lifetime.
-            try out.append(a, .{
-                .refresh = ev.refresh,
-                .runner = ev.runner,
-                .generated_at = try a.dupe(u8, ev.generated_at),
-                .harness_alphanumeric_id = try a.dupe(u8, ev.harness_alphanumeric_id),
-                .provider_alphanumeric_id = try a.dupe(u8, ev.provider_alphanumeric_id),
-                .model_alphanumeric_id = try a.dupe(u8, ev.model_alphanumeric_id),
-                .platform_alphanumeric_id = try a.dupe(u8, ev.platform_alphanumeric_id),
-            });
+            try validateActionRow(row);
+            try out.append(a, row);
         }
         return out;
     }
@@ -3236,6 +3839,8 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         const a = init.arena.allocator();
         const io = init.io;
 
+        try ensureMigrated(a, io);
+
         var d = Detection{};
         _ = try detect(init, &d);
 
@@ -3247,27 +3852,14 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             (if (provider_aid != null) @as(usize, 1) else 0) +
             (if (model_aid != null) @as(usize, 1) else 0);
 
-        // partial detection with >=1 resolved dim: record a seed row
-        // (resolved dims, others null, refresh:true), write no fixture,
-        // exit 2. Nothing is written if zero dims resolve.
+        // partial detection (1 or 2 dims): partial is bad data per DESIGN —
+        // report + exit 2, NO store change. Seeds are only created via
+        // `known queue`. Nothing is written if zero dims resolve.
         if (resolved >= 1 and resolved < 3) {
-            const ts = try timestampNow(a);
-            defer a.free(ts);
-            const seed: IndexEvent = .{
-                .refresh = true,
-                .runner = getParentPid(),
-                .generated_at = ts,
-                .harness_alphanumeric_id = harness_aid orelse "",
-                .provider_alphanumeric_id = provider_aid orelse "",
-                .model_alphanumeric_id = model_aid orelse "",
-                .platform_alphanumeric_id = platformAlphanumericId(),
-            };
-            const line = try emitIndexEvent(a, seed);
-            defer a.free(line);
-            try upsertIndexEvent(a, io, "known/index.jsonl", line);
-            writeErr(io, "known agent: partial detection — recorded ");
-            writeErr(io, try describeEvent(a, seed));
-            writeErr(io, " with refresh:true, no fixture written (exit 2)\n");
+            writeErr(io, "known agent: partial detection (");
+            var n_buf: [16]u8 = undefined;
+            writeErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{resolved}));
+            writeErr(io, "/3 dims) — no fixture written, no store change (exit 2)\n");
             return 2;
         }
         if (resolved == 0) {
@@ -3303,21 +3895,15 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             try dir.writeFile(io, .{ .sub_path = trailer_name, .data = t });
         }
 
-        // append refresh:false event to index.jsonl
-        const ts = try timestampNow(a);
-        defer a.free(ts);
-        const ev: IndexEvent = .{
-            .refresh = false,
+        // fixtures only: upsert the state row (never touches `actions`).
+        try upsertFixture(a, io, .{
+            .harness = harness_aid orelse unreachable,
+            .provider = provider_aid orelse unreachable,
+            .model = model_aid orelse unreachable,
+            .platform = platformAlphanumericId(),
             .runner = getParentPid(),
-            .generated_at = ts,
-            .harness_alphanumeric_id = harness_aid orelse unreachable,
-            .provider_alphanumeric_id = provider_aid orelse unreachable,
-            .model_alphanumeric_id = model_aid orelse unreachable,
-            .platform_alphanumeric_id = platformAlphanumericId(),
-        };
-        const line = try emitIndexEvent(a, ev);
-        defer a.free(line);
-        try upsertIndexEvent(a, io, "known/index.jsonl", line);
+            .generated_at = unixNow(io),
+        });
 
         writeOut(io, "known agent: wrote known/");
         writeOut(io, json_name);
@@ -3352,12 +3938,14 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         const a = init.arena.allocator();
         const io = init.io;
 
+        try ensureMigrated(a, io);
+
         const f = parseFilters(init) catch |err| {
             switch (err) {
-                error.NoFilter => writeErr(io, "known queue: at least one filter or scope flag is required (--known=, --agent=, --X=, --no-X, --all, --stale, --partial, --recipes, or --missing-fixture)\n"),
+                error.NoFilter => writeErr(io, "known queue: at least one filter or scope flag is required (--known=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
                 error.InvalidKnownId => writeErr(io, "known queue: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
                 error.InvalidAgentId => writeErr(io, "known queue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
-                error.InvalidThreshold => writeErr(io, "known queue: --older-than-days=/--older-than-hours= must be integers\n"),
+                error.InvalidThreshold => writeErr(io, "known queue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
                 error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known queue: conflicting filters (see --help)\n"),
             }
             writeOut(io, knownUsage);
@@ -3368,7 +3956,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             return runKnownQueueScope(init, f);
         }
 
-        // a `--no-*`-only filter has no positive dims to seed with
+        // bare dims / --agent= / --known=: create a seed row (no scope).
         const positive = f.harness.len > 0 or f.provider.len > 0 or
             f.model.len > 0 or f.platform.len > 0 or f.composite;
         if (!positive) {
@@ -3377,77 +3965,25 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             return 2;
         }
 
-        // gather matching rows (tuple-identity via the filter predicate)
-        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-
-        var matches: std.ArrayListUnmanaged(IndexEvent) = .empty;
-        defer matches.deinit(a);
-        {
-            var it = existing.iterator();
-            while (it.next()) |entry| {
-                if (matchesFilter(entry.value_ptr.*, f)) try matches.append(a, entry.value_ptr.*);
-            }
-        }
-
-        if (matches.items.len >= 1) {
-            // flip path: preserve each row's dims/runner, refresh
-            // generated_at, set refresh:true
-            const ts = try timestampNow(a);
-            defer a.free(ts);
-            for (matches.items) |ev| {
-                const new_ev: IndexEvent = .{
-                    .refresh = true,
-                    .runner = ev.runner,
-                    .generated_at = ts,
-                    .harness_alphanumeric_id = ev.harness_alphanumeric_id,
-                    .provider_alphanumeric_id = ev.provider_alphanumeric_id,
-                    .model_alphanumeric_id = ev.model_alphanumeric_id,
-                    .platform_alphanumeric_id = ev.platform_alphanumeric_id,
-                };
-                const line = try emitIndexEvent(a, new_ev);
-                defer a.free(line);
-                try upsertIndexEvent(a, io, "known/index.jsonl", line);
-            }
-            var n_buf: [16]u8 = undefined;
-            writeOut(io, "known queue: queued ");
-            writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{matches.items.len}));
-            writeOut(io, "\n");
-            return 0;
-        }
-
-        // create path: seed with the positive dims, others null
-        const h = if (f.no_harness) "" else f.harness;
-        const p = if (f.no_provider) "" else f.provider;
-        const m = if (f.no_model) "" else f.model;
-        const plat = if (f.no_platform) "" else f.platform;
-        const ts = try timestampNow(a);
-        defer a.free(ts);
-        const seed: IndexEvent = .{
-            .refresh = true,
+        const row: ActionRow = .{
+            .harness = if (f.harness.len > 0) f.harness else null,
+            .provider = if (f.provider.len > 0) f.provider else null,
+            .model = if (f.model.len > 0) f.model else null,
+            .platform = if (f.platform.len > 0) f.platform else null,
             .runner = getParentPid(),
-            .generated_at = ts,
-            .harness_alphanumeric_id = h,
-            .provider_alphanumeric_id = p,
-            .model_alphanumeric_id = m,
-            .platform_alphanumeric_id = plat,
+            .created_at = unixNow(io),
         };
-        const line = try emitIndexEvent(a, seed);
-        defer a.free(line);
-        try upsertIndexEvent(a, io, "known/index.jsonl", line);
+        try validateActionRow(row);
+        try upsertAction(a, io, row);
 
         writeOut(io, "known queue: queued ");
-        writeOut(io, try describeEvent(a, seed));
+        writeOut(io, try describeAction(a, row));
         writeOut(io, "\n");
         return 0;
     }
 
-    /// `known queue <scope> [filters]` — queue every event in the scope
-    /// candidate set (see `scopeCandidates`). Recipe-scope candidates
-    /// are created/refreshed as full `refresh:true` rows; row-scope
-    /// candidates are flipped in place. Dedupes mirror the removed
-    /// subcommands: `--recipes` skips rows already `refresh:false`,
-    /// `--missing-fixture` skips rows already `refresh:true`.
+    /// `known queue <scope> [filters]` — enumerate the scope candidate set
+    /// (see `scopeCandidates`) and upsert each into `actions`.
     fn runKnownQueueScope(init: std.process.Init, f: FilterOptions) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -3455,38 +3991,9 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         var candidates = try scopeCandidates(a, io, f);
         defer candidates.deinit(a);
 
-        // dedupe needs the pre-upsert index state
-        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-
-        const ts = try timestampNow(a);
-        defer a.free(ts);
-        const my_pid = getParentPid();
-
         var queued: usize = 0;
-        for (candidates.items) |ev| {
-            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
-            if (f.recipes) {
-                if (existing.get(key)) |prev| {
-                    if (!prev.refresh) continue;
-                }
-            } else if (f.missing_fixture) {
-                if (existing.get(key)) |prev| {
-                    if (prev.refresh) continue;
-                }
-            }
-            const new_ev: IndexEvent = .{
-                .refresh = true,
-                .runner = my_pid,
-                .generated_at = ts,
-                .harness_alphanumeric_id = ev.harness_alphanumeric_id,
-                .provider_alphanumeric_id = ev.provider_alphanumeric_id,
-                .model_alphanumeric_id = ev.model_alphanumeric_id,
-                .platform_alphanumeric_id = ev.platform_alphanumeric_id,
-            };
-            const line = try emitIndexEvent(a, new_ev);
-            defer a.free(line);
-            try upsertIndexEvent(a, io, "known/index.jsonl", line);
+        for (candidates.items) |row| {
+            try upsertAction(a, io, row);
             queued += 1;
         }
 
@@ -3559,263 +4066,36 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
     /// append a refresh:true event derived from an existing event.
     /// Caller is responsible for any platform/availability skip
     /// logic.
-    fn queueEventFrom(a: std.mem.Allocator, io: std.Io, ev: IndexEvent) !void {
-        const ts = try timestampNow(a);
-        defer a.free(ts);
-        const new_ev: IndexEvent = .{
-            .refresh = true,
-            .runner = getParentPid(),
-            .generated_at = ts,
-            .harness_alphanumeric_id = ev.harness_alphanumeric_id,
-            .provider_alphanumeric_id = ev.provider_alphanumeric_id,
-            .model_alphanumeric_id = ev.model_alphanumeric_id,
-            .platform_alphanumeric_id = ev.platform_alphanumeric_id,
-        };
-        const line = try emitIndexEvent(a, new_ev);
-        defer a.free(line);
-        try upsertIndexEvent(a, io, "known/index.jsonl", line);
-    }
-
-    /// is `ts` (a unix-seconds-as-string) older than
-    /// `threshold_hours` hours ago? Compares against `init.io`'s wall
-    /// clock; if parsing fails (e.g. stub timestamp "0"), treats the
-    /// entry as stale.
-    fn olderThanThreshold(ts: []const u8, threshold_hours: i64) bool {
-        const secs = std.fmt.parseInt(i64, ts, 10) catch return true;
-        _ = secs; // exact arithmetic is a TODO; stub returns false
-        _ = threshold_hours; // TODO: now - secs > threshold_hours * 3600
-        return false;
-    }
-
-    /// `known dequeue [scope] <filters>` — for every event matching the
-    /// shared filters (or the scope candidate set), upsert a
-    /// `refresh: false` event (re-emitting the same dims). The index
-    /// keeps one event per 4-tuple key, so the upserted event replaces
-    /// the prior one that `latestEventsPerTuple` returns. This is the
-    /// inverse of `known queue`: it tells the daemon "I have a fresh
-    /// fixture for this, don't recapture." At least one filter or scope
-    /// flag is required (the old "no filters = dequeue everything"
-    /// behavior is gone); nothing is deleted from the index.
+    /// `known dequeue [scope] <filters>` — **DELETE only; shared validator.**
+    /// Builds the WHERE from dims + scope columns (three-valued predicate)
+    /// + optional available match and deletes matching `actions` rows. No
+    /// staleness/file checks; no fixture mutation. At least one filter or
+    /// scope flag is required.
     pub fn runKnownDequeue(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
 
+        try ensureMigrated(a, io);
+
         const f = parseFilters(init) catch |err| {
             switch (err) {
-                error.NoFilter => writeErr(io, "known dequeue: at least one filter or scope flag is required (--known=, --agent=, --X=, --no-X, --all, --stale, --partial, --recipes, or --missing-fixture)\n"),
+                error.NoFilter => writeErr(io, "known dequeue: at least one filter or scope flag is required (--known=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
                 error.InvalidKnownId => writeErr(io, "known dequeue: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
                 error.InvalidAgentId => writeErr(io, "known dequeue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
-                error.InvalidThreshold => writeErr(io, "known dequeue: --older-than-days=/--older-than-hours= must be integers\n"),
+                error.InvalidThreshold => writeErr(io, "known dequeue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
                 error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known dequeue: conflicting filters (see --help)\n"),
             }
             writeOut(io, knownUsage);
             return 2;
         };
 
-        if (scopeCount(f) > 0) {
-            return runKnownDequeueScope(init, f);
-        }
-
-        const ts = try timestampNow(a);
-        defer a.free(ts);
-        const my_pid = getParentPid();
-
-        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-        var dequeued: usize = 0;
-        var it = existing.iterator();
-        while (it.next()) |entry| {
-            const ev = entry.value_ptr.*;
-            if (!matchesFilter(ev, f)) continue;
-            // re-emit the same dims with refresh:false. The upsert
-            // replaces the prior event for this tuple, so the latest
-            // event is now refresh:false, which
-            // latestEventsPerTuple will return on the next read.
-            const new_ev: IndexEvent = .{
-                .refresh = false,
-                .runner = my_pid,
-                .generated_at = ts,
-                .harness_alphanumeric_id = ev.harness_alphanumeric_id,
-                .provider_alphanumeric_id = ev.provider_alphanumeric_id,
-                .model_alphanumeric_id = ev.model_alphanumeric_id,
-                .platform_alphanumeric_id = ev.platform_alphanumeric_id,
-            };
-            const line = try emitIndexEvent(a, new_ev);
-            defer a.free(line);
-            try upsertIndexEvent(a, io, "known/index.jsonl", line);
-            dequeued += 1;
-        }
+        const deleted = try deleteActions(a, io, f);
 
         var n_buf: [16]u8 = undefined;
-        writeOut(io, "known dequeue: dequeued ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{dequeued}));
-        writeOut(io, " event(s)\n");
-        return 0;
-    }
-
-    /// `known dequeue <scope> [filters]` — set `refresh:false` on the
-    /// existing rows in the scope candidate set (see `scopeCandidates`).
-    fn runKnownDequeueScope(init: std.process.Init, f: FilterOptions) !u8 {
-        const a = init.arena.allocator();
-        const io = init.io;
-
-        var candidates = try scopeCandidates(a, io, f);
-        defer candidates.deinit(a);
-
-        const ts = try timestampNow(a);
-        defer a.free(ts);
-        const my_pid = getParentPid();
-
-        // map candidate events by their tuple key: dequeue only touches
-        // rows that already exist in the index.
-        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-
-        var dequeued: usize = 0;
-        for (candidates.items) |ev| {
-            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
-            // recipe-scope candidates may describe a recipe with no row
-            // yet — only flip rows that exist.
-            const prev = existing.get(key) orelse continue;
-            const new_ev: IndexEvent = .{
-                .refresh = false,
-                .runner = my_pid,
-                .generated_at = ts,
-                .harness_alphanumeric_id = prev.harness_alphanumeric_id,
-                .provider_alphanumeric_id = prev.provider_alphanumeric_id,
-                .model_alphanumeric_id = prev.model_alphanumeric_id,
-                .platform_alphanumeric_id = prev.platform_alphanumeric_id,
-            };
-            const line = try emitIndexEvent(a, new_ev);
-            defer a.free(line);
-            try upsertIndexEvent(a, io, "known/index.jsonl", line);
-            dequeued += 1;
-        }
-
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known dequeue: dequeued ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{dequeued}));
-        writeOut(io, " event(s)\n");
-        return 0;
-    }
-
-    /// `known purge <filters>` — delete every matching row from
-    /// `known/index.jsonl` (rewriting the file without their tuple
-    /// keys). At least one filter is required. The old implicit
-    /// "purge incomplete rows" mode is removed — partial rows are
-    /// first-class seeds now. The fixture sweep for malformed files is
-    /// kept: non-object `*.agent.json` files and fixtures missing
-    /// canonical harness/provider/model names are deleted (trailers
-    /// too).
-    pub fn runKnownPurge(init: std.process.Init) !u8 {
-        const a = init.arena.allocator();
-        const io = init.io;
-
-        const f = parseFilters(init) catch |err| {
-            switch (err) {
-                error.NoFilter => writeErr(io, "known purge: at least one filter or scope flag is required (--known=, --agent=, --X=, --no-X, --all, --stale, --partial, --recipes, or --missing-fixture)\n"),
-                error.InvalidKnownId => writeErr(io, "known purge: --known=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
-                error.InvalidAgentId => writeErr(io, "known purge: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
-                error.InvalidThreshold => writeErr(io, "known purge: --older-than-days=/--older-than-hours= must be integers\n"),
-                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "known purge: conflicting filters (see --help)\n"),
-            }
-            writeOut(io, knownUsage);
-            return 2;
-        };
-
-        const index_path = "known/index.jsonl";
-        const deleted = if (scopeCount(f) > 0)
-            try deleteIndexKeys(a, io, index_path, f)
-        else
-            try deleteIndexEvents(a, io, index_path, f);
-        const fixture_purged = purgeMalformedFixtures(a, io);
-
-        var n_buf: [16]u8 = undefined;
-        writeOut(io, "known purge: removed ");
+        writeOut(io, "known dequeue: deleted ");
         writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{deleted}));
-        writeOut(io, " event(s), fixture scan removed ");
-        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{fixture_purged}));
-        writeOut(io, "\n");
+        writeOut(io, " action(s)\n");
         return 0;
-    }
-
-    /// delete every event in `path` matching `f`; rewrites the file
-    /// with the rest and returns the count removed. Held under the
-    /// index lock so a concurrent daemon write can't be lost.
-    fn deleteIndexEvents(a: std.mem.Allocator, io: std.Io, path: []const u8, f: FilterOptions) !usize {
-        try lockIndex(io);
-        defer unlockIndex(io);
-
-        var existing = try latestEventsPerTuple(a, io, path);
-        defer existing.deinit(a);
-
-        var keep = std.ArrayList([]u8).empty;
-        defer keep.deinit(a);
-        var removed: usize = 0;
-        var it = existing.iterator();
-        while (it.next()) |entry| {
-            const ev = entry.value_ptr.*;
-            if (matchesFilter(ev, f)) {
-                removed += 1;
-                continue;
-            }
-            try keep.append(a, try emitIndexEvent(a, ev));
-        }
-
-        var new_content: std.ArrayList(u8) = .empty;
-        defer new_content.deinit(a);
-        for (keep.items) |line| {
-            try new_content.appendSlice(a, line);
-            try new_content.append(a, '\n');
-        }
-        try writeIndexAtomic(io, new_content.items);
-        return removed;
-    }
-
-    /// delete every event in `path` whose tuple key belongs to the
-    /// scope candidate set (see `scopeCandidates`); rewrites the file
-    /// with the rest and returns the count removed. Held under the
-    /// index lock so a concurrent daemon write can't be lost.
-    fn deleteIndexKeys(a: std.mem.Allocator, io: std.Io, path: []const u8, f: FilterOptions) !usize {
-        try lockIndex(io);
-        defer unlockIndex(io);
-
-        var candidates = try scopeCandidates(a, io, f);
-        defer candidates.deinit(a);
-
-        // candidate tuple keys (arena-backed)
-        var keys: std.StringHashMapUnmanaged(void) = .empty;
-        defer keys.deinit(a);
-        for (candidates.items) |ev| {
-            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
-            try keys.put(a, key, {});
-        }
-
-        var existing = try latestEventsPerTuple(a, io, path);
-        defer existing.deinit(a);
-
-        var keep = std.ArrayList([]u8).empty;
-        defer keep.deinit(a);
-        var removed: usize = 0;
-        var it = existing.iterator();
-        while (it.next()) |entry| {
-            const ev = entry.value_ptr.*;
-            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
-            if (keys.contains(key)) {
-                removed += 1;
-                continue;
-            }
-            try keep.append(a, try emitIndexEvent(a, ev));
-        }
-
-        var new_content: std.ArrayList(u8) = .empty;
-        defer new_content.deinit(a);
-        for (keep.items) |line| {
-            try new_content.appendSlice(a, line);
-            try new_content.append(a, '\n');
-        }
-        try writeIndexAtomic(io, new_content.items);
-        return removed;
     }
 
     /// sweep fixtures for malformed files (kept from the original
@@ -3863,13 +4143,15 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         return fixture_purged;
     }
 
-    /// `known daemon` — long-running. Polls known/index.jsonl every
-    /// 5 seconds. For each refresh:true event on the current
-    /// platform whose harness is available, sets up the env from the
-    /// KnownFixturesForKnownAgents recipe and spawns `agent-detection-dev refresh run`
-    /// as a child. **No stale detection** — the daemon only processes
-    /// refresh:true events. Stale detection is `known queue --stale`'s
-    /// job.
+    /// `known daemon` — long-running. **Owns all evaluation.** Every poll
+    /// it atomically pops one pending action, runs the SHARED validator on
+    /// it (warn + drop if invalid), then decides by the row's scope columns
+    /// + dims + current `fixtures`/filesystem: expand seeds (any NULL dim),
+    /// skip-and-complete full rows already freshly captured (unless
+    /// `scope_all=1`), re-validate staleness with the row's threshold,
+    /// re-probe `available` (never trust the stored value), then spawn
+    /// `refresh run`. Success → upsert `fixtures` (action already popped);
+    /// failure → re-queue. Idle → `purgeMalformedFixtures` + sleep.
     ///
     /// **USER-ONLY**: refuses to start if running inside an agent
     /// (see `assertNotInAgent`). The agent must never run the daemon
@@ -3918,146 +4200,136 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
         }
 
         try assertNotInAgent(a, init);
-
-        var msg_buf: [256]u8 = undefined;
+        try ensureMigrated(a, io);
 
         daemonWrite(io, "agent-detection-dev known daemon: running\n");
         daemonWrite(io, "  poll rate: 5s\n");
-        daemonWrite(io, "  index file: known/index.jsonl\n");
+        daemonWrite(io, "  index file: known/index.sqlite3\n");
         if (write_log) daemonWrite(io, "  log file: known/daemon.log\n");
         daemonWrite(io, "  press Ctrl+C to stop\n");
 
-        var processed: std.StringHashMapUnmanaged(void) = .empty;
-        defer processed.deinit(a);
-        var warned: std.StringHashMapUnmanaged(void) = .empty;
-        defer warned.deinit(a);
-
-        var queue: std.ArrayListUnmanaged(IndexEvent) = .empty;
-        errdefer queue.deinit(a);
-        var queued: std.StringHashMapUnmanaged(void) = .empty;
-        defer queued.deinit(a);
-
-        // pre-seed: enqueue everything already in the file on
-        // startup. New entries appended after startup are picked up
-        // by the polling loop.
-        try enqueuePending(a, io, &processed, &queued, &queue);
-        {
-            const msg = std.fmt.bufPrint(msg_buf[0..], "daemon: queued {d} items\n", .{queue.items.len}) catch "daemon: queued 0 items\n";
-            daemonWrite(io, msg);
-        }
         while (true) {
-            if (queue.items.len > 0) {
-                const ev = queue.items[0];
-                const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
-                _ = queue.orderedRemove(0);
-                _ = queued.remove(key);
-                const desc = try describeEvent(a, ev);
-                {
-                    const msg = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s} ({d} remaining)\n", .{desc, queue.items.len}) catch "daemon: processing\n";
-                    daemonWrite(io, msg);
+            const row = try popPendingAction(a, io);
+            if (row) |action| {
+                const desc = try describeAction(a, action);
+                var msg_buf: [256]u8 = undefined;
+                const m = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s}\n", .{desc}) catch "daemon: processing\n";
+                daemonWrite(io, m);
+
+                // shared validator: invalid → warn + drop (already popped).
+                validateActionRow(action) catch {
+                    daemonWriteErr(io, "daemon: invalid action row — dropping: ");
+                    daemonWriteErr(io, desc);
+                    daemonWriteErr(io, "\n");
+                    continue;
+                };
+
+                const full = action.harness != null and action.provider != null and
+                    action.model != null and action.platform != null;
+                if (!full) {
+                    try expandSeed(a, io, action);
+                    continue;
                 }
-                // full row → recipe capture; partial row (seed) → expand
-                const full = ev.harness_alphanumeric_id.len > 0 and
-                    ev.provider_alphanumeric_id.len > 0 and
-                    ev.model_alphanumeric_id.len > 0 and
-                    ev.platform_alphanumeric_id.len > 0;
-                if (full) {
-                    try runOneCombo(a, io, init, ev);
+
+                const h = action.harness.?;
+                const p = action.provider.?;
+                const m_d = action.model.?;
+                const plat = action.platform.?;
+
+                // skip-and-complete if a fresh fixture exists (unless scope_all=1)
+                if (action.scope_all == null or action.scope_all.? != 1) {
+                    if (try fixtureExists(a, io, h, p, m_d, plat)) {
+                        daemonWrite(io, "daemon: fresh fixture exists for ");
+                        daemonWrite(io, desc);
+                        daemonWrite(io, " — completing without re-capture\n");
+                        continue;
+                    }
+                }
+
+                // staleness re-validation with the row's stored threshold
+                if (action.stale_by_days != null or action.stale_by_minutes != null) {
+                    if (try fixtureRow(a, io, h, p, m_d, plat)) |fx| {
+                        if (!isStale(io, fx.generated_at, action.stale_by_minutes orelse (action.stale_by_days.? * 24 * 60))) {
+                            daemonWrite(io, "daemon: fixture for ");
+                            daemonWrite(io, desc);
+                            daemonWrite(io, " is still fresh by its threshold — completing early\n");
+                            continue;
+                        }
+                    }
+                }
+
+                // --available rows: re-probe LIVE; if unavailable, re-queue as
+                // handoff work (available=0, original created_at), never capture.
+                if (action.available != null) {
+                    const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
+                    if (!harnessAvailable(io, agent)) {
+                        daemonWrite(io, "daemon: harness unavailable for ");
+                        daemonWrite(io, desc);
+                        daemonWrite(io, " — re-queued as handoff for the next agent/platform\n");
+                        var requeue = action;
+                        requeue.available = 0;
+                        try upsertAction(a, io, requeue);
+                        continue;
+                    }
+                }
+
+                // capture the combo
+                const captured = try runOneComboResult(a, io, init, action);
+                if (captured) {
+                    try upsertFixture(a, io, .{
+                        .harness = h,
+                        .provider = p,
+                        .model = m_d,
+                        .platform = plat,
+                        .runner = getParentPid(),
+                        .generated_at = unixNow(io),
+                    });
                 } else {
-                    try expandSeed(a, io, ev, &warned, &processed);
+                    // failure → re-queue (refresh available only for --available rows)
+                    var requeue = action;
+                    if (action.available != null) {
+                        const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
+                        requeue.available = if (harnessAvailable(io, agent)) 1 else 0;
+                    }
+                    try upsertAction(a, io, requeue);
                 }
-                try processed.put(a, key, {});
             } else {
                 daemonWrite(io, "daemon: idle, queue empty, sleeping 5s\n");
+                _ = purgeMalformedFixtures(a, io);
             }
             try std.Io.sleep(io, .{ .nanoseconds = 5 * std.time.ns_per_s }, .boot);
-            try enqueuePending(a, io, &processed, &queued, &queue);
         }
     }
 
-    fn enqueuePending(a: std.mem.Allocator, io: std.Io, processed: *std.StringHashMapUnmanaged(void), queued: *std.StringHashMapUnmanaged(void), queue: *std.ArrayListUnmanaged(IndexEvent)) !void {
-        var existing = try latestEventsPerTuple(a, io, "known/index.jsonl");
-        defer existing.deinit(a);
-        const host = platformAlphanumericId();
-        var it = existing.iterator();
-        while (it.next()) |entry| {
-            const ev = entry.value_ptr.*;
-            if (!ev.refresh) continue;
-            const key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
-            if (processed.contains(key)) continue;
-            if (queued.contains(key)) continue;
-            // only skip non-host platforms when the platform is set;
-            // null-platform seeds flow through to expandSeed
-            if (ev.platform_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) continue;
-            const cloned: IndexEvent = .{
-                .refresh = ev.refresh,
-                .runner = ev.runner,
-                .generated_at = try a.dupe(u8, ev.generated_at),
-                .harness_alphanumeric_id = try a.dupe(u8, ev.harness_alphanumeric_id),
-                .provider_alphanumeric_id = try a.dupe(u8, ev.provider_alphanumeric_id),
-                .model_alphanumeric_id = try a.dupe(u8, ev.model_alphanumeric_id),
-                .platform_alphanumeric_id = try a.dupe(u8, ev.platform_alphanumeric_id),
-            };
-            try queue.append(a, cloned);
-            try queued.put(a, key, {});
-        }
+    /// true iff `generated_at` (unix secs) is older than `threshold_minutes`.
+    fn isStale(io: std.Io, generated_at: i64, threshold_minutes: i64) bool {
+        const now = std.Io.Clock.Timestamp.now(io, .real).raw.toSeconds();
+        return now - generated_at > threshold_minutes * 60;
     }
 
-    /// inner loop predicate: does every dim that `ev` has set equal
-    /// the recipe's dims? seed rows have missing dims, which are
-    /// filled from the recipe.
-    fn recipeMatchesEv(a: std.mem.Allocator, ev: IndexEvent, combo: KnownFixturesForKnownAgents, host: []const u8) !bool {
-        const parts = try splitAgentAlphanumericId(a, combo.agent_alphanumeric_id);
-        defer {
-            a.free(parts[0]);
-            a.free(parts[1]);
-            a.free(parts[2]);
-        }
-        if (ev.harness_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.harness_alphanumeric_id, parts[0])) return false;
-        if (ev.provider_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.provider_alphanumeric_id, parts[1])) return false;
-        if (ev.model_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.model_alphanumeric_id, parts[2])) return false;
-        if (ev.platform_alphanumeric_id.len > 0 and !std.mem.eql(u8, ev.platform_alphanumeric_id, host)) return false;
-        return true;
-    }
-
-    /// expand a partial (seed) row over the `knownFixturesForKnownAgents`
-    /// recipes. A seed is an action: "capture every applicable combo
+    /// expand a partial (seed) action over the `knownFixturesForKnownAgents`
+    /// recipes. A seed is an action: "capture every applicable recipe
     /// matching these dims". Every applicable recipe (set dims equal,
-    /// platform empty or host, harness available) is re-queued as a full
-    /// `refresh:true` row — refreshing existing `refresh:false` entries
-    /// and adding missing combos — then the seed row is deleted. The
-    /// re-queued combo keys are removed from the daemon's per-run
-    /// `processed` set so `enqueuePending` re-enqueues them this run even
-    /// if they were captured earlier. Warnings (no applicable recipe /
-    /// unknown id) leave the entry unchanged and are emitted once per
-    /// tuple key per daemon run (tracked in `warned`).
-    fn expandSeed(a: std.mem.Allocator, io: std.Io, ev: IndexEvent, warned: *std.StringHashMapUnmanaged(void), processed: *std.StringHashMapUnmanaged(void)) !void {
-        const seed_key = try tupleKey(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id, ev.platform_alphanumeric_id);
+    /// platform empty or host) is queued as a full action, then the seed is
+    /// dropped (already popped).
+    fn expandSeed(a: std.mem.Allocator, io: std.Io, seed: ActionRow) !void {
         const host = platformAlphanumericId();
+        const now = unixNow(io);
 
         var applicable: std.ArrayListUnmanaged(KnownFixturesForKnownAgents) = .empty;
         defer applicable.deinit(a);
         for (knownFixturesForKnownAgents) |c| {
-            if (!try recipeMatchesEv(a, ev, c, host)) continue;
-            if (!harnessAvailable(io, c.agent_alphanumeric_id)) continue;
+            if (!recipeMatchesAction(seed, c, host)) continue;
             try applicable.append(a, c);
         }
 
         if (applicable.items.len == 0) {
-            if (!warned.contains(seed_key)) {
-                daemonWriteErr(io, "daemon: warning: no capture recipe applicable for ");
-                daemonWriteErr(io, try describeEvent(a, ev));
-                daemonWriteErr(io, "\n");
-                try warned.put(a, try a.dupe(u8, seed_key), {});
-            }
+            daemonWriteErr(io, "daemon: warning: no capture recipe applicable for ");
+            daemonWriteErr(io, try describeAction(a, seed));
+            daemonWriteErr(io, "\n");
             return;
         }
 
-        // refresh every applicable combo (existing refresh:false entries
-        // and missing combos alike); combos are captured one per poll by
-        // the existing loop and carry their own retry state.
-        const ts = try timestampNow(a);
-        defer a.free(ts);
         for (applicable.items) |c| {
             const parts = try splitAgentAlphanumericId(a, c.agent_alphanumeric_id);
             defer {
@@ -4065,61 +4337,59 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 a.free(parts[1]);
                 a.free(parts[2]);
             }
-            const combo_key = try tupleKey(a, parts[0], parts[1], parts[2], host);
-            const combo_ev: IndexEvent = .{
-                .refresh = true,
+            var combo: ActionRow = .{
+                .harness = parts[0],
+                .provider = parts[1],
+                .model = parts[2],
+                .platform = try a.dupe(u8, host),
                 .runner = getParentPid(),
-                .generated_at = ts,
-                .harness_alphanumeric_id = parts[0],
-                .provider_alphanumeric_id = parts[1],
-                .model_alphanumeric_id = parts[2],
-                .platform_alphanumeric_id = host,
+                .created_at = now,
             };
-            const line = try emitIndexEvent(a, combo_ev);
-            defer a.free(line);
-            try upsertIndexEvent(a, io, "known/index.jsonl", line);
-            // a seed is an action: re-enqueue this combo even if it was
-            // already processed earlier in this daemon run.
-            _ = processed.remove(combo_key);
+            if (seed.available != null) {
+                combo.available = if (harnessAvailable(io, c.agent_alphanumeric_id)) 1 else 0;
+            }
+            try validateActionRow(combo);
+            try upsertAction(a, io, combo);
         }
-
-        // delete the seed row (its tuple key)
-        try deleteTupleKey(a, io, "known/index.jsonl", seed_key);
     }
 
-    /// delete every event in `path` whose tuple key equals `key`.
-    fn deleteTupleKey(a: std.mem.Allocator, io: std.Io, path: []const u8, key: []const u8) !void {
-        try lockIndex(io);
-        defer unlockIndex(io);
-
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
-        defer a.free(data);
-        var out: std.ArrayList(u8) = .empty;
-        defer out.deinit(a);
-        var lines = std.mem.splitScalar(u8, data, '\n');
-        while (lines.next()) |l| {
-            if (l.len == 0) continue;
-            const parsed = parseIndexEvent(a, l) orelse continue;
-            const lkey = try tupleKey(a, parsed.harness_alphanumeric_id, parsed.provider_alphanumeric_id, parsed.model_alphanumeric_id, parsed.platform_alphanumeric_id);
-            if (std.mem.eql(u8, lkey, key)) continue;
-            try out.appendSlice(a, l);
-            try out.append(a, '\n');
+    /// does every dim that `seed` has set equal the recipe's dims?
+    fn recipeMatchesAction(seed: ActionRow, combo: KnownFixturesForKnownAgents, host: []const u8) bool {
+        const parts = splitAgentAlphanumericId(std.heap.page_allocator, combo.agent_alphanumeric_id) catch return false;
+        defer {
+            std.heap.page_allocator.free(parts[0]);
+            std.heap.page_allocator.free(parts[1]);
+            std.heap.page_allocator.free(parts[2]);
         }
-        try writeIndexAtomic(io, out.items);
+        if (seed.harness) |v| {
+            if (v.len > 0 and !std.mem.eql(u8, v, parts[0])) return false;
+        }
+        if (seed.provider) |v| {
+            if (v.len > 0 and !std.mem.eql(u8, v, parts[1])) return false;
+        }
+        if (seed.model) |v| {
+            if (v.len > 0 and !std.mem.eql(u8, v, parts[2])) return false;
+        }
+        if (seed.platform) |v| {
+            if (v.len > 0 and !std.mem.eql(u8, v, host)) return false;
+        }
+        return true;
     }
 
-    /// spawn `agent-detection-dev refresh run` for a single
-    /// queued combo. The child inherits the daemon's env, which
-    /// is the user's terminal — not the dev harness.
-    fn runOneCombo(a: std.mem.Allocator, io: std.Io, init: std.process.Init, ev: IndexEvent) !void {
-        // 1. find the KnownFixturesForKnownAgents entry for the harness.
-        // The derived agent id is never stored — recompute from dims.
-        const target_agent_aid = (try agentIdFrom(a, ev.harness_alphanumeric_id, ev.provider_alphanumeric_id, ev.model_alphanumeric_id)) orelse {
-            const desc = try describeEvent(a, ev);
+    /// spawn `agent-detection-dev refresh run` for a single queued combo.
+    /// Returns true on successful capture (exit 0). The child inherits the
+    /// daemon's env, which is the user's terminal — not the dev harness.
+    fn runOneComboResult(a: std.mem.Allocator, io: std.Io, init: std.process.Init, action: ActionRow) !bool {
+        const h = action.harness orelse return false;
+        const p = action.provider orelse return false;
+        const m_d = action.model orelse return false;
+
+        // 1. find the recipe for the harness.
+        const target_agent_aid = (try agentIdFrom(a, h, p, m_d)) orelse {
             daemonWriteErr(io, "daemon: no recipe applicable for ");
-            daemonWriteErr(io, desc);
+            daemonWriteErr(io, try describeAction(a, action));
             daemonWriteErr(io, " — skipping\n");
-            return;
+            return false;
         };
         var combo: ?KnownFixturesForKnownAgents = null;
         for (knownFixturesForKnownAgents) |c| {
@@ -4132,13 +4402,12 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             daemonWriteErr(io, "daemon: no KnownFixturesForKnownAgents recipe for ");
             daemonWriteErr(io, target_agent_aid);
             daemonWriteErr(io, " — skipping\n");
-            return;
+            return false;
         };
 
         // 2. build env (writes config files, env vars)
         var env_map = std.process.Environ.Map.init(a);
         defer env_map.deinit();
-        // inherit the daemon's env (so HOME / USERPROFILE pass through)
         var parent_it = init.environ_map.iterator();
         while (parent_it.next()) |kv| {
             try env_map.put(kv.key_ptr.*, kv.value_ptr.*);
@@ -4147,13 +4416,12 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             daemonWriteErr(io, "daemon: buildEnv failed: ");
             daemonWriteErr(io, @errorName(err));
             daemonWriteErr(io, "\n");
-            return;
+            return false;
         };
         for (setup.env) |kv| {
             if (kv[0].len == 0) break;
             try env_map.put(kv[0], kv[1]);
         }
-        // apply file writes
         for (setup.writes) |w| {
             if (std.fs.path.dirname(w.path)) |dir| {
                 std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
@@ -4164,7 +4432,7 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                         daemonWriteErr(io, ": ");
                         daemonWriteErr(io, @errorName(err));
                         daemonWriteErr(io, "\n");
-                        return;
+                        return false;
                     },
                 };
             }
@@ -4174,30 +4442,17 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
                 daemonWriteErr(io, ": ");
                 daemonWriteErr(io, @errorName(err));
                 daemonWriteErr(io, "\n");
-                return;
+                return false;
             };
         }
 
-        // 3. spawn the child
-        // The child is the same binary (this dev binary) running
-        // `refresh run`, which does the capture in its own process
-        // and writes the fixture + index event. The daemon's process
-        // tree stays clean: the child is the daemon's direct child,
-        // and the daemon was started from the user's terminal — not
-        // from inside kimi-code.
-        // Resolve the running binary's absolute path. argv[0] can be a
-        // relative path (e.g. `./zig-out/bin/agent-detection-dev`) and is
-        // not reliable on its own — we use the canonical
-        // `std.process.executablePath` instead. We do NOT set `.cwd` to
-        // setup.cwd — the harness config files are written to absolute
-        // paths (e.g. `~/.kimi-code/config.toml`), and the child doesn't
-        // need to chdir.
+        // 3. spawn the child (`refresh run` / `known agent`)
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const self_path_len = std.process.executablePath(io, &self_path_buf) catch |err| {
             daemonWriteErr(io, "daemon: executablePath failed: ");
             daemonWriteErr(io, @errorName(err));
             daemonWriteErr(io, "\n");
-            return;
+            return false;
         };
         const argv0 = self_path_buf[0..self_path_len];
         var argv = [_][]const u8{ argv0, "refresh", "run" };
@@ -4212,11 +4467,8 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             daemonWriteErr(io, " (argv0=");
             daemonWriteErr(io, argv0);
             daemonWriteErr(io, ")\n");
-            return;
+            return false;
         };
-        // Drain worker stderr before wait() — wait() closes the pipe,
-        // so any unread bytes would be lost. The worker is short-lived
-        // and writes at most a couple of lines.
         var stderr_capture = try std.ArrayList(u8).initCapacity(a, 4096);
         defer stderr_capture.deinit(a);
         var stderr_buf: [4096]u8 = undefined;
@@ -4230,35 +4482,36 @@ const knownFixturesForKnownAgents = [_]KnownFixturesForKnownAgents{
             daemonWriteErr(io, "daemon: child wait failed: ");
             daemonWriteErr(io, @errorName(err));
             daemonWriteErr(io, "\n");
-            return;
+            return false;
         };
         switch (term) {
             .exited => |code| {
                 if (code != 0) {
                     daemonWriteErr(io, "daemon: worker failed for ");
-                    daemonWriteErr(io, try describeEvent(a, ev));
+                    daemonWriteErr(io, try describeAction(a, action));
                     daemonWriteErr(io, " (exit code ");
                     var n_buf: [16]u8 = undefined;
                     daemonWriteErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{code}));
-                    daemonWriteErr(io, ") — leaving refresh:true in index\n");
+                    daemonWriteErr(io, ") — re-queued\n");
                     if (stderr_capture.items.len > 0) {
                         daemonWriteErr(io, "  worker stderr: ");
                         daemonWriteErr(io, stderr_capture.items);
                         if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
                     }
-                    return;
+                    return false;
                 }
                 {
-                    var msg_buf: [256]u8 = undefined;
-                    const msg = std.fmt.bufPrint(msg_buf[0..], "daemon: captured {s}\n", .{try describeEvent(a, ev)}) catch "daemon: captured\n";
+                    var buf2: [256]u8 = undefined;
+                    const msg = std.fmt.bufPrint(buf2[0..], "daemon: captured {s}\n", .{try describeAction(a, action)}) catch "daemon: captured\n";
                     daemonWrite(io, msg);
                 }
+                return true;
             },
             else => {
                 daemonWriteErr(io, "daemon: child terminated abnormally for ");
-                daemonWriteErr(io, try describeEvent(a, ev));
+                daemonWriteErr(io, try describeAction(a, action));
                 daemonWriteErr(io, "\n");
-                return;
+                return false;
             },
         }
     }
@@ -4359,8 +4612,6 @@ pub fn main(init: std.process.Init) !u8 {
                 return dev.runKnownQueue(init);
             } else if (std.mem.eql(u8, sub, "dequeue")) {
                 return dev.runKnownDequeue(init);
-            } else if (std.mem.eql(u8, sub, "purge")) {
-                return dev.runKnownPurge(init);
             } else {
                 writeErr(io, "known: unknown subcommand — run `known --help`\n");
                 writeOut(io, dev.knownUsage);
