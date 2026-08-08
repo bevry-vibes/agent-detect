@@ -1,30 +1,22 @@
 # AGENTS.md
 
-Only one skill from https://github.com/bevry-labs/skills applies to this
-project: **commits.md**. None of the other skills in that repository apply,
-and this file is not policy — it is a pointer to the one relevant skill.
+This project conforms to Bevry's skills. Reference their remote URLs
+only — do not pull their contents into this file.
 
-## commits.md (the only applicable skill)
+- https://github.com/bevry-vibes/skills/blob/main/ai-policy.md —
+  **not applied to this project.** agent-detect is the enforcement
+  mechanism that ai-policy.md delegates to, so this project must run
+  on all agents, including those that violate that policy; it cannot
+  apply the policy to itself.
+- https://github.com/bevry-vibes/skills/blob/main/commits.md —
+  **applies**, with this project's tweaks: build via `zig build`,
+  generate the co-author trailer with
+  `./zig-out/bin/agent-detect trailer co-author`, attach it with
+  `git commit --trailer "$(./zig-out/bin/agent-detect trailer co-author)"`.
+  Never guess or cache the trailer; if generation fails, fix it rather
+  than commit without it.
+- https://github.com/bevry-vibes/skills/blob/main/minimax.md —
+  **applies** when the running agent is a MiniMax M3 model (its rules
+  gate themselves on model and harness).
 
-Follow https://github.com/bevry-labs/skills/blob/main/commits.md for every
-commit: Conventional Commits format, atomic commits, and the mandatory
-co-author trailer.
-
-The `agent-detect` tool that commits.md refers to is **this project**.
-To generate the co-author trailer for the current session, build this
-project's binary and run it:
-
-```sh
-zig build
-./zig-out/bin/agent-detect trailer   # prints the Co-authored-by trailer
-```
-
-Then attach it to the commit (never guess or cache the identity):
-
-```sh
-git commit --trailer "$(./zig-out/bin/agent-detect trailer)" # along with other args
-```
-
-If the trailer cannot be generated (the binary reports "unable to determine
-trailer"), do not commit without it and do not guess — fix the trailer
-generation for the current harness instead.
+This file is not policy — it is a pointer.

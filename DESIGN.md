@@ -5,8 +5,8 @@
 AI agents working on Bevry projects must identify their **harness**,
 **provider**, and **model** before working, and must credit commits
 with an accurate `Co-authored-by` trailer (see
-[policy.md](https://github.com/bevry-labs/skills/blob/main/policy.md) and
-[commits.md](https://github.com/bevry-labs/skills/blob/main/commits.md)).
+[ai-policy.md](https://github.com/bevry-vibes/skills/blob/main/ai-policy.md) and
+[commits.md](https://github.com/bevry-vibes/skills/blob/main/commits.md)).
 Hard-coded answers rot; manual per-harness techniques go unread. This
 repo provides a single small native binary, `agent-detect`, that
 infers the identity from live evidence at runtime — and, in recipe
@@ -27,7 +27,8 @@ above `pub fn detect` in `src/main.zig`.
 
 The released binary must stay minimal — no raw dump, no subcommands,
 no fixtures — so it ships as a single static file with no surprises.
-Its CLI surface is `cooked`, `trailer`, `help`, `version`. The dev
+Its CLI surface is `cooked`, `trailer co-author`, `trailer assisted-by`,
+`is-reciprocal`, `help`, `version`. The dev
 binary (`agent-detect-dev`) carries the maintainer's full toolkit: the
 standalone `raw` action (raw observations block) and the `fixtures`
 subcommand namespace (capture / daemon / queue / dequeue). The split
@@ -119,7 +120,7 @@ dims match is queued as a full action, then the seed is dropped. Seeds
 with no applicable recipe (unknown ids) are **warned once per run and
 kept**, so a bad seed is visible in logs without spinning.
 `fixtures capture` never touches `queue`; it only writes a `fixtures`
-row (partial detection exits 2 with no store change per the "never
+row (partial detection exits 8 with no store change per the "never
 guess" rule). `fixtures dequeue` is a pure **DELETE** of matching
 `queue` rows — it never mutates `fixtures`.
 
@@ -150,10 +151,12 @@ checks is documented on `runFixturesDaemon` in `src/main.zig`.
 Some harnesses are hard or impossible to detect live (they don't run
 inside their own session, or leave no reliable markers). For those, a
 maintainer adds the harness/provider/model to the rule tables and
-`cooked`/`trailer` accept a complete combo
+`cooked`/`trailer co-author`/`trailer assisted-by`/`is-reciprocal`
+accept a complete combo
 (`--harness=H --provider=P --model=M`) that resolves against the
 rules without live detection. All three dims are required (or none);
-a partial combo or an unknown id exits 2. `detectable` in recipe mode
+a partial combo exits 4 and an unknown id exits 7. `detectable` in
+recipe mode
 reflects the recipe (up to all three dims).
 
 ## scope
@@ -166,19 +169,97 @@ reflects the recipe (up to all three dims).
   additionally needs the system `sqlite3` CLI (preinstalled on every
   supported OS) to reach the state store.
 - **Never guess.** When detection can't fully resolve harness +
-  provider + model, the binary exits 2 with a single-line error
+  provider + model, the binary exits 8 (unable to detect) with a
+  single-line error
   and writes no fixture. A partial detection is bad data, not a
   placeholder. The test suite (`src/known_fixtures.test.zig`)
   enforces that every committed fixture has all 18 canonical fields
   non-null, so a "backfill to make tests pass" approach can't slip
   in.
 
+## exit status registry
+
+The canonical exit-status registry. Each distinct kind of outcome has
+its own number — `1` is **not** a fallback for everything; it is
+reserved strictly for genuinely unexpected/unclassified failures
+(uncaught zig errors, bugs). Every known error kind has its own status
+(2–13). The registry lives here; the CLI `--help` text only points at
+this section (plus brief per-action exit codes in context), and
+README.md mentions exit codes contextually per example only.
+
+| code | name | meaning |
+| ---- | ---- | ------- |
+| 0 | success | action completed; also explicitly-requested help/version |
+| 1 | unrecognised error | unexpected/unclassified (uncaught zig error, bug) |
+| 2 | unrecognised argument | unknown action / flag / subcommand |
+| 3 | conflicting argument | recognised but incompatible combination |
+| 4 | missing required arguments | required arg(s) absent |
+| 5 | incompatible environment refusing run | env present but incompatible → tool refuses |
+| 6 | incomplete environment preventing run | env missing required dependency → can't run |
+| 7 | missing specified agent | user-named combo not in rule tables |
+| 8 | unable to detect unspecified agent | live detection identity unresolvable |
+| 9 | agent data incomplete to make a determination | identity resolved, policy data missing |
+| 10 | agent data complete and requirement failed | determination definitive + negative (e.g. not reciprocal) |
+| 11 | out of memory | allocation failed (released + dev) |
+| 12 | sqlite query error | sqlite3 ran but failed; bad SQL / corrupt store (dev) |
+| 13 | filesystem I/O error | read/write/dir op failed (dev capture/daemon) |
+
+Examples per group:
+
+- **0** — `cooked` (identified) → JSON; `trailer co-author` →
+  `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`;
+  `is-reciprocal` → `is reciprocal`; `version` → `agent-detect
+  <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help
+  trailer` → usage.
+- **1** — uncaught error → `error: <name>` + trace.
+- **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` +
+  usage; `--bogus`; dev `fixtures frobnicate`.
+- **3** — `agent-detect cooked trailer` → `conflicting argument` +
+  usage; dev `fixtures queue --all --stale`.
+- **4** — `cooked --harness=cline` (partial combo); bare
+  `agent-detect trailer`; dev `fixtures queue` without filter.
+- **5** — dev `fixtures daemon` inside an agent → `incompatible
+  environment refusing run`.
+- **6** — dev `fixtures *` with no `sqlite3` on PATH → `incomplete
+  environment preventing run`.
+- **7** — `cooked`/`trailer co-author`/`is-reciprocal`
+  `--harness=foo --provider=bar --model=baz` → `missing specified
+  agent (harness, provider, model)`.
+- **8** — `cooked`/`trailer co-author`/`is-reciprocal` when live
+  detection resolves nothing (plain shell); dev `fixtures capture`
+  partial → `unable to detect unspecified agent (harness, provider,
+  model)`.
+- **9** — `is-reciprocal` with identity resolved but
+  `harness_license`/`model_reciprocity`/`provider_closed_training`
+  null (e.g. crush/hyper/qwen3.7-plus) → `agent (harness, provider,
+  model) data incomplete to make a determination`.
+- **10** — `is-reciprocal` for kilo/anthropic/claude-sonnet-4 (closed
+  model) → stderr `agent (harness, provider, model) data complete and
+  requirement failed`, stdout `not reciprocal`.
+- **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.)
+  → `error.OutOfMemory`.
+- **12** — dev `fixtures *` where sqlite3 runs but query fails (corrupt
+  `fixtures/index.sqlite3`, bad SQL) → `error.SqliteError`. Released
+  `kiloSqliteJson` catches its own, so hard sqlite errors are dev-only.
+- **13** — dev capture/daemon `createDirPath`/`openDir`/`writeFile`/
+  log-`createFile` failures → filesystem I/O error.
+
+**stdout/stderr discipline.** `is-reciprocal` writes its determination
+to stdout only (`is reciprocal` on 0, `not reciprocal` on 10); exits
+7/8/9 are stderr-only. `cooked`/`raw` are data-output actions: exit 8
+(identity unresolved) writes **no stdout** (no sensible data), exit 9
+(identity complete, policy data missing) writes the partial report to
+stdout plus a stderr explainer, exit 0 writes the full report. `trailer`
+writes to stdout only on success; 4/7/8 are stderr-only. Usage errors
+(2/3/4) dump the relevant usage text.
+
 ## evergreen decisions
 
 Recorded so a future maintainer doesn't re-litigate them. Each item
 names the shipped behavior and why it was chosen.
 
-1. **Never guess.** Partial detection exits 2 and writes nothing to
+1. **Never guess.** Partial detection exits 8 (unable to detect) and
+   writes nothing to
    the store — the fixtures-only approach means every committed
    `fixtures/*.json` is a real capture (or a rule-derived recipe
    report), never an assembly.
@@ -206,8 +287,8 @@ names the shipped behavior and why it was chosen.
 8. **Released binary stays minimal.** No SQLite, no `fixtures`, no raw
    dump in the released artifact — the `dev` modular
    (comptime-gated) block in `src/main.zig` drops that code at
-   compile time. Released actions: `cooked`, `trailer`, `help`,
-   `version`.
+   compile time. Released actions: `cooked`, `trailer co-author`,
+   `trailer assisted-by`, `is-reciprocal`, `help`, `version`.
 9. **The 18-field canonical fixture contract.** Test-enforced
    (see `src/known_fixtures.test.zig`); the raw block is shapeless
    (source-grouped keys), and harness rule *static* data
@@ -219,7 +300,8 @@ names the shipped behavior and why it was chosen.
     idle-loop step.
 11. **Recipe-mode `cooked`.** A harness whose provider/model can't be
     auto-detected is a warning for a later dev agent, not a hard
-    failure: `cooked`/`trailer` accept a full
+    failure: `cooked`/`trailer co-author`/`trailer assisted-by`/
+    `is-reciprocal` accept a full
     `--harness= --provider= --model=` combo resolved from the rule
     tables.
 12. **`*_id` fields are strict slugs.** `harness_id`, `provider_id`,

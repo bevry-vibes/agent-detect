@@ -30,6 +30,45 @@ const builtin = @import("builtin");
 const build_options = @import("build_options");
 pub const dev_build = build_options.dev;
 
+// Exit status registry — canonical numbers, one per distinct kind of
+// outcome. `1` is NOT a fallback for everything; it is reserved for
+// genuinely unexpected/unclassified failures (uncaught zig errors,
+// bugs). The full table + per-code examples live in DESIGN.md
+// "exit status registry".
+pub const EXIT_OK: u8 = 0;
+pub const EXIT_UNRECOGNISED_ERROR: u8 = 1;
+pub const EXIT_UNRECOGNISED_ARG: u8 = 2;
+pub const EXIT_CONFLICTING_ARG: u8 = 3;
+pub const EXIT_MISSING_ARG: u8 = 4;
+pub const EXIT_ENV_INCOMPATIBLE: u8 = 5;
+pub const EXIT_ENV_INCOMPLETE: u8 = 6;
+pub const EXIT_MISSING_SPECIFIED_AGENT: u8 = 7;
+pub const EXIT_UNABLE_TO_DETECT: u8 = 8;
+pub const EXIT_AGENT_DATA_INCOMPLETE: u8 = 9;
+pub const EXIT_REQUIREMENT_FAILED: u8 = 10;
+pub const EXIT_OUT_OF_MEMORY: u8 = 11;
+pub const EXIT_SQLITE_QUERY: u8 = 12;
+pub const EXIT_IO: u8 = 13;
+
+// Error-message strings = the exit-status registry names, verbatim.
+// STDERR carries the full registry-name message; STDOUT carries the
+// concise verdict (determination / data). No repo clause, no prose —
+// the repo-update rules live in README.md per use case.
+const MSG_UNRECOGNISED_ARG = "unrecognised argument: '";
+const MSG_CONFLICTING_ARG = "conflicting argument\n";
+const MSG_MISSING_ARG_COMBO = "missing required arguments: --harness= --provider= --model=\n";
+const MSG_MISSING_ARG_TRAILER_SUBTYPE = "missing required arguments: trailer subtype (co-author | assisted-by)\n";
+const MSG_MISSING_ARG = "missing required arguments\n";
+const MSG_ENV_INCOMPATIBLE = "incompatible environment refusing run\n";
+const MSG_ENV_INCOMPLETE = "incomplete environment preventing run\n";
+const MSG_MISSING_SPECIFIED_AGENT = "missing specified agent (harness, provider, model)\n";
+const MSG_UNABLE_TO_DETECT = "unable to detect unspecified agent (harness, provider, model)\n";
+const MSG_AGENT_DATA_INCOMPLETE = "agent (harness, provider, model) data incomplete to make a determination\n";
+const MSG_REQUIREMENT_FAILED = "agent (harness, provider, model) data complete and requirement failed\n";
+const MSG_OUT_OF_MEMORY = "out of memory\n";
+const MSG_SQLITE_QUERY = "sqlite query error\n";
+const MSG_IO = "filesystem I/O error\n";
+
 // macOS process walking (libproc + sysctl). zig 0.16 std has no darwin.zig,
 // so the headers are pulled in directly. `<libproc.h>` is *not* imported
 // via @cInclude because it transitively drags in `<mach/*.h>` opaque types
@@ -1700,6 +1739,20 @@ fn detectPi(a: std.mem.Allocator, env: *const std.process.Environ.Map, d: *Detec
     try applyModel(a, d, model, model);
 }
 
+/// tri-state reciprocity determination for `d`:
+/// - `.unknown` when any of `harness_license` / `model_reciprocity` /
+///   `provider_closed_training` is null (unverified status cannot be
+///   assumed reciprocal per the AI policy);
+/// - otherwise `.reciprocal` iff the current conjunction passes, else
+///   `.not_reciprocal`.
+pub const Reciprocity = enum { reciprocal, not_reciprocal, unknown };
+
+pub fn reciprocityOf(d: *const Detection) Reciprocity {
+    if (d.harness_license == null or d.model_reciprocity == null or d.provider_closed_training == null) return .unknown;
+    if (computeReciprocal(d)) return .reciprocal;
+    return .not_reciprocal;
+}
+
 /// compute the `reciprocal` boolean. Returns `true` only when:
 ///   - harness_license is non-null (harness is open-source), AND
 ///   - model_reciprocity is "open-source" or "open-weight", AND
@@ -1707,15 +1760,15 @@ fn detectPi(a: std.mem.Allocator, env: *const std.process.Environ.Map, d: *Detec
 ///     (provider does not unilaterally train closed models on customer data).
 /// Any null on the three conjuncts makes the result `false`: per the
 /// AI Policy, an unverified status cannot be assumed reciprocal.
+/// This is the same conjunction `reciprocityOf` uses for its non-null
+/// case, so the cooked JSON `reciprocal` field stays a boolean while
+/// the tri-state caller gets the full picture.
 pub fn computeReciprocal(d: *const Detection) bool {
     if (d.harness_license == null) return false;
     const mr = d.model_reciprocity orelse return false;
     if (!std.mem.eql(u8, mr, "open-source") and !std.mem.eql(u8, mr, "open-weight")) return false;
     const pct = d.provider_closed_training orelse return false;
-    if (std.mem.eql(u8, pct, "never") or std.mem.eql(u8, pct, "opt-in") or std.mem.eql(u8, pct, "opt-out")) {
-        return true;
-    }
-    return false;
+    return std.mem.eql(u8, pct, "never") or std.mem.eql(u8, pct, "opt-in") or std.mem.eql(u8, pct, "opt-out");
 }
 
 /// The detection report is a JSON object assembled from three
@@ -1782,6 +1835,21 @@ fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
 /// stored `d.trailer` (set by `detect` / recipe resolution).
 pub fn buildTrailer(d: *const Detection) ?[]const u8 {
     return d.trailer;
+}
+
+/// Build a commit-trailer line for `d` with the given keyword (e.g.
+/// `Co-authored-by` / `Assisted-by`), or `null` when the identity is
+/// incomplete (any of harness_label / model_label / agent_id null).
+/// Output format: `{keyword}: {harness_label} · {model_label}
+/// <{agent_id}@local>` — the `·` is a middle-dot separator, not a
+/// hyphen; the email local (machine-readable side) uses `-`.
+pub fn buildTrailerLine(a: std.mem.Allocator, d: *const Detection, keyword: []const u8) !?[]u8 {
+    if (d.harness_label == null or d.model_label == null or d.agent_id == null) return null;
+    return @as(?[]u8, try std.fmt.allocPrint(
+        a,
+        "{s}: {s} · {s} <{s}@local>",
+        .{ keyword, d.harness_label.?, d.model_label.?, d.agent_id.? },
+    ));
 }
 
 /// emit the slim released JSON report (canonical fields at the root,
@@ -1887,21 +1955,53 @@ fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]const u8
 // output
 
 const usage =
-    \\agent-detect — infer harness, provider, and model of the current agent session
+    \\agent-detect — infer the harness, provider, and model of the current agent session
     \\
-    \\usage: agent-detect <action> [--harness=H --provider=P --model=M]
+    \\usage:
+    \\  agent-detect <action> [options]
     \\
     \\actions:
-    \\  cooked       print the detection report as JSON (see CONTRIBUTING.md);
-    \\               with a full combo --harness=H --provider=P --model=M,
-    \\               resolve the report from the rule tables instead of live
-    \\               detection (all three required or none)
-    \\  trailer      print only the Co-authored-by trailer (for git commits);
-    \\               with a full combo, resolve it from the rule tables
-    \\  help         this help (also --help, -h, or no arguments)
-    \\  version      print the agent-detect version and exit (also --version, -V)
+    \\  cooked         print the detection report as JSON (harness, provider, model, policy)
+    \\  trailer        print a commit trailer — requires a subtype (see `trailer help`)
+    \\                   co-author     Co-authored-by: (Bevry commits.md)
+    \\                   assisted-by   Assisted-by:   (e.g. GCC AI policy)
+    \\  is-reciprocal  check reciprocity compliance with Bevry's AI policy
+    \\  help           this help (also --help, -h, or no arguments)
+    \\  version        print the version (also --version, -V)
     \\
-    \\exit codes: 0 = identified, 2 = unable to identify (stop and inform the user)
+    \\options:
+    \\  --harness=H --provider=P --model=M
+    \\                 resolve the action from the rule tables instead of live
+    \\                 detection (all three together, or none)
+    \\
+    \\examples:
+    \\  agent-detect cooked
+    \\  agent-detect trailer co-author
+    \\  agent-detect trailer assisted-by
+    \\  agent-detect is-reciprocal
+    \\  agent-detect cooked --harness=kilo --provider=deepseek --model=deepseek-v4-flash
+    \\
+    \\exit codes:
+    \\  is-reciprocal: 0 is reciprocal · 10 not reciprocal · 9 undeterminable ·
+    \\  8 undetectable · 7 unknown combo; others: 0 ok · 2 unrecognised argument ·
+    \\  3 conflicting argument · 4 missing required arguments · 8 undetectable.
+    \\  Full registry: DESIGN.md "exit status registry".
+    \\
+;
+
+const trailerUsage =
+    \\agent-detect trailer — print a commit trailer for the detected agent
+    \\
+    \\usage:
+    \\  agent-detect trailer <type> [--harness=H --provider=P --model=M]
+    \\
+    \\types:
+    \\  co-author      print the Co-authored-by: trailer (Bevry's commits.md)
+    \\  assisted-by    print the Assisted-by: trailer (e.g. GCC AI policy)
+    \\
+    \\examples:
+    \\  git commit --trailer "$(agent-detect trailer co-author)"
+    \\  git commit --trailer "$(agent-detect trailer assisted-by)"
     \\
 ;
 
@@ -1987,13 +2087,7 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     d.raw.model_urls = model.sources;
     try setAgentId(a, &d);
     d.reciprocal = computeReciprocal(&d);
-    if (d.harness_label != null and d.model_label != null and d.agent_id != null) {
-        d.trailer = try std.fmt.allocPrint(
-            a,
-            "Co-authored-by: {s} · {s} <{s}@local>",
-            .{ d.harness_label.?, d.model_label.?, d.agent_id.? },
-        );
-    }
+    d.trailer = try buildTrailerLine(a, &d, "Co-authored-by");
     return d;
 }
 
@@ -2113,13 +2207,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
     // `<harness_title> · <model_title>` with a middle-dot separator
     // (rather than `-`) for human readability — the email is the
     // machine-readable side and uses `-`.
-    if (d.harness_label != null and d.model_label != null and d.agent_id != null) {
-        d.trailer = try std.fmt.allocPrint(
-            a,
-            "Co-authored-by: {s} · {s} <{s}@local>",
-            .{ d.harness_label.?, d.model_label.?, d.agent_id.? },
-        );
-    }
+    d.trailer = try buildTrailerLine(a, d, "Co-authored-by");
     // `detectable` — the dims this run's ladder *could* resolve (from
     // the env-marker/process-ancestry match + the per-harness config
     // read). `detected` is derived from the canonical fields post-hoc
@@ -2153,7 +2241,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
 // a child `refresh run` that runs the capture (dev.runFixturesCapture)
 // in-process with the environment the daemon prepared. The released
 // binary (built with -Ddev=false, the default) has none of this — its
-// CLI surface is `cooked` (JSON report), `trailer`, `help`, and
+// CLI surface is `cooked` (JSON report), `trailer co-author` /
+// `trailer assisted-by`, `is-reciprocal`, `help`, and
 // `version`; no arguments shows help.
 
 pub const dev = if (build_options.dev) struct {
@@ -2208,7 +2297,10 @@ pub const dev = if (build_options.dev) struct {
         \\  dequeue                    DELETE matching queue rows (filters
         \\                              required; never touches fixtures)
         \\
-        \\exit codes: 0 = ok, 2 = bad arguments / unable to resolve
+        \\exit codes: 0 = ok, 2 = unrecognised argument, 3 = conflicting argument,
+        \\4 = missing required arguments, 5 = incompatible environment, 6 = incomplete
+        \\environment, 8 = unable to detect, 11 = out of memory, 12 = sqlite query error,
+        \\13 = filesystem I/O error
         \\
     ;
 
@@ -2327,18 +2419,30 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// dev-only `raw` action — emit only the raw observations block
-    /// (standalone, with `detectable` + `detected`).
+    /// (standalone, with `detectable` + `detected`). Data-output action:
+    /// identity unresolved → exit 8 with no stdout (no sensible data);
+    /// identity complete but reciprocity/policy data incomplete → exit 9
+    /// with the raw block on stdout + a stderr explainer; full identity →
+    /// exit 0.
     pub fn runRawAction(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
         var d = Detection{};
-        _ = try detect(init, &d);
+        const ok = try detect(init, &d);
         const raw_v = try buildRaw(a, &d, init.environ_map);
         const json_bytes = try std.json.Stringify.valueAlloc(a, raw_v, .{ .whitespace = .indent_2 });
         defer a.free(json_bytes);
+        if (!ok) {
+            writeErr(io, MSG_UNABLE_TO_DETECT);
+            return EXIT_UNABLE_TO_DETECT;
+        }
         writeOut(io, json_bytes);
         writeOut(io, "\n");
-        return 0;
+        if (reciprocityOf(&d) == .unknown) {
+            writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
+            return EXIT_AGENT_DATA_INCOMPLETE;
+        }
+        return EXIT_OK;
     }
 
     // ------------------------------------------------------------------
@@ -2386,7 +2490,7 @@ pub const dev = if (build_options.dev) struct {
     fn ensureSchema(a: std.mem.Allocator, io: std.Io) !void {
         std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
             error.PathAlreadyExists => {},
-            else => return err,
+            else => return error.FilesystemIoError,
         };
         _ = try sqliteRun(a, io,
             \\PRAGMA busy_timeout = 5000;
@@ -3633,23 +3737,23 @@ const recipesForFixtures = [_]RecipesForFixtures{
             (if (model_aid != null) @as(usize, 1) else 0);
 
         // partial detection (1 or 2 dims): partial is bad data per DESIGN —
-        // report + exit 2, NO store change. Seeds are only created via
+        // report + exit 8, NO store change. Seeds are only created via
         // `fixtures queue`. Nothing is written if zero dims resolve.
         if (resolved >= 1 and resolved < 3) {
             writeErr(io, "fixtures capture: partial detection (");
             var n_buf: [16]u8 = undefined;
             writeErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{resolved}));
-            writeErr(io, "/3 dims) — no fixture written, no store change (exit 2)\n");
-            return 2;
+            writeErr(io, "/3 dims) — no fixture written, no store change\n");
+            return EXIT_UNABLE_TO_DETECT;
         }
         if (resolved == 0) {
             writeErr(io, "fixtures capture: harness/provider/model did not resolve — nothing recorded\n");
-            return 2;
+            return EXIT_UNABLE_TO_DETECT;
         }
 
         const agent_aid = d.agent_id orelse {
             writeErr(io, "fixtures capture: agent_id did not compute\n");
-            return 2;
+            return EXIT_UNABLE_TO_DETECT;
         };
 
         const fixture_id = try fixtureId(a, agent_aid);
@@ -3669,16 +3773,22 @@ const recipesForFixtures = [_]RecipesForFixtures{
         // write fixture
         std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
             error.PathAlreadyExists => {},
-            else => return err,
+            else => {
+                writeErr(io, MSG_IO);
+                return EXIT_IO;
+            },
         };
         const dir = std.Io.Dir.cwd().openDir(io, "fixtures", .{}) catch {
             writeErr(io, "fixtures capture: cannot open fixtures/ dir\n");
-            return 2;
+            return EXIT_IO;
         };
         defer dir.close(io);
 
         const json_name = try std.fmt.allocPrint(a, "{s}.json", .{fixture_id});
-        try dir.writeFile(io, .{ .sub_path = json_name, .data = json_bytes });
+        dir.writeFile(io, .{ .sub_path = json_name, .data = json_bytes }) catch {
+            writeErr(io, MSG_IO);
+            return EXIT_IO;
+        };
 
         // fixtures only: upsert the state row (never touches `queue`).
         try upsertFixture(a, io, .{
@@ -3725,14 +3835,15 @@ const recipesForFixtures = [_]RecipesForFixtures{
 
         const f = parseFilters(init) catch |err| {
             switch (err) {
-                error.NoFilter => writeErr(io, "fixtures queue: at least one filter or scope flag is required (--fixture=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
+                error.NoFilter => writeErr(io, MSG_MISSING_ARG),
                 error.InvalidFixtureId => writeErr(io, "fixtures queue: --fixture=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
                 error.InvalidAgentId => writeErr(io, "fixtures queue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
                 error.InvalidThreshold => writeErr(io, "fixtures queue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
-                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "fixtures queue: conflicting filters (see --help)\n"),
+                error.ConflictingFilters => writeErr(io, MSG_CONFLICTING_ARG),
+                error.OutOfMemory => writeErr(io, MSG_OUT_OF_MEMORY),
             }
             writeOut(io, fixturesUsage);
-            return 2;
+            return if (err == error.NoFilter) EXIT_MISSING_ARG else if (err == error.ConflictingFilters) EXIT_CONFLICTING_ARG else if (err == error.OutOfMemory) EXIT_OUT_OF_MEMORY else EXIT_UNRECOGNISED_ARG;
         };
 
         if (scopeCount(f) > 0) {
@@ -3743,9 +3854,9 @@ const recipesForFixtures = [_]RecipesForFixtures{
         const positive = f.harness.len > 0 or f.provider.len > 0 or
             f.model.len > 0 or f.platform.len > 0 or f.composite;
         if (!positive) {
-            writeErr(io, "fixtures queue: a seed needs at least one positive dim, --agent=, or --fixture=\n");
+            writeErr(io, MSG_MISSING_ARG);
             writeOut(io, fixturesUsage);
-            return 2;
+            return EXIT_MISSING_ARG;
         }
 
         const row: QueueRow = .{
@@ -3830,14 +3941,15 @@ const recipesForFixtures = [_]RecipesForFixtures{
 
         const f = parseFilters(init) catch |err| {
             switch (err) {
-                error.NoFilter => writeErr(io, "fixtures dequeue: at least one filter or scope flag is required (--fixture=, --agent=, --X=, --all, --stale, --partial, --recipes, --missing-fixture, --available, or --unavailable)\n"),
+                error.NoFilter => writeErr(io, MSG_MISSING_ARG),
                 error.InvalidFixtureId => writeErr(io, "fixtures dequeue: --fixture=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
                 error.InvalidAgentId => writeErr(io, "fixtures dequeue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
                 error.InvalidThreshold => writeErr(io, "fixtures dequeue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
-                error.ConflictingFilters, error.OutOfMemory => writeErr(io, "fixtures dequeue: conflicting filters (see --help)\n"),
+                error.ConflictingFilters => writeErr(io, MSG_CONFLICTING_ARG),
+                error.OutOfMemory => writeErr(io, MSG_OUT_OF_MEMORY),
             }
             writeOut(io, fixturesUsage);
-            return 2;
+            return if (err == error.NoFilter) EXIT_MISSING_ARG else if (err == error.ConflictingFilters) EXIT_CONFLICTING_ARG else if (err == error.OutOfMemory) EXIT_OUT_OF_MEMORY else EXIT_UNRECOGNISED_ARG;
         };
 
         const deleted = try deleteQueueRows(a, io, f);
@@ -3920,7 +4032,7 @@ const recipesForFixtures = [_]RecipesForFixtures{
         // parse --write-log (tee daemon output to fixtures/daemon.log)
         var write_log = false;
         {
-            var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+            var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return EXIT_OUT_OF_MEMORY;
             defer args_it.deinit();
             _ = args_it.skip(); // argv0
             _ = args_it.skip(); // "fixtures"
@@ -3933,13 +4045,16 @@ const recipesForFixtures = [_]RecipesForFixtures{
         if (write_log) {
             std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
                 error.PathAlreadyExists => {},
-                else => return err,
+                else => {
+                    writeErr(io, MSG_IO);
+                    return EXIT_IO;
+                },
             };
             const log_file = std.Io.Dir.cwd().createFile(io, "fixtures/daemon.log", .{}) catch |err| {
                 daemonWriteErr(io, "daemon: cannot open fixtures/daemon.log: ");
                 daemonWriteErr(io, @errorName(err));
                 daemonWriteErr(io, "\n");
-                return 2;
+                return EXIT_IO;
             };
             daemon_log_file = log_file;
             daemon_log_file_owned = log_file;
@@ -4377,18 +4492,54 @@ const recipesForFixtures = [_]RecipesForFixtures{
 // ============================================================================
 // main entry
 
-/// register a CLI action, rejecting a second distinct action (the
-/// canonical spellings cooked/trailer/help/version).
-fn registerAction(io: std.Io, current: *[]const u8, act: []const u8) !void {
-    if (current.*.len != 0 and !std.mem.eql(u8, current.*, act)) {
-        writeErr(io, "conflicting arguments\n");
-        writeOut(io, usage);
-        return error.ConflictingAction;
-    }
-    current.* = act;
+/// is `word` one of the known top-level action words?
+fn isKnownAction(word: []const u8) bool {
+    return std.mem.eql(u8, word, "cooked") or
+        std.mem.eql(u8, word, "trailer") or
+        std.mem.eql(u8, word, "is-reciprocal") or
+        std.mem.eql(u8, word, "help") or
+        std.mem.eql(u8, word, "version");
 }
 
-pub fn main(init: std.process.Init) !u8 {
+pub fn main(init: std.process.Init) u8 {
+    return mainInner(init) catch |err| switch (err) {
+        error.OutOfMemory => EXIT_OUT_OF_MEMORY,
+        else => blk: {
+            // dev-only error kinds — pruned from the released binary.
+            // Each writes its registry-name message to stderr (matching
+            // the "exact message verbage" scheme) plus its exit code.
+            if (dev_build) {
+                if (err == error.SqliteSpawnFailed) {
+                    writeErr(init.io, MSG_ENV_INCOMPLETE);
+                    break :blk EXIT_ENV_INCOMPLETE;
+                }
+                if (err == error.SqliteError) {
+                    writeErr(init.io, MSG_SQLITE_QUERY);
+                    break :blk EXIT_SQLITE_QUERY;
+                }
+                if (err == error.FilesystemIoError) {
+                    writeErr(init.io, MSG_IO);
+                    break :blk EXIT_IO;
+                }
+                if (err == error.RunningInAgent) {
+                    writeErr(init.io, MSG_ENV_INCOMPATIBLE);
+                    break :blk EXIT_ENV_INCOMPATIBLE;
+                }
+                if (err == error.InvalidQueueRow) {
+                    writeErr(init.io, MSG_CONFLICTING_ARG);
+                    break :blk EXIT_CONFLICTING_ARG;
+                }
+            }
+            // genuinely unexpected/unclassified (bug) — the only home of exit 1.
+            writeErr(init.io, "error: ");
+            writeErr(init.io, @errorName(err));
+            writeErr(init.io, "\n");
+            break :blk EXIT_UNRECOGNISED_ERROR;
+        },
+    };
+}
+
+fn mainInner(init: std.process.Init) anyerror!u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
@@ -4401,9 +4552,10 @@ pub fn main(init: std.process.Init) !u8 {
     // `raw`/`fixtures`/`refresh` dispatch is compiled out of the
     // released binary (dev_build is false) — the released and dev
     // binaries both run the action parser below: `cooked`, `trailer`,
-    // `help`, `version` (with no arguments showing help).
+    // `is-reciprocal`, `help`, `version` (with no arguments showing
+    // help).
     if (dev_build) {
-        var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+        var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.OutOfMemory;
         defer sub_iter.deinit();
         _ = sub_iter.skip(); // argv0
         const cmd = sub_iter.next() orelse "";
@@ -4424,9 +4576,11 @@ pub fn main(init: std.process.Init) !u8 {
             } else if (std.mem.eql(u8, sub, "dequeue")) {
                 return dev.runFixturesDequeue(init);
             } else {
-                writeErr(io, "fixtures: unknown subcommand — run `fixtures --help`\n");
+                writeErr(io, "fixtures: unrecognised argument: '");
+                writeErr(io, sub);
+                writeErr(io, "'\n");
                 writeOut(io, dev.fixturesUsage);
-                return 2;
+                return EXIT_UNRECOGNISED_ARG;
             }
         } else if (std.mem.eql(u8, cmd, "refresh") and std.mem.eql(u8, sub, "run")) {
             // `refresh run` — invoked by the daemon as a child to
@@ -4443,27 +4597,53 @@ pub fn main(init: std.process.Init) !u8 {
     }
 
     // action parser. The canonical spellings are the bare words
-    // `cooked`, `trailer`, `help`, and `version`; the `--help` and
-    // `--version` / `-V` forms are aliases. No arguments prints help.
-    // `cooked` and `trailer` accept an optional complete combo
-    // (`--harness=H --provider=P --model=M` — all three or none)
-    // for recipe-mode output.
-    var action: []const u8 = ""; // "", "cooked", "trailer", "help", "version"
+    // `cooked`, `trailer` (with a subtype), `is-reciprocal`, `help`,
+    // and `version`; the `--help`/`-h` and `--version`/`-V` forms are
+    // aliases. No arguments prints help. `cooked`, `trailer <type>`,
+    // and `is-reciprocal` accept an optional complete combo
+    // (`--harness=H --provider=P --model=M` — all three or none) for
+    // recipe-mode output. help/version win over everything: any
+    // help/version flag anywhere at top level short-circuits to the
+    // relevant usage/version output (exit 0), never a conflict.
+    var action: []const u8 = ""; // "", "cooked", "trailer", "is-reciprocal", "help", "version"
+    var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
+    var help_wanted = false;
+    var version_wanted = false;
+    var help_topic: ?[]const u8 = null; // the word following `help` (`help trailer`)
+    var unknown: ?[]const u8 = null; // first unrecognised bare word (no action set yet)
+    var conflict: ?[]const u8 = null; // a second, different action/subtype word
     var combo_h: []const u8 = "";
     var combo_p: []const u8 = "";
     var combo_m: []const u8 = "";
-    var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return 1;
+    var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.OutOfMemory;
     defer args_it.deinit();
     _ = args_it.skip(); // argv0
     while (args_it.next()) |arg| {
-        if (std.mem.eql(u8, arg, "cooked")) {
-            try registerAction(io, &action, "cooked");
-        } else if (std.mem.eql(u8, arg, "trailer")) {
-            try registerAction(io, &action, "trailer");
-        } else if (std.mem.eql(u8, arg, "help") or std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
-            try registerAction(io, &action, "help");
+        if (std.mem.eql(u8, arg, "help") or std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
+            help_wanted = true;
+            if (action.len == 0) action = "help";
         } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
-            try registerAction(io, &action, "version");
+            version_wanted = true;
+        } else if (std.mem.eql(u8, arg, "cooked") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "is-reciprocal")) {
+            // an action word. After `help` it is the topic (`help trailer`).
+            if (action.len == 0) {
+                action = arg;
+            } else if (std.mem.eql(u8, action, "help") and help_topic == null) {
+                help_topic = arg;
+            } else if (!std.mem.eql(u8, action, arg) and conflict == null) {
+                conflict = arg;
+            }
+        } else if (std.mem.eql(u8, arg, "co-author") or std.mem.eql(u8, arg, "assisted-by")) {
+            // trailer subtypes; after any other action a bare word is a conflict.
+            if (std.mem.eql(u8, action, "trailer") and trailer_type.len == 0) {
+                trailer_type = arg;
+            } else if (std.mem.eql(u8, action, "help") and help_topic == null) {
+                help_topic = arg;
+            } else if (action.len == 0) {
+                if (unknown == null) unknown = arg;
+            } else if (conflict == null) {
+                conflict = arg;
+            }
         } else if (std.mem.startsWith(u8, arg, "--harness=")) {
             combo_h = arg["--harness=".len..];
         } else if (std.mem.startsWith(u8, arg, "--provider=")) {
@@ -4471,18 +4651,19 @@ pub fn main(init: std.process.Init) !u8 {
         } else if (std.mem.startsWith(u8, arg, "--model=")) {
             combo_m = arg["--model=".len..];
         } else {
-            writeErr(io, "unknown argument\n");
-            writeOut(io, usage);
-            return 2;
+            // unrecognised bare word / flag.
+            if (std.mem.eql(u8, action, "help") and help_topic == null) {
+                help_topic = arg; // `help <topic>`
+            } else if (action.len == 0) {
+                if (unknown == null) unknown = arg;
+            } else if (conflict == null) {
+                conflict = arg;
+            }
         }
     }
 
-    if (action.len == 0 or std.mem.eql(u8, action, "help")) {
-        writeOut(io, usage);
-        return 0;
-    }
-
-    if (std.mem.eql(u8, action, "version")) {
+    // version wins over everything.
+    if (version_wanted) {
         // Version is plumbed in at compile time from
         // `build.zig.zon`'s `.version` field via `build_options`.
         // Same value is baked into the released binary, the dev
@@ -4490,57 +4671,144 @@ pub fn main(init: std.process.Init) !u8 {
         writeOut(io, "agent-detect ");
         writeOut(io, build_options.version);
         writeOut(io, "\n");
-        return 0;
+        return EXIT_OK;
+    }
+
+    // help wins over everything.
+    if (help_wanted) {
+        if (std.mem.eql(u8, action, "trailer")) {
+            writeOut(io, trailerUsage);
+            return EXIT_OK;
+        }
+        if (help_topic) |topic| {
+            if (std.mem.eql(u8, topic, "trailer")) {
+                writeOut(io, trailerUsage);
+                return EXIT_OK;
+            }
+            if (isKnownAction(topic)) {
+                writeOut(io, usage);
+                return EXIT_OK;
+            }
+            writeErr(io, MSG_UNRECOGNISED_ARG);
+            writeErr(io, topic);
+            writeErr(io, "'\n");
+            writeOut(io, usage);
+            return EXIT_UNRECOGNISED_ARG;
+        }
+        writeOut(io, usage);
+        return EXIT_OK;
+    }
+
+    // an unrecognised action word (a bare word appeared before any
+    // known action, e.g. `foobar`, `--bogus`, `foobar cooked`).
+    if (unknown != null) {
+        writeErr(io, MSG_UNRECOGNISED_ARG);
+        writeErr(io, unknown.?);
+        writeErr(io, "'\n");
+        writeOut(io, usage);
+        return EXIT_UNRECOGNISED_ARG;
+    }
+
+    // no arguments (or only option flags, no action) → top usage.
+    if (action.len == 0) {
+        writeOut(io, usage);
+        return EXIT_OK;
+    }
+
+    // two distinct action/subtype words → conflicting argument.
+    if (conflict != null) {
+        writeErr(io, MSG_CONFLICTING_ARG);
+        writeOut(io, usage);
+        return EXIT_CONFLICTING_ARG;
+    }
+
+    // bare `trailer` → missing required arguments (subtype absent).
+    if (std.mem.eql(u8, action, "trailer") and trailer_type.len == 0) {
+        writeErr(io, MSG_MISSING_ARG_TRAILER_SUBTYPE);
+        writeOut(io, trailerUsage);
+        return EXIT_MISSING_ARG;
     }
 
     // recipe mode: a complete combo resolves against the rule tables,
-    // skipping live detection. Partial combos are rejected.
+    // skipping live detection. Partial combos are rejected (exit 4);
+    // an unknown combo is exit 7.
     const has_combo = combo_h.len > 0 or combo_p.len > 0 or combo_m.len > 0;
     if (has_combo) {
         if (combo_h.len == 0 or combo_p.len == 0 or combo_m.len == 0) {
-            writeErr(io, "recipe-mode needs all three of --harness=, --provider=, --model= (or none)\n");
+            writeErr(io, MSG_MISSING_ARG_COMBO);
             writeOut(io, usage);
-            return 2;
+            return EXIT_MISSING_ARG;
         }
         const d = (try resolveRecipe(a, combo_h, combo_p, combo_m)) orelse {
-            writeErr(io, "unknown combo — not a known harness/provider/model recipe\n");
-            return 2;
+            writeErr(io, MSG_MISSING_SPECIFIED_AGENT);
+            return EXIT_MISSING_SPECIFIED_AGENT;
         };
-        if (std.mem.eql(u8, action, "trailer")) {
-            if (d.trailer) |t| {
-                writeOut(io, t);
-                writeOut(io, "\n");
-                return 0;
-            }
-            writeErr(io, "unable to determine trailer for the combo\n");
-            return 2;
-        }
-        // cooked in recipe mode: emit the canonical object.
-        var buf: std.ArrayList(u8) = .empty;
-        try buildJson(a, &d, init.environ_map, null, .{}, &buf);
-        writeOut(io, buf.items);
-        return 0;
+        return runAction(init, &d, action, trailer_type);
     }
 
+    // live detection.
     var d = Detection{};
-    const ok = try detect(init, &d);
+    _ = try detect(init, &d);
+    return runAction(init, &d, action, trailer_type);
+}
+
+/// dispatch the resolved action on a fully-shaped `Detection`. Handles
+/// the shared identity-completeness gate (exit 8), the trailer subtypes
+/// (co-author / assisted-by), the is-reciprocal tri-state, and the
+/// cooked/raw data-output semantics (exit 9 on incomplete policy data).
+fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, trailer_type: []const u8) !u8 {
+    const a = init.arena.allocator();
+    const io = init.io;
+
+    // identity incomplete → unable to detect: stderr only, no stdout
+    // (no sensible data). Applies to every action.
+    if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
+        writeErr(io, MSG_UNABLE_TO_DETECT);
+        return EXIT_UNABLE_TO_DETECT;
+    }
 
     if (std.mem.eql(u8, action, "trailer")) {
-        if (d.trailer) |t| {
-            writeOut(io, t);
-            writeOut(io, "\n");
-            return 0;
-        }
-        writeErr(io, "unable to determine trailer (harness/provider/model unidentified) — stop and inform the user\n");
-        return 2;
+        // stdout only on success; failures are stderr-only.
+        const t = if (std.mem.eql(u8, trailer_type, "assisted-by"))
+            (try buildTrailerLine(a, d, "Assisted-by")).?
+        else
+            d.trailer.?; // "co-author" — already built with "Co-authored-by"
+        writeOut(io, t);
+        writeOut(io, "\n");
+        return EXIT_OK;
     }
-    // action == "cooked": the detection report (canonical at root).
-    var buf: std.ArrayList(u8) = .empty;
-    try buildJson(a, &d, init.environ_map, null, .{}, &buf);
-    writeOut(io, buf.items);
 
-    if (!ok) writeErr(io, "unable to fully identify harness/provider/model — stop and inform the user (per policy)\n");
-    return if (ok) 0 else 2;
+    if (std.mem.eql(u8, action, "is-reciprocal")) {
+        switch (reciprocityOf(d)) {
+            .reciprocal => {
+                writeOut(io, "is reciprocal\n");
+                return EXIT_OK;
+            },
+            .not_reciprocal => {
+                writeOut(io, "not reciprocal\n");
+                writeErr(io, MSG_REQUIREMENT_FAILED);
+                return EXIT_REQUIREMENT_FAILED;
+            },
+            .unknown => {
+                // identity resolved, policy data missing: stderr only.
+                writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
+                return EXIT_AGENT_DATA_INCOMPLETE;
+            },
+        }
+    }
+
+    // cooked — the detection report (canonical at root). Data-output
+    // action: full report on 0; identity complete but policy data
+    // incomplete → the report (with null policy fields) still goes to
+    // stdout + a stderr explainer, exit 9.
+    var buf: std.ArrayList(u8) = .empty;
+    try buildJson(a, d, init.environ_map, null, .{}, &buf);
+    writeOut(io, buf.items);
+    if (reciprocityOf(d) == .unknown) {
+        writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
+        return EXIT_AGENT_DATA_INCOMPLETE;
+    }
+    return EXIT_OK;
 }
 
 

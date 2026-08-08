@@ -39,7 +39,7 @@ The refresh flow uses two binaries with strict role separation:
 - **`agent-detect-dev fixtures capture`** — runs *inside an agent*
   session; captures the current session into a single
   `fixtures/<id>.json` and upserts a `fixtures` row. **Fixtures
-  only** — a partial detection exits 2 with no store change (never
+  only** — a partial detection exits 8 with no store change (never
   writes `queue`).
 - **`agent-detect-dev fixtures queue`** — **enumerate + upsert only,
   no evaluation.** With a scope flag it upserts each candidate into
@@ -104,19 +104,53 @@ For batch refreshes: `fixtures queue --all` re-queues every row in
 are missing. Add `--available` to probe-and-record harness
 availability instead of dropping unavailable harnesses.
 
+`--all` means every known agent recorded in `fixtures/index.sqlite3`
+(the `fixtures` table), filtered by the other filters
+(`--harness=`, `--provider=`, `--model=`, `--platform=`).
+`--all --available` means all of those, each probed and recorded with
+its harness availability (`available` 1/0); unavailable rows stay
+queued as handoff work for the next agent/platform.
+
+### common expected failures when refreshing
+
+A capture (or a harness-availability probe) requires the target
+harness to actually run the target model. When the account or
+environment can't do that, the daemon reports
+`daemon: worker failed for <combo> (exit code N) — re-queued` together
+with the worker's stderr, and the row stays queued for another
+attempt/platform. These are **expected, environment-level failures** —
+not detection-code bugs — and should be treated as such when triaging:
+
+- **credits depleted** — the account has no remaining credits for the
+  model; the provider refuses with an insufficient-balance / credits
+  error in the worker stderr. Top up and re-queue.
+- **rate limit encountered** — the provider throttles the harness /
+  model API (e.g. `429`, "too many requests"); the probe or capture is
+  refused. Back off and re-queue later — do not retry in a tight loop.
+- **upgraded plan required** — the model is paid or gated and the
+  current plan does not include it (e.g. `401`/`403`, "upgrade your
+  plan", "model not included in your tier"). The capture cannot proceed
+  until the plan is upgraded; leave the row queued as handoff for a
+  platform/account that has access.
+
+When a refresh fails for one of these reasons, do not treat it as a
+rule/detection defect (don't patch the rule tables or file a detection
+bug); resolve the account condition and re-queue, or skip the combo.
+
 ## recipe-mode cooked / trailer (hard-to-detect agents)
 
-`cooked` and `trailer` accept a complete combo to emit a report
+`cooked`, `trailer co-author`, `trailer assisted-by`, and
+`is-reciprocal` accept a complete combo to emit a report
 without live detection:
 
 ```sh
 ./zig-out/bin/agent-detect cooked --harness=cline --provider=clinepass --model=kimik3
-./zig-out/bin/agent-detect trailer --harness=cline --provider=clinepass --model=kimik3
+./zig-out/bin/agent-detect trailer co-author --harness=cline --provider=clinepass --model=kimik3
 ```
 
 All three of `--harness=`, `--provider=`, `--model=` are required (or
-none — then live detection runs). A partial combo or an id not in the
-rule tables exits 2. Ids may be given in canonical or strict-slug form
+none — then live detection runs). A partial combo exits 4; an id not
+in the rule tables exits 7. Ids may be given in canonical or strict-slug form
 (`cline-pass` or `clinepass`). This is how a harness whose
 provider/model can't be auto-detected still gets a cooked report and
 trailer.

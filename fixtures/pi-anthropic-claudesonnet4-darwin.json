@@ -40,11 +40,11 @@
     "process_lineage": [
       {
         "pid": 6568,
-        "name": "agent-detection-dev"
+        "name": "agent-detect-dev"
       },
       {
         "pid": 5891,
-        "name": "agent-detection-dev"
+        "name": "agent-detect-dev"
       },
       {
         "pid": 83120,
