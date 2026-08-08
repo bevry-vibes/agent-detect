@@ -59,6 +59,8 @@ docs/
 .zig-cache/
 zig-out/
 bin/
+# zig dependency package cache (populated by `zig fetch`; not committed, regenerated on demand)
+zig-pkg/
 
 # dev daemon telemetry (written by `fixtures daemon --write-log`; already
 # covered by **/*.log above, listed explicitly for discoverability)
