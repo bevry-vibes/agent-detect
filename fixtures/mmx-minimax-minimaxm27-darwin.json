@@ -1,23 +1,23 @@
 {
   "cooked": {
-    "harness_label": "Qwen Code",
+    "harness_label": "MiniMax CLI",
     "harness_short_title": null,
-    "harness_name": "qwen",
-    "harness_id": "qwen",
-    "harness_license": "Apache-2.0",
+    "harness_name": "mmx",
+    "harness_id": "mmx",
+    "harness_license": "MIT",
     "provider_label": "MiniMax",
     "provider_name": "minimax",
     "provider_id": "minimax",
     "provider_closed_training": "opt-in",
     "provider_open_training": "opt-in",
-    "model_label": "MiniMax M3",
-    "model_short_title": "M3",
-    "model_name": "minimax-m3",
-    "model_id": "minimaxm3",
+    "model_label": "MiniMax M2.7",
+    "model_short_title": "M2.7",
+    "model_name": "minimax-m2.7",
+    "model_id": "minimaxm27",
     "model_reciprocity": "open-weight",
-    "agent_id": "qwen-minimax-minimaxm3",
+    "agent_id": "mmx-minimax-minimaxm27",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Qwen Code · MiniMax M3 <qwen-minimax-minimaxm3@local>"
+    "trailer": "Co-authored-by: MiniMax CLI · MiniMax M2.7 <mmx-minimax-minimaxm27@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -32,17 +32,21 @@
       "model"
     ],
     "env": {
-      "QWEN_API_KEY": {
+      "MMX_CONFIG_DIR": {
+        "value": "<home>/.mmx",
         "present": true
+      },
+      "MINIMAX_API_KEY": {
+        "present": false
       }
     },
     "process_lineage": [
       {
-        "pid": 33922,
+        "pid": 33886,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33921,
+        "pid": 33885,
         "name": "bash"
       },
       {
@@ -62,47 +66,44 @@
         "name": "bash"
       }
     ],
-    "<home>/.qwen/settings.json": {
-      "model.name": "minimax-m3",
-      "modelProviders.openai[].baseUrl": "https://api.minimax.io/v1",
-      "security.auth.selectedType": "openai"
+    "<home>/.mmx/config.json": {
+      "defaultTextModel": "minimax/minimax-m2.7"
     },
     "harness-urls": [
-      "https://github.com/QwenLM/qwen-code",
-      "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+      "https://github.com/MiniMax-AI/cli",
+      "https://www.npmjs.com/package/mmx-cli"
     ],
     "provider-urls": [
       "https://platform.minimax.io/docs/guides/terms-of-service",
       "https://platform.minimax.io/docs/guides/privacy-policy"
     ],
     "model-urls": [
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
-      "https://www.minimax.io/blog/minimax-m3"
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.7",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
     ],
     "evidence": [
       {
         "dim": "harness",
         "source": "env",
-        "name": "QWEN_API_KEY",
-        "value": "qwen"
+        "name": "MMX_CONFIG_DIR",
+        "value": "mmx"
       },
       {
         "dim": "model",
         "source": "config",
-        "name": "<home>/.qwen/settings.json",
-        "field": "model.name",
-        "value": "minimax-m3"
+        "name": "<home>/.mmx/config.json",
+        "field": "defaultTextModel",
+        "value": "minimax/minimax-m2.7"
       },
       {
         "dim": "provider",
         "source": "config",
-        "name": "<home>/.qwen/settings.json",
-        "field": "modelProviders.openai[].baseUrl",
-        "value": "https://api.minimax.io/v1"
+        "name": "<home>/.mmx/config.json",
+        "field": "defaultTextModel",
+        "value": "minimax/minimax-m2.7"
       }
     ]
   },
-  "trailer": "Co-authored-by: Qwen Code · MiniMax M3 <qwen-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: MiniMax CLI · MiniMax M2.7 <mmx-minimax-minimaxm27@local>",
   "origin": "from-raw"
 }

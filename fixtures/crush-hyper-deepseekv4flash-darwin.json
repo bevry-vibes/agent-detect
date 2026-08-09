@@ -1,13 +1,13 @@
 {
   "cooked": {
-    "harness_label": "Reasonix",
+    "harness_label": "Crush",
     "harness_short_title": null,
-    "harness_name": "reasonix",
-    "harness_id": "reasonix",
-    "harness_license": "MIT",
-    "provider_label": "DeepSeek Flash",
-    "provider_name": "deepseek-flash",
-    "provider_id": "deepseekflash",
+    "harness_name": "crush",
+    "harness_id": "crush",
+    "harness_license": "FSL-1.1-MIT",
+    "provider_label": "Charm Hyper",
+    "provider_name": "hyper",
+    "provider_id": "hyper",
     "provider_closed_training": "never",
     "provider_open_training": "never",
     "model_label": "DeepSeek V4 Flash",
@@ -15,9 +15,9 @@
     "model_name": "deepseek-v4-flash",
     "model_id": "deepseekv4flash",
     "model_reciprocity": "open-weight",
-    "agent_id": "reasonix-deepseekflash-deepseekv4flash",
+    "agent_id": "crush-hyper-deepseekv4flash",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>"
+    "trailer": "Co-authored-by: Crush · DeepSeek V4 Flash <crush-hyper-deepseekv4flash@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -32,25 +32,25 @@
       "model"
     ],
     "env": {
-      "REASONIX_API_KEY": {
+      "CRUSH_API_KEY": {
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 34978,
+        "pid": 34437,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34977,
+        "pid": 34436,
         "name": "bash"
       },
       {
-        "pid": 34956,
+        "pid": 34349,
         "name": "bash"
       },
       {
-        "pid": 34904,
+        "pid": 34348,
         "name": "bash"
       },
       {
@@ -62,17 +62,16 @@
         "name": "bash"
       }
     ],
-    "<home>/.reasonix/config.toml": {
-      "default_model": "deepseek-flash",
-      "providers[].default": "deepseek-v4-flash"
+    "<home>/.local/share/crush/hyper.json": {
+      "default_large_model_id": "hyper/deepseek-v4-flash"
     },
     "harness-urls": [
-      "https://github.com/esengine/DeepSeek-Reasonix",
-      "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE"
+      "https://github.com/charmbracelet/crush",
+      "https://github.com/charmbracelet/crush/blob/main/LICENSE.md"
     ],
     "provider-urls": [
-      "https://api-docs.deepseek.com/quick_start/pricing",
-      "https://platform.deepseek.com"
+      "https://hyper.charm.land/terms",
+      "https://hyper.charm.land/privacy"
     ],
     "model-urls": [
       "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
@@ -82,25 +81,25 @@
       {
         "dim": "harness",
         "source": "env",
-        "name": "REASONIX_API_KEY",
-        "value": "reasonix"
+        "name": "CRUSH_API_KEY",
+        "value": "crush"
       },
       {
         "dim": "provider",
         "source": "config",
-        "name": "<home>/.reasonix/config.toml",
-        "field": "default_model",
-        "value": "deepseek-flash"
+        "name": "<home>/.local/share/crush/hyper.json",
+        "field": "default_large_model_id",
+        "value": "hyper/deepseek-v4-flash"
       },
       {
         "dim": "model",
         "source": "config",
-        "name": "<home>/.reasonix/config.toml",
-        "field": "providers[].default",
-        "value": "deepseek-v4-flash"
+        "name": "<home>/.local/share/crush/hyper.json",
+        "field": "default_large_model_id",
+        "value": "hyper/deepseek-v4-flash"
       }
     ]
   },
-  "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>",
+  "trailer": "Co-authored-by: Crush · DeepSeek V4 Flash <crush-hyper-deepseekv4flash@local>",
   "origin": "from-raw"
 }

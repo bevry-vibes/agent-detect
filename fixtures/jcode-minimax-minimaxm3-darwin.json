@@ -1,9 +1,9 @@
 {
   "cooked": {
-    "harness_label": "OpenCode",
+    "harness_label": "jcode",
     "harness_short_title": null,
-    "harness_name": "opencode",
-    "harness_id": "opencode",
+    "harness_name": "jcode",
+    "harness_id": "jcode",
     "harness_license": "MIT",
     "provider_label": "MiniMax",
     "provider_name": "minimax",
@@ -15,9 +15,9 @@
     "model_name": "minimax-m3",
     "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
-    "agent_id": "opencode-minimax-minimaxm3",
+    "agent_id": "jcode-minimax-minimaxm3",
     "reciprocal": true,
-    "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>"
+    "trailer": "Co-authored-by: jcode · MiniMax M3 <jcode-minimax-minimaxm3@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -32,29 +32,25 @@
       "model"
     ],
     "env": {
-      "OPENCODE_API_KEY": {
-        "present": true
-      },
-      "OPENCODE_MODEL": {
-        "value": "minimax/minimax-m3",
+      "JCODE_API_KEY": {
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 34465,
+        "pid": 34251,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34464,
+        "pid": 34250,
         "name": "bash"
       },
       {
-        "pid": 34349,
+        "pid": 34155,
         "name": "bash"
       },
       {
-        "pid": 34348,
+        "pid": 34154,
         "name": "bash"
       },
       {
@@ -66,9 +62,13 @@
         "name": "bash"
       }
     ],
+    "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_fixtures.json": {
+      "model": "minimax-m3",
+      "provider_key": "minimax"
+    },
     "harness-urls": [
-      "https://github.com/anomalyco/opencode",
-      "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      "https://github.com/1jehuang/jcode",
+      "https://github.com/1jehuang/jcode/blob/master/LICENSE"
     ],
     "provider-urls": [
       "https://platform.minimax.io/docs/guides/terms-of-service",
@@ -83,23 +83,25 @@
       {
         "dim": "harness",
         "source": "env",
-        "name": "OPENCODE_API_KEY",
-        "value": "opencode"
+        "name": "JCODE_API_KEY",
+        "value": "jcode"
       },
       {
         "dim": "provider",
-        "source": "env",
-        "name": "OPENCODE_MODEL",
-        "value": "minimax/minimax-m3"
+        "source": "session",
+        "name": "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_fixtures.json",
+        "field": "provider_key",
+        "value": "minimax"
       },
       {
         "dim": "model",
-        "source": "env",
-        "name": "OPENCODE_MODEL",
-        "value": "minimax/minimax-m3"
+        "source": "session",
+        "name": "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_fixtures.json",
+        "field": "model",
+        "value": "minimax-m3"
       }
     ]
   },
-  "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: jcode · MiniMax M3 <jcode-minimax-minimaxm3@local>",
   "origin": "from-raw"
 }

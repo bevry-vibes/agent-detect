@@ -1,13 +1,13 @@
 {
   "cooked": {
-    "harness_label": "Reasonix",
+    "harness_label": "Kilo Code",
     "harness_short_title": null,
-    "harness_name": "reasonix",
-    "harness_id": "reasonix",
+    "harness_name": "kilo",
+    "harness_id": "kilo",
     "harness_license": "MIT",
-    "provider_label": "DeepSeek Flash",
-    "provider_name": "deepseek-flash",
-    "provider_id": "deepseekflash",
+    "provider_label": "OpenRouter",
+    "provider_name": "openrouter",
+    "provider_id": "openrouter",
     "provider_closed_training": "never",
     "provider_open_training": "never",
     "model_label": "DeepSeek V4 Flash",
@@ -15,9 +15,9 @@
     "model_name": "deepseek-v4-flash",
     "model_id": "deepseekv4flash",
     "model_reciprocity": "open-weight",
-    "agent_id": "reasonix-deepseekflash-deepseekv4flash",
+    "agent_id": "kilo-openrouter-deepseekv4flash",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>"
+    "trailer": "Co-authored-by: Kilo Code · DeepSeek V4 Flash <kilo-openrouter-deepseekv4flash@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -32,25 +32,32 @@
       "model"
     ],
     "env": {
-      "REASONIX_API_KEY": {
+      "KILO_API_KEY": {
+        "present": true
+      },
+      "KILO": {
+        "present": false
+      },
+      "KILO_MODEL": {
+        "value": "openrouter/deepseek-v4-flash",
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 34978,
+        "pid": 34212,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34977,
+        "pid": 34211,
         "name": "bash"
       },
       {
-        "pid": 34956,
+        "pid": 34155,
         "name": "bash"
       },
       {
-        "pid": 34904,
+        "pid": 34154,
         "name": "bash"
       },
       {
@@ -62,17 +69,13 @@
         "name": "bash"
       }
     ],
-    "<home>/.reasonix/config.toml": {
-      "default_model": "deepseek-flash",
-      "providers[].default": "deepseek-v4-flash"
-    },
     "harness-urls": [
-      "https://github.com/esengine/DeepSeek-Reasonix",
-      "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE"
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://api-docs.deepseek.com/quick_start/pricing",
-      "https://platform.deepseek.com"
+      "https://openrouter.ai/privacy",
+      "https://openrouter.ai/terms"
     ],
     "model-urls": [
       "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
@@ -82,25 +85,23 @@
       {
         "dim": "harness",
         "source": "env",
-        "name": "REASONIX_API_KEY",
-        "value": "reasonix"
+        "name": "KILO_API_KEY",
+        "value": "kilo"
       },
       {
         "dim": "provider",
-        "source": "config",
-        "name": "<home>/.reasonix/config.toml",
-        "field": "default_model",
-        "value": "deepseek-flash"
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "openrouter/deepseek-v4-flash"
       },
       {
         "dim": "model",
-        "source": "config",
-        "name": "<home>/.reasonix/config.toml",
-        "field": "providers[].default",
-        "value": "deepseek-v4-flash"
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "openrouter/deepseek-v4-flash"
       }
     ]
   },
-  "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>",
+  "trailer": "Co-authored-by: Kilo Code · DeepSeek V4 Flash <kilo-openrouter-deepseekv4flash@local>",
   "origin": "from-raw"
 }

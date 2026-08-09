@@ -1,9 +1,9 @@
 {
   "cooked": {
-    "harness_label": "OpenCode",
+    "harness_label": "Pi",
     "harness_short_title": null,
-    "harness_name": "opencode",
-    "harness_id": "opencode",
+    "harness_name": "pi",
+    "harness_id": "pi",
     "harness_license": "MIT",
     "provider_label": "MiniMax",
     "provider_name": "minimax",
@@ -15,9 +15,9 @@
     "model_name": "minimax-m3",
     "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
-    "agent_id": "opencode-minimax-minimaxm3",
+    "agent_id": "pi-minimax-minimaxm3",
     "reciprocal": true,
-    "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>"
+    "trailer": "Co-authored-by: Pi · MiniMax M3 <pi-minimax-minimaxm3@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -32,29 +32,34 @@
       "model"
     ],
     "env": {
-      "OPENCODE_API_KEY": {
+      "PI_CODING_AGENT": {
+        "value": "true",
         "present": true
       },
-      "OPENCODE_MODEL": {
-        "value": "minimax/minimax-m3",
+      "PI_PROVIDER": {
+        "value": "minimax",
+        "present": true
+      },
+      "PI_MODEL": {
+        "value": "minimax-m3",
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 34465,
+        "pid": 33910,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34464,
+        "pid": 33909,
         "name": "bash"
       },
       {
-        "pid": 34349,
+        "pid": 33834,
         "name": "bash"
       },
       {
-        "pid": 34348,
+        "pid": 33833,
         "name": "bash"
       },
       {
@@ -67,8 +72,8 @@
       }
     ],
     "harness-urls": [
-      "https://github.com/anomalyco/opencode",
-      "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      "https://github.com/earendil-works/pi",
+      "https://github.com/earendil-works/pi/blob/main/LICENSE"
     ],
     "provider-urls": [
       "https://platform.minimax.io/docs/guides/terms-of-service",
@@ -83,23 +88,23 @@
       {
         "dim": "harness",
         "source": "env",
-        "name": "OPENCODE_API_KEY",
-        "value": "opencode"
+        "name": "PI_CODING_AGENT",
+        "value": "pi"
       },
       {
         "dim": "provider",
         "source": "env",
-        "name": "OPENCODE_MODEL",
-        "value": "minimax/minimax-m3"
+        "name": "PI_PROVIDER",
+        "value": "minimax"
       },
       {
         "dim": "model",
         "source": "env",
-        "name": "OPENCODE_MODEL",
-        "value": "minimax/minimax-m3"
+        "name": "PI_MODEL",
+        "value": "minimax-m3"
       }
     ]
   },
-  "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: Pi · MiniMax M3 <pi-minimax-minimaxm3@local>",
   "origin": "from-raw"
 }

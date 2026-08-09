@@ -113,29 +113,114 @@ queued as handoff work for the next agent/platform.
 
 ### common expected failures when refreshing
 
-A capture (or a harness-availability probe) requires the target
-harness to actually run the target model. When the account or
-environment can't do that, the daemon reports
-`daemon: worker failed for <combo> (exit code N) — re-queued` together
-with the worker's stderr, and the row stays queued for another
-attempt/platform. These are **expected, environment-level failures** —
-not detection-code bugs — and should be treated as such when triaging:
+Queue jobs run in three modes with different failure surfaces. The
+`from-raw` worker (default) never invokes a model — a failed `from-raw`
+capture is a **detection-code bug** (unresolved detection, missing
+config read, contradictory evidence claim), surfaced as
+`daemon: worker failed for <combo> (exit code N) — re-queued` with the
+worker stderr, and the row stays queued. Fix the detection/rule and let
+the daemon re-run.
 
-- **credits depleted** — the account has no remaining credits for the
-  model; the provider refuses with an insufficient-balance / credits
-  error in the worker stderr. Top up and re-queue.
-- **rate limit encountered** — the provider throttles the harness /
-  model API (e.g. `429`, "too many requests"); the probe or capture is
-  refused. Back off and re-queue later — do not retry in a tight loop.
-- **upgraded plan required** — the model is paid or gated and the
-  current plan does not include it (e.g. `401`/`403`, "upgrade your
-  plan", "model not included in your tier"). The capture cannot proceed
-  until the plan is upgraded; leave the row queued as handoff for a
-  platform/account that has access.
+Account-level failures — **credits depleted** (insufficient balance /
+credits error in the worker stderr), **rate limit encountered**
+(`429` / "too many requests" — back off, do not retry in a tight loop),
+**upgraded plan required** (`401`/`403`, "upgrade your plan") — are
+only reachable on `from-capture` jobs (a `from-raw` capture fabricates
+the runtime and never talks to a provider). Treat those as
+**environment-level failures**, not detection bugs: resolve the account
+condition and re-queue, or skip the combo. A `from-capture` row
+re-queues at most 3 times, then dequeues with a warning (token
+protection).
 
-When a refresh fails for one of these reasons, do not treat it as a
-rule/detection defect (don't patch the rule tables or file a detection
-bug); resolve the account condition and re-queue, or skip the combo.
+## test matrix: harnesses, providers, models
+
+The committed fixtures double as the integration test of the detection
+ladder (see DESIGN.md "test matrix" for the policy). The matrix is the
+`recipesForFixtures` table — one recipe per `agent_id` — expanded by
+`fixtures queue --recipes` and captured by the daemon. Scope: the 12
+coding harnesses (`cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`,
+`jcode`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`) plus the
+`goose` contributor-scope example.
+
+### per-harness install table
+
+Confirm every install with the user; prefer homebrew / npm / uv / scoop
+over web scripts.
+
+| harness   | macOS / Linux (homebrew)                          | cross-platform (npm / uv)                                      |
+| --------- | ------------------------------------------------- | -------------------------------------------------------------- |
+| cline     | —                                                 | `npm i -g cline`                                               |
+| kimi-code | —                                                 | `npm i -g @moonshot-ai/kimi-code`                              |
+| mmx       | —                                                 | `npm i -g mmx-cli`                                             |
+| pi        | —                                                 | `npm i -g @earendil-works/pi-coding-agent`                     |
+| qwen      | `brew install qwen-code`                          | `npm i -g @qwen-code/qwen-code`                                |
+| kilo      | `brew install Kilo-Org/tap/kilo`                  | `npm i -g @kilocode/cli`                                       |
+| jcode     | `brew tap 1jehuang/jcode && brew install jcode`   | —                                                              |
+| omp       | `brew install can1357/tap/omp`                    | `bun i -g @oh-my-pi/pi-coding-agent`                           |
+| reasonix  | `brew install esengine/reasonix/reasonix`         | `npm i -g reasonix`                                            |
+| crush     | `brew install charmbracelet/tap/crush`            | `npm i -g @charmland/crush`                                    |
+| opencode  | `brew install anomalyco/tap/opencode`             | `npm i -g opencode-ai`                                         |
+| vibe      | —                                                 | `uv tool install mistral-vibe`                                 |
+
+### probing scope + runbook
+
+The maintainer probes the free combos + the MiniMax subscription:
+
+```sh
+zig build dev
+./zig-out/bin/agent-detect-dev fixtures queue --recipes --available   # default from-raw, zero tokens
+./zig-out/bin/agent-detect-dev fixtures daemon --write-log
+```
+
+The daemon pops rows in order `from-ids` → `from-raw` → `from-capture`
+and captures each recipe to `fixtures/<id>-<platform>.json`. Review each
+fixture's evidence claims as they land. Contributors add other combos
+(rules → recipes → captures on their platform):
+
+- `--from-ids` — declared-only population: the harness is not installed
+  or won't run. Zero tokens; the fixture is declared, not observed.
+- `--from-raw` (default) — fabricated runtime + live detection ladder.
+  Zero tokens.
+- `--from-capture` — real re-captures only (token-consuming,
+  user-confirmed).
+
+### monitoring + control runbook
+
+Run the daemon with `fixtures daemon --write-log` (log:
+`fixtures/daemon.log`) and poll that log at ~1s — the daemon writes a
+status heartbeat every ~1s, faster than the iteration delays.
+Pacing: `from-ids`/`from-raw` jobs process at ~5s intervals
+(`--poll-seconds=N`); each `from-capture` is announced ~15s ahead
+(`--capture-review-seconds=N`, cancellable) and followed by a ~15s
+review pause. Control is the same on macOS/Linux/Windows:
+
+```sh
+printf 'pause\n'  > fixtures/daemon.ctl   # pause: finish in-flight, then no new pops
+printf 'resume\n' > fixtures/daemon.ctl   # resume
+printf 'stop\n'   > fixtures/daemon.ctl   # stop after the in-flight job
+```
+
+The daemon checks the file every ~1s and clears it after acting; Ctrl+C
+in the daemon terminal is the graceful-stop shortcut.
+
+### refresh / token warning
+
+Queue jobs run in three modes. `from-ids` resolves cooked from provided
+ids — zero tokens, no harness, declared-not-observed fixtures.
+`from-raw` (default) fabricates env markers + config files and runs the
+detection ladder via `refresh run` — zero tokens, no harness session.
+`from-capture` launches the real harness headlessly so it runs
+`fixtures capture` inside a live model session — that session consumes
+tokens (free-tier quota or subscription) and must be confirmed with the
+user first. A `fixtures capture` run by hand inside an agent session
+consumes that session's tokens.
+
+### global-settings rule
+
+Never change a global harness/provider/model setting to make a fixture
+pass — use env/arg/scope flags only. `from-raw` captures write config
+under a sandboxed HOME (per-fixture cache dir), never the user's real
+harness config; flag any needed global change instead.
 
 ## recipe-mode cooked / trailer (hard-to-detect agents)
 

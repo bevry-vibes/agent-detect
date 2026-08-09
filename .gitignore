@@ -65,6 +65,9 @@ zig-pkg/
 # dev daemon telemetry (written by `fixtures daemon --write-log`; already
 # covered by **/*.log above, listed explicitly for discoverability)
 fixtures/daemon.log
+# dev daemon control file (pause/resume/stop; written by the user, cleared
+# by the daemon after acting — never committed)
+fixtures/daemon.ctl
 
 # SQLite fixtures/queue DB (written/read via the `sqlite3` CLI; carries
 # per-host queue state and fixture history — never committed)

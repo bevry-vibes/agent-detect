@@ -4,6 +4,7 @@
 
 const std = @import("std");
 const testing = std.testing;
+const main = @import("main.zig");
 
 /// Discover every `fixtures/<stem>.json` fixture, returning the stems.
 fn discoverStems(a: std.mem.Allocator) ![][]u8 {
@@ -418,4 +419,132 @@ test "fixtures: warn on null harness_license (dev should fill in from upstream)"
     if (warnings > 0) {
         std.debug.print("WARNING: {d} fixture(s) have null harness_license\n", .{warnings});
     }
+}
+
+/// strict-slug equality: is `name`'s lowercase-alphanumeric slug equal
+/// to `slug`? Mirrors `main.slugId` without allocating.
+fn slugifyMatches(name: []const u8, slug: []const u8) bool {
+    var i: usize = 0;
+    for (name) |c| {
+        if (!std.ascii.isAlphanumeric(c)) continue;
+        if (i >= slug.len) return false;
+        if (std.ascii.toLower(c) != slug[i]) return false;
+        i += 1;
+    }
+    return i == slug.len;
+}
+
+/// split a `-`-separated id into exactly three non-empty parts, or null.
+fn split3(agent: []const u8) ?[3][]const u8 {
+    var it = std.mem.tokenizeScalar(u8, agent, '-');
+    const h = it.next() orelse return null;
+    const p = it.next() orelse return null;
+    const m = it.next() orelse return null;
+    if (it.next() != null) return null;
+    if (h.len == 0 or p.len == 0 or m.len == 0) return null;
+    return .{ h, p, m };
+}
+
+test "fixtures: every recipe agent_id splits into rule-table harness/provider/model; every harness rule has ≥1 recipe" {
+    // Decision #1/2d — the matrix recipes must only reference known
+    // rules (an unknown dim is a typo that would silently fail the
+    // from-raw sweep), and every harness in scope must have at least
+    // one recipe so `fixtures queue --recipes` covers the matrix.
+    for (main.dev.recipesForFixtures) |r| {
+        const parts = split3(r.agent_id) orelse {
+            std.debug.print("recipe {s} has a malformed agent_id\n", .{r.agent_id});
+            return error.MalformedRecipeId;
+        };
+        var h_ok = false;
+        for (main.rulesForHarnesses) |rr| {
+            if (slugifyMatches(rr.name, parts[0])) h_ok = true;
+        }
+        var p_ok = false;
+        for (main.rulesForProviders) |rr| {
+            if (slugifyMatches(rr.name, parts[1])) p_ok = true;
+        }
+        var m_ok = false;
+        for (main.rulesForModels) |rr| {
+            if (slugifyMatches(rr.name, parts[2])) m_ok = true;
+        }
+        if (!h_ok or !p_ok or !m_ok) {
+            std.debug.print("recipe {s} references an unknown dim (h:{}, p:{}, m:{})\n", .{ r.agent_id, h_ok, p_ok, m_ok });
+            return error.UnknownRecipeDim;
+        }
+    }
+    for (main.rulesForHarnesses) |rr| {
+        var found = false;
+        for (main.dev.recipesForFixtures) |r| {
+            const parts = split3(r.agent_id) orelse continue;
+            if (slugifyMatches(rr.name, parts[0])) found = true;
+        }
+        if (!found) {
+            std.debug.print("harness rule {s} has no recipe in recipesForFixtures\n", .{rr.name});
+            return error.HarnessWithoutRecipe;
+        }
+    }
+}
+
+test "fixtures: every fixture carries a valid origin; from-ids fixtures carry empty evidence" {
+    // Decision #7 — the top-level `origin` key classifies every fixture
+    // as declared (`from-ids`) or observed (`from-raw`/`from-capture`).
+    // Declared fixtures carry an empty `raw.evidence` array (nothing was
+    // observed); observed fixtures carry one claim per detected dim.
+    const stems = try discoverStems(testing.allocator);
+    defer {
+        for (stems) |s| testing.allocator.free(s);
+        testing.allocator.free(stems);
+    }
+    for (stems) |stem| {
+        const parsed = (try readFixtureParsed(testing.allocator, stem)) orelse continue;
+        defer parsed.deinit();
+        const root = parsed.value.object;
+        const origin = if (root.get("origin")) |o| (if (o == .string) o.string else "") else "";
+        const valid_origin = std.mem.eql(u8, origin, "from-ids") or
+            std.mem.eql(u8, origin, "from-raw") or
+            std.mem.eql(u8, origin, "from-capture");
+        if (!valid_origin) {
+            std.debug.print("fixture {s} has invalid origin '{s}'\n", .{ stem, origin });
+            return error.InvalidOrigin;
+        }
+        const raw = root.get("raw").?.object;
+        const evidence = raw.get("evidence") orelse {
+            std.debug.print("fixture {s} raw has no evidence key\n", .{stem});
+            return error.MissingEvidence;
+        };
+        try testing.expect(evidence == .array);
+        if (std.mem.eql(u8, origin, "from-ids")) {
+            try testing.expect(evidence.array.items.len == 0);
+        }
+    }
+}
+
+test "fixtures: observed (from-raw/from-capture) fixtures pass the evidence-claim check" {
+    // Decision #11 — every detected dim in an observed fixture must be
+    // attributed to a source present in raw whose value matches the
+    // cooked dim. The mechanical check cannot judge semantic
+    // deducibility — that is human review — but it catches "no
+    // evidence" and "evidence contradicts cooked". `from-ids` fixtures
+    // are declared, not observed, so they are excluded by origin.
+    const stems = try discoverStems(testing.allocator);
+    defer {
+        for (stems) |s| testing.allocator.free(s);
+        testing.allocator.free(stems);
+    }
+    var tested: usize = 0;
+    for (stems) |stem| {
+        const parsed = (try readFixtureParsed(testing.allocator, stem)) orelse continue;
+        defer parsed.deinit();
+        const root = parsed.value.object;
+        const origin = if (root.get("origin")) |o| (if (o == .string) o.string else "") else "";
+        if (std.mem.eql(u8, origin, "from-ids")) continue;
+        tested += 1;
+        const raw = root.get("raw").?;
+        const cooked = root.get("cooked").?;
+        if (!main.dev.evidenceClaimsValid(raw, cooked)) {
+            std.debug.print("fixture {s} failed the evidence-claim check\n", .{stem});
+            return error.EvidenceClaimsInvalid;
+        }
+    }
+    try testing.expect(tested >= 1);
 }

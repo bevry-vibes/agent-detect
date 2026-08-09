@@ -113,7 +113,9 @@ pub fn build(b: *std.Build) void {
                 .optimize = optimize,
             }),
         });
-        test_exe.root_module.addImport("build_options", build_options.createModule());
+        // Tests need the dev struct (fixture evidence validation +
+        // recipes) — build them with dev=true like the dev binary.
+        test_exe.root_module.addImport("build_options", dev_options.createModule());
         const run = b.addRunArtifact(test_exe);
         test_step.dependOn(&run.step);
     }

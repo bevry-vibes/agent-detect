@@ -53,15 +53,27 @@
     },
     "process_lineage": [
       {
-        "pid": 6522,
+        "pid": 33841,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 5891,
-        "name": "agent-detect-dev"
+        "pid": 33840,
+        "name": "bash"
       },
       {
-        "pid": 83120,
+        "pid": 33834,
+        "name": "bash"
+      },
+      {
+        "pid": 33833,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
         "name": "bash"
       }
     ],
@@ -70,17 +82,40 @@
       "providers.goose.model": "claude-sonnet-4"
     },
     "harness-urls": [
-      "https://github.com/aaif-goose/goose",
-      "https://github.com/aaif-goose/goose/blob/main/LICENSE"
+      "https://github.com/block/goose",
+      "https://github.com/block/goose/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://github.com/aaif-goose/goose",
-      "https://github.com/aaif-goose/goose/blob/main/LICENSE"
+      "https://github.com/block/goose",
+      "https://github.com/block/goose/blob/main/LICENSE"
     ],
     "model-urls": [
       "https://www.anthropic.com/claude/sonnet",
       "https://docs.anthropic.com/en/docs/about-claude/models"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "GOOSE_WORKING_DIR",
+        "value": "goose"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.config/goose/config.yaml",
+        "field": "active_provider",
+        "value": "goose"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.config/goose/config.yaml",
+        "field": "providers.goose.model",
+        "value": "claude-sonnet-4"
+      }
     ]
   },
-  "trailer": "Co-authored-by: Goose · Claude Sonnet 4 <goose-goose-claudesonnet4@local>"
+  "trailer": "Co-authored-by: Goose · Claude Sonnet 4 <goose-goose-claudesonnet4@local>",
+  "origin": "from-raw"
 }

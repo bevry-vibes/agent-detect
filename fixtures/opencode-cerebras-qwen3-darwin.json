@@ -5,19 +5,19 @@
     "harness_name": "opencode",
     "harness_id": "opencode",
     "harness_license": "MIT",
-    "provider_label": "MiniMax",
-    "provider_name": "minimax",
-    "provider_id": "minimax",
-    "provider_closed_training": "opt-in",
-    "provider_open_training": "opt-in",
-    "model_label": "MiniMax M3",
-    "model_short_title": "M3",
-    "model_name": "minimax-m3",
-    "model_id": "minimaxm3",
+    "provider_label": "Cerebras",
+    "provider_name": "cerebras",
+    "provider_id": "cerebras",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "Qwen3",
+    "model_short_title": null,
+    "model_name": "qwen3",
+    "model_id": "qwen3",
     "model_reciprocity": "open-weight",
-    "agent_id": "opencode-minimax-minimaxm3",
+    "agent_id": "opencode-cerebras-qwen3",
     "reciprocal": true,
-    "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>"
+    "trailer": "Co-authored-by: OpenCode · Qwen3 <opencode-cerebras-qwen3@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -36,17 +36,17 @@
         "present": true
       },
       "OPENCODE_MODEL": {
-        "value": "minimax/minimax-m3",
+        "value": "cerebras/qwen3",
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 34465,
+        "pid": 34497,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34464,
+        "pid": 34496,
         "name": "bash"
       },
       {
@@ -71,13 +71,12 @@
       "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
     ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/terms-of-service",
-      "https://platform.minimax.io/docs/guides/privacy-policy"
+      "https://www.cerebras.ai/privacy-policy",
+      "https://www.cerebras.ai/terms-of-service"
     ],
     "model-urls": [
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
-      "https://www.minimax.io/blog/minimax-m3"
+      "https://huggingface.co/Qwen/Qwen3",
+      "https://huggingface.co/Qwen/Qwen3/blob/main/LICENSE"
     ],
     "evidence": [
       {
@@ -90,16 +89,16 @@
         "dim": "provider",
         "source": "env",
         "name": "OPENCODE_MODEL",
-        "value": "minimax/minimax-m3"
+        "value": "cerebras/qwen3"
       },
       {
         "dim": "model",
         "source": "env",
         "name": "OPENCODE_MODEL",
-        "value": "minimax/minimax-m3"
+        "value": "cerebras/qwen3"
       }
     ]
   },
-  "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: OpenCode · Qwen3 <opencode-cerebras-qwen3@local>",
   "origin": "from-raw"
 }

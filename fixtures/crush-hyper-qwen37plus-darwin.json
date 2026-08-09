@@ -38,15 +38,27 @@
     },
     "process_lineage": [
       {
-        "pid": 46692,
+        "pid": 34427,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 43506,
-        "name": "agent-detect-dev"
+        "pid": 34426,
+        "name": "bash"
       },
       {
-        "pid": 83120,
+        "pid": 34349,
+        "name": "bash"
+      },
+      {
+        "pid": 34348,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
         "name": "bash"
       }
     ],
@@ -64,7 +76,30 @@
     "model-urls": [
       "https://qwen.ai/",
       "https://qwen.ai/blog?id=qwen3.7-plus"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "CRUSH_API_KEY",
+        "value": "crush"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.local/share/crush/hyper.json",
+        "field": "default_large_model_id",
+        "value": "hyper/qwen3.7-plus"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.local/share/crush/hyper.json",
+        "field": "default_large_model_id",
+        "value": "hyper/qwen3.7-plus"
+      }
     ]
   },
-  "trailer": "Co-authored-by: Crush · Qwen3.7-Plus <crush-hyper-qwen37plus@local>"
+  "trailer": "Co-authored-by: Crush · Qwen3.7-Plus <crush-hyper-qwen37plus@local>",
+  "origin": "from-raw"
 }

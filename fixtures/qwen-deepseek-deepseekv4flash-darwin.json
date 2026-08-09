@@ -1,13 +1,13 @@
 {
   "cooked": {
-    "harness_label": "Reasonix",
+    "harness_label": "Qwen Code",
     "harness_short_title": null,
-    "harness_name": "reasonix",
-    "harness_id": "reasonix",
-    "harness_license": "MIT",
-    "provider_label": "DeepSeek Flash",
-    "provider_name": "deepseek-flash",
-    "provider_id": "deepseekflash",
+    "harness_name": "qwen",
+    "harness_id": "qwen",
+    "harness_license": "Apache-2.0",
+    "provider_label": "DeepSeek",
+    "provider_name": "deepseek",
+    "provider_id": "deepseek",
     "provider_closed_training": "never",
     "provider_open_training": "never",
     "model_label": "DeepSeek V4 Flash",
@@ -15,9 +15,9 @@
     "model_name": "deepseek-v4-flash",
     "model_id": "deepseekv4flash",
     "model_reciprocity": "open-weight",
-    "agent_id": "reasonix-deepseekflash-deepseekv4flash",
+    "agent_id": "qwen-deepseek-deepseekv4flash",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>"
+    "trailer": "Co-authored-by: Qwen Code · DeepSeek V4 Flash <qwen-deepseek-deepseekv4flash@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -32,25 +32,25 @@
       "model"
     ],
     "env": {
-      "REASONIX_API_KEY": {
+      "QWEN_API_KEY": {
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 34978,
+        "pid": 33952,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34977,
+        "pid": 33951,
         "name": "bash"
       },
       {
-        "pid": 34956,
+        "pid": 33834,
         "name": "bash"
       },
       {
-        "pid": 34904,
+        "pid": 33833,
         "name": "bash"
       },
       {
@@ -62,13 +62,14 @@
         "name": "bash"
       }
     ],
-    "<home>/.reasonix/config.toml": {
-      "default_model": "deepseek-flash",
-      "providers[].default": "deepseek-v4-flash"
+    "<home>/.qwen/settings.json": {
+      "model.name": "deepseek-v4-flash",
+      "modelProviders.openai[].baseUrl": "https://api.deepseek.com",
+      "security.auth.selectedType": "openai"
     },
     "harness-urls": [
-      "https://github.com/esengine/DeepSeek-Reasonix",
-      "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE"
+      "https://github.com/QwenLM/qwen-code",
+      "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
     ],
     "provider-urls": [
       "https://api-docs.deepseek.com/quick_start/pricing",
@@ -82,25 +83,25 @@
       {
         "dim": "harness",
         "source": "env",
-        "name": "REASONIX_API_KEY",
-        "value": "reasonix"
-      },
-      {
-        "dim": "provider",
-        "source": "config",
-        "name": "<home>/.reasonix/config.toml",
-        "field": "default_model",
-        "value": "deepseek-flash"
+        "name": "QWEN_API_KEY",
+        "value": "qwen"
       },
       {
         "dim": "model",
         "source": "config",
-        "name": "<home>/.reasonix/config.toml",
-        "field": "providers[].default",
+        "name": "<home>/.qwen/settings.json",
+        "field": "model.name",
         "value": "deepseek-v4-flash"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.qwen/settings.json",
+        "field": "modelProviders.openai[].baseUrl",
+        "value": "https://api.deepseek.com"
       }
     ]
   },
-  "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>",
+  "trailer": "Co-authored-by: Qwen Code · DeepSeek V4 Flash <qwen-deepseek-deepseekv4flash@local>",
   "origin": "from-raw"
 }

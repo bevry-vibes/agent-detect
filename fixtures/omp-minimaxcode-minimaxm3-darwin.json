@@ -12,11 +12,11 @@
     "provider_open_training": "opt-in",
     "model_label": "MiniMax M3",
     "model_short_title": "M3",
-    "model_name": "MiniMax-M3",
+    "model_name": "minimax-m3",
     "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
     "agent_id": "omp-minimaxcode-minimaxm3",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>"
   },
   "raw": {
@@ -38,31 +38,69 @@
     },
     "process_lineage": [
       {
-        "pid": 6235,
+        "pid": 34356,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 5891,
-        "name": "agent-detect-dev"
+        "pid": 34355,
+        "name": "bash"
       },
       {
-        "pid": 83120,
+        "pid": 34349,
+        "name": "bash"
+      },
+      {
+        "pid": 34348,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
         "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
-      "modelRoles.default": "minimax-code/MiniMax-M3"
+      "modelRoles.default": "minimax-code/minimax-m3"
     },
-    "harness-urls": [],
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/platform/terms-of-service",
-      "https://platform.minimax.io/docs/guides/platform/privacy-policy"
+      "https://platform.minimax.io/docs/guides/terms-of-service",
+      "https://platform.minimax.io/docs/guides/privacy-policy"
     ],
     "model-urls": [
       "https://huggingface.co/MiniMaxAI/MiniMax-M3",
       "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
       "https://www.minimax.io/blog/minimax-m3"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "minimax-code/minimax-m3"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "minimax-code/minimax-m3"
+      }
     ]
   },
-  "trailer": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>"
+  "trailer": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
+  "origin": "from-raw"
 }

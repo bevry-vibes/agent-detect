@@ -1,9 +1,9 @@
 {
   "cooked": {
-    "harness_label": "OpenCode",
+    "harness_label": "Kilo Code",
     "harness_short_title": null,
-    "harness_name": "opencode",
-    "harness_id": "opencode",
+    "harness_name": "kilo",
+    "harness_id": "kilo",
     "harness_license": "MIT",
     "provider_label": "MiniMax",
     "provider_name": "minimax",
@@ -15,9 +15,9 @@
     "model_name": "minimax-m3",
     "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
-    "agent_id": "opencode-minimax-minimaxm3",
+    "agent_id": "kilo-minimax-minimaxm3",
     "reciprocal": true,
-    "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>"
+    "trailer": "Co-authored-by: Kilo Code · MiniMax M3 <kilo-minimax-minimaxm3@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -32,29 +32,32 @@
       "model"
     ],
     "env": {
-      "OPENCODE_API_KEY": {
+      "KILO_API_KEY": {
         "present": true
       },
-      "OPENCODE_MODEL": {
+      "KILO": {
+        "present": false
+      },
+      "KILO_MODEL": {
         "value": "minimax/minimax-m3",
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 34465,
+        "pid": 34204,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34464,
+        "pid": 34203,
         "name": "bash"
       },
       {
-        "pid": 34349,
+        "pid": 34155,
         "name": "bash"
       },
       {
-        "pid": 34348,
+        "pid": 34154,
         "name": "bash"
       },
       {
@@ -67,8 +70,8 @@
       }
     ],
     "harness-urls": [
-      "https://github.com/anomalyco/opencode",
-      "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
     ],
     "provider-urls": [
       "https://platform.minimax.io/docs/guides/terms-of-service",
@@ -83,23 +86,23 @@
       {
         "dim": "harness",
         "source": "env",
-        "name": "OPENCODE_API_KEY",
-        "value": "opencode"
+        "name": "KILO_API_KEY",
+        "value": "kilo"
       },
       {
         "dim": "provider",
         "source": "env",
-        "name": "OPENCODE_MODEL",
+        "name": "KILO_MODEL",
         "value": "minimax/minimax-m3"
       },
       {
         "dim": "model",
         "source": "env",
-        "name": "OPENCODE_MODEL",
+        "name": "KILO_MODEL",
         "value": "minimax/minimax-m3"
       }
     ]
   },
-  "trailer": "Co-authored-by: OpenCode · MiniMax M3 <opencode-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: Kilo Code · MiniMax M3 <kilo-minimax-minimaxm3@local>",
   "origin": "from-raw"
 }

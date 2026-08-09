@@ -5,19 +5,19 @@
     "harness_name": "cline",
     "harness_id": "cline",
     "harness_license": "Apache-2.0",
-    "provider_label": "Cline Pass",
-    "provider_name": "cline-pass",
-    "provider_id": "clinepass",
-    "provider_closed_training": "never",
-    "provider_open_training": "never",
-    "model_label": "Kimi K3",
-    "model_short_title": null,
-    "model_name": "kimi-k3",
-    "model_id": "kimik3",
+    "provider_label": "MiniMax",
+    "provider_name": "minimax",
+    "provider_id": "minimax",
+    "provider_closed_training": "opt-in",
+    "provider_open_training": "opt-in",
+    "model_label": "MiniMax M3",
+    "model_short_title": "M3",
+    "model_name": "minimax-m3",
+    "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
-    "agent_id": "cline-clinepass-kimik3",
+    "agent_id": "cline-minimax-minimaxm3",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>"
+    "trailer": "Co-authored-by: Cline · MiniMax M3 <cline-minimax-minimaxm3@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -55,11 +55,11 @@
     },
     "process_lineage": [
       {
-        "pid": 33537,
+        "pid": 33557,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33536,
+        "pid": 33556,
         "name": "bash"
       },
       {
@@ -80,21 +80,22 @@
       }
     ],
     "<home>/.cline/data/settings/providers.json": {
-      "lastUsedProvider": "cline-pass",
-      "providers.cline-pass.updatedAt": "2025-08-01T00:00:00Z",
-      "providers.cline-pass.settings.model": "cline-pass/kimi-k3"
+      "lastUsedProvider": "minimax",
+      "providers.minimax.updatedAt": "2025-08-01T00:00:00Z",
+      "providers.minimax.settings.model": "minimax/minimax-m3"
     },
     "harness-urls": [
       "https://github.com/cline/cline",
       "https://github.com/cline/cline/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://cline.bot/privacy",
-      "https://cline.bot/tos"
+      "https://platform.minimax.io/docs/guides/terms-of-service",
+      "https://platform.minimax.io/docs/guides/privacy-policy"
     ],
     "model-urls": [
-      "https://huggingface.co/moonshotai/Kimi-K3",
-      "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE"
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+      "https://www.minimax.io/blog/minimax-m3"
     ],
     "evidence": [
       {
@@ -108,17 +109,17 @@
         "source": "config",
         "name": "<home>/.cline/data/settings/providers.json",
         "field": "lastUsedProvider",
-        "value": "cline-pass"
+        "value": "minimax"
       },
       {
         "dim": "model",
         "source": "config",
         "name": "<home>/.cline/data/settings/providers.json",
-        "field": "providers.cline-pass.settings.model",
-        "value": "cline-pass/kimi-k3"
+        "field": "providers.minimax.settings.model",
+        "value": "minimax/minimax-m3"
       }
     ]
   },
-  "trailer": "Co-authored-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>",
+  "trailer": "Co-authored-by: Cline · MiniMax M3 <cline-minimax-minimaxm3@local>",
   "origin": "from-raw"
 }

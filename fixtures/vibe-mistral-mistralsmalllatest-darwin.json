@@ -10,14 +10,14 @@
     "provider_id": "mistral",
     "provider_closed_training": "opt-out",
     "provider_open_training": "opt-out",
-    "model_label": "Mistral Large (latest)",
+    "model_label": "Mistral Small (latest)",
     "model_short_title": null,
-    "model_name": "mistral-large-latest",
-    "model_id": "mistrallargelatest",
+    "model_name": "mistral-small-latest",
+    "model_id": "mistralsmalllatest",
     "model_reciprocity": "open-weight",
-    "agent_id": "vibe-mistral-mistrallargelatest",
+    "agent_id": "vibe-mistral-mistralsmalllatest",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Vibe · Mistral Large (latest) <vibe-mistral-mistrallargelatest@local>"
+    "trailer": "Co-authored-by: Vibe · Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -36,7 +36,7 @@
         "present": true
       },
       "VIBE_ACTIVE_MODEL": {
-        "value": "mistral-large-latest",
+        "value": "mistral-small-latest",
         "present": true
       },
       "VIBE_ACTIVE_PROVIDER": {
@@ -46,11 +46,11 @@
     },
     "process_lineage": [
       {
-        "pid": 34505,
+        "pid": 34513,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34504,
+        "pid": 34512,
         "name": "bash"
       },
       {
@@ -71,7 +71,7 @@
       }
     ],
     "<home>/.vibe/config.toml": {
-      "VIBE_ACTIVE_MODEL": "mistral-large-latest"
+      "VIBE_ACTIVE_MODEL": "mistral-small-latest"
     },
     "harness-urls": [
       "https://github.com/mistralai/mistral-vibe",
@@ -102,10 +102,10 @@
         "dim": "model",
         "source": "env",
         "name": "VIBE_ACTIVE_MODEL",
-        "value": "mistral-large-latest"
+        "value": "mistral-small-latest"
       }
     ]
   },
-  "trailer": "Co-authored-by: Vibe · Mistral Large (latest) <vibe-mistral-mistrallargelatest@local>",
+  "trailer": "Co-authored-by: Vibe · Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>",
   "origin": "from-raw"
 }

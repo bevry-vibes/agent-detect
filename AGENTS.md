@@ -20,3 +20,20 @@ only — do not pull their contents into this file.
   gate themselves on model and harness).
 
 This file is not policy — it is a pointer.
+
+## splat naming
+
+Never refer to a to-be-defined name with `X`, `Xxx`, or `XXX`.
+Use an asterisk splat (`build*Env`) or the interpolated form matching
+the language's conventions — `build<Harness>Env` (camelCase),
+`build<HARNESS>_ENV` (UPPER_SNAKE), `build{Harness}Env` /
+`build${HARNESS}Env` as the syntax dictates. Always a real, greppable
+pattern — never `X`.
+
+## token cost
+
+`agent-detect` consumes no model tokens: detection reads only local
+state (env markers, process ancestry, harness config/session files, the
+local Kilo DB) and performs no network I/O. Token cost arises only from
+the session hosting it — e.g. a live `fixtures capture` runs inside a
+real agent session, and that session is a model conversation.

@@ -309,3 +309,54 @@ names the shipped behavior and why it was chosen.
     are strictly lowercase-alphanumeric slugs of the canonical `*_name`
     (no separators). `*_name` carries the service's own spelling; the
     ids are what machine matching and fixture filenames use.
+
+## test matrix: harnesses, providers, models
+
+The committed fixture suite doubles as the integration test of the
+detection ladder. This section pins the matrix policy — what gets a
+rule, a recipe, and a fixture — so contributors extend it without
+re-litigating scope.
+
+- **Harness scope (coding harnesses only):** `cline`, `kimi`, `mmx`,
+  `pi`, `qwen`, `kilo`, `jcode`, `omp`, `reasonix`, `crush`, `opencode`,
+  `vibe`. Claw / machine-control agents are out of scope. `goose`
+  remains as a contributor-scope example fixture (kept, not extended).
+- **Model policy:** open-weight/open-source models are preferred; free
+  closed and popular closed models also get rules (detection must
+  exceed the preferred set). `reciprocity` is `open-source` |
+  `open-weight` | `closed`, sourced from the HF card + LICENSE (or the
+  provider's model page for closed models).
+- **Provider policy:** zero-training or reciprocal-training providers
+  are preferred. Maintainer probing covers free combos of those plus the
+  paid MiniMax subscription; anything beyond that is contributor scope
+  via CONTRIBUTING.md. New free providers: OpenRouter, Groq, Cerebras,
+  Z.ai, Kimi/Moonshot (training policies null until verified).
+- **Paid default:** MiniMax subscription. Subscriptions are preferred
+  over pay-as-you-go (DeepSeek paid API is secondary; DeepSeek free
+  combos use the free tier).
+- **Global-settings rule:** never change a global harness/provider/model
+  setting to make a fixture pass — use env/arg/scope flags only, and
+  worker captures run in a sandboxed HOME. Flag any needed global change
+  instead.
+- **Evidence-attribution rule (decision #11):** every detected dim in an
+  observed fixture (`from-raw`/`from-capture`) carries an evidence claim
+  pointing at a source present in `raw` whose value matches the cooked
+  dim. Code verifies the attribution chain mechanically; semantic
+  deducibility is human review (capture review window + commit review).
+  Sources that can't serialize into a claim (custom database formats,
+  e.g. kilo's sqlite session store) are logged follow-ups, never faked.
+  `from-ids` fixtures are declared, not observed — excluded by `origin`.
+- **Cross-platform daemon control principle (decision #12):** one
+  `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop` across
+  macOS/Linux/Windows — no per-platform signal doubles. Ctrl+C stays
+  the terminal graceful-stop shortcut; the daemon clears the control
+  file after acting.
+- **Refresh flavours:** every queue job runs in one of three modes —
+  `from-ids` (resolve cooked from provided ids; declared, not observed;
+  zero tokens; harness not required), `from-raw` (default; fabricate env
+  markers + config files and run the detection ladder via `refresh run`;
+  zero tokens), and `from-capture` (launch the real harness so it runs
+  `fixtures capture` in a live model session; token-consuming,
+  user-confirmed only). Every fixture carries a top-level `origin` key
+  (`"from-ids" | "from-raw" | "from-capture"`). See CONTRIBUTING.md for
+  installs and the probing runbook.

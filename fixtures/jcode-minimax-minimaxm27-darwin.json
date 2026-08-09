@@ -12,11 +12,11 @@
     "provider_open_training": "opt-in",
     "model_label": "MiniMax M2.7",
     "model_short_title": "M2.7",
-    "model_name": "MiniMax-M2.7",
+    "model_name": "minimax-m2.7",
     "model_id": "minimaxm27",
     "model_reciprocity": "open-weight",
     "agent_id": "jcode-minimax-minimaxm27",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: jcode · MiniMax M2.7 <jcode-minimax-minimaxm27@local>"
   },
   "raw": {
@@ -38,31 +38,69 @@
     },
     "process_lineage": [
       {
-        "pid": 6631,
+        "pid": 34231,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 5891,
-        "name": "agent-detect-dev"
+        "pid": 34230,
+        "name": "bash"
       },
       {
-        "pid": 83120,
+        "pid": 34155,
+        "name": "bash"
+      },
+      {
+        "pid": 34154,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
         "name": "bash"
       }
     ],
-    "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_known.json": {
-      "model": "MiniMax-M2.7",
+    "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_fixtures.json": {
+      "model": "minimax-m2.7",
       "provider_key": "minimax"
     },
-    "harness-urls": [],
+    "harness-urls": [
+      "https://github.com/1jehuang/jcode",
+      "https://github.com/1jehuang/jcode/blob/master/LICENSE"
+    ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/platform/terms-of-service",
-      "https://platform.minimax.io/docs/guides/platform/privacy-policy"
+      "https://platform.minimax.io/docs/guides/terms-of-service",
+      "https://platform.minimax.io/docs/guides/privacy-policy"
     ],
     "model-urls": [
       "https://huggingface.co/MiniMaxAI/MiniMax-M2.7",
       "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "JCODE_API_KEY",
+        "value": "jcode"
+      },
+      {
+        "dim": "provider",
+        "source": "session",
+        "name": "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_fixtures.json",
+        "field": "provider_key",
+        "value": "minimax"
+      },
+      {
+        "dim": "model",
+        "source": "session",
+        "name": "<home>/.jcode/sessions/session_zoo_9999999999999_refresh_fixtures.json",
+        "field": "model",
+        "value": "minimax-m2.7"
+      }
     ]
   },
-  "trailer": "Co-authored-by: jcode · MiniMax M2.7 <jcode-minimax-minimaxm27@local>"
+  "trailer": "Co-authored-by: jcode · MiniMax M2.7 <jcode-minimax-minimaxm27@local>",
+  "origin": "from-raw"
 }

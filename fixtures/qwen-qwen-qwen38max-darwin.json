@@ -5,19 +5,19 @@
     "harness_name": "qwen",
     "harness_id": "qwen",
     "harness_license": "Apache-2.0",
-    "provider_label": "MiniMax",
-    "provider_name": "minimax",
-    "provider_id": "minimax",
-    "provider_closed_training": "opt-in",
-    "provider_open_training": "opt-in",
-    "model_label": "MiniMax M3",
-    "model_short_title": "M3",
-    "model_name": "minimax-m3",
-    "model_id": "minimaxm3",
-    "model_reciprocity": "open-weight",
-    "agent_id": "qwen-minimax-minimaxm3",
-    "reciprocal": true,
-    "trailer": "Co-authored-by: Qwen Code · MiniMax M3 <qwen-minimax-minimaxm3@local>"
+    "provider_label": "Qwen",
+    "provider_name": "qwen",
+    "provider_id": "qwen",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Qwen3.8-Max",
+    "model_short_title": null,
+    "model_name": "qwen3.8-max",
+    "model_id": "qwen38max",
+    "model_reciprocity": "closed",
+    "agent_id": "qwen-qwen-qwen38max",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Qwen Code · Qwen3.8-Max <qwen-qwen-qwen38max@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -38,11 +38,11 @@
     },
     "process_lineage": [
       {
-        "pid": 33922,
+        "pid": 33964,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33921,
+        "pid": 33963,
         "name": "bash"
       },
       {
@@ -63,8 +63,8 @@
       }
     ],
     "<home>/.qwen/settings.json": {
-      "model.name": "minimax-m3",
-      "modelProviders.openai[].baseUrl": "https://api.minimax.io/v1",
+      "model.name": "qwen3.8-max",
+      "modelProviders.openai[].baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
       "security.auth.selectedType": "openai"
     },
     "harness-urls": [
@@ -72,13 +72,12 @@
       "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/terms-of-service",
-      "https://platform.minimax.io/docs/guides/privacy-policy"
+      "https://qwen.ai/",
+      "https://qwen.ai/legal"
     ],
     "model-urls": [
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
-      "https://www.minimax.io/blog/minimax-m3"
+      "https://qwen.ai/",
+      "https://qwen.ai/blog?id=qwen3.8-max"
     ],
     "evidence": [
       {
@@ -92,17 +91,17 @@
         "source": "config",
         "name": "<home>/.qwen/settings.json",
         "field": "model.name",
-        "value": "minimax-m3"
+        "value": "qwen3.8-max"
       },
       {
         "dim": "provider",
         "source": "config",
         "name": "<home>/.qwen/settings.json",
         "field": "modelProviders.openai[].baseUrl",
-        "value": "https://api.minimax.io/v1"
+        "value": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       }
     ]
   },
-  "trailer": "Co-authored-by: Qwen Code · MiniMax M3 <qwen-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: Qwen Code · Qwen3.8-Max <qwen-qwen-qwen38max@local>",
   "origin": "from-raw"
 }

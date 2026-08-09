@@ -140,7 +140,7 @@ const ModelRule = struct {
     reciprocity: ?[]const u8,
     sources: []const []const u8,
 };
-const rulesForModels = [_]ModelRule{
+pub const rulesForModels = [_]ModelRule{
     // kimi-k3: open-weight — Moonshot's HF card self-describes
     // "open-weight"; its LICENSE is the custom "Kimi K3 License"
     // (MIT-style with a large-scale commercial carve-out), not OSI.
@@ -177,6 +177,39 @@ const rulesForModels = [_]ModelRule{
     // qwen3.7-plus: closed — API-only; no official weights. Same
     // qwen.ai linkage as qwen3.8-max above.
     .{ .name = "qwen3.7-plus", .label = "Qwen3.7-Plus", .reciprocity = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.7-plus" } },
+    // deepseek-v4-pro: open-weight — the larger sibling of
+    // deepseek-v4-flash; HF card + MIT LICENSE.
+    .{ .name = "deepseek-v4-pro", .label = "DeepSeek V4 Pro", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE" } },
+    // llama-4: open-weight — Llama 4 community license (weights
+    // downloadable, custom license, not OSI); Scout is the smallest of
+    // the family.
+    .{ .name = "llama-4", .label = "Llama 4", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E", "https://huggingface.co/meta-llama/Llama-4-Scout-17B-16E/blob/main/LICENSE" } },
+    // qwen3.5: open-weight — Qwen3.5 weights on HF under the Qwen
+    // (Apache-2.0) license; the hosted alias is what most combos run.
+    .{ .name = "qwen3.5", .label = "Qwen3.5", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.5", "https://huggingface.co/Qwen/Qwen3.5/blob/main/LICENSE" } },
+    // qwen3: open-weight — the base Qwen3 family (Apache-2.0); used by
+    // Cerebras-hosted combos.
+    .{ .name = "qwen3", .label = "Qwen3", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3", "https://huggingface.co/Qwen/Qwen3/blob/main/LICENSE" } },
+    // mistral-small-latest: open-weight — Mistral Small's alias;
+    // Apache-2.0 weights per the models overview, same as
+    // mistral-large-latest.
+    .{ .name = "mistral-small-latest", .label = "Mistral Small (latest)", .reciprocity = "open-weight", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" } },
+    // gemini-3-flash: closed — Google Gemini API-only; no weights.
+    .{ .name = "gemini-3-flash", .label = "Gemini 3 Flash", .reciprocity = "closed", .sources = &.{ "https://deepmind.google/technologies/gemini/", "https://ai.google.dev/gemini-api/docs/models" } },
+    // gemini-3.1-pro: closed — Google Gemini API-only; no weights.
+    .{ .name = "gemini-3.1-pro", .label = "Gemini 3.1 Pro", .reciprocity = "closed", .sources = &.{ "https://deepmind.google/technologies/gemini/", "https://ai.google.dev/gemini-api/docs/models" } },
+    // gpt-5-mini: closed — OpenAI API-only; no weights.
+    .{ .name = "gpt-5-mini", .label = "GPT-5 mini", .reciprocity = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
+    // gpt-5.5: closed — OpenAI API-only; no weights.
+    .{ .name = "gpt-5.5", .label = "GPT-5.5", .reciprocity = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
+    // grok-3-mini: closed — xAI API-only; no weights.
+    .{ .name = "grok-3-mini", .label = "Grok 3 mini", .reciprocity = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    // grok-4: closed — xAI API-only; no weights.
+    .{ .name = "grok-4", .label = "Grok 4", .reciprocity = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    // claude-opus-4: closed — API-only; no weights.
+    .{ .name = "claude-opus-4", .label = "Claude Opus 4", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/opus", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    // claude-haiku-4: closed — API-only; no weights.
+    .{ .name = "claude-haiku-4", .label = "Claude Haiku 4", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/haiku", "https://docs.anthropic.com/en/docs/about-claude/models" } },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -195,7 +228,7 @@ const ProviderRule = struct {
     open_training: ?[]const u8,
     sources: []const []const u8,
 };
-const rulesForProviders = [_]ProviderRule{
+pub const rulesForProviders = [_]ProviderRule{
     // cline-pass: never/never — Cline's subscription tier. Cline is a
     // BYO-key client; its privacy notice says requests made with your
     // own API keys are not collected. Upstream AI model providers have
@@ -252,6 +285,28 @@ const rulesForProviders = [_]ProviderRule{
     // upstream. Display name + empty sources reflects that this is an
     // unknown placeholder, not a real provider.
     .{ .name = "remote", .label = "Remote", .closed_training = null, .open_training = null, .sources = &.{} },
+    // openrouter: never/never — a BYO-key aggregator gateway; it does
+    // not host or train models on customer traffic (privacy + terms).
+    .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "never", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
+    // groq: never/never — Groq is an inference-only LPU cloud; its
+    // terms/privacy state customer data is not used for model training.
+    .{ .name = "groq", .label = "Groq", .closed_training = "never", .open_training = "never", .sources = &.{ "https://groq.com/privacy", "https://groq.com/terms" } },
+    // cerebras: never/never — Cerebras Inference is a hardware
+    // inference cloud; customer prompts are not used for training.
+    .{ .name = "cerebras", .label = "Cerebras", .closed_training = "never", .open_training = "never", .sources = &.{ "https://www.cerebras.ai/privacy-policy", "https://www.cerebras.ai/terms-of-service" } },
+    // zai: null/null — Z.ai (Zhipu AI) trains models itself (the GLM
+    // family); API training-policy wording unverified, stays null.
+    .{ .name = "zai", .label = "Z.ai", .closed_training = null, .open_training = null, .sources = &.{ "https://www.z.ai/terms-of-service", "https://www.z.ai/privacy-policy" } },
+    // moonshot: null/null — Moonshot AI trains models (the Kimi
+    // family); API training-policy wording unverified, stays null.
+    .{ .name = "moonshot", .label = "Moonshot", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
+    // kimi: mirrors `moonshot` — the provider key kimi-code configs
+    // use (`default_model = "kimi/kimi-k3"`); same underlying Moonshot
+    // AI upstream, same unverified policy status.
+    .{ .name = "kimi", .label = "Kimi", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
+    // qwen: null/null — Alibaba Qwen's hosted tier (qwen.ai /
+    // DashScope); Qwen trains models itself, API policy unverified.
+    .{ .name = "qwen", .label = "Qwen", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/legal" } },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
@@ -310,6 +365,28 @@ pub const FileObservation = struct {
     fields: []const FieldObservation = &.{},
 };
 
+/// One evidence claim: "dim X was resolved from source Y, which is
+/// present in raw, and whose value was Z". Decision #11 — every
+/// detected dim in an observed fixture must carry a claim so code can
+/// mechanically verify the attribution chain (source present + value
+/// matches the cooked dim). `source` is one of "env" | "config" |
+/// "session" | "lineage":
+///   - "env":     `name` is the env-var name (must appear in raw.env)
+///   - "config"/"session": `name` is the file path (a top-level raw
+///     key after redaction) and `field` the dotted path within it
+///   - "lineage": `name` is a process basename (must appear in
+///     raw.process_lineage)
+/// `value` is the value the detector read (or, for lineage harness
+/// claims, the matched proc name). Semantic deducibility is human
+/// review; this struct only pins the attribution chain.
+pub const EvidenceClaim = struct {
+    dim: []const u8, // "harness" | "provider" | "model"
+    source: []const u8, // "env" | "config" | "session" | "lineage"
+    name: []const u8, // env var / file path / proc name
+    field: ?[]const u8 = null, // dotted path for config/session claims
+    value: ?[]const u8 = null, // the value read (null = no value seen)
+};
+
 /// All unprocessed observations in a typed shape that maps cleanly to
 /// the shapeless JSON output emitted by `buildRaw`. Top-level groups:
 /// - `env_vars` — env-var observations (one per matched marker)
@@ -326,6 +403,10 @@ pub const RawObservation = struct {
     harness_urls: []const []const u8 = &.{},
     provider_urls: []const []const u8 = &.{},
     model_urls: []const []const u8 = &.{},
+    /// decision #11 evidence claims — per detected dim, what source
+    /// was read and with what value. Empty for `from-ids` (declared,
+    /// not observed) fixtures.
+    evidence: []const EvidenceClaim = &.{},
 };
 
 pub const HarnessRule = struct {
@@ -357,7 +438,7 @@ const cline_env = [_][]const u8{ "CLINE_WRAPPER_PATH", "CLINE_BUILD_ENV", "CLINE
 const goose_env = [_][]const u8{ "GOOSE_WORKING_DIR", "GOOSE_PROVIDER", "GOOSE_MODEL", "GOOSE_TERMINAL", "GOOSE_MODE" };
 const kimi_env = [_][]const u8{ "KIMI_CODE_HOME", "KIMI_API_KEY", "KIMI_BASE_URL" };
 const mmx_env = [_][]const u8{ "MMX_CONFIG_DIR", "MINIMAX_API_KEY" };
-const pi_env = [_][]const u8{"PI_CODING_AGENT"};
+const pi_env = [_][]const u8{ "PI_CODING_AGENT", "PI_PROVIDER", "PI_MODEL" };
 
 // harnesses listed in the user's machine but not yet fully integrated;
 // each gets a single, plausibly-shaped env marker that the daemon's
@@ -367,13 +448,13 @@ const pi_env = [_][]const u8{"PI_CODING_AGENT"};
 // verified — a maintainer records the SPDX id + source URLs there, not
 // in the fixtures (fixtures are generated artifacts).
 const qwen_env = [_][]const u8{ "QWEN_API_KEY" };
-const kilo_env = [_][]const u8{ "KILO_API_KEY", "KILO" };
+const kilo_env = [_][]const u8{ "KILO_API_KEY", "KILO", "KILO_MODEL" };
 const jcode_env = [_][]const u8{ "JCODE_API_KEY" };
 const omp_env = [_][]const u8{ "OMP_API_KEY" };
 const reasonix_env = [_][]const u8{ "REASONIX_API_KEY" };
 const crush_env = [_][]const u8{ "CRUSH_API_KEY" };
-const opencode_env = [_][]const u8{ "OPENCODE_API_KEY" };
-const vibe_env = [_][]const u8{ "VIBE_API_KEY" };
+const opencode_env = [_][]const u8{ "OPENCODE_API_KEY", "OPENCODE_MODEL" };
+const vibe_env = [_][]const u8{ "VIBE_API_KEY", "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER" };
 
 const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
@@ -440,6 +521,11 @@ const env_value_allowlist = [_][]const u8{
     "CLINE_BUILD_ENV", "CLINE_NO_INTERACTIVE", "CLINE_WRAPPER_PATH",
     "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH",
     "KIMI_CODE_HOME", "MMX_CONFIG_DIR", "PI_CODING_AGENT",
+    // launcher-provided model selectors — the values are model ids /
+    // provider ids, not secrets, so fixtures can carry the exact value
+    // the detector read (evidence-claim value matching needs it).
+    "KILO_MODEL", "OPENCODE_MODEL", "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER",
+    "PI_PROVIDER", "PI_MODEL",
     "GOOSE_WORKING_DIR", "GOOSE_TERMINAL", "GOOSE_MODE",
     "USERPROFILE", "HOME", "APPDATA",
 };
@@ -449,6 +535,16 @@ fn isEnvValueAllowed(name: []const u8) bool {
         if (std.mem.eql(u8, allowed, name)) return true;
     }
     return false;
+}
+
+/// append one evidence claim to `d.raw.evidence`. The old slice is
+/// leaked (arena-backed) — fine for the short-lived Detection.
+fn addEvidenceClaim(a: std.mem.Allocator, d: *Detection, claim: EvidenceClaim) !void {
+    const new_len = d.raw.evidence.len + 1;
+    const new_slice = try a.alloc(EvidenceClaim, new_len);
+    @memcpy(new_slice[0..d.raw.evidence.len], d.raw.evidence);
+    new_slice[d.raw.evidence.len] = claim;
+    d.raw.evidence = new_slice;
 }
 
 /// apply a model slug to the detection. `slug` is the bare model id (e.g.
@@ -580,6 +676,32 @@ fn providerMetaForName(name: []const u8) ?ProviderRule {
         if (std.mem.eql(u8, r.name, name)) return r;
     }
     return null;
+}
+
+/// map an openai-compatible `base_url` host back to the canonical
+/// provider id. Used by `detectQwen` to resolve the upstream service
+/// behind qwen's `modelProviders[].baseUrl`, and mirrored by the dev
+/// provider metadata the from-raw fabricator writes. Unknown hosts
+/// fall back to "minimax" (the well-fixtures endpoint).
+fn providerForBaseUrl(base_url: []const u8) []const u8 {
+    const table = [_][2][]const u8{
+        .{ "minimax.io", "minimax" },
+        .{ "deepseek.com", "deepseek" },
+        .{ "openrouter.ai", "openrouter" },
+        .{ "groq.com", "groq" },
+        .{ "cerebras.ai", "cerebras" },
+        .{ "z.ai", "zai" },
+        .{ "moonshot", "moonshot" },
+        .{ "dashscope", "qwen" },
+        .{ "qwen.ai", "qwen" },
+        .{ "mistral.ai", "mistral" },
+        .{ "anthropic.com", "anthropic" },
+        .{ "hyper.charm.land", "hyper" },
+    };
+    for (table) |pair| {
+        if (std.mem.indexOf(u8, base_url, pair[0]) != null) return pair[1];
+    }
+    return "minimax";
 }
 
 /// look up a harness rule by its canonical `name` id. Returns the
@@ -717,6 +839,11 @@ const PROCESSENTRY32W = extern struct {
 extern "kernel32" fn CreateToolhelp32Snapshot(dwFlags: u32, th32ProcessID: u32) callconv(.winapi) std.os.windows.HANDLE;
 extern "kernel32" fn Process32FirstW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
 extern "kernel32" fn Process32NextW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
+// Windows process termination — used by the dev from-capture timeout
+// watchdog (`fixtures __timeout`). PROCESS_TERMINATE = 0x0001.
+extern "kernel32" fn OpenProcess(dwDesiredAccess: u32, bInheritHandle: c_int, dwProcessId: u32) callconv(.winapi) ?std.os.windows.HANDLE;
+extern "kernel32" fn TerminateProcess(hProcess: std.os.windows.HANDLE, uExitCode: u32) callconv(.winapi) c_int;
+extern "kernel32" fn CloseHandle(hObject: std.os.windows.HANDLE) callconv(.winapi) c_int;
 
 pub const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
 
@@ -989,6 +1116,7 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
                     d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
                     try applyProviderMeta(a, d, prov);
                     try config_fields.append(a, .{ .dotted_path = "lastUsedProvider", .value = prov });
+                    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = prov_path, .field = "lastUsedProvider", .value = prov });
                     if (root.get("providers")) |pv| {
                         if (pv == .object) {
                             if (pv.object.get(prov)) |ev| {
@@ -1009,6 +1137,7 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
                                                 try applyModel(a, d, slug, mid);
                                                 const dotted = try std.fmt.allocPrint(a, "providers.{s}.settings.model", .{prov});
                                                 try config_fields.append(a, .{ .dotted_path = dotted, .value = mid });
+                                                try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = prov_path, .field = dotted, .value = mid });
                                             }
                                         }
                                     }
@@ -1155,6 +1284,23 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         // `m` is the bare model id from config.yaml / GOOSE_MODEL env.
         try applyModel(a, d, m, m);
     }
+    // decision #11: claims against the source that actually resolved
+    // each dim (env vars override the config file).
+    if (provider) |p| {
+        if (std.mem.eql(u8, src, "env")) {
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "GOOSE_PROVIDER", .value = p });
+        } else if (active) |act| {
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "active_provider", .value = act });
+        }
+    }
+    if (model) |m| {
+        if (std.mem.eql(u8, src, "env")) {
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "GOOSE_MODEL", .value = m });
+        } else if (active) |act| {
+            const dotted = try std.fmt.allocPrint(a, "providers.{s}.model", .{act});
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = dotted, .value = m });
+        }
+    }
     // build config_files FileObservation if a file was read
     if (!std.mem.eql(u8, src, "none") and !std.mem.eql(u8, src, "env")) {
         var fields = std.ArrayList(FieldObservation).empty;
@@ -1206,19 +1352,22 @@ fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection)
             const obs = try a.alloc(FileObservation, 1);
             obs[0] = .{ .path = path, .fields = fields_slice };
             d.raw.config_files = obs;
+            // decision #11: both dims were read from config.toml's
+            // `default_model` = "<provider>/<model>" value.
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "default_model", .value = dm });
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "default_model", .value = dm });
             break;
         }
     }
 }
 
 fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
-    d.provider_name = "minimax";
-    d.provider_label = "MiniMax";
-    try applyProviderMeta(a, d, "minimax");
+    var provider: []const u8 = "minimax"; // mmx-cli is MiniMax's CLI; intrinsic default
     var model: []const u8 = "minimax-m3"; // mmx-cli default when no model configured
     var raw_input: []const u8 = "minimax-m3"; // bundle default
     var config_fields: ?[]const FieldObservation = null;
     var config_path: ?[]const u8 = null;
+    var config_value: ?[]const u8 = null;
     if (home.len > 0) {
         const cwd_dir = std.Io.Dir.cwd();
         const path = try std.fmt.allocPrint(a, "{s}/.mmx/config.json", .{home});
@@ -1228,10 +1377,20 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
                     const o = parsed.value.object;
                     if (jstr(o, "defaultTextModel") orelse jstr(o, "model")) |m| {
                         raw_input = m;
-                        // mmx config stores the bare model id; pass through as the canonical slug too.
+                        config_value = m;
+                        // mmx config stores the bare model id; when a
+                        // "provider/model" prefix is present it is the
+                        // upstream provider (the from-raw fabricator
+                        // writes that form to exercise non-minimax
+                        // combos). Bare ids keep the intrinsic default.
                         const lower = std.ascii.allocLowerString(a, m) catch m;
                         const slash = std.mem.findScalar(u8, lower, '/');
-                        model = if (slash) |i| lower[i + 1 ..] else lower;
+                        if (slash) |i| {
+                            provider = lower[0..i];
+                            model = lower[i + 1 ..];
+                        } else {
+                            model = lower;
+                        }
                         // build config_files FileObservation
                         var fields = std.ArrayList(FieldObservation).empty;
                         defer fields.deinit(a);
@@ -1244,7 +1403,16 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
             }
         }
     }
+    d.provider_name = provider;
+    d.provider_label = providerForName(provider) orelse try titleCase(a, provider);
+    try applyProviderMeta(a, d, provider);
     try applyModel(a, d, model, raw_input);
+    if (config_value) |cv| {
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = config_path orelse "", .field = if (config_fields != null) config_fields.?[0].dotted_path else null, .value = cv });
+        if (std.mem.indexOfScalar(u8, cv, '/') != null) {
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = config_path orelse "", .field = if (config_fields != null) config_fields.?[0].dotted_path else null, .value = cv });
+        }
+    }
     if (config_fields) |cf| {
         if (config_path) |cp| {
             const obs = try a.alloc(FileObservation, 1);
@@ -1294,17 +1462,19 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 
     // qwen's auth.selectedType is the route key, not the underlying
     // provider. Look at modelProviders[<key>][*].baseUrl to find the
-    // actual upstream service. Default to "minimax" for the well-fixtures
-    // case where the openai-compatible endpoint points at api.minimax.io.
+    // actual upstream service; the baseUrl host is mapped to the
+    // provider id (dev-only provider metadata carries the per-provider
+    // base_urls the from-raw fabricator writes). Unknown hosts default
+    // to "minimax" (the well-fixtures case: api.minimax.io).
     var provider_name: []const u8 = "minimax";
+    var provider_base_url: []const u8 = "";
     if (root.get("modelProviders")) |mps| {
         if (mps.object.get("openai")) |entries| {
             for (entries.array.items) |entry| {
                 if (entry.object.get("baseUrl")) |bu| {
-                    if (std.mem.indexOf(u8, bu.string, "minimax.io") != null) {
-                        provider_name = "minimax";
-                        break;
-                    }
+                    provider_base_url = bu.string;
+                    provider_name = providerForBaseUrl(bu.string);
+                    break;
                 }
             }
         }
@@ -1318,6 +1488,9 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
     try fields.append(a, .{ .dotted_path = "model.name", .value = model_name });
+    if (provider_base_url.len > 0) {
+        try fields.append(a, .{ .dotted_path = "modelProviders.openai[].baseUrl", .value = provider_base_url });
+    }
     if (root.get("security")) |sec| {
         if (sec.object.get("auth")) |auth| {
             if (auth.object.get("selectedType")) |st| {
@@ -1328,6 +1501,12 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
+    // decision #11: model read from settings.json model.name; provider
+    // derived from the modelProviders[].baseUrl host (when present).
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "model.name", .value = model_name });
+    if (provider_base_url.len > 0) {
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "modelProviders.openai[].baseUrl", .value = provider_base_url });
+    }
 }
 
 fn detectOmp(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
@@ -1395,6 +1574,10 @@ fn detectOmp(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
+    // decision #11: both dims read from config.yml's
+    // `modelRoles.default` = "<provider>/<model>".
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "modelRoles.default", .value = dm });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "modelRoles.default", .value = dm });
 }
 
 fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -1407,11 +1590,11 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
 
     // Naive parser: scan top-level lines for `default_model = "<value>"`.
     // The provider resolution matches default_model against the
-    // [[providers]] entries' `name` field; we don't actually need to
-    // parse the providers array fully because the harness's
-    // default_model IS one of the provider names in practice (the
-    // reasonix config here uses "deepseek-flash" as both the provider
-    // name and the default_model value).
+    // [[providers]] entries' `name` field, then reads that entry's
+    // `default` field for the actual model id. When the providers
+    // table can't be resolved (e.g. the model id equals the provider
+    // name in practice), fall back to using the default_model string as
+    // both the provider and model id.
     var lines = std.mem.splitScalar(u8, data, '\n');
     var default_model: ?[]const u8 = null;
     while (lines.next()) |raw| {
@@ -1425,17 +1608,37 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     }
     const dm = default_model orelse return;
 
-    // Per reasonix's [[providers]] block in the actual config on this
-    // machine, default_model "deepseek-flash" maps to provider
-    // "deepseek-flash" with model "deepseek-v4-flash" (the provider's
-    // own `default` field). When we can't resolve that mapping
-    // precisely, fall back to using the default_model string as both
-    // the provider and model id.
-    var provider_name: []const u8 = dm;
+    // walk the `[[providers]]` blocks: find the entry whose `name`
+    // equals `dm` and read its `default` field for the model id. Both
+    // are quoted toml strings on their own lines:
+    //   [[providers]]
+    //   name = "deepseek-flash"
+    //   default = "deepseek-v4-flash"
+    const provider_name: []const u8 = dm;
     var model_name: []const u8 = dm;
-    if (std.mem.eql(u8, dm, "deepseek-flash")) {
-        provider_name = "deepseek-flash";
-        model_name = "deepseek-v4-flash";
+    var in_providers = false;
+    var in_dm = false;
+    var lines2 = std.mem.splitScalar(u8, data, '\n');
+    while (lines2.next()) |raw| {
+        const t = std.mem.trim(u8, raw, " \t\r");
+        if (std.mem.eql(u8, t, "[[providers]]")) {
+            in_providers = true;
+            in_dm = false;
+            continue;
+        }
+        if (!in_providers) continue;
+        if (std.mem.startsWith(u8, t, "name =")) {
+            const eq = std.mem.findScalar(u8, t, '=') orelse continue;
+            const val = std.mem.trim(u8, t[eq + 1 ..], " \"\t");
+            in_dm = std.mem.eql(u8, val, dm);
+            continue;
+        }
+        if (in_dm and std.mem.startsWith(u8, t, "default =")) {
+            const eq = std.mem.findScalar(u8, t, '=') orelse continue;
+            const val = std.mem.trim(u8, t[eq + 1 ..], " \"\t");
+            if (val.len > 0) model_name = val;
+            break;
+        }
     }
 
     d.provider_name = provider_name;
@@ -1446,9 +1649,16 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
     try fields.append(a, .{ .dotted_path = "default_model", .value = dm });
+    if (!std.mem.eql(u8, model_name, dm)) {
+        try fields.append(a, .{ .dotted_path = "providers[].default", .value = model_name });
+    }
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
+    // decision #11: the provider is `default_model`; the model is the
+    // matched [[providers]] entry's `default` (both from config.toml).
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "default_model", .value = dm });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "providers[].default", .value = model_name });
 }
 
 fn detectJcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -1507,16 +1717,21 @@ fn detectJcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
+    // decision #11: jcode's session file is the source for both dims.
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = path, .field = "provider_key", .value = provider_key });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = path, .field = "model", .value = model_name });
 }
 
 fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = env;
-    _ = home;
+    if (home.len == 0) return;
     // crush's `default_large_model_id` is the "current" model — the
     // launcher wrote it into hyper.json from the user's `crush
-    // update-providers` run. Format: "<provider>/<model>".
+    // update-providers` run. Format: "<provider>/<model>". The path
+    // follows HOME (the from-raw fabricator writes it into the sandboxed
+    // HOME, so it must NOT be hardcoded).
     const cwd_dir = std.Io.Dir.cwd();
-    const path = "/Users/balupton/.local/share/crush/hyper.json";
+    const path = try std.fs.path.join(a, &.{ home, ".local/share/crush/hyper.json" });
     const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
     defer a.free(data);
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
@@ -1545,6 +1760,10 @@ fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
+    // decision #11: both dims read from hyper.json's
+    // `default_large_model_id` = "<provider>/<model>".
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "default_large_model_id", .value = dm });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "default_large_model_id", .value = dm });
 }
 
 fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -1569,7 +1788,10 @@ fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     // kilo has no config file — the KILO_MODEL value lives in
     // raw.env_vars (added by applyModel via the env block), not in
     // a fake config_file entry. Leaving config_files empty keeps the
-    // raw block honest.
+    // raw block honest. The evidence claims point at the KILO_MODEL
+    // env observation, whose value carries "<provider>/<model>".
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "KILO_MODEL", .value = model_full });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "KILO_MODEL", .value = model_full });
 }
 
 /// Kilo does not export the active model to child processes, but it
@@ -1696,6 +1918,8 @@ fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
 
     // opencode has no config file — the OPENCODE_MODEL value lives
     // in raw.env_vars, not in a fake config_file entry.
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
 }
 
 fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -1703,14 +1927,19 @@ fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     // vibe's documented override: VIBE_ACTIVE_MODEL=<name> sets the
     // active model without going through the config. Launcher uses
     // this to capture whatever model the user is currently running.
+    // Mistral Vibe is a Mistral product, so the underlying provider is
+    // Mistral unless the launcher overrides it (VIBE_ACTIVE_PROVIDER) —
+    // the from-raw fabricator uses that to exercise non-Mistral combos.
     const model_name = env.get("VIBE_ACTIVE_MODEL") orelse return;
     if (model_name.len == 0) return;
-    // Mistral Vibe is a Mistral product, so the underlying provider is
-    // always Mistral. The model name is whatever the user picked.
-    d.provider_name = "mistral";
-    d.provider_label = providerForName("mistral") orelse "Mistral";
-    try applyProviderMeta(a, d, "mistral");
+    const provider_id = env.get("VIBE_ACTIVE_PROVIDER") orelse "mistral";
+    d.provider_name = provider_id;
+    d.provider_label = providerForName(provider_id) orelse "Mistral";
+    try applyProviderMeta(a, d, provider_id);
     try applyModel(a, d, model_name, model_name);
+
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "VIBE_ACTIVE_PROVIDER", .value = provider_id });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "VIBE_ACTIVE_MODEL", .value = model_name });
 
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
@@ -1731,12 +1960,17 @@ fn detectPi(a: std.mem.Allocator, env: *const std.process.Environ.Map, d: *Detec
     // clear this is a placeholder until proper session
     // model_change parsing lands. Default: claude-sonnet-4 via
     // Anthropic (pi is most commonly run against Claude by default).
+    // The evidence claims record exactly what was used — the raw.env
+    // observation shows `present` so a reviewer can tell a launcher-set
+    // value from a default.
     const provider = env.get("PI_PROVIDER") orelse "anthropic";
     const model = env.get("PI_MODEL") orelse "claude-sonnet-4";
     d.provider_name = provider;
     d.provider_label = providerForName(provider) orelse try titleCase(a, provider);
     try applyProviderMeta(a, d, provider);
     try applyModel(a, d, model, model);
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "PI_PROVIDER", .value = provider });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "PI_MODEL", .value = model });
 }
 
 /// tri-state reciprocity determination for `d`:
@@ -1989,6 +2223,43 @@ const usage =
     \\
 ;
 
+/// decision #8 — the dev binary's top-level help: the released usage
+/// plus a dev-actions block referencing the fixtures namespace, the
+/// three refresh modes, and the daemon pacing/control flags. The
+/// released `agent-detect --help` is `usage` alone.
+const devUsage = if (dev_build)
+    usage ++
+    \\
+    \\dev actions (maintainer-only binary — `fixtures help` has the full namespace):
+    \\  fixtures daemon   long-running queue worker (user-only, never inside an agent);
+    \\                    pops rows in order from-ids → from-raw → from-capture with
+    \\                    adaptive pacing; pause/resume/stop via fixtures/daemon.ctl
+    \\  fixtures capture  capture the current session into fixtures/<id>.json
+    \\                    (daemon-spawned, or run by hand inside a harness session)
+    \\  fixtures queue    upsert queue rows [scope flags] [--from-ids|--from-raw|--from-capture]
+    \\  fixtures dequeue  DELETE matching queue rows [--from-ids|--from-raw|--from-capture]
+    \\  fixtures help     the fixtures namespace's full help
+    \\  refresh run       internal: the `from-raw` capture worker; agent-detect spawning
+    \\                    itself under the daemon-prepared env
+    \\  raw               print only the raw observations block
+    \\
+    \\mode flags (queue stamps rows, dequeue filters them; exactly one; default from-raw):
+    \\  --from-ids        resolve cooked from provided ids — declared, not observed,
+    \\                    zero tokens, harness binary not required
+    \\  --from-raw        (default) fabricate env markers + config files and run the
+    \\                    detection ladder via `refresh run` — zero tokens
+    \\  --from-capture    launch the real harness so it runs `fixtures capture` in a live
+    \\                    model session — token-consuming, user-confirmed only
+    \\
+    \\daemon flags:
+    \\  --write-log                 write daemon output to fixtures/daemon.log
+    \\  --poll-seconds=N            base poll interval (default 5)
+    \\  --capture-review-seconds=N  pre/post capture pause for from-capture jobs (default 15)
+    \\  --capture-timeout-seconds=N from-capture worker timeout (default 600)
+    \\
+else
+    usage;
+
 const trailerUsage =
     \\agent-detect trailer — print a commit trailer for the detected agent
     \\
@@ -2099,11 +2370,13 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
 
     var rule: ?HarnessRule = null;
     var hsrc: []const u8 = "none";
+    var hclaim_name: []const u8 = ""; // the matched env marker / proc name
     scan: for (rulesForHarnesses) |r| {
         for (r.env_markers) |m| {
             if (env.get(m) != null) {
                 rule = r;
                 hsrc = "env";
+                hclaim_name = m;
                 break :scan;
             }
         }
@@ -2114,6 +2387,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         if (!std.mem.eql(u8, v, "true")) {
             rule = null;
             hsrc = "none";
+            hclaim_name = "";
         }
     }
     if (rule == null) {
@@ -2123,6 +2397,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
                     if (std.mem.eql(u8, n, pn)) {
                         rule = r;
                         hsrc = "ancestor";
+                        hclaim_name = n;
                     }
                 }
             }
@@ -2137,6 +2412,18 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         if (r.version) |v| d.harness_version = try a.dupe(u8, v);
         d.harness_license = r.license;
         d.raw.harness_urls = r.license_sources;
+        // decision #11: the harness dim's evidence claim. The source is
+        // the marker var / proc name that actually matched (present in
+        // raw.env / raw.process_lineage); the value is the harness's
+        // canonical name, which is what the rule links the marker to.
+        if (hclaim_name.len > 0) {
+            try addEvidenceClaim(a, d, .{
+                .dim = "harness",
+                .source = if (std.mem.eql(u8, hsrc, "env")) "env" else "lineage",
+                .name = hclaim_name,
+                .value = r.name,
+            });
+        }
         // populate env_vars with one entry per declared env-marker — even
         // when the runtime env didn't have it (`present=false`) so a
         // human reading the fixture can tell which markers the rule
@@ -2257,9 +2544,29 @@ pub const dev = if (build_options.dev) struct {
         \\state: fixtures/index.sqlite3 holds two tables — `fixtures` (one row
         \\per captured 4-tuple harness/provider/model/platform) and `queue`
         \\(the work queue). fixtures/<id>.json are the generated fixtures
-        \\(single file, top-level `cooked`/`raw`/`trailer` keys). Queue rows
+        \\(single file, top-level `cooked`/`raw`/`trailer`/`origin` keys). Queue rows
         \\with missing dims are seeds: the daemon expands them over fixtures
         \\recipes (full combos queued, other seeds warned and kept).
+        \\
+        \\refresh modes (queue stamps; dequeue filters; exactly one, default
+        \\from-raw; two+ together → exit 3; one mode per combo — re-queueing
+        \\with a different mode upgrades/downgrades the single row):
+        \\  --from-ids        resolve cooked from provided ids — declared, not
+        \\                    observed; zero tokens; harness binary not required
+        \\  --from-raw        (default) fabricate env markers + config files and
+        \\                    run the detection ladder via `refresh run` — zero tokens
+        \\  --from-capture    launch the real harness so it runs `fixtures capture`
+        \\                    in a live model session — token-consuming,
+        \\                    user-confirmed only; one at a time, ~15s pre/post review
+        \\
+        \\daemon flags:
+        \\  --write-log                 tee daemon output to fixtures/daemon.log
+        \\  --poll-seconds=N            base poll interval (default 5)
+        \\  --capture-review-seconds=N  pre/post capture pause (default 15)
+        \\  --capture-timeout-seconds=N from-capture worker timeout (default 600)
+        \\
+        \\control: write pause/resume/stop to fixtures/daemon.ctl (checked every
+        \\~1s; the daemon clears it after acting). Ctrl+C is the graceful stop.
         \\
         \\filters (shared by queue/dequeue; at least one required):
         \\  --fixture=ID  4-part <h>-<p>-<m>-<platform> id (exact)
@@ -2278,16 +2585,18 @@ pub const dev = if (build_options.dev) struct {
         \\                   from disk
         \\  --available      modifier: probe each candidate's harness and
         \\                   record 1/0 into the available column (unavailable
-        \\                   rows stay queued as handoff for another platform)
+        \\                   rows stay queued as handoff for another platform;
+        \\                   from-ids records but does not gate on it)
         \\  --unavailable    modifier (dequeue only): match available=0 rows
         \\                   (alias --available=0)
         \\
         \\subcommands:
         \\  (none), help, --help, -h   this help
         \\  daemon                     pop queue rows from fixtures/index.sqlite3 and
-        \\                              capture (poll 5s) — run as a user,
-        \\                              never inside an agent; --write-log also
-        \\                              writes all daemon output to fixtures/daemon.log
+        \\                              capture (poll ~1s heartbeat; 5s poll base) —
+        \\                              run as a user, never inside an agent;
+        \\                              --write-log also writes all daemon output
+        \\                              to fixtures/daemon.log
         \\  capture                    capture the current session into a single
         \\                              fixtures/<id>.json + a fixtures row
         \\                              (spawned by the daemon; fixtures only)
@@ -2405,6 +2714,26 @@ pub const dev = if (build_options.dev) struct {
         try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
         try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
         try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
+        // decision #11 — evidence claims, one per detected dim, pinning
+        // the attribution chain (source present in raw + value matching
+        // the cooked dim). `from-ids` fixtures carry an empty array.
+        {
+            var ev_arr: V = .{ .array = std.json.Array.init(a) };
+            for (d.raw.evidence) |claim| {
+                var c_obj: V = .{ .object = .empty };
+                try c_obj.object.put(a, "dim", .{ .string = claim.dim });
+                try c_obj.object.put(a, "source", .{ .string = claim.source });
+                try c_obj.object.put(a, "name", .{ .string = try redactHome(a, claim.name, home) });
+                if (claim.field) |fld| {
+                    try c_obj.object.put(a, "field", .{ .string = fld });
+                }
+                if (claim.value) |val| {
+                    try c_obj.object.put(a, "value", .{ .string = try redactHome(a, val, home) });
+                }
+                try ev_arr.array.append(c_obj);
+            }
+            try raw.object.put(a, "evidence", ev_arr);
+        }
         // harness_version is the matched rule's declared release version
         // (e.g. "1.2.3") when the rule tracks one. Only emitted when
         // the rule declared it — null rules (most currently) skip the
@@ -2516,7 +2845,8 @@ pub const dev = if (build_options.dev) struct {
             \\    stale_by_minutes     INTEGER,
             \\    available            INTEGER,
             \\    runner               INTEGER NOT NULL,
-            \\    created_at           INTEGER NOT NULL
+            \\    created_at           INTEGER NOT NULL,
+            \\    mode                 TEXT NOT NULL DEFAULT 'from-raw'
             \\);
             \\CREATE UNIQUE INDEX IF NOT EXISTS queue_dedupe
             \\    ON queue (COALESCE(harness,''), COALESCE(provider,''), COALESCE(model,''),
@@ -2535,7 +2865,12 @@ pub const dev = if (build_options.dev) struct {
         return sqliteRun(a, io, sql);
     }
 
-    /// One row in the `queue` table.
+    /// One row in the `queue` table. `mode` is the refresh flavour
+    /// (`"from-ids" | "from-raw" | "from-capture"`, default `from-raw`)
+    /// — stamped by `fixtures queue`, inherited by seed expansions,
+    /// and used as the daemon's pop-order + worker selector. Deliberately
+    /// NOT part of `queue_dedupe`: one mode per combo, re-queueing with a
+    /// different mode flag upgrades/downgrades the single row in place.
     const QueueRow = struct {
         harness: ?[]const u8 = null,
         provider: ?[]const u8 = null,
@@ -2550,6 +2885,7 @@ pub const dev = if (build_options.dev) struct {
         available: ?i64 = null,
         runner: i64 = 0,
         created_at: i64 = 0,
+        mode: []const u8 = "from-raw",
     };
 
     /// One row in the `fixtures` state table (always full; platform = host).
@@ -2621,8 +2957,8 @@ pub const dev = if (build_options.dev) struct {
         const av = try sqlOptInt(a, row.available);
         defer a.free(av);
         const sql = try std.fmt.allocPrint(a,
-            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d})",
-            .{ h, p, m, pl, sa, sp, sr, sm, sd, smin, av, row.runner, row.created_at },
+            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at,mode) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d},{s})",
+            .{ h, p, m, pl, sa, sp, sr, sm, sd, smin, av, row.runner, row.created_at, try sqlQuote(a, row.mode) },
         );
         defer a.free(sql);
         _ = try sqliteQuery(a, io, sql);
@@ -2674,7 +3010,7 @@ pub const dev = if (build_options.dev) struct {
     /// every `queue` row whose dims are all NULL (seeds) — for `--partial`.
     fn selectSeedQueueRows(a: std.mem.Allocator, io: std.Io) ![]QueueRow {
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at,mode FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
         );
         defer a.free(out);
         if (out.len == 0) return &.{};
@@ -2710,6 +3046,7 @@ pub const dev = if (build_options.dev) struct {
             .available = sjoptint(o, "available"),
             .runner = sjint(o, "runner"),
             .created_at = sjint(o, "created_at"),
+            .mode = sjstr(o, "mode"),
         };
     }
 
@@ -2778,8 +3115,11 @@ pub const dev = if (build_options.dev) struct {
 
     /// atomically pop the oldest pending queue row. Returns null when empty.
     fn popQueueRow(a: std.mem.Allocator, io: std.Io) !?QueueRow {
+        // sweep ordering (decision #9): from-ids, then from-raw, then
+        // from-capture — cheaper/declared work always precedes
+        // token-consuming captures.
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at FROM queue ORDER BY created_at,rowid LIMIT 1",
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at,mode FROM queue ORDER BY CASE mode WHEN 'from-ids' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1",
         );
         defer a.free(out);
         var row: ?QueueRow = null;
@@ -2792,7 +3132,7 @@ pub const dev = if (build_options.dev) struct {
         // is the only evaluator). Use generated_at as a tie-break handle.
         if (row) |_| {
             const sql = try std.fmt.allocPrint(a,
-                "DELETE FROM queue WHERE rowid = (SELECT rowid FROM queue ORDER BY created_at,rowid LIMIT 1)",
+                "DELETE FROM queue WHERE rowid = (SELECT rowid FROM queue ORDER BY CASE mode WHEN 'from-ids' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1)",
                 .{},
             );
             defer a.free(sql);
@@ -2817,6 +3157,7 @@ pub const dev = if (build_options.dev) struct {
         if (f.stale) try where.appendSlice(a, " AND (stale_by_days IS NOT NULL OR stale_by_minutes IS NOT NULL)");
         if (f.available) try where.appendSlice(a, " AND available=1");
         if (f.unavailable) try where.appendSlice(a, " AND available=0");
+        if (f.mode.len > 0) try where.appendSlice(a, appendCond(a, "mode", f.mode) catch return 0);
         // DELETE + SELECT changes() in ONE sqlite3 invocation so the count is
         // connection-local (changes() in a fresh process would read 0).
         const sql = try std.fmt.allocPrint(a, "DELETE FROM queue {s}; SELECT changes() AS c;", .{where.items});
@@ -2917,13 +3258,20 @@ const RecipesForFixtures = struct {
     /// Binary names to probe on PATH for harness-availability checks.
     probeNames: []const []const u8,
     /// Build the env+files a child `refresh run` needs to detect as
-    /// this fixture's agent.
+    /// this fixture's agent. One parameterized function per harness —
+    /// the combo (provider/model) is derived from `combo.agent_id`, so
+    /// a new combo is one line in `recipesForFixtures`.
     buildEnv: *const fn (
         a: std.mem.Allocator,
         env_map: *const std.process.Environ.Map,
         io: std.Io,
         combo: *const RecipesForFixtures,
     ) anyerror!EnvSetup,
+    /// Headless launch argv for `from-capture` jobs (2g): the harness
+    /// binary + args that run `agent-detect-dev fixtures capture` inside
+    /// a live model session. `null` = no reliable headless mode → the
+    /// recipe is `from-ids`/`from-raw` only. Starter set only.
+    launch: ?[]const []const u8 = null,
 };
 
 /// Split an `agent_id` into its three sub-ids. Each
@@ -2995,8 +3343,98 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
         if (builtin.os.tag == .windows) "C:/Users/default" else "/tmp";
 }
 
-    pub fn buildClineEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+/// Dev-only provider metadata (2b): the openai-compatible base_url +
+/// API-key env var per provider, used by the from-raw fabricator to
+/// write plausible harness configs (e.g. qwen's settings.json
+/// modelProviders baseUrl + envKey). `providerForBaseUrl` mirrors the
+/// base_url hosts back to provider ids so detection resolves the same
+/// upstream the fabricator wrote.
+const DevProviderMeta = struct {
+    provider: []const u8,
+    base_url: []const u8,
+    key_env: []const u8,
+};
+const devProviderMeta = [_]DevProviderMeta{
+    .{ .provider = "minimax", .base_url = "https://api.minimax.io/v1", .key_env = "MINIMAX_API_KEY" },
+    .{ .provider = "minimax-code", .base_url = "https://api.minimax.io/v1", .key_env = "MINIMAX_API_KEY" },
+    .{ .provider = "deepseek", .base_url = "https://api.deepseek.com", .key_env = "DEEPSEEK_API_KEY" },
+    .{ .provider = "deepseek-flash", .base_url = "https://api.deepseek.com", .key_env = "DEEPSEEK_API_KEY" },
+    .{ .provider = "anthropic", .base_url = "https://api.anthropic.com", .key_env = "ANTHROPIC_API_KEY" },
+    .{ .provider = "openrouter", .base_url = "https://openrouter.ai/api/v1", .key_env = "OPENROUTER_API_KEY" },
+    .{ .provider = "groq", .base_url = "https://api.groq.com/openai/v1", .key_env = "GROQ_API_KEY" },
+    .{ .provider = "cerebras", .base_url = "https://api.cerebras.ai/v1", .key_env = "CEREBRAS_API_KEY" },
+    .{ .provider = "zai", .base_url = "https://api.z.ai/api/paas/v4", .key_env = "ZAI_API_KEY" },
+    .{ .provider = "kimi", .base_url = "https://api.moonshot.ai/v1", .key_env = "MOONSHOT_API_KEY" },
+    .{ .provider = "moonshot", .base_url = "https://api.moonshot.ai/v1", .key_env = "MOONSHOT_API_KEY" },
+    .{ .provider = "qwen", .base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1", .key_env = "DASHSCOPE_API_KEY" },
+    .{ .provider = "mistral", .base_url = "https://api.mistral.ai/v1", .key_env = "MISTRAL_API_KEY" },
+    .{ .provider = "hyper", .base_url = "https://hyper.charm.land/api/v1/fantasy", .key_env = "HYPER_API_KEY" },
+    .{ .provider = "goose", .base_url = "https://api.anthropic.com", .key_env = "ANTHROPIC_API_KEY" },
+    .{ .provider = "cline-pass", .base_url = "https://api.cline.bot", .key_env = "CLINE_API_KEY" },
+    .{ .provider = "cline", .base_url = "https://api.cline.bot", .key_env = "CLINE_API_KEY" },
+    .{ .provider = "remote", .base_url = "https://api.anthropic.com", .key_env = "ANTHROPIC_API_KEY" },
+};
+
+fn devProviderMetaFor(name: []const u8) ?DevProviderMeta {
+    for (devProviderMeta) |m| {
+        if (std.mem.eql(u8, m.provider, name)) return m;
+    }
+    return null;
+}
+
+/// canonical (dash-spelling) harness rule name for a strict slug.
+fn canonicalHarnessName(slug: []const u8) ?[]const u8 {
+    for (rulesForHarnesses) |r| {
+        if (ruleIdMatches(r.name, slug)) return r.name;
+    }
+    return null;
+}
+
+/// canonical (dash-spelling) provider rule name for a strict slug.
+fn canonicalProviderName(slug: []const u8) ?[]const u8 {
+    for (rulesForProviders) |r| {
+        if (ruleIdMatches(r.name, slug)) return r.name;
+    }
+    return null;
+}
+
+/// canonical (dash-spelling) model rule name for a strict slug.
+fn canonicalModelName(slug: []const u8) ?[]const u8 {
+    for (rulesForModels) |r| {
+        if (ruleIdMatches(r.name, slug)) return r.name;
+    }
+    return null;
+}
+
+/// resolve a combo's `agent_id` (strict slugs) into the three canonical
+/// (dash-spelling) names. Caller owns the three returned slices.
+fn comboDims(a: std.mem.Allocator, combo: *const RecipesForFixtures) ![3][]u8 {
+    const parts = try splitAgentId(a, combo.agent_id);
+    defer {
+        a.free(parts[0]);
+        a.free(parts[1]);
+        a.free(parts[2]);
+    }
+    const h = canonicalHarnessName(parts[0]) orelse return error.InvalidAgentId;
+    const p = canonicalProviderName(parts[1]) orelse return error.InvalidAgentId;
+    const m = canonicalModelName(parts[2]) orelse return error.InvalidAgentId;
+    return .{
+        try a.dupe(u8, h),
+        try a.dupe(u8, p),
+        try a.dupe(u8, m),
+    };
+}
+
+    pub fn buildClineEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const p = dims[1];
+    const m = dims[2];
     const env = [_][2][]const u8{
         .{ "CLINE_BUILD_ENV", "dev" },
         .{ "CLINE_NO_INTERACTIVE", "true" },
@@ -3006,18 +3444,18 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
         .{ "", "" },
     };
     const providers_path = try std.fs.path.join(a, &.{ home, ".cline/data/settings/providers.json" });
-    const json =
-        \\{
-        \\  "lastUsedProvider": "cline-pass",
-        \\  "providers": {
-        \\    "cline-pass": {
+    const json = try std.fmt.allocPrint(a,
+        \\{{
+        \\  "lastUsedProvider": "{s}",
+        \\  "providers": {{
+        \\    "{s}": {{
         \\      "updatedAt": "2025-08-01T00:00:00Z",
-        \\      "settings": { "model": "cline-pass/kimi-k3" }
-        \\    }
-        \\  }
-        \\}
+        \\      "settings": {{ "model": "{s}/{s}" }}
+        \\    }}
+        \\  }}
+        \\}}
         \\
-    ;
+    , .{ p, p, p, m });
     const writes = [_]EnvSetup.WriteSpec{
         .{ .path = providers_path, .content = json },
     };
@@ -3030,16 +3468,23 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildKimiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildKimiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
     const dir = try std.fs.path.join(a, &.{ home, ".kimi-code" });
     const env = [_][2][]const u8{
         .{ "KIMI_CODE_HOME", dir },
         .{ "KIMI_BASE_URL", "https://api.example.invalid" },
         .{ "", "" },
     };
+    const cfg = try std.fmt.allocPrint(a, "default_model = \"{s}/{s}\"\n", .{ dims[1], dims[2] });
     const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = try std.fs.path.join(a, &.{ dir, "config.toml" }), .content = "default_model = \"minimax/minimax-m3\"\n" },
+        .{ .path = try std.fs.path.join(a, &.{ dir, "config.toml" }), .content = cfg },
     };
     std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
         error.PathAlreadyExists => {},
@@ -3048,15 +3493,26 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildMmxEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildMmxEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
     const dir = try std.fs.path.join(a, &.{ home, ".mmx" });
     const env = [_][2][]const u8{
         .{ "MMX_CONFIG_DIR", dir },
         .{ "", "" },
     };
+    // mmx stores a bare model id natively; the from-raw fabricator writes
+    // the "<provider>/<model>" form so `detectMmx` can also resolve a
+    // non-default provider (detectMmx falls back to the bare-model
+    // intrinsic minimax otherwise).
+    const cfg = try std.fmt.allocPrint(a, "{{\"defaultTextModel\":\"{s}/{s}\"}}\n", .{ dims[1], dims[2] });
     const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = try std.fs.path.join(a, &.{ dir, "config.json" }), .content = "{\"defaultTextModel\":\"minimax-m3\"}\n" },
+        .{ .path = try std.fs.path.join(a, &.{ dir, "config.json" }), .content = cfg },
     };
     std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
         error.PathAlreadyExists => {},
@@ -3065,21 +3521,27 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildGooseEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildGooseEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
     const env = [_][2][]const u8{
         .{ "GOOSE_TERMINAL", "true" },
         .{ "GOOSE_MODE", "auto" },
         .{ "GOOSE_WORKING_DIR", home },
         .{ "", "" },
     };
-    const yaml =
-        \\active_provider: goose
+    const yaml = try std.fmt.allocPrint(a,
+        \\active_provider: {s}
         \\providers:
-        \\  goose:
-        \\    model: claude-sonnet-4
+        \\  {s}:
+        \\    model: {s}
         \\
-    ;
+    , .{ dims[1], dims[1], dims[2] });
     const config_path = try std.fs.path.join(a, &.{ home, ".config/goose/config.yaml" });
     const writes = [_]EnvSetup.WriteSpec{
         .{ .path = config_path, .content = yaml },
@@ -3093,48 +3555,52 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildPiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildPiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
-    const env = [_][2][]const u8{
-        .{ "PI_CODING_AGENT", "true" },
-        .{ "", "" },
-    };
-    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &.{}), .cwd = home };
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const env = try a.alloc([2][]const u8, 4);
+    env[0] = .{ "PI_CODING_AGENT", "true" };
+    env[1] = .{ "PI_PROVIDER", dims[1] };
+    env[2] = .{ "PI_MODEL", dims[2] };
+    env[3] = .{ "", "" };
+    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &.{}), .cwd = home };
 }
 
-    pub fn buildSingleEnv(comptime marker_name: []const u8) *const fn (a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
-    return struct {
-        fn f(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
-            const home = resolveHome(env_map);
-            const env = try a.alloc([2][]const u8, 2);
-            env[0] = .{ marker_name, "fake" };
-            env[1] = .{ "", "" };
-            return .{ .env = env, .writes = &.{}, .cwd = home };
-        }
-    }.f;
-}
-
-    pub fn buildQwenEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildQwenEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const p = dims[1];
+    const m = dims[2];
+    const meta = devProviderMetaFor(p) orelse devProviderMetaFor("minimax").?;
     const qwen_dir = try std.fs.path.join(a, &.{ home, ".qwen" });
     defer a.free(qwen_dir);
     const settings_path = try std.fs.path.join(a, &.{ qwen_dir, "settings.json" });
     defer a.free(settings_path);
-    const settings_body =
-        \\{
-        \\  "security": { "auth": { "selectedType": "openai" } },
-        \\  "model": { "name": "MiniMax-M3" },
-        \\  "modelProviders": {
-        \\    "openai": [{
-        \\      "id": "MiniMax-M3",
-        \\      "name": "[MiniMax] MiniMax-M3",
-        \\      "baseUrl": "https://api.minimax.io/v1",
-        \\      "envKey": "MINIMAX_API_KEY"
-        \\    }]
-        \\  }
-        \\}
+    const settings_body = try std.fmt.allocPrint(a,
+        \\{{
+        \\  "security": {{ "auth": {{ "selectedType": "openai" }} }},
+        \\  "model": {{ "name": "{s}" }},
+        \\  "modelProviders": {{
+        \\    "openai": [{{
+        \\      "id": "{s}",
+        \\      "name": "[{s}] {s}",
+        \\      "baseUrl": "{s}",
+        \\      "envKey": "{s}"
+        \\    }}]
+        \\  }}
+        \\}}
         \\
-    ;
+    , .{ m, m, p, m, meta.base_url, meta.key_env });
     const env = try a.alloc([2][]const u8, 2);
     env[0] = .{ "QWEN_API_KEY", "fake" };
     env[1] = .{ "", "" };
@@ -3144,17 +3610,23 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildOmpEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildOmpEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
     const omp_dir = try std.fs.path.join(a, &.{ home, ".omp/agent" });
     defer a.free(omp_dir);
     const config_path = try std.fs.path.join(a, &.{ omp_dir, "config.yml" });
     defer a.free(config_path);
-    const config_body =
+    const config_body = try std.fmt.allocPrint(a,
         \\modelRoles:
-        \\  default: minimax-code/MiniMax-M3
+        \\  default: {s}/{s}
         \\
-    ;
+    , .{ dims[1], dims[2] });
     const env = try a.alloc([2][]const u8, 2);
     env[0] = .{ "OMP_API_KEY", "fake" };
     env[1] = .{ "", "" };
@@ -3164,22 +3636,31 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildReasonixEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildReasonixEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const p = dims[1];
+    const m = dims[2];
+    const meta = devProviderMetaFor(p) orelse devProviderMetaFor("deepseek").?;
     const config_path = try std.fs.path.join(a, &.{ home, ".reasonix/config.toml" });
     defer a.free(config_path);
-    const config_body =
-        \\default_model = "deepseek-flash"
+    const config_body = try std.fmt.allocPrint(a,
+        \\default_model = "{s}"
         \\
         \\[[providers]]
-        \\name = "deepseek-flash"
+        \\name = "{s}"
         \\kind = "openai"
-        \\base_url = "https://api.deepseek.com"
-        \\models = ["deepseek-v4-flash", "deepseek-v4-pro"]
-        \\default = "deepseek-v4-flash"
-        \\api_key_env = "DEEPSEEK_API_KEY"
+        \\base_url = "{s}"
+        \\models = ["{s}"]
+        \\default = "{s}"
+        \\api_key_env = "{s}"
         \\
-    ;
+    , .{ p, p, meta.base_url, m, m, meta.key_env });
     const env = try a.alloc([2][]const u8, 2);
     env[0] = .{ "REASONIX_API_KEY", "fake" };
     env[1] = .{ "", "" };
@@ -3189,23 +3670,29 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildJcodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildJcodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
     const sessions_dir = try std.fs.path.join(a, &.{ home, ".jcode/sessions" });
     defer a.free(sessions_dir);
     const session_path = try std.fs.path.join(a, &.{ sessions_dir, "session_zoo_9999999999999_refresh_fixtures.json" });
     defer a.free(session_path);
-    const session_body =
-        \\{
+    const session_body = try std.fmt.allocPrint(a,
+        \\{{
         \\  "id": "session_zoo_9999999999999_refresh_fixtures",
-        \\  "model": "MiniMax-M2.7",
-        \\  "provider_key": "minimax",
+        \\  "model": "{s}",
+        \\  "provider_key": "{s}",
         \\  "route_api_method": "openai-compatible",
         \\  "status": "Closed",
         \\  "saved": false
-        \\}
+        \\}}
         \\
-    ;
+    , .{ dims[2], dims[1] });
     const env = try a.alloc([2][]const u8, 2);
     env[0] = .{ "JCODE_API_KEY", "fake" };
     env[1] = .{ "", "" };
@@ -3215,21 +3702,27 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildCrushEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildCrushEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
     const hyper_path = try std.fs.path.join(a, &.{ home, ".local/share/crush/hyper.json" });
     defer a.free(hyper_path);
-    const hyper_body =
-        \\{
+    const hyper_body = try std.fmt.allocPrint(a,
+        \\{{
         \\  "name": "Charm Hyper",
         \\  "id": "hyper",
         \\  "type": "openai-compat",
         \\  "api_endpoint": "https://hyper.charm.land/api/v1/fantasy",
-        \\  "default_large_model_id": "hyper/qwen3.7-plus",
-        \\  "default_small_model_id": "hyper/deepseek-v4-flash"
-        \\}
+        \\  "default_large_model_id": "{s}/{s}",
+        \\  "default_small_model_id": "{s}/{s}"
+        \\}}
         \\
-    ;
+    , .{ dims[1], dims[2], dims[1], dims[2] });
     const env = try a.alloc([2][]const u8, 2);
     env[0] = .{ "CRUSH_API_KEY", "fake" };
     env[1] = .{ "", "" };
@@ -3239,127 +3732,116 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildKiloEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildKiloEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
     const env = try a.alloc([2][]const u8, 3);
     env[0] = .{ "KILO_API_KEY", "fake" };
-    env[1] = .{ "KILO_MODEL", "anthropic/claude-sonnet-4" };
+    env[1] = .{ "KILO_MODEL", model_full };
     env[2] = .{ "", "" };
     return .{ .env = env, .writes = &.{}, .cwd = home };
 }
 
-    pub fn buildOpencodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildOpencodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
     const env = try a.alloc([2][]const u8, 3);
     env[0] = .{ "OPENCODE_API_KEY", "fake" };
-    env[1] = .{ "OPENCODE_MODEL", "minimax/MiniMax-M3" };
+    env[1] = .{ "OPENCODE_MODEL", model_full };
     env[2] = .{ "", "" };
     return .{ .env = env, .writes = &.{}, .cwd = home };
 }
 
-    pub fn buildKiloDeepseekEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
+    pub fn buildVibeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
-    const env = try a.alloc([2][]const u8, 3);
-    env[0] = .{ "KILO_API_KEY", "fake" };
-    env[1] = .{ "KILO_MODEL", "deepseek/deepseek-v4-flash" };
-    env[2] = .{ "", "" };
-    return .{ .env = env, .writes = &.{}, .cwd = home };
-}
-
-    pub fn buildVibeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, _: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const env = try a.alloc([2][]const u8, 3);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const env = try a.alloc([2][]const u8, 4);
     env[0] = .{ "VIBE_API_KEY", "fake" };
-    env[1] = .{ "VIBE_ACTIVE_MODEL", "mistral-large-latest" };
-    env[2] = .{ "", "" };
+    env[1] = .{ "VIBE_ACTIVE_MODEL", dims[2] };
+    env[2] = .{ "VIBE_ACTIVE_PROVIDER", dims[1] };
+    env[3] = .{ "", "" };
     return .{ .env = env, .writes = &.{}, .cwd = home };
 }
 
-const recipesForFixtures = [_]RecipesForFixtures{
-    // Cline × Cline Pass × Kimi K3
-    .{
-        .agent_id = "cline-clinepass-kimik3",
-        .probeNames = &.{ "cline", "cline.exe" },
-        .buildEnv = buildClineEnv,
-    },
-    // Kimi Code × minimax × minimax-m3
-    .{
-        .agent_id = "kimicode-minimax-minimaxm3",
-        .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" },
-        .buildEnv = buildKimiEnv,
-    },
-    // MiniMax CLI (mmx) × minimax × minimax-m3
-    .{
-        .agent_id = "mmx-minimax-minimaxm3",
-        .probeNames = &.{ "mmx", "mmx.exe" },
-        .buildEnv = buildMmxEnv,
-    },
-    // Goose × goose × claude-sonnet-4
-    .{
-        .agent_id = "goose-goose-claudesonnet4",
-        .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" },
-        .buildEnv = buildGooseEnv,
-    },
-    // pi × anthropic × claude-sonnet-4
-    .{
-        .agent_id = "pi-anthropic-claudesonnet4",
-        .probeNames = &.{ "pi", "pi.exe" },
-        .buildEnv = buildPiEnv,
-    },
-    // qwen × minimax × minimax-m3
-    .{
-        .agent_id = "qwen-minimax-minimaxm3",
-        .probeNames = &.{ "qwen", "qwen.exe" },
-        .buildEnv = buildQwenEnv,
-    },
-    // kilo × anthropic × claude-sonnet-4
-    .{
-        .agent_id = "kilo-anthropic-claudesonnet4",
-        .probeNames = &.{ "kilo", "kilo.exe" },
-        .buildEnv = buildKiloEnv,
-    },
-    // kilo × deepseek × deepseek-v4-flash
-    .{
-        .agent_id = "kilo-deepseek-deepseekv4flash",
-        .probeNames = &.{ "kilo", "kilo.exe" },
-        .buildEnv = buildKiloDeepseekEnv,
-    },
-    // jcode × minimax × minimax-m2.7
-    .{
-        .agent_id = "jcode-minimax-minimaxm27",
-        .probeNames = &.{ "jcode", "jcode.exe" },
-        .buildEnv = buildJcodeEnv,
-    },
-    // omp × minimax-code × minimax-m3
-    .{
-        .agent_id = "omp-minimaxcode-minimaxm3",
-        .probeNames = &.{ "omp", "omp.exe" },
-        .buildEnv = buildOmpEnv,
-    },
-    // reasonix × deepseek-flash × deepseek-v4-flash
-    .{
-        .agent_id = "reasonix-deepseekflash-deepseekv4flash",
-        .probeNames = &.{ "reasonix", "reasonix.exe" },
-        .buildEnv = buildReasonixEnv,
-    },
-    // crush × hyper × qwen3.7-plus
-    .{
-        .agent_id = "crush-hyper-qwen37plus",
-        .probeNames = &.{ "crush", "crush.exe" },
-        .buildEnv = buildCrushEnv,
-    },
-    // opencode × minimax × minimax-m3
-    .{
-        .agent_id = "opencode-minimax-minimaxm3",
-        .probeNames = &.{ "opencode", "opencode.exe" },
-        .buildEnv = buildOpencodeEnv,
-    },
-    // vibe × mistral × mistral-large-latest
-    .{
-        .agent_id = "vibe-mistral-mistrallargelatest",
-        .probeNames = &.{ "vibe", "vibe.exe" },
-        .buildEnv = buildVibeEnv,
-    },
+/// the capture prompt the from-capture worker hands a headless harness:
+/// the model session runs `agent-detect-dev fixtures capture` in the
+/// current working directory and reports the result.
+const capture_prompt = "run `agent-detect-dev fixtures capture` in the current working directory and report the result";
+
+pub const recipesForFixtures = [_]RecipesForFixtures{
+    // cline — clinepass/kimi-k3 (keep), deepseek/v4-flash, minimax/m3, openrouter/v4-flash
+    .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    // goose — goose/claude-sonnet-4 (contributor-scope example, keeps the harness→recipe test green)
+    .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .buildEnv = buildGooseEnv },
+    // kimi — minimax/m3 (keep), deepseek/v4-flash, kimi/k3
+    .{ .agent_id = "kimicode-minimax-minimaxm3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-deepseek-deepseekv4flash", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-kimi-kimik3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    // mmx — minimax/m3 (keep), minimax/m2.7
+    .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv },
+    .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv },
+    // pi — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash, minimax/m3
+    .{ .agent_id = "pi-anthropic-claudesonnet4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-deepseek-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-minimax-minimaxm3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    // qwen — minimax/m3 (keep), deepseek/v4-flash, qwen/qwen3.8-max
+    .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-qwen-qwen38max", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    // kilo — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash (keep), minimax/m3, openrouter/v4-flash, zai/glm-5.2
+    .{ .agent_id = "kilo-anthropic-claudesonnet4", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-deepseek-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-minimax-minimaxm3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    // jcode — minimax/m2.7 (keep), deepseek/v4-flash, minimax/m3, openrouter/v4-flash
+    .{ .agent_id = "jcode-minimax-minimaxm27", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
+    .{ .agent_id = "jcode-deepseek-deepseekv4flash", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
+    .{ .agent_id = "jcode-minimax-minimaxm3", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
+    .{ .agent_id = "jcode-openrouter-deepseekv4flash", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
+    // omp — minimax-code/m3 (keep), deepseek/v4-flash, openrouter/v4-flash
+    .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-openrouter-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    // reasonix — deepseek-flash/v4-flash (keep), deepseek/v4-flash, minimax/m3
+    .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
+    .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
+    .{ .agent_id = "reasonix-minimax-minimaxm3", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
+    // crush — hyper/qwen3.7-plus (keep), hyper/v4-flash, minimax/m3, deepseek/v4-flash
+    .{ .agent_id = "crush-hyper-qwen37plus", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
+    .{ .agent_id = "crush-hyper-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
+    .{ .agent_id = "crush-minimax-minimaxm3", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
+    .{ .agent_id = "crush-deepseek-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
+    // opencode — minimax/m3 (keep), deepseek/v4-flash, hyper/v4-flash, groq/llama-4, cerebras/qwen3
+    .{ .agent_id = "opencode-minimax-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-deepseek-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-hyper-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-groq-llama4", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-cerebras-qwen3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    // vibe — mistral/mistral-large-latest (keep), mistral/mistral-small-latest, minimax/m3
+    .{ .agent_id = "vibe-mistral-mistrallargelatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
+    .{ .agent_id = "vibe-mistral-mistralsmalllatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
+    .{ .agent_id = "vibe-minimax-minimaxm3", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
 };
 
 // ----------------------------------------------------------------------------
@@ -3449,6 +3931,10 @@ const recipesForFixtures = [_]RecipesForFixtures{
         /// true when `--fixture=` or `--agent=` (the composite ids)
         /// contributed the equality dims — used for the creation path.
         composite: bool = false,
+        /// refresh mode: `"from-ids" | "from-raw" | "from-capture"`,
+        /// or `""` when no mode flag was given. `queue` stamps it on
+        /// rows (default `from-raw`); `dequeue` filters by it.
+        mode: []const u8 = "",
     };
 
     const FilterError = error{
@@ -3478,12 +3964,17 @@ const recipesForFixtures = [_]RecipesForFixtures{
         var seen_provider = false;
         var seen_model = false;
         var seen_platform = false;
+        var is_dequeue = false;
 
         var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return FilterError.NoFilter;
         defer args_it.deinit();
         _ = args_it.skip(); // argv0
         _ = args_it.skip(); // "fixtures"
-        _ = args_it.skip(); // "queue"/"dequeue"
+        if (args_it.next()) |sub| {
+            is_dequeue = std.mem.eql(u8, sub, "dequeue");
+        } else {
+            return FilterError.NoFilter;
+        }
         while (args_it.next()) |arg| {
             if (std.mem.startsWith(u8, arg, "--fixture=")) {
                 f.fixture = arg["--fixture=".len..];
@@ -3521,8 +4012,17 @@ const recipesForFixtures = [_]RecipesForFixtures{
                 f.stale_by_days = std.fmt.parseInt(i64, arg["--stale-by-days=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-minutes=")) {
                 f.stale_by_minutes = std.fmt.parseInt(i64, arg["--stale-by-minutes=".len..], 10) catch return FilterError.InvalidThreshold;
+            } else if (std.mem.eql(u8, arg, "--from-ids") or std.mem.eql(u8, arg, "--from-raw") or std.mem.eql(u8, arg, "--from-capture")) {
+                // exactly one mode flag (two+ → conflicting).
+                const m = arg["--from-".len..];
+                if (f.mode.len > 0 and !std.mem.eql(u8, f.mode, m)) return FilterError.ConflictingFilters;
+                f.mode = m;
             }
         }
+
+        // default mode when none given: queue stamps `from-raw`; dequeue
+        // leaves "" = "all modes" (filters, does not stamp).
+        if (f.mode.len == 0 and !is_dequeue) f.mode = "from-raw";
 
         // `--stale` is an alias for `--stale-by-days=7`.
         if (f.stale and f.stale_by_days == null and f.stale_by_minutes == null) f.stale_by_days = 7;
@@ -3630,6 +4130,7 @@ const recipesForFixtures = [_]RecipesForFixtures{
                     .platform = try a.dupe(u8, host),
                     .runner = getParentPid(),
                     .created_at = now,
+                    .mode = f.mode,
                 };
                 if (f.recipes) row.scope_recipes = 1;
                 if (f.missing_fixture) row.scope_missing_fixture = 1;
@@ -3680,6 +4181,7 @@ const recipesForFixtures = [_]RecipesForFixtures{
                 .platform = try a.dupe(u8, fx.platform),
                 .runner = getParentPid(),
                 .created_at = now,
+                .mode = f.mode,
             };
             if (f.all) row.scope_all = 1;
             if (f.stale) {
@@ -3767,6 +4269,14 @@ const recipesForFixtures = [_]RecipesForFixtures{
         if (d.trailer) |t| {
             try root.object.put(a, "trailer", .{ .string = t });
         }
+        // decision #7 — every fixture carries a top-level `origin`
+        // classifying it as observed (`from-raw` when the daemon
+        // fabricated the runtime, `from-capture` for a real session)
+        // or declared (`from-ids`, written by the from-ids worker, which
+        // never reaches this capture path). The daemon sets
+        // AGENT_DETECT_FIXTURE_ORIGIN on the `refresh run` child; a hand-run
+        // capture is a real session → `from-capture`.
+        try root.object.put(a, "origin", .{ .string = init.environ_map.get("AGENT_DETECT_FIXTURE_ORIGIN") orelse "from-capture" });
         const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
         defer a.free(json_bytes);
 
@@ -3866,6 +4376,7 @@ const recipesForFixtures = [_]RecipesForFixtures{
             .platform = if (f.platform.len > 0) f.platform else null,
             .runner = getParentPid(),
             .created_at = unixNow(io),
+            .mode = f.mode,
         };
         try validateQueueRow(row);
         try upsertQueueRow(a, io, row);
@@ -4029,8 +4540,12 @@ const recipesForFixtures = [_]RecipesForFixtures{
         const a = init.arena.allocator();
         const io = init.io;
 
-        // parse --write-log (tee daemon output to fixtures/daemon.log)
+        // parse daemon flags: --write-log, --poll-seconds=N,
+        // --capture-review-seconds=N, --capture-timeout-seconds=N.
         var write_log = false;
+        var poll_seconds: u64 = 5;
+        var review_seconds: u64 = 15;
+        var capture_timeout_seconds: u64 = 600;
         {
             var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return EXIT_OUT_OF_MEMORY;
             defer args_it.deinit();
@@ -4038,7 +4553,15 @@ const recipesForFixtures = [_]RecipesForFixtures{
             _ = args_it.skip(); // "fixtures"
             _ = args_it.skip(); // "daemon"
             while (args_it.next()) |arg| {
-                if (std.mem.eql(u8, arg, "--write-log")) write_log = true;
+                if (std.mem.eql(u8, arg, "--write-log")) {
+                    write_log = true;
+                } else if (std.mem.startsWith(u8, arg, "--poll-seconds=")) {
+                    poll_seconds = std.fmt.parseInt(u64, arg["--poll-seconds=".len..], 10) catch return EXIT_CONFLICTING_ARG;
+                } else if (std.mem.startsWith(u8, arg, "--capture-review-seconds=")) {
+                    review_seconds = std.fmt.parseInt(u64, arg["--capture-review-seconds=".len..], 10) catch return EXIT_CONFLICTING_ARG;
+                } else if (std.mem.startsWith(u8, arg, "--capture-timeout-seconds=")) {
+                    capture_timeout_seconds = std.fmt.parseInt(u64, arg["--capture-timeout-seconds=".len..], 10) catch return EXIT_CONFLICTING_ARG;
+                }
             }
         }
         var daemon_log_file_owned: ?std.Io.File = null;
@@ -4067,121 +4590,323 @@ const recipesForFixtures = [_]RecipesForFixtures{
         try assertNotInAgent(a, init);
 
         daemonWrite(io, "agent-detect-dev fixtures daemon: running\n");
-        daemonWrite(io, "  poll rate: 5s\n");
+        {
+            var buf: [128]u8 = undefined;
+            const m = std.fmt.bufPrint(buf[0..], "  poll rate: {d}s (from-capture review: {d}s, timeout: {d}s)\n", .{ poll_seconds, review_seconds, capture_timeout_seconds }) catch "  poll rate: 5s\n";
+            daemonWrite(io, m);
+        }
         daemonWrite(io, "  index file: fixtures/index.sqlite3\n");
+        daemonWrite(io, "  control file: fixtures/daemon.ctl (write pause/resume/stop)\n");
         if (write_log) daemonWrite(io, "  log file: fixtures/daemon.log\n");
         daemonWrite(io, "  press Ctrl+C to stop\n");
 
+        // decision #12 — one cross-platform control mechanism: the
+        // daemon checks `fixtures/daemon.ctl` every ~1s heartbeat and
+        // acts on pause/resume/stop, clearing the file after acting.
+        // The heartbeat also writes the current state to the log every
+        // ~1s so a watcher polling at 1s always sees live state,
+        // decoupled from the 5s/30s iteration delays. Signals are not
+        // relied on beyond terminal Ctrl+C (SIGINT = graceful stop).
+        var paused = false;
+        var stop_requested = false;
+        var phase: enum { idle, pre_capture, post_review } = .idle;
+        var pending: ?QueueRow = null;
+        var phase_until: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot };
+        var next_poll: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot }; // 0 = poll on the first tick
+        var capture_attempts = std.StringHashMap(u8).init(a);
+        defer capture_attempts.deinit();
+
         while (true) {
-            const row = try popQueueRow(a, io);
-            if (row) |action| {
-                const desc = try describeQueueRow(a, action);
-                var msg_buf: [256]u8 = undefined;
-                const m = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s}\n", .{desc}) catch "daemon: processing\n";
-                daemonWrite(io, m);
+            const now = std.Io.Clock.Timestamp.now(io, .boot);
+            const boot_now_ns = now.raw.nanoseconds;
 
-                // shared validator: invalid → warn + drop (already popped).
-                validateQueueRow(action) catch {
-                    daemonWriteErr(io, "daemon: invalid action row — dropping: ");
-                    daemonWriteErr(io, desc);
-                    daemonWriteErr(io, "\n");
-                    continue;
-                };
-
-                const full = action.harness != null and action.provider != null and
-                    action.model != null and action.platform != null;
-                if (!full) {
-                    try expandSeed(a, io, action);
-                    continue;
+            // --- control check (every tick) ---
+            const ctl = readControlAction(a, io);
+            if (ctl) |c| {
+                if (std.mem.eql(u8, c, "pause") and !paused) {
+                    paused = true;
+                    daemonWrite(io, "daemon: pause requested — pausing\n");
+                } else if (std.mem.eql(u8, c, "resume") and paused) {
+                    paused = false;
+                    daemonWrite(io, "daemon: resume requested — resuming\n");
+                } else if (std.mem.eql(u8, c, "stop")) {
+                    stop_requested = true;
+                    daemonWrite(io, "daemon: stop requested — finishing in-flight work then exiting\n");
                 }
+            }
 
-                const h = action.harness.?;
-                const p = action.provider.?;
-                const m_d = action.model.?;
-                const plat = action.platform.?;
+            if (stop_requested and phase == .idle and pending == null) {
+                daemonWrite(io, "daemon: stopped\n");
+                return EXIT_OK;
+            }
+            // a stop during the pre-capture window cancels the pending
+            // capture (it has consumed no tokens yet).
+            if (stop_requested and phase == .pre_capture and pending != null) {
+                daemonWrite(io, "daemon: stop during pre-capture review — canceled the pending capture\n");
+                pending = null;
+                phase = .idle;
+                return EXIT_OK;
+            }
 
-                // skip-and-complete if a fresh fixture exists (unless scope_all=1)
-                if (action.scope_all == null or action.scope_all.? != 1) {
-                    // 1. sqlite says a row already exists → nothing to do.
-                    if (try fixtureExists(a, io, h, p, m_d, plat)) {
-                        daemonWrite(io, "daemon: fresh fixture exists for ");
-                        daemonWrite(io, desc);
-                        daemonWrite(io, " — completing without re-capture\n");
-                        continue;
-                    }
-                    // 2. no sqlite row yet, but a valid committed
-                    // `fixtures/<id>.json` exists → lazy backfill: upsert
-                    // the fixtures row from the committed capture and
-                    // complete without spawning a child.
-                    if (committedFixtureValid(a, io, h, p, m_d, plat)) {
-                        try upsertFixture(a, io, .{
-                            .harness = h,
-                            .provider = p,
-                            .model = m_d,
-                            .platform = plat,
-                            .runner = getParentPid(),
-                            .generated_at = unixNow(io),
-                        });
-                        daemonWrite(io, "daemon: committed fixture for ");
-                        daemonWrite(io, desc);
-                        daemonWrite(io, " is valid — backfilled fixtures row without re-capture\n");
-                        continue;
-                    }
-                }
+            if (paused) {
+                daemonWrite(io, "daemon: paused\n");
+                try std.Io.sleep(io, .{ .nanoseconds = std.time.ns_per_s }, .boot);
+                continue;
+            }
 
-                // staleness re-validation with the row's stored threshold
-                if (action.stale_by_days != null or action.stale_by_minutes != null) {
-                    if (try fixtureRow(a, io, h, p, m_d, plat)) |fx| {
-                        if (!isStale(io, fx.generated_at, action.stale_by_minutes orelse (action.stale_by_days.? * 24 * 60))) {
-                            daemonWrite(io, "daemon: fixture for ");
-                            daemonWrite(io, desc);
-                            daemonWrite(io, " is still fresh by its threshold — completing early\n");
+            switch (phase) {
+                .pre_capture => {
+                    daemonWrite(io, "daemon: pre-capture review — capture starts in ");
+                    const remaining = @max(@divTrunc(phase_until.raw.nanoseconds - boot_now_ns, std.time.ns_per_s) + 1, 1);
+                    var nb: [32]u8 = undefined;
+                    daemonWrite(io, try std.fmt.bufPrint(&nb, "{d}", .{remaining}));
+                    daemonWrite(io, "s (write stop to fixtures/daemon.ctl to cancel)\n");
+                    if (boot_now_ns >= phase_until.raw.nanoseconds) {
+                        const action = pending orelse {
+                            phase = .idle;
                             continue;
+                        };
+                        pending = null;
+                        const desc = try describeQueueRow(a, action);
+                        daemonWrite(io, "daemon: starting capture for ");
+                        daemonWrite(io, desc);
+                        daemonWrite(io, "\n");
+                        const ok = runOneComboCapture(a, io, init, action, capture_timeout_seconds) catch |err| blk: {
+                            daemonWriteErr(io, "daemon: capture worker error: ");
+                            daemonWriteErr(io, @errorName(err));
+                            daemonWriteErr(io, "\n");
+                            break :blk false;
+                        };
+                        phase = .post_review;
+                        phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
+                        if (ok) {
+                            capture_attempts.put(desc, 0) catch {};
+                            const h = action.harness.?;
+                            const p = action.provider.?;
+                            const m_d = action.model.?;
+                            const plat = action.platform.?;
+                            try upsertFixture(a, io, .{
+                                .harness = h,
+                                .provider = p,
+                                .model = m_d,
+                                .platform = plat,
+                                .runner = getParentPid(),
+                                .generated_at = unixNow(io),
+                            });
+                            daemonWrite(io, "daemon: captured ");
+                            daemonWrite(io, desc);
+                            daemonWrite(io, "\n");
+                        } else {
+                            // token protection: at most 3 attempts, then
+                            // dequeue with a warning (decision #12 runbook).
+                            const attempts = (capture_attempts.get(desc) orelse 0) + 1;
+                            capture_attempts.put(desc, attempts) catch {};
+                            if (attempts >= 3) {
+                                daemonWriteErr(io, "daemon: from-capture failed ");
+                                var nbuf: [16]u8 = undefined;
+                                daemonWriteErr(io, try std.fmt.bufPrint(&nbuf, "{d}", .{attempts}));
+                                daemonWriteErr(io, " times for ");
+                                daemonWriteErr(io, desc);
+                                daemonWriteErr(io, " — dequeued with a warning (token protection)\n");
+                            } else {
+                                daemonWriteErr(io, "daemon: from-capture failed for ");
+                                daemonWriteErr(io, desc);
+                                daemonWriteErr(io, " — re-queued (attempt ");
+                                var nbuf2: [16]u8 = undefined;
+                                daemonWriteErr(io, try std.fmt.bufPrint(&nbuf2, "{d}", .{attempts}));
+                                daemonWriteErr(io, "/3)\n");
+                                try upsertQueueRow(a, io, action);
+                            }
+                        }
+                        daemonWrite(io, "daemon: capture finished — human review window ");
+                        var nb2: [32]u8 = undefined;
+                        daemonWrite(io, try std.fmt.bufPrint(&nb2, "{d}", .{review_seconds}));
+                        daemonWrite(io, "s\n");
+                    }
+                },
+                .post_review => {
+                    daemonWrite(io, "daemon: post-capture review\n");
+                    if (boot_now_ns >= phase_until.raw.nanoseconds) {
+                        phase = .idle;
+                        daemonWrite(io, "daemon: review window complete\n");
+                    }
+                },
+                .idle => {
+                    if (boot_now_ns < next_poll.raw.nanoseconds) {
+                        daemonWrite(io, "daemon: idle\n");
+                    } else {
+                        const row = try popQueueRow(a, io);
+                        // one row per poll (decision #10): schedule the next
+                        // poll `poll_seconds` out on EVERY path below, so a
+                        // from-ids/from-raw batch processes at ~5s intervals.
+                        next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
+                        if (row) |action| {
+                            const desc = try describeQueueRow(a, action);
+                            var msg_buf: [320]u8 = undefined;
+                            const m = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s} [{s}]\n", .{ desc, action.mode }) catch "daemon: processing\n";
+                            daemonWrite(io, m);
+
+                            // shared validator: invalid → warn + drop (already popped).
+                            validateQueueRow(action) catch {
+                                daemonWriteErr(io, "daemon: invalid action row — dropping: ");
+                                daemonWriteErr(io, desc);
+                                daemonWriteErr(io, "\n");
+                                continue;
+                            };
+
+                            const full = action.harness != null and action.provider != null and
+                                action.model != null and action.platform != null;
+                            if (!full) {
+                                try expandSeed(a, io, action);
+                                continue;
+                            }
+
+                            const h = action.harness.?;
+                            const p = action.provider.?;
+                            const m_d = action.model.?;
+                            const plat = action.platform.?;
+
+                            // skip-and-complete if a fresh fixture exists (unless
+                            // scope_all=1). `from-capture` rows never skip: they
+                            // are token-consuming and user-confirmed, so a
+                            // committed fixture must not preempt the real capture.
+                            if ((action.scope_all == null or action.scope_all.? != 1) and !std.mem.eql(u8, action.mode, "from-capture")) {
+                                // 1. sqlite says a row already exists → nothing to do.
+                                if (try fixtureExists(a, io, h, p, m_d, plat)) {
+                                    daemonWrite(io, "daemon: fresh fixture exists for ");
+                                    daemonWrite(io, desc);
+                                    daemonWrite(io, " — completing without re-capture\n");
+                                    continue;
+                                }
+                                // 2. no sqlite row yet, but a valid committed
+                                // `fixtures/<id>.json` exists → origin-aware lazy
+                                // backfill: only when the existing fixture's
+                                // origin ranks ≥ the queued mode (a `from-raw`
+                                // row re-captures over a stale `from-ids`
+                                // fixture; `from-capture` never backfills).
+                                if (try fixtureFileOriginRank(a, io, h, p, m_d, plat)) |rank| {
+                                    if (rank >= modeRank(action.mode)) {
+                                        try upsertFixture(a, io, .{
+                                            .harness = h,
+                                            .provider = p,
+                                            .model = m_d,
+                                            .platform = plat,
+                                            .runner = getParentPid(),
+                                            .generated_at = unixNow(io),
+                                        });
+                                        daemonWrite(io, "daemon: committed fixture for ");
+                                        daemonWrite(io, desc);
+                                        daemonWrite(io, " is valid — backfilled fixtures row without re-capture\n");
+                                        continue;
+                                    }
+                                    daemonWrite(io, "daemon: committed fixture for ");
+                                    daemonWrite(io, desc);
+                                    daemonWrite(io, " ranks below the queued mode — re-capturing\n");
+                                }
+                            }
+
+                            // staleness re-validation with the row's stored threshold
+                            if (action.stale_by_days != null or action.stale_by_minutes != null) {
+                                if (try fixtureRow(a, io, h, p, m_d, plat)) |fx| {
+                                    if (!isStale(io, fx.generated_at, action.stale_by_minutes orelse (action.stale_by_days.? * 24 * 60))) {
+                                        daemonWrite(io, "daemon: fixture for ");
+                                        daemonWrite(io, desc);
+                                        daemonWrite(io, " is still fresh by its threshold — completing early\n");
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            // --available rows: re-probe LIVE; if unavailable, re-queue as
+                            // handoff work (available=0, original created_at), never capture.
+                            // `from-ids` records availability but does NOT gate on it.
+                            if (action.available != null and !std.mem.eql(u8, action.mode, "from-ids")) {
+                                const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
+                                if (!harnessAvailable(io, agent)) {
+                                    daemonWrite(io, "daemon: harness unavailable for ");
+                                    daemonWrite(io, desc);
+                                    daemonWrite(io, " — re-queued as handoff for the next agent/platform\n");
+                                    var requeue = action;
+                                    requeue.available = 0;
+                                    try upsertQueueRow(a, io, requeue);
+                                    continue;
+                                }
+                            }
+
+                            // branch the worker on the row's mode (decision #7).
+                            if (std.mem.eql(u8, action.mode, "from-capture")) {
+                                if (pending != null) {
+                                    daemonWrite(io, "daemon: already have a pending from-capture job — re-queuing\n");
+                                    try upsertQueueRow(a, io, action);
+                                } else {
+                                    pending = action;
+                                    phase = .pre_capture;
+                                    phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
+                                    daemonWrite(io, "daemon: from-capture job — announcing ");
+                                    var nb3: [32]u8 = undefined;
+                                    daemonWrite(io, try std.fmt.bufPrint(&nb3, "{d}", .{review_seconds}));
+                                    daemonWrite(io, "s before capture (write stop to fixtures/daemon.ctl to cancel)\n");
+                                }
+                                continue;
+                            }
+
+                            const captured = try (if (std.mem.eql(u8, action.mode, "from-ids"))
+                                runOneComboIds(a, io, action)
+                            else
+                                runOneComboResult(a, io, init, action));
+                            if (captured) {
+                                capture_attempts.put(desc, 0) catch {};
+                                try upsertFixture(a, io, .{
+                                    .harness = h,
+                                    .provider = p,
+                                    .model = m_d,
+                                    .platform = plat,
+                                    .runner = getParentPid(),
+                                    .generated_at = unixNow(io),
+                                });
+                            } else {
+                                // failure → re-queue (refresh available only for --available rows)
+                                var requeue = action;
+                                if (action.available != null) {
+                                    const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
+                                    requeue.available = if (harnessAvailable(io, agent)) 1 else 0;
+                                }
+                                try upsertQueueRow(a, io, requeue);
+                            }
+                        } else {
+                            next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
+                            _ = purgeMalformedFixtures(a, io);
+                            daemonWrite(io, "daemon: idle, queue empty\n");
                         }
                     }
-                }
-
-                // --available rows: re-probe LIVE; if unavailable, re-queue as
-                // handoff work (available=0, original created_at), never capture.
-                if (action.available != null) {
-                    const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
-                    if (!harnessAvailable(io, agent)) {
-                        daemonWrite(io, "daemon: harness unavailable for ");
-                        daemonWrite(io, desc);
-                        daemonWrite(io, " — re-queued as handoff for the next agent/platform\n");
-                        var requeue = action;
-                        requeue.available = 0;
-                        try upsertQueueRow(a, io, requeue);
-                        continue;
-                    }
-                }
-
-                // capture the combo
-                const captured = try runOneComboResult(a, io, init, action);
-                if (captured) {
-                    try upsertFixture(a, io, .{
-                        .harness = h,
-                        .provider = p,
-                        .model = m_d,
-                        .platform = plat,
-                        .runner = getParentPid(),
-                        .generated_at = unixNow(io),
-                    });
-                } else {
-                    // failure → re-queue (refresh available only for --available rows)
-                    var requeue = action;
-                    if (action.available != null) {
-                        const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
-                        requeue.available = if (harnessAvailable(io, agent)) 1 else 0;
-                    }
-                    try upsertQueueRow(a, io, requeue);
-                }
-            } else {
-                daemonWrite(io, "daemon: idle, queue empty, sleeping 5s\n");
-                _ = purgeMalformedFixtures(a, io);
+                },
             }
-            try std.Io.sleep(io, .{ .nanoseconds = 5 * std.time.ns_per_s }, .boot);
+            // the ~1s tick — also the control-check cadence. Breaking the
+            // sleep up this way is what lets a 15s review window stay
+            // responsive (a single long sleep could not).
+            try std.Io.sleep(io, .{ .nanoseconds = std.time.ns_per_s }, .boot);
         }
+    }
+
+    /// rank a refresh mode / fixture origin for ordering:
+    /// `from-ids` (0) < `from-raw` (1) < `from-capture` (2).
+    fn modeRank(mode: []const u8) u8 {
+        if (std.mem.eql(u8, mode, "from-ids")) return 0;
+        if (std.mem.eql(u8, mode, "from-raw")) return 1;
+        return 2;
+    }
+
+    /// read `fixtures/daemon.ctl`, clear it, and return the action word
+    /// (`pause` / `resume` / `stop`) or null when absent/empty. The
+    /// daemon clears the file after acting (decision #12).
+    fn readControlAction(a: std.mem.Allocator, io: std.Io) ?[]const u8 {
+        const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/daemon.ctl", a, @enumFromInt(4096)) catch return null;
+        defer a.free(data);
+        std.Io.Dir.cwd().deleteFile(io, "fixtures/daemon.ctl") catch {};
+        const t = std.mem.trim(u8, data, " \t\r\n");
+        if (t.len == 0) return null;
+        if (std.mem.eql(u8, t, "pause") or std.mem.eql(u8, t, "resume") or std.mem.eql(u8, t, "stop")) return t;
+        return null;
     }
 
     /// true iff `generated_at` (unix secs) is older than `threshold_minutes`.
@@ -4190,35 +4915,39 @@ const recipesForFixtures = [_]RecipesForFixtures{
         return now - generated_at > threshold_minutes * 60;
     }
 
-    /// Lazy file-based backfill (replaces the removed JSONL migration).
-    /// Given a full combo `(h, p, m, plat)`, returns true when a valid
-    /// committed `fixtures/<fixture_id>.json` exists whose `cooked`
-    /// block parses AND carries the exact dims. The caller (daemon
-    /// skip-and-complete) then upserts the `fixtures` row from the
-    /// file's state and completes without spawning a capture — the
-    /// `refresh:false` / already-captured semantics. No timestamps are
-    /// preserved from the file (fixtures carry none); the row records
-    /// `runner = getParentPid()` and `generated_at = unixNow()`.
-    fn committedFixtureValid(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) bool {
+    /// Origin-aware lazy file-based backfill. Given a full combo
+    /// `(h, p, m, plat)`, returns the existing committed
+    /// `fixtures/<fixture_id>.json`'s origin rank (0 = from-ids, 1 =
+    /// from-raw, 2 = from-capture) when a valid file exists whose
+    /// `cooked` block parses AND carries the exact dims; null
+    /// otherwise. The daemon backfills only when the rank is ≥ the
+    /// queued mode's rank (a `from-raw` row re-captures over a stale
+    /// `from-ids` fixture; `from-capture` never backfills).
+    fn fixtureFileOriginRank(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?u8 {
         _ = plat;
-        const agent = (agentIdFrom(a, h, p, m) catch return false) orelse return false;
+        const agent = (agentIdFrom(a, h, p, m) catch return null) orelse return null;
         defer a.free(agent);
-        const f_id = fixtureId(a, agent) catch return false;
+        const f_id = fixtureId(a, agent) catch return null;
         defer a.free(f_id);
-        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return false;
+        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return null;
         defer a.free(path);
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return false;
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return null;
         defer a.free(data);
-        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return false;
+        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
         defer parsed.deinit();
-        if (parsed.value != .object) return false;
-        const cooked = parsed.value.object.get("cooked") orelse return false;
-        if (cooked != .object) return false;
+        if (parsed.value != .object) return null;
+        const cooked = parsed.value.object.get("cooked") orelse return null;
+        if (cooked != .object) return null;
         const cob = cooked.object;
         const ch = sjstr(cob, "harness_id");
         const cp = sjstr(cob, "provider_id");
         const cm = sjstr(cob, "model_id");
-        return std.mem.eql(u8, ch, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m);
+        if (!(std.mem.eql(u8, ch, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m))) return null;
+        const origin = if (parsed.value.object.get("origin")) |ov| switch (ov) {
+            .string => |s| s,
+            else => "from-capture", // legacy fixtures predate the origin key
+        } else "from-capture";
+        return modeRank(origin);
     }
 
     /// expand a partial (seed) action over the `recipesForFixtures`
@@ -4258,6 +4987,8 @@ const recipesForFixtures = [_]RecipesForFixtures{
                 .platform = try a.dupe(u8, host),
                 .runner = getParentPid(),
                 .created_at = now,
+                // each expanded full row inherits the seed's mode.
+                .mode = seed.mode,
             };
             if (seed.available != null) {
                 combo.available = if (harnessAvailable(io, c.agent_id)) 1 else 0;
@@ -4290,9 +5021,12 @@ const recipesForFixtures = [_]RecipesForFixtures{
         return true;
     }
 
-    /// spawn `agent-detect-dev refresh run` for a single queued combo.
-    /// Returns true on successful capture (exit 0). The child inherits the
-    /// daemon's env, which is the user's terminal — not the dev harness.
+    /// spawn `agent-detect-dev refresh run` for a single queued combo
+    /// (`from-raw` mode). Returns true on successful capture (child exit
+    /// 0 AND the post-check passing). The child inherits the daemon's
+    /// env plus the fabricated markers, but its HOME is sandboxed to a
+    /// per-fixture cache dir (2a) so `from-raw` captures never touch the
+    /// user's real harness config and reruns are idempotent.
     fn runOneComboResult(a: std.mem.Allocator, io: std.Io, init: std.process.Init, action: QueueRow) !bool {
         const h = action.harness orelse return false;
         const p = action.provider orelse return false;
@@ -4319,14 +5053,35 @@ const recipesForFixtures = [_]RecipesForFixtures{
             return false;
         };
 
-        // 2. build env (writes config files, env vars)
+        // 2. build env (writes config files, env vars). HOME is
+        // sandboxed BEFORE buildEnv runs so the fabricator's config
+        // writes land in the per-fixture cache dir, never the real one.
         var env_map = std.process.Environ.Map.init(a);
         defer env_map.deinit();
         var parent_it = init.environ_map.iterator();
         while (parent_it.next()) |kv| {
             try env_map.put(kv.key_ptr.*, kv.value_ptr.*);
         }
-        const setup = c.buildEnv(a, init.environ_map, io, &c) catch |err| {
+        const real_home = init.environ_map.get("HOME") orelse (init.environ_map.get("USERPROFILE") orelse "");
+        const xdg_cache = init.environ_map.get("XDG_CACHE_HOME") orelse blk: {
+            if (real_home.len == 0) break :blk "";
+            break :blk try std.fs.path.join(a, &.{ real_home, ".cache" });
+        };
+        const sandbox_home = try std.fs.path.join(a, &.{ xdg_cache, "agent-detect/workers", target_agent_aid });
+        std.Io.Dir.cwd().createDirPath(io, sandbox_home) catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => {
+                daemonWriteErr(io, "daemon: cannot create sandbox HOME for from-raw worker: ");
+                daemonWriteErr(io, @errorName(err));
+                daemonWriteErr(io, "\n");
+                return false;
+            },
+        };
+        try env_map.put("HOME", sandbox_home);
+        if (builtin.os.tag == .windows) try env_map.put("USERPROFILE", sandbox_home);
+        try env_map.put("AGENT_DETECT_FIXTURE_ORIGIN", "from-raw");
+
+        const setup = c.buildEnv(a, &env_map, io, &c) catch |err| {
             daemonWriteErr(io, "daemon: buildEnv failed: ");
             daemonWriteErr(io, @errorName(err));
             daemonWriteErr(io, "\n");
@@ -4414,6 +5169,15 @@ const recipesForFixtures = [_]RecipesForFixtures{
                     }
                     return false;
                 }
+                // decision #11 post-check: the child wrote
+                // `fixtures/<id>.json` and upserted a `fixtures` row.
+                // Validate combo-match + evidence claims BEFORE accepting;
+                // failure → delete the file AND the row the child
+                // upserted, then re-queue.
+                if (!(try postCheckComboFixture(a, io, action, "from-raw"))) {
+                    deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
+                    return false;
+                }
                 {
                     var buf2: [256]u8 = undefined;
                     const msg = std.fmt.bufPrint(buf2[0..], "daemon: captured {s}\n", .{try describeQueueRow(a, action)}) catch "daemon: captured\n";
@@ -4428,6 +5192,437 @@ const recipesForFixtures = [_]RecipesForFixtures{
                 return false;
             },
         }
+    }
+
+    /// decision #11/#12 post-check for an observed fixture produced by a
+    /// `from-raw`/`from-capture` worker: parse `fixtures/<id>.json`,
+    /// verify the top-level `origin` equals `expected_origin`, verify
+    /// combo-match (`cooked.agent_id` == the queued agent), and verify
+    /// the evidence claims pass `evidenceClaimsValid`. Returns false on
+    /// any failure (the caller deletes the file + fixtures row and
+    /// re-queues).
+    fn postCheckComboFixture(a: std.mem.Allocator, io: std.Io, action: QueueRow, expected_origin: []const u8) !bool {
+        const h = action.harness orelse return false;
+        const p = action.provider orelse return false;
+        const m_d = action.model orelse return false;
+        const agent = (agentIdFrom(a, h, p, m_d) catch return false) orelse return false;
+        defer a.free(agent);
+        const f_id = fixtureId(a, agent) catch return false;
+        defer a.free(f_id);
+        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return false;
+        defer a.free(path);
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch {
+            daemonWriteErr(io, "daemon: post-check: fixture file missing: ");
+            daemonWriteErr(io, path);
+            daemonWriteErr(io, "\n");
+            return false;
+        };
+        defer a.free(data);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch {
+            daemonWriteErr(io, "daemon: post-check: unparsable fixture: ");
+            daemonWriteErr(io, path);
+            daemonWriteErr(io, "\n");
+            return false;
+        };
+        defer parsed.deinit();
+        if (parsed.value != .object) return false;
+        const cooked = parsed.value.object.get("cooked") orelse return false;
+        const raw = parsed.value.object.get("raw") orelse return false;
+        if (cooked != .object or raw != .object) return false;
+        const cooked_agent = sjstr(cooked.object, "agent_id");
+        if (!std.mem.eql(u8, cooked_agent, agent)) {
+            daemonWriteErr(io, "daemon: post-check: combo mismatch — cooked agent_id '");
+            daemonWriteErr(io, cooked_agent);
+            daemonWriteErr(io, "' != queued '");
+            daemonWriteErr(io, agent);
+            daemonWriteErr(io, "'\n");
+            return false;
+        }
+        const origin = if (parsed.value.object.get("origin")) |ov| switch (ov) {
+            .string => |s| s,
+            else => "from-capture", // legacy fixtures predate the origin key
+        } else "from-capture";
+        if (!std.mem.eql(u8, origin, expected_origin)) {
+            daemonWriteErr(io, "daemon: post-check: origin '");
+            daemonWriteErr(io, origin);
+            daemonWriteErr(io, "' != expected '");
+            daemonWriteErr(io, expected_origin);
+            daemonWriteErr(io, "'\n");
+            return false;
+        }
+        if (!evidenceClaimsValid(raw, cooked)) {
+            daemonWriteErr(io, "daemon: post-check: evidence claims invalid for ");
+            daemonWriteErr(io, agent);
+            daemonWriteErr(io, "\n");
+            return false;
+        }
+        return true;
+    }
+
+    /// `from-ids` post-check (decision #7): parse the declared fixture,
+    /// confirm `origin == "from-ids"` and the cooked identity dims match
+    /// the queue row. Declared fixtures carry no evidence, so the
+    /// evidence-claim check is skipped.
+    fn postCheckDeclaredFixture(a: std.mem.Allocator, io: std.Io, action: QueueRow) !bool {
+        const h = action.harness orelse return false;
+        const p = action.provider orelse return false;
+        const m_d = action.model orelse return false;
+        const agent = (agentIdFrom(a, h, p, m_d) catch return false) orelse return false;
+        defer a.free(agent);
+        const f_id = fixtureId(a, agent) catch return false;
+        defer a.free(f_id);
+        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return false;
+        defer a.free(path);
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return false;
+        defer a.free(data);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return false;
+        defer parsed.deinit();
+        if (parsed.value != .object) return false;
+        const origin = if (parsed.value.object.get("origin")) |ov| switch (ov) {
+            .string => |s| s,
+            else => "",
+        } else "";
+        if (!std.mem.eql(u8, origin, "from-ids")) return false;
+        const cooked = parsed.value.object.get("cooked") orelse return false;
+        if (cooked != .object) return false;
+        const ch = sjstr(cooked.object, "harness_id");
+        const cp = sjstr(cooked.object, "provider_id");
+        const cm = sjstr(cooked.object, "model_id");
+        return std.mem.eql(u8, ch, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m_d);
+    }
+
+    /// delete the `fixtures/<id>.json` file AND the `fixtures` row the
+    /// child already upserted (runFixturesCapture upserts before the
+    /// daemon's post-check runs) — a failed post-check must not leave
+    /// "captured" state behind.
+    fn deleteFixtureFileAndRow(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) void {
+        const agent = (agentIdFrom(a, h, p, m) catch return) orelse return;
+        defer a.free(agent);
+        const f_id = fixtureId(a, agent) catch return;
+        defer a.free(f_id);
+        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return;
+        defer a.free(path);
+        std.Io.Dir.cwd().deleteFile(io, path) catch {};
+        const qh = sqlQuote(a, h) catch return;
+        defer a.free(qh);
+        const qp = sqlQuote(a, p) catch return;
+        defer a.free(qp);
+        const qm = sqlQuote(a, m) catch return;
+        defer a.free(qm);
+        const qplat = sqlQuote(a, plat) catch return;
+        defer a.free(qplat);
+        const sql = std.fmt.allocPrint(a,
+            "DELETE FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
+            .{ qh, qp, qm, qplat },
+        ) catch return;
+        defer a.free(sql);
+        _ = sqliteQuery(a, io, sql) catch {};
+        daemonWriteErr(io, "daemon: post-check failure — deleted ");
+        daemonWriteErr(io, path);
+        daemonWriteErr(io, " and its fixtures row\n");
+    }
+
+    /// decision #11 — mechanical evidence-claim validation. For every
+    /// dim in `raw.detected`, at least one `raw.evidence` claim must:
+    ///   - have that `dim`,
+    ///   - point at a source that is present in raw (env var name in
+    ///     raw.env, config/session path+field as a top-level raw key,
+    ///     lineage name in raw.process_lineage), and
+    ///   - have a `value` that equals/contains the cooked dim's
+    ///     canonical name (case-insensitive).
+    /// This verifies the attribution chain only — semantic
+    /// deducibility is human review. `from-ids` fixtures are excluded
+    /// by their origin (declared, not observed).
+    pub fn evidenceClaimsValid(raw_v: std.json.Value, cooked_v: std.json.Value) bool {
+        if (raw_v != .object or cooked_v != .object) return false;
+        const raw = raw_v.object;
+        const cooked = cooked_v.object;
+        const detected = raw.get("detected") orelse return false;
+        const evidence = raw.get("evidence") orelse return false;
+        const env = raw.get("env") orelse return false;
+        const lineage = raw.get("process_lineage") orelse return false;
+        if (detected != .array or evidence != .array) return false;
+        outer: for (detected.array.items) |item| {
+            if (item != .string) continue;
+            const dim = item.string;
+            for (evidence.array.items) |ev| {
+                if (ev != .object) continue;
+                const eo = ev.object;
+                const cdim = jstr(eo, "dim") orelse continue;
+                if (!std.mem.eql(u8, cdim, dim)) continue;
+                const source = jstr(eo, "source") orelse continue;
+                const name = jstr(eo, "name") orelse continue;
+                // source present in raw?
+                var present = false;
+                if (std.mem.eql(u8, source, "env")) {
+                    present = env.object.contains(name);
+                } else if (std.mem.eql(u8, source, "config") or std.mem.eql(u8, source, "session")) {
+                    if (raw.get(name)) |cfg| {
+                        if (cfg == .object) {
+                            if (jstr(eo, "field")) |fld| {
+                                present = cfg.object.contains(fld);
+                            } else {
+                                present = true;
+                            }
+                        } else {
+                            present = true;
+                        }
+                    }
+                } else if (std.mem.eql(u8, source, "lineage")) {
+                    for (lineage.array.items) |ent| {
+                        if (ent == .object) {
+                            const nm = jstr(ent.object, "name") orelse "";
+                            if (std.mem.eql(u8, nm, name)) {
+                                present = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!present) continue;
+                const value = jstr(eo, "value") orelse "";
+                if (valueMatchesDim(value, dim, cooked)) continue :outer;
+            }
+            return false; // no valid claim for this dim
+        }
+        return true;
+    }
+
+    /// does `value` (the claim's recorded value) equal or contain the
+    /// cooked canonical name/id for `dim`? Case-insensitive; the
+    /// canonical reference is the `*_name` field (dash-spelled), with
+    /// the `*_id` slug as fallback. For provider claims derived from an
+    /// openai-compatible base_url (qwen), the value maps to the provider
+    /// via `providerForBaseUrl` — the same derivation the detector ran.
+    fn valueMatchesDim(value: []const u8, dim: []const u8, cooked: std.json.ObjectMap) bool {
+        const names = [_][2][]const u8{
+            .{ "harness", "harness_name" },
+            .{ "provider", "provider_name" },
+            .{ "model", "model_name" },
+        };
+        for (names) |pair| {
+            if (!std.mem.eql(u8, pair[0], dim)) continue;
+            const name = jstr(cooked, pair[1]) orelse "";
+            if (name.len > 0 and std.ascii.indexOfIgnoreCase(value, name) != null) return true;
+            const id_key = if (std.mem.eql(u8, dim, "harness")) "harness_id" else if (std.mem.eql(u8, dim, "provider")) "provider_id" else "model_id";
+            const id = jstr(cooked, id_key) orelse "";
+            if (id.len > 0 and std.ascii.indexOfIgnoreCase(value, id) != null) return true;
+            // base_url-derived provider: the value is the endpoint, and
+            // the provider id was derived FROM it.
+            if (std.mem.eql(u8, dim, "provider")) {
+                const pname = jstr(cooked, "provider_name") orelse "";
+                if (pname.len > 0 and std.mem.eql(u8, providerForBaseUrl(value), pname)) return true;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    /// `from-ids` worker (2f): resolve the combo via `resolveRecipe`
+    /// (recipe-mode, no detection, zero tokens, no harness required),
+    /// assemble the fixture with `cooked` fully populated, `raw` =
+    /// platform_id/detectable/detected/empty-env/real-lineage/
+    /// empty-evidence/static *-urls, and top-level `origin: "from-ids"`.
+    /// Declared, not observed.
+    fn runOneComboIds(a: std.mem.Allocator, io: std.Io, action: QueueRow) !bool {
+        const h = action.harness orelse return false;
+        const p = action.provider orelse return false;
+        const m_d = action.model orelse return false;
+        var d = (try resolveRecipe(a, h, p, m_d)) orelse {
+            daemonWriteErr(io, "daemon: from-ids: combo not in the rule tables — cannot declare a fixture\n");
+            return false;
+        };
+        // real process lineage (like detect() would emit) so the
+        // declared fixture still shows WHERE it was written.
+        const anc = ancestorInfo(a, io);
+        var lineage = std.ArrayList(Ancestor).empty;
+        for (anc.pids, 0..) |pid, i| {
+            const name: []const u8 = if (i < anc.names.len) anc.names[i] else "";
+            try lineage.append(a, .{ .pid = pid, .name = name });
+        }
+        d.raw.process_lineage = try lineage.toOwnedSlice(a);
+        var empty_env = std.process.Environ.Map.init(a);
+        defer empty_env.deinit();
+        const cooked = try buildCooked(a, &d);
+        const raw = try buildRaw(a, &d, &empty_env);
+        var root = std.json.Value{ .object = .empty };
+        try root.object.put(a, "cooked", cooked);
+        try root.object.put(a, "raw", raw);
+        if (d.trailer) |t| {
+            try root.object.put(a, "trailer", .{ .string = t });
+        }
+        try root.object.put(a, "origin", .{ .string = "from-ids" });
+        const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
+        defer a.free(json_bytes);
+
+        std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => return false,
+        };
+        const dir = std.Io.Dir.cwd().openDir(io, "fixtures", .{}) catch return false;
+        defer dir.close(io);
+        const agent = (try agentIdFrom(a, h, p, m_d)) orelse return false;
+        defer a.free(agent);
+        const f_id = fixtureId(a, agent) catch return false;
+        defer a.free(f_id);
+        const json_name = try std.fmt.allocPrint(a, "{s}.json", .{f_id});
+        dir.writeFile(io, .{ .sub_path = json_name, .data = json_bytes }) catch {
+            daemonWriteErr(io, "daemon: from-ids: cannot write fixture file\n");
+            return false;
+        };
+        if (!(try postCheckDeclaredFixture(a, io, action))) {
+            daemonWriteErr(io, "daemon: from-ids: post-check failed — deleting fixture\n");
+            std.Io.Dir.cwd().deleteFile(io, try std.fs.path.join(a, &.{ "fixtures", json_name })) catch {};
+            return false;
+        }
+        return true;
+    }
+
+    /// `from-capture` worker (2g): launch the real harness headlessly so
+    /// it runs `fixtures capture` inside a live model session. Uses the
+    /// REAL environment (unsandboxed HOME — real API keys/config are
+    /// required); cwd stays the daemon's (the repo root) so the session
+    /// writes `fixtures/<id>.json` into the repo. A watchdog subprocess
+    /// (`fixtures __timeout`) enforces `--capture-timeout-seconds` so a
+    /// hung harness fails out instead of blocking the poll loop forever.
+    /// Success = child exit 0 AND the post-check passing; the caller
+    /// handles re-queue/cap semantics. Token-consuming — user-confirmed
+    /// only.
+    fn runOneComboCapture(a: std.mem.Allocator, io: std.Io, init: std.process.Init, action: QueueRow, timeout_seconds: u64) !bool {
+        const h = action.harness orelse return false;
+        const p = action.provider orelse return false;
+        const m_d = action.model orelse return false;
+        const agent = (agentIdFrom(a, h, p, m_d) catch return false) orelse return false;
+        defer a.free(agent);
+        var combo: ?RecipesForFixtures = null;
+        for (recipesForFixtures) |c| {
+            if (std.mem.eql(u8, c.agent_id, agent)) {
+                combo = c;
+                break;
+            }
+        }
+        const c = combo orelse {
+            daemonWriteErr(io, "daemon: from-capture: no recipe for ");
+            daemonWriteErr(io, agent);
+            daemonWriteErr(io, "\n");
+            return false;
+        };
+        const launch = c.launch orelse {
+            daemonWriteErr(io, "daemon: from-capture: no launch spec for ");
+            daemonWriteErr(io, agent);
+            daemonWriteErr(io, " — headless capture not supported; use from-ids/from-raw\n");
+            return false;
+        };
+
+        var child = std.process.spawn(io, .{
+            .argv = launch,
+            .environ_map = init.environ_map,
+            .stdout = .ignore,
+            .stderr = .pipe,
+        }) catch |err| {
+            daemonWriteErr(io, "daemon: from-capture: spawn failed: ");
+            daemonWriteErr(io, @errorName(err));
+            daemonWriteErr(io, "\n");
+            return false;
+        };
+
+        // timeout watchdog — `agent-detect-dev fixtures __timeout <sec> <pid>`.
+        var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const self_path_len = std.process.executablePath(io, &self_path_buf) catch return false;
+        const argv0 = self_path_buf[0..self_path_len];
+        const pid_num: u32 = @intCast(child.id orelse 0);
+        const pid_str = try std.fmt.allocPrint(a, "{d}", .{pid_num});
+        var tbuf: [64]u8 = undefined;
+        const sec_str = std.fmt.bufPrint(&tbuf, "{d}", .{timeout_seconds}) catch "";
+        var wargv = [_][]const u8{ argv0, "fixtures", "__timeout", sec_str, pid_str };
+        _ = std.process.spawn(io, .{ .argv = &wargv, .stdout = .ignore, .stderr = .ignore }) catch {};
+
+        var stderr_capture = try std.ArrayList(u8).initCapacity(a, 4096);
+        defer stderr_capture.deinit(a);
+        var stderr_buf: [4096]u8 = undefined;
+        var stderr_reader = child.stderr.?.reader(io, &stderr_buf);
+        while (stderr_capture.items.len < 1 << 16) {
+            const n = stderr_reader.interface.readSliceShort(stderr_capture.unusedCapacitySlice()) catch break;
+            if (n == 0) break;
+            stderr_capture.shrinkRetainingCapacity(stderr_capture.items.len + n);
+        }
+        const term = child.wait(io) catch |err| {
+            daemonWriteErr(io, "daemon: from-capture: child wait failed: ");
+            daemonWriteErr(io, @errorName(err));
+            daemonWriteErr(io, "\n");
+            return false;
+        };
+        switch (term) {
+            .exited => |code| {
+                if (code != 0) {
+                    daemonWriteErr(io, "daemon: from-capture worker failed for ");
+                    daemonWriteErr(io, agent);
+                    daemonWriteErr(io, " (exit code ");
+                    var n_buf: [16]u8 = undefined;
+                    daemonWriteErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{code}));
+                    daemonWriteErr(io, ")\n");
+                    if (stderr_capture.items.len > 0) {
+                        daemonWriteErr(io, "  worker stderr: ");
+                        daemonWriteErr(io, stderr_capture.items);
+                        if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
+                    }
+                    deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
+                    return false;
+                }
+                if (!(try postCheckComboFixture(a, io, action, "from-capture"))) {
+                    deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
+                    return false;
+                }
+                return true;
+            },
+            else => {
+                daemonWriteErr(io, "daemon: from-capture child terminated abnormally for ");
+                daemonWriteErr(io, agent);
+                daemonWriteErr(io, "\n");
+                deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
+                return false;
+            },
+        }
+    }
+
+    /// `fixtures __timeout <seconds> <pid>` — internal watchdog used by
+    /// the from-capture worker: sleeps N seconds (1s increments), then
+    /// sends SIGTERM to the capture child so a hung harness fails out at
+    /// `--capture-timeout-seconds` instead of blocking the poll loop.
+    /// Fire-and-forget from the daemon's perspective.
+    pub fn runTimeoutWorker(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return EXIT_OUT_OF_MEMORY;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "fixtures"
+        _ = args_it.skip(); // "__timeout"
+        const sec_arg = args_it.next() orelse return EXIT_MISSING_ARG;
+        const pid_arg = args_it.next() orelse return EXIT_MISSING_ARG;
+        const seconds = std.fmt.parseInt(u64, sec_arg, 10) catch return EXIT_CONFLICTING_ARG;
+        const pid = std.fmt.parseInt(u32, pid_arg, 10) catch return EXIT_CONFLICTING_ARG;
+        var remaining = seconds;
+        while (remaining > 0) : (remaining -= 1) {
+            std.Io.sleep(io, .{ .nanoseconds = std.time.ns_per_s }, .boot) catch return EXIT_OK;
+        }
+        killPid(pid);
+        return EXIT_OK;
+    }
+
+    /// send a terminate signal to a pid (the capture child). SIGTERM on
+    /// POSIX; TerminateProcess on Windows — the single portable control
+    /// surface the from-capture timeout relies on.
+    fn killPid(pid: u32) void {
+        if (builtin.os.tag == .windows) {
+            const handle = OpenProcess(0x0001, 0, pid); // PROCESS_TERMINATE
+            if (handle != null) {
+                _ = TerminateProcess(handle.?, 1);
+                _ = CloseHandle(handle.?);
+            }
+            return;
+        }
+        std.posix.kill(@intCast(pid), .TERM) catch {};
     }
 
     /// refuse to start the daemon if the current process is inside
@@ -4445,6 +5640,12 @@ const recipesForFixtures = [_]RecipesForFixtures{
             "CLINE_NO_INTERACTIVE", "QWEN_API_KEY",  "JCODE_API_KEY",
             "OMP_API_KEY",     "REASONIX_API_KEY",  "CRUSH_API_KEY",
             "KILO_API_KEY",    "OPENCODE_API_KEY",  "VIBE_API_KEY",
+            // launcher model-selector markers (from-raw/from-capture
+            // workers set these in the child env, never the daemon's —
+            // but if a stray one reaches a real shell the daemon should
+            // still refuse, since it indicates a harness-session env).
+            "KILO_MODEL", "OPENCODE_MODEL", "PI_PROVIDER", "PI_MODEL",
+            "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER",
         };
         var it = init.environ_map.iterator();
         while (it.next()) |kv| {
@@ -4560,6 +5761,22 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         _ = sub_iter.skip(); // argv0
         const cmd = sub_iter.next() orelse "";
         const sub = sub_iter.next() orelse "";
+        // decision #8 — the dev binary's top-level help (bare no-args,
+        // `help`, `--help`, `-h`) shows the FULL dev surface: the
+        // released usage plus the dev actions section. `agent-detect
+        // --help` (released binary) is unchanged.
+        if (std.mem.eql(u8, cmd, "") or
+            std.mem.eql(u8, cmd, "help") or
+            std.mem.eql(u8, cmd, "--help") or
+            std.mem.eql(u8, cmd, "-h"))
+        {
+            if (std.mem.eql(u8, sub, "trailer")) {
+                writeOut(io, trailerUsage);
+                return EXIT_OK;
+            }
+            writeOut(io, devUsage);
+            return EXIT_OK;
+        }
         if (std.mem.eql(u8, cmd, "fixtures")) {
             if (sub.len == 0 or
                 std.mem.eql(u8, sub, "--help") or
@@ -4575,6 +5792,9 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 return dev.runFixturesQueue(init);
             } else if (std.mem.eql(u8, sub, "dequeue")) {
                 return dev.runFixturesDequeue(init);
+            } else if (std.mem.eql(u8, sub, "__timeout")) {
+                // internal watchdog used by the from-capture worker.
+                return dev.runTimeoutWorker(init);
             } else {
                 writeErr(io, "fixtures: unrecognised argument: '");
                 writeErr(io, sub);

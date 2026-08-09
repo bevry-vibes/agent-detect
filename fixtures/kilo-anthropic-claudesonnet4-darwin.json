@@ -8,7 +8,7 @@
     "provider_label": "Anthropic",
     "provider_name": "anthropic",
     "provider_id": "anthropic",
-    "provider_closed_training": "opt-out",
+    "provider_closed_training": "never",
     "provider_open_training": null,
     "model_label": "Claude Sonnet 4",
     "model_short_title": null,
@@ -34,19 +34,38 @@
     "env": {
       "KILO_API_KEY": {
         "present": true
+      },
+      "KILO": {
+        "present": false
+      },
+      "KILO_MODEL": {
+        "value": "anthropic/claude-sonnet-4",
+        "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 6311,
+        "pid": 34188,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 5891,
-        "name": "agent-detect-dev"
+        "pid": 34187,
+        "name": "bash"
       },
       {
-        "pid": 83120,
+        "pid": 34155,
+        "name": "bash"
+      },
+      {
+        "pid": 34154,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
         "name": "bash"
       }
     ],
@@ -61,7 +80,28 @@
     "model-urls": [
       "https://www.anthropic.com/claude/sonnet",
       "https://docs.anthropic.com/en/docs/about-claude/models"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "KILO_API_KEY",
+        "value": "kilo"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "anthropic/claude-sonnet-4"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "anthropic/claude-sonnet-4"
+      }
     ]
   },
-  "trailer": "Co-authored-by: Kilo Code · Claude Sonnet 4 <kilo-anthropic-claudesonnet4@local>"
+  "trailer": "Co-authored-by: Kilo Code · Claude Sonnet 4 <kilo-anthropic-claudesonnet4@local>",
+  "origin": "from-raw"
 }

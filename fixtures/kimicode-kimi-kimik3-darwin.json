@@ -5,19 +5,19 @@
     "harness_name": "kimi-code",
     "harness_id": "kimicode",
     "harness_license": "MIT",
-    "provider_label": "MiniMax",
-    "provider_name": "minimax",
-    "provider_id": "minimax",
-    "provider_closed_training": "opt-in",
-    "provider_open_training": "opt-in",
-    "model_label": "MiniMax M3",
-    "model_short_title": "M3",
-    "model_name": "minimax-m3",
-    "model_id": "minimaxm3",
+    "provider_label": "Kimi",
+    "provider_name": "kimi",
+    "provider_id": "kimi",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Kimi K3",
+    "model_short_title": null,
+    "model_name": "kimi-k3",
+    "model_id": "kimik3",
     "model_reciprocity": "open-weight",
-    "agent_id": "kimicode-minimax-minimaxm3",
-    "reciprocal": true,
-    "trailer": "Co-authored-by: Kimi Code · MiniMax M3 <kimicode-minimax-minimaxm3@local>"
+    "agent_id": "kimicode-kimi-kimik3",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Kimi Code · Kimi K3 <kimicode-kimi-kimik3@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -45,11 +45,11 @@
     },
     "process_lineage": [
       {
-        "pid": 34162,
+        "pid": 34180,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34161,
+        "pid": 34179,
         "name": "bash"
       },
       {
@@ -70,20 +70,19 @@
       }
     ],
     "<home>/.kimi-code/config.toml": {
-      "default_model": "minimax/minimax-m3"
+      "default_model": "kimi/kimi-k3"
     },
     "harness-urls": [
       "https://github.com/MoonshotAI/kimi-code",
       "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/terms-of-service",
-      "https://platform.minimax.io/docs/guides/privacy-policy"
+      "https://platform.moonshot.ai/docs/terms",
+      "https://platform.moonshot.ai/docs/privacy"
     ],
     "model-urls": [
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
-      "https://www.minimax.io/blog/minimax-m3"
+      "https://huggingface.co/moonshotai/Kimi-K3",
+      "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE"
     ],
     "evidence": [
       {
@@ -97,17 +96,17 @@
         "source": "config",
         "name": "<home>/.kimi-code/config.toml",
         "field": "default_model",
-        "value": "minimax/minimax-m3"
+        "value": "kimi/kimi-k3"
       },
       {
         "dim": "model",
         "source": "config",
         "name": "<home>/.kimi-code/config.toml",
         "field": "default_model",
-        "value": "minimax/minimax-m3"
+        "value": "kimi/kimi-k3"
       }
     ]
   },
-  "trailer": "Co-authored-by: Kimi Code · MiniMax M3 <kimicode-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: Kimi Code · Kimi K3 <kimicode-kimi-kimik3@local>",
   "origin": "from-raw"
 }

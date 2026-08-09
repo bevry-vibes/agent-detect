@@ -33,51 +33,78 @@
     ],
     "env": {
       "MMX_CONFIG_DIR": {
-        "value": "fake",
+        "value": "<home>/.mmx",
         "present": true
       },
       "MINIMAX_API_KEY": {
         "present": false
       }
     },
-    "/Users/balupton/.mmx/config.json": {
-      "defaultTextModel": "minimax-m3"
+    "process_lineage": [
+      {
+        "pid": 33877,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 33876,
+        "name": "bash"
+      },
+      {
+        "pid": 33834,
+        "name": "bash"
+      },
+      {
+        "pid": 33833,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "<home>/.mmx/config.json": {
+      "defaultTextModel": "minimax/minimax-m3"
     },
     "harness-urls": [
       "https://github.com/MiniMax-AI/cli",
-      "https://github.com/MiniMax-AI/cli/blob/main/LICENSE"
+      "https://www.npmjs.com/package/mmx-cli"
     ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/platform/terms-of-service",
-      "https://platform.minimax.io/docs/guides/platform/privacy-policy"
+      "https://platform.minimax.io/docs/guides/terms-of-service",
+      "https://platform.minimax.io/docs/guides/privacy-policy"
     ],
     "model-urls": [
       "https://huggingface.co/MiniMaxAI/MiniMax-M3",
       "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
       "https://www.minimax.io/blog/minimax-m3"
     ],
-    "process_lineage": [
+    "evidence": [
       {
-        "pid": 54920,
-        "name": "agent-detect"
+        "dim": "harness",
+        "source": "env",
+        "name": "MMX_CONFIG_DIR",
+        "value": "mmx"
       },
       {
-        "pid": 54919,
-        "name": "bash"
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.mmx/config.json",
+        "field": "defaultTextModel",
+        "value": "minimax/minimax-m3"
       },
       {
-        "pid": 54916,
-        "name": "bash"
-      },
-      {
-        "pid": 51336,
-        "name": "kimi-code"
-      },
-      {
-        "pid": 81450,
-        "name": "bash"
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.mmx/config.json",
+        "field": "defaultTextModel",
+        "value": "minimax/minimax-m3"
       }
     ]
   },
-  "trailer": "Co-authored-by: MiniMax CLI · MiniMax M3 <mmx-minimax-minimaxm3@local>"
+  "trailer": "Co-authored-by: MiniMax CLI · MiniMax M3 <mmx-minimax-minimaxm3@local>",
+  "origin": "from-raw"
 }
