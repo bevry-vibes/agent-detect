@@ -1118,6 +1118,7 @@ extern "kernel32" fn Process32NextW(hSnapshot: std.os.windows.HANDLE, lppe: *PRO
 extern "kernel32" fn OpenProcess(dwDesiredAccess: u32, bInheritHandle: c_int, dwProcessId: u32) callconv(.winapi) ?std.os.windows.HANDLE;
 extern "kernel32" fn TerminateProcess(hProcess: std.os.windows.HANDLE, uExitCode: u32) callconv(.winapi) c_int;
 extern "kernel32" fn CloseHandle(hObject: std.os.windows.HANDLE) callconv(.winapi) c_int;
+extern "kernel32" fn GetProcessId(hProcess: std.os.windows.HANDLE) callconv(.winapi) u32;
 
 pub const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
 
@@ -1997,6 +1998,21 @@ fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "default_large_model_id", .value = dm });
 }
 
+/// Resolve the current working directory for session-store lookups.
+/// POSIX shells export `PWD` (the logical cwd) — use it for parity
+/// with existing behavior. Windows has no `PWD` (and git-bash's MSYS
+/// `/c/...` form would never match the session store), so use the OS
+/// current directory via `std.process.currentPathAlloc`. The returned
+/// slice is either env-owned or arena-owned; both outlive this call.
+fn currentDir(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map) ?[]const u8 {
+    if (builtin.os.tag != .windows) {
+        if (env.get("PWD")) |pwd| {
+            if (pwd.len > 0) return pwd;
+        }
+    }
+    return std.process.currentPathAlloc(io, a) catch return null;
+}
+
 fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     // Launcher sets KILO_MODEL=<provider>/<model> before capture runs;
     // prefer that (matches the committed-trailer provider naming). Fall
@@ -2037,8 +2053,7 @@ fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 /// leaving detection unresolved).
 fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     if (home.len == 0) return;
-    const dir = env.get("PWD") orelse return;
-    if (dir.len == 0) return;
+    const dir = currentDir(a, io, env) orelse return;
     const db = try std.fs.path.join(a, &.{ home, ".local/share/kilo/kilo.db" });
     defer a.free(db);
     const mm = (try detectActiveSessionModel(a, io, db, dir)) orelse return;
@@ -2086,13 +2101,20 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
     if (db.len == 0 or dir.len == 0) return null;
     if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return null;
 
-    // quote dir into a SQL string literal (single-quote doubling)
+    // quote dir into a SQL string literal (single-quote doubling).
+    // Windows stores session directories with forward slashes while
+    // `currentPathAlloc` returns backslashes — normalize separators so
+    // the exact match finds the active session (POSIX is a no-op).
     var dir_lit: std.ArrayList(u8) = .empty;
     defer dir_lit.deinit(a);
     try dir_lit.append(a, '\'');
     for (dir) |c| {
         if (c == '\'') try dir_lit.append(a, '\'');
-        try dir_lit.append(a, c);
+        if (builtin.os.tag == .windows and c == '\\') {
+            try dir_lit.append(a, '/');
+        } else {
+            try dir_lit.append(a, c);
+        }
     }
     try dir_lit.append(a, '\'');
 
@@ -2249,8 +2271,7 @@ fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     // newest message; model read from that message's data (written at
     // creation time), not the lazily-written session.model column.
     if (home.len == 0) return;
-    const dir = env.get("PWD") orelse return;
-    if (dir.len == 0) return;
+    const dir = currentDir(a, io, env) orelse return;
     const db = try std.fs.path.join(a, &.{ home, ".local/share/opencode/opencode.db" });
     defer a.free(db);
     const mm = (try detectActiveSessionModel(a, io, db, dir)) orelse return;
@@ -4326,34 +4347,34 @@ const capture_prompt = "run `agent-detect-dev fixtures capture` in the current w
 
 pub const recipesForFixtures = [_]RecipesForFixtures{
     // cline — clinepass/kimi-k3 (keep, no launch spec — not in the usable set), deepseek/v4-flash, minimax/m3, openrouter/v4-flash (no launch spec — not in the usable set)
-    .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=cline-pass/kimi-k3", capture_prompt } },
-    .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=deepseek", "--model=deepseek-v4-flash", "--thinking", "high", capture_prompt } },
-    .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=minimax", "--model=minimax/minimax-m3", capture_prompt } },
-    .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=openrouter", "--model=openrouter/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=cline-pass/kimi-k3", capture_prompt } },
+    .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=deepseek", "--model=deepseek-v4-flash", "--thinking", "high", capture_prompt } },
+    .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=minimax", "--model=minimax/minimax-m3", capture_prompt } },
+    .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=openrouter", "--model=openrouter/deepseek-v4-flash", capture_prompt } },
     // cline additions (real usable combos): clinepass/step-3.7-flash and clinepass/free-deepseek-v4-flash
-    .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=stepfun/step-3.7-flash", capture_prompt } },
-    .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=free/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=stepfun/step-3.7-flash", capture_prompt } },
+    .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=free/deepseek-v4-flash", capture_prompt } },
     // goose — goose/claude-sonnet-4 (contributor-scope example, keeps the harness→recipe test green)
     .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .buildEnv = buildGooseEnv, .launch = &.{ "goose", "run", "-t", capture_prompt } },
     // kimi — minimax/m3 (keep), deepseek/v4-flash, kimi/k3
-    .{ .agent_id = "kimicode-minimax-minimaxm3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-deepseek-deepseekv4flash", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-kimi-kimik3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-minimax-minimaxm3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-deepseek-deepseekv4flash", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-kimi-kimik3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     // kimi catalog inference (2026-08-11, `kimi provider catalog list`,
     // models.dev): per the ordering spec — all-providers-free step
     // (openrouter `:free` models that clear the evergreen top-50) —
     // then minimax all-models (M2.7) and deepseek all-models (v4-pro)
     // steps. All provider/model rules already exist; `buildKimiEnv`
     // writes `default_model = "<provider>/<model>"` for each.
-    .{ .agent_id = "kimicode-openrouter-gemma431b", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-openrouter-nemotron3ultra", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-openrouter-nemotron3super", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-openrouter-nemotron3nano", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-minimax-minimaxm27", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-deepseek-deepseekv4pro", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-gemma431b", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3ultra", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3super", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3nano", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-minimax-minimaxm27", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-deepseek-deepseekv4pro", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     // mmx — minimax/m3 (keep), minimax/m2.7
-    .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
-    .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
+    .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe", "mmx.cmd", "mmx.ps1" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
+    .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe", "mmx.cmd", "mmx.ps1" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
     // pi — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash, minimax/m3
     .{ .agent_id = "pi-anthropic-claudesonnet4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
     .{ .agent_id = "pi-deepseek-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-flash", "-p", capture_prompt } },
@@ -4388,45 +4409,45 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "pi-minimax-minimaxm27", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "minimax", "--model", "MiniMax-M2.7", "-p", capture_prompt } },
     .{ .agent_id = "pi-deepseek-deepseekv4pro", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-pro", "-p", capture_prompt } },
     // qwen — minimax/m3 (keep), deepseek/v4-flash, qwen/qwen3.8-max
-    .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-qwen-qwen38max", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-qwen-qwen38max", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
     // qwen catalog inference (2026-08-11, `~/.qwen/settings.json`
     // `modelProviders`): minimax/deepseek all-models steps per the
     // ordering spec, then evergreen-clearing xai/requesty/dashscope
     // combos. baseUrl hosts map via `providerForBaseUrl` (requesty and
     // x.ai added to the table this batch).
-    .{ .agent_id = "qwen-minimax-minimaxm25", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-minimax-minimaxm27", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-deepseek-deepseekv4pro", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-xai-grok45", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-xai-grok420", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-openai-gpt4o", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-qwen-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-minimax-minimaxm25", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-minimax-minimaxm27", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-deepseek-deepseekv4pro", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-xai-grok45", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-xai-grok420", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-openai-gpt4o", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-qwen-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
     // kilo — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash (keep), minimax/m3, openrouter/v4-flash, zai/glm-5.2
-    .{ .agent_id = "kilo-anthropic-claudesonnet4", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-deepseek-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-minimax-minimaxm3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-anthropic-claudesonnet4", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-deepseek-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-minimax-minimaxm3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     // kilo catalog inference (2026-08-11, `kilo models`, 481 models):
     // free-tier `~*-latest` router aliases that clear the evergreen
     // top-50 (provider `kilo`), then minimax/clinepass/deepseek
     // all-models steps per the ordering spec, then evergreen-clearing
     // hyper/ollama-cloud/fireworks-ai combos. Scoped to kilo's authed
     // providers.
-    .{ .agent_id = "kilo-kilo-gemini35flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~google/gemini-flash-latest", capture_prompt } },
-    .{ .agent_id = "kilo-kilo-grok45", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~x-ai/grok-latest", capture_prompt } },
-    .{ .agent_id = "kilo-kilo-kimik3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~moonshotai/kimi-latest", capture_prompt } },
-    .{ .agent_id = "kilo-minimax-minimaxm27", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-clinepass-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-clinepass-kimik27code", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-deepseek-deepseekv4pro", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-hyper-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-hyper-kimik3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-ollamacloud-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-ollamacloud-kimik25", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-fireworksai-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-gemini35flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~google/gemini-flash-latest", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-grok45", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~x-ai/grok-latest", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-kimik3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~moonshotai/kimi-latest", capture_prompt } },
+    .{ .agent_id = "kilo-minimax-minimaxm27", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-clinepass-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-clinepass-kimik27code", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-deepseek-deepseekv4pro", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-hyper-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-hyper-kimik3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-ollamacloud-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-ollamacloud-kimik25", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-fireworksai-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     // omp — minimax-code/m3 (keep), deepseek/v4-flash, openrouter/v4-flash
     .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "minimax-code/MiniMax-M3", capture_prompt } },
     .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "deepseek/deepseek-v4-flash", capture_prompt } },
@@ -4558,13 +4579,13 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     // `cursor-cli`, authed). Cursor's CLI takes `--model` per run over
     // its first-party router; recipes are evergreen-clearing catalog
     // models (flat subscription — no per-model free/paid split).
-    .{ .agent_id = "cursor-cursor-claudefable5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-fable-5-thinking-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-claudesonnet5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-sonnet-5-thinking-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-claudeopus5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-opus-5-thinking-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-gpt56sol", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-sol-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-gpt56luna", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-luna-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-gpt52", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.2", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-grok45", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "cursor-grok-4.5-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudefable5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-fable-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudesonnet5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-sonnet-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudeopus5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-opus-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt56sol", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-sol-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt56luna", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-luna-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt52", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.2", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-grok45", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "cursor-grok-4.5-high", capture_prompt } },
     // copilot (2026-08-11, installed `copilot` from brew `copilot-cli`,
     // authed). Copilot routes GitHub-hosted models; recipes are
     // evergreen-clearing models its CLI exposes (`-p` headless verified;
@@ -5311,7 +5332,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             // daemon's liveness probe only needs the writer pid to be
             // *some* pid, not specifically the parent. Use our own
             // pid as a stand-in — the runner field is informational.
-            return @intCast(builtin.os.windows.GetCurrentProcessId());
+            return @intCast(std.os.windows.GetCurrentProcessId());
         }
         return @intCast(std.c.getppid());
     }
@@ -6460,7 +6481,10 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const self_path_len = std.process.executablePath(io, &self_path_buf) catch return false;
         const argv0 = self_path_buf[0..self_path_len];
-        const pid_num: u32 = @intCast(child.id orelse 0);
+        const pid_num: u32 = if (builtin.os.tag == .windows)
+            GetProcessId(child.id orelse return false)
+        else
+            @intCast(child.id orelse return false);
         const pid_str = try std.fmt.allocPrint(a, "{d}", .{pid_num});
         var tbuf: [64]u8 = undefined;
         const sec_str = std.fmt.bufPrint(&tbuf, "{d}", .{timeout_seconds}) catch "";

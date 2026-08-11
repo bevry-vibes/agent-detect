@@ -40,3 +40,13 @@ state (env markers, process ancestry, harness config/session files, the
 local Kilo DB) and performs no network I/O. Token cost arises only from
 the session hosting it — e.g. a live `fixtures capture` runs inside a
 real agent session, and that session is a model conversation.
+
+## powershell
+
+All PowerShell work must run on PowerShell 7.6 or later. Every
+PowerShell script starts with `#Requires -Version 7.6`, and scripts
+should use modern syntax where appropriate — pipeline chain operators
+(`&&` / `||`), ternary / null-coalescing expressions (`?:` / `??` /
+`??=`), switch expressions, `ForEach-Object -Parallel`, typed class
+definitions, native-command `2>&1` stderr capture — instead of legacy
+forms.
