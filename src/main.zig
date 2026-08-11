@@ -311,6 +311,8 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "kimi-k2.7-code", .label = "Kimi K2.7 Code", .reciprocity = null, .sources = &.{} },
     // grok-4.20: xAI Grok 4.20; closed, reciprocity unverified.
     .{ .name = "grok-4.20", .label = "Grok 4.20", .reciprocity = null, .sources = &.{} },
+    // minimax-m2.5: MiniMax M2.5 (open-weight); reciprocity unverified.
+    .{ .name = "minimax-m2.5", .label = "MiniMax M2.5", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -4121,6 +4123,22 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "opencode-cerebras-qwen3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
     // opencode's built-in free tier (opencode router, no API key needed)
     .{ .agent_id = "opencode-opencode-deepseekv4flashfree", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", "--model", "opencode/deepseek-v4-flash-free", capture_prompt } },
+    // opencode catalog inference (2026-08-11, `opencode models`, 83
+    // models): free-tier router model that clears the evergreen top-50
+    // (nemotron-3-ultra), then minimax/clinepass/deepseek all-models
+    // steps per the ordering spec, then evergreen-clearing alibaba
+    // combos. scoped to opencode's authed providers.
+    .{ .agent_id = "opencode-opencode-nemotron3ultra", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", "--model", "opencode/nemotron-3-ultra-free", capture_prompt } },
+    .{ .agent_id = "opencode-minimax-minimaxm25", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-minimax-minimaxm27", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-glm52", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-kimik27code", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-deepseekv4pro", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-deepseek-deepseekv4pro", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-alibaba-glm52", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-alibaba-qwen3coder", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-alibaba-qwen38max", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
     // vibe — mistral/mistral-large-latest (keep), mistral/mistral-small-latest, minimax/m3
     .{ .agent_id = "vibe-mistral-mistrallargelatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
     .{ .agent_id = "vibe-mistral-mistralsmalllatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },

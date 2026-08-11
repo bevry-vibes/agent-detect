@@ -1,0 +1,93 @@
+{
+  "cooked": {
+    "harness_label": "OpenCode",
+    "harness_short_title": null,
+    "harness_name": "opencode",
+    "harness_id": "opencode",
+    "harness_license": "MIT",
+    "provider_label": "Alibaba",
+    "provider_name": "alibaba",
+    "provider_id": "alibaba",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Qwen3 Coder",
+    "model_short_title": null,
+    "model_name": "qwen3-coder",
+    "model_id": "qwen3coder",
+    "model_reciprocity": null,
+    "agent_id": "opencode-alibaba-qwen3coder",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: OpenCode · Qwen3 Coder <opencode-alibaba-qwen3coder@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OPENCODE_API_KEY": {
+        "present": true
+      },
+      "OPENCODE_MODEL": {
+        "value": "alibaba/qwen3-coder",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 95046,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 94897,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/anomalyco/opencode",
+      "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+    ],
+    "provider-urls": [
+      "https://qwen.ai/",
+      "https://qwen.ai/legal"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OPENCODE_API_KEY",
+        "value": "opencode"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "OPENCODE_MODEL",
+        "value": "alibaba/qwen3-coder"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "OPENCODE_MODEL",
+        "value": "alibaba/qwen3-coder"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: OpenCode · Qwen3 Coder <opencode-alibaba-qwen3coder@local>",
+  "origin": "from-raw"
+}

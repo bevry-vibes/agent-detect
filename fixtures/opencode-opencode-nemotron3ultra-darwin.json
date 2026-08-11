@@ -1,0 +1,92 @@
+{
+  "cooked": {
+    "harness_label": "OpenCode",
+    "harness_short_title": null,
+    "harness_name": "opencode",
+    "harness_id": "opencode",
+    "harness_license": "MIT",
+    "provider_label": "OpenCode",
+    "provider_name": "opencode",
+    "provider_id": "opencode",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Nemotron 3 Ultra",
+    "model_short_title": null,
+    "model_name": "nemotron-3-ultra",
+    "model_id": "nemotron3ultra",
+    "model_reciprocity": null,
+    "agent_id": "opencode-opencode-nemotron3ultra",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: OpenCode · Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OPENCODE_API_KEY": {
+        "present": true
+      },
+      "OPENCODE_MODEL": {
+        "value": "opencode/nemotron-3-ultra",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 94973,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 94897,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/anomalyco/opencode",
+      "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+    ],
+    "provider-urls": [
+      "https://github.com/anomalyco/opencode"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OPENCODE_API_KEY",
+        "value": "opencode"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "OPENCODE_MODEL",
+        "value": "opencode/nemotron-3-ultra"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "OPENCODE_MODEL",
+        "value": "opencode/nemotron-3-ultra"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: OpenCode · Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>",
+  "origin": "from-raw"
+}
