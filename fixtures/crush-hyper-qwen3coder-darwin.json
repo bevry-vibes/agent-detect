@@ -1,0 +1,94 @@
+{
+  "cooked": {
+    "harness_label": "Crush",
+    "harness_short_title": null,
+    "harness_name": "crush",
+    "harness_id": "crush",
+    "harness_license": "FSL-1.1-MIT",
+    "provider_label": "Charm Hyper",
+    "provider_name": "hyper",
+    "provider_id": "hyper",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "Qwen3 Coder",
+    "model_short_title": null,
+    "model_name": "qwen3-coder",
+    "model_id": "qwen3coder",
+    "model_reciprocity": null,
+    "agent_id": "crush-hyper-qwen3coder",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Crush · Qwen3 Coder <crush-hyper-qwen3coder@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "CRUSH_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 97084,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 96913,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "<home>/.local/share/crush/hyper.json": {
+      "default_large_model_id": "hyper/qwen3-coder"
+    },
+    "harness-urls": [
+      "https://github.com/charmbracelet/crush",
+      "https://github.com/charmbracelet/crush/blob/main/LICENSE.md"
+    ],
+    "provider-urls": [
+      "https://hyper.charm.land/terms",
+      "https://hyper.charm.land/privacy"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "CRUSH_API_KEY",
+        "value": "crush"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.local/share/crush/hyper.json",
+        "field": "default_large_model_id",
+        "value": "hyper/qwen3-coder"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.local/share/crush/hyper.json",
+        "field": "default_large_model_id",
+        "value": "hyper/qwen3-coder"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Crush · Qwen3 Coder <crush-hyper-qwen3coder@local>",
+  "origin": "from-raw"
+}

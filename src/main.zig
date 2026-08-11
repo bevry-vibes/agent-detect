@@ -313,6 +313,10 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "grok-4.20", .label = "Grok 4.20", .reciprocity = null, .sources = &.{} },
     // minimax-m2.5: MiniMax M2.5 (open-weight); reciprocity unverified.
     .{ .name = "minimax-m2.5", .label = "MiniMax M2.5", .reciprocity = null, .sources = &.{} },
+    // qwen3.6-max: Alibaba Qwen3.6 Max; reciprocity unverified.
+    .{ .name = "qwen3.6-max", .label = "Qwen3.6-Max", .reciprocity = null, .sources = &.{} },
+    // qwen3.7-flash: Alibaba Qwen3.7 Flash; reciprocity unverified.
+    .{ .name = "qwen3.7-flash", .label = "Qwen3.7-Flash", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -4137,6 +4141,24 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "crush-hyper-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
     .{ .agent_id = "crush-minimax-minimaxm3", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
     .{ .agent_id = "crush-deepseek-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    // crush catalog inference (2026-08-11): `crush models` lists the
+    // full models.dev catalog (1435 entries) but the runtime provider is
+    // hyper only — confirmed from `~/.local/share/crush/hyper.json`
+    // (the runnable set). Adds hyper-provider models that clear the
+    // evergreen top-50; no recipes for catalog providers crush cannot
+    // actually run.
+    .{ .agent_id = "crush-hyper-deepseekv4pro", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-glm52", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-kimik25", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-kimik27code", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-kimik3", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-llama3370b", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-llama4maverick", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-minimaxm27", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen36max", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen37flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen38max", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen3coder", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
     // opencode — minimax/m3 (keep), deepseek/v4-flash, hyper/v4-flash, groq/llama-4, cerebras/qwen3
     .{ .agent_id = "opencode-minimax-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
     .{ .agent_id = "opencode-deepseek-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
