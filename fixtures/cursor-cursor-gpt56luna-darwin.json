@@ -1,0 +1,92 @@
+{
+  "cooked": {
+    "harness_label": "Cursor",
+    "harness_short_title": null,
+    "harness_name": "cursor",
+    "harness_id": "cursor",
+    "harness_license": null,
+    "provider_label": "Cursor",
+    "provider_name": "cursor",
+    "provider_id": "cursor",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "GPT-5.6 Luna",
+    "model_short_title": null,
+    "model_name": "gpt-5.6-luna",
+    "model_id": "gpt56luna",
+    "model_reciprocity": null,
+    "agent_id": "cursor-cursor-gpt56luna",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Cursor · GPT-5.6 Luna <cursor-cursor-gpt56luna@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "CURSOR_API_KEY": {
+        "present": true
+      },
+      "CURSOR_API_ENDPOINT": {
+        "present": false
+      },
+      "CURSOR_MODEL": {
+        "value": "cursor/gpt-5.6-luna",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 2316,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 2292,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [],
+    "provider-urls": [
+      "https://cursor.com/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "CURSOR_API_KEY",
+        "value": "cursor"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "CURSOR_MODEL",
+        "value": "cursor/gpt-5.6-luna"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "CURSOR_MODEL",
+        "value": "cursor/gpt-5.6-luna"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Cursor · GPT-5.6 Luna <cursor-cursor-gpt56luna@local>",
+  "origin": "from-raw"
+}

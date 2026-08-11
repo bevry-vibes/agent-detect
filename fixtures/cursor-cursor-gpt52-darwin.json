@@ -1,0 +1,92 @@
+{
+  "cooked": {
+    "harness_label": "Cursor",
+    "harness_short_title": null,
+    "harness_name": "cursor",
+    "harness_id": "cursor",
+    "harness_license": null,
+    "provider_label": "Cursor",
+    "provider_name": "cursor",
+    "provider_id": "cursor",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "GPT-5.2",
+    "model_short_title": null,
+    "model_name": "gpt-5.2",
+    "model_id": "gpt52",
+    "model_reciprocity": null,
+    "agent_id": "cursor-cursor-gpt52",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Cursor · GPT-5.2 <cursor-cursor-gpt52@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "CURSOR_API_KEY": {
+        "present": true
+      },
+      "CURSOR_API_ENDPOINT": {
+        "present": false
+      },
+      "CURSOR_MODEL": {
+        "value": "cursor/gpt-5.2",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 2323,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 2292,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [],
+    "provider-urls": [
+      "https://cursor.com/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "CURSOR_API_KEY",
+        "value": "cursor"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "CURSOR_MODEL",
+        "value": "cursor/gpt-5.2"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "CURSOR_MODEL",
+        "value": "cursor/gpt-5.2"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Cursor · GPT-5.2 <cursor-cursor-gpt52@local>",
+  "origin": "from-raw"
+}

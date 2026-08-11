@@ -317,6 +317,18 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "qwen3.6-max", .label = "Qwen3.6-Max", .reciprocity = null, .sources = &.{} },
     // qwen3.7-flash: Alibaba Qwen3.7 Flash; reciprocity unverified.
     .{ .name = "qwen3.7-flash", .label = "Qwen3.7-Flash", .reciprocity = null, .sources = &.{} },
+    // gpt-5.2: OpenAI GPT-5.2; closed, reciprocity unverified.
+    .{ .name = "gpt-5.2", .label = "GPT-5.2", .reciprocity = null, .sources = &.{} },
+    // gpt-5.6-sol: OpenAI GPT-5.6 Sol; closed, reciprocity unverified.
+    .{ .name = "gpt-5.6-sol", .label = "GPT-5.6 Sol", .reciprocity = null, .sources = &.{} },
+    // gpt-5.6-luna: OpenAI GPT-5.6 Luna; closed, reciprocity unverified.
+    .{ .name = "gpt-5.6-luna", .label = "GPT-5.6 Luna", .reciprocity = null, .sources = &.{} },
+    // claude-sonnet-5: Anthropic Claude Sonnet 5; closed, reciprocity unverified.
+    .{ .name = "claude-sonnet-5", .label = "Claude Sonnet 5", .reciprocity = null, .sources = &.{} },
+    // claude-opus-5: Anthropic Claude Opus 5; closed, reciprocity unverified.
+    .{ .name = "claude-opus-5", .label = "Claude Opus 5", .reciprocity = null, .sources = &.{} },
+    // gemini-2.5-pro: Google Gemini 2.5 Pro; closed, reciprocity unverified.
+    .{ .name = "gemini-2.5-pro", .label = "Gemini 2.5 Pro", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -617,11 +629,15 @@ const reasonix_env = [_][]const u8{ "REASONIX_API_KEY" };
 const crush_env = [_][]const u8{ "CRUSH_API_KEY" };
 const opencode_env = [_][]const u8{ "OPENCODE_API_KEY", "OPENCODE_MODEL" };
 const vibe_env = [_][]const u8{ "VIBE_API_KEY", "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER" };
+const cursor_env = [_][]const u8{ "CURSOR_API_KEY", "CURSOR_API_ENDPOINT", "CURSOR_MODEL" };
+const copilot_env = [_][]const u8{ "COPILOT_ALLOW_ALL", "COPILOT_MODEL" };
 
 const cline_procs = [_][]const u8{ "cline.exe", "cline" };
 const goose_procs = [_][]const u8{ "goose.exe", "goose", "goosed.exe", "goosed" };
 const kimi_procs = [_][]const u8{ "kimi.exe", "kimi", "kimi-code.exe", "kimi-code" };
 const kilo_procs = [_][]const u8{ "kilo.exe", "kilo" };
+const cursor_procs = [_][]const u8{ "cursor-agent.exe", "cursor-agent" };
+const copilot_procs = [_][]const u8{ "copilot.exe", "copilot" };
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an
     // Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code /
@@ -670,6 +686,12 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // vibe: Apache-2.0 — https://github.com/mistralai/mistral-vibe ships
     // an Apache-2.0 LICENSE (the Vibe CLI for Mistral models).
     .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .env_markers = &vibe_env, .proc_names = &.{} },
+    // cursor: null — the Cursor Agent CLI (cursor-agent, brew
+    // `cursor-cli`) is closed-source; no public SPDX license.
+    .{ .name = "cursor", .label = "Cursor", .license = null, .license_sources = &.{}, .env_markers = &cursor_env, .proc_names = &cursor_procs },
+    // copilot: null — the GitHub Copilot CLI (brew `copilot-cli`) is
+    // closed-source; no public SPDX license.
+    .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = null, .license_sources = &.{}, .env_markers = &copilot_env, .proc_names = &copilot_procs },
 };
 /// env-var names whose values are safe to emit in raw.env_vars. Names NOT
 /// on this list emit an empty string for the value slot — secrets like
@@ -684,6 +706,7 @@ const env_value_allowlist = [_][]const u8{
     // the detector read (evidence-claim value matching needs it).
     "KILO_MODEL", "OPENCODE_MODEL", "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER",
     "PI_PROVIDER", "PI_MODEL",
+    "CURSOR_MODEL", "COPILOT_MODEL",
     "GOOSE_WORKING_DIR", "GOOSE_TERMINAL", "GOOSE_MODE",
     "USERPROFILE", "HOME", "APPDATA",
 };
@@ -2198,6 +2221,94 @@ fn piProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
     return provider;
 }
 
+fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    _ = io;
+    _ = home;
+    // cursor does not persist the current model in a config file — the
+    // CLI takes `--model` per run (default `auto`). The launcher sets
+    // CURSOR_MODEL="<provider>/<model>" (provider is cursor's first-party
+    // router); when unset, detection stays unresolved (no real-session
+    // on-disk source yet — a cursor session fixture can be added once a
+    // live session records its model).
+    const model_full = env.get("CURSOR_MODEL") orelse return;
+    if (model_full.len == 0) return;
+    const slash = std.mem.findScalar(u8, model_full, '/');
+    if (slash) |i| {
+        const prov = model_full[0..i];
+        const model_only = model_full[i + 1 ..];
+        try setProvider(a, d, prov);
+        try applyModel(a, d, model_only, model_full);
+    } else {
+        try setProvider(a, d, "cursor");
+        try applyModel(a, d, model_full, model_full);
+    }
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
+}
+
+fn detectCopilot(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    const model_full = env.get("COPILOT_MODEL") orelse {
+        return detectCopilotFromDb(a, io, home, d);
+    };
+    if (model_full.len == 0) return detectCopilotFromDb(a, io, home, d);
+    const slash = std.mem.findScalar(u8, model_full, '/');
+    if (slash) |i| {
+        const prov = model_full[0..i];
+        const model_only = model_full[i + 1 ..];
+        try setProvider(a, d, prov);
+        try applyModel(a, d, model_only, model_full);
+    } else {
+        try setProvider(a, d, "github-copilot");
+        try applyModel(a, d, model_full, model_full);
+    }
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "COPILOT_MODEL", .value = model_full });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "COPILOT_MODEL", .value = model_full });
+}
+
+/// Copilot does not export the active model to child processes, but it
+/// records it in the session store `~/.copilot/data.db` (`sessions.model`,
+/// `sessions.provider_id` referencing `model_providers`). Read that
+/// read-only via the `sqlite3` CLI: the newest session row. Partial/absent
+/// → no-op (the caller falls back to leaving detection unresolved).
+fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
+    if (home.len == 0) return;
+    const db = try std.fs.path.join(a, &.{ home, ".copilot/data.db" });
+    defer a.free(db);
+    if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return;
+    const sql = "SELECT model, provider_id FROM sessions ORDER BY updated_at DESC LIMIT 1";
+    const out = kiloSqliteJson(a, io, db, sql) catch return;
+    defer a.free(out);
+    if (out.len == 0) return;
+    const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return;
+    if (outer.value != .array or outer.value.array.items.len == 0) return;
+    const row = outer.value.array.items[0];
+    if (row != .object) return;
+    const model_str = switch (row.object.get("model") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    if (model_str.len == 0) return;
+    // provider: the sessions.provider_id FK (a `model_providers` id), or
+    // the first-party GitHub route when absent/unknown.
+    var provider_id: []const u8 = "github-copilot";
+    if (row.object.get("provider_id")) |pid| {
+        if (pid == .string and pid.string.len > 0 and providerMetaForName(pid.string) != null) {
+            provider_id = pid.string;
+        }
+    }
+    try setProvider(a, d, provider_id);
+    try applyModel(a, d, model_str, model_str);
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "session.model", .value = model_str });
+    try fields.append(a, .{ .dotted_path = "session.provider_id", .value = provider_id });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
+    d.raw.session_files = obs;
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.provider_id", .value = provider_id });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model", .value = model_str });
+}
+
 /// tri-state reciprocity determination for `d`:
 /// - `.unknown` when any of `harness_license` / `model_reciprocity` /
 ///   `provider_closed_training` is null (unverified status cannot be
@@ -2706,6 +2817,10 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectOpencode(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "vibe")) {
             try detectVibe(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "cursor")) {
+            try detectCursor(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "copilot")) {
+            try detectCopilot(a, io, env, home, d);
         }
     }
     // compute reciprocity from the three policy fields
@@ -3976,6 +4091,38 @@ fn comboDims(a: std.mem.Allocator, combo: *const RecipesForFixtures) ![3][]u8 {
     return .{ .env = env, .writes = &.{}, .cwd = home };
 }
 
+    pub fn buildCursorEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
+    const env = try a.alloc([2][]const u8, 3);
+    env[0] = .{ "CURSOR_API_KEY", "fake" };
+    env[1] = .{ "CURSOR_MODEL", model_full };
+    env[2] = .{ "", "" };
+    return .{ .env = env, .writes = &.{}, .cwd = home };
+}
+
+    pub fn buildCopilotEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
+    const home = resolveHome(env_map);
+    const dims = try comboDims(a, combo);
+    defer {
+        a.free(dims[0]);
+        a.free(dims[1]);
+        a.free(dims[2]);
+    }
+    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
+    const env = try a.alloc([2][]const u8, 3);
+    env[0] = .{ "COPILOT_ALLOW_ALL", "true" };
+    env[1] = .{ "COPILOT_MODEL", model_full };
+    env[2] = .{ "", "" };
+    return .{ .env = env, .writes = &.{}, .cwd = home };
+}
+
 /// the capture prompt the from-capture worker hands a headless harness:
 /// the model session runs `agent-detect-dev fixtures capture` in the
 /// current working directory and reports the result.
@@ -4199,6 +4346,25 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "vibe-mistral-mistrallargelatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
     .{ .agent_id = "vibe-mistral-mistralsmalllatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
     .{ .agent_id = "vibe-minimax-minimaxm3", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
+    // cursor (2026-08-11, installed `cursor-agent` from brew
+    // `cursor-cli`, authed). Cursor's CLI takes `--model` per run over
+    // its first-party router; recipes are evergreen-clearing catalog
+    // models (flat subscription — no per-model free/paid split).
+    .{ .agent_id = "cursor-cursor-claudefable5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-fable-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudesonnet5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-sonnet-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudeopus5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-opus-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt56sol", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-sol-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt56luna", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-luna-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt52", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.2", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-grok45", .probeNames = &.{ "cursor-agent", "cursor-agent.exe" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "cursor-grok-4.5-high", capture_prompt } },
+    // copilot (2026-08-11, installed `copilot` from brew `copilot-cli`,
+    // authed). Copilot routes GitHub-hosted models; recipes are
+    // evergreen-clearing models its CLI exposes (`-p` headless verified;
+    // the `gpt-5-mini` session model was confirmed live).
+    .{ .agent_id = "copilot-githubcopilot-gpt52", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "gpt-5.2", capture_prompt } },
+    .{ .agent_id = "copilot-githubcopilot-gemini25pro", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "gemini-2.5-pro", capture_prompt } },
+    .{ .agent_id = "copilot-githubcopilot-grok45", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "grok-4.5", capture_prompt } },
+    .{ .agent_id = "copilot-githubcopilot-claudesonnet5", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "claude-sonnet-5", capture_prompt } },
 };
 
 // ----------------------------------------------------------------------------
@@ -6005,6 +6171,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             // still refuse, since it indicates a harness-session env).
             "KILO_MODEL", "OPENCODE_MODEL", "PI_PROVIDER", "PI_MODEL",
             "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER",
+            "CURSOR_MODEL", "COPILOT_MODEL",
         };
         var it = init.environ_map.iterator();
         while (it.next()) |kv| {
@@ -6032,6 +6199,8 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             "kilo",         "kilo.exe",
             "opencode",     "opencode.exe",
             "vibe",         "vibe.exe",
+            "cursor-agent", "cursor-agent.exe",
+            "copilot",      "copilot.exe",
         };
         const anc = ancestorInfo(a, io);
         for (anc.names) |n| {

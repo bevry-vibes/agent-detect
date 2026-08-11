@@ -1,0 +1,91 @@
+{
+  "cooked": {
+    "harness_label": "GitHub Copilot CLI",
+    "harness_short_title": null,
+    "harness_name": "copilot",
+    "harness_id": "copilot",
+    "harness_license": null,
+    "provider_label": "GitHub Copilot",
+    "provider_name": "github-copilot",
+    "provider_id": "githubcopilot",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Grok 4.5",
+    "model_short_title": null,
+    "model_name": "grok-4.5",
+    "model_id": "grok45",
+    "model_reciprocity": null,
+    "agent_id": "copilot-githubcopilot-grok45",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: GitHub Copilot CLI · Grok 4.5 <copilot-githubcopilot-grok45@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "COPILOT_ALLOW_ALL": {
+        "present": true
+      },
+      "COPILOT_MODEL": {
+        "value": "github-copilot/grok-4.5",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 2344,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 2292,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [],
+    "provider-urls": [
+      "https://github.com/features/copilot"
+    ],
+    "model-urls": [
+      "https://docs.x.ai/docs/models"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "COPILOT_ALLOW_ALL",
+        "value": "copilot"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "COPILOT_MODEL",
+        "value": "github-copilot/grok-4.5"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "COPILOT_MODEL",
+        "value": "github-copilot/grok-4.5"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: GitHub Copilot CLI · Grok 4.5 <copilot-githubcopilot-grok45@local>",
+  "origin": "from-raw"
+}
