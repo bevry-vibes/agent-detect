@@ -609,9 +609,15 @@ pub const HarnessRule = struct {
     /// rule doesn't track a per-harness version — consumers fall
     /// back to `label` (or `harness_name`).
     version: ?[]const u8 = null,
-    /// SPDX license identifier (e.g. "Apache-2.0", "MIT"), or null for
-    /// closed-source / proprietary harnesses. Drives the `harness_license`
-    /// canonical field and the `reciprocal` computation.
+    /// SPDX license keyword for the harness. Semantics per the license
+    /// table in CONTRIBUTING.md "add a new harness rule":
+    ///   - `null` — no data available (`.unknown`)
+    ///   - `"NOASSERTION"` — attempted, inconclusive (`.unknown`)
+    ///   - `"NONE"` — concluded: no license present (verified
+    ///     proprietary/closed; `.not_reciprocal`)
+    ///   - any real SPDX id (`"Apache-2.0"`, `"MIT"`, …) — open
+    ///     license, drives the `harness_license` canonical field and
+    ///     the `reciprocal` computation.
     license: ?[]const u8,
     /// Array of independent cross-references that informed the `license`
     /// value (URL 1 = project page; URL 2 = the actual LICENSE file
@@ -700,12 +706,15 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // vibe: Apache-2.0 — https://github.com/mistralai/mistral-vibe ships
     // an Apache-2.0 LICENSE (the Vibe CLI for Mistral models).
     .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .env_markers = &vibe_env, .proc_names = &.{} },
-    // cursor: null — the Cursor Agent CLI (cursor-agent, brew
-    // `cursor-cli`) is closed-source; no public SPDX license.
-    .{ .name = "cursor", .label = "Cursor", .license = null, .license_sources = &.{}, .env_markers = &cursor_env, .proc_names = &cursor_procs },
-    // copilot: null — the GitHub Copilot CLI (brew `copilot-cli`) is
-    // closed-source; no public SPDX license.
-    .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = null, .license_sources = &.{}, .env_markers = &copilot_env, .proc_names = &copilot_procs },
+    // cursor: NONE — the Cursor Agent CLI (cursor-agent, brew
+    // `cursor-cli`) is closed-source; verified from the project page
+    // and its Terms of Service (no open license), so `license` is
+    // `"NONE"` (concluded no-license), not null.
+    .{ .name = "cursor", .label = "Cursor", .license = "NONE", .license_sources = &.{ "https://cursor.com/", "https://www.cursor.com/en-US/terms-of-service" }, .env_markers = &cursor_env, .proc_names = &cursor_procs },
+    // copilot: NONE — the GitHub Copilot CLI (brew `copilot-cli`) is
+    // closed-source; verified from the feature page and the GitHub
+    // Terms of Service (no open license), so `license` is `"NONE"`.
+    .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .env_markers = &copilot_env, .proc_names = &copilot_procs },
 };
 /// env-var names whose values are safe to emit in raw.env_vars. Names NOT
 /// on this list emit an empty string for the value slot — secrets like
@@ -725,7 +734,7 @@ const env_value_allowlist = [_][]const u8{
     "USERPROFILE", "HOME", "APPDATA",
 };
 
-fn isEnvValueAllowed(name: []const u8) bool {
+fn envValueAllowed(name: []const u8) bool {
     for (env_value_allowlist) |allowed| {
         if (std.mem.eql(u8, allowed, name)) return true;
     }
@@ -2323,32 +2332,58 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model", .value = model_str });
 }
 
+/// SPDX license keywords with special reciprocity semantics (see the
+/// license table in CONTRIBUTING.md "add a new harness rule"):
+///   - `"NONE"` — concluded: no license present (verified
+///     proprietary/closed). Forces `.not_reciprocal` even when the
+///     model/provider dims are null.
+///   - `"NOASSERTION"` — attempted, inconclusive. Treated like `null`
+///     (`.unknown`).
+pub const license_none = "NONE";
+pub const license_noassertion = "NOASSERTION";
+
 /// tri-state reciprocity determination for `d`:
-/// - `.unknown` when any of `harness_license` / `model_reciprocity` /
-///   `provider_closed_training` is null (unverified status cannot be
-///   assumed reciprocal per the AI policy);
+/// - `"NONE"` harness_license → `.not_reciprocal` unconditionally (a
+///   verified closed harness can never be reciprocal, regardless of
+///   the model/provider dims);
+/// - `.unknown` when `harness_license` is `null` or `"NOASSERTION"`,
+///   or any of `model_reciprocity` / `provider_closed_training` is
+///   null (unverified status cannot be assumed reciprocal per the AI
+///   policy);
 /// - otherwise `.reciprocal` iff the current conjunction passes, else
 ///   `.not_reciprocal`.
 pub const Reciprocity = enum { reciprocal, not_reciprocal, unknown };
 
 pub fn reciprocityOf(d: *const Detection) Reciprocity {
-    if (d.harness_license == null or d.model_reciprocity == null or d.provider_closed_training == null) return .unknown;
+    if (d.harness_license) |hl| {
+        if (std.mem.eql(u8, hl, license_none)) return .not_reciprocal;
+        if (std.mem.eql(u8, hl, license_noassertion)) return .unknown;
+    } else {
+        return .unknown;
+    }
+    if (d.model_reciprocity == null or d.provider_closed_training == null) return .unknown;
     if (computeReciprocal(d)) return .reciprocal;
     return .not_reciprocal;
 }
 
 /// compute the `reciprocal` boolean. Returns `true` only when:
-///   - harness_license is non-null (harness is open-source), AND
+///   - harness_license is a real SPDX id (non-null, not `"NONE"`,
+///     not `"NOASSERTION"`), AND
 ///   - model_reciprocity is "open-source" or "open-weight", AND
 ///   - provider_closed_training is one of "never", "opt-in", or "opt-out"
 ///     (provider does not unilaterally train closed models on customer data).
 /// Any null on the three conjuncts makes the result `false`: per the
 /// AI Policy, an unverified status cannot be assumed reciprocal.
+/// `"NONE"` and `"NOASSERTION"` both short-circuit to `false` — the
+/// former because a verified closed harness is never reciprocal, the
+/// latter because it is unverified.
 /// This is the same conjunction `reciprocityOf` uses for its non-null
 /// case, so the cooked JSON `reciprocal` field stays a boolean while
 /// the tri-state caller gets the full picture.
 pub fn computeReciprocal(d: *const Detection) bool {
     if (d.harness_license == null) return false;
+    if (std.mem.eql(u8, d.harness_license.?, license_none)) return false;
+    if (std.mem.eql(u8, d.harness_license.?, license_noassertion)) return false;
     const mr = d.model_reciprocity orelse return false;
     if (!std.mem.eql(u8, mr, "open-source") and !std.mem.eql(u8, mr, "open-weight")) return false;
     const pct = d.provider_closed_training orelse return false;
@@ -2781,7 +2816,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         var env_list = std.ArrayList(EnvVarObservation).empty;
         for (r.env_markers) |m| {
             if (env.get(m)) |v| {
-                const value: []const u8 = if (isEnvValueAllowed(m)) v else "";
+                const value: []const u8 = if (envValueAllowed(m)) v else "";
                 try env_list.append(a, .{ .name = m, .value = value, .present = true });
             } else {
                 try env_list.append(a, .{ .name = m, .value = "", .present = false });
@@ -2885,6 +2920,13 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
 // `version`; no arguments shows help.
 
 pub const dev = if (build_options.dev) struct {
+
+    /// dev-struct exposure of the env-value allow-list check so tests
+    /// can assert the evidence-redaction decision (the implementation
+    /// is the file-level `envValueAllowed`).
+    pub fn isEnvValueAllowed(name: []const u8) bool {
+        return envValueAllowed(name);
+    }
 
     /// usage text for the `fixtures` subcommand namespace — printed by
     /// `fixtures --help`, bare `fixtures`, and `fixtures help`.
@@ -3003,28 +3045,14 @@ pub const dev = if (build_options.dev) struct {
         // `cooked`.
         try raw.object.put(a, "detectable", stringListValue(a, d.detectable));
         try raw.object.put(a, "detected", stringListValue(a, try detectedDims(a, d)));
-        // The `value` field is only emitted when the var's name is on
-        // the secrets allow-list AND the var is present in the
-        // environment. Otherwise the entry is `{"present": <bool>}` —
-        // absent for vars the harness rule declared but the runtime env
-        // didn't have, or redacted-by-default for secret-shaped names
-        // not on the allow-list. Keeping `value` only when it's the
-        // real on-disk content avoids emitting empty-string
-        // placeholders that look like real but-blank values to a
-        // maintainer scanning the fixture.
-        {
-            var env_obj: V = .{ .object = .empty };
-            for (d.raw.env_vars) |ev| {
-                var ev_obj: V = .{ .object = .empty };
-                if (isEnvValueAllowed(ev.name) and ev.present) {
-                    const redacted = try redactHome(a, ev.value, home);
-                    try ev_obj.object.put(a, "value", .{ .string = redacted });
-                }
-                try ev_obj.object.put(a, "present", .{ .bool = ev.present });
-                try env_obj.object.put(a, ev.name, ev_obj);
-            }
-            try raw.object.put(a, "env", env_obj);
-        }
+        // The `env` object and per-file config/session objects were
+        // dropped from the raw block (decision #4 — raw slimming): the
+        // evidence section below documents the sources that informed
+        // each canonical deduction, so the raw observations are not
+        // duplicated verbatim. `RawObservation.env_vars` /
+        // `config_files` / `session_files` are still populated internally
+        // (detection + the redaction decision in the evidence block rely
+        // on them); they just never reach the JSON.
 
         // process_lineage — always present so a maintainer reading the
         // fixture sees "no process info" rather than absence. The array
@@ -3041,27 +3069,6 @@ pub const dev = if (build_options.dev) struct {
         try raw.object.put(a, "process_lineage", lineage);
     }
 
-        // config_files + session_files — each file path becomes its own
-        // top-level raw key, with the dotted fields as a sub-object.
-        for (d.raw.config_files) |file| {
-            var obj: V = .{ .object = .empty };
-            for (file.fields) |f| {
-                const redacted = try redactHome(a, f.value, home);
-                try obj.object.put(a, f.dotted_path, .{ .string = redacted });
-            }
-            const path_redacted = try redactHome(a, file.path, home);
-            try raw.object.put(a, path_redacted, obj);
-        }
-        for (d.raw.session_files) |file| {
-            var obj: V = .{ .object = .empty };
-            for (file.fields) |f| {
-                const redacted = try redactHome(a, f.value, home);
-                try obj.object.put(a, f.dotted_path, .{ .string = redacted });
-            }
-            const path_redacted = try redactHome(a, file.path, home);
-            try raw.object.put(a, path_redacted, obj);
-        }
-
         // *-urls arrays + static rule declarations
         try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
         try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
@@ -3069,6 +3076,11 @@ pub const dev = if (build_options.dev) struct {
         // decision #11 — evidence claims, one per detected dim, pinning
         // the attribution chain (source present in raw + value matching
         // the cooked dim). `from-ids` fixtures carry an empty array.
+        // Env-source claims on non-allowlisted env vars emit the
+        // literal `"<redacted>"` for `value` (decision #3) — the value
+        // the detector read was secret-shaped and must not be written to
+        // disk; the claim still records the dim/source/name so the
+        // attribution chain stays audit-trailable.
         {
             var ev_arr: V = .{ .array = std.json.Array.init(a) };
             for (d.raw.evidence) |claim| {
@@ -3080,7 +3092,11 @@ pub const dev = if (build_options.dev) struct {
                     try c_obj.object.put(a, "field", .{ .string = fld });
                 }
                 if (claim.value) |val| {
-                    try c_obj.object.put(a, "value", .{ .string = try redactHome(a, val, home) });
+                    const emitted = if (std.mem.eql(u8, claim.source, "env") and !envValueAllowed(claim.name))
+                        "<redacted>"
+                    else
+                        try redactHome(a, val, home);
+                    try c_obj.object.put(a, "value", .{ .string = emitted });
                 }
                 try ev_arr.array.append(c_obj);
             }
@@ -5865,11 +5881,15 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     /// decision #11 — mechanical evidence-claim validation. For every
     /// dim in `raw.detected`, at least one `raw.evidence` claim must:
     ///   - have that `dim`,
-    ///   - point at a source that is present in raw (env var name in
-    ///     raw.env, config/session path+field as a top-level raw key,
-    ///     lineage name in raw.process_lineage), and
+    ///   - point at a source that is present in raw (lineage name in
+    ///     raw.process_lineage — env/config/session sources are no
+    ///     longer verifiable in the slimmed raw block, so their
+    ///     presence is assumed from the claim itself), and
     ///   - have a `value` that equals/contains the cooked dim's
-    ///     canonical name (case-insensitive).
+    ///     canonical name (case-insensitive) — OR be the literal
+    ///     `"<redacted>"` (a secret-shaped env-source value that was
+    ///     redacted on write; the claim's dim/source/name chain is
+    ///     accepted on its own).
     /// This verifies the attribution chain only — semantic
     /// deducibility is human review. `from-ids` fixtures are excluded
     /// by their origin (declared, not observed).
@@ -5879,7 +5899,6 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
         const cooked = cooked_v.object;
         const detected = raw.get("detected") orelse return false;
         const evidence = raw.get("evidence") orelse return false;
-        const env = raw.get("env") orelse return false;
         const lineage = raw.get("process_lineage") orelse return false;
         if (detected != .array or evidence != .array) return false;
         outer: for (detected.array.items) |item| {
@@ -5892,23 +5911,13 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                 if (!std.mem.eql(u8, cdim, dim)) continue;
                 const source = jstr(eo, "source") orelse continue;
                 const name = jstr(eo, "name") orelse continue;
-                // source present in raw?
-                var present = false;
-                if (std.mem.eql(u8, source, "env")) {
-                    present = env.object.contains(name);
-                } else if (std.mem.eql(u8, source, "config") or std.mem.eql(u8, source, "session")) {
-                    if (raw.get(name)) |cfg| {
-                        if (cfg == .object) {
-                            if (jstr(eo, "field")) |fld| {
-                                present = cfg.object.contains(fld);
-                            } else {
-                                present = true;
-                            }
-                        } else {
-                            present = true;
-                        }
-                    }
-                } else if (std.mem.eql(u8, source, "lineage")) {
+                // source present in raw? (env/config/session sources are
+                // not verifiable in the slimmed raw block — the claim's
+                // dim/source/name chain is the attribution; only lineage
+                // claims are checked against raw.process_lineage.)
+                var present = true;
+                if (std.mem.eql(u8, source, "lineage")) {
+                    present = false;
                     for (lineage.array.items) |ent| {
                         if (ent == .object) {
                             const nm = jstr(ent.object, "name") orelse "";
@@ -5921,6 +5930,9 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                 }
                 if (!present) continue;
                 const value = jstr(eo, "value") orelse "";
+                // a redacted secret value is accepted as-is: the claim
+                // records the attribution chain but never the secret.
+                if (std.mem.eql(u8, value, "<redacted>")) continue :outer;
                 if (valueMatchesDim(value, dim, cooked)) continue :outer;
             }
             return false; // no valid claim for this dim
