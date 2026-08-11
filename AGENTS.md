@@ -18,6 +18,9 @@ only — do not pull their contents into this file.
 - https://github.com/bevry-vibes/skills/blob/main/minimax.md —
   **applies** when the running agent is a MiniMax M3 model (its rules
   gate themselves on model and harness).
+- https://github.com/bevry-vibes/skills/blob/main/kilo.md —
+  **applies** when the running harness is `kilo` (its rules gate
+  themselves on harness).
 
 This file is not policy — it is a pointer.
 
@@ -37,11 +40,3 @@ state (env markers, process ancestry, harness config/session files, the
 local Kilo DB) and performs no network I/O. Token cost arises only from
 the session hosting it — e.g. a live `fixtures capture` runs inside a
 real agent session, and that session is a model conversation.
-
-## kilo plans
-
-When the running harness is `kilo`, commit the session's
-`.kilo/plans/*.md` plan file(s) alongside the work they drive — a plan
-is part of the change it plans, not scratch. Stage and commit them in
-the same logical unit as the implementation, with the same co-author
-trailer.
