@@ -50,3 +50,16 @@ should use modern syntax where appropriate — pipeline chain operators
 `??=`), switch expressions, `ForEach-Object -Parallel`, typed class
 definitions, native-command `2>&1` stderr capture — instead of legacy
 forms.
+
+## harness configuration
+
+Never create, modify, or overwrite a harness's config/auth files or set
+API keys on the user's machine — this includes anything under
+`~/.<harness>/`, `~/.config/<harness>/`, `%APPDATA%`, and credential
+stores. Harness setup, logins, and API keys are the user's
+responsibility alone, and the user decides when configs change. This is
+a hard rule; do not probe for, ask for, offer to set, or write
+credentials. `agent-detect` reads these files read-only; the only
+config writes in this project are the from-raw fixture worker's, which
+land in a per-fixture sandboxed HOME (`~/.cache/agent-detect/workers`),
+never the real one.
