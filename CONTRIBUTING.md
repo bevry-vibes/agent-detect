@@ -193,10 +193,16 @@ an individual addition a user explicitly needs (a one-off
 `--harness= --provider= --model=` combo added on request is always
 allowed). Whether a model is free on a given provider only decides if a
 free launch/capture is attached — free on one provider is not free on
-another. Name variations across services (`:free` vs `-free`, release
-stamps like `-0731`, reasoning-effort suffixes) are coalesced into one
-canonical model per family and recorded as variations on the recipe —
-never added as duplicates. Reference cache: `docs/evergreen-top50-models.txt`
+another. Query free/paid from the harness's own model catalog first
+(e.g. omp's `~/.omp/agent/models.db` per-provider `cost`: input==0 →
+free); OpenRouter's `/api/v1/models` (explicit `:free` ids + `pricing`)
+and artificialanalysis.ai (per-model price) are good cross-checks.
+arena.ai (LMArena) and HF trending are not free/paid sources — they
+report rankings and published weights, not serving prices. Name
+variations across services (`:free` vs `-free`, release stamps like
+`-0731`, reasoning-effort suffixes) are coalesced into one canonical
+model per family and recorded as variations on the recipe — never added
+as duplicates. Reference cache: `docs/evergreen-top50-models.txt`
 (the tracked coalesced evergreen top-50 set that bulk additions must clear;
 a harness's own model catalog intersects it per provider to decide free
 launch/capture attachment).

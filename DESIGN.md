@@ -332,7 +332,17 @@ names the shipped behavior and why it was chosen.
      - [openrouter.ai/models?order=top-weekly](https://openrouter.ai/models?order=top-weekly).
      "Free on that provider" only decides whether a free launch/capture
      is attached — a model free on one provider is not assumed free on
-     another. Name variations across services (e.g. `gpt-5.6-sol` vs
+     another. Source of truth for free-vs-paid: a harness's own model
+     catalog (omp's `models.db` per-provider `cost`) is the best
+     harness-local source because it's the exact catalog the harness
+     resolves against; OpenRouter's `/api/v1/models` is the best
+     cross-provider source (explicit `:free` model ids + per-model
+     `pricing`); artificialanalysis.ai lists per-model price and its
+     cheapest/free models. arena.ai (LMArena) and HF trending are NOT
+     free/paid sources — rankings and published weights respectively,
+     not serving prices. The rank set (which models qualify) and the
+     free/paid determination are separate concerns. Name variations
+     across services (e.g. `gpt-5.6-sol` vs
      `gpt-5.6-luna`, `claude-opus-4.7/4.8/5`, `qwen3.5/3.6`, the
      `:free` vs `-free` vs `-0731` stamps) are coalesced into one
      canonical model per family, and the service-specific spellings are
