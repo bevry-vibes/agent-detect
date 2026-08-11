@@ -2549,7 +2549,7 @@ const usage =
     \\  trailer        print a commit trailer — requires a subtype (see `trailer help`)
     \\                   co-author     Co-authored-by: (Bevry commits.md)
     \\                   assisted-by   Assisted-by:   (e.g. GCC AI policy)
-    \\  is-reciprocal  check reciprocity compliance with Bevry's AI policy
+    \\  check-reciprocal  check reciprocity compliance with Bevry's AI policy
     \\  help           this help (also --help, -h, or no arguments)
     \\  version        print the version (also --version, -V)
     \\
@@ -2562,11 +2562,11 @@ const usage =
     \\  agent-detect cooked
     \\  agent-detect trailer co-author
     \\  agent-detect trailer assisted-by
-    \\  agent-detect is-reciprocal
+    \\  agent-detect check-reciprocal
     \\  agent-detect cooked --harness=kilo --provider=deepseek --model=deepseek-v4-flash
     \\
     \\exit codes:
-    \\  is-reciprocal: 0 is reciprocal · 10 not reciprocal · 9 undeterminable ·
+    \\  check-reciprocal: 0 is reciprocal · 10 not reciprocal · 9 undeterminable ·
     \\  8 undetectable · 7 unknown combo; others: 0 ok · 2 unrecognised argument ·
     \\  3 conflicting argument · 4 missing required arguments · 8 undetectable.
     \\  Full registry: DESIGN.md "exit status registry".
@@ -2881,7 +2881,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
 // in-process with the environment the daemon prepared. The released
 // binary (built with -Ddev=false, the default) has none of this — its
 // CLI surface is `cooked` (JSON report), `trailer co-author` /
-// `trailer assisted-by`, `is-reciprocal`, `help`, and
+// `trailer assisted-by`, `check-reciprocal`, `help`, and
 // `version`; no arguments shows help.
 
 pub const dev = if (build_options.dev) struct {
@@ -6238,7 +6238,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
 fn isKnownAction(word: []const u8) bool {
     return std.mem.eql(u8, word, "cooked") or
         std.mem.eql(u8, word, "trailer") or
-        std.mem.eql(u8, word, "is-reciprocal") or
+        std.mem.eql(u8, word, "check-reciprocal") or
         std.mem.eql(u8, word, "help") or
         std.mem.eql(u8, word, "version");
 }
@@ -6294,7 +6294,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     // `raw`/`fixtures`/`refresh` dispatch is compiled out of the
     // released binary (dev_build is false) — the released and dev
     // binaries both run the action parser below: `cooked`, `trailer`,
-    // `is-reciprocal`, `help`, `version` (with no arguments showing
+    // `check-reciprocal`, `help`, `version` (with no arguments showing
     // help).
     if (dev_build) {
         var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.OutOfMemory;
@@ -6358,15 +6358,15 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     }
 
     // action parser. The canonical spellings are the bare words
-    // `cooked`, `trailer` (with a subtype), `is-reciprocal`, `help`,
+    // `cooked`, `trailer` (with a subtype), `check-reciprocal`, `help`,
     // and `version`; the `--help`/`-h` and `--version`/`-V` forms are
     // aliases. No arguments prints help. `cooked`, `trailer <type>`,
-    // and `is-reciprocal` accept an optional complete combo
+    // and `check-reciprocal` accept an optional complete combo
     // (`--harness=H --provider=P --model=M` — all three or none) for
     // recipe-mode output. help/version win over everything: any
     // help/version flag anywhere at top level short-circuits to the
     // relevant usage/version output (exit 0), never a conflict.
-    var action: []const u8 = ""; // "", "cooked", "trailer", "is-reciprocal", "help", "version"
+    var action: []const u8 = ""; // "", "cooked", "trailer", "check-reciprocal", "help", "version"
     var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
     var help_wanted = false;
     var version_wanted = false;
@@ -6385,7 +6385,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             if (action.len == 0) action = "help";
         } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
             version_wanted = true;
-        } else if (std.mem.eql(u8, arg, "cooked") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "is-reciprocal")) {
+        } else if (std.mem.eql(u8, arg, "cooked") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal")) {
             // an action word. After `help` it is the topic (`help trailer`).
             if (action.len == 0) {
                 action = arg;
@@ -6515,7 +6515,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
 
 /// dispatch the resolved action on a fully-shaped `Detection`. Handles
 /// the shared identity-completeness gate (exit 8), the trailer subtypes
-/// (co-author / assisted-by), the is-reciprocal tri-state, and the
+/// (co-author / assisted-by), the check-reciprocal tri-state, and the
 /// cooked/raw data-output semantics (exit 9 on incomplete policy data).
 fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, trailer_type: []const u8) !u8 {
     const a = init.arena.allocator();
@@ -6539,7 +6539,7 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
         return EXIT_OK;
     }
 
-    if (std.mem.eql(u8, action, "is-reciprocal")) {
+    if (std.mem.eql(u8, action, "check-reciprocal")) {
         switch (reciprocityOf(d)) {
             .reciprocal => {
                 writeOut(io, "is reciprocal\n");

@@ -28,7 +28,7 @@ above `pub fn detect` in `src/main.zig`.
 The released binary must stay minimal — no raw dump, no subcommands,
 no fixtures — so it ships as a single static file with no surprises.
 Its CLI surface is `cooked`, `trailer co-author`, `trailer assisted-by`,
-`is-reciprocal`, `help`, `version`. The dev
+`check-reciprocal`, `help`, `version`. The dev
 binary (`agent-detect-dev`) carries the maintainer's full toolkit: the
 standalone `raw` action (raw observations block) and the `fixtures`
 subcommand namespace (capture / daemon / queue / dequeue). The split
@@ -155,7 +155,7 @@ in CONTRIBUTING.md "daemon launch: macOS LaunchAgent bootstrap".
 Some harnesses are hard or impossible to detect live (they don't run
 inside their own session, or leave no reliable markers). For those, a
 maintainer adds the harness/provider/model to the rule tables and
-`cooked`/`trailer co-author`/`trailer assisted-by`/`is-reciprocal`
+`cooked`/`trailer co-author`/`trailer assisted-by`/`check-reciprocal`
 accept a complete combo
 (`--harness=H --provider=P --model=M`) that resolves against the
 rules without live detection. All three dims are required (or none);
@@ -212,7 +212,7 @@ Examples per group:
 
 - **0** — `cooked` (identified) → JSON; `trailer co-author` →
   `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`;
-  `is-reciprocal` → `is reciprocal`; `version` → `agent-detect
+  `check-reciprocal` → `is reciprocal`; `version` → `agent-detect
   <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help
   trailer` → usage.
 - **1** — uncaught error → `error: <name>` + trace.
@@ -226,18 +226,18 @@ Examples per group:
   environment refusing run`.
 - **6** — dev `fixtures *` with no `sqlite3` on PATH → `incomplete
   environment preventing run`.
-- **7** — `cooked`/`trailer co-author`/`is-reciprocal`
+- **7** — `cooked`/`trailer co-author`/`check-reciprocal`
   `--harness=foo --provider=bar --model=baz` → `missing specified
   agent (harness, provider, model)`.
-- **8** — `cooked`/`trailer co-author`/`is-reciprocal` when live
+- **8** — `cooked`/`trailer co-author`/`check-reciprocal` when live
   detection resolves nothing (plain shell); dev `fixtures capture`
   partial → `unable to detect unspecified agent (harness, provider,
   model)`.
-- **9** — `is-reciprocal` with identity resolved but
+- **9** — `check-reciprocal` with identity resolved but
   `harness_license`/`model_reciprocity`/`provider_closed_training`
   null (e.g. crush/hyper/qwen3.7-plus) → `agent (harness, provider,
   model) data incomplete to make a determination`.
-- **10** — `is-reciprocal` for kilo/anthropic/claude-sonnet-4 (closed
+- **10** — `check-reciprocal` for kilo/anthropic/claude-sonnet-4 (closed
   model) → stderr `agent (harness, provider, model) data complete and
   requirement failed`, stdout `not reciprocal`.
 - **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.)
@@ -248,7 +248,7 @@ Examples per group:
 - **13** — dev capture/daemon `createDirPath`/`openDir`/`writeFile`/
   log-`createFile` failures → filesystem I/O error.
 
-**stdout/stderr discipline.** `is-reciprocal` writes its determination
+**stdout/stderr discipline.** `check-reciprocal` writes its determination
 to stdout only (`is reciprocal` on 0, `not reciprocal` on 10); exits
 7/8/9 are stderr-only. `cooked`/`raw` are data-output actions: exit 8
 (identity unresolved) writes **no stdout** (no sensible data), exit 9
@@ -292,7 +292,7 @@ names the shipped behavior and why it was chosen.
    dump in the released artifact — the `dev` modular
    (comptime-gated) block in `src/main.zig` drops that code at
    compile time. Released actions: `cooked`, `trailer co-author`,
-   `trailer assisted-by`, `is-reciprocal`, `help`, `version`.
+   `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
 9. **The 18-field canonical fixture contract.** Test-enforced
    (see `src/known_fixtures.test.zig`); the raw block is shapeless
    (source-grouped keys), and harness rule *static* data
@@ -305,7 +305,7 @@ names the shipped behavior and why it was chosen.
 11. **Recipe-mode `cooked`.** A harness whose provider/model can't be
     auto-detected is a warning for a later dev agent, not a hard
     failure: `cooked`/`trailer co-author`/`trailer assisted-by`/
-    `is-reciprocal` accept a full
+    `check-reciprocal` accept a full
     `--harness= --provider= --model=` combo resolved from the rule
     tables.
  12. **`*_id` fields are strict slugs.** `harness_id`, `provider_id`,

@@ -316,7 +316,7 @@ harness config; flag any needed global change instead.
 ## recipe-mode cooked / trailer (hard-to-detect agents)
 
 `cooked`, `trailer co-author`, `trailer assisted-by`, and
-`is-reciprocal` accept a complete combo to emit a report
+`check-reciprocal` accept a complete combo to emit a report
 without live detection:
 
 ```sh
