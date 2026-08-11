@@ -145,6 +145,10 @@ because the daemon isn't running, the correct action is for the
 agent to surface the command and the directory the user should run
 it in. The agent never runs the daemon. The exact guard and what it
 checks is documented on `runFixturesDaemon` in `src/main.zig`.
+A user run from a terminal is the baseline; on macOS the same clean
+user context can be achieved without a terminal via the per-user
+LaunchAgent bootstrap (no sudo, launchd-parented), which is documented
+in CONTRIBUTING.md "daemon launch: macOS LaunchAgent bootstrap".
 
 ### recipe-mode cooked/trailer (hard-to-detect agents)
 

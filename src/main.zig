@@ -4013,8 +4013,11 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             } else if (std.mem.startsWith(u8, arg, "--stale-by-minutes=")) {
                 f.stale_by_minutes = std.fmt.parseInt(i64, arg["--stale-by-minutes=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.eql(u8, arg, "--from-ids") or std.mem.eql(u8, arg, "--from-raw") or std.mem.eql(u8, arg, "--from-capture")) {
-                // exactly one mode flag (two+ → conflicting).
-                const m = arg["--from-".len..];
+                // exactly one mode flag (two+ → conflicting). The stored
+                // value is the FULL "from-*" string (not the prefix
+                // stripped off) so modeRank and the daemon's worker
+                // branch can compare it verbatim.
+                const m = arg[2..];
                 if (f.mode.len > 0 and !std.mem.eql(u8, f.mode, m)) return FilterError.ConflictingFilters;
                 f.mode = m;
             }

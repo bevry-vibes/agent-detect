@@ -203,6 +203,60 @@ printf 'stop\n'   > fixtures/daemon.ctl   # stop after the in-flight job
 The daemon checks the file every ~1s and clears it after acting; Ctrl+C
 in the daemon terminal is the graceful-stop shortcut.
 
+### daemon launch: macOS LaunchAgent bootstrap (macOS-only, no sudo)
+
+The daemon is user-only (`assertNotInAgent`): it refuses to start when
+an ancestor process matches a harness agent (e.g. `kilo`), so it must
+run as a plain user process with a clean ancestry and environment. A
+terminal is the baseline way to do that on every platform.
+
+On macOS the daemon can instead be registered with the per-user
+LaunchAgent domain via `launchctl bootstrap`, which needs **no sudo and
+no permission dialogs**: `gui/$(id -u)` is your own launchd adopting
+your own agent, so no privilege escalation or TCC prompt is involved.
+The job then survives the terminal closing, and launchd respawns it on
+crash. The plist may live anywhere — `bootstrap` takes a path, not just
+`~/Library/LaunchAgents`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.agent-detect.fixtures</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/abs/path/to/zig-out/bin/agent-detect-dev</string>
+    <string>fixtures</string>
+    <string>daemon</string>
+    <string>--write-log</string>
+  </array>
+  <key>WorkingDirectory</key><string>/abs/path/to/repo</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+</dict>
+</plist>
+```
+
+```sh
+launchctl bootstrap "gui/$(id -u)" /path/to/agent-detect.fixtures.plist   # start
+launchctl bootout  "gui/$(id -u)"/com.agent-detect.fixtures               # stop + unload
+launchctl list | rg com.agent-detect.fixtures                             # status
+```
+
+Because launchd parents the job directly, the daemon's environment and
+`process_lineage` are clean — the same user context the guard requires,
+so a fixture captured this way is indistinguishable from one captured
+from a terminal. Only the `system/` domain (root `LaunchDaemon`s) needs
+sudo; per-user `gui/` jobs never do.
+
+Limitations: the caller must already be inside the user's GUI session
+(a terminal or app) — headless `ssh` sessions are not attached to it,
+so `bootstrap` fails there; use `tmux`/`screen` instead. This is
+macOS-only; the sudo-free equivalents elsewhere are `systemd --user`
+(`systemctl --user enable --now <unit>`) on Linux and Task Scheduler /
+NSSM on Windows. The plain terminal run stays the universal baseline.
+
 ### refresh / token warning
 
 Queue jobs run in three modes. `from-ids` resolves cooked from provided
