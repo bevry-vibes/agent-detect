@@ -72,7 +72,7 @@ combination is two `--stale-by-*` age thresholds:
 - `--stale-by-version` — version-marker scope. The daemon compares a
   live `--version` call against the fixture's captured
   `harness_version` (a `fixtures` column stamped at capture time;
-  `from-ids` rows carry null). Combine it with an age threshold to
+  `from-identity` rows carry null). Combine it with an age threshold to
   skip only when the fixture is age-fresh **and** version-equal.
 - `--partial` — `queue` rows with at least one missing dim (seeds).
 - `--recipes` — every known recipe (`recipesForFixtures`,
@@ -189,12 +189,12 @@ zig build dev
 ./zig-out/bin/agent-detect-dev fixtures daemon --write-log
 ```
 
-The daemon pops rows in order `from-ids` → `from-raw` → `from-capture`
+The daemon pops rows in order `from-identity` → `from-raw` → `from-capture`
 and captures each recipe to `fixtures/<id>-<platform>.json`. Review each
 fixture's evidence claims as they land. Contributors add other combos
 (rules → recipes → captures on their platform):
 
-- `--from-ids` — declared-only population: the harness is not installed
+- `--from-identity` — declared-only population: the harness is not installed
   or won't run. Zero tokens; the fixture is declared, not observed.
 - `--from-raw` (default) — fabricated runtime + live detection ladder.
   Zero tokens.
@@ -235,7 +235,7 @@ launch/capture attachment).
 Run the daemon with `fixtures daemon --write-log` (log:
 `fixtures/daemon.log`) and poll that log at ~1s — the daemon writes a
 status heartbeat every ~1s, faster than the iteration delays.
-Pacing: `from-ids`/`from-raw` jobs process at ~5s intervals
+Pacing: `from-identity`/`from-raw` jobs process at ~5s intervals
 (`--poll-seconds=N`); each `from-capture` is announced ~15s ahead
 (`--capture-review-seconds=N`, cancellable) and followed by a ~15s
 review pause. Control is the same on macOS/Linux/Windows:
@@ -317,7 +317,7 @@ NSSM on Windows. The plain terminal run stays the universal baseline.
 
 ### refresh / token warning
 
-Queue jobs run in three modes. `from-ids` resolves cooked from provided
+Queue jobs run in three modes. `from-identity` resolves cooked from provided
 ids — zero tokens, no harness, declared-not-observed fixtures.
 `from-raw` (default) fabricates env markers + config files and runs the
 detection ladder via `refresh run` — zero tokens, no harness session.
@@ -518,7 +518,7 @@ maintains them.
   env `ANTHROPIC_MODEL`/`ANTHROPIC_BASE_URL`/`ANTHROPIC_AUTH_TOKEN` +
   `CLAUDE_CODE_*`; config `~/.claude/settings.json` + `~/.claude.json`;
   sessions `~/.claude/projects/`; proc `claude`). Native binary broken
-  on the maintainer's machine (npm postinstall) — rules/from-ids land
+  on the maintainer's machine (npm postinstall) — rules/from-identity land
   regardless of install.
 - [ ] **codex** — OpenAI Codex CLI (`codex exec <prompt>`; config
   `~/.codex/config.toml` `model`/`model_provider`; sessions
@@ -530,9 +530,9 @@ maintains them.
   `~/.gemini/settings.json`; proc `gemini`).
 - [ ] **amp / roo / qoder / openhands** — maintained CLIs (Replit/Anvil,
   Roo Code, Alibaba, OpenHands); not installed on the maintainer's
-  machine; rules + from-ids fixtures when a contributor picks them up.
+  machine; rules + from-identity fixtures when a contributor picks them up.
 - [ ] **devin / droid / zencoder / kimchi / firebender** — declared-only
-  (from-ids) Tier-2 harnesses; config dirs `~/.config/devin/`,
+  (from-identity) Tier-2 harnesses; config dirs `~/.config/devin/`,
   `~/.factory/`, `~/.zencoder/`, `~/.config/kimchi/harness/`,
   `~/.firebender/`; rules + recipes when a contributor picks them up.
 - [ ] **continue / cody / windsurf** — other VS Code-embedded agents

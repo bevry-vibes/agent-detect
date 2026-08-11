@@ -106,7 +106,7 @@ tables**:
   with `platform` always the host platform. This is **state**: what has
   been captured and when (`generated_at`), plus the `harness_version`
   captured by a live `--version` call during the capture (decision #6;
-  null for declared `from-ids` rows). Written only by `fixtures
+  null for declared `from-identity` rows). Written only by `fixtures
   capture`, the daemon, and the lazy file-based backfill.
 - `queue` — the work **queue**: "capture <these dims> [under this
   scope]". Dims are nullable (NULL = unset seed); each scope filter is
@@ -138,20 +138,22 @@ guess" rule). `fixtures dequeue` is a pure **DELETE** of matching
 ### lazy file-based backfill (replaces the old JSONL migration)
 
 The store is **not** backfilled at init. Instead, when the daemon
-processes a full queue row with `refresh:false` semantics (no
-`scope_all`) and a valid committed `fixtures/<fixture_id>.json` exists
-for the combo — the file parses and its `cooked` block carries the
-exact dims — the daemon upserts the `fixtures` row from the file and
-completes without spawning a capture. Fixture files carry no
-timestamps, so the row records `runner = getParentPid()` and
-`generated_at = unixNow()`. This is the "already captured, don't
-re-capture" behavior.
+processes a full queue row and **no `fixtures` row exists yet** for the
+combo, but a valid committed `fixtures/<fixture_id>.json` does — the
+file parses and its `cooked` block carries the exact dims — the daemon
+upserts the `fixtures` row from the file and completes without spawning
+a capture. Fixture files carry no timestamps, so the row records
+`runner = getParentPid()` and `generated_at = unixNow()`. This is the
+fresh-clone store-population path (decision #6). Once a `fixtures` row
+exists, a queued full combo **always re-captures** — there is no
+"already captured, don't re-capture" skip; the only skip mechanisms are
+the `--stale-by-*` markers below.
 
 ### harness-version tracking + `--stale-by-version`
 
 A captured fixture records the harness's live `--version` snapshot in
 `fixtures.harness_version` (stamped by `fixtures capture` / the daemon
-via a zero-token `--version` call; declared `from-ids` rows carry
+via a zero-token `--version` call; declared `from-identity` rows carry
 null). The `--stale-by-version` scope queues rows whose live
 `--version` differs from the stored value, so a harness upgrade re-
 captures its fixtures without waiting for an age threshold. The daemon
@@ -163,13 +165,14 @@ uninstalled harness is inconclusive (proceeds to capture). Version
 comparison is exact-string mismatch; a semver/calver "newer-than"
 comparator is a future refinement.
 
-Scope flags all AND together; `--all` is the explicit default scope
-and is absorbed by any other scope flag. The only conflicting
-combination is two `--stale-by-*` age thresholds (`--stale-by-days=`,
-`--stale-by-hours=`, `--stale-by-minutes=`), which all store their
-threshold as MINUTES in the single `stale_by_minutes` column. The
-standalone `--stale` flag was dropped in favour of the explicit
-markers (see the fixtures help for the current surface).
+Scope flags all AND together; `--all` is a no-op alias for the plain
+`queue`/`dequeue` (the default scope) and is absorbed by any other scope
+flag. The only conflicting combination is two `--stale-by-*` age
+thresholds (`--stale-by-days=`, `--stale-by-hours=`,
+`--stale-by-minutes=`), which all store their threshold as MINUTES in
+the single `stale_by_minutes` column. The standalone `--stale` flag was
+dropped in favour of the explicit markers (see the fixtures help for the
+current surface).
 
 ### user-only daemon (not the agent)
 
@@ -316,8 +319,14 @@ names the shipped behavior and why it was chosen.
    `fixtures` workflow only (documented in CONTRIBUTING.md).
 4. **Kilo live-DB fallback.** Live identity inference falls back
    env marker → `KILO_MODEL` → a direct read of the live
-   `~/.local/share/kilo/kilo.db` (newest session row for the cwd).
-   Production stays SQLite-free except for this read-only Kilo store.
+   `~/.local/share/kilo/kilo.db`. The *active* session is the
+   non-archived session whose newest `message` was written in the cwd
+   (real conversational activity, not the session row's `time_updated`,
+   which background syncs/compaction bump — and not the lazily-written
+   `session.model` column). Opencode uses the same schema/query via
+   `~/.local/share/opencode/opencode.db`; copilot prefers its running
+   non-archived session. Production stays SQLite-free except for these
+   read-only session-store reads.
 5. **No `--no-*` flags.** A `fixtures` row always has all four
    dims NOT NULL; an unset dim is expressed as a NULL seed dim in
    `queue` only. There is no "explicit null" CLI spelling.
@@ -431,18 +440,18 @@ re-litigating scope.
   deducibility is human review (capture review window + commit review).
   Sources that can't serialize into a claim (custom database formats,
   e.g. kilo's sqlite session store) are logged follow-ups, never faked.
-  `from-ids` fixtures are declared, not observed — excluded by `origin`.
+  `from-identity` fixtures are declared, not observed — excluded by `origin`.
 - **Cross-platform daemon control principle (decision #12):** one
   `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop` across
   macOS/Linux/Windows — no per-platform signal doubles. Ctrl+C stays
   the terminal graceful-stop shortcut; the daemon clears the control
   file after acting.
 - **Refresh flavours:** every queue job runs in one of three modes —
-  `from-ids` (resolve cooked from provided ids; declared, not observed;
+  `from-identity` (resolve cooked from provided ids; declared, not observed;
   zero tokens; harness not required), `from-raw` (default; fabricate env
   markers + config files and run the detection ladder via `refresh run`;
   zero tokens), and `from-capture` (launch the real harness so it runs
   `fixtures capture` in a live model session; token-consuming,
   user-confirmed only). Every fixture carries a top-level `origin` key
-  (`"from-ids" | "from-raw" | "from-capture"`). See CONTRIBUTING.md for
+  (`"from-identity" | "from-raw" | "from-capture"`). See CONTRIBUTING.md for
   installs and the probing runbook.
