@@ -47,28 +47,16 @@
     },
     "process_lineage": [
       {
-        "pid": 33902,
+        "pid": 63452,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33901,
-        "name": "bash"
+        "pid": 63375,
+        "name": "node"
       },
       {
-        "pid": 33834,
-        "name": "bash"
-      },
-      {
-        "pid": 33833,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
-        "name": "bash"
+        "pid": 63101,
+        "name": "agent-detect-dev"
       }
     ],
     "harness-urls": [
@@ -105,5 +93,5 @@
     ]
   },
   "trailer": "Co-authored-by: Pi · DeepSeek V4 Flash <pi-deepseek-deepseekv4flash@local>",
-  "origin": "from-raw"
+  "origin": "from-capture"
 }

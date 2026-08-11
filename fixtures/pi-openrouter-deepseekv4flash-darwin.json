@@ -5,19 +5,19 @@
     "harness_name": "pi",
     "harness_id": "pi",
     "harness_license": "MIT",
-    "provider_label": "MiniMax",
-    "provider_name": "minimax",
-    "provider_id": "minimax",
-    "provider_closed_training": "opt-in",
-    "provider_open_training": "opt-in",
-    "model_label": "MiniMax M3",
-    "model_short_title": "M3",
-    "model_name": "MiniMax-M3",
-    "model_id": "minimaxm3",
+    "provider_label": "OpenRouter",
+    "provider_name": "openrouter",
+    "provider_id": "openrouter",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "DeepSeek V4 Flash",
+    "model_short_title": null,
+    "model_name": "deepseek/deepseek-v4-flash",
+    "model_id": "deepseekv4flash",
     "model_reciprocity": "open-weight",
-    "agent_id": "pi-minimax-minimaxm3",
+    "agent_id": "pi-openrouter-deepseekv4flash",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Pi · MiniMax M3 <pi-minimax-minimaxm3@local>"
+    "trailer": "Co-authored-by: Pi · DeepSeek V4 Flash <pi-openrouter-deepseekv4flash@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -37,21 +37,25 @@
         "present": true
       },
       "PI_PROVIDER": {
-        "value": "minimax",
+        "value": "openrouter",
         "present": true
       },
       "PI_MODEL": {
-        "value": "MiniMax-M3",
+        "value": "deepseek/deepseek-v4-flash",
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 66810,
+        "pid": 68456,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 66666,
+        "pid": 68455,
+        "name": "bash"
+      },
+      {
+        "pid": 67668,
         "name": "node"
       },
       {
@@ -64,13 +68,12 @@
       "https://github.com/earendil-works/pi/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/terms-of-service",
-      "https://platform.minimax.io/docs/guides/privacy-policy"
+      "https://openrouter.ai/privacy",
+      "https://openrouter.ai/terms"
     ],
     "model-urls": [
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
-      "https://www.minimax.io/blog/minimax-m3"
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
     ],
     "evidence": [
       {
@@ -83,16 +86,16 @@
         "dim": "provider",
         "source": "env",
         "name": "PI_PROVIDER",
-        "value": "minimax"
+        "value": "openrouter"
       },
       {
         "dim": "model",
         "source": "env",
         "name": "PI_MODEL",
-        "value": "MiniMax-M3"
+        "value": "deepseek/deepseek-v4-flash"
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi · MiniMax M3 <pi-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: Pi · DeepSeek V4 Flash <pi-openrouter-deepseekv4flash@local>",
   "origin": "from-capture"
 }

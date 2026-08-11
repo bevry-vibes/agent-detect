@@ -5,19 +5,19 @@
     "harness_name": "pi",
     "harness_id": "pi",
     "harness_license": "MIT",
-    "provider_label": "MiniMax",
-    "provider_name": "minimax",
-    "provider_id": "minimax",
-    "provider_closed_training": "opt-in",
-    "provider_open_training": "opt-in",
-    "model_label": "MiniMax M3",
-    "model_short_title": "M3",
-    "model_name": "MiniMax-M3",
-    "model_id": "minimaxm3",
+    "provider_label": "Mistral",
+    "provider_name": "mistral",
+    "provider_id": "mistral",
+    "provider_closed_training": "opt-out",
+    "provider_open_training": "opt-out",
+    "model_label": "Mistral Large (latest)",
+    "model_short_title": null,
+    "model_name": "mistral-large-latest",
+    "model_id": "mistrallargelatest",
     "model_reciprocity": "open-weight",
-    "agent_id": "pi-minimax-minimaxm3",
+    "agent_id": "pi-mistral-mistrallargelatest",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Pi · MiniMax M3 <pi-minimax-minimaxm3@local>"
+    "trailer": "Co-authored-by: Pi · Mistral Large (latest) <pi-mistral-mistrallargelatest@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -37,21 +37,21 @@
         "present": true
       },
       "PI_PROVIDER": {
-        "value": "minimax",
+        "value": "mistral",
         "present": true
       },
       "PI_MODEL": {
-        "value": "MiniMax-M3",
+        "value": "mistral-large-latest",
         "present": true
       }
     },
     "process_lineage": [
       {
-        "pid": 66810,
+        "pid": 71375,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 66666,
+        "pid": 71329,
         "name": "node"
       },
       {
@@ -64,13 +64,12 @@
       "https://github.com/earendil-works/pi/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://platform.minimax.io/docs/guides/terms-of-service",
-      "https://platform.minimax.io/docs/guides/privacy-policy"
+      "https://docs.mistral.ai/legal/terms-of-service/",
+      "https://docs.mistral.ai/legal/acceptable-use-policy/"
     ],
     "model-urls": [
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3",
-      "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
-      "https://www.minimax.io/blog/minimax-m3"
+      "https://docs.mistral.ai/getting-started/models/models_overview/",
+      "https://docs.mistral.ai/getting-started/models/"
     ],
     "evidence": [
       {
@@ -83,16 +82,16 @@
         "dim": "provider",
         "source": "env",
         "name": "PI_PROVIDER",
-        "value": "minimax"
+        "value": "mistral"
       },
       {
         "dim": "model",
         "source": "env",
         "name": "PI_MODEL",
-        "value": "MiniMax-M3"
+        "value": "mistral-large-latest"
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi · MiniMax M3 <pi-minimax-minimaxm3@local>",
+  "trailer": "Co-authored-by: Pi · Mistral Large (latest) <pi-mistral-mistrallargelatest@local>",
   "origin": "from-capture"
 }

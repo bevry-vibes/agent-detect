@@ -301,6 +301,10 @@ pub const rulesForProviders = [_]ProviderRule{
     // zai: null/null — Z.ai (Zhipu AI) trains models itself (the GLM
     // family); API training-policy wording unverified, stays null.
     .{ .name = "zai", .label = "Z.ai", .closed_training = null, .open_training = null, .sources = &.{ "https://www.z.ai/terms-of-service", "https://www.z.ai/privacy-policy" } },
+    // xai: null/null — xAI trains the Grok family itself; API
+    // training-policy wording unverified, stays null (same source set
+    // as the grok model rules).
+    .{ .name = "xai", .label = "xAI", .closed_training = null, .open_training = null, .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
     // moonshot: null/null — Moonshot AI trains models (the Kimi
     // family); API training-policy wording unverified, stays null.
     .{ .name = "moonshot", .label = "Moonshot", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
@@ -483,7 +487,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     .{ .name = "mmx", .label = "MiniMax CLI", .license = "MIT", .license_sources = &.{ "https://github.com/MiniMax-AI/cli", "https://www.npmjs.com/package/mmx-cli" }, .env_markers = &mmx_env, .proc_names = &.{} }, // node-based; exe name is generic
     // pi: MIT — https://github.com/earendil-works/pi ships a MIT
     // LICENSE (Copyright Mario Zechner; the Rust terminal coding agent).
-    .{ .name = "pi", .label = "Pi", .license = "MIT", .license_sources = &.{ "https://github.com/earendil-works/pi", "https://github.com/earendil-works/pi/blob/main/LICENSE" }, .env_markers = &pi_env, .proc_names = &.{} },
+    .{ .name = "pi", .label = "Pi", .license = "MIT", .license_sources = &.{ "https://github.com/earendil-works/pi", "https://github.com/earendil-works/pi/blob/main/LICENSE" }, .env_markers = &pi_env, .proc_names = &.{ "pi", "pi.exe" } },
     // qwen: Apache-2.0 — https://github.com/QwenLM/qwen-code (the Qwen
     // Code CLI, formerly Apollo) ships an Apache-2.0 LICENSE.
     .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .env_markers = &qwen_env, .proc_names = &.{} },
@@ -1999,11 +2003,12 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
     if (provider_env != null and model_env != null) {
         const provider = provider_env.?;
         const model = model_env.?;
-        d.provider_name = provider;
-        d.provider_label = providerForName(provider) orelse try titleCase(a, provider);
-        try applyProviderMeta(a, d, provider);
+        const provider_canon = try piProviderCanonical(a, provider);
+        d.provider_name = provider_canon;
+        d.provider_label = providerForName(provider_canon) orelse try titleCase(a, provider_canon);
+        try applyProviderMeta(a, d, provider_canon);
         try applyModel(a, d, model, model);
-        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "PI_PROVIDER", .value = provider });
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "PI_PROVIDER", .value = provider_canon });
         try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "PI_MODEL", .value = model });
         return;
     }
@@ -2026,21 +2031,31 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
         else => return,
     };
     if (provider.len == 0 or model.len == 0) return;
+    const provider_canon = try piProviderCanonical(a, provider);
 
-    d.provider_name = provider;
-    d.provider_label = providerForName(provider) orelse try titleCase(a, provider);
-    try applyProviderMeta(a, d, provider);
+    d.provider_name = provider_canon;
+    d.provider_label = providerForName(provider_canon) orelse try titleCase(a, provider_canon);
+    try applyProviderMeta(a, d, provider_canon);
     try applyModel(a, d, model, model);
 
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
-    try fields.append(a, .{ .dotted_path = "defaultProvider", .value = provider });
+    try fields.append(a, .{ .dotted_path = "defaultProvider", .value = provider_canon });
     try fields.append(a, .{ .dotted_path = "defaultModel", .value = model });
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "defaultProvider", .value = provider });
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "defaultProvider", .value = provider_canon });
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "defaultModel", .value = model });
+}
+
+/// map pi's provider names onto agent-detect's canonical provider ids
+/// (pi names its Moonshot upstream `moonshotai`; agent-detect calls it
+/// `kimi`). Other providers already match (deepseek, minimax, openrouter,
+/// groq, cerebras, mistral, xai).
+fn piProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
+    if (std.mem.eql(u8, provider, "moonshotai")) return a.dupe(u8, "kimi");
+    return provider;
 }
 
 /// tri-state reciprocity determination for `d`:
@@ -3875,8 +3890,19 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv },
     // pi — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash, minimax/m3
     .{ .agent_id = "pi-anthropic-claudesonnet4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
-    .{ .agent_id = "pi-deepseek-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
-    .{ .agent_id = "pi-minimax-minimaxm3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-deepseek-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-flash", "-p", capture_prompt } },
+    .{ .agent_id = "pi-minimax-minimaxm3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "minimax", "--model", "MiniMax-M3", "-p", capture_prompt } },
+    // pi additions (pi authed with these providers 2026-08-11). The
+    // groq/cerebras/xai/moonshot recipes have no launch spec: this
+    // account's groq key 404s llama-4, cerebras 404s every catalog id,
+    // xai reports no credits (403), moonshot is rate-limited (429) —
+    // from-ids/from-raw still cover them.
+    .{ .agent_id = "pi-openrouter-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "deepseek/deepseek-v4-flash", "-p", capture_prompt } },
+    .{ .agent_id = "pi-groq-llama4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-cerebras-qwen3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-mistral-mistrallargelatest", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "mistral", "--model", "mistral-large-latest", "-p", capture_prompt } },
+    .{ .agent_id = "pi-xai-grok4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-kimi-kimik3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
     // qwen — minimax/m3 (keep), deepseek/v4-flash, qwen/qwen3.8-max
     .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
     .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
