@@ -219,17 +219,18 @@ test "fixtures: raw.process_lineage entries are subobjects with pid + name" {
     }
 }
 
-test "fixtures: raw.env entries always carry present; value only when real" {
-    // Each declared env-marker gets one entry in raw.env, even when
-    // absent from the runtime env (`present: false`) — so a maintainer
-    // reading the fixture can see every marker the rule declared and
-    // distinguish "absent" from "redacted-for-allow-list" by checking
-    // whether `value` is present.
-    //   - real value emitted: `{"value": "...", "present": true}`
-    //   - absent in runtime: `{"present": false}`
-    //   - redacted secret:   `{"present": true}` (no value)
-    // The KEY is the env-var name (so JSON round-trips via
-    // `env.get("NAME")`); the entry always has `present` as a bool.
+test "fixtures: raw is slim — no env/file objects; secret env evidence is <redacted>" {
+    // Decision #4 (raw slimming): the raw block drops the `env` object
+    // and the per-file config/session objects — the `evidence` section
+    // documents the sources that informed each canonical deduction. The
+    // remaining top-level keys are the fixed set (+ the optional static
+    // `harness_version`). Env-source evidence claims on non-allowlisted
+    // names carry the literal `<redacted>` value; allowlisted names keep
+    // the value the detector read.
+    const fixed_keys = [_][]const u8{
+        "platform_id", "detectable", "detected", "process_lineage",
+        "harness-urls", "provider-urls", "model-urls", "evidence",
+    };
     const stems = try discoverStems(testing.allocator);
     defer {
         for (stems) |s| testing.allocator.free(s);
@@ -238,14 +239,35 @@ test "fixtures: raw.env entries always carry present; value only when real" {
     for (stems) |stem| {
         const parsed = (try readFixtureParsed(testing.allocator, stem)) orelse continue;
         defer parsed.deinit();
-        const env = parsed.value.object.get("raw").?.object.get("env").?.object;
-        try testing.expect(env.count() >= 1); // at least one declared marker
-        for (env.values()) |entry| {
-            const ev = entry.object;
-            try testing.expect(ev.get("present") != null);
-            try testing.expect(ev.get("present").? == .bool);
-            if (ev.get("value")) |v| {
-                try testing.expect(v == .string);
+        const raw = parsed.value.object.get("raw").?.object;
+        try testing.expect(!raw.contains("env"));
+        for (raw.keys()) |key| {
+            var known = false;
+            for (fixed_keys) |fk| {
+                if (std.mem.eql(u8, key, fk)) known = true;
+            }
+            // the optional static rule-declared version is allowed.
+            if (std.mem.eql(u8, key, "harness_version")) known = true;
+            if (!known) {
+                std.debug.print("fixture {s} has unexpected raw top-level key '{s}'\n", .{ stem, key });
+                return error.UnexpectedRawKey;
+            }
+        }
+        // evidence claims: env-source on non-allowlisted names → `<redacted>`.
+        const evidence = raw.get("evidence").?.array;
+        for (evidence.items) |ev| {
+            if (ev != .object) continue;
+            const eo = ev.object;
+            const source = eo.get("source") orelse continue;
+            if (source != .string or !std.mem.eql(u8, source.string, "env")) continue;
+            const name = eo.get("name") orelse continue;
+            if (name != .string) continue;
+            const value = eo.get("value") orelse continue;
+            try testing.expect(value == .string);
+            if (!main.dev.isEnvValueAllowed(name.string)) {
+                try testing.expectEqualStrings("<redacted>", value.string);
+            } else {
+                try testing.expect(!std.mem.eql(u8, value.string, "<redacted>"));
             }
         }
     }
@@ -360,13 +382,14 @@ test "fixtures: cooked *_name fields are non-empty strings" {
     }
 }
 
-test "fixtures: raw JSON is pretty-printed (cooked indented, env/process/*-urls present)" {
-    // The pretty JSON emitter expands cooked fields, env markers,
-    // process ancestors, and *-urls arrays onto their own lines so a
-    // human can read the fixture end-to-end. Empty arrays render as
-    // `[]` on a single line — that's std.json.Stringify's default and
-    // is acceptable; the test only asserts the keys exist, not that
-    // every array is non-empty.
+test "fixtures: raw JSON is pretty-printed (cooked indented, no env block, process/*-urls present)" {
+    // The pretty JSON emitter expands cooked fields, process
+    // ancestors, and *-urls arrays onto their own lines so a human can
+    // read the fixture end-to-end. Empty arrays render as `[]` on a
+    // single line — that's std.json.Stringify's default and is
+    // acceptable; the test only asserts the keys exist, not that every
+    // array is non-empty. The `env` object is absent (raw slimming,
+    // decision #4).
     const stems = try discoverStems(testing.allocator);
     defer {
         for (stems) |s| testing.allocator.free(s);
@@ -382,12 +405,8 @@ test "fixtures: raw JSON is pretty-printed (cooked indented, env/process/*-urls 
         //    the cooked object
         try testing.expect(std.mem.indexOf(u8, data, "    \"harness_label\"") != null);
 
-        // 2. env section: present, with each marker carrying `"present":`.
-        //    `"value":` may be absent (redacted/absent vars omit it
-        //    entirely), so we don't assert on it — only on `present`
-        //    being there for every entry.
-        try testing.expect(std.mem.indexOf(u8, data, "\"env\": {") != null);
-        try testing.expect(std.mem.indexOf(u8, data, "\"present\":") != null);
+        // 2. no `env` block in the slimmed raw shape.
+        try testing.expect(std.mem.indexOf(u8, data, "\"env\":") == null);
 
         // 3. process_lineage section: at least one pid+name entry.
         try testing.expect(std.mem.indexOf(u8, data, "\"process_lineage\":") != null);
@@ -400,7 +419,11 @@ test "fixtures: raw JSON is pretty-printed (cooked indented, env/process/*-urls 
     }
 }
 
-test "fixtures: warn on null harness_license (dev should fill in from upstream)" {
+test "fixtures: warn on null / NOASSERTION harness_license (dev should fill in from upstream)" {
+    // Decision #1 — the license tri-state: `null` (no data) and
+    // `NOASSERTION` (attempted, inconclusive) warn; `NONE` (concluded:
+    // verified proprietary/closed) is a deliberate, valid value and must
+    // NOT warn.
     const stems = try discoverStems(testing.allocator);
     defer {
         for (stems) |s| testing.allocator.free(s);
@@ -411,13 +434,16 @@ test "fixtures: warn on null harness_license (dev should fill in from upstream)"
         const parsed = (try readFixtureParsed(testing.allocator, stem)) orelse continue;
         defer parsed.deinit();
         const cooked = parsed.value.object.get("cooked").?.object;
-        if (cooked.get("harness_license") == null or cooked.get("harness_license").? == .null) {
-            std.debug.print("WARNING: fixture {s} has null harness_license — look up the upstream license and fill it in\n", .{stem});
+        const hl = cooked.get("harness_license");
+        const is_unverified = hl == null or hl.? == .null or
+            (hl.? == .string and std.mem.eql(u8, hl.?.string, "NOASSERTION"));
+        if (is_unverified) {
+            std.debug.print("WARNING: fixture {s} has unverified harness_license ({s}) — look up the upstream license and fill it in\n", .{ stem, if (hl == null or hl.? == .null) "null" else hl.?.string });
             warnings += 1;
         }
     }
     if (warnings > 0) {
-        std.debug.print("WARNING: {d} fixture(s) have null harness_license\n", .{warnings});
+        std.debug.print("WARNING: {d} fixture(s) have an unverified harness_license\n", .{warnings});
     }
 }
 
