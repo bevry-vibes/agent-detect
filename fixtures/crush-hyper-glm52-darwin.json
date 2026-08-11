@@ -31,32 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "CRUSH_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 97005,
+        "pid": 97030,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 96913,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.local/share/crush/hyper.json": {
-      "default_large_model_id": "hyper/glm-5.2"
-    },
     "harness-urls": [
       "https://github.com/charmbracelet/crush",
       "https://github.com/charmbracelet/crush/blob/main/LICENSE.md"
@@ -75,7 +63,7 @@
         "dim": "harness",
         "source": "env",
         "name": "CRUSH_API_KEY",
-        "value": "crush"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

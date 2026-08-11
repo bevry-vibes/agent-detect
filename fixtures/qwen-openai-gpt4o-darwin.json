@@ -31,42 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "QWEN_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14626,
+        "pid": 89867,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.qwen/settings.json": {
-      "model.name": "gpt-4o",
-      "modelProviders.openai[].baseUrl": "https://api.openai.com/v1",
-      "security.auth.selectedType": "openai"
-    },
     "harness-urls": [
       "https://github.com/QwenLM/qwen-code",
       "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
@@ -84,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "QWEN_API_KEY",
-        "value": "qwen"
+        "value": "<redacted>"
       },
       {
         "dim": "model",

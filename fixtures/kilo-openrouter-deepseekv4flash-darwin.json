@@ -31,41 +31,17 @@
       "provider",
       "model"
     ],
-    "env": {
-      "KILO_API_KEY": {
-        "present": true
-      },
-      "KILO": {
-        "present": false
-      },
-      "KILO_MODEL": {
-        "value": "openrouter/deepseek-v4-flash",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34212,
+        "pid": 90291,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34211,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34155,
-        "name": "bash"
-      },
-      {
-        "pid": 34154,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
@@ -86,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "KILO_API_KEY",
-        "value": "kilo"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

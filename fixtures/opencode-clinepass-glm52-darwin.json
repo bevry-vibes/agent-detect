@@ -31,30 +31,17 @@
       "provider",
       "model"
     ],
-    "env": {
-      "OPENCODE_API_KEY": {
-        "present": true
-      },
-      "OPENCODE_MODEL": {
-        "value": "cline-pass/glm-5.2",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 95011,
+        "pid": 98638,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 94897,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
@@ -76,7 +63,7 @@
         "dim": "harness",
         "source": "env",
         "name": "OPENCODE_API_KEY",
-        "value": "opencode"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

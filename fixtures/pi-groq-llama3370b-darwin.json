@@ -31,43 +31,17 @@
       "provider",
       "model"
     ],
-    "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
-        "present": true
-      },
-      "PI_PROVIDER": {
-        "value": "groq",
-        "present": true
-      },
-      "PI_MODEL": {
-        "value": "llama-3.3-70b",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14592,
+        "pid": 88880,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],

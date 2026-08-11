@@ -31,47 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "KIMI_CODE_HOME": {
-        "value": "<home>/.kimi-code",
-        "present": true
-      },
-      "KIMI_API_KEY": {
-        "present": false
-      },
-      "KIMI_BASE_URL": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34171,
+        "pid": 86815,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34170,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34155,
-        "name": "bash"
-      },
-      {
-        "pid": 34154,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.kimi-code/config.toml": {
-      "default_model": "deepseek/deepseek-v4-flash"
-    },
     "harness-urls": [
       "https://github.com/MoonshotAI/kimi-code",
       "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"

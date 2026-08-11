@@ -1,0 +1,84 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "ZenMux",
+    "provider_name": "zenmux",
+    "provider_id": "zenmux",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Z.ai GLM 4.7 Flash",
+    "model_short_title": null,
+    "model_name": "glm-4.7-flash",
+    "model_id": "glm47flash",
+    "model_reciprocity": "open-weight",
+    "agent_id": "omp-zenmux-glm47flash",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Z.ai GLM 4.7 Flash <omp-zenmux-glm47flash@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "process_lineage": [
+      {
+        "pid": 92012,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 86093,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 7115,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://zenmux.ai/"
+    ],
+    "model-urls": [
+      "https://huggingface.co/zai-org/GLM-4.7-Flash",
+      "https://huggingface.co/zai-org/GLM-4.7-Flash/blob/main/LICENSE"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "<redacted>"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "zenmux/glm-4.7-flash"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "zenmux/glm-4.7-flash"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Z.ai GLM 4.7 Flash <omp-zenmux-glm47flash@local>",
+  "origin": "from-raw"
+}

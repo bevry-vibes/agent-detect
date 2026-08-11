@@ -31,60 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "CLINE_WRAPPER_PATH": {
-        "value": "/opt/homebrew/lib/node_modules/cline/bin/cline",
-        "present": true
-      },
-      "CLINE_BUILD_ENV": {
-        "value": "production",
-        "present": true
-      },
-      "CLINE_NO_INTERACTIVE": {
-        "value": "1",
-        "present": true
-      },
-      "CLINE_RUN_AS_HUB_DAEMON": {
-        "present": false
-      },
-      "CLINE_CONNECTOR_CLI_LAUNCH": {
-        "value": "{\"launcher\":\"/opt/homebrew/lib/node_modules/cline/node_modules/@cline/cli-darwin-arm64/bin/cline\",\"connectArgsPrefix\":[\"connect\"],\"cwd\":\"/private/var/folders/3v/fjmy4fyx1p9c28v31vzm8j9r0000gn/T/tmpf9d2j20v\"}",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 27128,
+        "pid": 86578,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 27127,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 64143,
-        "name": "cline"
+        "pid": 7115,
+        "name": "bash"
       }
     ],
-    "<home>/.cline/data/settings/providers.json": {
-      "lastUsedProvider": "cline-pass",
-      "providers.cline-pass.updatedAt": "2026-08-11T02:04:42.646Z",
-      "providers.cline-pass.settings.model": "free/deepseek-v4-flash"
-    },
-    "<home>/.cline/data/sessions/1786413883036_mdzl5/1786413883036_mdzl5.json": {
-      "id": "1786413883036_mdzl5",
-      "status": "running",
-      "started_at": "2026-08-11T02:04:43.290Z",
-      "cwd": "<home>/Projects/vibes/agent-detect",
-      "pid": "64143",
-      "provider": "cline-pass",
-      "model": "free/deepseek-v4-flash",
-      "messages_path": "<home>/.cline/data/sessions/1786413883036_mdzl5/1786413883036_mdzl5.messages.json"
-    },
-    "<home>/.cline/data/sessions/1786413883036_mdzl5/1786413883036_mdzl5.messages.json": {
-      "lastModelInfo.id": "free/deepseek-v4-flash",
-      "lastModelInfo.provider": "cline-pass"
-    },
     "harness-urls": [
       "https://github.com/cline/cline",
       "https://github.com/cline/cline/blob/main/LICENSE"
@@ -116,10 +76,10 @@
         "source": "config",
         "name": "<home>/.cline/data/settings/providers.json",
         "field": "providers.cline-pass.settings.model",
-        "value": "free/deepseek-v4-flash"
+        "value": "cline-pass/deepseek-v4-flash"
       }
     ]
   },
   "trailer": "Co-authored-by: Cline · DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>",
-  "origin": "from-capture"
+  "origin": "from-raw"
 }

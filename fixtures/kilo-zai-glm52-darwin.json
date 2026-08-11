@@ -31,41 +31,17 @@
       "provider",
       "model"
     ],
-    "env": {
-      "KILO_API_KEY": {
-        "present": true
-      },
-      "KILO": {
-        "present": false
-      },
-      "KILO_MODEL": {
-        "value": "zai/glm-5.2",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34221,
+        "pid": 90407,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34220,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34155,
-        "name": "bash"
-      },
-      {
-        "pid": 34154,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
@@ -87,7 +63,7 @@
         "dim": "harness",
         "source": "env",
         "name": "KILO_API_KEY",
-        "value": "kilo"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

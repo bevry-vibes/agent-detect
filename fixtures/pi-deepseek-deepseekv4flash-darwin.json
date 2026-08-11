@@ -31,32 +31,18 @@
       "provider",
       "model"
     ],
-    "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
-        "present": true
-      },
-      "PI_PROVIDER": {
-        "value": "deepseek",
-        "present": true
-      },
-      "PI_MODEL": {
-        "value": "deepseek-v4-flash",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 63452,
+        "pid": 87798,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 63375,
-        "name": "node"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 63101,
-        "name": "agent-detect-dev"
+        "pid": 7115,
+        "name": "bash"
       }
     ],
     "harness-urls": [
@@ -93,5 +79,5 @@
     ]
   },
   "trailer": "Co-authored-by: Pi · DeepSeek V4 Flash <pi-deepseek-deepseekv4flash@local>",
-  "origin": "from-capture"
+  "origin": "from-raw"
 }

@@ -4,7 +4,7 @@
     "harness_short_title": null,
     "harness_name": "copilot",
     "harness_id": "copilot",
-    "harness_license": null,
+    "harness_license": "NONE",
     "provider_label": "GitHub Copilot",
     "provider_name": "github-copilot",
     "provider_id": "githubcopilot",
@@ -31,42 +31,24 @@
       "provider",
       "model"
     ],
-    "env": {
-      "COPILOT_ALLOW_ALL": {
-        "present": true
-      },
-      "COPILOT_MODEL": {
-        "value": "github-copilot/gpt-5.2",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14158,
+        "pid": 828,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "harness-urls": [],
+    "harness-urls": [
+      "https://github.com/features/copilot",
+      "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+    ],
     "provider-urls": [
       "https://github.com/features/copilot"
     ],
@@ -79,7 +61,7 @@
         "dim": "harness",
         "source": "env",
         "name": "COPILOT_ALLOW_ALL",
-        "value": "copilot"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

@@ -31,56 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "CLINE_WRAPPER_PATH": {
-        "value": "/opt/homebrew/lib/node_modules/cline/bin/cline",
-        "present": true
-      },
-      "CLINE_BUILD_ENV": {
-        "value": "production",
-        "present": true
-      },
-      "CLINE_NO_INTERACTIVE": {
-        "value": "1",
-        "present": true
-      },
-      "CLINE_RUN_AS_HUB_DAEMON": {
-        "present": false
-      },
-      "CLINE_CONNECTOR_CLI_LAUNCH": {
-        "value": "{\"launcher\":\"/opt/homebrew/lib/node_modules/cline/node_modules/@cline/cli-darwin-arm64/bin/cline\",\"connectArgsPrefix\":[\"connect\"],\"cwd\":\"/private/var/folders/3v/fjmy4fyx1p9c28v31vzm8j9r0000gn/T/tmpf9d2j20v\"}",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 30132,
+        "pid": 86196,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 64143,
-        "name": "cline"
+        "pid": 86093,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 7115,
+        "name": "bash"
       }
     ],
-    "<home>/.cline/data/settings/providers.json": {
-      "lastUsedProvider": "deepseek",
-      "providers.deepseek.updatedAt": "2026-08-11T02:08:29.755Z",
-      "providers.deepseek.settings.model": "deepseek-v4-flash"
-    },
-    "<home>/.cline/data/sessions/1786414109820_37omd/1786414109820_37omd.json": {
-      "id": "1786414109820_37omd",
-      "status": "running",
-      "started_at": "2026-08-11T02:08:30.197Z",
-      "cwd": "<home>/Projects/vibes/agent-detect",
-      "pid": "64143",
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "messages_path": "<home>/.cline/data/sessions/1786414109820_37omd/1786414109820_37omd.messages.json"
-    },
-    "<home>/.cline/data/sessions/1786414109820_37omd/1786414109820_37omd.messages.json": {
-      "lastModelInfo.id": "deepseek-v4-flash",
-      "lastModelInfo.provider": "deepseek"
-    },
     "harness-urls": [
       "https://github.com/cline/cline",
       "https://github.com/cline/cline/blob/main/LICENSE"
@@ -112,10 +76,10 @@
         "source": "config",
         "name": "<home>/.cline/data/settings/providers.json",
         "field": "providers.deepseek.settings.model",
-        "value": "deepseek-v4-flash"
+        "value": "deepseek/deepseek-v4-flash"
       }
     ]
   },
   "trailer": "Co-authored-by: Cline · DeepSeek V4 Flash <cline-deepseek-deepseekv4flash@local>",
-  "origin": "from-capture"
+  "origin": "from-raw"
 }

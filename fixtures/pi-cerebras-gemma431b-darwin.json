@@ -17,7 +17,7 @@
     "model_reciprocity": "open-weight",
     "agent_id": "pi-cerebras-gemma431b",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Pi \u00b7 Gemma 4 31B <pi-cerebras-gemma431b@local>"
+    "trailer": "Co-authored-by: Pi · Gemma 4 31B <pi-cerebras-gemma431b@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -31,32 +31,18 @@
       "provider",
       "model"
     ],
-    "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
-        "present": true
-      },
-      "PI_PROVIDER": {
-        "value": "cerebras",
-        "present": true
-      },
-      "PI_MODEL": {
-        "value": "gemma-4-31b",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 81026,
+        "pid": 88186,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 80921,
-        "name": "node"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 77625,
-        "name": "agent-detect-dev"
+        "pid": 7115,
+        "name": "bash"
       }
     ],
     "harness-urls": [
@@ -92,6 +78,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi \u00b7 Gemma 4 31B <pi-cerebras-gemma431b@local>",
-  "origin": "from-capture"
+  "trailer": "Co-authored-by: Pi · Gemma 4 31B <pi-cerebras-gemma431b@local>",
+  "origin": "from-raw"
 }

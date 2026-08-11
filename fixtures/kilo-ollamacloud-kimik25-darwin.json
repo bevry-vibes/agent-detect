@@ -31,41 +31,17 @@
       "provider",
       "model"
     ],
-    "env": {
-      "KILO_API_KEY": {
-        "present": true
-      },
-      "KILO": {
-        "present": false
-      },
-      "KILO_MODEL": {
-        "value": "ollama-cloud/kimi-k2.5",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14272,
+        "pid": 91275,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
@@ -85,7 +61,7 @@
         "dim": "harness",
         "source": "env",
         "name": "KILO_API_KEY",
-        "value": "kilo"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

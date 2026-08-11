@@ -31,38 +31,17 @@
       "provider",
       "model"
     ],
-    "env": {
-      "OPENCODE_API_KEY": {
-        "present": true
-      },
-      "OPENCODE_MODEL": {
-        "value": "groq/llama-4",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34489,
+        "pid": 98117,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34488,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34349,
-        "name": "bash"
-      },
-      {
-        "pid": 34348,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
@@ -83,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "OPENCODE_API_KEY",
-        "value": "opencode"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

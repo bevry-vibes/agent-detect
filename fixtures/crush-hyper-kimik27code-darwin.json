@@ -31,40 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "CRUSH_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14177,
+        "pid": 97170,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.local/share/crush/hyper.json": {
-      "default_large_model_id": "hyper/kimi-k2.7-code"
-    },
     "harness-urls": [
       "https://github.com/charmbracelet/crush",
       "https://github.com/charmbracelet/crush/blob/main/LICENSE.md"
@@ -82,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "CRUSH_API_KEY",
-        "value": "crush"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

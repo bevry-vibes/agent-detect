@@ -31,56 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "GOOSE_WORKING_DIR": {
-        "value": "<home>",
-        "present": true
-      },
-      "GOOSE_PROVIDER": {
-        "present": false
-      },
-      "GOOSE_MODEL": {
-        "present": false
-      },
-      "GOOSE_TERMINAL": {
-        "value": "true",
-        "present": true
-      },
-      "GOOSE_MODE": {
-        "value": "auto",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 33841,
+        "pid": 86668,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33840,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 33834,
-        "name": "bash"
-      },
-      {
-        "pid": 33833,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.config/goose/config.yaml": {
-      "active_provider": "goose",
-      "providers.goose.model": "claude-sonnet-4"
-    },
     "harness-urls": [
       "https://github.com/block/goose",
       "https://github.com/block/goose/blob/main/LICENSE"

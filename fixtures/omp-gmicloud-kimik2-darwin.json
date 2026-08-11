@@ -31,40 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "OMP_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14343,
+        "pid": 93552,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.omp/agent/config.yml": {
-      "modelRoles.default": "gmi-cloud/kimi-k2"
-    },
     "harness-urls": [
       "https://github.com/can1357/oh-my-pi",
       "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
@@ -81,7 +61,7 @@
         "dim": "harness",
         "source": "env",
         "name": "OMP_API_KEY",
-        "value": "omp"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

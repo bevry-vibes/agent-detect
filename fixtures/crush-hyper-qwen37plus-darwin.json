@@ -31,40 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "CRUSH_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34427,
+        "pid": 96657,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34426,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34349,
-        "name": "bash"
-      },
-      {
-        "pid": 34348,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.local/share/crush/hyper.json": {
-      "default_large_model_id": "hyper/qwen3.7-plus"
-    },
     "harness-urls": [
       "https://github.com/charmbracelet/crush",
       "https://github.com/charmbracelet/crush/blob/main/LICENSE.md"
@@ -82,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "CRUSH_API_KEY",
-        "value": "crush"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

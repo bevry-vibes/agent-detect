@@ -17,7 +17,7 @@
     "model_reciprocity": "open-weight",
     "agent_id": "pi-cerebras-zaiglm47",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Pi \u00b7 Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>"
+    "trailer": "Co-authored-by: Pi · Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -31,32 +31,18 @@
       "provider",
       "model"
     ],
-    "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
-        "present": true
-      },
-      "PI_PROVIDER": {
-        "value": "cerebras",
-        "present": true
-      },
-      "PI_MODEL": {
-        "value": "zai-glm-4.7",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 6156,
+        "pid": 88250,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 6106,
-        "name": "node"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 5833,
-        "name": "agent-detect-dev"
+        "pid": 7115,
+        "name": "bash"
       }
     ],
     "harness-urls": [
@@ -92,6 +78,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi \u00b7 Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>",
-  "origin": "from-capture"
+  "trailer": "Co-authored-by: Pi · Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>",
+  "origin": "from-raw"
 }

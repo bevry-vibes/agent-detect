@@ -31,33 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "REASONIX_API_KEY": {
-        "present": false
-      }
-    },
     "process_lineage": [
       {
-        "pid": 43766,
+        "pid": 96433,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 43765,
+        "pid": 86093,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 7115,
         "name": "bash"
-      },
-      {
-        "pid": 43565,
-        "name": "reasonix"
-      },
-      {
-        "pid": 43206,
-        "name": "agent-detect-dev"
       }
     ],
-    "<home>/.reasonix/config.toml": {
-      "default_model": "deepseek-flash",
-      "providers[].models": "deepseek-v4-flash"
-    },
     "harness-urls": [
       "https://github.com/esengine/DeepSeek-Reasonix",
       "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE"
@@ -73,9 +60,9 @@
     "evidence": [
       {
         "dim": "harness",
-        "source": "lineage",
-        "name": "reasonix",
-        "value": "reasonix"
+        "source": "env",
+        "name": "REASONIX_API_KEY",
+        "value": "<redacted>"
       },
       {
         "dim": "provider",
@@ -94,5 +81,5 @@
     ]
   },
   "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>",
-  "origin": "from-capture"
+  "origin": "from-raw"
 }

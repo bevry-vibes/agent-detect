@@ -31,24 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "OMP_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 58711,
+        "pid": 92571,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 58478,
+        "pid": 86093,
         "name": "agent-detect-dev"
+      },
+      {
+        "pid": 7115,
+        "name": "bash"
       }
     ],
-    "<home>/.omp/agent/config.yml": {
-      "modelRoles.default": "ollama-cloud/glm-5.2"
-    },
     "harness-urls": [
       "https://github.com/can1357/oh-my-pi",
       "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
@@ -66,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "OMP_API_KEY",
-        "value": "omp"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

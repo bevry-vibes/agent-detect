@@ -31,41 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "REASONIX_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34966,
+        "pid": 96518,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34965,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34956,
-        "name": "bash"
-      },
-      {
-        "pid": 34904,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.reasonix/config.toml": {
-      "default_model": "deepseek",
-      "providers[].default": "deepseek-v4-flash"
-    },
     "harness-urls": [
       "https://github.com/esengine/DeepSeek-Reasonix",
       "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE"
@@ -83,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "REASONIX_API_KEY",
-        "value": "reasonix"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",
@@ -96,7 +75,7 @@
         "dim": "model",
         "source": "config",
         "name": "<home>/.reasonix/config.toml",
-        "field": "providers[].default",
+        "field": "providers[].models",
         "value": "deepseek-v4-flash"
       }
     ]

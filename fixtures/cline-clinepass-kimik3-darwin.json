@@ -31,59 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "CLINE_WRAPPER_PATH": {
-        "value": "/opt/cline/wrapper",
-        "present": true
-      },
-      "CLINE_BUILD_ENV": {
-        "value": "dev",
-        "present": true
-      },
-      "CLINE_NO_INTERACTIVE": {
-        "value": "true",
-        "present": true
-      },
-      "CLINE_RUN_AS_HUB_DAEMON": {
-        "value": "true",
-        "present": true
-      },
-      "CLINE_CONNECTOR_CLI_LAUNCH": {
-        "value": "true",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 33537,
+        "pid": 86104,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33536,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 33520,
-        "name": "bash"
-      },
-      {
-        "pid": 33518,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.cline/data/settings/providers.json": {
-      "lastUsedProvider": "cline-pass",
-      "providers.cline-pass.updatedAt": "2025-08-01T00:00:00Z",
-      "providers.cline-pass.settings.model": "cline-pass/kimi-k3"
-    },
     "harness-urls": [
       "https://github.com/cline/cline",
       "https://github.com/cline/cline/blob/main/LICENSE"

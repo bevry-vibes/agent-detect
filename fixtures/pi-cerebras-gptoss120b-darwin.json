@@ -17,7 +17,7 @@
     "model_reciprocity": "open-weight",
     "agent_id": "pi-cerebras-gptoss120b",
     "reciprocal": true,
-    "trailer": "Co-authored-by: Pi \u00b7 GPT-OSS 120B <pi-cerebras-gptoss120b@local>"
+    "trailer": "Co-authored-by: Pi · GPT-OSS 120B <pi-cerebras-gptoss120b@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -31,32 +31,18 @@
       "provider",
       "model"
     ],
-    "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
-        "present": true
-      },
-      "PI_PROVIDER": {
-        "value": "cerebras",
-        "present": true
-      },
-      "PI_MODEL": {
-        "value": "gpt-oss-120b",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 77978,
+        "pid": 88103,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 77950,
-        "name": "node"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 77625,
-        "name": "agent-detect-dev"
+        "pid": 7115,
+        "name": "bash"
       }
     ],
     "harness-urls": [
@@ -92,6 +78,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi \u00b7 GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
-  "origin": "from-capture"
+  "trailer": "Co-authored-by: Pi · GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
+  "origin": "from-raw"
 }

@@ -1,0 +1,83 @@
+{
+  "cooked": {
+    "harness_label": "Pi",
+    "harness_short_title": null,
+    "harness_name": "pi",
+    "harness_id": "pi",
+    "harness_license": "MIT",
+    "provider_label": "xAI",
+    "provider_name": "xai",
+    "provider_id": "xai",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Grok 4",
+    "model_short_title": null,
+    "model_name": "grok-4",
+    "model_id": "grok4",
+    "model_reciprocity": "closed",
+    "agent_id": "pi-xai-grok4",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Pi · Grok 4 <pi-xai-grok4@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "process_lineage": [
+      {
+        "pid": 88416,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 86093,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 7115,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/earendil-works/pi",
+      "https://github.com/earendil-works/pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://x.ai/grok",
+      "https://docs.x.ai/docs/models"
+    ],
+    "model-urls": [
+      "https://x.ai/grok",
+      "https://docs.x.ai/docs/models"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "PI_CODING_AGENT",
+        "value": "pi"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "PI_PROVIDER",
+        "value": "xai"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "PI_MODEL",
+        "value": "grok-4"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Pi · Grok 4 <pi-xai-grok4@local>",
+  "origin": "from-raw"
+}

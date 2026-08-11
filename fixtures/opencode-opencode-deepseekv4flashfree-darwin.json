@@ -17,7 +17,7 @@
     "model_reciprocity": "open-weight",
     "agent_id": "opencode-opencode-deepseekv4flashfree",
     "reciprocal": false,
-    "trailer": "Co-authored-by: OpenCode \u00b7 DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>"
+    "trailer": "Co-authored-by: OpenCode · DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -31,32 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "OPENCODE_API_KEY": {
-        "present": false
-      },
-      "OPENCODE_MODEL": {
-        "present": false
-      }
-    },
     "process_lineage": [
       {
-        "pid": 3844,
+        "pid": 98269,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2064,
-        "name": "opencode"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 1769,
-        "name": "agent-detect-dev"
+        "pid": 7115,
+        "name": "bash"
       }
     ],
-    "<home>/.local/share/opencode/opencode.db": {
-      "session.model.providerID": "opencode",
-      "session.model.id": "deepseek-v4-flash-free"
-    },
     "harness-urls": [
       "https://github.com/anomalyco/opencode",
       "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
@@ -71,26 +59,24 @@
     "evidence": [
       {
         "dim": "harness",
-        "source": "lineage",
-        "name": "opencode",
-        "value": "opencode"
+        "source": "env",
+        "name": "OPENCODE_API_KEY",
+        "value": "<redacted>"
       },
       {
         "dim": "provider",
-        "source": "session",
-        "name": "<home>/.local/share/opencode/opencode.db",
-        "field": "session.model.providerID",
-        "value": "opencode"
+        "source": "env",
+        "name": "OPENCODE_MODEL",
+        "value": "opencode/deepseek-v4-flash-free"
       },
       {
         "dim": "model",
-        "source": "session",
-        "name": "<home>/.local/share/opencode/opencode.db",
-        "field": "session.model.id",
-        "value": "deepseek-v4-flash-free"
+        "source": "env",
+        "name": "OPENCODE_MODEL",
+        "value": "opencode/deepseek-v4-flash-free"
       }
     ]
   },
-  "trailer": "Co-authored-by: OpenCode \u00b7 DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>",
-  "origin": "from-capture"
+  "trailer": "Co-authored-by: OpenCode · DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>",
+  "origin": "from-raw"
 }

@@ -31,48 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "VIBE_API_KEY": {
-        "present": true
-      },
-      "VIBE_ACTIVE_MODEL": {
-        "value": "minimax-m3",
-        "present": true
-      },
-      "VIBE_ACTIVE_PROVIDER": {
-        "value": "minimax",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34521,
+        "pid": 99438,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34520,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34349,
-        "name": "bash"
-      },
-      {
-        "pid": 34348,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.vibe/config.toml": {
-      "VIBE_ACTIVE_MODEL": "minimax-m3"
-    },
     "harness-urls": [
       "https://github.com/mistralai/mistral-vibe",
       "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE"
@@ -91,7 +63,7 @@
         "dim": "harness",
         "source": "env",
         "name": "VIBE_API_KEY",
-        "value": "vibe"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

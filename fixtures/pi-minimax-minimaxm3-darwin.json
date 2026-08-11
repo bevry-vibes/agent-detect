@@ -12,7 +12,7 @@
     "provider_open_training": "opt-in",
     "model_label": "MiniMax M3",
     "model_short_title": "M3",
-    "model_name": "MiniMax-M3",
+    "model_name": "minimax-m3",
     "model_id": "minimaxm3",
     "model_reciprocity": "open-weight",
     "agent_id": "pi-minimax-minimaxm3",
@@ -31,32 +31,18 @@
       "provider",
       "model"
     ],
-    "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
-        "present": true
-      },
-      "PI_PROVIDER": {
-        "value": "minimax",
-        "present": true
-      },
-      "PI_MODEL": {
-        "value": "MiniMax-M3",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 66810,
+        "pid": 87880,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 66666,
-        "name": "node"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 63101,
-        "name": "agent-detect-dev"
+        "pid": 7115,
+        "name": "bash"
       }
     ],
     "harness-urls": [
@@ -89,10 +75,10 @@
         "dim": "model",
         "source": "env",
         "name": "PI_MODEL",
-        "value": "MiniMax-M3"
+        "value": "minimax-m3"
       }
     ]
   },
   "trailer": "Co-authored-by: Pi · MiniMax M3 <pi-minimax-minimaxm3@local>",
-  "origin": "from-capture"
+  "origin": "from-raw"
 }

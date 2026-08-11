@@ -31,41 +31,17 @@
       "provider",
       "model"
     ],
-    "env": {
-      "KILO_API_KEY": {
-        "present": true
-      },
-      "KILO": {
-        "present": false
-      },
-      "KILO_MODEL": {
-        "value": "cline-pass/kimi-k2.7-code",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14252,
+        "pid": 90888,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
@@ -86,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "KILO_API_KEY",
-        "value": "kilo"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

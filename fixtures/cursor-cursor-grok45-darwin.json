@@ -4,7 +4,7 @@
     "harness_short_title": null,
     "harness_name": "cursor",
     "harness_id": "cursor",
-    "harness_license": null,
+    "harness_license": "NONE",
     "provider_label": "Cursor",
     "provider_name": "cursor",
     "provider_id": "cursor",
@@ -31,45 +31,24 @@
       "provider",
       "model"
     ],
-    "env": {
-      "CURSOR_API_KEY": {
-        "present": true
-      },
-      "CURSOR_API_ENDPOINT": {
-        "present": false
-      },
-      "CURSOR_MODEL": {
-        "value": "cursor/grok-4.5",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 14247,
+        "pid": 651,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 14142,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 14140,
-        "name": "xargs"
-      },
-      {
-        "pid": 13612,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "harness-urls": [],
+    "harness-urls": [
+      "https://cursor.com/",
+      "https://www.cursor.com/en-US/terms-of-service"
+    ],
     "provider-urls": [
       "https://cursor.com/"
     ],
@@ -82,7 +61,7 @@
         "dim": "harness",
         "source": "env",
         "name": "CURSOR_API_KEY",
-        "value": "cursor"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

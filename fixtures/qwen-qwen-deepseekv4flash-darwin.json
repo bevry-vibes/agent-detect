@@ -31,34 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "QWEN_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 98158,
+        "pid": 89950,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 98003,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.qwen/settings.json": {
-      "model.name": "deepseek-v4-flash",
-      "modelProviders.openai[].baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-      "security.auth.selectedType": "openai"
-    },
     "harness-urls": [
       "https://github.com/QwenLM/qwen-code",
       "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
@@ -76,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "QWEN_API_KEY",
-        "value": "qwen"
+        "value": "<redacted>"
       },
       {
         "dim": "model",
@@ -90,7 +76,7 @@
         "source": "config",
         "name": "<home>/.qwen/settings.json",
         "field": "modelProviders.openai[].baseUrl",
-        "value": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+        "value": "https://dashscope.aliyuncs.com/compatible-mode/v1"
       }
     ]
   },

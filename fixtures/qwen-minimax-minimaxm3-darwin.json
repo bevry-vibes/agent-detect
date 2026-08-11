@@ -31,42 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "QWEN_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 33922,
+        "pid": 89287,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33921,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 33834,
-        "name": "bash"
-      },
-      {
-        "pid": 33833,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.qwen/settings.json": {
-      "model.name": "minimax-m3",
-      "modelProviders.openai[].baseUrl": "https://api.minimax.io/v1",
-      "security.auth.selectedType": "openai"
-    },
     "harness-urls": [
       "https://github.com/QwenLM/qwen-code",
       "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
@@ -85,7 +63,7 @@
         "dim": "harness",
         "source": "env",
         "name": "QWEN_API_KEY",
-        "value": "qwen"
+        "value": "<redacted>"
       },
       {
         "dim": "model",

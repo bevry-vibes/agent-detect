@@ -31,40 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "OMP_API_KEY": {
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 34376,
+        "pid": 91561,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34375,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 34349,
-        "name": "bash"
-      },
-      {
-        "pid": 34348,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.omp/agent/config.yml": {
-      "modelRoles.default": "openrouter/deepseek-v4-flash"
-    },
     "harness-urls": [
       "https://github.com/can1357/oh-my-pi",
       "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
@@ -82,7 +62,7 @@
         "dim": "harness",
         "source": "env",
         "name": "OMP_API_KEY",
-        "value": "omp"
+        "value": "<redacted>"
       },
       {
         "dim": "provider",

@@ -31,44 +31,20 @@
       "provider",
       "model"
     ],
-    "env": {
-      "MMX_CONFIG_DIR": {
-        "value": "<home>/.mmx",
-        "present": true
-      },
-      "MINIMAX_API_KEY": {
-        "present": false
-      }
-    },
     "process_lineage": [
       {
-        "pid": 33877,
+        "pid": 87505,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 33876,
-        "name": "bash"
+        "pid": 86093,
+        "name": "agent-detect-dev"
       },
       {
-        "pid": 33834,
-        "name": "bash"
-      },
-      {
-        "pid": 33833,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
+        "pid": 7115,
         "name": "bash"
       }
     ],
-    "<home>/.mmx/config.json": {
-      "defaultTextModel": "minimax/minimax-m3"
-    },
     "harness-urls": [
       "https://github.com/MiniMax-AI/cli",
       "https://www.npmjs.com/package/mmx-cli"

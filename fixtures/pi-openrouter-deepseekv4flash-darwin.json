@@ -12,7 +12,7 @@
     "provider_open_training": "never",
     "model_label": "DeepSeek V4 Flash",
     "model_short_title": null,
-    "model_name": "deepseek/deepseek-v4-flash",
+    "model_name": "deepseek-v4-flash",
     "model_id": "deepseekv4flash",
     "model_reciprocity": "open-weight",
     "agent_id": "pi-openrouter-deepseekv4flash",
@@ -31,36 +31,18 @@
       "provider",
       "model"
     ],
-    "env": {
-      "PI_CODING_AGENT": {
-        "value": "true",
-        "present": true
-      },
-      "PI_PROVIDER": {
-        "value": "openrouter",
-        "present": true
-      },
-      "PI_MODEL": {
-        "value": "deepseek/deepseek-v4-flash",
-        "present": true
-      }
-    },
     "process_lineage": [
       {
-        "pid": 68456,
+        "pid": 87944,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 68455,
+        "pid": 86093,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 7115,
         "name": "bash"
-      },
-      {
-        "pid": 67668,
-        "name": "node"
-      },
-      {
-        "pid": 63101,
-        "name": "agent-detect-dev"
       }
     ],
     "harness-urls": [
@@ -92,10 +74,10 @@
         "dim": "model",
         "source": "env",
         "name": "PI_MODEL",
-        "value": "deepseek/deepseek-v4-flash"
+        "value": "deepseek-v4-flash"
       }
     ]
   },
   "trailer": "Co-authored-by: Pi · DeepSeek V4 Flash <pi-openrouter-deepseekv4flash@local>",
-  "origin": "from-capture"
+  "origin": "from-raw"
 }
