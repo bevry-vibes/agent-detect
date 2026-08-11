@@ -2967,12 +2967,23 @@ pub const dev = if (build_options.dev) struct {
         \\  --agent=ID    3-part <h>-<p>-<m> id (platform unfiltered)
         \\  --harness=H   constrain harness to H (any of H/P/M/PLAT)
         \\
-        \\scope flags (shared by queue/dequeue; exactly one, and they
-        \\compose with the dim filters above to narrow the set):
-        \\  --all            every fixture row on this platform
-        \\  --stale          fixture rows older than the threshold
-        \\                   [--stale-by-days=N] [--stale-by-minutes=N]
-        \\                   (--stale is an alias for --stale-by-days=7)
+        \\scope flags (shared by queue/dequeue; all scope flags AND
+        \\together — the only conflict is two --stale-by-* age thresholds;
+        \\--all is the default scope made explicit and is absorbed by any
+        \\other scope flag; they compose with the dim filters above):
+        \\  --all            the default scope made explicit (every fixture
+        \\                   row); absorbed by any other scope flag
+        \\  --stale-by-days=N      age threshold in days (stored as minutes)
+        \\  --stale-by-hours=N     age threshold in hours (stored as minutes)
+        \\  --stale-by-minutes=N   age threshold in minutes — the single
+        \\                   age column; each flag stamps every candidate
+        \\                   row (no age pre-filter) and the daemon skips
+        \\                   only when the fixture is still age-fresh
+        \\  --stale-by-version  version-marker scope: live harness `--version`
+        \\                   vs the fixture's captured `harness_version`;
+        \\                   combines with a --stale-by-* age threshold
+        \\                   (the daemon skips only when the fixture is
+        \\                   age-fresh AND version-equal) or stands alone
         \\  --partial        queue rows with at least one missing dim (seeds)
         \\  --recipes        every known recipe (host platform)
         \\  --missing-fixture recipes whose fixtures/<id>.json is absent
@@ -3198,6 +3209,7 @@ pub const dev = if (build_options.dev) struct {
             \\    platform                TEXT NOT NULL,
             \\    runner                  INTEGER NOT NULL,
             \\    generated_at            INTEGER NOT NULL,
+            \\    harness_version         TEXT,
             \\    PRIMARY KEY (harness, provider, model, platform)
             \\);
             \\CREATE TABLE IF NOT EXISTS queue (
@@ -3209,8 +3221,8 @@ pub const dev = if (build_options.dev) struct {
             \\    scope_partial        INTEGER,
             \\    scope_recipes        INTEGER,
             \\    scope_missing_fixture INTEGER,
-            \\    stale_by_days        INTEGER,
             \\    stale_by_minutes     INTEGER,
+            \\    stale_by_version     INTEGER,
             \\    available            INTEGER,
             \\    runner               INTEGER NOT NULL,
             \\    created_at           INTEGER NOT NULL,
@@ -3220,7 +3232,8 @@ pub const dev = if (build_options.dev) struct {
             \\    ON queue (COALESCE(harness,''), COALESCE(provider,''), COALESCE(model,''),
             \\                COALESCE(platform,''), COALESCE(scope_all,0), COALESCE(scope_partial,0),
             \\                COALESCE(scope_recipes,0), COALESCE(scope_missing_fixture,0),
-            \\                COALESCE(stale_by_days,0), COALESCE(stale_by_minutes,0),
+            \\                COALESCE(stale_by_minutes,0),
+            \\                COALESCE(stale_by_version,0),
             \\                COALESCE(available,0));
             \\
         );
@@ -3239,6 +3252,11 @@ pub const dev = if (build_options.dev) struct {
     /// and used as the daemon's pop-order + worker selector. Deliberately
     /// NOT part of `queue_dedupe`: one mode per combo, re-queueing with a
     /// different mode flag upgrades/downgrades the single row in place.
+    /// `stale_by_minutes` is the single age marker (days/hours flags
+    /// convert to minutes at stamp time); `stale_by_version` marks a row
+    /// for version-based staleness evaluation at pop (the daemon compares
+    /// a live `--version` call against the fixture's captured
+    /// `harness_version`).
     const QueueRow = struct {
         harness: ?[]const u8 = null,
         provider: ?[]const u8 = null,
@@ -3248,8 +3266,8 @@ pub const dev = if (build_options.dev) struct {
         scope_partial: ?i64 = null,
         scope_recipes: ?i64 = null,
         scope_missing_fixture: ?i64 = null,
-        stale_by_days: ?i64 = null,
         stale_by_minutes: ?i64 = null,
+        stale_by_version: ?i64 = null,
         available: ?i64 = null,
         runner: i64 = 0,
         created_at: i64 = 0,
@@ -3257,6 +3275,9 @@ pub const dev = if (build_options.dev) struct {
     };
 
     /// One row in the `fixtures` state table (always full; platform = host).
+    /// `harness_version` is the version captured by a live `--version`
+    /// call during the capture (decision #6); null when the version
+    /// couldn't be read or the row was declared (`from-ids`).
     const FixtureRow = struct {
         harness: []const u8,
         provider: []const u8,
@@ -3264,6 +3285,7 @@ pub const dev = if (build_options.dev) struct {
         platform: []const u8,
         runner: i64,
         generated_at: i64,
+        harness_version: ?[]const u8 = null,
     };
 
     /// current unix epoch seconds (staleness source / queue order).
@@ -3318,38 +3340,40 @@ pub const dev = if (build_options.dev) struct {
         defer a.free(sr);
         const sm = try sqlOptInt(a, row.scope_missing_fixture);
         defer a.free(sm);
-        const sd = try sqlOptInt(a, row.stale_by_days);
+        const sd = try sqlOptInt(a, row.stale_by_minutes);
         defer a.free(sd);
-        const smin = try sqlOptInt(a, row.stale_by_minutes);
-        defer a.free(smin);
+        const sv = try sqlOptInt(a, row.stale_by_version);
+        defer a.free(sv);
         const av = try sqlOptInt(a, row.available);
         defer a.free(av);
         const sql = try std.fmt.allocPrint(a,
-            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at,mode) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d},{s})",
-            .{ h, p, m, pl, sa, sp, sr, sm, sd, smin, av, row.runner, row.created_at, try sqlQuote(a, row.mode) },
+            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d},{s})",
+            .{ h, p, m, pl, sa, sp, sr, sm, sd, sv, av, row.runner, row.created_at, try sqlQuote(a, row.mode) },
         );
         defer a.free(sql);
         _ = try sqliteQuery(a, io, sql);
     }
 
     /// `INSERT OR REPLACE INTO fixtures` — state, written only by `fixtures
-    /// agent` and the daemon. No `available` column.
+    /// agent` and the daemon. No `available` column. `harness_version` is
+    /// the live `--version` snapshot from the capture (null for
+    /// declared `from-ids` rows and backfills).
     fn upsertFixture(a: std.mem.Allocator, io: std.Io, f: FixtureRow) !void {
         const sql = try std.fmt.allocPrint(a,
-            "INSERT OR REPLACE INTO fixtures(harness,provider,model,platform,runner,generated_at) VALUES({s},{s},{s},{s},{d},{d})",
+            "INSERT OR REPLACE INTO fixtures(harness,provider,model,platform,runner,generated_at,harness_version) VALUES({s},{s},{s},{s},{d},{d},{s})",
             .{
                 try sqlQuote(a, f.harness), try sqlQuote(a, f.provider),
                 try sqlQuote(a, f.model), try sqlQuote(a, f.platform),
-                f.runner, f.generated_at,
+                f.runner, f.generated_at, try sqlOptStr(a, f.harness_version),
             },
         );
         defer a.free(sql);
         _ = try sqliteQuery(a, io, sql);
     }
 
-    /// every `fixtures` row (for `--all` / `--stale` enumeration).
+    /// every `fixtures` row (for `--all` / stale-scope enumeration).
     fn selectFixtures(a: std.mem.Allocator, io: std.Io) ![]FixtureRow {
-        const out = try sqliteQuery(a, io, "SELECT harness,provider,model,platform,runner,generated_at FROM fixtures");
+        const out = try sqliteQuery(a, io, "SELECT harness,provider,model,platform,runner,generated_at,harness_version FROM fixtures");
         defer a.free(out);
         if (out.len == 0) return &.{};
         const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return &.{};
@@ -3370,6 +3394,7 @@ pub const dev = if (build_options.dev) struct {
                 .platform = sjstr(o, "platform"),
                 .runner = sjint(o, "runner"),
                 .generated_at = sjint(o, "generated_at"),
+                .harness_version = sjoptstr(o, "harness_version"),
             }) catch continue;
         }
         return rows.toOwnedSlice(a);
@@ -3378,7 +3403,7 @@ pub const dev = if (build_options.dev) struct {
     /// every `queue` row whose dims are all NULL (seeds) — for `--partial`.
     fn selectSeedQueueRows(a: std.mem.Allocator, io: std.Io) ![]QueueRow {
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at,mode FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
         );
         defer a.free(out);
         if (out.len == 0) return &.{};
@@ -3409,8 +3434,8 @@ pub const dev = if (build_options.dev) struct {
             .scope_partial = sjoptint(o, "scope_partial"),
             .scope_recipes = sjoptint(o, "scope_recipes"),
             .scope_missing_fixture = sjoptint(o, "scope_missing_fixture"),
-            .stale_by_days = sjoptint(o, "stale_by_days"),
             .stale_by_minutes = sjoptint(o, "stale_by_minutes"),
+            .stale_by_version = sjoptint(o, "stale_by_version"),
             .available = sjoptint(o, "available"),
             .runner = sjint(o, "runner"),
             .created_at = sjint(o, "created_at"),
@@ -3469,7 +3494,7 @@ pub const dev = if (build_options.dev) struct {
     /// the `fixtures` row for the given dims, or null if absent.
     fn fixtureRow(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?FixtureRow {
         const sql = try std.fmt.allocPrint(a,
-            "SELECT harness,provider,model,platform,runner,generated_at FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
+            "SELECT harness,provider,model,platform,runner,generated_at,harness_version FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
             .{ try sqlQuote(a, h), try sqlQuote(a, p), try sqlQuote(a, m), try sqlQuote(a, plat) },
         );
         defer a.free(sql);
@@ -3487,7 +3512,7 @@ pub const dev = if (build_options.dev) struct {
         // from-capture — cheaper/declared work always precedes
         // token-consuming captures.
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_days,stale_by_minutes,available,runner,created_at,mode FROM queue ORDER BY CASE mode WHEN 'from-ids' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1",
+            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue ORDER BY CASE mode WHEN 'from-ids' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1",
         );
         defer a.free(out);
         var row: ?QueueRow = null;
@@ -3518,11 +3543,13 @@ pub const dev = if (build_options.dev) struct {
         if (f.provider.len > 0) try where.appendSlice(a, appendCond(a, "provider", f.provider) catch return 0);
         if (f.model.len > 0) try where.appendSlice(a, appendCond(a, "model", f.model) catch return 0);
         if (f.platform.len > 0) try where.appendSlice(a, appendCond(a, "platform", f.platform) catch return 0);
-        if (f.all) try where.appendSlice(a, " AND scope_all=1");
+        // `--all` is the explicit default scope — it adds no constraint
+        // of its own (it is absorbed by any other scope flag).
         if (f.partial) try where.appendSlice(a, " AND scope_partial=1");
-        if (f.recipes) try where.appendSlice(a, " AND scope_recipes=1");
-        if (f.missing_fixture) try where.appendSlice(a, " AND scope_missing_fixture=1");
-        if (f.stale) try where.appendSlice(a, " AND (stale_by_days IS NOT NULL OR stale_by_minutes IS NOT NULL)");
+        // mirror the queue stamping: `--missing-fixture` absorbs `--recipes`.
+        if (f.missing_fixture) try where.appendSlice(a, " AND scope_missing_fixture=1") else if (f.recipes) try where.appendSlice(a, " AND scope_recipes=1");
+        if (f.stale_by_days != null or f.stale_by_hours != null or f.stale_by_minutes != null) try where.appendSlice(a, " AND stale_by_minutes IS NOT NULL");
+        if (f.stale_by_version) try where.appendSlice(a, " AND stale_by_version=1");
         if (f.available) try where.appendSlice(a, " AND available=1");
         if (f.unavailable) try where.appendSlice(a, " AND available=0");
         if (f.mode.len > 0) try where.appendSlice(a, appendCond(a, "mode", f.mode) catch return 0);
@@ -3562,11 +3589,13 @@ pub const dev = if (build_options.dev) struct {
             @as(usize, @intFromBool(row.scope_partial != null and row.scope_partial.? == 1)) +
             @as(usize, @intFromBool(row.scope_recipes != null and row.scope_recipes.? == 1)) +
             @as(usize, @intFromBool(row.scope_missing_fixture != null and row.scope_missing_fixture.? == 1)) +
-            @as(usize, @intFromBool(row.stale_by_days != null or row.stale_by_minutes != null));
+            // the staleness scope is one unit: an age marker, a version
+            // marker, or both (a `--stale-by-* --stale-by-version` row
+            // carries both; the daemon skips only when both are fresh).
+            @as(usize, @intFromBool(row.stale_by_minutes != null or (row.stale_by_version != null and row.stale_by_version.? == 1)));
         if (scope_count > 1) return error.InvalidQueueRow;
-        if (row.stale_by_days != null and row.stale_by_minutes != null) return error.InvalidQueueRow;
-        if (row.stale_by_days != null and row.stale_by_days.? < 1) return error.InvalidQueueRow;
         if (row.stale_by_minutes != null and row.stale_by_minutes.? < 1) return error.InvalidQueueRow;
+        if (row.stale_by_version != null and (row.stale_by_version.? != 0 and row.stale_by_version.? != 1)) return error.InvalidQueueRow;
         if (row.available != null and (row.available.? != 0 and row.available.? != 1)) return error.InvalidQueueRow;
         if (row.available != null and scope_count == 0) return error.InvalidQueueRow;
         const scopes = [_]?i64{ row.scope_all, row.scope_partial, row.scope_recipes, row.scope_missing_fixture };
@@ -4419,6 +4448,77 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     }
     return false;
 }
+
+/// extract the first version token from a `--version` stdout capture.
+/// The scanner matches `\d+(\.\d+)+([-+][0-9A-Za-z.-]+)?` — verified
+/// against every harness's `--version` format (bare semver, `v`-prefixed,
+/// `/`-separated, multi-line, calver+hash). Returns null when no token
+/// matches.
+pub fn scanVersionToken(s: []const u8) ?[]const u8 {
+    var i: usize = 0;
+    while (i < s.len) {
+        if (!std.ascii.isDigit(s[i])) {
+            i += 1;
+            continue;
+        }
+        const start = i;
+        i += 1;
+        var groups: usize = 1;
+        while (i < s.len and std.ascii.isDigit(s[i])) i += 1;
+        while (i < s.len and s[i] == '.' and i + 1 < s.len and std.ascii.isDigit(s[i + 1])) {
+            groups += 1;
+            i += 2;
+            while (i < s.len and std.ascii.isDigit(s[i])) i += 1;
+        }
+        if (groups >= 2) {
+            if (i < s.len and (s[i] == '-' or s[i] == '+')) {
+                i += 1;
+                while (i < s.len and (std.ascii.isAlphanumeric(s[i]) or s[i] == '.' or s[i] == '-')) i += 1;
+            }
+            return s[start..i];
+        }
+    }
+    return null;
+}
+
+/// run the recipe's harness `--version` and return the extracted
+/// version token (first match of the generic scanner), or null when
+/// nothing runs or no token matches. Zero-token: version calls invoke
+/// the harness binary directly, they never touch a model API.
+fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]const u8 {
+    var probe_names: []const []const u8 = &.{};
+    for (recipesForFixtures) |c| {
+        if (std.mem.eql(u8, c.agent_id, agent_id)) {
+            probe_names = c.probeNames;
+            break;
+        }
+    }
+    if (probe_names.len == 0) return null;
+    for (probe_names) |n| {
+        var argv_buf = [_][]const u8{ n, "--version" };
+        var child = std.process.spawn(io, .{
+            .argv = &argv_buf,
+            .stdout = .pipe,
+            .stderr = .ignore,
+        }) catch continue;
+        var out: std.ArrayList(u8) = .empty;
+        defer out.deinit(a);
+        var buf: [8192]u8 = undefined;
+        var reader = child.stdout.?.reader(io, &buf);
+        while (true) {
+            var chunk: [8192]u8 = undefined;
+            const nread = reader.interface.readSliceShort(&chunk) catch break;
+            if (nread == 0) break;
+            out.appendSlice(a, chunk[0..nread]) catch break;
+        }
+        const term = child.wait(io) catch continue;
+        if (term != .exited or term.exited != 0) continue;
+        if (scanVersionToken(out.items)) |tok| {
+            return a.dupe(u8, tok) catch null;
+        }
+    }
+    return null;
+}
     // ----------------------------------------------------------------
     // fixtures fixture subcommands
     // ----------------------------------------------------------------
@@ -4463,11 +4563,10 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
         platform: []const u8 = "",
         fixture: ?[]const u8 = null,
         agent: ?[]const u8 = null,
-        /// scope flags: `--all`/`--stale`/`--partial` target index rows;
+        /// scope flags: `--all`/`--stale-by-*`/`--partial` target index rows;
         /// `--recipes`/`--missing-fixture` target the recipe table.
         /// Exactly one scope flag may be set.
         all: bool = false,
-        stale: bool = false,
         partial: bool = false,
         recipes: bool = false,
         missing_fixture: bool = false,
@@ -4477,9 +4576,20 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
         /// `--unavailable` / `--available=0`: dequeue match for available=0
         /// handoff rows. Modifier only.
         unavailable: bool = false,
-        /// stale thresholds. `--stale` is an alias for `stale_by_days=7`.
+        /// age thresholds. Each is a scope flag by itself; at most one of
+        /// the three may be set. The queued row always stores the age in
+        /// MINUTES in the `stale_by_minutes` column (days/hours convert at
+        /// stamp time) so the table has a single age column.
         stale_by_days: ?i64 = null,
+        stale_by_hours: ?i64 = null,
         stale_by_minutes: ?i64 = null,
+        /// `--stale-by-version`: version-marker staleness. All scope
+        /// flags AND together; this one combines with an age threshold
+        /// (the daemon skips only when the fixture is age-fresh AND
+        /// version-equal) or stands alone. The daemon compares a live
+        /// `--version` call against the fixture's captured
+        /// `harness_version`.
+        stale_by_version: bool = false,
         any: bool = false,
         /// true when `--fixture=` or `--agent=` (the composite ids)
         /// contributed the equality dims — used for the creation path.
@@ -4549,8 +4659,8 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                 seen_platform = true;
             } else if (std.mem.eql(u8, arg, "--all")) {
                 f.all = true;
-            } else if (std.mem.eql(u8, arg, "--stale")) {
-                f.stale = true;
+            } else if (std.mem.eql(u8, arg, "--stale-by-version")) {
+                f.stale_by_version = true;
             } else if (std.mem.eql(u8, arg, "--partial")) {
                 f.partial = true;
             } else if (std.mem.eql(u8, arg, "--recipes")) {
@@ -4563,6 +4673,8 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                 f.unavailable = true;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-days=")) {
                 f.stale_by_days = std.fmt.parseInt(i64, arg["--stale-by-days=".len..], 10) catch return FilterError.InvalidThreshold;
+            } else if (std.mem.startsWith(u8, arg, "--stale-by-hours=")) {
+                f.stale_by_hours = std.fmt.parseInt(i64, arg["--stale-by-hours=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-minutes=")) {
                 f.stale_by_minutes = std.fmt.parseInt(i64, arg["--stale-by-minutes=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.eql(u8, arg, "--from-ids") or std.mem.eql(u8, arg, "--from-raw") or std.mem.eql(u8, arg, "--from-capture")) {
@@ -4580,20 +4692,23 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
         // leaves "" = "all modes" (filters, does not stamp).
         if (f.mode.len == 0 and !is_dequeue) f.mode = "from-raw";
 
-        // `--stale` is an alias for `--stale-by-days=7`.
-        if (f.stale and f.stale_by_days == null and f.stale_by_minutes == null) f.stale_by_days = 7;
-        // a stale threshold implies the `--stale` scope.
-        if (f.stale_by_days != null or f.stale_by_minutes != null) f.stale = true;
-        // only one of days/minutes may be set
-        if (f.stale_by_days != null and f.stale_by_minutes != null) return FilterError.ConflictingFilters;
+        // stale-by-* age scopes: at most one of days/hours/minutes may be
+        // set (they are the only mutually-conflicting scope flags — every
+        // other scope flag ANDs with them), and the value must be a
+        // positive integer.
+        const age_scopes = @as(usize, @intFromBool(f.stale_by_days != null)) +
+            @as(usize, @intFromBool(f.stale_by_hours != null)) +
+            @as(usize, @intFromBool(f.stale_by_minutes != null));
+        if (age_scopes > 1) return FilterError.ConflictingFilters;
         if ((f.stale_by_days != null and f.stale_by_days.? < 1) or
+            (f.stale_by_hours != null and f.stale_by_hours.? < 1) or
             (f.stale_by_minutes != null and f.stale_by_minutes.? < 1)) return FilterError.ConflictingFilters;
 
-        // scope flags: exactly one allowed
-        const scope_count = @as(usize, @intFromBool(f.all)) + @as(usize, @intFromBool(f.stale)) +
-            @as(usize, @intFromBool(f.partial)) + @as(usize, @intFromBool(f.recipes)) +
-            @as(usize, @intFromBool(f.missing_fixture));
-        if (scope_count > 1) return FilterError.ConflictingFilters;
+        // all other scope flags combine (AND). scope_count is used below
+        // only as a "has any scope" probe.
+        const scope_count = @as(usize, @intFromBool(f.all)) + age_scopes +
+            @as(usize, @intFromBool(f.stale_by_version)) + @as(usize, @intFromBool(f.partial)) +
+            @as(usize, @intFromBool(f.recipes)) + @as(usize, @intFromBool(f.missing_fixture));
 
         // --available / --unavailable are modifiers: require a scope flag
         if ((f.available or f.unavailable) and scope_count == 0) return FilterError.ConflictingFilters;
@@ -4643,19 +4758,51 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
         return f;
     }
 
-    /// how many scope flags are set (exactly one is allowed).
+    /// how many scope flags are set. All scope flags AND together; only
+    /// conflicting `--stale-by-*` age thresholds are rejected (in
+    /// `parseFilters`). This is only a "has any scope" probe for
+    /// `fixtures queue`'s scope-path dispatch.
     fn scopeCount(f: FilterOptions) usize {
-        return @as(usize, @intFromBool(f.all)) + @as(usize, @intFromBool(f.stale)) +
-            @as(usize, @intFromBool(f.partial)) + @as(usize, @intFromBool(f.recipes)) +
-            @as(usize, @intFromBool(f.missing_fixture));
+        const age_scopes = @as(usize, @intFromBool(f.stale_by_days != null)) +
+            @as(usize, @intFromBool(f.stale_by_hours != null)) +
+            @as(usize, @intFromBool(f.stale_by_minutes != null));
+        return @as(usize, @intFromBool(f.all)) + age_scopes +
+            @as(usize, @intFromBool(f.stale_by_version)) + @as(usize, @intFromBool(f.partial)) +
+            @as(usize, @intFromBool(f.recipes)) + @as(usize, @intFromBool(f.missing_fixture));
     }
 
-    /// the scope candidate set for `f`, as queue rows:
+    /// the scope candidate set for `f`, as queue rows. All scope flags
+    /// AND together; `--all` is the explicit form of the default scope
+    /// and is absorbed by any other scope flag. The only conflicting
+    /// combination is two `--stale-by-*` age thresholds (rejected in
+    /// `parseFilters`). Candidates come from one of three tables — the
+    /// recipe table (`--recipes`/`--missing-fixture`), the seed queue
+    /// (`--partial`), or the fixtures table (`--all`/`--stale-by-*`).
     fn scopeCandidates(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !std.ArrayListUnmanaged(QueueRow) {
         var out: std.ArrayListUnmanaged(QueueRow) = .empty;
         const host = platformId();
         const now = unixNow(io);
+        // the age threshold in MINUTES (days/hours convert at stamp time —
+        // the table has a single `stale_by_minutes` age column).
+        const stale_min = if (f.stale_by_minutes != null)
+            f.stale_by_minutes
+        else if (f.stale_by_hours != null)
+            @as(?i64, f.stale_by_hours.? * 60)
+        else if (f.stale_by_days != null)
+            @as(?i64, f.stale_by_days.? * 24 * 60)
+        else
+            null;
 
+        // `--all` is the default scope made explicit: it is absorbed by
+        // any other scope flag (which already enumerates that set).
+        const all_effective = f.all and f.stale_by_days == null and f.stale_by_hours == null and
+            f.stale_by_minutes == null and !f.stale_by_version and
+            !f.partial and !f.recipes and !f.missing_fixture;
+
+        // recipe-table candidates (`--recipes` / `--missing-fixture`).
+        // `--missing-fixture` absorbs `--recipes` (missing ∩ recipes =
+        // missing). Stale/partial flags do not apply to the recipe
+        // universe, so they don't change this enumeration.
         if (f.recipes or f.missing_fixture) {
             for (recipesForFixtures) |c| {
                 const parts = try splitAgentId(a, c.agent_id);
@@ -4688,8 +4835,11 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                     .created_at = now,
                     .mode = f.mode,
                 };
-                if (f.recipes) row.scope_recipes = 1;
-                if (f.missing_fixture) row.scope_missing_fixture = 1;
+                if (f.missing_fixture) {
+                    row.scope_missing_fixture = 1;
+                } else {
+                    row.scope_recipes = 1;
+                }
                 if (f.available) {
                     row.available = if (harnessAvailable(io, c.agent_id)) 1 else 0;
                 }
@@ -4699,7 +4849,11 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             return out;
         }
 
+        // seed-queue candidates (`--partial`). Seeds are partial-dim rows,
+        // disjoint from the full-dim recipe/fixture universes, so ANDing
+        // `--partial` with a recipe/fixture scope yields an empty set.
         if (f.partial) {
+            if (f.recipes or f.missing_fixture or stale_min != null or f.stale_by_version) return out;
             const seeds = try selectSeedQueueRows(a, io);
             for (seeds) |s| {
                 if (f.harness.len > 0 and !std.mem.eql(u8, s.harness orelse "", f.harness)) continue;
@@ -4716,20 +4870,18 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             return out;
         }
 
-        // --all / --stale: enumerate fixtures
+        // fixtures-table candidates (`--all` / `--stale-by-*`). Staleness
+        // is NOT age-filtered at queue time (decision #6): every candidate
+        // row is queued with the marker the flag requested and the daemon
+        // evaluates it at pop. `--all` stamps `scope_all` only when it is
+        // the sole scope flag; a stale marker subsumes it (both enumerate
+        // every fixture row).
         const fixtures = try selectFixtures(a, io);
         for (fixtures) |fx| {
             if (f.harness.len > 0 and !std.mem.eql(u8, f.harness, fx.harness)) continue;
             if (f.provider.len > 0 and !std.mem.eql(u8, f.provider, fx.provider)) continue;
             if (f.model.len > 0 and !std.mem.eql(u8, f.model, fx.model)) continue;
             if (f.platform.len > 0 and !std.mem.eql(u8, f.platform, fx.platform)) continue;
-            // --stale: only queue fixtures actually older than the threshold
-            // (snapshot at queue time; the daemon re-validates with the stored
-            // threshold later).
-            if (f.stale) {
-                const threshold_minutes = f.stale_by_minutes orelse (f.stale_by_days.? * 24 * 60);
-                if (!isStale(io, fx.generated_at, threshold_minutes)) continue;
-            }
             var row: QueueRow = .{
                 .harness = try a.dupe(u8, fx.harness),
                 .provider = try a.dupe(u8, fx.provider),
@@ -4739,11 +4891,9 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                 .created_at = now,
                 .mode = f.mode,
             };
-            if (f.all) row.scope_all = 1;
-            if (f.stale) {
-                row.stale_by_days = f.stale_by_days;
-                row.stale_by_minutes = f.stale_by_minutes;
-            }
+            if (all_effective) row.scope_all = 1;
+            if (stale_min != null) row.stale_by_minutes = stale_min;
+            if (f.stale_by_version) row.stale_by_version = 1;
             if (f.available) {
                 const agent = (try agentIdFrom(a, fx.harness, fx.provider, fx.model)) orelse continue;
                 row.available = if (harnessAvailable(io, agent)) 1 else 0;
@@ -4857,6 +5007,9 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
         };
 
         // fixtures only: upsert the state row (never touches `queue`).
+        // Stamp the live harness `--version` snapshot (decision #6) so
+        // a later `--stale-by-version` sweep can compare against it.
+        const hver = harnessVersion(a, io, agent_aid);
         try upsertFixture(a, io, .{
             .harness = harness_aid orelse unreachable,
             .provider = provider_aid orelse unreachable,
@@ -4864,6 +5017,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             .platform = platformId(),
             .runner = getParentPid(),
             .generated_at = unixNow(io),
+            .harness_version = hver,
         });
 
         writeOut(io, "fixtures capture: wrote fixtures/");
@@ -4883,7 +5037,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     /// seed path (the daemon expands seeds over fixtures recipes; see
     /// `runFixturesDaemon`).
     ///
-    /// With a scope flag (`--all`/`--stale`/`--partial`/`--recipes`/
+    /// With a scope flag (`--all`/`--stale-by-*`/`--partial`/`--recipes`/
     /// `--missing-fixture`) the target set is computed instead (see
     /// `scopeCandidates`) and every candidate is queued (recipe-scope
     /// candidates are created as full `refresh:true` rows). `--available`
@@ -5241,6 +5395,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                             const p = action.provider.?;
                             const m_d = action.model.?;
                             const plat = action.platform.?;
+                            const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
                             try upsertFixture(a, io, .{
                                 .harness = h,
                                 .provider = p,
@@ -5248,6 +5403,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                                 .platform = plat,
                                 .runner = getParentPid(),
                                 .generated_at = unixNow(io),
+                                .harness_version = harnessVersion(a, io, agent),
                             });
                             daemonWrite(io, "daemon: captured ");
                             daemonWrite(io, desc);
@@ -5361,15 +5517,44 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                                 }
                             }
 
-                            // staleness re-validation with the row's stored threshold
-                            if (action.stale_by_days != null or action.stale_by_minutes != null) {
-                                if (try fixtureRow(a, io, h, p, m_d, plat)) |fx| {
-                                    if (!isStale(io, fx.generated_at, action.stale_by_minutes orelse (action.stale_by_days.? * 24 * 60))) {
-                                        daemonWrite(io, "daemon: fixture for ");
-                                        daemonWrite(io, desc);
-                                        daemonWrite(io, " is still fresh by its threshold — completing early\n");
-                                        continue;
+                            // staleness re-validation with the row's stored
+                            // markers (decision #6): the daemon evaluates at
+                            // pop. A row carries at most one marker — the age
+                            // threshold (`stale_by_minutes`) or the version
+                            // marker — and skips only when its marker says
+                            // the fixture is still fresh.
+                            if (action.stale_by_minutes != null or
+                                (action.stale_by_version != null and action.stale_by_version.? == 1))
+                            {
+                                const fx = try fixtureRow(a, io, h, p, m_d, plat);
+                                var age_fresh = false;
+                                if (action.stale_by_minutes != null) {
+                                    if (fx) |f| {
+                                        age_fresh = !isStale(io, f.generated_at, action.stale_by_minutes.?);
                                     }
+                                }
+                                var version_equal = false;
+                                if (action.stale_by_version != null and action.stale_by_version.? == 1) {
+                                    if (fx) |f| {
+                                        if (f.harness_version) |stored_v| {
+                                            const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
+                                            if (harnessVersion(a, io, agent)) |live_v| {
+                                                if (std.mem.eql(u8, live_v, stored_v)) version_equal = true;
+                                            }
+                                            // uninstalled harness → inconclusive →
+                                            // not version-equal (proceeds to capture).
+                                        }
+                                        // no stored version → version-stale → capture.
+                                    }
+                                    // no fixture row → version-stale → capture.
+                                }
+                                const age_ok = (action.stale_by_minutes == null) or age_fresh;
+                                const version_ok = (action.stale_by_version == null) or version_equal;
+                                if (age_ok and version_ok) {
+                                    daemonWrite(io, "daemon: fixture for ");
+                                    daemonWrite(io, desc);
+                                    daemonWrite(io, " is still fresh by its markers — completing early\n");
+                                    continue;
                                 }
                             }
 
@@ -5412,6 +5597,13 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                                 runOneComboResult(a, io, init, action));
                             if (captured) {
                                 capture_attempts.put(desc, 0) catch {};
+                                // version stamp (decision #6): from-raw captures
+                                // record the live harness `--version`; declared
+                                // from-ids fixtures carry null (no binary ran).
+                                const hver = if (std.mem.eql(u8, action.mode, "from-ids"))
+                                    null
+                                else
+                                    harnessVersion(a, io, (try agentIdFrom(a, h, p, m_d)) orelse continue);
                                 try upsertFixture(a, io, .{
                                     .harness = h,
                                     .provider = p,
@@ -5419,6 +5611,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
                                     .platform = plat,
                                     .runner = getParentPid(),
                                     .generated_at = unixNow(io),
+                                    .harness_version = hver,
                                 });
                             } else {
                                 // failure → re-queue (refresh available only for --available rows)
