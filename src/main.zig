@@ -462,6 +462,10 @@ pub const rulesForProviders = [_]ProviderRule{
     // google: null/null — Google's Gemini platform tier (the `google`
     // provider key for Gemini CLI / gemini-api combos); policy unverified.
     .{ .name = "google", .label = "Google", .closed_training = null, .open_training = null, .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs" } },
+    // kilo: null/null — the Kilo Code CLI's first-party router provider
+    // (its `kilo/~*-latest` alias tier); an inference router, but the
+    // first-party upstreams are varied, so policy stays unverified.
+    .{ .name = "kilo", .label = "Kilo", .closed_training = null, .open_training = null, .sources = &.{ "https://github.com/Kilo-Org/kilocode" } },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
@@ -4034,6 +4038,24 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "kilo-minimax-minimaxm3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    // kilo catalog inference (2026-08-11, `kilo models`, 481 models):
+    // free-tier `~*-latest` router aliases that clear the evergreen
+    // top-50 (provider `kilo`), then minimax/clinepass/deepseek
+    // all-models steps per the ordering spec, then evergreen-clearing
+    // hyper/ollama-cloud/fireworks-ai combos. Scoped to kilo's authed
+    // providers.
+    .{ .agent_id = "kilo-kilo-gemini35flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~google/gemini-flash-latest", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-grok45", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~x-ai/grok-latest", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-kimik3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~moonshotai/kimi-latest", capture_prompt } },
+    .{ .agent_id = "kilo-minimax-minimaxm27", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-clinepass-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-clinepass-kimik27code", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-deepseek-deepseekv4pro", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-hyper-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-hyper-kimik3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-ollamacloud-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-ollamacloud-kimik25", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-fireworksai-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     // omp — minimax-code/m3 (keep), deepseek/v4-flash, openrouter/v4-flash
     .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "minimax-code/MiniMax-M3", capture_prompt } },
     .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "deepseek/deepseek-v4-flash", capture_prompt } },

@@ -1,0 +1,97 @@
+{
+  "cooked": {
+    "harness_label": "Kilo Code",
+    "harness_short_title": null,
+    "harness_name": "kilo",
+    "harness_id": "kilo",
+    "harness_license": "MIT",
+    "provider_label": "Kilo",
+    "provider_name": "kilo",
+    "provider_id": "kilo",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Grok 4.5",
+    "model_short_title": null,
+    "model_name": "grok-4.5",
+    "model_id": "grok45",
+    "model_reciprocity": null,
+    "agent_id": "kilo-kilo-grok45",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Kilo Code · Grok 4.5 <kilo-kilo-grok45@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "KILO_API_KEY": {
+        "present": true
+      },
+      "KILO": {
+        "present": false
+      },
+      "KILO_MODEL": {
+        "value": "kilo/grok-4.5",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 96169,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 96064,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://github.com/Kilo-Org/kilocode"
+    ],
+    "model-urls": [
+      "https://docs.x.ai/docs/models"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "KILO_API_KEY",
+        "value": "kilo"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "kilo/grok-4.5"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "kilo/grok-4.5"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Kilo Code · Grok 4.5 <kilo-kilo-grok45@local>",
+  "origin": "from-raw"
+}

@@ -1,0 +1,100 @@
+{
+  "cooked": {
+    "harness_label": "Kilo Code",
+    "harness_short_title": null,
+    "harness_name": "kilo",
+    "harness_id": "kilo",
+    "harness_license": "MIT",
+    "provider_label": "Charm Hyper",
+    "provider_name": "hyper",
+    "provider_id": "hyper",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "GLM 5.2",
+    "model_short_title": null,
+    "model_name": "glm-5.2",
+    "model_id": "glm52",
+    "model_reciprocity": "open-source",
+    "agent_id": "kilo-hyper-glm52",
+    "reciprocal": true,
+    "trailer": "Co-authored-by: Kilo Code · GLM 5.2 <kilo-hyper-glm52@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "KILO_API_KEY": {
+        "present": true
+      },
+      "KILO": {
+        "present": false
+      },
+      "KILO_MODEL": {
+        "value": "hyper/glm-5.2",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 96200,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 96064,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://hyper.charm.land/terms",
+      "https://hyper.charm.land/privacy"
+    ],
+    "model-urls": [
+      "https://huggingface.co/zai-org/GLM-5.2",
+      "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE",
+      "https://opensource.org/ai/open-source-ai-definition"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "KILO_API_KEY",
+        "value": "kilo"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "hyper/glm-5.2"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "hyper/glm-5.2"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Kilo Code · GLM 5.2 <kilo-hyper-glm52@local>",
+  "origin": "from-raw"
+}

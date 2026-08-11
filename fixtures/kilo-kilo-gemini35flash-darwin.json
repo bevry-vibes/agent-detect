@@ -1,0 +1,97 @@
+{
+  "cooked": {
+    "harness_label": "Kilo Code",
+    "harness_short_title": null,
+    "harness_name": "kilo",
+    "harness_id": "kilo",
+    "harness_license": "MIT",
+    "provider_label": "Kilo",
+    "provider_name": "kilo",
+    "provider_id": "kilo",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Gemini 3.5 Flash",
+    "model_short_title": null,
+    "model_name": "gemini-3.5-flash",
+    "model_id": "gemini35flash",
+    "model_reciprocity": null,
+    "agent_id": "kilo-kilo-gemini35flash",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Kilo Code · Gemini 3.5 Flash <kilo-kilo-gemini35flash@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "KILO_API_KEY": {
+        "present": true
+      },
+      "KILO": {
+        "present": false
+      },
+      "KILO_MODEL": {
+        "value": "kilo/gemini-3.5-flash",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 96164,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 96064,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/Kilo-Org/kilocode",
+      "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://github.com/Kilo-Org/kilocode"
+    ],
+    "model-urls": [
+      "https://deepmind.google/models/"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "KILO_API_KEY",
+        "value": "kilo"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "kilo/gemini-3.5-flash"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "KILO_MODEL",
+        "value": "kilo/gemini-3.5-flash"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Kilo Code · Gemini 3.5 Flash <kilo-kilo-gemini35flash@local>",
+  "origin": "from-raw"
+}
