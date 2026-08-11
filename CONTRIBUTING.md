@@ -231,12 +231,24 @@ crash. The plist may live anywhere — `bootstrap` takes a path, not just
     <string>daemon</string>
     <string>--write-log</string>
   </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/abs/path/to/harness/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+  </dict>
   <key>WorkingDirectory</key><string>/abs/path/to/repo</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
 </dict>
 </plist>
 ```
+
+`EnvironmentVariables.PATH` is **required** for `from-capture` jobs:
+launchd does not inherit your shell PATH, and the daemon spawns harness
+binaries by bare name (e.g. `cline`), so without it every real capture
+fails with `spawn failed: FileNotFound`. Include the directories holding
+your harness binaries (homebrew `/opt/homebrew/bin`, npm/uv shims, etc.).
+The daemon restarts pick it up on the next `bootstrap`.
 
 ```sh
 launchctl bootstrap "gui/$(id -u)" /path/to/agent-detect.fixtures.plist   # start

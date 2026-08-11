@@ -3838,14 +3838,14 @@ fn comboDims(a: std.mem.Allocator, combo: *const RecipesForFixtures) ![3][]u8 {
 const capture_prompt = "run `agent-detect-dev fixtures capture` in the current working directory and report the result";
 
 pub const recipesForFixtures = [_]RecipesForFixtures{
-    // cline — clinepass/kimi-k3 (keep), deepseek/v4-flash, minimax/m3, openrouter/v4-flash
+    // cline — clinepass/kimi-k3 (keep, no launch spec — not in the usable set), deepseek/v4-flash, minimax/m3, openrouter/v4-flash (no launch spec — not in the usable set)
     .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
-    .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
-    .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=deepseek", "--model=deepseek-v4-flash", "--thinking", "high", capture_prompt } },
+    .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=minimax", "--model=minimax/minimax-m3", capture_prompt } },
     .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
     // cline additions (real usable combos): clinepass/step-3.7-flash and clinepass/free-deepseek-v4-flash
-    .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
-    .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=stepfun/step-3.7-flash", capture_prompt } },
+    .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=free/deepseek-v4-flash", capture_prompt } },
     // goose — goose/claude-sonnet-4 (contributor-scope example, keeps the harness→recipe test green)
     .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .buildEnv = buildGooseEnv },
     // kimi — minimax/m3 (keep), deepseek/v4-flash, kimi/k3
