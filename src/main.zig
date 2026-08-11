@@ -228,6 +228,18 @@ pub const rulesForModels = [_]ModelRule{
     // zai-glm-4.7: Z.ai GLM 4.7 (hosted on Cerebras free trial);
     // reciprocity unverified, stays null.
     .{ .name = "zai-glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = null, .sources = &.{} },
+    // gemini-3.5-flash: Google Gemini 3.5 Flash (free tier of the
+    // family); closed — no weights, reciprocity null/unverified.
+    .{ .name = "gemini-3.5-flash", .label = "Gemini 3.5 Flash", .reciprocity = null, .sources = &.{ "https://deepmind.google/models/" } },
+    // grok-4.5: xAI Grok 4.5 (free tier of the Grok family);
+    // closed, reciprocity null/unverified.
+    .{ .name = "grok-4.5", .label = "Grok 4.5", .reciprocity = null, .sources = &.{ "https://docs.x.ai/docs/models" } },
+    // glm-4.7-flash: Z.ai GLM 4.7 Flash (open-weight variant hosted on
+    // free tiers); reciprocity unverified, stays null.
+    .{ .name = "glm-4.7-flash", .label = "Z.ai GLM 4.7 Flash", .reciprocity = null, .sources = &.{} },
+    // fugu-ultra-v1.1: Sakana AI Fugu Ultra v1.1 (Japanese MoE);
+    // reciprocity unverified, stays null.
+    .{ .name = "fugu-ultra-v1.1", .label = "Fugu Ultra v1.1", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -325,6 +337,16 @@ pub const rulesForProviders = [_]ProviderRule{
     // qwen: null/null — Alibaba Qwen's hosted tier (qwen.ai /
     // DashScope); Qwen trains models itself, API policy unverified.
     .{ .name = "qwen", .label = "Qwen", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/legal" } },
+    // zenmux: null/null — an aggregator/API gateway exposing many
+    // upstreams (`provider/id` models, several `-free`); training-policy
+    // wording unverified, stays null.
+    .{ .name = "zenmux", .label = "ZenMux", .closed_training = null, .open_training = null, .sources = &.{ "https://zenmux.ai/" } },
+    // siliconflow: null/null — Baidu SiliconFlow hosts many open
+    // open-weight models on a free/per-token tier; API policy unverified.
+    .{ .name = "siliconflow", .label = "SiliconFlow", .closed_training = null, .open_training = null, .sources = &.{ "https://siliconflow.cn/", "https://docs.siliconflow.cn/" } },
+    // sakana: null/null — Sakana AI trains the Fugu/Namazu families
+    // (Japanese LLMs); API policy unverified, stays null.
+    .{ .name = "sakana", .label = "Sakana AI", .closed_training = null, .open_training = null, .sources = &.{ "https://sakana.ai/" } },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
@@ -3879,6 +3901,21 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
     .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
     .{ .agent_id = "omp-openrouter-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    // omp evergreen+free additions (2026-08-11): free models on the
+    // newly-added providers, constrained to the evergreen top-50 set.
+    // Service ids carry a -free suffix (e.g. zenmux "kimi-k3-free");
+    // the recipe stores the coalesced canonical model, the -free is the
+    // free-tier variation on that provider.
+    .{ .agent_id = "omp-zenmux-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-zenmux-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-zenmux-step37flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-zenmux-grok45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-zenmux-gemini35flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-zenmux-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-siliconflow-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-siliconflow-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-siliconflow-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-sakana-fuguultrav11", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
     // reasonix — deepseek-flash/v4-flash (keep), deepseek/v4-flash, minimax/m3
     .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv, .launch = &.{ "reasonix", "run", "--permission-mode", "bypassPermissions", capture_prompt } },
     .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },

@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Sakana AI",
+    "provider_name": "sakana",
+    "provider_id": "sakana",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Fugu Ultra v1.1",
+    "model_short_title": null,
+    "model_name": "fugu-ultra-v1.1",
+    "model_id": "fuguultrav11",
+    "model_reciprocity": null,
+    "agent_id": "omp-sakana-fuguultrav11",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Fugu Ultra v1.1 <omp-sakana-fuguultrav11@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 51278,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 51214,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "sakana/fugu-ultra-v1.1"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://sakana.ai/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "sakana/fugu-ultra-v1.1"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "sakana/fugu-ultra-v1.1"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Fugu Ultra v1.1 <omp-sakana-fuguultrav11@local>",
+  "origin": "from-raw"
+}
