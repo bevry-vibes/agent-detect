@@ -1,0 +1,87 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "GitHub Copilot",
+    "provider_name": "github-copilot",
+    "provider_id": "githubcopilot",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Gemini 3 Pro",
+    "model_short_title": null,
+    "model_name": "gemini-3-pro",
+    "model_id": "gemini3pro",
+    "model_reciprocity": null,
+    "agent_id": "omp-githubcopilot-gemini3pro",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Gemini 3 Pro <omp-githubcopilot-gemini3pro@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 67158,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 67018,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "github-copilot/gemini-3-pro"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://github.com/features/copilot"
+    ],
+    "model-urls": [
+      "https://deepmind.google/models/"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "github-copilot/gemini-3-pro"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "github-copilot/gemini-3-pro"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Gemini 3 Pro <omp-githubcopilot-gemini3pro@local>",
+  "origin": "from-raw"
+}

@@ -429,6 +429,9 @@ pub const rulesForProviders = [_]ProviderRule{
     // cursor: null/null — Cursor's first-party model routing (flat
     // subscription, no per-call price tracked); policy unverified.
     .{ .name = "cursor", .label = "Cursor", .closed_training = null, .open_training = null, .sources = &.{ "https://cursor.com/" } },
+    // github-copilot: null/null — GitHub Copilot's model routing
+    // (subscription-included, no per-call price tracked); unverified.
+    .{ .name = "github-copilot", .label = "GitHub Copilot", .closed_training = null, .open_training = null, .sources = &.{ "https://github.com/features/copilot" } },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
@@ -4047,6 +4050,10 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "omp-cursor-glm52", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/glm-5.2", capture_prompt } },
     .{ .agent_id = "omp-cursor-claudefable5", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/claude-fable-5", capture_prompt } },
     .{ .agent_id = "omp-cursor-kimik25", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/kimi-k2.5", capture_prompt } },
+    // omp batch 4 (evergreen+free): github-copilot
+    .{ .agent_id = "omp-githubcopilot-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "github-copilot/gpt-4o", capture_prompt } },
+    .{ .agent_id = "omp-githubcopilot-gemini3pro", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "github-copilot/gemini-3-pro", capture_prompt } },
+    .{ .agent_id = "omp-githubcopilot-gpt5mini", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "github-copilot/gpt-5-mini", capture_prompt } },
     // reasonix — deepseek-flash/v4-flash (keep), deepseek/v4-flash, minimax/m3
     .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv, .launch = &.{ "reasonix", "run", "--permission-mode", "bypassPermissions", capture_prompt } },
     .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
