@@ -4202,6 +4202,18 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "kimicode-minimax-minimaxm3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     .{ .agent_id = "kimicode-deepseek-deepseekv4flash", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     .{ .agent_id = "kimicode-kimi-kimik3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    // kimi catalog inference (2026-08-11, `kimi provider catalog list`,
+    // models.dev): per the ordering spec — all-providers-free step
+    // (openrouter `:free` models that clear the evergreen top-50) —
+    // then minimax all-models (M2.7) and deepseek all-models (v4-pro)
+    // steps. All provider/model rules already exist; `buildKimiEnv`
+    // writes `default_model = "<provider>/<model>"` for each.
+    .{ .agent_id = "kimicode-openrouter-gemma431b", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3ultra", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3super", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3nano", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-minimax-minimaxm27", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-deepseek-deepseekv4pro", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     // mmx — minimax/m3 (keep), minimax/m2.7
     .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
     .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
