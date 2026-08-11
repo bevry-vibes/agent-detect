@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "NanoGPT",
+    "provider_name": "nanogpt",
+    "provider_id": "nanogpt",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Mistral Small 3",
+    "model_short_title": null,
+    "model_name": "mistral-small-3",
+    "model_id": "mistralsmall3",
+    "model_reciprocity": null,
+    "agent_id": "omp-nanogpt-mistralsmall3",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Mistral Small 3 <omp-nanogpt-mistralsmall3@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 65153,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "nanogpt/mistral-small-3"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://nanogpt.ai/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "nanogpt/mistral-small-3"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "nanogpt/mistral-small-3"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Mistral Small 3 <omp-nanogpt-mistralsmall3@local>",
+  "origin": "from-raw"
+}

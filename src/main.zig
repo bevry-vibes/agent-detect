@@ -259,6 +259,44 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "cogito-2.1", .label = "Cogito 2.1", .reciprocity = null, .sources = &.{} },
     // muse-spark-1.2: Meta Muse Spark 1.2; reciprocity unverified.
     .{ .name = "muse-spark-1.2", .label = "Muse Spark 1.2", .reciprocity = null, .sources = &.{} },
+    // claude-fable-5: Anthropic Claude Fable 5; closed, unverified.
+    .{ .name = "claude-fable-5", .label = "Claude Fable 5", .reciprocity = null, .sources = &.{ "https://www.anthropic.com/claude" } },
+    // gpt-4o: OpenAI GPT-4o; closed, unverified.
+    .{ .name = "gpt-4o", .label = "GPT-4o", .reciprocity = null, .sources = &.{ "https://openai.com/api/pricing/" } },
+    // grok-3: xAI Grok 3; closed, unverified.
+    .{ .name = "grok-3", .label = "Grok 3", .reciprocity = null, .sources = &.{ "https://docs.x.ai/docs/models" } },
+    // glm-4.7: Z.ai GLM 4.7 (open-weight); reciprocity unverified.
+    .{ .name = "glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = null, .sources = &.{} },
+    // deepseek-r1: DeepSeek R1 (open-weight); reciprocity unverified.
+    .{ .name = "deepseek-r1", .label = "DeepSeek R1", .reciprocity = null, .sources = &.{} },
+    // gemini-3-pro: Google Gemini 3 Pro; closed, unverified.
+    .{ .name = "gemini-3-pro", .label = "Gemini 3 Pro", .reciprocity = null, .sources = &.{ "https://deepmind.google/models/" } },
+    // gemma-3-27b: Google Gemma 3 27B (open-weight); unverified.
+    .{ .name = "gemma-3-27b", .label = "Gemma 3 27B", .reciprocity = null, .sources = &.{} },
+    // phi-4: Microsoft Phi-4 (open-weight); reciprocity unverified.
+    .{ .name = "phi-4", .label = "Phi-4", .reciprocity = null, .sources = &.{} },
+    // phi-4-mini: Microsoft Phi-4 Mini (open-weight); unverified.
+    .{ .name = "phi-4-mini", .label = "Phi-4 Mini", .reciprocity = null, .sources = &.{} },
+    // command-a: Cohere Command A (open-weight); reciprocity unverified.
+    .{ .name = "command-a", .label = "Command A", .reciprocity = null, .sources = &.{} },
+    // ling-3.0-flash: InclusionAI Ling 3.0 Flash (open-weight); unverified.
+    .{ .name = "ling-3.0-flash", .label = "Ling 3.0 Flash", .reciprocity = null, .sources = &.{} },
+    // ling-2.6-1t: InclusionAI Ling 2.6 1T (open-weight); unverified.
+    .{ .name = "ling-2.6-1t", .label = "Ling 2.6 1T", .reciprocity = null, .sources = &.{} },
+    // olmo-3-32b-think: Ai2 OLMo 3 32B Think (open-weight); unverified.
+    .{ .name = "olmo-3-32b-think", .label = "OLMo 3 32B Think", .reciprocity = null, .sources = &.{} },
+    // doubao-seed-2.1: ByteDance Doubao Seed 2.1; reciprocity unverified.
+    .{ .name = "doubao-seed-2.1", .label = "Doubao Seed 2.1", .reciprocity = null, .sources = &.{} },
+    // ernie-4.5: Baidu ERNIE 4.5 (open-weight); reciprocity unverified.
+    .{ .name = "ernie-4.5", .label = "ERNIE 4.5", .reciprocity = null, .sources = &.{} },
+    // hunyuan-t1: Tencent Hunyuan T1 (open-weight); reciprocity unverified.
+    .{ .name = "hunyuan-t1", .label = "Hunyuan T1", .reciprocity = null, .sources = &.{} },
+    // mistral-small-3: Mistral Small 3 (open-weight); reciprocity unverified.
+    .{ .name = "mistral-small-3", .label = "Mistral Small 3", .reciprocity = null, .sources = &.{} },
+    // qwen3.6: Alibaba Qwen3.6 (open-weight); reciprocity unverified.
+    .{ .name = "qwen3.6", .label = "Qwen3.6", .reciprocity = null, .sources = &.{} },
+    // llama-3.1-8b: Meta Llama 3.1 8B (open-weight); reciprocity unverified.
+    .{ .name = "llama-3.1-8b", .label = "Llama 3.1 8B", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -379,6 +417,18 @@ pub const rulesForProviders = [_]ProviderRule{
     // kimi-code: mirrors `kimi`/`moonshot` — the kimi-code CLI's own
     // provider key (`k3` models); same Moonshot upstream, unverified.
     .{ .name = "kimi-code", .label = "Kimi Code", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
+    // gmi-cloud: null/null — a multimodal gateway exposing many
+    // upstreams at zero tracked cost; policy unverified, stays null.
+    .{ .name = "gmi-cloud", .label = "GMI Cloud", .closed_training = null, .open_training = null, .sources = &.{ "https://gmi.cloud/" } },
+    // nanogpt: null/null — an aggregator exposing many open models
+    // (zero tracked cost in omp's catalog); policy unverified.
+    .{ .name = "nanogpt", .label = "NanoGPT", .closed_training = null, .open_training = null, .sources = &.{ "https://nanogpt.ai/" } },
+    // huggingface: null/null — HF Serverless Inference for open-weight
+    // models (free tier); each model's weights are the real license.
+    .{ .name = "huggingface", .label = "Hugging Face", .closed_training = null, .open_training = null, .sources = &.{ "https://huggingface.co/docs/inference-providers" } },
+    // cursor: null/null — Cursor's first-party model routing (flat
+    // subscription, no per-call price tracked); policy unverified.
+    .{ .name = "cursor", .label = "Cursor", .closed_training = null, .open_training = null, .sources = &.{ "https://cursor.com/" } },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
@@ -3960,6 +4010,43 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "omp-kimicode-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "kimi-code/k3", capture_prompt } },
     .{ .agent_id = "omp-meta-musespark12", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "meta/muse-spark-1.2", capture_prompt } },
     .{ .agent_id = "omp-googleantigravity-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "google-antigravity/gpt-oss-120b", capture_prompt } },
+    // omp batch 3 (evergreen+free): gmi-cloud, nanogpt, huggingface, cursor
+    .{ .agent_id = "omp-gmicloud-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/openai/gpt-4o", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-grok45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/x-ai/grok-4.5", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-kimik2", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/moonshotai/kimi-k2", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/nvidia/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-glm47", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/zai-org/glm-4.7", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-deepseekr1", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/deepseek-ai/deepseek-r1", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-gemini3flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/google/gemini-3-flash", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-claudefable5", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/anthropic/claude-fable-5", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-deepseekr1", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/deepseek-ai/deepseek-r1", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/openai/chatgpt-4o", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-grok3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/grok-3", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-kimik2", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/baseten/kimi-k2", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/nvidia/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-phi4mini", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/phi-4-mini", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-olmo332bthink", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/allenai/olmo-3-32b-think", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-ling30flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/inclusionai/ling-3.0-flash", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-doubaoseed21", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/bytedance/doubao-seed-2.1", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-ernie45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/baidu/ernie-4.5", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-hunyuant1", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/hunyuan-t1", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/TEE/gpt-oss-120b", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-gemma327b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/gemma-3-27b", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-mistralsmall3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/mistral-small-3", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-qwen36", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/alibaba/qwen3.6", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-phi4", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/microsoft/phi-4", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/zai-org/glm-4.7-flash", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/nvidia/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-llama318b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/meta-llama/llama-3.1-8b", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-ling261t", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/inclusionai/ling-2.6-1t", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-cogito21", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/deepcogito/cogito-2.1", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/openai/gpt-oss-120b", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-commanda", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/cohere/command-a", capture_prompt } },
+    .{ .agent_id = "omp-cursor-gpt5mini", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/gpt-5-mini", capture_prompt } },
+    .{ .agent_id = "omp-cursor-gemini3flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/gemini-3-flash", capture_prompt } },
+    .{ .agent_id = "omp-cursor-glm52", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/glm-5.2", capture_prompt } },
+    .{ .agent_id = "omp-cursor-claudefable5", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/claude-fable-5", capture_prompt } },
+    .{ .agent_id = "omp-cursor-kimik25", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/kimi-k2.5", capture_prompt } },
     // reasonix — deepseek-flash/v4-flash (keep), deepseek/v4-flash, minimax/m3
     .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv, .launch = &.{ "reasonix", "run", "--permission-mode", "bypassPermissions", capture_prompt } },
     .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },

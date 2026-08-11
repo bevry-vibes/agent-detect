@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "GMI Cloud",
+    "provider_name": "gmi-cloud",
+    "provider_id": "gmicloud",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Nemotron 3 Ultra",
+    "model_short_title": null,
+    "model_name": "nemotron-3-ultra",
+    "model_id": "nemotron3ultra",
+    "model_reciprocity": null,
+    "agent_id": "omp-gmicloud-nemotron3ultra",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Nemotron 3 Ultra <omp-gmicloud-nemotron3ultra@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 63426,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "gmi-cloud/nemotron-3-ultra"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://gmi.cloud/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "gmi-cloud/nemotron-3-ultra"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "gmi-cloud/nemotron-3-ultra"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Nemotron 3 Ultra <omp-gmicloud-nemotron3ultra@local>",
+  "origin": "from-raw"
+}

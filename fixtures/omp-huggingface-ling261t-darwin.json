@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Hugging Face",
+    "provider_name": "huggingface",
+    "provider_id": "huggingface",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Ling 2.6 1T",
+    "model_short_title": null,
+    "model_name": "ling-2.6-1t",
+    "model_id": "ling261t",
+    "model_reciprocity": null,
+    "agent_id": "omp-huggingface-ling261t",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Ling 2.6 1T <omp-huggingface-ling261t@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 65640,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "huggingface/ling-2.6-1t"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://huggingface.co/docs/inference-providers"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/ling-2.6-1t"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/ling-2.6-1t"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Ling 2.6 1T <omp-huggingface-ling261t@local>",
+  "origin": "from-raw"
+}

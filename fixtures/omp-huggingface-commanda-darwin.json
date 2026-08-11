@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Hugging Face",
+    "provider_name": "huggingface",
+    "provider_id": "huggingface",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Command A",
+    "model_short_title": null,
+    "model_name": "command-a",
+    "model_id": "commanda",
+    "model_reciprocity": null,
+    "agent_id": "omp-huggingface-commanda",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Command A <omp-huggingface-commanda@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 65761,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "huggingface/command-a"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://huggingface.co/docs/inference-providers"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/command-a"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/command-a"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Command A <omp-huggingface-commanda@local>",
+  "origin": "from-raw"
+}

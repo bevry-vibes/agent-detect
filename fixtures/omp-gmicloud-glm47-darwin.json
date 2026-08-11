@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "GMI Cloud",
+    "provider_name": "gmi-cloud",
+    "provider_id": "gmicloud",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Z.ai GLM 4.7",
+    "model_short_title": null,
+    "model_name": "glm-4.7",
+    "model_id": "glm47",
+    "model_reciprocity": null,
+    "agent_id": "omp-gmicloud-glm47",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Z.ai GLM 4.7 <omp-gmicloud-glm47@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 63567,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "gmi-cloud/glm-4.7"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://gmi.cloud/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "gmi-cloud/glm-4.7"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "gmi-cloud/glm-4.7"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Z.ai GLM 4.7 <omp-gmicloud-glm47@local>",
+  "origin": "from-raw"
+}

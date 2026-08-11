@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Hugging Face",
+    "provider_name": "huggingface",
+    "provider_id": "huggingface",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Llama 3.1 8B",
+    "model_short_title": null,
+    "model_name": "llama-3.1-8b",
+    "model_id": "llama318b",
+    "model_reciprocity": null,
+    "agent_id": "omp-huggingface-llama318b",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Llama 3.1 8B <omp-huggingface-llama318b@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 65572,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "huggingface/llama-3.1-8b"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://huggingface.co/docs/inference-providers"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/llama-3.1-8b"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/llama-3.1-8b"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Llama 3.1 8B <omp-huggingface-llama318b@local>",
+  "origin": "from-raw"
+}

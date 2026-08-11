@@ -1,0 +1,87 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "GMI Cloud",
+    "provider_name": "gmi-cloud",
+    "provider_id": "gmicloud",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Grok 4.5",
+    "model_short_title": null,
+    "model_name": "grok-4.5",
+    "model_id": "grok45",
+    "model_reciprocity": null,
+    "agent_id": "omp-gmicloud-grok45",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Grok 4.5 <omp-gmicloud-grok45@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 63285,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "gmi-cloud/grok-4.5"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://gmi.cloud/"
+    ],
+    "model-urls": [
+      "https://docs.x.ai/docs/models"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "gmi-cloud/grok-4.5"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "gmi-cloud/grok-4.5"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Grok 4.5 <omp-gmicloud-grok45@local>",
+  "origin": "from-raw"
+}

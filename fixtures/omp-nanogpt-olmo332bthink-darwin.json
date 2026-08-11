@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "NanoGPT",
+    "provider_name": "nanogpt",
+    "provider_id": "nanogpt",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "OLMo 3 32B Think",
+    "model_short_title": null,
+    "model_name": "olmo-3-32b-think",
+    "model_id": "olmo332bthink",
+    "model_reciprocity": null,
+    "agent_id": "omp-nanogpt-olmo332bthink",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · OLMo 3 32B Think <omp-nanogpt-olmo332bthink@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 64486,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "nanogpt/olmo-3-32b-think"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://nanogpt.ai/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "nanogpt/olmo-3-32b-think"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "nanogpt/olmo-3-32b-think"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · OLMo 3 32B Think <omp-nanogpt-olmo332bthink@local>",
+  "origin": "from-raw"
+}

@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Hugging Face",
+    "provider_name": "huggingface",
+    "provider_id": "huggingface",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Phi-4",
+    "model_short_title": null,
+    "model_name": "phi-4",
+    "model_id": "phi4",
+    "model_reciprocity": null,
+    "agent_id": "omp-huggingface-phi4",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Phi-4 <omp-huggingface-phi4@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 65341,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 63116,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "huggingface/phi-4"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://huggingface.co/docs/inference-providers"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/phi-4"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "huggingface/phi-4"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Phi-4 <omp-huggingface-phi4@local>",
+  "origin": "from-raw"
+}
