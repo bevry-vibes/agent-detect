@@ -322,7 +322,7 @@ rule, a recipe, and a fixture — so contributors extend it without
 re-litigating scope.
 
 - **Harness scope (coding harnesses only):** `cline`, `kimi`, `mmx`,
-  `pi`, `qwen`, `kilo`, `jcode`, `omp`, `reasonix`, `crush`, `opencode`,
+  `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`,
   `vibe`. Claw / machine-control agents are out of scope. `goose`
   remains as a contributor-scope example fixture (kept, not extended).
 - **Model policy:** open-weight/open-source models are preferred; free

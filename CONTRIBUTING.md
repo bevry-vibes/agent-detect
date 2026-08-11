@@ -137,9 +137,9 @@ protection).
 The committed fixtures double as the integration test of the detection
 ladder (see DESIGN.md "test matrix" for the policy). The matrix is the
 `recipesForFixtures` table — one recipe per `agent_id` — expanded by
-`fixtures queue --recipes` and captured by the daemon. Scope: the 12
+`fixtures queue --recipes` and captured by the daemon. Scope: the 11
 coding harnesses (`cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`,
-`jcode`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`) plus the
+`omp`, `reasonix`, `crush`, `opencode`, `vibe`) plus the
 `goose` contributor-scope example.
 
 ### per-harness install table
@@ -155,7 +155,6 @@ over web scripts.
 | pi        | —                                                 | `npm i -g @earendil-works/pi-coding-agent`                     |
 | qwen      | `brew install qwen-code`                          | `npm i -g @qwen-code/qwen-code`                                |
 | kilo      | `brew install Kilo-Org/tap/kilo`                  | `npm i -g @kilocode/cli`                                       |
-| jcode     | `brew tap 1jehuang/jcode && brew install jcode`   | —                                                              |
 | omp       | `brew install can1357/tap/omp`                    | `bun i -g @oh-my-pi/pi-coding-agent`                           |
 | reasonix  | `brew install esengine/reasonix/reasonix`         | `npm i -g reasonix`                                            |
 | crush     | `brew install charmbracelet/tap/crush`            | `npm i -g @charmland/crush`                                    |

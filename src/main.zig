@@ -214,6 +214,13 @@ pub const rulesForModels = [_]ModelRule{
     // reciprocity stays null (the policy check reports "unverified")
     // until a maintainer audits StepFun's model card.
     .{ .name = "step-3.7-flash", .label = "Step 3.7 Flash", .reciprocity = null, .sources = &.{} },
+    // gpt-oss-120b: OpenAI's open-weight GPT-OSS flagship (Cerebras
+    // hosts it on the free trial); reciprocity unverified, stays null
+    // until a maintainer audits the weights license.
+    .{ .name = "gpt-oss-120b", .label = "GPT-OSS 120B", .reciprocity = null, .sources = &.{} },
+    // gemma-4-31b: Google's open-weight Gemma 4 family (Cerebras free
+    // trial); reciprocity unverified, stays null.
+    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -258,10 +265,6 @@ pub const rulesForProviders = [_]ProviderRule{
     // transport fronts). Same data-handling policy as `deepseek-flash`;
     // mirrors it so the direct provider id resolves the same policies.
     .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" } },
-    // jcode's openai-compatible transport that fronts `api.minimax.io`
-    // is the same upstream as the `minimax` rule above — the
-    // openai-compatible interface is transport detail, not a
-    // different provider, so jcode resolves to `minimax`.
     // anthropic: never/null — Anthropic's Commercial Terms state
     // "Anthropic may not train models on Customer Content from the
     // Services" (API tier); no open-weight Anthropic models exist, so
@@ -284,11 +287,6 @@ pub const rulesForProviders = [_]ProviderRule{
     // hosted tier (qwen3.7-plus is a closed model); no public
     // training-policy page was verified, so policies stay null.
     .{ .name = "qwen3.7-plus", .label = "Qwen3.7 Plus", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.7-plus" } },
-    // jcode's `provider_key: "remote"` is a placeholder for sessions
-    // where the model+provider pairing wasn't tagged with a real
-    // upstream. Display name + empty sources reflects that this is an
-    // unknown placeholder, not a real provider.
-    .{ .name = "remote", .label = "Remote", .closed_training = null, .open_training = null, .sources = &.{} },
     // openrouter: never/never — a BYO-key aggregator gateway; it does
     // not host or train models on customer traffic (privacy + terms).
     .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "never", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
@@ -457,7 +455,6 @@ const pi_env = [_][]const u8{ "PI_CODING_AGENT", "PI_PROVIDER", "PI_MODEL" };
 // in the fixtures (fixtures are generated artifacts).
 const qwen_env = [_][]const u8{ "QWEN_API_KEY" };
 const kilo_env = [_][]const u8{ "KILO_API_KEY", "KILO", "KILO_MODEL" };
-const jcode_env = [_][]const u8{ "JCODE_API_KEY" };
 const omp_env = [_][]const u8{ "OMP_API_KEY" };
 const reasonix_env = [_][]const u8{ "REASONIX_API_KEY" };
 const crush_env = [_][]const u8{ "CRUSH_API_KEY" };
@@ -494,10 +491,6 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // kilo: MIT — https://github.com/Kilo-Org/kilocode ships a MIT
     // LICENSE (Kilo Code CLI).
     .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &kilo_procs },
-    // jcode: MIT — https://github.com/1jehuang/jcode ships a MIT
-    // LICENSE (default branch `master`); verified from the repo's
-    // README license badge and the LICENSE file linked from it.
-    .{ .name = "jcode", .label = "jcode", .license = "MIT", .license_sources = &.{ "https://github.com/1jehuang/jcode", "https://github.com/1jehuang/jcode/blob/master/LICENSE" }, .env_markers = &jcode_env, .proc_names = &.{} },
     // omp: MIT — https://github.com/can1357/oh-my-pi (omp is the CLI
     // distribution name of oh-my-pi) ships a MIT LICENSE; verified
     // from the repo's license badge and the LICENSE file linked from it.
@@ -1687,67 +1680,6 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = model_field, .value = model_name });
 }
 
-fn detectJcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    _ = env;
-    if (home.len == 0) return;
-    const dir_path = try std.fs.path.join(a, &.{ home, ".jcode/sessions" });
-
-    // pick the lexicographically-last session json (jcode's filenames
-    // embed a Unix-ms timestamp prefix, so lexicographic order is
-    // also chronological). Entry doesn't expose mtime; sort is fine
-    // since new sessions are written in fresh subdirs only on explicit
-    // user action.
-    var cwd_dir = std.Io.Dir.cwd();
-    var dir = cwd_dir.openDir(io, dir_path, .{ .iterate = true }) catch return;
-    defer dir.close(io);
-    var it = dir.iterate();
-    var latest_name: ?[]const u8 = null;
-    while (it.next(io) catch null) |ent| {
-        if (ent.kind != .file) continue;
-        if (!std.mem.endsWith(u8, ent.name, ".json")) continue;
-        if (latest_name == null or std.mem.lessThan(u8, latest_name.?, ent.name)) {
-            latest_name = ent.name;
-        }
-    }
-    const name = latest_name orelse return;
-    const path = try std.fs.path.join(a, &.{ dir_path, name });
-    defer a.free(path);
-
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(2 * 1024 * 1024)) catch return;
-    defer a.free(data);
-    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
-    defer parsed.deinit();
-
-    // session JSON has top-level: model, provider_key, env_snapshots (last one with provider+model)
-    const root = parsed.value.object;
-    const model_name = (root.get("model") orelse return).string;
-    // empty OR the literal "Unknown" sentinel both mean "we don't
-    // actually know the model". Bail without setting anything so the
-    // capture fails (no fixture written). A partial detection is
-    // bad data, not a fixture.
-    if (model_name.len == 0) return;
-    if (std.ascii.eqlIgnoreCase(model_name, "Unknown")) return;
-    const provider_key = (root.get("provider_key") orelse return).string;
-    if (provider_key.len == 0) return;
-    if (std.ascii.eqlIgnoreCase(provider_key, "Unknown")) return;
-
-    d.provider_name = provider_key;
-    d.provider_label = providerForName(provider_key) orelse try titleCase(a, provider_key);
-    try applyProviderMeta(a, d, provider_key);
-    try applyModel(a, d, model_name, model_name);
-
-    var fields = std.ArrayList(FieldObservation).empty;
-    defer fields.deinit(a);
-    try fields.append(a, .{ .dotted_path = "model", .value = model_name });
-    try fields.append(a, .{ .dotted_path = "provider_key", .value = provider_key });
-    const obs = try a.alloc(FileObservation, 1);
-    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
-    d.raw.config_files = obs;
-    // decision #11: jcode's session file is the source for both dims.
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = path, .field = "provider_key", .value = provider_key });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = path, .field = "model", .value = model_name });
-}
-
 fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = env;
     if (home.len == 0) return;
@@ -2556,8 +2488,6 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectQwen(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "kilo")) {
             try detectKilo(a, io, env, home, d);
-        } else if (std.mem.eql(u8, r.name, "jcode")) {
-            try detectJcode(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "omp")) {
             try detectOmp(a, io, home, d);
         } else if (std.mem.eql(u8, r.name, "reasonix")) {
@@ -3755,38 +3685,6 @@ fn comboDims(a: std.mem.Allocator, combo: *const RecipesForFixtures) ![3][]u8 {
     return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
 }
 
-    pub fn buildJcodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const sessions_dir = try std.fs.path.join(a, &.{ home, ".jcode/sessions" });
-    defer a.free(sessions_dir);
-    const session_path = try std.fs.path.join(a, &.{ sessions_dir, "session_zoo_9999999999999_refresh_fixtures.json" });
-    defer a.free(session_path);
-    const session_body = try std.fmt.allocPrint(a,
-        \\{{
-        \\  "id": "session_zoo_9999999999999_refresh_fixtures",
-        \\  "model": "{s}",
-        \\  "provider_key": "{s}",
-        \\  "route_api_method": "openai-compatible",
-        \\  "status": "Closed",
-        \\  "saved": false
-        \\}}
-        \\
-    , .{ dims[2], dims[1] });
-    const env = try a.alloc([2][]const u8, 2);
-    env[0] = .{ "JCODE_API_KEY", "fake" };
-    env[1] = .{ "", "" };
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = session_path, .content = session_body },
-    };
-    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
     pub fn buildCrushEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
     const home = resolveHome(env_map);
     const dims = try comboDims(a, combo);
@@ -3899,7 +3797,10 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     // from-ids/from-raw still cover them.
     .{ .agent_id = "pi-openrouter-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "deepseek/deepseek-v4-flash", "-p", capture_prompt } },
     .{ .agent_id = "pi-groq-llama4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
-    .{ .agent_id = "pi-cerebras-qwen3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    // cerebras free-trial models (verified working 2026-08-11):
+    // gpt-oss-120b (production) and gemma-4-31b (preview).
+    .{ .agent_id = "pi-cerebras-gptoss120b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gpt-oss-120b", "-p", capture_prompt } },
+    .{ .agent_id = "pi-cerebras-gemma431b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gemma-4-31b", "-p", capture_prompt } },
     .{ .agent_id = "pi-mistral-mistrallargelatest", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "mistral", "--model", "mistral-large-latest", "-p", capture_prompt } },
     .{ .agent_id = "pi-xai-grok4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
     .{ .agent_id = "pi-kimi-kimik3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
@@ -3913,11 +3814,6 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "kilo-minimax-minimaxm3", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    // jcode — minimax/m2.7 (keep), deepseek/v4-flash, minimax/m3, openrouter/v4-flash
-    .{ .agent_id = "jcode-minimax-minimaxm27", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
-    .{ .agent_id = "jcode-deepseek-deepseekv4flash", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
-    .{ .agent_id = "jcode-minimax-minimaxm3", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
-    .{ .agent_id = "jcode-openrouter-deepseekv4flash", .probeNames = &.{ "jcode", "jcode.exe" }, .buildEnv = buildJcodeEnv, .launch = &.{ "jcode", "run", capture_prompt } },
     // omp — minimax-code/m3 (keep), deepseek/v4-flash, openrouter/v4-flash
     .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
     .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
@@ -5739,8 +5635,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             "KIMI_CODE_HOME",  "KIMI_API_KEY",      "KIMI_BASE_URL",
             "MMX_CONFIG_DIR",  "MINIMAX_API_KEY",   "PI_CODING_AGENT",
             "GOOSE_TERMINAL",  "GOOSE_MODE",        "GOOSE_WORKING_DIR",
-            "CLINE_NO_INTERACTIVE", "QWEN_API_KEY",  "JCODE_API_KEY",
-            "OMP_API_KEY",     "REASONIX_API_KEY",  "CRUSH_API_KEY",
+            "CLINE_NO_INTERACTIVE", "QWEN_API_KEY",  "OMP_API_KEY",     "REASONIX_API_KEY",  "CRUSH_API_KEY",
             "KILO_API_KEY",    "OPENCODE_API_KEY",  "VIBE_API_KEY",
             // launcher model-selector markers (from-raw/from-capture
             // workers set these in the child env, never the daemon's —
@@ -5769,7 +5664,6 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
             "goose",        "goose.exe",   "goosed",   "goosed.exe",
             "pi",           "pi.exe",
             "qwen",         "qwen.exe",
-            "jcode",        "jcode.exe",
             "omp",          "omp.exe",
             "reasonix",     "reasonix.exe",
             "crush",        "crush.exe",
