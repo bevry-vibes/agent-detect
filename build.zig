@@ -33,9 +33,9 @@ pub fn build(b: *std.Build) void {
 
     // Read the project version out of `build.zig.zon` so the binary's
     // `--version` output reflects the actual release tag. The format is
-    // calver: `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`).
+    // calver: `<year>.<month>.<day>-<revision>` (e.g. `2026.8.11-1`).
     // Bumped at cut-time by the maintainer runbook documented in
-    // DESIGN.md under "distribution / versioned releases".
+    // CONTRIBUTING.md under "cut a release".
     const version = readVersionFromZon(b);
 
     // `--dev` is required when building the dev binary (never read by
@@ -104,6 +104,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "run zig tests");
     const test_files = [_][]const u8{
         "src/known_fixtures.test.zig",
+        "src/exit_statuses.test.zig",
     };
     inline for (test_files) |file| {
         const test_exe = b.addTest(.{

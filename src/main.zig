@@ -2636,6 +2636,28 @@ const devUsage = if (dev_build)
     \\  --from-capture    launch the real harness so it runs `fixtures capture` in a live
     \\                    model session — token-consuming, user-confirmed only
     \\
+    \\scope flags (queue/dequeue; compose with --harness=/--provider=/
+    \\--model=/--platform=; all scope flags AND together — the only
+    \\conflict is two --stale-by-* age thresholds; --all is the default
+    \\scope made explicit and is absorbed by any other scope flag):
+    \\  --all             the default scope made explicit (every fixture row);
+    \\                    absorbed by any other scope flag
+    \\  --stale-by-days=N      age threshold in days (stored as minutes)
+    \\  --stale-by-hours=N     age threshold in hours (stored as minutes)
+    \\  --stale-by-minutes=N   age threshold in minutes — stamps every
+    \\                    candidate row (no age pre-filter); the daemon skips
+    \\                    only when the fixture is still age-fresh
+    \\  --stale-by-version   version-marker scope: live `--version` vs the
+    \\                    stored fixtures.harness_version; combines with a
+    \\                    --stale-by-* age threshold (skip only when age-fresh
+    \\                    AND version-equal) or stands alone
+    \\  --partial         queue rows with at least one missing dim (seeds)
+    \\  --recipes         every known recipe (host platform)
+    \\  --missing-fixture recipes whose fixtures/<id>.json is absent
+    \\  --available       modifier: probe + record each candidate's harness
+    \\                    availability (unavailable rows stay queued as handoff)
+    \\  --unavailable     modifier (dequeue only): match available=0 rows
+    \\
     \\daemon flags:
     \\  --write-log                 write daemon output to fixtures/daemon.log
     \\  --poll-seconds=N            base poll interval (default 5)
@@ -3017,6 +3039,106 @@ pub const dev = if (build_options.dev) struct {
         \\13 = filesystem I/O error
         \\
     ;
+
+    /// flags shared by `fixtures queue` and `fixtures dequeue` (modes,
+    /// filters, scope flags). Referenced by both subcommand usages so
+    /// the common surface is documented once.
+    pub const queueDequeueFlags =
+        \\refresh modes (queue stamps rows, dequeue filters them; exactly one,
+        \\default from-raw; two+ together → exit 3):
+        \\  --from-ids        resolve cooked from provided ids — declared, not
+        \\                    observed; zero tokens; harness binary not required
+        \\  --from-raw        (default) fabricate env markers + config files and
+        \\                    run the detection ladder via `refresh run` — zero tokens
+        \\  --from-capture    launch the real harness so it runs `fixtures capture`
+        \\                    in a live model session — token-consuming,
+        \\                    user-confirmed only
+        \\
+        \\filters (at least one required for queue/dequeue):
+        \\  --fixture=ID  4-part <h>-<p>-<m>-<platform> id (exact)
+        \\  --agent=ID    3-part <h>-<p>-<m> id (platform unfiltered)
+        \\  --harness=H   constrain harness to H (any of H/P/M/PLAT)
+        \\
+        \\scope flags (all AND together; the only conflict is two
+        \\--stale-by-* age thresholds; --all is the default scope made
+        \\explicit and is absorbed by any other scope flag; compose with
+        \\the dim filters above):
+        \\  --all            the default scope made explicit (every fixture
+        \\                   row); absorbed by any other scope flag
+        \\  --stale-by-days=N      age threshold in days (stored as minutes)
+        \\  --stale-by-hours=N     age threshold in hours (stored as minutes)
+        \\  --stale-by-minutes=N   age threshold in minutes — the single age
+        \\                   column; each flag stamps every candidate row (no
+        \\                   age pre-filter); the daemon skips only when the
+        \\                   fixture is still age-fresh
+        \\  --stale-by-version  version-marker scope: live harness `--version`
+        \\                   vs the fixture's captured `harness_version`;
+        \\                   combines with a --stale-by-* age threshold (skip
+        \\                   only when age-fresh AND version-equal) or stands alone
+        \\  --partial        queue rows with at least one missing dim (seeds)
+        \\  --recipes        every known recipe (host platform)
+        \\  --missing-fixture recipes whose fixtures/<id>.json is absent from disk
+        \\  --available      modifier: probe each candidate's harness and record
+        \\                   1/0 into the available column (unavailable rows stay
+        \\                   queued as handoff; from-ids records but does not gate)
+        \\  --unavailable    modifier (dequeue only): match available=0 rows
+        \\                   (alias --available=0)
+        \\
+    ;
+
+    /// usage for `fixtures queue` — printed by `fixtures queue --help`
+    /// and on queue argument errors. Subcommand-scoped so an error never
+    /// dumps the whole namespace help.
+    pub const queueUsage =
+        \\agent-detect fixtures queue — enumerate + upsert queue rows (no evaluation)
+        \\
+        \\usage: agent-detect fixtures queue [scope] [filters] [mode]
+        \\
+        \\With a scope flag, every candidate is upserted into `queue`. Without
+        \\one, a seed row is created from the positive dims (`--harness=`/
+        \\`--provider=`/`--model=`/`--platform=` or the composite `--agent=`/
+        \\`--fixture=`) with the rest `null` — the daemon expands seeds over
+        \\the known recipes.
+        \\
+        ++ queueDequeueFlags ++
+        \\exit codes: 0 = ok, 2 = unrecognised argument, 3 = conflicting argument,
+        \\4 = missing required arguments, 11 = out of memory, 12 = sqlite query error,
+        \\13 = filesystem I/O error
+        \\
+    ;
+
+    /// usage for `fixtures dequeue` — printed by `fixtures dequeue --help`
+    /// and on dequeue argument errors.
+    pub const dequeueUsage =
+        \\agent-detect fixtures dequeue — DELETE matching queue rows (never touches fixtures)
+        \\
+        \\usage: agent-detect fixtures dequeue [scope] [filters] [mode]
+        \\
+        \\Deletes every `queue` row matching the filters/scope. Filters are
+        \\required; no evaluation happens, nothing is captured.
+        \\
+        ++ queueDequeueFlags ++
+        \\exit codes: 0 = ok, 2 = unrecognised argument, 3 = conflicting argument,
+        \\4 = missing required arguments, 11 = out of memory, 12 = sqlite query error,
+        \\13 = filesystem I/O error
+        \\
+    ;
+
+    /// true when the args after a `fixtures` subcommand contain a help
+    /// flag (`help`, `--help`, `-h`) — lets `fixtures queue --help`
+    /// print the subcommand usage instead of an argument error.
+    pub fn subcommandWantsHelp(init: std.process.Init) bool {
+        const a = init.arena.allocator();
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return false;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "fixtures"
+        _ = args_it.skip(); // subcommand
+        while (args_it.next()) |arg| {
+            if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "help")) return true;
+        }
+        return false;
+    }
 
     /// print the `fixtures` namespace help and exit 0.
     pub fn runFixturesHelp(init: std.process.Init) !u8 {
@@ -5065,16 +5187,21 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         const a = init.arena.allocator();
         const io = init.io;
 
+        if (subcommandWantsHelp(init)) {
+            writeOut(io, queueUsage);
+            return EXIT_OK;
+        }
+
         const f = parseFilters(init) catch |err| {
             switch (err) {
                 error.NoFilter => writeErr(io, MSG_MISSING_ARG),
                 error.InvalidFixtureId => writeErr(io, "fixtures queue: --fixture=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
                 error.InvalidAgentId => writeErr(io, "fixtures queue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
-                error.InvalidThreshold => writeErr(io, "fixtures queue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
+                error.InvalidThreshold => writeErr(io, "fixtures queue: --stale-by-days=/--stale-by-hours=/--stale-by-minutes= must be integers >= 1\n"),
                 error.ConflictingFilters => writeErr(io, MSG_CONFLICTING_ARG),
                 error.OutOfMemory => writeErr(io, MSG_OUT_OF_MEMORY),
             }
-            writeOut(io, fixturesUsage);
+            writeOut(io, queueUsage);
             return if (err == error.NoFilter) EXIT_MISSING_ARG else if (err == error.ConflictingFilters) EXIT_CONFLICTING_ARG else if (err == error.OutOfMemory) EXIT_OUT_OF_MEMORY else EXIT_UNRECOGNISED_ARG;
         };
 
@@ -5087,7 +5214,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             f.model.len > 0 or f.platform.len > 0 or f.composite;
         if (!positive) {
             writeErr(io, MSG_MISSING_ARG);
-            writeOut(io, fixturesUsage);
+            writeOut(io, queueUsage);
             return EXIT_MISSING_ARG;
         }
 
@@ -5172,16 +5299,21 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         const a = init.arena.allocator();
         const io = init.io;
 
+        if (subcommandWantsHelp(init)) {
+            writeOut(io, dequeueUsage);
+            return EXIT_OK;
+        }
+
         const f = parseFilters(init) catch |err| {
             switch (err) {
                 error.NoFilter => writeErr(io, MSG_MISSING_ARG),
                 error.InvalidFixtureId => writeErr(io, "fixtures dequeue: --fixture=<id> must be a 4-part <harness>-<provider>-<model>-<platform> id\n"),
                 error.InvalidAgentId => writeErr(io, "fixtures dequeue: --agent=<id> must be a 3-part <harness>-<provider>-<model> id\n"),
-                error.InvalidThreshold => writeErr(io, "fixtures dequeue: --stale-by-days=/--stale-by-minutes= must be integers >= 1\n"),
+                error.InvalidThreshold => writeErr(io, "fixtures dequeue: --stale-by-days=/--stale-by-hours=/--stale-by-minutes= must be integers >= 1\n"),
                 error.ConflictingFilters => writeErr(io, MSG_CONFLICTING_ARG),
                 error.OutOfMemory => writeErr(io, MSG_OUT_OF_MEMORY),
             }
-            writeOut(io, fixturesUsage);
+            writeOut(io, dequeueUsage);
             return if (err == error.NoFilter) EXIT_MISSING_ARG else if (err == error.ConflictingFilters) EXIT_CONFLICTING_ARG else if (err == error.OutOfMemory) EXIT_OUT_OF_MEMORY else EXIT_UNRECOGNISED_ARG;
         };
 
