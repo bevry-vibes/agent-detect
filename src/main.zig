@@ -4036,6 +4036,18 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
     .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
     .{ .agent_id = "qwen-qwen-qwen38max", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    // qwen catalog inference (2026-08-11, `~/.qwen/settings.json`
+    // `modelProviders`): minimax/deepseek all-models steps per the
+    // ordering spec, then evergreen-clearing xai/requesty/dashscope
+    // combos. baseUrl hosts map via `providerForBaseUrl` (requesty and
+    // x.ai added to the table this batch).
+    .{ .agent_id = "qwen-minimax-minimaxm25", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-minimax-minimaxm27", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-deepseek-deepseekv4pro", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-xai-grok45", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-xai-grok420", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-openai-gpt4o", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-qwen-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
     // kilo — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash (keep), minimax/m3, openrouter/v4-flash, zai/glm-5.2
     .{ .agent_id = "kilo-anthropic-claudesonnet4", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     .{ .agent_id = "kilo-deepseek-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },

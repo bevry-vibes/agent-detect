@@ -1,0 +1,98 @@
+{
+  "cooked": {
+    "harness_label": "Qwen Code",
+    "harness_short_title": null,
+    "harness_name": "qwen",
+    "harness_id": "qwen",
+    "harness_license": "Apache-2.0",
+    "provider_label": "xAI",
+    "provider_name": "xai",
+    "provider_id": "xai",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Grok 4.5",
+    "model_short_title": null,
+    "model_name": "grok-4.5",
+    "model_id": "grok45",
+    "model_reciprocity": null,
+    "agent_id": "qwen-xai-grok45",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Qwen Code · Grok 4.5 <qwen-xai-grok45@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "QWEN_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 98135,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 98003,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "<home>/.qwen/settings.json": {
+      "model.name": "grok-4.5",
+      "modelProviders.openai[].baseUrl": "https://api.x.ai/v1",
+      "security.auth.selectedType": "openai"
+    },
+    "harness-urls": [
+      "https://github.com/QwenLM/qwen-code",
+      "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://x.ai/grok",
+      "https://docs.x.ai/docs/models"
+    ],
+    "model-urls": [
+      "https://docs.x.ai/docs/models"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "QWEN_API_KEY",
+        "value": "qwen"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.qwen/settings.json",
+        "field": "model.name",
+        "value": "grok-4.5"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.qwen/settings.json",
+        "field": "modelProviders.openai[].baseUrl",
+        "value": "https://api.x.ai/v1"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Qwen Code · Grok 4.5 <qwen-xai-grok45@local>",
+  "origin": "from-raw"
+}

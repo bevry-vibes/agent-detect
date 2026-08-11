@@ -1,0 +1,98 @@
+{
+  "cooked": {
+    "harness_label": "Qwen Code",
+    "harness_short_title": null,
+    "harness_name": "qwen",
+    "harness_id": "qwen",
+    "harness_license": "Apache-2.0",
+    "provider_label": "OpenAI",
+    "provider_name": "openai",
+    "provider_id": "openai",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "GPT-4o",
+    "model_short_title": null,
+    "model_name": "gpt-4o",
+    "model_id": "gpt4o",
+    "model_reciprocity": null,
+    "agent_id": "qwen-openai-gpt4o",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "QWEN_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 98149,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 98003,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "<home>/.qwen/settings.json": {
+      "model.name": "gpt-4o",
+      "modelProviders.openai[].baseUrl": "https://api.openai.com/v1",
+      "security.auth.selectedType": "openai"
+    },
+    "harness-urls": [
+      "https://github.com/QwenLM/qwen-code",
+      "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://openai.com/policies/privacy-policy/",
+      "https://openai.com/policies/terms-of-use/"
+    ],
+    "model-urls": [
+      "https://openai.com/api/pricing/"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "QWEN_API_KEY",
+        "value": "qwen"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.qwen/settings.json",
+        "field": "model.name",
+        "value": "gpt-4o"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.qwen/settings.json",
+        "field": "modelProviders.openai[].baseUrl",
+        "value": "https://api.openai.com/v1"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>",
+  "origin": "from-raw"
+}
