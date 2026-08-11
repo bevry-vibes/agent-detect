@@ -501,7 +501,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // reasonix: MIT — https://github.com/esengine/DeepSeek-Reasonix
     // ships a MIT LICENSE (default branch `main-v2`); verified from
     // the repo's license badge and the LICENSE file linked from it.
-    .{ .name = "reasonix", .label = "Reasonix", .license = "MIT", .license_sources = &.{ "https://github.com/esengine/DeepSeek-Reasonix", "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE" }, .env_markers = &reasonix_env, .proc_names = &.{} },
+    .{ .name = "reasonix", .label = "Reasonix", .license = "MIT", .license_sources = &.{ "https://github.com/esengine/DeepSeek-Reasonix", "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE" }, .env_markers = &reasonix_env, .proc_names = &.{ "reasonix", "reasonix.exe" } },
     // crush: FSL-1.1-MIT (Functional Source License) —
     // https://github.com/charmbracelet/crush links its LICENSE.md from
     // the README's License section; that is the upstream SPDX id.
@@ -1595,16 +1595,19 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     // Naive parser: scan top-level lines for `default_model = "<value>"`.
     // The provider resolution matches default_model against the
     // [[providers]] entries' `name` field, then reads that entry's
-    // `default` field for the actual model id. When the providers
-    // table can't be resolved (e.g. the model id equals the provider
-    // name in practice), fall back to using the default_model string as
-    // both the provider and model id.
+    // `default` (or first `models = [...]` entry) for the actual model
+    // id. Keys are matched by the token before `=` so aligned columns
+    // (`name        = "..."`) parse the same as single-space ones; when
+    // the providers table can't be resolved (e.g. the model id equals
+    // the provider name in practice), fall back to using the
+    // default_model string as both the provider and model id.
     var lines = std.mem.splitScalar(u8, data, '\n');
     var default_model: ?[]const u8 = null;
     while (lines.next()) |raw| {
         const t = std.mem.trim(u8, raw, " \t\r");
-        if (!std.mem.startsWith(u8, t, "default_model")) continue;
         const eq = std.mem.findScalar(u8, t, '=') orelse continue;
+        const key = std.mem.trim(u8, t[0..eq], " \t\r");
+        if (!std.mem.eql(u8, key, "default_model")) continue;
         const val = std.mem.trim(u8, t[eq + 1 ..], " \"\t");
         if (val.len == 0) continue;
         default_model = val;
@@ -1613,13 +1616,15 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     const dm = default_model orelse return;
 
     // walk the `[[providers]]` blocks: find the entry whose `name`
-    // equals `dm` and read its `default` field for the model id. Both
-    // are quoted toml strings on their own lines:
+    // equals `dm` and read its `default` (or first `models = [...]`
+    // entry) for the model id:
     //   [[providers]]
     //   name = "deepseek-flash"
-    //   default = "deepseek-v4-flash"
+    //   default = "deepseek-v4-flash"     (fabricated from-raw configs)
+    //   models = ["deepseek-v4-flash"]    (real configs, aligned)
     const provider_name: []const u8 = dm;
     var model_name: []const u8 = dm;
+    var model_field: []const u8 = "default_model";
     var in_providers = false;
     var in_dm = false;
     var lines2 = std.mem.splitScalar(u8, data, '\n');
@@ -1631,16 +1636,28 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
             continue;
         }
         if (!in_providers) continue;
-        if (std.mem.startsWith(u8, t, "name =")) {
-            const eq = std.mem.findScalar(u8, t, '=') orelse continue;
-            const val = std.mem.trim(u8, t[eq + 1 ..], " \"\t");
+        const eq = std.mem.findScalar(u8, t, '=') orelse continue;
+        const key = std.mem.trim(u8, t[0..eq], " \t\r");
+        const val = std.mem.trim(u8, t[eq + 1 ..], " \"\t");
+        if (std.mem.eql(u8, key, "name")) {
             in_dm = std.mem.eql(u8, val, dm);
             continue;
         }
-        if (in_dm and std.mem.startsWith(u8, t, "default =")) {
-            const eq = std.mem.findScalar(u8, t, '=') orelse continue;
-            const val = std.mem.trim(u8, t[eq + 1 ..], " \"\t");
-            if (val.len > 0) model_name = val;
+        if (in_dm and std.mem.eql(u8, key, "default")) {
+            if (val.len > 0) {
+                model_name = val;
+                model_field = "providers[].default";
+            }
+            break;
+        }
+        if (in_dm and std.mem.eql(u8, key, "models")) {
+            const q = std.mem.findScalar(u8, t, '"') orelse continue;
+            const rest = t[q + 1 ..];
+            const q2 = std.mem.findScalar(u8, rest, '"') orelse continue;
+            if (q2 > 0) {
+                model_name = rest[0..q2];
+                model_field = "providers[].models";
+            }
             break;
         }
     }
@@ -1654,15 +1671,16 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     defer fields.deinit(a);
     try fields.append(a, .{ .dotted_path = "default_model", .value = dm });
     if (!std.mem.eql(u8, model_name, dm)) {
-        try fields.append(a, .{ .dotted_path = "providers[].default", .value = model_name });
+        try fields.append(a, .{ .dotted_path = model_field, .value = model_name });
     }
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
     // decision #11: the provider is `default_model`; the model is the
-    // matched [[providers]] entry's `default` (both from config.toml).
+    // matched [[providers]] entry's `default`/`models` (both from
+    // config.toml).
     try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "default_model", .value = dm });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "providers[].default", .value = model_name });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = model_field, .value = model_name });
 }
 
 fn detectJcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -3879,7 +3897,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
     .{ .agent_id = "omp-openrouter-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
     // reasonix — deepseek-flash/v4-flash (keep), deepseek/v4-flash, minimax/m3
-    .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
+    .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv, .launch = &.{ "reasonix", "run", "--permission-mode", "bypassPermissions", capture_prompt } },
     .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
     .{ .agent_id = "reasonix-minimax-minimaxm3", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
     // crush — hyper/qwen3.7-plus (keep), hyper/v4-flash, minimax/m3, deepseek/v4-flash

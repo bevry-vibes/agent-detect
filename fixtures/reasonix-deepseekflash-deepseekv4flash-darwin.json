@@ -33,38 +33,30 @@
     ],
     "env": {
       "REASONIX_API_KEY": {
-        "present": true
+        "present": false
       }
     },
     "process_lineage": [
       {
-        "pid": 34978,
+        "pid": 43766,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 34977,
+        "pid": 43765,
         "name": "bash"
       },
       {
-        "pid": 34956,
-        "name": "bash"
+        "pid": 43565,
+        "name": "reasonix"
       },
       {
-        "pid": 34904,
-        "name": "bash"
-      },
-      {
-        "pid": 61993,
-        "name": "kilo"
-      },
-      {
-        "pid": 35373,
-        "name": "bash"
+        "pid": 43206,
+        "name": "agent-detect-dev"
       }
     ],
     "<home>/.reasonix/config.toml": {
       "default_model": "deepseek-flash",
-      "providers[].default": "deepseek-v4-flash"
+      "providers[].models": "deepseek-v4-flash"
     },
     "harness-urls": [
       "https://github.com/esengine/DeepSeek-Reasonix",
@@ -81,8 +73,8 @@
     "evidence": [
       {
         "dim": "harness",
-        "source": "env",
-        "name": "REASONIX_API_KEY",
+        "source": "lineage",
+        "name": "reasonix",
         "value": "reasonix"
       },
       {
@@ -96,11 +88,11 @@
         "dim": "model",
         "source": "config",
         "name": "<home>/.reasonix/config.toml",
-        "field": "providers[].default",
+        "field": "providers[].models",
         "value": "deepseek-v4-flash"
       }
     ]
   },
   "trailer": "Co-authored-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseekflash-deepseekv4flash@local>",
-  "origin": "from-raw"
+  "origin": "from-capture"
 }
