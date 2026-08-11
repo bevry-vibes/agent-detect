@@ -91,6 +91,7 @@ real agent session, and that session is a model conversation.
 - Global-settings rule (never change global harness/provider/model settings; only env/arg/scope flags; worker captures run in a sandboxed HOME; flag any needed global change).
 - Evidence-attribution rule (every detected dim in observed fixtures carries a claim to a present, value-matching source; semantic deducibility is human review; custom-db sources are logged follow-ups, never faked; `from-ids` fixtures are declared, not observed).
 - Cross-platform daemon control principle (single `fixtures/daemon.ctl` protocol for pause/resume/stop across macOS/Linux/Windows — no per-platform signal doubles; Ctrl+C stays the terminal graceful-stop).
+- **No docker isolation (decision, 2026-08-11):** harness installs/runs are never containerized. A container (overwhelmingly Linux-based) would not produce genuine macOS/Windows captures — platform evidence (config paths, env markers, process lineage, harness session behavior) must come from the harness running on the actual host platform, and dockerized runs would paper over exactly the portability the matrix exists to test. Isolation is instead handled by the sandboxed worker HOME (2a) and the user-only daemon rule; new/untrusted harnesses are vetted via the CONTRIBUTING.md install-confirmation rule.
 - Refresh flavours (`refresh-cooked-from-ids` / `refresh-cooked-from-raw` / `refresh-from-capture`), the `origin` key, and pointer to CONTRIBUTING.md for installs + probing runbook. No token-cost text here.
 
 **1c. CONTRIBUTING.md — add:**
@@ -195,6 +196,7 @@ Add to `known_fixtures.test.zig` (or a new test file):
 - **pi real model detection:** `detectPi` (main.zig:1726) currently uses `PI_PROVIDER`/`PI_MODEL` placeholder defaults ("model detection TODO") — implement real session model parsing so pi fixtures are genuine captures, not assumptions.
 - **Any other custom evidence source** the 2h detector audit turns up gets the same treatment: claimed if it maps to env/config/session shapes, logged here if it does not.
 - **Consider removing `refresh-cooked-from-raw`:** deferred to a full-impact follow-up. Weigh: fabricated evidence vs the "real captures, not synthetic assemblies" contract (main.zig:2013); the machinery overhead (2a/2b/2h) serving only this path; the loss of the only zero-token automated `detect()` integration coverage and what replaces it (in-process `detect()` regression test); whether `from-ids` + `from-capture` + contributor captures can cover the matrix.
+- **Docker isolation for harness installs/runs — explicitly NOT adopted (2026-08-11):** containers would not give genuine macOS/Windows captures (platform evidence must come from the real host run); the sandboxed worker HOME + user-only daemon already isolate runs from host config. Recorded so the idea is not re-raised without revisiting this rationale.
 
 ## Out of scope
 

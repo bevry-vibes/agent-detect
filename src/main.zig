@@ -210,6 +210,10 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "claude-opus-4", .label = "Claude Opus 4", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/opus", "https://docs.anthropic.com/en/docs/about-claude/models" } },
     // claude-haiku-4: closed — API-only; no weights.
     .{ .name = "claude-haiku-4", .label = "Claude Haiku 4", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/haiku", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    // step-3.7-flash: unverified — no independent cross-references yet;
+    // reciprocity stays null (the policy check reports "unverified")
+    // until a maintainer audits StepFun's model card.
+    .{ .name = "step-3.7-flash", .label = "Step 3.7 Flash", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -3839,6 +3843,9 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
     .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
     .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    // cline additions (real usable combos): clinepass/step-3.7-flash and clinepass/free-deepseek-v4-flash
+    .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
     // goose — goose/claude-sonnet-4 (contributor-scope example, keeps the harness→recipe test green)
     .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .buildEnv = buildGooseEnv },
     // kimi — minimax/m3 (keep), deepseek/v4-flash, kimi/k3
