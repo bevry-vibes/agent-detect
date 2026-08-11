@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: mlugg/setup-zig@v2
+      - uses: step-security/setup-zig@v2
         with:
           version: 0.16.0
 
@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: mlugg/setup-zig@v2
+      - uses: step-security/setup-zig@v2
         with:
           version: 0.16.0
 
@@ -110,7 +110,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: mlugg/setup-zig@v2
+      - uses: step-security/setup-zig@v2
         with:
           version: 0.16.0
 
