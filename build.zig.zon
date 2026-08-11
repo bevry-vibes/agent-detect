@@ -1,6 +1,6 @@
 .{
     .name = .agent_detect,
-    .version = "2026.8.11-2",
+    .version = "2026.8.11-3",
     .dependencies = .{},
     .paths = .{""},
     .fingerprint = 0x9e6bf0b525b94d47,
