@@ -163,21 +163,22 @@ plus the `goose` contributor-scope example.
 Confirm every install with the user; prefer homebrew / npm / uv / scoop
 over web scripts.
 
-| harness   | macOS / Linux (homebrew)                          | cross-platform (npm / uv)                                      |
-| --------- | ------------------------------------------------- | -------------------------------------------------------------- |
-| cline     | —                                                 | `npm i -g cline`                                               |
-| kimi-code | —                                                 | `npm i -g @moonshot-ai/kimi-code`                              |
-| mmx       | —                                                 | `npm i -g mmx-cli`                                             |
-| pi        | —                                                 | `npm i -g @earendil-works/pi-coding-agent`                     |
-| qwen      | `brew install qwen-code`                          | `npm i -g @qwen-code/qwen-code`                                |
-| kilo      | `brew install Kilo-Org/tap/kilo`                  | `npm i -g @kilocode/cli`                                       |
-| omp       | `brew install can1357/tap/omp`                    | `bun i -g @oh-my-pi/pi-coding-agent`                           |
-| reasonix  | `brew install esengine/reasonix/reasonix`         | `npm i -g reasonix`                                            |
-| crush     | `brew install charmbracelet/tap/crush`            | `npm i -g @charmland/crush`                                    |
-| opencode  | `brew install anomalyco/tap/opencode`             | `npm i -g opencode-ai`                                         |
-| vibe      | —                                                 | `uv tool install mistral-vibe`                                 |
-| cursor    | `brew install cursor-cli`                         | — (binaries: `cursor-agent`)                                  |
-| copilot   | `brew install copilot-cli`                        | — (binaries: `copilot`)                                       |
+| harness   | macOS / Linux (homebrew)                          | cross-platform (npm / uv)                                      | Windows (install → binary location)                                                                           |
+| --------- | ------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| cline     | —                                                 | `npm i -g cline`                                                 | `npm i -g cline` → `~\scoop\apps\nodejs\current\bin\cline{,.cmd,.ps1}`                                        |
+| kimi-code | —                                                 | `npm i -g @moonshot-ai/kimi-code`                                | `npm i -g @moonshot-ai/kimi-code` → `~\.kimi-code\bin\kimi.exe`                                               |
+| mmx       | —                                                 | `npm i -g mmx-cli`                                               | `npm i -g mmx-cli` → `~\scoop\apps\nodejs\current\bin\mmx{,.cmd,.ps1}`                                        |
+| pi        | —                                                 | `npm i -g @earendil-works/pi-coding-agent`                       | `scoop install pi-coding-agent` → `~\scoop\shims\pi.exe`                                                      |
+| qwen      | `brew install qwen-code`                          | `npm i -g @qwen-code/qwen-code`                                  | `npm i -g @qwen-code/qwen-code` → `~\scoop\apps\nodejs\current\bin\qwen{,.cmd,.ps1}`                          |
+| kilo      | `brew install Kilo-Org/tap/kilo`                  | `npm i -g @kilocode/cli`                                         | `npm i -g @kilocode/cli` → `~\scoop\apps\nodejs\current\bin\kilo{,.cmd,.ps1}`                                 |
+| omp       | `brew install can1357/tap/omp`                    | `bun i -g @oh-my-pi/pi-coding-agent`                             | `scoop install oh-my-pi` → `~\scoop\shims\omp.exe`                                                            |
+| reasonix  | `brew install esengine/reasonix/reasonix`         | `npm i -g reasonix`                                              | `scoop install reasonix` → `~\scoop\shims\reasonix.exe`                                                       |
+| crush     | `brew install charmbracelet/tap/crush`            | `npm i -g @charmland/crush`                                      | `winget install charmbracelet.crush` → winget package dir (alias on PATH)                                     |
+| opencode  | `brew install anomalyco/tap/opencode`             | `npm i -g opencode-ai`                                           | `scoop install opencode` → `~\scoop\shims\opencode.exe`                                                       |
+| vibe      | —                                                 | `uv tool install mistral-vibe`                                   | `uv tool install mistral-vibe` → `~\scoop\persist\uv\tools\shims\vibe.exe`                                    |
+| cursor    | `brew install cursor-cli`                         | — (binaries: `cursor-agent`)                                    | `irm 'https://cursor.com/install?win32=true' \| iex` → `%LOCALAPPDATA%\cursor-agent\cursor-agent{,.cmd,.ps1}` |
+| copilot   | `brew install copilot-cli`                        | — (binaries: `copilot`)                                         | `scoop install copilot-cli` → `~\scoop\shims\copilot.exe`                                                     |
+| goose     | —                                                  | — (contributor-scope example)                               | `scoop install goose-cli` → `~\scoop\shims\goose.exe` (contributor-scope example)                             |
 
 ### probing scope + runbook
 
