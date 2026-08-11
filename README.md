@@ -1,13 +1,15 @@
 # agent-detect
 
-Infers the current agent's **harness**, **provider**, and **model** — multi-harness, multi-OS, multi-arch — so AI agents can identify themselves as required by [Bevry's skills](https://github.com/bevry-vibes/skills) (`ai-policy.md` identification + reciprocity, `commits.md` co-author trailers).
+Infers the current agent's **harness**, **provider**, and **model** — multi-harness, multi-OS, multi-arch — so AI agents can identify themselves accurately, as required by various AI policies and skills.
 
 ## usage
 
+### installation
+
 Identify the binary for your platform from the [latest release](https://github.com/bevry-vibes/agent-detect/releases/latest):
 
-| binary                                                                                                                                              | os                   | arch   |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------ |
+| binary                                                                                                                                      | os                   | arch   |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ------ |
 | [`agent-detect-windows-x86_64.exe`](https://github.com/bevry-vibes/agent-detect/releases/latest/download/agent-detect-windows-x86_64.exe)   | Windows              | x86_64 |
 | [`agent-detect-windows-aarch64.exe`](https://github.com/bevry-vibes/agent-detect/releases/latest/download/agent-detect-windows-aarch64.exe) | Windows              | ARM64  |
 | [`agent-detect-macos-x86_64`](https://github.com/bevry-vibes/agent-detect/releases/latest/download/agent-detect-macos-x86_64)               | macOS                | x86_64 |
@@ -32,7 +34,9 @@ Invoke-WebRequest https://github.com/bevry-vibes/agent-detect/releases/latest/do
 
 Once downloaded, the use cases:
 
-**identify yourself / model** (per [minimax.md](https://github.com/bevry-vibes/skills/blob/main/minimax.md)) — report the harness, provider, and model, with their provenance:
+### identification
+
+Identify your agent (harness, model, provider) via:
 
 ```sh
 # sh (linux, macos)
@@ -44,92 +48,63 @@ Once downloaded, the use cases:
 .\agent-detect.exe cooked   # machine-readable JSON report
 ```
 
-Sample report (excerpt):
+### reciprocity compliance
 
-```json
-{
-  "harness_label": "Kilo Code",
-  "provider_label": "DeepSeek",
-  "model_label": "DeepSeek V4 Flash",
-  "model_name": "deepseek-v4-flash",
-  "agent_id": "kilo-deepseek-deepseekv4flash"
-}
-```
-
-`cooked` (and `trailer co-author` / `trailer assisted-by` /
-`is-reciprocal`) also accept a full combo
-`--harness=H --provider=P --model=M` to resolve the report from the
-rule tables instead of live detection.
-
-Rules for this use case: on exit `8` (identity unresolved, nothing on
-stdout) agent-detect must be updated to detect your agent (harness,
-provider, model). On exit `9` (partial report still printed to stdout)
-agent-detect must be updated for the reciprocity of your agent
-(harness, provider, model). Exit `7` means the combo you named is not
-a known recipe.
-
-**reciprocity compliance** (per [ai-policy.md](https://github.com/bevry-vibes/skills/blob/main/ai-policy.md)) — check whether the current agent is reciprocal under Bevry's AI policy:
+Check your agent (harness, model, provider)'s reciprocity compliance via:
 
 ```sh
-./agent-detect is-reciprocal   # prints "is reciprocal" (0) or "not reciprocal" (10)
+# sh (linux, macos)
+./agent-detect check-reciprocal   # prints "is reciprocal" (0) or "not reciprocal" (10)
+```
+
+```powershell
+# powershell (windows)
+.\agent-detect.exe check-reciprocal   # machine-readable JSON report
 ```
 
 Rules for this use case, by exit code:
 
-| exit | stdout | what it means | what to do |
-| ---- | ------ | ------------- | ---------- |
-| 0 | `is reciprocal` | the agent's harness/provider/model satisfy the policy | proceed |
-| 10 | `not reciprocal` | the policy requirement failed | not permitted — stop |
-| 9 | — | identity resolved, but reciprocity data is incomplete (policy fields null) | agent-detect must be updated for the reciprocity of your agent (harness, provider, model) |
-| 8 | — | live detection couldn't resolve the identity | agent-detect must be updated to detect your agent (harness, provider, model) |
-| 7 | — | the named combo is not a known recipe | check the spelling against the rule tables |
+| exit | stdout           | what it means                                                              | what to do                                                                                |
+| ---- | ---------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 0    | `is reciprocal`  | the harness, provider, and model are all reciprocal                        | proceed                                                                                   |
+| 10   | `not reciprocal` | either the harness, provider, model is not reciprocal                      | not permitted - stop                                                                      |
+| 9    | —                | identity resolved, but reciprocity data is incomplete (policy fields null) | agent-detect must be updated for the reciprocity of your agent (harness, provider, model) |
+| 8    | —                | live detection couldn't resolve the identity                               | `agent-detect` must be updated to detect your agent (harness, provider, model)            |
+| 7    | —                | the named combo is not a known recipe                                      | check the spelling against the rule tables                                                |
 
-On exit `10`, the full message `agent (harness, provider, model) data
-complete and requirement failed` is written to stderr alongside the
-`not reciprocal` verdict on stdout.
+### co-author trailer
 
-**co-author trailer** (per [commits.md](https://github.com/bevry-vibes/skills/blob/main/commits.md)) — emit only the `Co-authored-by` trailer:
+Generate your agent (harness, model, provider) co-author trailer via:
 
 ```sh
-# sh
+# sh (linux, macos)
 git commit --trailer "$(./agent-detect trailer co-author)"
 ```
 
 ```powershell
-# powershell
+# powershell (windows)
 git commit --trailer "$(.\agent-detect.exe trailer co-author)"
 ```
 
-Example trailer: `Co-authored-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>`.
+Never guess or cache the identity — generate it fresh per commit. Never commit without the resolved trailer.
 
-Rules for this use case: never guess or cache the identity — generate
-it fresh per commit. On exit `8`, agent-detect must be updated to
-detect your agent (harness, provider, model); do not commit without
-the trailer.
-
-**assisted-by trailer** (e.g. [GCC's AI policy](https://gcc.gnu.org/ai-policy.html)) — emit only the `Assisted-by` trailer:
+### assisted-by trailer
 
 ```sh
+# sh (linux, macos)
 git commit --trailer "$(./agent-detect trailer assisted-by)"
 ```
 
-Example trailer: `Assisted-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>`.
+```powershell
+# powershell (windows)
+git commit --trailer "$(.\agent-detect.exe trailer assisted-by)"
+```
 
-Other actions: `agent-detect help` (also `--help`, `-h`, or no
-arguments) and `agent-detect version` (also `--version`, `-V`).
-
-Exit codes appear contextually in each example above; the full
-canonical exit-status registry lives in
-[DESIGN.md](./DESIGN.md#exit-status-registry).
-
-The released binary has zero runtime dependencies. The maintainer
-`fixtures` workflow (see [CONTRIBUTING.md](./CONTRIBUTING.md))
-additionally needs the system `sqlite3` CLI to reach the sqlite state
-store.
+Never guess or cache the identity — generate it fresh per commit. Never commit without the resolved trailer.
 
 ## contributing
 
-If your platform is not detected, or the agent-detect CLI failed,
+If your platform is not detected, or the `agent-detect` CLI failed,
 you will need to contribute a patch. See
 [CONTRIBUTING.md](./CONTRIBUTING.md) for refresh / add-rule /
 cut-a-release workflows.
