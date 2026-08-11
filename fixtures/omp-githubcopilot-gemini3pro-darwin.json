@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "gemini-3-pro",
     "model_id": "gemini3pro",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "omp-githubcopilot-gemini3pro",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · Gemini 3 Pro <omp-githubcopilot-gemini3pro@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 67158,
+        "pid": 14293,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 67018,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -57,7 +73,8 @@
       "https://github.com/features/copilot"
     ],
     "model-urls": [
-      "https://deepmind.google/models/"
+      "https://deepmind.google/models/",
+      "https://ai.google.dev/gemini-api/docs/models"
     ],
     "evidence": [
       {

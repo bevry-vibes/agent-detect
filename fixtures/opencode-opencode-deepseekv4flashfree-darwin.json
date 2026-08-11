@@ -14,10 +14,10 @@
     "model_short_title": null,
     "model_name": "deepseek-v4-flash-free",
     "model_id": "deepseekv4flashfree",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "opencode-opencode-deepseekv4flashfree",
     "reciprocal": false,
-    "trailer": "Co-authored-by: OpenCode · DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>"
+    "trailer": "Co-authored-by: OpenCode \u00b7 DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -64,7 +64,10 @@
     "provider-urls": [
       "https://github.com/anomalyco/opencode"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+      "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",
@@ -88,6 +91,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: OpenCode · DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>",
+  "trailer": "Co-authored-by: OpenCode \u00b7 DeepSeek V4 Flash (free) <opencode-opencode-deepseekv4flashfree@local>",
   "origin": "from-capture"
 }

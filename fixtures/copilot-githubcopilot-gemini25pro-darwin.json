@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "gemini-2.5-pro",
     "model_id": "gemini25pro",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "copilot-githubcopilot-gemini25pro",
     "reciprocal": false,
     "trailer": "Co-authored-by: GitHub Copilot CLI · Gemini 2.5 Pro <copilot-githubcopilot-gemini25pro@local>"
@@ -42,11 +42,19 @@
     },
     "process_lineage": [
       {
-        "pid": 2339,
+        "pid": 14153,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2292,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -62,7 +70,10 @@
     "provider-urls": [
       "https://github.com/features/copilot"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://deepmind.google/models/",
+      "https://ai.google.dev/gemini-api/docs/models"
+    ],
     "evidence": [
       {
         "dim": "harness",

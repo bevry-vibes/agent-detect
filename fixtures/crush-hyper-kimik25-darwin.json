@@ -14,9 +14,9 @@
     "model_short_title": null,
     "model_name": "kimi-k2.5",
     "model_id": "kimik25",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "crush-hyper-kimik25",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: Crush · Kimi K2.5 <crush-hyper-kimik25@local>"
   },
   "raw": {
@@ -38,11 +38,19 @@
     },
     "process_lineage": [
       {
-        "pid": 97012,
+        "pid": 14170,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 96913,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -65,7 +73,10 @@
       "https://hyper.charm.land/terms",
       "https://hyper.charm.land/privacy"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/moonshotai/Kimi-K2.5",
+      "https://huggingface.co/moonshotai/Kimi-K2.5/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "deepseek-v3.2",
     "model_id": "deepseekv32",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-ollamacloud-deepseekv32",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · DeepSeek V3.2 <omp-ollamacloud-deepseekv32@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 58640,
+        "pid": 14541,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 58478,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://ollama.com/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/deepseek-ai/DeepSeek-V3.2",
+      "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

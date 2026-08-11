@@ -14,9 +14,9 @@
     "model_short_title": null,
     "model_name": "kimi-k2.7-code",
     "model_id": "kimik27code",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "kilo-clinepass-kimik27code",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: Kilo Code · Kimi K2.7 Code <kilo-clinepass-kimik27code@local>"
   },
   "raw": {
@@ -45,11 +45,19 @@
     },
     "process_lineage": [
       {
-        "pid": 96190,
+        "pid": 14252,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 96064,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -69,7 +77,10 @@
       "https://cline.bot/privacy",
       "https://cline.bot/tos"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/moonshotai/Kimi-K2.7-Code",
+      "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

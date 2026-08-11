@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "grok-4.5",
     "model_id": "grok45",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "copilot-githubcopilot-grok45",
     "reciprocal": false,
     "trailer": "Co-authored-by: GitHub Copilot CLI · Grok 4.5 <copilot-githubcopilot-grok45@local>"
@@ -42,11 +42,19 @@
     },
     "process_lineage": [
       {
-        "pid": 2344,
+        "pid": 14163,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2292,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -63,6 +71,7 @@
       "https://github.com/features/copilot"
     ],
     "model-urls": [
+      "https://x.ai/grok",
       "https://docs.x.ai/docs/models"
     ],
     "evidence": [

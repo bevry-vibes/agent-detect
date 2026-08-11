@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "claude-sonnet-5",
     "model_id": "claudesonnet5",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "copilot-githubcopilot-claudesonnet5",
     "reciprocal": false,
     "trailer": "Co-authored-by: GitHub Copilot CLI · Claude Sonnet 5 <copilot-githubcopilot-claudesonnet5@local>"
@@ -42,11 +42,19 @@
     },
     "process_lineage": [
       {
-        "pid": 2349,
+        "pid": 14146,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2292,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -62,7 +70,10 @@
     "provider-urls": [
       "https://github.com/features/copilot"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://www.anthropic.com/claude/sonnet",
+      "https://docs.anthropic.com/en/docs/about-claude/models"
+    ],
     "evidence": [
       {
         "dim": "harness",

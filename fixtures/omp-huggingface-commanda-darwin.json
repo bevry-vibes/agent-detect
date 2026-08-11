@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "command-a",
     "model_id": "commanda",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-huggingface-commanda",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · Command A <omp-huggingface-commanda@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 65761,
+        "pid": 14371,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 63116,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://huggingface.co/docs/inference-providers"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025",
+      "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "gpt-oss-120b",
     "model_id": "gptoss120b",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-huggingface-gptoss120b",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · GPT-OSS 120B <omp-huggingface-gptoss120b@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 65723,
+        "pid": 14387,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 63116,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://huggingface.co/docs/inference-providers"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/openai/gpt-oss-120b",
+      "https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

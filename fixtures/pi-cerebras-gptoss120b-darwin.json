@@ -14,10 +14,10 @@
     "model_short_title": null,
     "model_name": "gpt-oss-120b",
     "model_id": "gptoss120b",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "pi-cerebras-gptoss120b",
-    "reciprocal": false,
-    "trailer": "Co-authored-by: Pi · GPT-OSS 120B <pi-cerebras-gptoss120b@local>"
+    "reciprocal": true,
+    "trailer": "Co-authored-by: Pi \u00b7 GPT-OSS 120B <pi-cerebras-gptoss120b@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -67,7 +67,10 @@
       "https://www.cerebras.ai/privacy-policy",
       "https://www.cerebras.ai/terms-of-service"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/openai/gpt-oss-120b",
+      "https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",
@@ -89,6 +92,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi · GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
+  "trailer": "Co-authored-by: Pi \u00b7 GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
   "origin": "from-capture"
 }

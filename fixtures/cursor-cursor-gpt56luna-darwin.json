@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "gpt-5.6-luna",
     "model_id": "gpt56luna",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "cursor-cursor-gpt56luna",
     "reciprocal": false,
     "trailer": "Co-authored-by: Cursor · GPT-5.6 Luna <cursor-cursor-gpt56luna@local>"
@@ -45,11 +45,19 @@
     },
     "process_lineage": [
       {
-        "pid": 2316,
+        "pid": 14237,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2292,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -65,7 +73,10 @@
     "provider-urls": [
       "https://cursor.com/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://openai.com/index/gpt-5/",
+      "https://platform.openai.com/docs/models"
+    ],
     "evidence": [
       {
         "dim": "harness",

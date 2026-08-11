@@ -14,9 +14,9 @@
     "model_short_title": null,
     "model_name": "qwen3.7-flash",
     "model_id": "qwen37flash",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "crush-hyper-qwen37flash",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: Crush · Qwen3.7-Flash <crush-hyper-qwen37flash@local>"
   },
   "raw": {
@@ -38,15 +38,19 @@
     },
     "process_lineage": [
       {
-        "pid": 97487,
+        "pid": 14212,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 97474,
+        "pid": 14142,
         "name": "bash"
       },
       {
-        "pid": 97404,
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -69,7 +73,10 @@
       "https://hyper.charm.land/terms",
       "https://hyper.charm.land/privacy"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/Qwen/Qwen3.7-Flash",
+      "https://huggingface.co/Qwen/Qwen3.7-Flash/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

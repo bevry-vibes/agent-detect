@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "phi-4",
     "model_id": "phi4",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-huggingface-phi4",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · Phi-4 <omp-huggingface-phi4@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 65341,
+        "pid": 14422,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 63116,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://huggingface.co/docs/inference-providers"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/microsoft/phi-4",
+      "https://huggingface.co/microsoft/phi-4/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

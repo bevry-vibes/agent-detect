@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "qwen3-coder",
     "model_id": "qwen3coder",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "opencode-alibaba-qwen3coder",
     "reciprocal": false,
     "trailer": "Co-authored-by: OpenCode · Qwen3 Coder <opencode-alibaba-qwen3coder@local>"
@@ -42,11 +42,19 @@
     },
     "process_lineage": [
       {
-        "pid": 95046,
+        "pid": 14567,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 94897,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -66,7 +74,10 @@
       "https://qwen.ai/",
       "https://qwen.ai/legal"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/Qwen/Qwen3-Coder",
+      "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

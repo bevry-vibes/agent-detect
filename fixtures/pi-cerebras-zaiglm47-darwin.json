@@ -14,10 +14,10 @@
     "model_short_title": null,
     "model_name": "zai-glm-4.7",
     "model_id": "zaiglm47",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "pi-cerebras-zaiglm47",
-    "reciprocal": false,
-    "trailer": "Co-authored-by: Pi · Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>"
+    "reciprocal": true,
+    "trailer": "Co-authored-by: Pi \u00b7 Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -67,7 +67,10 @@
       "https://www.cerebras.ai/privacy-policy",
       "https://www.cerebras.ai/terms-of-service"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/zai-org/GLM-4.7",
+      "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",
@@ -89,6 +92,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi · Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>",
+  "trailer": "Co-authored-by: Pi \u00b7 Z.ai GLM 4.7 <pi-cerebras-zaiglm47@local>",
   "origin": "from-capture"
 }

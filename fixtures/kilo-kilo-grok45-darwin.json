@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "grok-4.5",
     "model_id": "grok45",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "kilo-kilo-grok45",
     "reciprocal": false,
     "trailer": "Co-authored-by: Kilo Code · Grok 4.5 <kilo-kilo-grok45@local>"
@@ -45,11 +45,19 @@
     },
     "process_lineage": [
       {
-        "pid": 96169,
+        "pid": 14267,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 96064,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -69,6 +77,7 @@
       "https://github.com/Kilo-Org/kilocode"
     ],
     "model-urls": [
+      "https://x.ai/grok",
       "https://docs.x.ai/docs/models"
     ],
     "evidence": [

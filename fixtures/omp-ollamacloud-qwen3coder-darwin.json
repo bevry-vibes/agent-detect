@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "qwen3-coder",
     "model_id": "qwen3coder",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-ollamacloud-qwen3coder",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · Qwen3 Coder <omp-ollamacloud-qwen3coder@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 59030,
+        "pid": 14555,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 58478,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://ollama.com/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/Qwen/Qwen3-Coder",
+      "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

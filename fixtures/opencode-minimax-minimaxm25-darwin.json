@@ -14,9 +14,9 @@
     "model_short_title": null,
     "model_name": "minimax-m2.5",
     "model_id": "minimaxm25",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "opencode-minimax-minimaxm25",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: OpenCode · MiniMax M2.5 <opencode-minimax-minimaxm25@local>"
   },
   "raw": {
@@ -42,11 +42,19 @@
     },
     "process_lineage": [
       {
-        "pid": 94999,
+        "pid": 14577,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 94897,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -66,7 +74,10 @@
       "https://platform.minimax.io/docs/guides/terms-of-service",
       "https://platform.minimax.io/docs/guides/privacy-policy"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.5",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.5/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

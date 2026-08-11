@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "gpt-5.2",
     "model_id": "gpt52",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "copilot-githubcopilot-gpt52",
     "reciprocal": false,
     "trailer": "Co-authored-by: GitHub Copilot CLI · GPT-5.2 <copilot-githubcopilot-gpt52@local>"
@@ -42,11 +42,19 @@
     },
     "process_lineage": [
       {
-        "pid": 2334,
+        "pid": 14158,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2292,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -62,7 +70,10 @@
     "provider-urls": [
       "https://github.com/features/copilot"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://openai.com/index/gpt-5/",
+      "https://platform.openai.com/docs/models"
+    ],
     "evidence": [
       {
         "dim": "harness",

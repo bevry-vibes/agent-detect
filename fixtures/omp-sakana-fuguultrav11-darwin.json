@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "fugu-ultra-v1.1",
     "model_id": "fuguultrav11",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-sakana-fuguultrav11",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · Fugu Ultra v1.1 <omp-sakana-fuguultrav11@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 51278,
+        "pid": 14562,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 51214,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://sakana.ai/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/sakana-ai/fugu-ultra-v1.1",
+      "https://huggingface.co/sakana-ai/fugu-ultra-v1.1/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "claude-opus-5",
     "model_id": "claudeopus5",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "cursor-cursor-claudeopus5",
     "reciprocal": false,
     "trailer": "Co-authored-by: Cursor · Claude Opus 5 <cursor-cursor-claudeopus5@local>"
@@ -45,11 +45,19 @@
     },
     "process_lineage": [
       {
-        "pid": 2306,
+        "pid": 14222,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2292,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -65,7 +73,10 @@
     "provider-urls": [
       "https://cursor.com/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://www.anthropic.com/claude/opus",
+      "https://docs.anthropic.com/en/docs/about-claude/models"
+    ],
     "evidence": [
       {
         "dim": "harness",

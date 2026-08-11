@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "gpt-4o",
     "model_id": "gpt4o",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "omp-gmicloud-gpt4o",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · GPT-4o <omp-gmicloud-gpt4o@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 63191,
+        "pid": 14329,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 63116,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -57,7 +73,8 @@
       "https://gmi.cloud/"
     ],
     "model-urls": [
-      "https://openai.com/api/pricing/"
+      "https://openai.com/api/pricing/",
+      "https://platform.openai.com/docs/models"
     ],
     "evidence": [
       {

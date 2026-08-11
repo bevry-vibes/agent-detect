@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "deepseek-r1",
     "model_id": "deepseekr1",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-gmicloud-deepseekr1",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · DeepSeek R1 <omp-gmicloud-deepseekr1@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 63607,
+        "pid": 14314,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 63116,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://gmi.cloud/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+      "https://huggingface.co/deepseek-ai/DeepSeek-R1/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

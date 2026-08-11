@@ -14,9 +14,9 @@
     "model_short_title": null,
     "model_name": "llama-4-maverick",
     "model_id": "llama4maverick",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "crush-hyper-llama4maverick",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: Crush · Llama 4 Maverick <crush-hyper-llama4maverick@local>"
   },
   "raw": {
@@ -38,11 +38,19 @@
     },
     "process_lineage": [
       {
-        "pid": 97041,
+        "pid": 14191,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 96913,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -65,7 +73,10 @@
       "https://hyper.charm.land/terms",
       "https://hyper.charm.land/privacy"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+      "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

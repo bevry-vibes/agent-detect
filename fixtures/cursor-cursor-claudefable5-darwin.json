@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "claude-fable-5",
     "model_id": "claudefable5",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "cursor-cursor-claudefable5",
     "reciprocal": false,
     "trailer": "Co-authored-by: Cursor · Claude Fable 5 <cursor-cursor-claudefable5@local>"
@@ -45,11 +45,19 @@
     },
     "process_lineage": [
       {
-        "pid": 2296,
+        "pid": 14217,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 2292,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -66,7 +74,8 @@
       "https://cursor.com/"
     ],
     "model-urls": [
-      "https://www.anthropic.com/claude"
+      "https://www.anthropic.com/claude",
+      "https://docs.anthropic.com/en/docs/about-claude/models"
     ],
     "evidence": [
       {

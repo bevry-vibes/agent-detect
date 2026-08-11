@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "grok-4.5",
     "model_id": "grok45",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "qwen-xai-grok45",
     "reciprocal": false,
     "trailer": "Co-authored-by: Qwen Code · Grok 4.5 <qwen-xai-grok45@local>"
@@ -38,11 +38,19 @@
     },
     "process_lineage": [
       {
-        "pid": 98135,
+        "pid": 14640,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 98003,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -68,6 +76,7 @@
       "https://docs.x.ai/docs/models"
     ],
     "model-urls": [
+      "https://x.ai/grok",
       "https://docs.x.ai/docs/models"
     ],
     "evidence": [

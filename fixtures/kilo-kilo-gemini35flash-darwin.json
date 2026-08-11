@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "gemini-3.5-flash",
     "model_id": "gemini35flash",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "kilo-kilo-gemini35flash",
     "reciprocal": false,
     "trailer": "Co-authored-by: Kilo Code · Gemini 3.5 Flash <kilo-kilo-gemini35flash@local>"
@@ -45,11 +45,19 @@
     },
     "process_lineage": [
       {
-        "pid": 96164,
+        "pid": 14262,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 96064,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -69,7 +77,8 @@
       "https://github.com/Kilo-Org/kilocode"
     ],
     "model-urls": [
-      "https://deepmind.google/models/"
+      "https://deepmind.google/models/",
+      "https://ai.google.dev/gemini-api/docs/models"
     ],
     "evidence": [
       {

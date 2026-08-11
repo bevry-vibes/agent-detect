@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "ling-3.0-flash",
     "model_id": "ling30flash",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "omp-nanogpt-ling30flash",
     "reciprocal": false,
     "trailer": "Co-authored-by: omp · Ling 3.0 Flash <omp-nanogpt-ling30flash@local>"
@@ -38,12 +38,28 @@
     },
     "process_lineage": [
       {
-        "pid": 64625,
+        "pid": 14497,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 63116,
-        "name": "agent-detect-dev"
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
       }
     ],
     "<home>/.omp/agent/config.yml": {
@@ -56,7 +72,10 @@
     "provider-urls": [
       "https://nanogpt.ai/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/inclusionai/Ling-3.0-Flash",
+      "https://huggingface.co/inclusionai/Ling-3.0-Flash/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

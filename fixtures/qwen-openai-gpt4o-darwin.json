@@ -8,13 +8,13 @@
     "provider_label": "OpenAI",
     "provider_name": "openai",
     "provider_id": "openai",
-    "provider_closed_training": null,
-    "provider_open_training": null,
+    "provider_closed_training": "opt-in",
+    "provider_open_training": "opt-in",
     "model_label": "GPT-4o",
     "model_short_title": null,
     "model_name": "gpt-4o",
     "model_id": "gpt4o",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "qwen-openai-gpt4o",
     "reciprocal": false,
     "trailer": "Co-authored-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>"
@@ -38,11 +38,19 @@
     },
     "process_lineage": [
       {
-        "pid": 98149,
+        "pid": 14626,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 98003,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -64,11 +72,12 @@
       "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
     ],
     "provider-urls": [
-      "https://openai.com/policies/privacy-policy/",
-      "https://openai.com/policies/terms-of-use/"
+      "https://openai.com/policies/data-usage-policy/",
+      "https://openai.com/policies/business-terms/"
     ],
     "model-urls": [
-      "https://openai.com/api/pricing/"
+      "https://openai.com/api/pricing/",
+      "https://platform.openai.com/docs/models"
     ],
     "evidence": [
       {

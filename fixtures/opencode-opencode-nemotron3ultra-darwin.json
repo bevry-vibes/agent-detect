@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "nemotron-3-ultra",
     "model_id": "nemotron3ultra",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "opencode-opencode-nemotron3ultra",
     "reciprocal": false,
     "trailer": "Co-authored-by: OpenCode · Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>"
@@ -42,11 +42,19 @@
     },
     "process_lineage": [
       {
-        "pid": 94973,
+        "pid": 14582,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 94897,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -65,7 +73,10 @@
     "provider-urls": [
       "https://github.com/anomalyco/opencode"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B",
+      "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

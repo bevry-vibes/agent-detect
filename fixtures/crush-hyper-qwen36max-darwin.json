@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "qwen3.6-max",
     "model_id": "qwen36max",
-    "model_reciprocity": null,
+    "model_reciprocity": "closed",
     "agent_id": "crush-hyper-qwen36max",
     "reciprocal": false,
     "trailer": "Co-authored-by: Crush · Qwen3.6-Max <crush-hyper-qwen36max@local>"
@@ -38,15 +38,19 @@
     },
     "process_lineage": [
       {
-        "pid": 97479,
+        "pid": 14205,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 97474,
+        "pid": 14142,
         "name": "bash"
       },
       {
-        "pid": 97404,
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -69,7 +73,10 @@
       "https://hyper.charm.land/terms",
       "https://hyper.charm.land/privacy"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://qwen.ai/",
+      "https://qwen.ai/blog?id=qwen3.6-max"
+    ],
     "evidence": [
       {
         "dim": "harness",

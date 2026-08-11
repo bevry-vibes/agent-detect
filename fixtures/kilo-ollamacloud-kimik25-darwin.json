@@ -14,7 +14,7 @@
     "model_short_title": null,
     "model_name": "kimi-k2.5",
     "model_id": "kimik25",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "kilo-ollamacloud-kimik25",
     "reciprocal": false,
     "trailer": "Co-authored-by: Kilo Code · Kimi K2.5 <kilo-ollamacloud-kimik25@local>"
@@ -45,11 +45,19 @@
     },
     "process_lineage": [
       {
-        "pid": 96215,
+        "pid": 14272,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 96064,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -68,7 +76,10 @@
     "provider-urls": [
       "https://ollama.com/"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/moonshotai/Kimi-K2.5",
+      "https://huggingface.co/moonshotai/Kimi-K2.5/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

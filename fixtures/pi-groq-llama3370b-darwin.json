@@ -14,9 +14,9 @@
     "model_short_title": null,
     "model_name": "llama-3.3-70b",
     "model_id": "llama3370b",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "pi-groq-llama3370b",
-    "reciprocal": false,
+    "reciprocal": true,
     "trailer": "Co-authored-by: Pi · Llama 3.3 70B <pi-groq-llama3370b@local>"
   },
   "raw": {
@@ -47,11 +47,19 @@
     },
     "process_lineage": [
       {
-        "pid": 93366,
+        "pid": 14592,
         "name": "agent-detect-dev"
       },
       {
-        "pid": 93342,
+        "pid": 14142,
+        "name": "bash"
+      },
+      {
+        "pid": 14140,
+        "name": "xargs"
+      },
+      {
+        "pid": 13612,
         "name": "bash"
       },
       {
@@ -71,7 +79,10 @@
       "https://groq.com/privacy",
       "https://groq.com/terms"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct",
+      "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",

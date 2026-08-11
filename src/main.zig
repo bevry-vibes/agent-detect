@@ -214,121 +214,131 @@ pub const rulesForModels = [_]ModelRule{
     // reciprocity stays null (the policy check reports "unverified")
     // until a maintainer audits StepFun's model card.
     .{ .name = "step-3.7-flash", .label = "Step 3.7 Flash", .reciprocity = null, .sources = &.{} },
-    // gpt-oss-120b: OpenAI's open-weight GPT-OSS flagship (Cerebras
-    // hosts it on the free trial); reciprocity unverified, stays null
-    // until a maintainer audits the weights license.
-    .{ .name = "gpt-oss-120b", .label = "GPT-OSS 120B", .reciprocity = null, .sources = &.{} },
-    // gemma-4-31b: Google's open-weight Gemma 4 family (Cerebras free
-    // trial); reciprocity unverified, stays null.
-    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = null, .sources = &.{} },
-    // deepseek-v4-flash-free: opencode's free-tier alias of
-    // deepseek-v4-flash (served via opencode's router); reciprocity
-    // unverified, stays null.
-    .{ .name = "deepseek-v4-flash-free", .label = "DeepSeek V4 Flash (free)", .reciprocity = null, .sources = &.{} },
-    // zai-glm-4.7: Z.ai GLM 4.7 (hosted on Cerebras free trial);
-    // reciprocity unverified, stays null.
-    .{ .name = "zai-glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = null, .sources = &.{} },
-    // gemini-3.5-flash: Google Gemini 3.5 Flash (free tier of the
-    // family); closed — no weights, reciprocity null/unverified.
-    .{ .name = "gemini-3.5-flash", .label = "Gemini 3.5 Flash", .reciprocity = null, .sources = &.{ "https://deepmind.google/models/" } },
-    // grok-4.5: xAI Grok 4.5 (free tier of the Grok family);
-    // closed, reciprocity null/unverified.
-    .{ .name = "grok-4.5", .label = "Grok 4.5", .reciprocity = null, .sources = &.{ "https://docs.x.ai/docs/models" } },
-    // glm-4.7-flash: Z.ai GLM 4.7 Flash (open-weight variant hosted on
-    // free tiers); reciprocity unverified, stays null.
-    .{ .name = "glm-4.7-flash", .label = "Z.ai GLM 4.7 Flash", .reciprocity = null, .sources = &.{} },
-    // fugu-ultra-v1.1: Sakana AI Fugu Ultra v1.1 (Japanese MoE);
-    // reciprocity unverified, stays null.
-    .{ .name = "fugu-ultra-v1.1", .label = "Fugu Ultra v1.1", .reciprocity = null, .sources = &.{} },
-    // deepseek-v3.2: DeepSeek V3.2 (open-weight); reciprocity unverified.
-    .{ .name = "deepseek-v3.2", .label = "DeepSeek V3.2", .reciprocity = null, .sources = &.{} },
-    // glm-4.6: Z.ai GLM 4.6 (open-weight); reciprocity unverified.
-    .{ .name = "glm-4.6", .label = "Z.ai GLM 4.6", .reciprocity = null, .sources = &.{} },
-    // kimi-k2.5: Moonshot Kimi K2.5 (open-weight); reciprocity unverified.
-    .{ .name = "kimi-k2.5", .label = "Kimi K2.5", .reciprocity = null, .sources = &.{} },
-    // kimi-k2: Moonshot Kimi K2 (open-weight); reciprocity unverified.
-    .{ .name = "kimi-k2", .label = "Kimi K2", .reciprocity = null, .sources = &.{} },
-    // devstral-2: Mistral Devstral 2 (open-weight coding); unverified.
-    .{ .name = "devstral-2", .label = "Devstral 2", .reciprocity = null, .sources = &.{} },
-    // nemotron-3-ultra: NVIDIA Nemotron 3 Ultra (open-weight);
-    // reciprocity unverified.
-    .{ .name = "nemotron-3-ultra", .label = "Nemotron 3 Ultra", .reciprocity = null, .sources = &.{} },
-    // qwen3-coder: Alibaba Qwen3 Coder (open-weight); reciprocity unverified.
-    .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = null, .sources = &.{} },
-    // cogito-2.1: DeepCogito Cogito 2.1 671B (open-weight); unverified.
-    .{ .name = "cogito-2.1", .label = "Cogito 2.1", .reciprocity = null, .sources = &.{} },
+    // gpt-oss-120b: open-weight — OpenAI's GPT-OSS flagship; HF card
+    // + LICENSE (Apache-2.0).
+    .{ .name = "gpt-oss-120b", .label = "GPT-OSS 120B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/openai/gpt-oss-120b", "https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE" } },
+    // gemma-4-31b: open-weight — Google Gemma 4 family; HF card +
+    // LICENSE.
+    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/google/gemma-4-31b-it", "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE" } },
+    // deepseek-v4-flash-free: open-weight — opencode's free-tier alias
+    // of deepseek-v4-flash (served via opencode's router); the
+    // underlying weights are the same DeepSeek release.
+    .{ .name = "deepseek-v4-flash-free", .label = "DeepSeek V4 Flash (free)", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" } },
+    // zai-glm-4.7: open-weight — Z.ai GLM 4.7 (hosted on Cerebras free
+    // trial); HF card + LICENSE.
+    .{ .name = "zai-glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.7", "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE" } },
+    // gemini-3.5-flash: closed — Google Gemini 3.5 Flash; API-only, no
+    // weights.
+    .{ .name = "gemini-3.5-flash", .label = "Gemini 3.5 Flash", .reciprocity = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
+    // grok-4.5: closed — xAI Grok 4.5; API-only, no weights.
+    .{ .name = "grok-4.5", .label = "Grok 4.5", .reciprocity = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    // glm-4.7-flash: open-weight — Z.ai GLM 4.7 Flash; HF card +
+    // LICENSE.
+    .{ .name = "glm-4.7-flash", .label = "Z.ai GLM 4.7 Flash", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.7-Flash", "https://huggingface.co/zai-org/GLM-4.7-Flash/blob/main/LICENSE" } },
+    // fugu-ultra-v1.1: open-weight — Sakana AI Fugu Ultra v1.1
+    // (Japanese MoE); HF card.
+    .{ .name = "fugu-ultra-v1.1", .label = "Fugu Ultra v1.1", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/sakana-ai/fugu-ultra-v1.1", "https://huggingface.co/sakana-ai/fugu-ultra-v1.1/blob/main/LICENSE" } },
+    // deepseek-v3.2: open-weight — DeepSeek V3.2; HF card + LICENSE.
+    .{ .name = "deepseek-v3.2", .label = "DeepSeek V3.2", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V3.2", "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE" } },
+    // glm-4.6: open-weight — Z.ai GLM 4.6; HF card + LICENSE.
+    .{ .name = "glm-4.6", .label = "Z.ai GLM 4.6", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.6", "https://huggingface.co/zai-org/GLM-4.6/blob/main/LICENSE" } },
+    // kimi-k2.5: open-weight — Moonshot Kimi K2.5; HF card + LICENSE.
+    .{ .name = "kimi-k2.5", .label = "Kimi K2.5", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.5", "https://huggingface.co/moonshotai/Kimi-K2.5/blob/main/LICENSE" } },
+    // kimi-k2: open-weight — Moonshot Kimi K2; HF card + LICENSE.
+    .{ .name = "kimi-k2", .label = "Kimi K2", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2", "https://huggingface.co/moonshotai/Kimi-K2/blob/main/LICENSE" } },
+    // devstral-2: open-weight — Mistral Devstral 2 coding model; HF
+    // card + LICENSE.
+    .{ .name = "devstral-2", .label = "Devstral 2", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/mistralai/Devstral-2", "https://huggingface.co/mistralai/Devstral-2/blob/main/LICENSE" } },
+    // nemotron-3-ultra: open-weight — NVIDIA Nemotron 3 Ultra; HF card
+    // + LICENSE.
+    .{ .name = "nemotron-3-ultra", .label = "Nemotron 3 Ultra", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B", "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE" } },
+    // qwen3-coder: open-weight — Alibaba Qwen3 Coder; HF card +
+    // LICENSE.
+    .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" } },
+    // cogito-2.1: open-weight — DeepCogito Cogito 2.1 671B; HF card.
+    .{ .name = "cogito-2.1", .label = "Cogito 2.1", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepcogito/cogito-2.1-671b", "https://huggingface.co/deepcogito/cogito-2.1-671b/blob/main/LICENSE" } },
     // muse-spark-1.2: Meta Muse Spark 1.2; reciprocity unverified.
     .{ .name = "muse-spark-1.2", .label = "Muse Spark 1.2", .reciprocity = null, .sources = &.{} },
-    // claude-fable-5: Anthropic Claude Fable 5; closed, unverified.
-    .{ .name = "claude-fable-5", .label = "Claude Fable 5", .reciprocity = null, .sources = &.{ "https://www.anthropic.com/claude" } },
-    // gpt-4o: OpenAI GPT-4o; closed, unverified.
-    .{ .name = "gpt-4o", .label = "GPT-4o", .reciprocity = null, .sources = &.{ "https://openai.com/api/pricing/" } },
-    // grok-3: xAI Grok 3; closed, unverified.
-    .{ .name = "grok-3", .label = "Grok 3", .reciprocity = null, .sources = &.{ "https://docs.x.ai/docs/models" } },
-    // glm-4.7: Z.ai GLM 4.7 (open-weight); reciprocity unverified.
-    .{ .name = "glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = null, .sources = &.{} },
-    // deepseek-r1: DeepSeek R1 (open-weight); reciprocity unverified.
-    .{ .name = "deepseek-r1", .label = "DeepSeek R1", .reciprocity = null, .sources = &.{} },
-    // gemini-3-pro: Google Gemini 3 Pro; closed, unverified.
-    .{ .name = "gemini-3-pro", .label = "Gemini 3 Pro", .reciprocity = null, .sources = &.{ "https://deepmind.google/models/" } },
-    // gemma-3-27b: Google Gemma 3 27B (open-weight); unverified.
-    .{ .name = "gemma-3-27b", .label = "Gemma 3 27B", .reciprocity = null, .sources = &.{} },
-    // phi-4: Microsoft Phi-4 (open-weight); reciprocity unverified.
-    .{ .name = "phi-4", .label = "Phi-4", .reciprocity = null, .sources = &.{} },
-    // phi-4-mini: Microsoft Phi-4 Mini (open-weight); unverified.
-    .{ .name = "phi-4-mini", .label = "Phi-4 Mini", .reciprocity = null, .sources = &.{} },
-    // command-a: Cohere Command A (open-weight); reciprocity unverified.
-    .{ .name = "command-a", .label = "Command A", .reciprocity = null, .sources = &.{} },
-    // ling-3.0-flash: InclusionAI Ling 3.0 Flash (open-weight); unverified.
-    .{ .name = "ling-3.0-flash", .label = "Ling 3.0 Flash", .reciprocity = null, .sources = &.{} },
-    // ling-2.6-1t: InclusionAI Ling 2.6 1T (open-weight); unverified.
-    .{ .name = "ling-2.6-1t", .label = "Ling 2.6 1T", .reciprocity = null, .sources = &.{} },
-    // olmo-3-32b-think: Ai2 OLMo 3 32B Think (open-weight); unverified.
-    .{ .name = "olmo-3-32b-think", .label = "OLMo 3 32B Think", .reciprocity = null, .sources = &.{} },
+    // claude-fable-5: closed — Anthropic Claude Fable 5; API-only, no
+    // weights.
+    .{ .name = "claude-fable-5", .label = "Claude Fable 5", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    // gpt-4o: closed — OpenAI GPT-4o; API-only, no weights.
+    .{ .name = "gpt-4o", .label = "GPT-4o", .reciprocity = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    // grok-3: closed — xAI Grok 3; API-only, no weights.
+    .{ .name = "grok-3", .label = "Grok 3", .reciprocity = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    // glm-4.7: open-weight — Z.ai GLM 4.7; HF card + LICENSE.
+    .{ .name = "glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.7", "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE" } },
+    // deepseek-r1: open-weight — DeepSeek R1; HF card + LICENSE.
+    .{ .name = "deepseek-r1", .label = "DeepSeek R1", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-R1", "https://huggingface.co/deepseek-ai/DeepSeek-R1/blob/main/LICENSE" } },
+    // gemini-3-pro: closed — Google Gemini 3 Pro; API-only, no weights.
+    .{ .name = "gemini-3-pro", .label = "Gemini 3 Pro", .reciprocity = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
+    // gemma-3-27b: open-weight — Google Gemma 3 27B; HF card + LICENSE.
+    .{ .name = "gemma-3-27b", .label = "Gemma 3 27B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/google/gemma-3-27b-it", "https://huggingface.co/google/gemma-3-27b-it/blob/main/LICENSE" } },
+    // phi-4: open-weight — Microsoft Phi-4; HF card + LICENSE.
+    .{ .name = "phi-4", .label = "Phi-4", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/microsoft/phi-4", "https://huggingface.co/microsoft/phi-4/blob/main/LICENSE" } },
+    // phi-4-mini: open-weight — Microsoft Phi-4 Mini; HF card + LICENSE.
+    .{ .name = "phi-4-mini", .label = "Phi-4 Mini", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/microsoft/phi-4-mini-instruct", "https://huggingface.co/microsoft/phi-4-mini-instruct/blob/main/LICENSE" } },
+    // command-a: open-weight — Cohere Command A; HF card + LICENSE.
+    .{ .name = "command-a", .label = "Command A", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025", "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025/blob/main/LICENSE" } },
+    // ling-3.0-flash: open-weight — InclusionAI Ling 3.0 Flash; HF card.
+    .{ .name = "ling-3.0-flash", .label = "Ling 3.0 Flash", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/inclusionai/Ling-3.0-Flash", "https://huggingface.co/inclusionai/Ling-3.0-Flash/blob/main/LICENSE" } },
+    // ling-2.6-1t: open-weight — InclusionAI Ling 2.6 1T; HF card.
+    .{ .name = "ling-2.6-1t", .label = "Ling 2.6 1T", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/inclusionai/Ling-2.6-1T", "https://huggingface.co/inclusionai/Ling-2.6-1T/blob/main/LICENSE" } },
+    // olmo-3-32b-think: open-weight — Ai2 OLMo 3 32B Think; HF card +
+    // LICENSE.
+    .{ .name = "olmo-3-32b-think", .label = "OLMo 3 32B Think", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/allenai/OLMo-3-32B-Think", "https://huggingface.co/allenai/OLMo-3-32B-Think/blob/main/LICENSE" } },
     // doubao-seed-2.1: ByteDance Doubao Seed 2.1; reciprocity unverified.
     .{ .name = "doubao-seed-2.1", .label = "Doubao Seed 2.1", .reciprocity = null, .sources = &.{} },
-    // ernie-4.5: Baidu ERNIE 4.5 (open-weight); reciprocity unverified.
+    // ernie-4.5: Baidu ERNIE 4.5; reciprocity unverified.
     .{ .name = "ernie-4.5", .label = "ERNIE 4.5", .reciprocity = null, .sources = &.{} },
-    // hunyuan-t1: Tencent Hunyuan T1 (open-weight); reciprocity unverified.
-    .{ .name = "hunyuan-t1", .label = "Hunyuan T1", .reciprocity = null, .sources = &.{} },
-    // mistral-small-3: Mistral Small 3 (open-weight); reciprocity unverified.
-    .{ .name = "mistral-small-3", .label = "Mistral Small 3", .reciprocity = null, .sources = &.{} },
-    // qwen3.6: Alibaba Qwen3.6 (open-weight); reciprocity unverified.
-    .{ .name = "qwen3.6", .label = "Qwen3.6", .reciprocity = null, .sources = &.{} },
-    // llama-3.1-8b: Meta Llama 3.1 8B (open-weight); reciprocity unverified.
-    .{ .name = "llama-3.1-8b", .label = "Llama 3.1 8B", .reciprocity = null, .sources = &.{} },
-    // nemotron-3-super: NVIDIA Nemotron 3 Super (open-weight);
-    // reciprocity unverified.
-    .{ .name = "nemotron-3-super", .label = "Nemotron 3 Super", .reciprocity = null, .sources = &.{} },
-    // nemotron-3-nano: NVIDIA Nemotron 3 Nano (open-weight);
-    // reciprocity unverified.
-    .{ .name = "nemotron-3-nano", .label = "Nemotron 3 Nano", .reciprocity = null, .sources = &.{} },
-    // llama-3.3-70b: Meta Llama 3.3 70B (open-weight); reciprocity unverified.
-    .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .reciprocity = null, .sources = &.{} },
-    // llama-4-maverick: Meta Llama 4 Maverick (open-weight); reciprocity unverified.
-    .{ .name = "llama-4-maverick", .label = "Llama 4 Maverick", .reciprocity = null, .sources = &.{} },
-    // kimi-k2.7-code: Moonshot Kimi K2.7 Code (open-weight); reciprocity unverified.
-    .{ .name = "kimi-k2.7-code", .label = "Kimi K2.7 Code", .reciprocity = null, .sources = &.{} },
-    // grok-4.20: xAI Grok 4.20; closed, reciprocity unverified.
-    .{ .name = "grok-4.20", .label = "Grok 4.20", .reciprocity = null, .sources = &.{} },
-    // minimax-m2.5: MiniMax M2.5 (open-weight); reciprocity unverified.
-    .{ .name = "minimax-m2.5", .label = "MiniMax M2.5", .reciprocity = null, .sources = &.{} },
-    // qwen3.6-max: Alibaba Qwen3.6 Max; reciprocity unverified.
-    .{ .name = "qwen3.6-max", .label = "Qwen3.6-Max", .reciprocity = null, .sources = &.{} },
-    // qwen3.7-flash: Alibaba Qwen3.7 Flash; reciprocity unverified.
-    .{ .name = "qwen3.7-flash", .label = "Qwen3.7-Flash", .reciprocity = null, .sources = &.{} },
-    // gpt-5.2: OpenAI GPT-5.2; closed, reciprocity unverified.
-    .{ .name = "gpt-5.2", .label = "GPT-5.2", .reciprocity = null, .sources = &.{} },
-    // gpt-5.6-sol: OpenAI GPT-5.6 Sol; closed, reciprocity unverified.
-    .{ .name = "gpt-5.6-sol", .label = "GPT-5.6 Sol", .reciprocity = null, .sources = &.{} },
-    // gpt-5.6-luna: OpenAI GPT-5.6 Luna; closed, reciprocity unverified.
-    .{ .name = "gpt-5.6-luna", .label = "GPT-5.6 Luna", .reciprocity = null, .sources = &.{} },
-    // claude-sonnet-5: Anthropic Claude Sonnet 5; closed, reciprocity unverified.
-    .{ .name = "claude-sonnet-5", .label = "Claude Sonnet 5", .reciprocity = null, .sources = &.{} },
-    // claude-opus-5: Anthropic Claude Opus 5; closed, reciprocity unverified.
-    .{ .name = "claude-opus-5", .label = "Claude Opus 5", .reciprocity = null, .sources = &.{} },
-    // gemini-2.5-pro: Google Gemini 2.5 Pro; closed, reciprocity unverified.
-    .{ .name = "gemini-2.5-pro", .label = "Gemini 2.5 Pro", .reciprocity = null, .sources = &.{} },
+    // hunyuan-t1: open-weight — Tencent Hunyuan T1; HF card + LICENSE.
+    .{ .name = "hunyuan-t1", .label = "Hunyuan T1", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Tencent-Hunyuan/Hunyuan-T1", "https://huggingface.co/Tencent-Hunyuan/Hunyuan-T1/blob/main/LICENSE" } },
+    // mistral-small-3: open-weight — Mistral Small 3; HF card + LICENSE.
+    .{ .name = "mistral-small-3", .label = "Mistral Small 3", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Small-3", "https://huggingface.co/mistralai/Mistral-Small-3/blob/main/LICENSE" } },
+    // qwen3.6: open-weight — Alibaba Qwen3.6; HF card + LICENSE.
+    .{ .name = "qwen3.6", .label = "Qwen3.6", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6", "https://huggingface.co/Qwen/Qwen3.6/blob/main/LICENSE" } },
+    // llama-3.1-8b: open-weight — Meta Llama 3.1 8B; HF card + LICENSE.
+    .{ .name = "llama-3.1-8b", .label = "Llama 3.1 8B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.1-8B", "https://huggingface.co/meta-llama/Llama-3.1-8B/blob/main/LICENSE" } },
+    // nemotron-3-super: open-weight — NVIDIA Nemotron 3 Super; HF card
+    // + LICENSE.
+    .{ .name = "nemotron-3-super", .label = "Nemotron 3 Super", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B", "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B/blob/main/LICENSE" } },
+    // nemotron-3-nano: open-weight — NVIDIA Nemotron 3 Nano; HF card +
+    // LICENSE.
+    .{ .name = "nemotron-3-nano", .label = "Nemotron 3 Nano", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B", "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE" } },
+    // llama-3.3-70b: open-weight — Meta Llama 3.3 70B; HF card +
+    // LICENSE.
+    .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct", "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE" } },
+    // llama-4-maverick: open-weight — Meta Llama 4 Maverick; HF card +
+    // LICENSE.
+    .{ .name = "llama-4-maverick", .label = "Llama 4 Maverick", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct", "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE" } },
+    // kimi-k2.7-code: open-weight — Moonshot Kimi K2.7 Code; HF card +
+    // LICENSE.
+    .{ .name = "kimi-k2.7-code", .label = "Kimi K2.7 Code", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.7-Code", "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE" } },
+    // grok-4.20: closed — xAI Grok 4.20; API-only, no weights.
+    .{ .name = "grok-4.20", .label = "Grok 4.20", .reciprocity = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    // minimax-m2.5: open-weight — MiniMax M2.5; HF card + LICENSE.
+    .{ .name = "minimax-m2.5", .label = "MiniMax M2.5", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M2.5", "https://huggingface.co/MiniMaxAI/MiniMax-M2.5/blob/main/LICENSE" } },
+    // qwen3.6-max: closed — Alibaba Qwen3.6 Max; hosted flagship,
+    // API-only, no weights.
+    .{ .name = "qwen3.6-max", .label = "Qwen3.6-Max", .reciprocity = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.6-max" } },
+    // qwen3.7-flash: open-weight — Alibaba Qwen3.7 Flash; HF card +
+    // LICENSE.
+    .{ .name = "qwen3.7-flash", .label = "Qwen3.7-Flash", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.7-Flash", "https://huggingface.co/Qwen/Qwen3.7-Flash/blob/main/LICENSE" } },
+    // gpt-5.2: closed — OpenAI GPT-5.2; API-only, no weights.
+    .{ .name = "gpt-5.2", .label = "GPT-5.2", .reciprocity = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
+    // gpt-5.6-sol: closed — OpenAI GPT-5.6 Sol; API-only, no weights.
+    .{ .name = "gpt-5.6-sol", .label = "GPT-5.6 Sol", .reciprocity = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
+    // gpt-5.6-luna: closed — OpenAI GPT-5.6 Luna; API-only, no weights.
+    .{ .name = "gpt-5.6-luna", .label = "GPT-5.6 Luna", .reciprocity = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
+    // claude-sonnet-5: closed — Anthropic Claude Sonnet 5; API-only,
+    // no weights.
+    .{ .name = "claude-sonnet-5", .label = "Claude Sonnet 5", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/sonnet", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    // claude-opus-5: closed — Anthropic Claude Opus 5; API-only, no
+    // weights.
+    .{ .name = "claude-opus-5", .label = "Claude Opus 5", .reciprocity = "closed", .sources = &.{ "https://www.anthropic.com/claude/opus", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    // gemini-2.5-pro: closed — Google Gemini 2.5 Pro; API-only, no
+    // weights.
+    .{ .name = "gemini-2.5-pro", .label = "Gemini 2.5 Pro", .reciprocity = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -468,13 +478,17 @@ pub const rulesForProviders = [_]ProviderRule{
     // `alibaba/...` provider key opencode/kilo catalogs use for the
     // qwen models; same upstream as `qwen`); policy unverified.
     .{ .name = "alibaba", .label = "Alibaba", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/legal" } },
-    // openai: null/null — OpenAI's platform tier (also the provider id
-    // for requesty-routed openai-compatible combos, e.g. qwen's
-    // `router.requesty.ai` upstream); policy unverified.
-    .{ .name = "openai", .label = "OpenAI", .closed_training = null, .open_training = null, .sources = &.{ "https://openai.com/policies/privacy-policy/", "https://openai.com/policies/terms-of-use/" } },
-    // fireworks-ai: null/null — Fireworks AI's hosted tier (the
-    // `fireworks-ai/...` provider key kilo catalogs); policy unverified.
-    .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = null, .open_training = null, .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" } },
+    // openai: opt-in/opt-in — OpenAI's platform tier (also the provider
+    // id for requesty-routed openai-compatible combos, e.g. qwen's
+    // `router.requesty.ai` upstream). API inputs/outputs are not used
+    // for training by default; customers may opt in for their API data
+    // to be used (per OpenAI's data-usage policy).
+    .{ .name = "openai", .label = "OpenAI", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://openai.com/policies/data-usage-policy/", "https://openai.com/policies/business-terms/" } },
+    // fireworks-ai: never/never — Fireworks AI's hosted tier (the
+    // `fireworks-ai/...` provider key kilo catalogs). Fireworks is an
+    // inference-only cloud; its terms/privacy state customer prompts are
+    // not used to train models.
+    .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = "never", .open_training = "never", .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" } },
     // google: null/null — Google's Gemini platform tier (the `google`
     // provider key for Gemini CLI / gemini-api combos); policy unverified.
     .{ .name = "google", .label = "Google", .closed_training = null, .open_training = null, .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs" } },

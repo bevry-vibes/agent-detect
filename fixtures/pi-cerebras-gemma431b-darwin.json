@@ -14,10 +14,10 @@
     "model_short_title": null,
     "model_name": "gemma-4-31b",
     "model_id": "gemma431b",
-    "model_reciprocity": null,
+    "model_reciprocity": "open-weight",
     "agent_id": "pi-cerebras-gemma431b",
-    "reciprocal": false,
-    "trailer": "Co-authored-by: Pi · Gemma 4 31B <pi-cerebras-gemma431b@local>"
+    "reciprocal": true,
+    "trailer": "Co-authored-by: Pi \u00b7 Gemma 4 31B <pi-cerebras-gemma431b@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -67,7 +67,10 @@
       "https://www.cerebras.ai/privacy-policy",
       "https://www.cerebras.ai/terms-of-service"
     ],
-    "model-urls": [],
+    "model-urls": [
+      "https://huggingface.co/google/gemma-4-31b-it",
+      "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE"
+    ],
     "evidence": [
       {
         "dim": "harness",
@@ -89,6 +92,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: Pi · Gemma 4 31B <pi-cerebras-gemma431b@local>",
+  "trailer": "Co-authored-by: Pi \u00b7 Gemma 4 31B <pi-cerebras-gemma431b@local>",
   "origin": "from-capture"
 }
