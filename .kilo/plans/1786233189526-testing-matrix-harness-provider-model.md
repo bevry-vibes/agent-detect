@@ -4,6 +4,35 @@
 
 All `zig build test` tests pass; every coding harness detects correctly. The matrix policy lives in DESIGN.md, the runbook + installs in CONTRIBUTING.md, and the token restraint in AGENTS.md.
 
+## Current state (2026-08-11)
+
+**Shipped and committed** (in order; `zig build test` green at every checkpoint, tree clean):
+
+1. **Full matrix implemented:** 110 recipes, 11 coding harnesses (jcode **dropped** 2026-08-11 — too unreliable), all three queue modes, origin-aware backfill, evidence claims + combo-match post-checks, daemon pacing + `fixtures/daemon.ctl` control (pause/resume/stop), adaptive `--poll-seconds`/`--capture-review-seconds`/`--capture-timeout-seconds`, `from-ids`/`from-raw`/`from-capture` workers.
+2. **Mode-value bug fixed:** queue stores the full `from-*` string (was prefix-stripped → from-ids rows ran the from-raw worker). Verified end-to-end via a launchd-launched daemon.
+3. **Daemon launchpath (macOS):** `launchctl bootstrap gui/$(id -u)` with a LaunchAgent plist runs the user-only daemon with a clean launchd ancestry (passes `assertNotInAgent`), no sudo/TCC. Documented in CONTRIBUTING.md, including the **required `EnvironmentVariables.PATH`** (launchd doesn't inherit the shell PATH → harness spawns fail `FileNotFound` without it).
+4. **Real `from-capture` fixtures (user-confirmed, token-consuming):**
+   - cline: `cline-clinepass-step37flash`, `cline-clinepass-deepseekv4flash`, `cline-minimax-minimaxm3`, `cline-deepseek-deepseekv4flash`
+   - reasonix: `reasonix-deepseekflash-deepseekv4flash` (launch uses `--permission-mode bypassPermissions`; reasonix defaults to interactive tool approval)
+   - pi: `pi-deepseek-deepseekv4flash`, `pi-minimax-minimaxm3`, `pi-openrouter-deepseekv4flash`, `pi-mistral-mistrallargelatest`, `pi-cerebras-gptoss120b`, `pi-cerebras-gemma431b`, `pi-cerebras-zaiglm47`
+   - opencode: `opencode-opencode-deepseekv4flashfree`
+   - Every fixture's lineage passes through the live harness; evidence + combo-match post-checks pass.
+5. **Live-detection fixes discovered by real captures:**
+   - reasonix: empty `proc_names` (no lineage detection) + a config parser using `startsWith("name =")` that fails on aligned TOML columns (`name        = "..."`); now key-matches before `=` and reads `models = [...]` in addition to `default =`.
+   - pi: empty `proc_names`; pi exports `PI_CODING_AGENT`/`PI_PROVIDER`/`PI_MODEL` to tool subprocesses (env path works live); added `moonshotai → kimi` provider-name mapping.
+   - opencode: empty `proc_names`; doesn't export `OPENCODE_MODEL`; stores sessions in sqlite (`opencode.db`, `session.model` JSON) → `detectOpencode` gained a session-db fallback (mirrors kilo.db), with session-source evidence claims. Unlocked the whole `opencode/*` free tier.
+   - kilo.db: `detectKiloFromDb` now records session observations + evidence claims (the "kilo live-session evidence" follow-up is **done**).
+6. **Evergreen top-50 bulk-add constraint (design, DESIGN.md decision #13 + CONTRIBUTING.md):** bulk/maintenance model additions must clear a coalesced evergreen top-50 rank set (artificialanalysis / arena / llm-stats / HF trending base-weights / openrouter top-weekly); does NOT apply retroactively to existing models, NOT limited to free models, and does NOT gate an individual user-needed addition. Name variations coalesce to canonical models and are recorded on the recipe. Free/paid source-of-truth: harness's own catalog first (omp `models.db` `cost`), OpenRouter `/api/v1/models` (`:free` + `pricing`) and artificialanalysis as cross-checks; arena/HF are not price sources. Tracked cache: `docs/evergreen-top50-models.txt`. Note: the leaderboards are JS-rendered; the coalesced set is curated from accessible signals, not scraped.
+7. **No docker isolation** (decision recorded) — containers can't produce genuine macOS/Windows captures.
+8. **omp evergreen+free expansion (4 batches):** 63 omp recipes covering all providers that expose evergreen+free models — zenmux, siliconflow, sakana, ollama-cloud, kimi-code, meta, google-antigravity, gmi-cloud, nanogpt, huggingface, cursor, github-copilot (devin/moonshot skipped: no evergreen models). 9 new provider rules, ~30 new model rules, 53 real from-raw fixtures (0 failures). All harnesses now have launch specs (crush/goose/mmx/omp added; only account-blocked pi providers and config-mismatched reasonix combos remain launch-less by design).
+
+**Recipe count per harness:** cline 6, crush 4, goose 1, kilo 5, kimicode 3, mmx 2, omp 63, opencode 6, pi 11, qwen 3, reasonix 3, vibe 3 (110 total).
+
+**Current blockers / next-step constraints:**
+- **Cross-harness provider expansion is blocked by provider configuration:** the free evergreen providers (zenmux, siliconflow, ollama-cloud, gmi-cloud, nanogpt, huggingface, cursor, github-copilot, sakana) are configured **only on omp**. kilo/kimi/qwen/mmx/crush/vibe/cline/pi/opencode/goose aren't authed against them, so recipes for those would be non-runnable (speculative) — violating the real-captures contract. Continuing requires the providers to be added to each harness, then the same evergreen+free batch pattern.
+- **Account-blocked providers:** groq (org 413 request-too-large on every model), xai (403 no credits), moonshot (429/insufficient balance) — recipes carry no launch spec; free-model exploration found cerebras (`gpt-oss-120b`, `gemma-4-31b`, `zai-glm-4.7`) and opencode's own free router as the working free sources.
+- **`from-capture` remains user-confirmed** per job (token-consuming); the daemon caps failures at 3 attempts then dequeues with a warning.
+
 ## Terminology: the three refresh flavours (all are queue modes)
 
 The term "synthetic" is dropped as ambiguous. All three flavours are first-class `fixtures queue`/`dequeue` modes (flags `--from-ids` / `--from-raw` / `--from-capture`):
@@ -16,9 +45,9 @@ The term "synthetic" is dropped as ambiguous. All three flavours are first-class
 
 ## Decisions (confirmed)
 
-1. **Harness scope:** coding harnesses only — `cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`, `jcode`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`. Claw / machine-control agents out of scope.
+1. **Harness scope:** coding harnesses only — `cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`. Claw / machine-control agents out of scope. `jcode` was in the original scope but **dropped (2026-08-11)** — too unreliable.
 2. **Models:** open-weight/open-source preferred; free closed and popular closed models also get rules (detection must exceed the preferred set).
-3. **Providers:** zero-training or reciprocal-training preferred. Maintainer probing = free combos of those + paid MiniMax. Add new free providers now: OpenRouter, Groq, Cerebras, Z.AI, Kimi/Moonshot.
+3. **Providers:** zero-training or reciprocal-training preferred. Maintainer probing = free combos of those + paid MiniMax. New free providers added during this run: OpenRouter, Groq, Cerebras, Z.AI, Kimi/Moonshot (provider rules), plus the omp-provided evergreen+free set (zenmux, siliconflow, ollama-cloud, gmi-cloud, nanogpt, huggingface, cursor, github-copilot, sakana, meta, google-antigravity, kimi-code).
 4. **Paid default:** MiniMax subscription. Subscriptions preferred over pay-as-you-go (DeepSeek paid API is secondary; DeepSeek free combos use the free tier).
 5. **Existing closed/paid fixtures** (goose/pi/kilo × anthropic/claude-sonnet-4): keep as contributor-scope examples.
 6. **Recipe refactor:** one parameterized `buildEnv` per harness, not one per combo.
@@ -192,15 +221,19 @@ Add to `known_fixtures.test.zig` (or a new test file):
 
 ## Follow-ups (logged, not faked)
 
-- **kilo live-session evidence:** `detectKiloFromDb` reads provider/model from `~/.local/share/kilo/kilo.db`, a custom sqlite session store (main.zig:1581); define a claim shape for db sources so live/`from-capture` kilo fixtures pass. `from-raw` kilo fixtures are unaffected (2b sets `KILO_MODEL`).
-- **pi real model detection:** `detectPi` (main.zig:1726) currently uses `PI_PROVIDER`/`PI_MODEL` placeholder defaults ("model detection TODO") — implement real session model parsing so pi fixtures are genuine captures, not assumptions.
-- **Any other custom evidence source** the 2h detector audit turns up gets the same treatment: claimed if it maps to env/config/session shapes, logged here if it does not.
-- **Consider removing `refresh-cooked-from-raw`:** deferred to a full-impact follow-up. Weigh: fabricated evidence vs the "real captures, not synthetic assemblies" contract (main.zig:2013); the machinery overhead (2a/2b/2h) serving only this path; the loss of the only zero-token automated `detect()` integration coverage and what replaces it (in-process `detect()` regression test); whether `from-ids` + `from-capture` + contributor captures can cover the matrix.
+- ~~**kilo live-session evidence:**~~ **DONE (2026-08-11)** — `detectKiloFromDb` now records session observations + evidence claims for the provider/model resolved from `~/.local/share/kilo/kilo.db`.
+- ~~**pi real model detection:**~~ **DONE (2026-08-11)** — `detectPi` reads the real `~/.pi/agent/settings.json` (`defaultProvider`/`defaultModel`) when `PI_PROVIDER`/`PI_MODEL` are unset, plus the `moonshotai → kimi` provider mapping; verified via sandboxed captures.
+- **Any other custom evidence source** the detector audit turns up gets the same treatment: claimed if it maps to env/config/session shapes, logged here if it does not. (opencode.db session-db fallback added 2026-08-11.)
+- **Consider removing `refresh-cooked-from-raw`:** still deferred to a full-impact follow-up. Weigh: fabricated evidence vs the "real captures, not synthetic assemblies" contract (main.zig:2013); the machinery overhead (2a/2b/2h) serving only this path; the loss of the only zero-token automated `detect()` integration coverage and what replaces it (in-process `detect()` regression test); whether `from-ids` + `from-capture` + contributor captures can cover the matrix.
 - **Docker isolation for harness installs/runs — explicitly NOT adopted (2026-08-11):** containers would not give genuine macOS/Windows captures (platform evidence must come from the real host run); the sandboxed worker HOME + user-only daemon already isolate runs from host config. Recorded so the idea is not re-raised without revisiting this rationale.
+- **Evergreen top-50 cache maintenance:** `docs/evergreen-top50-models.txt` is a curated snapshot of the coalesced evergreen set; refresh it when the leaderboards shift materially (it gates future bulk additions).
+- **Cross-harness provider expansion:** the free evergreen providers are configured on omp only; expanding kilo/kimi/qwen/mmx/crush/vibe/cline/pi/opencode/goose requires the user to add those providers to each harness first (then the identical batch pattern applies).
+- **Real `from-capture` for the remaining capturable combos** (kilo, kimi, qwen, mmx, crush, vibe, goose, opencode free-tier extras): user-confirmed, token-consuming; run via the launchd daemon when the user green-lights them.
 
 ## Out of scope
 
 - Claw / pending harnesses (claude, continue/cody/windsurf, grok).
 - Removing or re-capturing existing closed-model fixtures.
-- Running `--from-capture` jobs (token-consuming) as part of the matrix build — infra + starter launch specs only; real capture-mode smoke tests are user-confirmed follow-ups.
-- `from-capture` launch specs for harnesses beyond the starter set (kilo, opencode, kimi, qwen, jcode, vibe).
+- Running `--from-capture` jobs (token-consuming) as part of the matrix build — infra + launch specs are in (every harness has one now); real capture-mode sweeps are user-confirmed follow-ups.
+- Expanding the free evergreen providers (zenmux, siliconflow, etc.) onto harnesses other than omp until those harnesses are configured with them.
+- `jcode` (dropped 2026-08-11).
