@@ -36,6 +36,19 @@ jobs:
           ./bin/agent-detect-linux-x86_64 --help
           ./bin/agent-detect-linux-x86_64 --version
 
+      - name: smoke asserts (recipe mode + exit statuses)
+        run: |
+          set -e
+          B=./bin/agent-detect-linux-x86_64
+          "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
+          test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          set +e
+          OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          RC=$?
+          set -e
+          test "$OUT" = "not reciprocal"
+          test "$RC" -eq 10
+
   # Every push to `main` overwrites the `nightly` rolling release so
   # WIP consumers can pin to `releases/tag/nightly/download/<asset>`.
   # Marked `prerelease: true` and `latest: false` so it never becomes
@@ -59,6 +72,19 @@ jobs:
         run: |
           chmod +x bin/agent-detect-linux-x86_64
           ./bin/agent-detect-linux-x86_64 --version
+
+      - name: smoke asserts (recipe mode + exit statuses)
+        run: |
+          set -e
+          B=./bin/agent-detect-linux-x86_64
+          "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
+          test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          set +e
+          OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          RC=$?
+          set -e
+          test "$OUT" = "not reciprocal"
+          test "$RC" -eq 10
 
       - name: publish rolling release
         uses: softprops/action-gh-release@v2
@@ -95,6 +121,19 @@ jobs:
         run: |
           chmod +x bin/agent-detect-linux-x86_64
           ./bin/agent-detect-linux-x86_64 --version
+
+      - name: smoke asserts (recipe mode + exit statuses)
+        run: |
+          set -e
+          B=./bin/agent-detect-linux-x86_64
+          "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
+          test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          set +e
+          OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          RC=$?
+          set -e
+          test "$OUT" = "not reciprocal"
+          test "$RC" -eq 10
 
       - name: publish tagged release as latest
         uses: softprops/action-gh-release@v2
