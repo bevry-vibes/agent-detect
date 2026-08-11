@@ -21,7 +21,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: mlugg/setup-zig@v2
         with:
@@ -59,7 +59,7 @@ jobs:
     permissions:
       contents: write # publish release assets
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: mlugg/setup-zig@v2
         with:
@@ -92,7 +92,7 @@ jobs:
           tag_name: nightly
           name: nightly
           prerelease: true
-          latest: false
+          make_latest: false
           body: |
             Rolling build of `agent-detect` binaries for all platforms, updated on every push to `main`. Pin WIP consumers to `releases/tag/nightly/download/<asset>`; stable consumers should use `releases/latest/download/<asset>` instead (which only updates when a calver tag is pushed).
           files: bin/*
@@ -108,7 +108,7 @@ jobs:
     permissions:
       contents: write # publish release assets
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: mlugg/setup-zig@v2
         with:
@@ -141,7 +141,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           prerelease: false
-          latest: true
+          make_latest: true
           body: |
             Stable release `agent-detect ${{ github.ref_name }}`. Cut from `main` — see DESIGN.md "distribution / versioned releases" for the runbook. Direct downloads via `releases/latest/download/<asset>` (this release IS `latest`).
           files: bin/*
