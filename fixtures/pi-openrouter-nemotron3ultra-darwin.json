@@ -1,0 +1,98 @@
+{
+  "cooked": {
+    "harness_label": "Pi",
+    "harness_short_title": null,
+    "harness_name": "pi",
+    "harness_id": "pi",
+    "harness_license": "MIT",
+    "provider_label": "OpenRouter",
+    "provider_name": "openrouter",
+    "provider_id": "openrouter",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "Nemotron 3 Ultra",
+    "model_short_title": null,
+    "model_name": "nemotron-3-ultra",
+    "model_id": "nemotron3ultra",
+    "model_reciprocity": null,
+    "agent_id": "pi-openrouter-nemotron3ultra",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Pi · Nemotron 3 Ultra <pi-openrouter-nemotron3ultra@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "PI_CODING_AGENT": {
+        "value": "true",
+        "present": true
+      },
+      "PI_PROVIDER": {
+        "value": "openrouter",
+        "present": true
+      },
+      "PI_MODEL": {
+        "value": "nemotron-3-ultra",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 93351,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 93342,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/earendil-works/pi",
+      "https://github.com/earendil-works/pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://openrouter.ai/privacy",
+      "https://openrouter.ai/terms"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "PI_CODING_AGENT",
+        "value": "pi"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "PI_PROVIDER",
+        "value": "openrouter"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "PI_MODEL",
+        "value": "nemotron-3-ultra"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Pi · Nemotron 3 Ultra <pi-openrouter-nemotron3ultra@local>",
+  "origin": "from-raw"
+}

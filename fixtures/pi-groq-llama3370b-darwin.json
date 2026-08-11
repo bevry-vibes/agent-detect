@@ -1,0 +1,98 @@
+{
+  "cooked": {
+    "harness_label": "Pi",
+    "harness_short_title": null,
+    "harness_name": "pi",
+    "harness_id": "pi",
+    "harness_license": "MIT",
+    "provider_label": "Groq",
+    "provider_name": "groq",
+    "provider_id": "groq",
+    "provider_closed_training": "never",
+    "provider_open_training": "never",
+    "model_label": "Llama 3.3 70B",
+    "model_short_title": null,
+    "model_name": "llama-3.3-70b",
+    "model_id": "llama3370b",
+    "model_reciprocity": null,
+    "agent_id": "pi-groq-llama3370b",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: Pi · Llama 3.3 70B <pi-groq-llama3370b@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "PI_CODING_AGENT": {
+        "value": "true",
+        "present": true
+      },
+      "PI_PROVIDER": {
+        "value": "groq",
+        "present": true
+      },
+      "PI_MODEL": {
+        "value": "llama-3.3-70b",
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 93366,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 93342,
+        "name": "bash"
+      },
+      {
+        "pid": 61993,
+        "name": "kilo"
+      },
+      {
+        "pid": 35373,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/earendil-works/pi",
+      "https://github.com/earendil-works/pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://groq.com/privacy",
+      "https://groq.com/terms"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "PI_CODING_AGENT",
+        "value": "pi"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "PI_PROVIDER",
+        "value": "groq"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "PI_MODEL",
+        "value": "llama-3.3-70b"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: Pi · Llama 3.3 70B <pi-groq-llama3370b@local>",
+  "origin": "from-raw"
+}

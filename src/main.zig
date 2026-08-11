@@ -297,6 +297,20 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "qwen3.6", .label = "Qwen3.6", .reciprocity = null, .sources = &.{} },
     // llama-3.1-8b: Meta Llama 3.1 8B (open-weight); reciprocity unverified.
     .{ .name = "llama-3.1-8b", .label = "Llama 3.1 8B", .reciprocity = null, .sources = &.{} },
+    // nemotron-3-super: NVIDIA Nemotron 3 Super (open-weight);
+    // reciprocity unverified.
+    .{ .name = "nemotron-3-super", .label = "Nemotron 3 Super", .reciprocity = null, .sources = &.{} },
+    // nemotron-3-nano: NVIDIA Nemotron 3 Nano (open-weight);
+    // reciprocity unverified.
+    .{ .name = "nemotron-3-nano", .label = "Nemotron 3 Nano", .reciprocity = null, .sources = &.{} },
+    // llama-3.3-70b: Meta Llama 3.3 70B (open-weight); reciprocity unverified.
+    .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .reciprocity = null, .sources = &.{} },
+    // llama-4-maverick: Meta Llama 4 Maverick (open-weight); reciprocity unverified.
+    .{ .name = "llama-4-maverick", .label = "Llama 4 Maverick", .reciprocity = null, .sources = &.{} },
+    // kimi-k2.7-code: Moonshot Kimi K2.7 Code (open-weight); reciprocity unverified.
+    .{ .name = "kimi-k2.7-code", .label = "Kimi K2.7 Code", .reciprocity = null, .sources = &.{} },
+    // grok-4.20: xAI Grok 4.20; closed, reciprocity unverified.
+    .{ .name = "grok-4.20", .label = "Grok 4.20", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -432,6 +446,20 @@ pub const rulesForProviders = [_]ProviderRule{
     // github-copilot: null/null — GitHub Copilot's model routing
     // (subscription-included, no per-call price tracked); unverified.
     .{ .name = "github-copilot", .label = "GitHub Copilot", .closed_training = null, .open_training = null, .sources = &.{ "https://github.com/features/copilot" } },
+    // alibaba: null/null — Alibaba's hosted Qwen/DashScope tier (the
+    // `alibaba/...` provider key opencode/kilo catalogs use for the
+    // qwen models; same upstream as `qwen`); policy unverified.
+    .{ .name = "alibaba", .label = "Alibaba", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/legal" } },
+    // openai: null/null — OpenAI's platform tier (also the provider id
+    // for requesty-routed openai-compatible combos, e.g. qwen's
+    // `router.requesty.ai` upstream); policy unverified.
+    .{ .name = "openai", .label = "OpenAI", .closed_training = null, .open_training = null, .sources = &.{ "https://openai.com/policies/privacy-policy/", "https://openai.com/policies/terms-of-use/" } },
+    // fireworks-ai: null/null — Fireworks AI's hosted tier (the
+    // `fireworks-ai/...` provider key kilo catalogs); policy unverified.
+    .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = null, .open_training = null, .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" } },
+    // google: null/null — Google's Gemini platform tier (the `google`
+    // provider key for Gemini CLI / gemini-api combos); policy unverified.
+    .{ .name = "google", .label = "Google", .closed_training = null, .open_training = null, .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs" } },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
@@ -817,6 +845,9 @@ fn providerForBaseUrl(base_url: []const u8) []const u8 {
         .{ "mistral.ai", "mistral" },
         .{ "anthropic.com", "anthropic" },
         .{ "hyper.charm.land", "hyper" },
+        .{ "x.ai", "xai" },
+        .{ "requesty.ai", "openai" },
+        .{ "openai.com", "openai" },
     };
     for (table) |pair| {
         if (std.mem.indexOf(u8, base_url, pair[0]) != null) return pair[1];
@@ -3555,6 +3586,11 @@ const devProviderMeta = [_]DevProviderMeta{
     .{ .provider = "cline-pass", .base_url = "https://api.cline.bot", .key_env = "CLINE_API_KEY" },
     .{ .provider = "cline", .base_url = "https://api.cline.bot", .key_env = "CLINE_API_KEY" },
     .{ .provider = "remote", .base_url = "https://api.anthropic.com", .key_env = "ANTHROPIC_API_KEY" },
+    .{ .provider = "xai", .base_url = "https://api.x.ai/v1", .key_env = "XAI_API_KEY" },
+    .{ .provider = "openai", .base_url = "https://api.openai.com/v1", .key_env = "OPENAI_API_KEY" },
+    .{ .provider = "alibaba", .base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", .key_env = "DASHSCOPE_API_KEY" },
+    .{ .provider = "fireworks-ai", .base_url = "https://api.fireworks.ai/inference/v1", .key_env = "FIREWORKS_API_KEY" },
+    .{ .provider = "google", .base_url = "https://generativelanguage.googleapis.com/v1beta/openai", .key_env = "GEMINI_API_KEY" },
 };
 
 fn devProviderMetaFor(name: []const u8) ?DevProviderMeta {
@@ -3972,6 +4008,20 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "pi-mistral-mistrallargelatest", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "mistral", "--model", "mistral-large-latest", "-p", capture_prompt } },
     .{ .agent_id = "pi-xai-grok4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
     .{ .agent_id = "pi-kimi-kimik3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    // pi batch 2 (2026-08-11, catalog inference): free-tier openrouter
+    // `:free` models + groq free-tier models (evergreen-clearing, per
+    // the ordering spec's "all providers' free models" step), then
+    // minimax/deepseek all-models steps (their named-provider override
+    // bypasses the evergreen gate). Groq has no launch spec — this
+    // account's groq key 404s (see the batch-1 comment).
+    .{ .agent_id = "pi-openrouter-gemma431b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "google/gemma-4-31b-it:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-openrouter-nemotron3ultra", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-ultra-550b-a55b:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-openrouter-nemotron3super", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-super-120b-a12b:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-openrouter-nemotron3nano", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-nano-30b-a3b:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-groq-llama3370b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-groq-llama318b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-minimax-minimaxm27", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "minimax", "--model", "MiniMax-M2.7", "-p", capture_prompt } },
+    .{ .agent_id = "pi-deepseek-deepseekv4pro", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-pro", "-p", capture_prompt } },
     // qwen — minimax/m3 (keep), deepseek/v4-flash, qwen/qwen3.8-max
     .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
     .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
