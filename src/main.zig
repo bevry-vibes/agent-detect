@@ -806,7 +806,7 @@ fn daemonWrite(io: std.Io, bytes: []const u8) void {
         const ts = std.Io.Clock.Timestamp.now(io, .real);
         const sec = ts.raw.toSeconds();
         const ms = ts.raw.toMilliseconds() - sec * 1000;
-        const prefix = std.fmt.bufPrint(buf[0..], "[{d}.{d}] ", .{sec, ms}) catch return;
+        const prefix = std.fmt.bufPrint(buf[0..], "[{d}.{d:0>3}] ", .{sec, ms}) catch return;
         std.Io.File.stdout().writeStreamingAll(io, prefix) catch {};
         if (daemon_log_file) |f| f.writeStreamingAll(io, prefix) catch {};
     }
@@ -822,7 +822,7 @@ fn daemonWriteErr(io: std.Io, bytes: []const u8) void {
         const ts = std.Io.Clock.Timestamp.now(io, .real);
         const sec = ts.raw.toSeconds();
         const ms = ts.raw.toMilliseconds() - sec * 1000;
-        const prefix = std.fmt.bufPrint(buf[0..], "[{d}.{d}] ", .{sec, ms}) catch return;
+        const prefix = std.fmt.bufPrint(buf[0..], "[{d}.{d:0>3}] ", .{sec, ms}) catch return;
         std.Io.File.stderr().writeStreamingAll(io, prefix) catch {};
         if (daemon_log_file) |f| f.writeStreamingAll(io, prefix) catch {};
     }
