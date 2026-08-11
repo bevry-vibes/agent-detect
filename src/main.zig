@@ -221,6 +221,10 @@ pub const rulesForModels = [_]ModelRule{
     // gemma-4-31b: Google's open-weight Gemma 4 family (Cerebras free
     // trial); reciprocity unverified, stays null.
     .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = null, .sources = &.{} },
+    // deepseek-v4-flash-free: opencode's free-tier alias of
+    // deepseek-v4-flash (served via opencode's router); reciprocity
+    // unverified, stays null.
+    .{ .name = "deepseek-v4-flash-free", .label = "DeepSeek V4 Flash (free)", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -290,6 +294,11 @@ pub const rulesForProviders = [_]ProviderRule{
     // openrouter: never/never — a BYO-key aggregator gateway; it does
     // not host or train models on customer traffic (privacy + terms).
     .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "never", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
+    // opencode: null/null — opencode's first-party router (its built-in
+    // free tier: `opencode/deepseek-v4-flash-free` etc.). As an
+    // inference router it doesn't train on traffic, but the first-party
+    // upstreams are varied; training-policy wording unverified, null.
+    .{ .name = "opencode", .label = "OpenCode", .closed_training = null, .open_training = null, .sources = &.{ "https://github.com/anomalyco/opencode" } },
     // groq: never/never — Groq is an inference-only LPU cloud; its
     // terms/privacy state customer data is not used for model training.
     .{ .name = "groq", .label = "Groq", .closed_training = "never", .open_training = "never", .sources = &.{ "https://groq.com/privacy", "https://groq.com/terms" } },
@@ -509,7 +518,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // opencode: MIT — https://github.com/anomalyco/opencode (formerly
     // sst/opencode) ships a MIT LICENSE; default branch is `dev`, so
     // the LICENSE blob URL is branch-qualified.
-    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/dev/LICENSE" }, .env_markers = &opencode_env, .proc_names = &.{} },
+    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/dev/LICENSE" }, .env_markers = &opencode_env, .proc_names = &.{ "opencode", "opencode.exe" } },
     // vibe: Apache-2.0 — https://github.com/mistralai/mistral-vibe ships
     // an Apache-2.0 LICENSE (the Vibe CLI for Mistral models).
     .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .env_markers = &vibe_env, .proc_names = &.{} },
@@ -1865,31 +1874,79 @@ fn stripBuildStamp(a: std.mem.Allocator, name: []const u8) []const u8 {
 }
 
 fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    _ = home;
-    _ = io;
-    // Same model as kilo: opencode doesn't persist current-model.
-    // Launcher sets OPENCODE_MODEL="<provider>/<model>" before invoking.
-    const model_full = env.get("OPENCODE_MODEL") orelse return;
-    if (model_full.len == 0) return;
-    const slash = std.mem.findScalar(u8, model_full, '/');
-    if (slash) |i| {
-        const prov = model_full[0..i];
-        const model_only = model_full[i + 1 ..];
-        d.provider_name = prov;
-        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
-        try applyProviderMeta(a, d, prov);
-        try applyModel(a, d, model_only, model_full);
-    } else {
-        d.provider_name = "anthropic";
-        d.provider_label = "Anthropic";
-        try applyProviderMeta(a, d, "anthropic");
-        try applyModel(a, d, model_full, model_full);
+    // opencode doesn't persist current-model in a config file. The
+    // launcher sets OPENCODE_MODEL="<provider>/<model>"; in a real
+    // session opencode stores the model in sqlite (`opencode.db`,
+    // `session.model` JSON with `providerID`/`id`), so fall back to the
+    // latest session when the env var is absent.
+    if (env.get("OPENCODE_MODEL")) |model_full| {
+        if (model_full.len == 0) return;
+        const slash = std.mem.findScalar(u8, model_full, '/');
+        if (slash) |i| {
+            const prov = model_full[0..i];
+            const model_only = model_full[i + 1 ..];
+            d.provider_name = prov;
+            d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+            try applyProviderMeta(a, d, prov);
+            try applyModel(a, d, model_only, model_full);
+        } else {
+            d.provider_name = "anthropic";
+            d.provider_label = "Anthropic";
+            try applyProviderMeta(a, d, "anthropic");
+            try applyModel(a, d, model_full, model_full);
+        }
+        // opencode has no config file — the OPENCODE_MODEL value lives
+        // in raw.env_vars, not in a fake config_file entry.
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
+        return;
     }
 
-    // opencode has no config file — the OPENCODE_MODEL value lives
-    // in raw.env_vars, not in a fake config_file entry.
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
+    // real opencode session: latest session's model JSON in the sqlite
+    // store (`~/.local/share/opencode/opencode.db`).
+    if (home.len == 0) return;
+    const db = try std.fs.path.join(a, &.{ home, ".local/share/opencode/opencode.db" });
+    defer a.free(db);
+    const sql = "SELECT model FROM session ORDER BY time_updated DESC LIMIT 1";
+    const out = kiloSqliteJson(a, io, db, sql) catch return;
+    defer a.free(out);
+    if (out.len == 0) return;
+    const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return;
+    if (outer.value != .array or outer.value.array.items.len == 0) return;
+    const row = outer.value.array.items[0];
+    if (row != .object) return;
+    const model_str = switch (row.object.get("model") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    // model JSON: {"id":"deepseek-v4-flash-free","providerID":"opencode","variant":"default"}
+    const inner = std.json.parseFromSlice(std.json.Value, a, model_str, .{}) catch return;
+    const inner_obj = switch (inner.value) {
+        .object => |o| o,
+        else => return,
+    };
+    const provider_id = switch (inner_obj.get("providerID") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    const model_full = switch (inner_obj.get("id") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    d.provider_name = provider_id;
+    d.provider_label = providerForName(provider_id) orelse try titleCase(a, provider_id);
+    try applyProviderMeta(a, d, provider_id);
+    try applyModel(a, d, stripBuildStamp(a, model_full), model_full);
+    // decision #11: the live session store is the source for both dims.
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "session.model.providerID", .value = provider_id });
+    try fields.append(a, .{ .dotted_path = "session.model.id", .value = model_full });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
+    d.raw.session_files = obs;
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.model.providerID", .value = provider_id });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = model_full });
 }
 
 fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -3833,6 +3890,8 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "opencode-hyper-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
     .{ .agent_id = "opencode-groq-llama4", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
     .{ .agent_id = "opencode-cerebras-qwen3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    // opencode's built-in free tier (opencode router, no API key needed)
+    .{ .agent_id = "opencode-opencode-deepseekv4flashfree", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", "--model", "opencode/deepseek-v4-flash-free", capture_prompt } },
     // vibe — mistral/mistral-large-latest (keep), mistral/mistral-small-latest, minimax/m3
     .{ .agent_id = "vibe-mistral-mistrallargelatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
     .{ .agent_id = "vibe-mistral-mistralsmalllatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
