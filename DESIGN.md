@@ -308,11 +308,39 @@ names the shipped behavior and why it was chosen.
     `is-reciprocal` accept a full
     `--harness= --provider= --model=` combo resolved from the rule
     tables.
-12. **`*_id` fields are strict slugs.** `harness_id`, `provider_id`,
-    `model_id`, `agent_id`, `platform_id`, and the derived `fixture_id`
-    are strictly lowercase-alphanumeric slugs of the canonical `*_name`
-    (no separators). `*_name` carries the service's own spelling; the
-    ids are what machine matching and fixture filenames use.
+ 12. **`*_id` fields are strict slugs.** `harness_id`, `provider_id`,
+     `model_id`, `agent_id`, `platform_id`, and the derived `fixture_id`
+     are strictly lowercase-alphanumeric slugs of the canonical `*_name`
+     (no separators). `*_name` carries the service's own spelling; the
+     ids are what machine matching and fixture filenames use.
+ 13. **Bulk model additions are constrained to the evergreen top 50.**
+     When models are added en masse (maintenance sweeps, expanding a
+     harness across a batch of providers, free-catalog imports), every
+     new model — paid or free, on any provider — must clear the coalesced
+     evergreen top-50 rank set. This guard is for bulk/maintenance work
+     only and does NOT apply retroactively to models already in the
+     matrix, and it does NOT apply to an individual addition a user
+     explicitly needs (a one-off `--harness= --provider= --model=` combo
+     added on request is always allowed). The rank set is the union of
+     what perennially clears the top-50 leaderboards of:
+     - [artificialanalysis.ai](https://artificialanalysis.ai)
+       (Intelligence Index leaders),
+     - [lmarena.ai / arena.ai](https://arena.ai) (LMArena leaderboard),
+     - [llm-stats.com](https://llm-stats.com),
+     - [huggingface.co/models](https://huggingface.co/models) (trending
+       base-weights, finetunes/GGUF/image/audio models excluded),
+     - [openrouter.ai/models?order=top-weekly](https://openrouter.ai/models?order=top-weekly).
+     "Free on that provider" only decides whether a free launch/capture
+     is attached — a model free on one provider is not assumed free on
+     another. Name variations across services (e.g. `gpt-5.6-sol` vs
+     `gpt-5.6-luna`, `claude-opus-4.7/4.8/5`, `qwen3.5/3.6`, the
+     `:free` vs `-free` vs `-0731` stamps) are coalesced into one
+     canonical model per family, and the service-specific spellings are
+     recorded as variations on the recipe, never added as duplicates.
+     Note: these leaderboards are JS-rendered and mostly lack public rank
+     APIs, so the coalesced set is curated from the accessible signals
+     (the artificialanalysis page + OpenRouter/HF model catalogs) rather
+     than scraped. See CONTRIBUTING.md "bulk additions, evergreen top 50".
 
 ## test matrix: harnesses, providers, models
 

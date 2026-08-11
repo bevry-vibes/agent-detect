@@ -183,6 +183,24 @@ fixture's evidence claims as they land. Contributors add other combos
 - `--from-capture` — real re-captures only (token-consuming,
   user-confirmed).
 
+A bulk/maintenance model addition (a sweep, expanding a harness across a
+batch of providers, or a free-catalog import) adds a model only when it
+is in the evergreen top-50 rank set (see DESIGN.md "bulk model additions
+are constrained to the evergreen top 50") — regardless of whether it is
+paid or free, or which provider serves it. This does not apply
+retroactively to models already in the matrix, and it does not apply to
+an individual addition a user explicitly needs (a one-off
+`--harness= --provider= --model=` combo added on request is always
+allowed). Whether a model is free on a given provider only decides if a
+free launch/capture is attached — free on one provider is not free on
+another. Name variations across services (`:free` vs `-free`, release
+stamps like `-0731`, reasoning-effort suffixes) are coalesced into one
+canonical model per family and recorded as variations on the recipe —
+never added as duplicates. Reference cache: `docs/evergreen-top50-models.txt`
+(the tracked coalesced evergreen top-50 set that bulk additions must clear;
+a harness's own model catalog intersects it per provider to decide free
+launch/capture attachment).
+
 ### monitoring + control runbook
 
 Run the daemon with `fixtures daemon --write-log` (log:

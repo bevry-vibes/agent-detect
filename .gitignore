@@ -62,6 +62,11 @@ bin/
 # zig dependency package cache (populated by `zig fetch`; not committed, regenerated on demand)
 zig-pkg/
 
+# the evergreen top-50 model cache is a tracked reference artifact (bulk-add guard; see DESIGN.md)
+!docs/
+docs/*
+!docs/evergreen-top50-models.txt
+
 # dev daemon telemetry (written by `fixtures daemon --write-log`; already
 # covered by **/*.log above, listed explicitly for discoverability)
 fixtures/daemon.log

@@ -225,6 +225,9 @@ pub const rulesForModels = [_]ModelRule{
     // deepseek-v4-flash (served via opencode's router); reciprocity
     // unverified, stays null.
     .{ .name = "deepseek-v4-flash-free", .label = "DeepSeek V4 Flash (free)", .reciprocity = null, .sources = &.{} },
+    // zai-glm-4.7: Z.ai GLM 4.7 (hosted on Cerebras free trial);
+    // reciprocity unverified, stays null.
+    .{ .name = "zai-glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -3858,6 +3861,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     // gpt-oss-120b (production) and gemma-4-31b (preview).
     .{ .agent_id = "pi-cerebras-gptoss120b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gpt-oss-120b", "-p", capture_prompt } },
     .{ .agent_id = "pi-cerebras-gemma431b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gemma-4-31b", "-p", capture_prompt } },
+    .{ .agent_id = "pi-cerebras-zaiglm47", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "zai-glm-4.7", "-p", capture_prompt } },
     .{ .agent_id = "pi-mistral-mistrallargelatest", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "mistral", "--model", "mistral-large-latest", "-p", capture_prompt } },
     .{ .agent_id = "pi-xai-grok4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
     .{ .agent_id = "pi-kimi-kimik3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
