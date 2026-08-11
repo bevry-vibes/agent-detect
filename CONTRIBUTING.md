@@ -220,7 +220,12 @@ report rankings and published weights, not serving prices. Name
 variations across services (`:free` vs `-free`, release stamps like
 `-0731`, reasoning-effort suffixes) are coalesced into one canonical
 model per family and recorded as variations on the recipe — never added
-as duplicates. Reference cache: `docs/evergreen-top50-models.txt`
+as duplicates. This documented convention is mirrored at the code level
+by each rule's `variations` field (see "add a new model or provider
+rule" below): `--model=`/`--provider=`/`--harness=` CLI flags resolve
+any alias that is the rule's `name`, `label`, `short_title`, or a
+`variations` entry, normalized to a strict slug. Reference cache:
+`docs/evergreen-top50-models.txt`
 (the tracked coalesced evergreen top-50 set that bulk additions must clear;
 a harness's own model catalog intersects it per provider to decide free
 launch/capture attachment).
@@ -342,8 +347,15 @@ without live detection:
 
 All three of `--harness=`, `--provider=`, `--model=` are required (or
 none — then live detection runs). A partial combo exits 4; an id not
-in the rule tables exits 7. Ids may be given in canonical or strict-slug form
-(`cline-pass` or `clinepass`). This is how a harness whose
+in the rule tables exits 7. Ids may be given in canonical, strict-slug,
+label, or case-variation form (`cline-pass`, `clinepass`, `Cline Pass`,
+or `CLINE_PASS` all work) — each is normalized (lowercase + strip
+non-alphanumeric, whole-string) and matched against the rule's alias
+set (canonical `name`, `label`, `short_title`, and `variations`), with
+exact-name precedence (so `cline` always means `cline`, never
+`cline-pass`). An alias matching two rules is rejected by the
+alias-uniqueness test; the resolver itself is deterministic
+(first rule in array order wins). This is how a harness whose
 provider/model can't be auto-detected still gets a cooked report and
 trailer.
 
@@ -360,6 +372,7 @@ Add a `HarnessRule` entry to the `rulesForHarnesses` array in
 | `license_sources` | two URLs: the project page + the LICENSE file linked from it. `null`/`NOASSERTION` license keeps this empty |
 | `env_markers`     | env-var names unique to this harness (one or more). Run the harness' `--help` and inspect its config to discover |
 | `proc_names`      | lowercase exe names matched against the process ancestry. Many node-based harnesses use generic exes — leave empty |
+| `variations`      | optional extra alias display-strings not covered by `name`/`label`/`short_title` (e.g. `"Kilo Code CLI"`). Keep minimal — see the alias conventions below |
 
 `license` semantics (per SPDX spec):
 
@@ -402,6 +415,7 @@ Their structs are `ModelRule` and `ProviderRule`.
 | `short_title`| optional shorter brand form (e.g. `M3` for `MiniMax M3`); `null` when there's no established short form                       |
 | `reciprocity`| one of `open-source`, `open-weight`, or `closed`                                                                                |
 | `sources`    | independent cross-references that informed the reciprocity decision — typically the HF model page + its LICENSE file           |
+| `variations` | optional extra alias display-strings not covered by `name`/`label`/`short_title` (default `&.{}`)                              |
 
 **Provider rule fields:**
 
@@ -409,13 +423,31 @@ Their structs are `ModelRule` and `ProviderRule`.
 | ------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `name`              | the provider id used by harness configs (e.g. `cline-pass`, `anthropic`)                                     |
 | `label`             | the human-readable provider name (e.g. `Cline Pass`, `Anthropic`)                                           |
+| `short_title`       | optional short brand form (e.g. `M3`); `null` when there's no established short form (most providers omit it) |
 | `closed_training`   | one of `enforced`, `opt-in`, `opt-out`, `never`, or `null` (unverified). Reflects whether the provider trains closed models on customer data |
 | `open_training`     | same enum. Reflects whether the provider trains open-weight/open-source models on customer data                |
 | `sources`           | two independent same-provider policy documents (typically privacy policy + terms of service) that informed both training values |
+| `variations`        | optional extra alias display-strings not covered by `name`/`label`/`short_title` (default `&.{}`)            |
 
 Reciprocity and training values are *derived from public docs*, not
 guessed. If you can't verify a value, leave it `null` — a maintainer
 fills it in once verified.
+
+### alias conventions (harness / provider / model rules)
+
+Every rule's CLI alias set is `name` + `label` + `short_title` (if
+present) + `variations`, all normalized to a strict slug: lowercase +
+strip non-alphanumeric, **whole-string** (no word stripping — removing
+suffixes like `-code`/`cli`/`pass` would wrongly conflate `kimi-code`↔
+`kimi` and `cline-pass`↔`cline`). Resolution is **exact-name-first**
+(`--harness=cline` always means the `cline` rule, never `cline-pass`),
+then first-rule-in-array-order over the normalized alias set. Add
+`variations` only where a real-world alias is nowhere in
+`name`/`label`/`short_title` (e.g. `kilo`'s full product name
+`Kilo Code CLI`); label/short_title matching covers the common forms.
+A slug that would match two rules in the same table fails the
+alias-uniqueness test — keep every rule's alias set globally distinct
+within its table (same-name labels across *different* tables are fine).
 
 ## cut a release
 

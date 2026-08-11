@@ -139,6 +139,14 @@ const ModelRule = struct {
     short_title: ?[]const u8 = null,
     reciprocity: ?[]const u8,
     sources: []const []const u8,
+    /// extra alias display-strings not covered by `name`/`label`/
+    /// `short_title` (e.g. the full product name). Each entry joins
+    /// the rule's normalized alias set (lowercase + strip
+    /// non-alphanumeric, whole-string) used by CLI flag resolution —
+    /// see `canonicalIdFor`. Keep entries minimal: name/label/
+    /// short_title already cover the common forms; add a variation
+    /// only when a real-world alias is nowhere in those.
+    variations: []const []const u8 = &.{},
 };
 pub const rulesForModels = [_]ModelRule{
     // kimi-k3: open-weight — Moonshot's HF card self-describes
@@ -266,8 +274,11 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "gpt-4o", .label = "GPT-4o", .reciprocity = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
     // grok-3: closed — xAI Grok 3; API-only, no weights.
     .{ .name = "grok-3", .label = "Grok 3", .reciprocity = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
-    // glm-4.7: open-weight — Z.ai GLM 4.7; HF card + LICENSE.
-    .{ .name = "glm-4.7", .label = "Z.ai GLM 4.7", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.7", "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE" } },
+    // glm-4.7: open-weight — Z.ai GLM 4.7; HF card + LICENSE. The
+    // label is the plain family form ("GLM 4.7", like `glm-5.2`) so it
+    // stays distinct from the `zai-glm-4.7` rule's "Z.ai GLM 4.7"
+    // label — identical labels would make the alias resolver ambiguous.
+    .{ .name = "glm-4.7", .label = "GLM 4.7", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.7", "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE" } },
     // deepseek-r1: open-weight — DeepSeek R1; HF card + LICENSE.
     .{ .name = "deepseek-r1", .label = "DeepSeek R1", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-R1", "https://huggingface.co/deepseek-ai/DeepSeek-R1/blob/main/LICENSE" } },
     // gemini-3-pro: closed — Google Gemini 3 Pro; API-only, no weights.
@@ -353,9 +364,18 @@ pub const rulesForModels = [_]ModelRule{
 const ProviderRule = struct {
     name: []const u8,
     label: []const u8,
+    /// optional short brand form for casual references. `null` when no
+    /// established short form; kept on the generic resolver so the
+    /// normalized alias set (name + label + short_title + variations)
+    /// is uniform across the three rule tables (see `canonicalIdFor`).
+    short_title: ?[]const u8 = null,
     closed_training: ?[]const u8,
     open_training: ?[]const u8,
     sources: []const []const u8,
+    /// extra alias display-strings not covered by `name`/`label`/
+    /// `short_title`; joins the normalized alias set — see the field
+    /// doc on `ModelRule.variations`.
+    variations: []const []const u8 = &.{},
 };
 pub const rulesForProviders = [_]ProviderRule{
     // cline-pass: never/never — Cline's subscription tier. Cline is a
@@ -628,6 +648,10 @@ pub const HarnessRule = struct {
     license_sources: []const []const u8,
     env_markers: []const []const u8,
     proc_names: []const []const u8, // lowercase exe names matched against process ancestry
+    /// extra alias display-strings not covered by `name`/`label`/
+    /// `short_title`; joins the normalized alias set — see the field
+    /// doc on `ModelRule.variations`.
+    variations: []const []const u8 = &.{},
 };
 const cline_env = [_][]const u8{ "CLINE_WRAPPER_PATH", "CLINE_BUILD_ENV", "CLINE_NO_INTERACTIVE", "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH" };
 const goose_env = [_][]const u8{ "GOOSE_WORKING_DIR", "GOOSE_PROVIDER", "GOOSE_MODEL", "GOOSE_TERMINAL", "GOOSE_MODE" };
@@ -683,7 +707,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .env_markers = &qwen_env, .proc_names = &.{} },
     // kilo: MIT — https://github.com/Kilo-Org/kilocode ships a MIT
     // LICENSE (Kilo Code CLI).
-    .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &kilo_procs },
+    .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &kilo_procs, .variations = &.{ "Kilo Code CLI" } },
     // omp: MIT — https://github.com/can1357/oh-my-pi (omp is the CLI
     // distribution name of oh-my-pi) ships a MIT LICENSE; verified
     // from the repo's license badge and the LICENSE file linked from it.
@@ -923,23 +947,6 @@ fn harnessRuleForName(name: []const u8) ?HarnessRule {
     return null;
 }
 
-/// does `input` name the rule whose canonical `name` is `rule_name`?
-/// Accepts either the canonical spelling (e.g. `kimi-code`) or the
-/// strict slug (`kimicode`) — recipe-mode combos are typically given
-/// in slug form (as in the `agent_id`/`fixture_id` composites).
-fn ruleIdMatches(rule_name: []const u8, input: []const u8) bool {
-    if (std.mem.eql(u8, rule_name, input)) return true;
-    // slug form: lowercase-alphanumeric of the canonical name
-    var i: usize = 0;
-    for (rule_name) |c| {
-        if (!std.ascii.isAlphanumeric(c)) continue;
-        if (i >= input.len) return false;
-        if (std.ascii.toLower(c) != input[i]) return false;
-        i += 1;
-    }
-    return i == input.len;
-}
-
 /// apply provider rule metadata (training policies + their cross-reference
 /// sources) to `d`. No-op if the provider id is not in the table; this is
 /// the single place the four detectors should call to populate `provider_*`
@@ -1024,6 +1031,66 @@ pub fn slugId(a: std.mem.Allocator, display: []const u8) ![]u8 {
         if (std.ascii.isAlphanumeric(c)) try list.append(a, std.ascii.toLower(c));
     }
     return list.toOwnedSlice(a);
+}
+
+/// does the strict slug (lowercase + non-alphanumerics stripped,
+/// whole-string) of `display` equal `slug`? `slug` is a value produced
+/// by `slugId`; this is the allocation-free comparison half of the same
+/// normalization, used to match rule aliases against a pre-normalized
+/// CLI input.
+fn slugEquals(display: []const u8, slug: []const u8) bool {
+    var i: usize = 0;
+    for (display) |c| {
+        if (!std.ascii.isAlphanumeric(c)) continue;
+        if (i >= slug.len) return false;
+        if (std.ascii.toLower(c) != slug[i]) return false;
+        i += 1;
+    }
+    return i == slug.len;
+}
+
+/// resolve a CLI-provided harness / provider / model id to its
+/// canonical rule `name`. Exact canonical-name equality takes
+/// precedence (so `cline` resolves to `cline`, never aliasing into
+/// `cline-pass`); otherwise `input` is normalized via `slugId`
+/// (lowercase + strip non-alphanumeric, whole-string) and the first
+/// rule in array order whose normalized alias set — canonical `name`,
+/// `label`, `short_title` (if present), and each explicit `variations`
+/// entry — contains it wins. Deterministic first-rule-in-array-order;
+/// the alias-uniqueness test guards against a slug matching two rules.
+/// Returns `null` when nothing matches (the caller decides: exit 7 in
+/// recipe mode, raw pass-through in the fixtures seed path).
+/// Empty/whitespace-only input normalizes to the empty slug and never
+/// matches. Non-ASCII characters strip out via `std.ascii` (lossy — an
+/// input whose remaining ASCII slug matches a rule still resolves).
+pub fn canonicalIdFor(a: std.mem.Allocator, comptime Rules: type, rules: []const Rules, input: []const u8) ?[]const u8 {
+    for (rules) |r| {
+        if (std.mem.eql(u8, r.name, input)) return r.name;
+    }
+    const slug = slugId(a, input) catch return null;
+    defer a.free(slug);
+    if (slug.len == 0) return null;
+    for (rules) |r| {
+        if (slugEquals(r.name, slug)) return r.name;
+        if (slugEquals(r.label, slug)) return r.name;
+        if (r.short_title) |st| {
+            if (slugEquals(st, slug)) return r.name;
+        }
+        for (r.variations) |v| {
+            if (slugEquals(v, slug)) return r.name;
+        }
+    }
+    return null;
+}
+
+/// canonicalize a h/p/m filter dim to the strict-slug id of the rule it
+/// resolves to (`slugId` of the canonical `name`) — the exact form the
+/// fixtures queue/fixtures store rows use for their dim columns. Returns
+/// null when the dim doesn't resolve to a known rule (the fixtures seed
+/// path passes unknown dims through raw).
+fn canonicalFilterDim(a: std.mem.Allocator, comptime Rules: type, rules: []const Rules, dim: []const u8) ?[]const u8 {
+    const name = canonicalIdFor(a, Rules, rules, dim) orelse return null;
+    return slugId(a, name) catch null;
 }
 
 // ============================================================================
@@ -2704,42 +2771,27 @@ const trailerUsage =
 //
 // Returns `null` when any of the three ids is not a known harness /
 // provider / model rule — the combo is not a valid recipe and the
-// caller exits 2. The `detectable` list is fully populated (a full
+// caller exits 7. The `detectable` list is fully populated (a full
 // known combo implies all three dims are resolvable); `detected` is
 // derived in buildRaw from whatever landed in the canonical fields.
 pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !?Detection {
     // All three ids must be known rules — an unknown dim is an invalid
-    // combo (caller exits 2). Combos may be given in either the
-    // canonical spelling or the strict slug form (`cline-pass` vs
-    // `clinepass`), so every lookup matches both.
-    const harness = harnessRuleForName(h) orelse blk: {
-        var found: ?HarnessRule = null;
-        for (rulesForHarnesses) |r| {
-            if (ruleIdMatches(r.name, h)) {
-                found = r;
-                break;
-            }
+    // combo (caller exits 7). Combos may be given in the canonical
+    // spelling, the strict slug form (`cline-pass` vs `clinepass`),
+    // a label (`Cline Pass`), or any explicit `variations` alias —
+    // `canonicalIdFor` normalizes the input and matches the rule's
+    // normalized alias set (name, label, short_title, variations).
+    const harness_name = canonicalIdFor(a, HarnessRule, &rulesForHarnesses, h) orelse return null;
+    const provider_name = canonicalIdFor(a, ProviderRule, &rulesForProviders, p) orelse return null;
+    const model_name = canonicalIdFor(a, ModelRule, &rulesForModels, m) orelse return null;
+    const harness = harnessRuleForName(harness_name) orelse return null;
+    const provider = providerMetaForName(provider_name) orelse return null;
+    const model = blk: {
+        for (rulesForModels) |r| {
+            if (std.mem.eql(u8, r.name, model_name)) break :blk r;
         }
-        break :blk found orelse return null;
+        return null;
     };
-    const provider = providerMetaForName(p) orelse blk: {
-        var found: ?ProviderRule = null;
-        for (rulesForProviders) |r| {
-            if (ruleIdMatches(r.name, p)) {
-                found = r;
-                break;
-            }
-        }
-        break :blk found orelse return null;
-    };
-    var model_rule: ?ModelRule = null;
-    for (rulesForModels) |r| {
-        if (ruleIdMatches(r.name, m)) {
-            model_rule = r;
-            break;
-        }
-    }
-    const model = model_rule orelse return null;
 
     var d = Detection{};
     d.harness_label = try a.dupe(u8, harness.label);
@@ -3906,28 +3958,20 @@ fn devProviderMetaFor(name: []const u8) ?DevProviderMeta {
     return null;
 }
 
-/// canonical (dash-spelling) harness rule name for a strict slug.
-fn canonicalHarnessName(slug: []const u8) ?[]const u8 {
-    for (rulesForHarnesses) |r| {
-        if (ruleIdMatches(r.name, slug)) return r.name;
-    }
-    return null;
+/// canonical (dash-spelling) harness rule name for a strict slug (or
+/// any alias form — `canonicalIdFor` is the shared resolver).
+fn canonicalHarnessName(a: std.mem.Allocator, slug: []const u8) ?[]const u8 {
+    return canonicalIdFor(a, HarnessRule, &rulesForHarnesses, slug);
 }
 
 /// canonical (dash-spelling) provider rule name for a strict slug.
-fn canonicalProviderName(slug: []const u8) ?[]const u8 {
-    for (rulesForProviders) |r| {
-        if (ruleIdMatches(r.name, slug)) return r.name;
-    }
-    return null;
+fn canonicalProviderName(a: std.mem.Allocator, slug: []const u8) ?[]const u8 {
+    return canonicalIdFor(a, ProviderRule, &rulesForProviders, slug);
 }
 
 /// canonical (dash-spelling) model rule name for a strict slug.
-fn canonicalModelName(slug: []const u8) ?[]const u8 {
-    for (rulesForModels) |r| {
-        if (ruleIdMatches(r.name, slug)) return r.name;
-    }
-    return null;
+fn canonicalModelName(a: std.mem.Allocator, slug: []const u8) ?[]const u8 {
+    return canonicalIdFor(a, ModelRule, &rulesForModels, slug);
 }
 
 /// resolve a combo's `agent_id` (strict slugs) into the three canonical
@@ -3939,9 +3983,9 @@ fn comboDims(a: std.mem.Allocator, combo: *const RecipesForFixtures) ![3][]u8 {
         a.free(parts[1]);
         a.free(parts[2]);
     }
-    const h = canonicalHarnessName(parts[0]) orelse return error.InvalidAgentId;
-    const p = canonicalProviderName(parts[1]) orelse return error.InvalidAgentId;
-    const m = canonicalModelName(parts[2]) orelse return error.InvalidAgentId;
+    const h = canonicalHarnessName(a, parts[0]) orelse return error.InvalidAgentId;
+    const p = canonicalProviderName(a, parts[1]) orelse return error.InvalidAgentId;
+    const m = canonicalModelName(a, parts[2]) orelse return error.InvalidAgentId;
     return .{
         try a.dupe(u8, h),
         try a.dupe(u8, p),
@@ -4888,6 +4932,30 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             f.provider = a.dupe(u8, parts[1]) catch return FilterError.OutOfMemory;
             f.model = a.dupe(u8, parts[2]) catch return FilterError.OutOfMemory;
             f.composite = true;
+        }
+
+        // canonicalize the h/p/m filter dims to the store's slug-id form
+        // when they resolve to a known rule (the queue/fixtures tables
+        // store `slugId(canonicalName)` — e.g. `kimicode`, never
+        // `kimi-code`), so label forms (`Kilo Code`), canonical
+        // spellings (`kimi-code`), slug forms (`kimicode`), and case
+        // variants (`KILO`) all match the same rows. Unknown dims pass
+        // through raw — the seed path intentionally allows unknown ids.
+        // The platform dim is never canonicalized.
+        if (f.harness.len > 0) {
+            if (canonicalFilterDim(a, HarnessRule, &rulesForHarnesses, f.harness)) |canon| {
+                f.harness = a.dupe(u8, canon) catch return FilterError.OutOfMemory;
+            }
+        }
+        if (f.provider.len > 0) {
+            if (canonicalFilterDim(a, ProviderRule, &rulesForProviders, f.provider)) |canon| {
+                f.provider = a.dupe(u8, canon) catch return FilterError.OutOfMemory;
+            }
+        }
+        if (f.model.len > 0) {
+            if (canonicalFilterDim(a, ModelRule, &rulesForModels, f.model)) |canon| {
+                f.model = a.dupe(u8, canon) catch return FilterError.OutOfMemory;
+            }
         }
         return f;
     }

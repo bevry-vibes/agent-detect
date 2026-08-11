@@ -130,3 +130,134 @@ test "scanVersionToken: null on no dotted version" {
     try testing.expect(main.dev.scanVersionToken("no version here\n") == null);
     try testing.expect(main.dev.scanVersionToken("2026-08-11\n") == null);
 }
+
+// ============================================================================
+// alias / case-variation resolution for --harness=/--provider=/--model=
+// ============================================================================
+
+const HarnessRule = main.HarnessRule;
+const ProviderRule = @TypeOf(main.rulesForProviders[0]);
+const ModelRule = @TypeOf(main.rulesForModels[0]);
+
+/// register `slug` against the per-table map, failing if a different
+/// rule already claimed it. Returns the map entry's owner rule name.
+fn registerSlug(map: *std.StringHashMap([]const u8), r: anytype, slug: []const u8) !void {
+    const gop = try map.getOrPut(slug);
+    if (gop.found_existing) {
+        try testing.expectEqualStrings(gop.value_ptr.*, r.name);
+    } else {
+        gop.value_ptr.* = r.name;
+    }
+}
+
+fn checkTableAliasUniqueness(a: std.mem.Allocator, rules: anytype) !void {
+    // slug -> rule name it resolves to (first rule in array order wins)
+    var map = std.StringHashMap([]const u8).init(a);
+    defer map.deinit();
+    for (rules) |r| {
+        // base surfaces: name + label (+ short_title). Their slugs may
+        // naturally coincide within one rule (short ids where name ==
+        // label, e.g. `omp`/`omp`); that is harmless because both map
+        // to the same rule.
+        var base = std.StringHashMap(void).init(a);
+        defer base.deinit();
+        for ([_][]const u8{ r.name, r.label }) |d| {
+            try base.put(try main.slugId(a, d), {});
+        }
+        if (r.short_title) |st| {
+            try base.put(try main.slugId(a, st), {});
+        }
+        // a variation must not duplicate an existing alias surface or
+        // another variation of the same rule (a pointless variation is
+        // a data smell the test should catch).
+        var seen_variation = std.StringHashMap(void).init(a);
+        defer seen_variation.deinit();
+        for (r.variations) |v| {
+            const slug = try main.slugId(a, v);
+            try testing.expect(base.get(slug) == null);
+            try testing.expect(seen_variation.get(slug) == null);
+            try seen_variation.put(slug, {});
+        }
+        // cross-rule uniqueness over the full alias set: a slug claimed
+        // by two different rules would make the deterministic resolver
+        // silently pick the wrong one.
+        for ([_][]const u8{ r.name, r.label }) |d| {
+            try registerSlug(&map, r, try main.slugId(a, d));
+        }
+        if (r.short_title) |st| {
+            try registerSlug(&map, r, try main.slugId(a, st));
+        }
+        for (r.variations) |v| {
+            try registerSlug(&map, r, try main.slugId(a, v));
+        }
+    }
+}
+
+test "alias sets: no normalized slug maps to two rules within a table" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try checkTableAliasUniqueness(a, &main.rulesForHarnesses);
+    try checkTableAliasUniqueness(a, &main.rulesForProviders);
+    try checkTableAliasUniqueness(a, &main.rulesForModels);
+}
+
+test "canonicalIdFor: harness kilo resolves every alias form" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const forms = [_][]const u8{ "kilo", "kilo-code", "Kilo Code", "Kilo Code CLI", "KILO", "kilocode" };
+    for (forms) |f| {
+        const got = main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("kilo", got);
+    }
+}
+
+test "canonicalIdFor: cline stays cline; cline-pass wins its aliases" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const got = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, "cline") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("cline", got);
+    const pass_forms = [_][]const u8{ "clinepass", "cline-pass", "Cline Pass", "CLINE_PASS" };
+    for (pass_forms) |f| {
+        const g2 = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("cline-pass", g2);
+    }
+}
+
+test "canonicalIdFor: minimax-m3 aliases; deepseek-v4-flash family stays distinct" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const m3_forms = [_][]const u8{ "minimax-m3", "MiniMax M3", "minimaxm3", "M3" };
+    for (m3_forms) |f| {
+        const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("minimax-m3", got);
+    }
+    const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "deepseek-v4-flash") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-v4-flash", got);
+    const got2 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "DeepSeek V4 Flash") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-v4-flash", got2);
+    const got3 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "deepseek-v4-flash-free") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-v4-flash-free", got3);
+    // the free alias must never resolve to the plain model
+    const got4 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "deepseekv4flashfree") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-v4-flash-free", got4);
+}
+
+test "canonicalIdFor: empty/unknown input resolves null" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try testing.expect(main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, "") == null);
+    try testing.expect(main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, "   ") == null);
+    try testing.expect(main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, "devin") == null);
+    // non-ASCII chars strip out (std.ascii), so an all-non-ASCII input
+    // normalizes to the empty slug and never matches...
+    try testing.expect(main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "ΩΩΩ") == null);
+    // ...while a non-ASCII input whose ASCII remainder matches a rule
+    // still resolves (the strip is lossy, documented behavior).
+    const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "M3Ω") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("minimax-m3", got);
+}

@@ -42,6 +42,8 @@ jobs:
           B=./bin/agent-detect-linux-x86_64
           "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
           test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          # alias / case-variation resolution must equal the canonical form
+          test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
           set +e
           OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
           RC=$?
@@ -79,6 +81,8 @@ jobs:
           B=./bin/agent-detect-linux-x86_64
           "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
           test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          # alias / case-variation resolution must equal the canonical form
+          test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
           set +e
           OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
           RC=$?
@@ -128,6 +132,8 @@ jobs:
           B=./bin/agent-detect-linux-x86_64
           "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
           test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          # alias / case-variation resolution must equal the canonical form
+          test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
           set +e
           OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
           RC=$?

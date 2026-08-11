@@ -10,14 +10,14 @@
     "provider_id": "gmicloud",
     "provider_closed_training": null,
     "provider_open_training": null,
-    "model_label": "Z.ai GLM 4.7",
+    "model_label": "GLM 4.7",
     "model_short_title": null,
     "model_name": "glm-4.7",
     "model_id": "glm47",
     "model_reciprocity": "open-weight",
     "agent_id": "omp-gmicloud-glm47",
     "reciprocal": false,
-    "trailer": "Co-authored-by: omp · Z.ai GLM 4.7 <omp-gmicloud-glm47@local>"
+    "trailer": "Co-authored-by: omp · GLM 4.7 <omp-gmicloud-glm47@local>"
   },
   "raw": {
     "platform_id": "darwin",
@@ -79,6 +79,6 @@
       }
     ]
   },
-  "trailer": "Co-authored-by: omp · Z.ai GLM 4.7 <omp-gmicloud-glm47@local>",
+  "trailer": "Co-authored-by: omp · GLM 4.7 <omp-gmicloud-glm47@local>",
   "origin": "from-raw"
 }
