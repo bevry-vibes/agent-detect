@@ -137,10 +137,10 @@ protection).
 The committed fixtures double as the integration test of the detection
 ladder (see DESIGN.md "test matrix" for the policy). The matrix is the
 `recipesForFixtures` table — one recipe per `agent_id` — expanded by
-`fixtures queue --recipes` and captured by the daemon. Scope: the 11
+`fixtures queue --recipes` and captured by the daemon. Scope: the 13
 coding harnesses (`cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`,
-`omp`, `reasonix`, `crush`, `opencode`, `vibe`) plus the
-`goose` contributor-scope example.
+`omp`, `reasonix`, `crush`, `opencode`, `vibe`, `cursor`, `copilot`)
+plus the `goose` contributor-scope example.
 
 ### per-harness install table
 
@@ -160,6 +160,8 @@ over web scripts.
 | crush     | `brew install charmbracelet/tap/crush`            | `npm i -g @charmland/crush`                                    |
 | opencode  | `brew install anomalyco/tap/opencode`             | `npm i -g opencode-ai`                                         |
 | vibe      | —                                                 | `uv tool install mistral-vibe`                                 |
+| cursor    | `brew install cursor-cli`                         | — (binaries: `cursor-agent`)                                  |
+| copilot   | `brew install copilot-cli`                        | — (binaries: `copilot`)                                       |
 
 ### probing scope + runbook
 
@@ -444,7 +446,42 @@ maintainer's next-session list. When a pending harness gets its rule
 added, remember the daemon's recipe table (`recipesForFixtures`) must
 contain the harness before seed expansion will queue captures for it.
 
-- [ ] **claude** — VS Code-embedded Claude Code agent.
+The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11)
+and scoped the rest below as follow-ups for other contributors to pick
+up — he won't use them, so their rules land only when someone else
+maintains them.
+
+- [ ] **claude** — Claude Code CLI (`claude -p <prompt>` headless;
+  env `ANTHROPIC_MODEL`/`ANTHROPIC_BASE_URL`/`ANTHROPIC_AUTH_TOKEN` +
+  `CLAUDE_CODE_*`; config `~/.claude/settings.json` + `~/.claude.json`;
+  sessions `~/.claude/projects/`; proc `claude`). Native binary broken
+  on the maintainer's machine (npm postinstall) — rules/from-ids land
+  regardless of install.
+- [ ] **codex** — OpenAI Codex CLI (`codex exec <prompt>`; config
+  `~/.codex/config.toml` `model`/`model_provider`; sessions
+  `~/.codex/sessions/`; proc `codex`).
+- [ ] **grok** — Grok CLI (`grok --always-approve <prompt>`; config
+  `~/.grok/config.toml` + models `~/.grok/models_cache.json`; sessions
+  `~/.grok/sessions/` + `worktrees.db`; proc `grok`).
+- [ ] **gemini** — Gemini CLI (`gemini -p <prompt>`; config
+  `~/.gemini/settings.json`; proc `gemini`).
+- [ ] **amp / roo / qoder / openhands** — maintained CLIs (Replit/Anvil,
+  Roo Code, Alibaba, OpenHands); not installed on the maintainer's
+  machine; rules + from-ids fixtures when a contributor picks them up.
+- [ ] **devin / droid / zencoder / kimchi / firebender** — declared-only
+  (from-ids) Tier-2 harnesses; config dirs `~/.config/devin/`,
+  `~/.factory/`, `~/.zencoder/`, `~/.config/kimchi/harness/`,
+  `~/.firebender/`; rules + recipes when a contributor picks them up.
 - [ ] **continue / cody / windsurf** — other VS Code-embedded agents
   (need a different ladder step to detect extension-host children).
-- [ ] **grok** — Grok Build / Grok CLI.
+
+### catalog-inference verdicts (recorded so they aren't re-litigated)
+
+Per-harness result of Part-1 catalog inference (2026-08-11): **pi**,
+**opencode**, **kilo**, **crush**, **qwen** are inferable (recipes
+added from their local catalogs); **kimi** is partial (no providers
+configured until `kimi provider catalog` is run); **reasonix** is
+partial (only the configured `[[providers]]`, currently
+deepseek-flash); **goose**, **mmx**, **vibe** are **not inferable**
+(no enumerable local model catalog — goose is local-inference only,
+mmx is oauth-only, vibe exposes only `active_model`).

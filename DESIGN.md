@@ -361,8 +361,13 @@ re-litigating scope.
 
 - **Harness scope (coding harnesses only):** `cline`, `kimi`, `mmx`,
   `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`,
-  `vibe`. Claw / machine-control agents are out of scope. `goose`
-  remains as a contributor-scope example fixture (kept, not extended).
+  `vibe`, `cursor`, `copilot`. Claw / machine-control agents are out of
+  scope. `goose` remains as a contributor-scope example fixture (kept,
+  not extended). The remaining maintained CLIs (`claude`, `codex`,
+  `grok`, `gemini`, `amp`, `roo`, `qoder`, `openhands`, `devin`,
+  `droid`, `zencoder`, `kimchi`, `firebender`) are logged follow-ups in
+  CONTRIBUTING.md's pending list, not in-scope until a contributor
+  adds their rules.
 - **Model policy:** open-weight/open-source models are preferred; free
   closed and popular closed models also get rules (detection must
   exceed the preferred set). `reciprocity` is `open-source` |
