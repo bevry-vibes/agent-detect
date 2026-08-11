@@ -5,7 +5,7 @@
 AI agents working on Bevry projects must identify their **harness**,
 **provider**, and **model** before working, and must credit commits
 with an accurate `Co-authored-by` trailer (see
-[ai-policy.md](https://github.com/bevry-vibes/skills/blob/main/ai-policy.md) and
+[policy.md](https://github.com/bevry-vibes/skills/blob/main/policy.md) and
 [commits.md](https://github.com/bevry-vibes/skills/blob/main/commits.md)).
 Hard-coded answers rot; manual per-harness techniques go unread. This
 repo provides a single small native binary, `agent-detect`, that

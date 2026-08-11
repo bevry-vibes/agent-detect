@@ -3,9 +3,9 @@
 This project conforms to Bevry's skills. Reference their remote URLs
 only — do not pull their contents into this file.
 
-- https://github.com/bevry-vibes/skills/blob/main/ai-policy.md —
+- https://github.com/bevry-vibes/skills/blob/main/policy.md —
   **not applied to this project.** agent-detect is the enforcement
-  mechanism that ai-policy.md delegates to, so this project must run
+  mechanism that policy.md delegates to, so this project must run
   on all agents, including those that violate that policy; it cannot
   apply the policy to itself.
 - https://github.com/bevry-vibes/skills/blob/main/commits.md —
