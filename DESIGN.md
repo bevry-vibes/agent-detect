@@ -27,7 +27,7 @@ above `pub fn detect` in `src/main.zig`.
 
 The released binary must stay minimal — no raw dump, no subcommands,
 no fixtures — so it ships as a single static file with no surprises.
-Its CLI surface is `cooked`, `trailer co-author`, `trailer assisted-by`,
+Its CLI surface is `identify`, `trailer co-author`, `trailer assisted-by`,
 `check-reciprocal`, `help`, `version`. The dev
 binary (`agent-detect-dev`) carries the maintainer's full toolkit: the
 standalone `raw` action (raw observations block) and the `fixtures`
@@ -185,12 +185,12 @@ user context can be achieved without a terminal via the per-user
 LaunchAgent bootstrap (no sudo, launchd-parented), which is documented
 in CONTRIBUTING.md "daemon launch: macOS LaunchAgent bootstrap".
 
-### recipe-mode cooked/trailer (hard-to-detect agents)
+### recipe-mode identify/trailer (hard-to-detect agents)
 
 Some harnesses are hard or impossible to detect live (they don't run
 inside their own session, or leave no reliable markers). For those, a
 maintainer adds the harness/provider/model to the rule tables and
-`cooked`/`trailer co-author`/`trailer assisted-by`/`check-reciprocal`
+`identify`/`trailer co-author`/`trailer assisted-by`/`check-reciprocal`
 accept a complete combo
 (`--harness=H --provider=P --model=M`) that resolves against the
 rules without live detection. All three dims are required (or none);
@@ -245,7 +245,7 @@ README.md mentions exit codes contextually per example only.
 
 Examples per group:
 
-- **0** — `cooked` (identified) → JSON; `trailer co-author` →
+- **0** — `identify` (identified) → JSON; `trailer co-author` →
   `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`;
   `check-reciprocal` → `is reciprocal`; `version` → `agent-detect
   <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help
@@ -253,18 +253,18 @@ Examples per group:
 - **1** — uncaught error → `error: <name>` + trace.
 - **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` +
   usage; `--bogus`; dev `fixtures frobnicate`.
-- **3** — `agent-detect cooked trailer` → `conflicting argument` +
+- **3** — `agent-detect identify trailer` → `conflicting argument` +
   usage; dev `fixtures queue --stale-by-days=7 --stale-by-minutes=30`.
-- **4** — `cooked --harness=cline` (partial combo); bare
+- **4** — `identify --harness=cline` (partial combo); bare
   `agent-detect trailer`; dev `fixtures queue` without filter.
 - **5** — dev `fixtures daemon` inside an agent → `incompatible
   environment refusing run`.
 - **6** — dev `fixtures *` with no `sqlite3` on PATH → `incomplete
   environment preventing run`.
-- **7** — `cooked`/`trailer co-author`/`check-reciprocal`
+- **7** — `identify`/`trailer co-author`/`check-reciprocal`
   `--harness=foo --provider=bar --model=baz` → `missing specified
   agent (harness, provider, model)`.
-- **8** — `cooked`/`trailer co-author`/`check-reciprocal` when live
+- **8** — `identify`/`trailer co-author`/`check-reciprocal` when live
   detection resolves nothing (plain shell); dev `fixtures capture`
   partial → `unable to detect unspecified agent (harness, provider,
   model)`.
@@ -289,7 +289,7 @@ Examples per group:
 
 **stdout/stderr discipline.** `check-reciprocal` writes its determination
 to stdout only (`is reciprocal` on 0, `not reciprocal` on 10); exits
-7/8/9 are stderr-only. `cooked`/`raw` are data-output actions: exit 8
+7/8/9 are stderr-only. `identify`/`raw` are data-output actions: exit 8
 (identity unresolved) writes **no stdout** (no sensible data), exit 9
 (identity complete, policy data missing) writes the partial report to
 stdout plus a stderr explainer, exit 0 writes the full report. `trailer`
@@ -330,8 +330,8 @@ names the shipped behavior and why it was chosen.
 8. **Released binary stays minimal.** No SQLite, no `fixtures`, no raw
    dump in the released artifact — the `dev` modular
    (comptime-gated) block in `src/main.zig` drops that code at
-   compile time. Released actions: `cooked`, `trailer co-author`,
-   `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
+    compile time. Released actions: `identify`, `trailer co-author`,
+    `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
 9. **The 18-field canonical fixture contract.** Test-enforced
    (see `src/known_fixtures.test.zig`); the raw block is shapeless
    (source-grouped keys), and harness rule *static* data
@@ -341,9 +341,9 @@ names the shipped behavior and why it was chosen.
     Dequeue never mutates fixtures; capture never touches queue; the
     malformed-fixtures sweep `purgeMalformedFixtures` runs as a daemon
     idle-loop step.
-11. **Recipe-mode `cooked`.** A harness whose provider/model can't be
+11. **Recipe-mode `identify`.** A harness whose provider/model can't be
     auto-detected is a warning for a later dev agent, not a hard
-    failure: `cooked`/`trailer co-author`/`trailer assisted-by`/
+    failure: `identify`/`trailer co-author`/`trailer assisted-by`/
     `check-reciprocal` accept a full
     `--harness= --provider= --model=` combo resolved from the rule
     tables.

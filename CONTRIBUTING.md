@@ -334,14 +334,14 @@ pass — use env/arg/scope flags only. `from-raw` captures write config
 under a sandboxed HOME (per-fixture cache dir), never the user's real
 harness config; flag any needed global change instead.
 
-## recipe-mode cooked / trailer (hard-to-detect agents)
+## recipe-mode identify / trailer (hard-to-detect agents)
 
-`cooked`, `trailer co-author`, `trailer assisted-by`, and
+`identify`, `trailer co-author`, `trailer assisted-by`, and
 `check-reciprocal` accept a complete combo to emit a report
 without live detection:
 
 ```sh
-./zig-out/bin/agent-detect cooked --harness=cline --provider=clinepass --model=kimik3
+./zig-out/bin/agent-detect identify --harness=cline --provider=clinepass --model=kimik3
 ./zig-out/bin/agent-detect trailer co-author --harness=cline --provider=clinepass --model=kimik3
 ```
 
@@ -356,7 +356,7 @@ exact-name precedence (so `cline` always means `cline`, never
 `cline-pass`). An alias matching two rules is rejected by the
 alias-uniqueness test; the resolver itself is deterministic
 (first rule in array order wins). This is how a harness whose
-provider/model can't be auto-detected still gets a cooked report and
+provider/model can't be auto-detected still gets a report and
 trailer.
 
 ## add a new harness rule
@@ -398,7 +398,7 @@ If the harness is closed-source and you can't verify the SPDX license,
 leave `license: null` and `license_sources: &.{}` — a maintainer fills
 them in once verified. If the harness' provider/model can't be
 auto-detected at all, the rule alone is enough for recipe-mode
-`cooked`/`trailer` (see above) — you don't need a live capture.
+`identify`/`trailer` (see above) — you don't need a live capture.
 
 ## add a new model or provider rule
 

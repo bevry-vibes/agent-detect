@@ -40,12 +40,12 @@ Identify your agent (harness, model, provider) via:
 
 ```sh
 # sh (linux, macos)
-./agent-detect cooked   # machine-readable JSON report
+./agent-detect identify   # machine-readable JSON report
 ```
 
 ```powershell
 # powershell (windows)
-.\agent-detect.exe cooked   # machine-readable JSON report
+.\agent-detect.exe identify   # machine-readable JSON report
 ```
 
 ### reciprocity compliance
