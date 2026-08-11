@@ -57,24 +57,35 @@ with `--platform=`). Dim filters compose (AND) with the scope flags
 below. (There are no `--no-*` flags — an unset dim is expressed by
 simply omitting it.)
 
-The scope flags (exactly one per call, shared by `queue`/`dequeue`)
-select a candidate set instead of a dim filter:
-- `--all` — every `fixtures` row on this platform.
-- `--stale` — `fixtures` rows older than the threshold
-  (`--stale-by-days=N`, `--stale-by-minutes=N`; `--stale` is an alias
-  for `--stale-by-days=7`).
+The scope flags (shared by `queue`/`dequeue`) select a candidate set
+instead of a dim filter. They all AND together — the only incompatible
+combination is two `--stale-by-*` age thresholds:
+- `--all` — the default scope made explicit: every `fixtures` row on
+  this platform. It is absorbed by any other scope flag (e.g.
+  `queue --all --recipes` is the same as `queue --recipes`).
+- `--stale-by-days=N`, `--stale-by-hours=N`, `--stale-by-minutes=N` —
+  age-threshold scopes. The queued row always stores the age in
+  **minutes** (`stale_by_minutes`); days/hours convert at stamp time,
+  so the table has a single age column. Every candidate row is queued
+  (no age pre-filter at queue time) and the daemon skips only when the
+  fixture is still age-fresh.
+- `--stale-by-version` — version-marker scope. The daemon compares a
+  live `--version` call against the fixture's captured
+  `harness_version` (a `fixtures` column stamped at capture time;
+  `from-ids` rows carry null). Combine it with an age threshold to
+  skip only when the fixture is age-fresh **and** version-equal.
 - `--partial` — `queue` rows with at least one missing dim (seeds).
 - `--recipes` — every known recipe (`recipesForFixtures`,
   host platform).
 - `--missing-fixture` — recipes whose `fixtures/<id>.json` is absent
-  from disk.
+  from disk (absorbs `--recipes`).
 `queue` upserts the candidates into `queue`; `dequeue` deletes them.
 By default nothing is gated on harness availability; `--available` (a
-modifier, combinable with any single scope flag) probes each
-candidate's harness and records `1` (available) or `0` (unavailable)
-into the `available` column. Unavailable rows are **kept queued** as
-handoff work for the next agent/platform; `--unavailable` (dequeue
-only, alias `--available=0`) matches those `available=0` rows.
+modifier) probes each candidate's harness and records `1` (available)
+or `0` (unavailable) into the `available` column. Unavailable rows are
+**kept queued** as handoff work for the next agent/platform;
+`--unavailable` (dequeue only, alias `--available=0`) matches those
+`available=0` rows.
 
 To refresh one fixture end-to-end:
 
@@ -97,12 +108,17 @@ To refresh one fixture end-to-end:
    re-capturing.
 
 For batch refreshes: `fixtures queue --all` re-queues every row in
-`fixtures`, `fixtures queue --stale [--stale-by-days=N]
-[--stale-by-minutes=N]` queues only rows older than the threshold,
+`fixtures`, `fixtures queue --stale-by-minutes=1440` stamps every row
+with an age marker (the daemon skips fresh ones and re-captures stale
+ones), `fixtures queue --stale-by-version` stamps rows whose live
+harness `--version` differs from the captured `harness_version`,
 `fixtures queue --recipes` re-queues every committed recipe, and
 `fixtures queue --missing-fixture` queues recipes whose fixture files
-are missing. Add `--available` to probe-and-record harness
-availability instead of dropping unavailable harnesses.
+are missing. Combine a `--stale-by-*` age threshold with
+`--stale-by-version` to re-capture only what is age-stale **or**
+version-changed (the daemon skips only when both are fresh). Add
+`--available` to probe-and-record harness availability instead of
+dropping unavailable harnesses.
 
 `--all` means every known agent recorded in `fixtures/index.sqlite3`
 (the `fixtures` table), filtered by the other filters
@@ -340,10 +356,24 @@ Add a `HarnessRule` entry to the `rulesForHarnesses` array in
 | ----------------- | ---------------------------------------------------------------------------------------------------------- |
 | `name`            | strictly lowercase alphanumeric — what the harness calls itself canonically (e.g. `kimi-code`)              |
 | `label`           | the human-readable brand form (e.g. `Kimi Code`); used to derive `harness_id`                              |
-| `license`         | SPDX id (e.g. `Apache-2.0`, `MIT`), or `null` for closed-source harnesses                                  |
-| `license_sources` | two URLs: the project page + the LICENSE file linked from it. `null` license keeps this empty              |
+| `license`         | SPDX keyword per the table below                                                                           |
+| `license_sources` | two URLs: the project page + the LICENSE file linked from it. `null`/`NOASSERTION` license keeps this empty |
 | `env_markers`     | env-var names unique to this harness (one or more). Run the harness' `--help` and inspect its config to discover |
 | `proc_names`      | lowercase exe names matched against the process ancestry. Many node-based harnesses use generic exes — leave empty |
+
+`license` semantics (per SPDX spec):
+
+| value            | meaning                                                    | reciprocity            |
+| ---------------- | ---------------------------------------------------------- | ---------------------- |
+| `null`           | no data available                                          | `.unknown` (exit 9)    |
+| `"NOASSERTION"`  | attempted, inconclusive                                    | `.unknown` (exit 9)    |
+| `"NONE"`         | concluded: no license present (verified proprietary/closed) | `.not_reciprocal` (exit 10) |
+| SPDX id (`MIT`, `Apache-2.0`, …) | open license                                | computed as today      |
+
+`"NONE"` forces `.not_reciprocal` even when the model/provider dims
+are null. Example: `cursor` and `copilot` are closed-source harnesses
+verified as no-license, so their rules carry `license = "NONE"` with
+their project/terms URLs as `license_sources`.
 
 After adding the rule:
 
@@ -405,10 +435,11 @@ today=$(date -u +%Y.%-m.%-d)        # GNU & macOS alike with %-
 rev=$(git tag --list "${today}-*" | wc -l | tr -d ' ')
 new_version="${today}-$((rev + 1))"
 
-# 2. Bump `build.zig.zon` `.version` to the new string, commit on main.
+# 2. Bump `build.zig.zon` `.version` to the new string, commit on main
+#    with the generated co-author trailer (see AGENTS.md).
 sed -i.bak "s/\.version = \".*\"/.version = \"${new_version}\"/" build.zig.zon && rm build.zig.zon.bak
 git add build.zig.zon
-git commit -m "release: ${new_version}"
+git commit -m "release: ${new_version}" --trailer "$(./zig-out/bin/agent-detect trailer co-author)"
 
 # 3. Tag with the same string (no v prefix) and push — the `release`
 #    job in build.yml picks it up, cross-compiles, and marks the
@@ -478,10 +509,10 @@ maintains them.
 ### catalog-inference verdicts (recorded so they aren't re-litigated)
 
 Per-harness result of Part-1 catalog inference (2026-08-11): **pi**,
-**opencode**, **kilo**, **crush**, **qwen** are inferable (recipes
-added from their local catalogs); **kimi** is partial (no providers
-configured until `kimi provider catalog` is run); **reasonix** is
-partial (only the configured `[[providers]]`, currently
-deepseek-flash); **goose**, **mmx**, **vibe** are **not inferable**
-(no enumerable local model catalog — goose is local-inference only,
-mmx is oauth-only, vibe exposes only `active_model`).
+**opencode**, **kilo**, **crush**, **qwen**, **kimi** are inferable
+(recipes added from their local catalogs / the models.dev catalog via
+`kimi provider catalog list`); **reasonix** is partial (only the
+configured `[[providers]]`, currently deepseek-flash); **goose**,
+**mmx**, **vibe** are **not inferable** (no enumerable local model
+catalog — goose is local-inference only, mmx is oauth-only, vibe
+exposes only `active_model`).

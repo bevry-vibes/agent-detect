@@ -65,8 +65,15 @@ platform's committed files. Each platform has its own
 
 - `cooked` — the 18-field canonical object (`harness_id`,
   `provider_id`, `model_id`, `agent_id`, policy fields, trailer).
-- `raw` — the shapeless runtime observations, headed by `platform_id`,
-  `detectable`, and `detected`.
+- `raw` — the slimmed shapeless runtime observations, headed by
+  `platform_id`, `detectable`, and `detected`, then `process_lineage`,
+  the `*-urls` reference arrays, and the `evidence` claims. The raw
+  block deliberately does NOT duplicate the env vars / config files /
+  session files verbatim (decision #4 — raw slimming): the `evidence`
+  section documents the source that informed each canonical deduction.
+  Env-source evidence claims on non-allowlisted env vars carry the
+  literal `"<redacted>"` value so secrets never reach disk while the
+  attribution chain stays audit-trailable.
 - `trailer` — the `Co-authored-by` string (duplicates
   `cooked.trailer`; the top-level key is the canonical one).
 
@@ -97,15 +104,19 @@ tables**:
 - `fixtures` — one row per captured 4-tuple
   `(harness, provider, model, platform)`, all four dims NOT NULL,
   with `platform` always the host platform. This is **state**: what has
-  been captured and when (`generated_at`). Written only by
-  `fixtures capture`, the daemon, and the lazy file-based backfill.
+  been captured and when (`generated_at`), plus the `harness_version`
+  captured by a live `--version` call during the capture (decision #6;
+  null for declared `from-ids` rows). Written only by `fixtures
+  capture`, the daemon, and the lazy file-based backfill.
 - `queue` — the work **queue**: "capture <these dims> [under this
   scope]". Dims are nullable (NULL = unset seed); each scope filter is
   its own three-valued column (`1` active / `0` explicit-off / `NULL`
-  undeclared); `stale_by_days`/`stale_by_minutes` carry a staleness
-  threshold; `available` is a three-valued probe-status column (`1`
-  probed available, `0` probed unavailable — a queued handoff for the
-  next agent/platform, `NULL` not probed). Written by `fixtures queue`.
+  undeclared); `stale_by_minutes` is the single age-threshold column
+  (the `--stale-by-days`/`--stale-by-hours` flags convert to minutes at
+  stamp time) and `stale_by_version` marks version-based staleness;
+  `available` is a three-valued probe-status column (`1` probed
+  available, `0` probed unavailable — a queued handoff for the next
+  agent/platform, `NULL` not probed). Written by `fixtures queue`.
 
 The derived `fixture_id`/`agent_id` are *not* stored; they're
 recomputed per use (`fixtureIdFrom`/`agentIdFrom`) for fixture naming
@@ -135,6 +146,30 @@ completes without spawning a capture. Fixture files carry no
 timestamps, so the row records `runner = getParentPid()` and
 `generated_at = unixNow()`. This is the "already captured, don't
 re-capture" behavior.
+
+### harness-version tracking + `--stale-by-version`
+
+A captured fixture records the harness's live `--version` snapshot in
+`fixtures.harness_version` (stamped by `fixtures capture` / the daemon
+via a zero-token `--version` call; declared `from-ids` rows carry
+null). The `--stale-by-version` scope queues rows whose live
+`--version` differs from the stored value, so a harness upgrade re-
+captures its fixtures without waiting for an age threshold. The daemon
+evaluates staleness at pop: a row skips the capture only when its
+markers are all fresh — an age threshold (fresh `generated_at`) AND the
+version marker (live `--version` equal to the stored value). A
+different version is stale even when the fixture is age-fresh; an
+uninstalled harness is inconclusive (proceeds to capture). Version
+comparison is exact-string mismatch; a semver/calver "newer-than"
+comparator is a future refinement.
+
+Scope flags all AND together; `--all` is the explicit default scope
+and is absorbed by any other scope flag. The only conflicting
+combination is two `--stale-by-*` age thresholds (`--stale-by-days=`,
+`--stale-by-hours=`, `--stale-by-minutes=`), which all store their
+threshold as MINUTES in the single `stale_by_minutes` column. The
+standalone `--stale` flag was dropped in favour of the explicit
+markers (see the fixtures help for the current surface).
 
 ### user-only daemon (not the agent)
 
@@ -219,7 +254,7 @@ Examples per group:
 - **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` +
   usage; `--bogus`; dev `fixtures frobnicate`.
 - **3** — `agent-detect cooked trailer` → `conflicting argument` +
-  usage; dev `fixtures queue --all --stale`.
+  usage; dev `fixtures queue --stale-by-days=7 --stale-by-minutes=30`.
 - **4** — `cooked --harness=cline` (partial combo); bare
   `agent-detect trailer`; dev `fixtures queue` without filter.
 - **5** — dev `fixtures daemon` inside an agent → `incompatible
@@ -235,11 +270,15 @@ Examples per group:
   model)`.
 - **9** — `check-reciprocal` with identity resolved but
   `harness_license`/`model_reciprocity`/`provider_closed_training`
-  null (e.g. crush/hyper/qwen3.7-plus) → `agent (harness, provider,
-  model) data incomplete to make a determination`.
+  null (e.g. crush/hyper/qwen3.7-plus), or `harness_license` is
+  `"NOASSERTION"` (attempted, inconclusive) → `agent (harness,
+  provider, model) data incomplete to make a determination`.
 - **10** — `check-reciprocal` for kilo/anthropic/claude-sonnet-4 (closed
-  model) → stderr `agent (harness, provider, model) data complete and
-  requirement failed`, stdout `not reciprocal`.
+  model), or any harness whose `harness_license` is `"NONE"` (verified
+  proprietary/closed, e.g. cursor/copilot) → stderr `agent (harness,
+  provider, model) data complete and requirement failed`, stdout
+  `not reciprocal`. `NONE` forces `.not_reciprocal` even when the
+  model/provider dims are unverified.
 - **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.)
   → `error.OutOfMemory`.
 - **12** — dev `fixtures *` where sqlite3 runs but query fails (corrupt
