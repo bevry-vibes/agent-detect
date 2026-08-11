@@ -1847,6 +1847,18 @@ fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.En
     };
     try setProvider(a, d, provider_id);
     try applyModel(a, d, stripBuildStamp(a, model_full), model_full);
+    // decision #11: the live session store is the source for both dims —
+    // record the db read so a real-session fixture's evidence chain is
+    // complete (the env path above already claims KILO_MODEL).
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "session.model.providerID", .value = provider_id });
+    try fields.append(a, .{ .dotted_path = "session.model.id", .value = model_full });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
+    d.raw.session_files = obs;
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.model.providerID", .value = provider_id });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = model_full });
 }
 
 /// spawn `sqlite3 -json <db> <sql>`; return stdout (caller frees).
@@ -1952,25 +1964,61 @@ fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     }
 }
 
-fn detectPi(a: std.mem.Allocator, env: *const std.process.Environ.Map, d: *Detection) !void {
-    // pi: harness-only by design — model detection is still TODO. To
-    // make the fixture write succeed, we read the
-    // launcher's PI_MODEL/PI_PROVIDER env vars as a stand-in; the
-    // canonical fields are populated, but the raw block makes it
-    // clear this is a placeholder until proper session
-    // model_change parsing lands. Default: claude-sonnet-4 via
-    // Anthropic (pi is most commonly run against Claude by default).
-    // The evidence claims record exactly what was used — the raw.env
-    // observation shows `present` so a reviewer can tell a launcher-set
-    // value from a default.
-    const provider = env.get("PI_PROVIDER") orelse "anthropic";
-    const model = env.get("PI_MODEL") orelse "claude-sonnet-4";
+fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    // pi: harness-only by design for the env path; real pi sessions set
+    // no PI_* env vars, so when both are unset we read the real
+    // defaults from `~/.pi/agent/settings.json` (`defaultProvider` /
+    // `defaultModel`). The env path (both set) is the launcher stand-in
+    // and stays unchanged — its evidence claims record exactly what was
+    // used, and the raw.env observation shows `present` so a reviewer
+    // can tell a launcher-set value from a default.
+    const provider_env = env.get("PI_PROVIDER");
+    const model_env = env.get("PI_MODEL");
+    if (provider_env != null and model_env != null) {
+        const provider = provider_env.?;
+        const model = model_env.?;
+        d.provider_name = provider;
+        d.provider_label = providerForName(provider) orelse try titleCase(a, provider);
+        try applyProviderMeta(a, d, provider);
+        try applyModel(a, d, model, model);
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "PI_PROVIDER", .value = provider });
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "PI_MODEL", .value = model });
+        return;
+    }
+
+    if (home.len == 0) return;
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = try std.fmt.allocPrint(a, "{s}/.pi/agent/settings.json", .{home});
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    defer a.free(data);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
+    defer parsed.deinit();
+    const root = parsed.value.object;
+    const provider = switch (root.get("defaultProvider") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    const model = switch (root.get("defaultModel") orelse return) {
+        .string => |s| s,
+        else => return,
+    };
+    if (provider.len == 0 or model.len == 0) return;
+
     d.provider_name = provider;
     d.provider_label = providerForName(provider) orelse try titleCase(a, provider);
     try applyProviderMeta(a, d, provider);
     try applyModel(a, d, model, model);
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "PI_PROVIDER", .value = provider });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "PI_MODEL", .value = model });
+
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "defaultProvider", .value = provider });
+    try fields.append(a, .{ .dotted_path = "defaultModel", .value = model });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    d.raw.config_files = obs;
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "defaultProvider", .value = provider });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "defaultModel", .value = model });
 }
 
 /// tri-state reciprocity determination for `d`:
@@ -2466,7 +2514,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         } else if (std.mem.eql(u8, r.name, "mmx")) {
             try detectMmx(a, io, home, d);
         } else if (std.mem.eql(u8, r.name, "pi")) {
-            try detectPi(a, env, d);
+            try detectPi(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "qwen")) {
             try detectQwen(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "kilo")) {
