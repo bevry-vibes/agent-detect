@@ -1,7 +1,7 @@
 {
   "cooked": {
     "harness_label": "Kilo Code",
-    "harness_short_title": null,
+    "harness_short_title": "Kilo",
     "harness_name": "kilo",
     "harness_id": "kilo",
     "harness_license": "MIT",
@@ -33,16 +33,8 @@
     ],
     "process_lineage": [
       {
-        "pid": 91028,
+        "pid": 50447,
         "name": "agent-detect-dev"
-      },
-      {
-        "pid": 86093,
-        "name": "agent-detect-dev"
-      },
-      {
-        "pid": 7115,
-        "name": "bash"
       }
     ],
     "harness-urls": [
@@ -58,27 +50,8 @@
       "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE",
       "https://opensource.org/ai/open-source-ai-definition"
     ],
-    "evidence": [
-      {
-        "dim": "harness",
-        "source": "env",
-        "name": "KILO_API_KEY",
-        "value": "<redacted>"
-      },
-      {
-        "dim": "provider",
-        "source": "env",
-        "name": "KILO_MODEL",
-        "value": "hyper/glm-5.2"
-      },
-      {
-        "dim": "model",
-        "source": "env",
-        "name": "KILO_MODEL",
-        "value": "hyper/glm-5.2"
-      }
-    ]
+    "evidence": []
   },
   "trailer": "Co-authored-by: Kilo Code · GLM 5.2 <kilo-hyper-glm52@local>",
-  "origin": "from-raw"
+  "origin": "from-identity"
 }

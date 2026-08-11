@@ -261,3 +261,41 @@ test "canonicalIdFor: empty/unknown input resolves null" {
     const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "M3Ω") orelse return error.TestUnexpectedResult;
     try testing.expectEqualStrings("minimax-m3", got);
 }
+
+test "modelFromMessageData: assistant flat form resolves" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const data = "{\"role\":\"assistant\",\"agent\":\"code\",\"modelID\":\"deepseek-v4-flash\",\"providerID\":\"deepseek\"}";
+    const mm = (try main.modelFromMessageData(a, data)) orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-v4-flash", mm.model_full);
+    try testing.expectEqualStrings("deepseek", mm.provider_id);
+}
+
+test "modelFromMessageData: user nested form resolves" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const data = "{\"role\":\"user\",\"agent\":\"code\",\"model\":{\"providerID\":\"deepseek\",\"modelID\":\"deepseek-v4-flash\",\"variant\":\"high\"}}";
+    const mm = (try main.modelFromMessageData(a, data)) orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-v4-flash", mm.model_full);
+    try testing.expectEqualStrings("deepseek", mm.provider_id);
+}
+
+test "modelFromMessageData: no model info resolves null" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const data = "{\"role\":\"assistant\",\"agent\":\"code\"}";
+    try testing.expect((try main.modelFromMessageData(a, data)) == null);
+}
+
+test "modelFromSessionRow: id + providerID resolve" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const model = "{\"id\":\"deepseek-v4-flash-0731\",\"providerID\":\"hyper\"}";
+    const mm = (try main.modelFromSessionRow(a, model)) orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-v4-flash-0731", mm.model_full);
+    try testing.expectEqualStrings("hyper", mm.provider_id);
+}

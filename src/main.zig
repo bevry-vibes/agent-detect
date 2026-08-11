@@ -613,7 +613,7 @@ pub const RawObservation = struct {
     provider_urls: []const []const u8 = &.{},
     model_urls: []const []const u8 = &.{},
     /// decision #11 evidence claims — per detected dim, what source
-    /// was read and with what value. Empty for `from-ids` (declared,
+    /// was read and with what value. Empty for `from-identity` (declared,
     /// not observed) fixtures.
     evidence: []const EvidenceClaim = &.{},
 };
@@ -707,7 +707,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .env_markers = &qwen_env, .proc_names = &.{} },
     // kilo: MIT — https://github.com/Kilo-Org/kilocode ships a MIT
     // LICENSE (Kilo Code CLI).
-    .{ .name = "kilo", .label = "Kilo Code", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &kilo_procs, .variations = &.{ "Kilo Code CLI" } },
+    .{ .name = "kilo", .label = "Kilo Code", .short_title = "Kilo", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .proc_names = &kilo_procs, .variations = &.{ "Kilo Code CLI" } },
     // omp: MIT — https://github.com/can1357/oh-my-pi (omp is the CLI
     // distribution name of oh-my-pi) ships a MIT LICENSE; verified
     // from the repo's license badge and the LICENSE file linked from it.
@@ -2026,18 +2026,65 @@ fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 }
 
 /// Kilo does not export the active model to child processes, but it
-/// records it in the session store `~/.local/share/kilo/kilo.db`
-/// (`session.model`, JSON with `id` + `providerID`). Read that read-only
-/// via the `sqlite3` CLI: the newest session row whose `directory`
-/// matches the current working directory. Partial/absent → no-op (the
-/// caller falls back to leaving detection unresolved).
+/// records it in the session store `~/.local/share/kilo/kilo.db`. Read
+/// that read-only via the `sqlite3` CLI: resolve the *active* session —
+/// the non-archived session whose newest message was written in the
+/// current working directory — and read the model from that message's
+/// data (carried at creation time), not from the session row's
+/// `session.model` column (which kilo writes lazily and which
+/// `ORDER BY time_updated DESC` can misattribute to a different
+/// window's session). Partial/absent → no-op (the caller falls back to
+/// leaving detection unresolved).
 fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     if (home.len == 0) return;
     const dir = env.get("PWD") orelse return;
     if (dir.len == 0) return;
     const db = try std.fs.path.join(a, &.{ home, ".local/share/kilo/kilo.db" });
     defer a.free(db);
-    if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return;
+    const mm = (try detectActiveSessionModel(a, io, db, dir)) orelse return;
+    try setProvider(a, d, mm.provider_id);
+    try applyModel(a, d, stripBuildStamp(a, mm.model_full), mm.model_full);
+    // decision #11: the live session store is the source for both dims —
+    // record the db read so a real-session fixture's evidence chain is
+    // complete (the env path above already claims KILO_MODEL).
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "session.model.providerID", .value = mm.provider_id });
+    try fields.append(a, .{ .dotted_path = "session.model.id", .value = mm.model_full });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
+    d.raw.session_files = obs;
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.model.providerID", .value = mm.provider_id });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = mm.model_full });
+}
+
+/// A provider + model resolved from a kilo/opencode session store.
+const ActiveSessionModel = struct {
+    provider_id: []const u8,
+    model_full: []const u8,
+};
+
+/// Resolve the *active* session's model from a kilo/opencode-format
+/// session store (`~/.local/share/kilo/kilo.db` / `~/.local/share/
+/// opencode/opencode.db`). Both harnesses use the same schema: a
+/// `session` table (with `directory`, `time_archived`, and a
+/// lazily-written `model` JSON column) plus a `message` table whose
+/// `data` JSON carries the model at message-creation time.
+///
+/// The active session is the non-archived session in `dir` whose newest
+/// `message.time_created` is most recent — real conversational activity,
+/// not the session row's `time_updated` (which background syncs, title
+/// generation, and compaction bump for any session in the directory,
+/// including other windows'). The message data is preferred over
+/// `session.model` because it is written at creation time (assistant
+/// messages carry flat `modelID`/`providerID`; user messages nest them
+/// under `model`), whereas `session.model` can be null for minutes after
+/// a session starts. Falls back to `session.model` only when the newest
+/// message lacks model info. Partial/absent → null (caller leaves
+/// detection unresolved).
+fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, dir: []const u8) !?ActiveSessionModel {
+    if (db.len == 0 or dir.len == 0) return null;
+    if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return null;
 
     // quote dir into a SQL string literal (single-quote doubling)
     var dir_lit: std.ArrayList(u8) = .empty;
@@ -2048,48 +2095,78 @@ fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.En
         try dir_lit.append(a, c);
     }
     try dir_lit.append(a, '\'');
-    const sql = try std.fmt.allocPrint(a, "SELECT model FROM session WHERE directory={s} ORDER BY time_updated DESC LIMIT 1", .{dir_lit.items});
+
+    // newest message in a non-archived session for `dir` — the session
+    // that owns it is the active one. Read its data JSON and the
+    // session row's model JSON in one row so the message path can fall
+    // back to the (lazily-written) session column.
+    const sql = try std.fmt.allocPrint(a,
+        \\SELECT m.data, s.model FROM message m JOIN session s ON s.id = m.session_id
+        \\WHERE s.directory={s} AND s.time_archived IS NULL
+        \\ORDER BY m.time_created DESC LIMIT 1
+    , .{dir_lit.items});
     defer a.free(sql);
 
-    const out = kiloSqliteJson(a, io, db, sql) catch return;
+    const out = kiloSqliteJson(a, io, db, sql) catch return null;
     defer a.free(out);
-    if (out.len == 0) return;
-    const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return;
-    if (outer.value != .array or outer.value.array.items.len == 0) return;
+    if (out.len == 0) return null;
+    const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
+    if (outer.value != .array or outer.value.array.items.len == 0) return null;
     const row = outer.value.array.items[0];
-    if (row != .object) return;
-    const model_str = switch (row.object.get("model") orelse return) {
-        .string => |s| s,
-        else => return,
-    };
-    // model JSON: {"id":"deepseek-v4-flash-0731","providerID":"hyper"}
-    const inner = std.json.parseFromSlice(std.json.Value, a, model_str, .{}) catch return;
-    const inner_obj = switch (inner.value) {
+    if (row != .object) return null;
+
+    // message data carries the model at creation time — prefer it.
+    // assistant: {"role":"assistant", ..., "modelID":"...", "providerID":"..."}
+    // user:      {"role":"user", ..., "model":{"providerID":"...","modelID":"..."}}
+    if (row.object.get("data")) |md| {
+        if (md == .string and md.string.len > 0) {
+            if (try modelFromMessageData(a, md.string)) |mm| return mm;
+        }
+    }
+    // fallback: the session row's model JSON
+    // {"id":"deepseek-v4-flash-0731","providerID":"hyper"}
+    if (row.object.get("model")) |sm| {
+        if (sm == .string and sm.string.len > 0) {
+            if (try modelFromSessionRow(a, sm.string)) |mm| return mm;
+        }
+    }
+    return null;
+}
+
+/// Extract `providerID` + `modelID` from a kilo/opencode message `data`
+/// JSON string. Returns null when the message carries no model info.
+pub fn modelFromMessageData(a: std.mem.Allocator, data: []const u8) !?ActiveSessionModel {
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
+    const o = switch (parsed.value) {
         .object => |o| o,
-        else => return,
+        else => return null,
     };
-    const provider_id = switch (inner_obj.get("providerID") orelse return) {
-        .string => |s| s,
-        else => return,
+    var provider_id: ?[]const u8 = jstr(o, "providerID");
+    var model_full: ?[]const u8 = jstr(o, "modelID");
+    // user messages nest the model under `model`
+    if (provider_id == null or model_full == null) {
+        if (o.get("model")) |mv| {
+            if (mv == .object) {
+                if (provider_id == null) provider_id = jstr(mv.object, "providerID");
+                if (model_full == null) model_full = jstr(mv.object, "modelID");
+            }
+        }
+    }
+    if (provider_id == null or model_full == null) return null;
+    return .{ .provider_id = provider_id.?, .model_full = model_full.? };
+}
+
+/// Extract `providerID` + `id` from a kilo/opencode session-row `model`
+/// JSON string (e.g. `{"id":"deepseek-v4-flash-0731","providerID":"hyper"}`).
+pub fn modelFromSessionRow(a: std.mem.Allocator, model_str: []const u8) !?ActiveSessionModel {
+    const parsed = std.json.parseFromSlice(std.json.Value, a, model_str, .{}) catch return null;
+    const o = switch (parsed.value) {
+        .object => |o| o,
+        else => return null,
     };
-    const model_full = switch (inner_obj.get("id") orelse return) {
-        .string => |s| s,
-        else => return,
-    };
-    try setProvider(a, d, provider_id);
-    try applyModel(a, d, stripBuildStamp(a, model_full), model_full);
-    // decision #11: the live session store is the source for both dims —
-    // record the db read so a real-session fixture's evidence chain is
-    // complete (the env path above already claims KILO_MODEL).
-    var fields = std.ArrayList(FieldObservation).empty;
-    defer fields.deinit(a);
-    try fields.append(a, .{ .dotted_path = "session.model.providerID", .value = provider_id });
-    try fields.append(a, .{ .dotted_path = "session.model.id", .value = model_full });
-    const obs = try a.alloc(FileObservation, 1);
-    obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
-    d.raw.session_files = obs;
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.model.providerID", .value = provider_id });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = model_full });
+    const provider_id = jstr(o, "providerID") orelse return null;
+    const model_full = jstr(o, "id") orelse return null;
+    return .{ .provider_id = provider_id, .model_full = model_full };
 }
 
 /// spawn `sqlite3 -json <db> <sql>`; return stdout (caller frees).
@@ -2166,51 +2243,29 @@ fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
         return;
     }
 
-    // real opencode session: latest session's model JSON in the sqlite
-    // store (`~/.local/share/opencode/opencode.db`).
+    // real opencode session: the active session's model in the sqlite
+    // store (`~/.local/share/opencode/opencode.db`). Same schema as
+    // kilo's — active = non-archived session for the cwd with the
+    // newest message; model read from that message's data (written at
+    // creation time), not the lazily-written session.model column.
     if (home.len == 0) return;
+    const dir = env.get("PWD") orelse return;
+    if (dir.len == 0) return;
     const db = try std.fs.path.join(a, &.{ home, ".local/share/opencode/opencode.db" });
     defer a.free(db);
-    const sql = "SELECT model FROM session ORDER BY time_updated DESC LIMIT 1";
-    const out = kiloSqliteJson(a, io, db, sql) catch return;
-    defer a.free(out);
-    if (out.len == 0) return;
-    const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return;
-    if (outer.value != .array or outer.value.array.items.len == 0) return;
-    const row = outer.value.array.items[0];
-    if (row != .object) return;
-    const model_str = switch (row.object.get("model") orelse return) {
-        .string => |s| s,
-        else => return,
-    };
-    // model JSON: {"id":"deepseek-v4-flash-free","providerID":"opencode","variant":"default"}
-    const inner = std.json.parseFromSlice(std.json.Value, a, model_str, .{}) catch return;
-    const inner_obj = switch (inner.value) {
-        .object => |o| o,
-        else => return,
-    };
-    const provider_id = switch (inner_obj.get("providerID") orelse return) {
-        .string => |s| s,
-        else => return,
-    };
-    const model_full = switch (inner_obj.get("id") orelse return) {
-        .string => |s| s,
-        else => return,
-    };
-    d.provider_name = provider_id;
-    d.provider_label = providerForName(provider_id) orelse try titleCase(a, provider_id);
-    try applyProviderMeta(a, d, provider_id);
-    try applyModel(a, d, stripBuildStamp(a, model_full), model_full);
+    const mm = (try detectActiveSessionModel(a, io, db, dir)) orelse return;
+    try setProvider(a, d, mm.provider_id);
+    try applyModel(a, d, stripBuildStamp(a, mm.model_full), mm.model_full);
     // decision #11: the live session store is the source for both dims.
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
-    try fields.append(a, .{ .dotted_path = "session.model.providerID", .value = provider_id });
-    try fields.append(a, .{ .dotted_path = "session.model.id", .value = model_full });
+    try fields.append(a, .{ .dotted_path = "session.model.providerID", .value = mm.provider_id });
+    try fields.append(a, .{ .dotted_path = "session.model.id", .value = mm.model_full });
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
     d.raw.session_files = obs;
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.model.providerID", .value = provider_id });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = model_full });
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.model.providerID", .value = mm.provider_id });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = mm.model_full });
 }
 
 fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -2365,7 +2420,11 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
     const db = try std.fs.path.join(a, &.{ home, ".copilot/data.db" });
     defer a.free(db);
     if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return;
-    const sql = "SELECT model, provider_id FROM sessions ORDER BY updated_at DESC LIMIT 1";
+    // Copilot's sessions have no cwd column, so "active" means: not
+    // archived and (prefer) currently running — never a closed session
+    // that merely updated last. `is_running DESC` keeps the live session
+    // ahead of a finished one with a newer updated_at.
+    const sql = "SELECT model, provider_id FROM sessions WHERE archived_at IS NULL ORDER BY is_running DESC, updated_at DESC LIMIT 1";
     const out = kiloSqliteJson(a, io, db, sql) catch return;
     defer a.free(out);
     if (out.len == 0) return;
@@ -2682,54 +2741,19 @@ const usage =
 const devUsage = if (dev_build)
     usage ++
     \\
-    \\dev actions (maintainer-only binary — `fixtures help` has the full namespace):
+    \\dev actions (maintainer-only binary — `fixtures help` has the full namespace,
+    \\including the refresh-mode, scope, and daemon flags):
     \\  fixtures daemon   long-running queue worker (user-only, never inside an agent);
-    \\                    pops rows in order from-ids → from-raw → from-capture with
+    \\                    pops rows in order from-identity → from-raw → from-capture with
     \\                    adaptive pacing; pause/resume/stop via fixtures/daemon.ctl
     \\  fixtures capture  capture the current session into fixtures/<id>.json
     \\                    (daemon-spawned, or run by hand inside a harness session)
-    \\  fixtures queue    upsert queue rows [scope flags] [--from-ids|--from-raw|--from-capture]
-    \\  fixtures dequeue  DELETE matching queue rows [--from-ids|--from-raw|--from-capture]
+    \\  fixtures queue    upsert queue rows [scope flags] [--from-identity|--from-raw|--from-capture]
+    \\  fixtures dequeue  DELETE matching queue rows [--from-identity|--from-raw|--from-capture]
     \\  fixtures help     the fixtures namespace's full help
     \\  refresh run       internal: the `from-raw` capture worker; agent-detect spawning
     \\                    itself under the daemon-prepared env
     \\  raw               print only the raw observations block
-    \\
-    \\mode flags (queue stamps rows, dequeue filters them; exactly one; default from-raw):
-    \\  --from-ids        resolve cooked from provided ids — declared, not observed,
-    \\                    zero tokens, harness binary not required
-    \\  --from-raw        (default) fabricate env markers + config files and run the
-    \\                    detection ladder via `refresh run` — zero tokens
-    \\  --from-capture    launch the real harness so it runs `fixtures capture` in a live
-    \\                    model session — token-consuming, user-confirmed only
-    \\
-    \\scope flags (queue/dequeue; compose with --harness=/--provider=/
-    \\--model=/--platform=; all scope flags AND together — the only
-    \\conflict is two --stale-by-* age thresholds; --all is the default
-    \\scope made explicit and is absorbed by any other scope flag):
-    \\  --all             the default scope made explicit (every fixture row);
-    \\                    absorbed by any other scope flag
-    \\  --stale-by-days=N      age threshold in days (stored as minutes)
-    \\  --stale-by-hours=N     age threshold in hours (stored as minutes)
-    \\  --stale-by-minutes=N   age threshold in minutes — stamps every
-    \\                    candidate row (no age pre-filter); the daemon skips
-    \\                    only when the fixture is still age-fresh
-    \\  --stale-by-version   version-marker scope: live `--version` vs the
-    \\                    stored fixtures.harness_version; combines with a
-    \\                    --stale-by-* age threshold (skip only when age-fresh
-    \\                    AND version-equal) or stands alone
-    \\  --partial         queue rows with at least one missing dim (seeds)
-    \\  --recipes         every known recipe (host platform)
-    \\  --missing-fixture recipes whose fixtures/<id>.json is absent
-    \\  --available       modifier: probe + record each candidate's harness
-    \\                    availability (unavailable rows stay queued as handoff)
-    \\  --unavailable     modifier (dequeue only): match available=0 rows
-    \\
-    \\daemon flags:
-    \\  --write-log                 write daemon output to fixtures/daemon.log
-    \\  --poll-seconds=N            base poll interval (default 5)
-    \\  --capture-review-seconds=N  pre/post capture pause for from-capture jobs (default 15)
-    \\  --capture-timeout-seconds=N from-capture worker timeout (default 600)
     \\
 else
     usage;
@@ -3016,17 +3040,6 @@ pub const dev = if (build_options.dev) struct {
         \\with missing dims are seeds: the daemon expands them over fixtures
         \\recipes (full combos queued, other seeds warned and kept).
         \\
-        \\refresh modes (queue stamps; dequeue filters; exactly one, default
-        \\from-raw; two+ together → exit 3; one mode per combo — re-queueing
-        \\with a different mode upgrades/downgrades the single row):
-        \\  --from-ids        resolve cooked from provided ids — declared, not
-        \\                    observed; zero tokens; harness binary not required
-        \\  --from-raw        (default) fabricate env markers + config files and
-        \\                    run the detection ladder via `refresh run` — zero tokens
-        \\  --from-capture    launch the real harness so it runs `fixtures capture`
-        \\                    in a live model session — token-consuming,
-        \\                    user-confirmed only; one at a time, ~15s pre/post review
-        \\
         \\daemon flags:
         \\  --write-log                 tee daemon output to fixtures/daemon.log
         \\  --poll-seconds=N            base poll interval (default 5)
@@ -3036,40 +3049,8 @@ pub const dev = if (build_options.dev) struct {
         \\control: write pause/resume/stop to fixtures/daemon.ctl (checked every
         \\~1s; the daemon clears it after acting). Ctrl+C is the graceful stop.
         \\
-        \\filters (shared by queue/dequeue; at least one required):
-        \\  --fixture=ID  4-part <h>-<p>-<m>-<platform> id (exact)
-        \\  --agent=ID    3-part <h>-<p>-<m> id (platform unfiltered)
-        \\  --harness=H   constrain harness to H (any of H/P/M/PLAT)
-        \\
-        \\scope flags (shared by queue/dequeue; all scope flags AND
-        \\together — the only conflict is two --stale-by-* age thresholds;
-        \\--all is the default scope made explicit and is absorbed by any
-        \\other scope flag; they compose with the dim filters above):
-        \\  --all            the default scope made explicit (every fixture
-        \\                   row); absorbed by any other scope flag
-        \\  --stale-by-days=N      age threshold in days (stored as minutes)
-        \\  --stale-by-hours=N     age threshold in hours (stored as minutes)
-        \\  --stale-by-minutes=N   age threshold in minutes — the single
-        \\                   age column; each flag stamps every candidate
-        \\                   row (no age pre-filter) and the daemon skips
-        \\                   only when the fixture is still age-fresh
-        \\  --stale-by-version  version-marker scope: live harness `--version`
-        \\                   vs the fixture's captured `harness_version`;
-        \\                   combines with a --stale-by-* age threshold
-        \\                   (the daemon skips only when the fixture is
-        \\                   age-fresh AND version-equal) or stands alone
-        \\  --partial        queue rows with at least one missing dim (seeds)
-        \\  --recipes        every known recipe (host platform)
-        \\  --missing-fixture recipes whose fixtures/<id>.json is absent
-        \\                   from disk
-        \\  --available      modifier: probe each candidate's harness and
-        \\                   record 1/0 into the available column (unavailable
-        \\                   rows stay queued as handoff for another platform;
-        \\                   from-ids records but does not gate on it)
-        \\  --unavailable    modifier (dequeue only): match available=0 rows
-        \\                   (alias --available=0)
-        \\
-        \\subcommands:
+        \\subcommands (see each subcommand's `--help` for its flags — modes,
+        \\filters, and scope flags are shared and documented once):
         \\  (none), help, --help, -h   this help
         \\  daemon                     pop queue rows from fixtures/index.sqlite3 and
         \\                              capture (poll ~1s heartbeat; 5s poll base) —
@@ -3098,7 +3079,7 @@ pub const dev = if (build_options.dev) struct {
     pub const queueDequeueFlags =
         \\refresh modes (queue stamps rows, dequeue filters them; exactly one,
         \\default from-raw; two+ together → exit 3):
-        \\  --from-ids        resolve cooked from provided ids — declared, not
+        \\  --from-identity        resolve cooked from provided ids — declared, not
         \\                    observed; zero tokens; harness binary not required
         \\  --from-raw        (default) fabricate env markers + config files and
         \\                    run the detection ladder via `refresh run` — zero tokens
@@ -3112,19 +3093,15 @@ pub const dev = if (build_options.dev) struct {
         \\  --harness=H   constrain harness to H (any of H/P/M/PLAT)
         \\
         \\scope flags (all AND together; the only conflict is two
-        \\--stale-by-* age thresholds; --all is the default scope made
-        \\explicit and is absorbed by any other scope flag; compose with
-        \\the dim filters above):
+        \\--stale-by-* age thresholds; compose with the dim filters above):
         \\  --all            the default scope made explicit (every fixture
         \\                   row); absorbed by any other scope flag
-        \\  --stale-by-days=N      age threshold in days (stored as minutes)
-        \\  --stale-by-hours=N     age threshold in hours (stored as minutes)
-        \\  --stale-by-minutes=N   age threshold in minutes — the single age
-        \\                   column; each flag stamps every candidate row (no
-        \\                   age pre-filter); the daemon skips only when the
-        \\                   fixture is still age-fresh
-        \\  --stale-by-version  version-marker scope: live harness `--version`
-        \\                   vs the fixture's captured `harness_version`;
+        \\  --stale-by-days=N      age threshold in days
+        \\  --stale-by-hours=N     age threshold in hours
+        \\  --stale-by-minutes=N   age threshold in minutes — the daemon skips
+        \\                   only when the fixture is still age-fresh
+        \\  --stale-by-version  version-marker scope: re-capture when the live
+        \\                   harness version differs from the captured one;
         \\                   combines with a --stale-by-* age threshold (skip
         \\                   only when age-fresh AND version-equal) or stands alone
         \\  --partial        queue rows with at least one missing dim (seeds)
@@ -3132,9 +3109,9 @@ pub const dev = if (build_options.dev) struct {
         \\  --missing-fixture recipes whose fixtures/<id>.json is absent from disk
         \\  --available      modifier: probe each candidate's harness and record
         \\                   1/0 into the available column (unavailable rows stay
-        \\                   queued as handoff; from-ids records but does not gate)
-        \\  --unavailable    modifier (dequeue only): match available=0 rows
-        \\                   (alias --available=0)
+        \\                   queued as handoff; from-identity records but does not gate)
+        \\  --unavailable    modifier (dequeue only): match rows whose harness
+        \\                   is unavailable (available=0)
         \\
     ;
 
@@ -3260,7 +3237,7 @@ pub const dev = if (build_options.dev) struct {
         try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
         // decision #11 — evidence claims, one per detected dim, pinning
         // the attribution chain (source present in raw + value matching
-        // the cooked dim). `from-ids` fixtures carry an empty array.
+        // the cooked dim). `from-identity` fixtures carry an empty array.
         // Env-source claims on non-allowlisted env vars emit the
         // literal `"<redacted>"` for `value` (decision #3) — the value
         // the detector read was secret-shaped and must not be written to
@@ -3391,7 +3368,6 @@ pub const dev = if (build_options.dev) struct {
             \\    provider             TEXT,
             \\    model                TEXT,
             \\    platform             TEXT,
-            \\    scope_all            INTEGER,
             \\    scope_partial        INTEGER,
             \\    scope_recipes        INTEGER,
             \\    scope_missing_fixture INTEGER,
@@ -3404,7 +3380,7 @@ pub const dev = if (build_options.dev) struct {
             \\);
             \\CREATE UNIQUE INDEX IF NOT EXISTS queue_dedupe
             \\    ON queue (COALESCE(harness,''), COALESCE(provider,''), COALESCE(model,''),
-            \\                COALESCE(platform,''), COALESCE(scope_all,0), COALESCE(scope_partial,0),
+            \\                COALESCE(platform,''), COALESCE(scope_partial,0),
             \\                COALESCE(scope_recipes,0), COALESCE(scope_missing_fixture,0),
             \\                COALESCE(stale_by_minutes,0),
             \\                COALESCE(stale_by_version,0),
@@ -3421,7 +3397,7 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// One row in the `queue` table. `mode` is the refresh flavour
-    /// (`"from-ids" | "from-raw" | "from-capture"`, default `from-raw`)
+    /// (`"from-identity" | "from-raw" | "from-capture"`, default `from-raw`)
     /// — stamped by `fixtures queue`, inherited by seed expansions,
     /// and used as the daemon's pop-order + worker selector. Deliberately
     /// NOT part of `queue_dedupe`: one mode per combo, re-queueing with a
@@ -3436,7 +3412,6 @@ pub const dev = if (build_options.dev) struct {
         provider: ?[]const u8 = null,
         model: ?[]const u8 = null,
         platform: ?[]const u8 = null,
-        scope_all: ?i64 = null,
         scope_partial: ?i64 = null,
         scope_recipes: ?i64 = null,
         scope_missing_fixture: ?i64 = null,
@@ -3451,7 +3426,7 @@ pub const dev = if (build_options.dev) struct {
     /// One row in the `fixtures` state table (always full; platform = host).
     /// `harness_version` is the version captured by a live `--version`
     /// call during the capture (decision #6); null when the version
-    /// couldn't be read or the row was declared (`from-ids`).
+    /// couldn't be read or the row was declared (`from-identity`).
     const FixtureRow = struct {
         harness: []const u8,
         provider: []const u8,
@@ -3506,8 +3481,6 @@ pub const dev = if (build_options.dev) struct {
         defer a.free(m);
         const pl = try sqlOptStr(a, row.platform);
         defer a.free(pl);
-        const sa = try sqlOptInt(a, row.scope_all);
-        defer a.free(sa);
         const sp = try sqlOptInt(a, row.scope_partial);
         defer a.free(sp);
         const sr = try sqlOptInt(a, row.scope_recipes);
@@ -3521,8 +3494,8 @@ pub const dev = if (build_options.dev) struct {
         const av = try sqlOptInt(a, row.available);
         defer a.free(av);
         const sql = try std.fmt.allocPrint(a,
-            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d},{s})",
-            .{ h, p, m, pl, sa, sp, sr, sm, sd, sv, av, row.runner, row.created_at, try sqlQuote(a, row.mode) },
+            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d},{s})",
+            .{ h, p, m, pl, sp, sr, sm, sd, sv, av, row.runner, row.created_at, try sqlQuote(a, row.mode) },
         );
         defer a.free(sql);
         _ = try sqliteQuery(a, io, sql);
@@ -3531,7 +3504,7 @@ pub const dev = if (build_options.dev) struct {
     /// `INSERT OR REPLACE INTO fixtures` — state, written only by `fixtures
     /// agent` and the daemon. No `available` column. `harness_version` is
     /// the live `--version` snapshot from the capture (null for
-    /// declared `from-ids` rows and backfills).
+    /// declared `from-identity` rows and backfills).
     fn upsertFixture(a: std.mem.Allocator, io: std.Io, f: FixtureRow) !void {
         const sql = try std.fmt.allocPrint(a,
             "INSERT OR REPLACE INTO fixtures(harness,provider,model,platform,runner,generated_at,harness_version) VALUES({s},{s},{s},{s},{d},{d},{s})",
@@ -3577,7 +3550,7 @@ pub const dev = if (build_options.dev) struct {
     /// every `queue` row whose dims are all NULL (seeds) — for `--partial`.
     fn selectSeedQueueRows(a: std.mem.Allocator, io: std.Io) ![]QueueRow {
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
+            "SELECT harness,provider,model,platform,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
         );
         defer a.free(out);
         if (out.len == 0) return &.{};
@@ -3604,7 +3577,6 @@ pub const dev = if (build_options.dev) struct {
             .provider = sjoptstr(o, "provider"),
             .model = sjoptstr(o, "model"),
             .platform = sjoptstr(o, "platform"),
-            .scope_all = sjoptint(o, "scope_all"),
             .scope_partial = sjoptint(o, "scope_partial"),
             .scope_recipes = sjoptint(o, "scope_recipes"),
             .scope_missing_fixture = sjoptint(o, "scope_missing_fixture"),
@@ -3682,11 +3654,11 @@ pub const dev = if (build_options.dev) struct {
 
     /// atomically pop the oldest pending queue row. Returns null when empty.
     fn popQueueRow(a: std.mem.Allocator, io: std.Io) !?QueueRow {
-        // sweep ordering (decision #9): from-ids, then from-raw, then
+        // sweep ordering (decision #9): from-identity, then from-raw, then
         // from-capture — cheaper/declared work always precedes
         // token-consuming captures.
         const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_all,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue ORDER BY CASE mode WHEN 'from-ids' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1",
+            "SELECT harness,provider,model,platform,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue ORDER BY CASE mode WHEN 'from-identity' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1",
         );
         defer a.free(out);
         var row: ?QueueRow = null;
@@ -3699,7 +3671,7 @@ pub const dev = if (build_options.dev) struct {
         // is the only evaluator). Use generated_at as a tie-break handle.
         if (row) |_| {
             const sql = try std.fmt.allocPrint(a,
-                "DELETE FROM queue WHERE rowid = (SELECT rowid FROM queue ORDER BY CASE mode WHEN 'from-ids' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1)",
+                "DELETE FROM queue WHERE rowid = (SELECT rowid FROM queue ORDER BY CASE mode WHEN 'from-identity' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1)",
                 .{},
             );
             defer a.free(sql);
@@ -3759,8 +3731,7 @@ pub const dev = if (build_options.dev) struct {
     /// the shared validator — single source of truth for valid filter
     /// combinations. Called by BOTH writer paths and the daemon reader.
     fn validateQueueRow(row: QueueRow) !void {
-        const scope_count = @as(usize, @intFromBool(row.scope_all != null and row.scope_all.? == 1)) +
-            @as(usize, @intFromBool(row.scope_partial != null and row.scope_partial.? == 1)) +
+        const scope_count = @as(usize, @intFromBool(row.scope_partial != null and row.scope_partial.? == 1)) +
             @as(usize, @intFromBool(row.scope_recipes != null and row.scope_recipes.? == 1)) +
             @as(usize, @intFromBool(row.scope_missing_fixture != null and row.scope_missing_fixture.? == 1)) +
             // the staleness scope is one unit: an age marker, a version
@@ -3772,7 +3743,7 @@ pub const dev = if (build_options.dev) struct {
         if (row.stale_by_version != null and (row.stale_by_version.? != 0 and row.stale_by_version.? != 1)) return error.InvalidQueueRow;
         if (row.available != null and (row.available.? != 0 and row.available.? != 1)) return error.InvalidQueueRow;
         if (row.available != null and scope_count == 0) return error.InvalidQueueRow;
-        const scopes = [_]?i64{ row.scope_all, row.scope_partial, row.scope_recipes, row.scope_missing_fixture };
+        const scopes = [_]?i64{ row.scope_partial, row.scope_recipes, row.scope_missing_fixture };
         for (scopes) |s| {
             if (s != null and (s.? != 0 and s.? != 1)) return error.InvalidQueueRow;
         }
@@ -3841,7 +3812,7 @@ const RecipesForFixtures = struct {
     /// Headless launch argv for `from-capture` jobs (2g): the harness
     /// binary + args that run `agent-detect-dev fixtures capture` inside
     /// a live model session. `null` = no reliable headless mode → the
-    /// recipe is `from-ids`/`from-raw` only. Starter set only.
+    /// recipe is `from-identity`/`from-raw` only. Starter set only.
     launch: ?[]const []const u8 = null,
 };
 
@@ -4391,7 +4362,7 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     // groq/cerebras/xai/moonshot recipes have no launch spec: this
     // account's groq key 404s llama-4, cerebras 404s every catalog id,
     // xai reports no credits (403), moonshot is rate-limited (429) —
-    // from-ids/from-raw still cover them.
+    // from-identity/from-raw still cover them.
     .{ .agent_id = "pi-openrouter-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "deepseek/deepseek-v4-flash", "-p", capture_prompt } },
     .{ .agent_id = "pi-groq-llama4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
     // cerebras free-trial models (verified working 2026-08-11):
@@ -4772,7 +4743,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         /// true when `--fixture=` or `--agent=` (the composite ids)
         /// contributed the equality dims — used for the creation path.
         composite: bool = false,
-        /// refresh mode: `"from-ids" | "from-raw" | "from-capture"`,
+        /// refresh mode: `"from-identity" | "from-raw" | "from-capture"`,
         /// or `""` when no mode flag was given. `queue` stamps it on
         /// rows (default `from-raw`); `dequeue` filters by it.
         mode: []const u8 = "",
@@ -4855,7 +4826,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                 f.stale_by_hours = std.fmt.parseInt(i64, arg["--stale-by-hours=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-minutes=")) {
                 f.stale_by_minutes = std.fmt.parseInt(i64, arg["--stale-by-minutes=".len..], 10) catch return FilterError.InvalidThreshold;
-            } else if (std.mem.eql(u8, arg, "--from-ids") or std.mem.eql(u8, arg, "--from-raw") or std.mem.eql(u8, arg, "--from-capture")) {
+            } else if (std.mem.eql(u8, arg, "--from-identity") or std.mem.eql(u8, arg, "--from-raw") or std.mem.eql(u8, arg, "--from-capture")) {
                 // exactly one mode flag (two+ → conflicting). The stored
                 // value is the FULL "from-*" string (not the prefix
                 // stripped off) so modeRank and the daemon's worker
@@ -4883,13 +4854,18 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             (f.stale_by_minutes != null and f.stale_by_minutes.? < 1)) return FilterError.ConflictingFilters;
 
         // all other scope flags combine (AND). scope_count is used below
-        // only as a "has any scope" probe.
+        // only as a "has any scope" probe. `--all` is the explicit default
+        // scope (every fixture row), so it counts as a scope flag.
         const scope_count = @as(usize, @intFromBool(f.all)) + age_scopes +
             @as(usize, @intFromBool(f.stale_by_version)) + @as(usize, @intFromBool(f.partial)) +
             @as(usize, @intFromBool(f.recipes)) + @as(usize, @intFromBool(f.missing_fixture));
 
-        // --available / --unavailable are modifiers: require a scope flag
-        if ((f.available or f.unavailable) and scope_count == 0) return FilterError.ConflictingFilters;
+        // --available / --unavailable are modifiers: with no other scope flag
+        // they imply the `--all` default scope, so `--all --available` ≡
+        // `--available`. The two modifiers still conflict with each other.
+        if (f.available or f.unavailable) {
+            if (scope_count == 0) f.all = true;
+        }
         if (f.available and f.unavailable) return FilterError.ConflictingFilters;
 
         f.any = seen_fixture or seen_agent or seen_harness or seen_provider or
@@ -4963,7 +4939,8 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
     /// how many scope flags are set. All scope flags AND together; only
     /// conflicting `--stale-by-*` age thresholds are rejected (in
     /// `parseFilters`). This is only a "has any scope" probe for
-    /// `fixtures queue`'s scope-path dispatch.
+    /// `fixtures queue`'s scope-path dispatch. `--all` is the explicit
+    /// default scope (every fixture row), so it counts as a scope flag.
     fn scopeCount(f: FilterOptions) usize {
         const age_scopes = @as(usize, @intFromBool(f.stale_by_days != null)) +
             @as(usize, @intFromBool(f.stale_by_hours != null)) +
@@ -4995,11 +4972,10 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         else
             null;
 
-        // `--all` is the default scope made explicit: it is absorbed by
-        // any other scope flag (which already enumerates that set).
-        const all_effective = f.all and f.stale_by_days == null and f.stale_by_hours == null and
-            f.stale_by_minutes == null and !f.stale_by_version and
-            !f.partial and !f.recipes and !f.missing_fixture;
+        // `--all` is the explicit default scope — every fixture row — and
+        // is absorbed by any other scope flag (which already enumerates that
+        // set). `--available`/`--unavailable` with no other scope flag imply
+        // `--all` (see parseFilters).
 
         // recipe-table candidates (`--recipes` / `--missing-fixture`).
         // `--missing-fixture` absorbs `--recipes` (missing ∩ recipes =
@@ -5075,9 +5051,8 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         // fixtures-table candidates (`--all` / `--stale-by-*`). Staleness
         // is NOT age-filtered at queue time (decision #6): every candidate
         // row is queued with the marker the flag requested and the daemon
-        // evaluates it at pop. `--all` stamps `scope_all` only when it is
-        // the sole scope flag; a stale marker subsumes it (both enumerate
-        // every fixture row).
+        // evaluates it at pop. `--all` enumerates every fixture row; a stale
+        // marker subsumes it (both enumerate every fixture row).
         const fixtures = try selectFixtures(a, io);
         for (fixtures) |fx| {
             if (f.harness.len > 0 and !std.mem.eql(u8, f.harness, fx.harness)) continue;
@@ -5093,7 +5068,6 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                 .created_at = now,
                 .mode = f.mode,
             };
-            if (all_effective) row.scope_all = 1;
             if (stale_min != null) row.stale_by_minutes = stale_min;
             if (f.stale_by_version) row.stale_by_version = 1;
             if (f.available) {
@@ -5180,7 +5154,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         // decision #7 — every fixture carries a top-level `origin`
         // classifying it as observed (`from-raw` when the daemon
         // fabricated the runtime, `from-capture` for a real session)
-        // or declared (`from-ids`, written by the from-ids worker, which
+        // or declared (`from-identity`, written by the from-identity worker, which
         // never reaches this capture path). The daemon sets
         // AGENT_DETECT_FIXTURE_ORIGIN on the `refresh run` child; a hand-run
         // capture is a real session → `from-capture`.
@@ -5442,8 +5416,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
     /// it atomically pops one pending action, runs the SHARED validator on
     /// it (warn + drop if invalid), then decides by the row's scope columns
     /// + dims + current `fixtures`/filesystem: expand seeds (any NULL dim),
-    /// skip-and-complete full rows already freshly captured (unless
-    /// `scope_all=1`), re-validate staleness with the row's threshold,
+    /// re-validate staleness with the row's threshold,
     /// re-probe `available` (never trust the stored value), then spawn
     /// `refresh run`. Success → upsert `fixtures` (action already popped);
     /// failure → re-queue. Idle → `purgeMalformedFixtures` + sleep.
@@ -5662,7 +5635,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                         const row = try popQueueRow(a, io);
                         // one row per poll (decision #10): schedule the next
                         // poll `poll_seconds` out on EVERY path below, so a
-                        // from-ids/from-raw batch processes at ~5s intervals.
+                        // from-identity/from-raw batch processes at ~5s intervals.
                         next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
                         if (row) |action| {
                             const desc = try describeQueueRow(a, action);
@@ -5690,42 +5663,42 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                             const m_d = action.model.?;
                             const plat = action.platform.?;
 
-                            // skip-and-complete if a fresh fixture exists (unless
-                            // scope_all=1). `from-capture` rows never skip: they
-                            // are token-consuming and user-confirmed, so a
-                            // committed fixture must not preempt the real capture.
-                            if ((action.scope_all == null or action.scope_all.? != 1) and !std.mem.eql(u8, action.mode, "from-capture")) {
-                                // 1. sqlite says a row already exists → nothing to do.
-                                if (try fixtureExists(a, io, h, p, m_d, plat)) {
-                                    daemonWrite(io, "daemon: fresh fixture exists for ");
-                                    daemonWrite(io, desc);
-                                    daemonWrite(io, " — completing without re-capture\n");
-                                    continue;
-                                }
-                                // 2. no sqlite row yet, but a valid committed
-                                // `fixtures/<id>.json` exists → origin-aware lazy
+                            // queued full combos always re-capture —
+                            // there is no "already captured, don't
+                            // re-capture" skip. The only skip mechanisms
+                            // are the `--stale-by-*` markers re-validated
+                            // below. `from-capture` rows never skip: they
+                            // are token-consuming and user-confirmed.
+                            if (!std.mem.eql(u8, action.mode, "from-capture")) {
+                                // decision #6 lazy file-based backfill: no
+                                // sqlite row yet, but a valid committed
+                                // `fixtures/<id>.json` exists → origin-aware
                                 // backfill: only when the existing fixture's
-                                // origin ranks ≥ the queued mode (a `from-raw`
-                                // row re-captures over a stale `from-ids`
-                                // fixture; `from-capture` never backfills).
-                                if (try fixtureFileOriginRank(a, io, h, p, m_d, plat)) |rank| {
-                                    if (rank >= modeRank(action.mode)) {
-                                        try upsertFixture(a, io, .{
-                                            .harness = h,
-                                            .provider = p,
-                                            .model = m_d,
-                                            .platform = plat,
-                                            .runner = getParentPid(),
-                                            .generated_at = unixNow(io),
-                                        });
+                                // origin ranks ≥ the queued mode (a
+                                // `from-raw` row re-captures over a stale
+                                // `from-identity` fixture; `from-capture`
+                                // never backfills). Once a store row exists,
+                                // re-capture.
+                                if (!(try fixtureExists(a, io, h, p, m_d, plat))) {
+                                    if (try fixtureFileOriginRank(a, io, h, p, m_d, plat)) |rank| {
+                                        if (rank >= modeRank(action.mode)) {
+                                            try upsertFixture(a, io, .{
+                                                .harness = h,
+                                                .provider = p,
+                                                .model = m_d,
+                                                .platform = plat,
+                                                .runner = getParentPid(),
+                                                .generated_at = unixNow(io),
+                                            });
+                                            daemonWrite(io, "daemon: committed fixture for ");
+                                            daemonWrite(io, desc);
+                                            daemonWrite(io, " is valid — backfilled fixtures row without re-capture\n");
+                                            continue;
+                                        }
                                         daemonWrite(io, "daemon: committed fixture for ");
                                         daemonWrite(io, desc);
-                                        daemonWrite(io, " is valid — backfilled fixtures row without re-capture\n");
-                                        continue;
+                                        daemonWrite(io, " ranks below the queued mode — re-capturing\n");
                                     }
-                                    daemonWrite(io, "daemon: committed fixture for ");
-                                    daemonWrite(io, desc);
-                                    daemonWrite(io, " ranks below the queued mode — re-capturing\n");
                                 }
                             }
 
@@ -5772,8 +5745,8 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
 
                             // --available rows: re-probe LIVE; if unavailable, re-queue as
                             // handoff work (available=0, original created_at), never capture.
-                            // `from-ids` records availability but does NOT gate on it.
-                            if (action.available != null and !std.mem.eql(u8, action.mode, "from-ids")) {
+                            // `from-identity` records availability but does NOT gate on it.
+                            if (action.available != null and !std.mem.eql(u8, action.mode, "from-identity")) {
                                 const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
                                 if (!harnessAvailable(io, agent)) {
                                     daemonWrite(io, "daemon: harness unavailable for ");
@@ -5803,16 +5776,16 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                                 continue;
                             }
 
-                            const captured = try (if (std.mem.eql(u8, action.mode, "from-ids"))
-                                runOneComboIds(a, io, action)
+                            const captured = try (if (std.mem.eql(u8, action.mode, "from-identity"))
+                                runOneComboIdentity(a, io, action)
                             else
                                 runOneComboResult(a, io, init, action));
                             if (captured) {
                                 capture_attempts.put(desc, 0) catch {};
                                 // version stamp (decision #6): from-raw captures
                                 // record the live harness `--version`; declared
-                                // from-ids fixtures carry null (no binary ran).
-                                const hver = if (std.mem.eql(u8, action.mode, "from-ids"))
+                                // from-identity fixtures carry null (no binary ran).
+                                const hver = if (std.mem.eql(u8, action.mode, "from-identity"))
                                     null
                                 else
                                     harnessVersion(a, io, (try agentIdFrom(a, h, p, m_d)) orelse continue);
@@ -5850,9 +5823,9 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
     }
 
     /// rank a refresh mode / fixture origin for ordering:
-    /// `from-ids` (0) < `from-raw` (1) < `from-capture` (2).
+    /// `from-identity` (0) < `from-raw` (1) < `from-capture` (2).
     fn modeRank(mode: []const u8) u8 {
-        if (std.mem.eql(u8, mode, "from-ids")) return 0;
+        if (std.mem.eql(u8, mode, "from-identity")) return 0;
         if (std.mem.eql(u8, mode, "from-raw")) return 1;
         return 2;
     }
@@ -5878,12 +5851,12 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
 
     /// Origin-aware lazy file-based backfill. Given a full combo
     /// `(h, p, m, plat)`, returns the existing committed
-    /// `fixtures/<fixture_id>.json`'s origin rank (0 = from-ids, 1 =
+    /// `fixtures/<fixture_id>.json`'s origin rank (0 = from-identity, 1 =
     /// from-raw, 2 = from-capture) when a valid file exists whose
     /// `cooked` block parses AND carries the exact dims; null
     /// otherwise. The daemon backfills only when the rank is ≥ the
     /// queued mode's rank (a `from-raw` row re-captures over a stale
-    /// `from-ids` fixture; `from-capture` never backfills).
+    /// `from-identity` fixture; `from-capture` never backfills).
     fn fixtureFileOriginRank(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?u8 {
         _ = plat;
         const agent = (agentIdFrom(a, h, p, m) catch return null) orelse return null;
@@ -6220,8 +6193,8 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         return true;
     }
 
-    /// `from-ids` post-check (decision #7): parse the declared fixture,
-    /// confirm `origin == "from-ids"` and the cooked identity dims match
+    /// `from-identity` post-check (decision #7): parse the declared fixture,
+    /// confirm `origin == "from-identity"` and the cooked identity dims match
     /// the queue row. Declared fixtures carry no evidence, so the
     /// evidence-claim check is skipped.
     fn postCheckDeclaredFixture(a: std.mem.Allocator, io: std.Io, action: QueueRow) !bool {
@@ -6243,7 +6216,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             .string => |s| s,
             else => "",
         } else "";
-        if (!std.mem.eql(u8, origin, "from-ids")) return false;
+        if (!std.mem.eql(u8, origin, "from-identity")) return false;
         const cooked = parsed.value.object.get("cooked") orelse return false;
         if (cooked != .object) return false;
         const ch = sjstr(cooked.object, "harness_id");
@@ -6296,7 +6269,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
     ///     redacted on write; the claim's dim/source/name chain is
     ///     accepted on its own).
     /// This verifies the attribution chain only — semantic
-    /// deducibility is human review. `from-ids` fixtures are excluded
+    /// deducibility is human review. `from-identity` fixtures are excluded
     /// by their origin (declared, not observed).
     pub fn evidenceClaimsValid(raw_v: std.json.Value, cooked_v: std.json.Value) bool {
         if (raw_v != .object or cooked_v != .object) return false;
@@ -6375,18 +6348,18 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         return false;
     }
 
-    /// `from-ids` worker (2f): resolve the combo via `resolveRecipe`
+    /// `from-identity` worker (2f): resolve the combo via `resolveRecipe`
     /// (recipe-mode, no detection, zero tokens, no harness required),
     /// assemble the fixture with `cooked` fully populated, `raw` =
     /// platform_id/detectable/detected/empty-env/real-lineage/
-    /// empty-evidence/static *-urls, and top-level `origin: "from-ids"`.
+    /// empty-evidence/static *-urls, and top-level `origin: "from-identity"`.
     /// Declared, not observed.
-    fn runOneComboIds(a: std.mem.Allocator, io: std.Io, action: QueueRow) !bool {
+    fn runOneComboIdentity(a: std.mem.Allocator, io: std.Io, action: QueueRow) !bool {
         const h = action.harness orelse return false;
         const p = action.provider orelse return false;
         const m_d = action.model orelse return false;
         var d = (try resolveRecipe(a, h, p, m_d)) orelse {
-            daemonWriteErr(io, "daemon: from-ids: combo not in the rule tables — cannot declare a fixture\n");
+            daemonWriteErr(io, "daemon: from-identity: combo not in the rule tables — cannot declare a fixture\n");
             return false;
         };
         // real process lineage (like detect() would emit) so the
@@ -6408,7 +6381,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         if (d.trailer) |t| {
             try root.object.put(a, "trailer", .{ .string = t });
         }
-        try root.object.put(a, "origin", .{ .string = "from-ids" });
+        try root.object.put(a, "origin", .{ .string = "from-identity" });
         const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
         defer a.free(json_bytes);
 
@@ -6424,11 +6397,11 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         defer a.free(f_id);
         const json_name = try std.fmt.allocPrint(a, "{s}.json", .{f_id});
         dir.writeFile(io, .{ .sub_path = json_name, .data = json_bytes }) catch {
-            daemonWriteErr(io, "daemon: from-ids: cannot write fixture file\n");
+            daemonWriteErr(io, "daemon: from-identity: cannot write fixture file\n");
             return false;
         };
         if (!(try postCheckDeclaredFixture(a, io, action))) {
-            daemonWriteErr(io, "daemon: from-ids: post-check failed — deleting fixture\n");
+            daemonWriteErr(io, "daemon: from-identity: post-check failed — deleting fixture\n");
             std.Io.Dir.cwd().deleteFile(io, try std.fs.path.join(a, &.{ "fixtures", json_name })) catch {};
             return false;
         }
@@ -6467,7 +6440,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         const launch = c.launch orelse {
             daemonWriteErr(io, "daemon: from-capture: no launch spec for ");
             daemonWriteErr(io, agent);
-            daemonWriteErr(io, " — headless capture not supported; use from-ids/from-raw\n");
+            daemonWriteErr(io, " — headless capture not supported; use from-identity/from-raw\n");
             return false;
         };
 

@@ -511,9 +511,9 @@ test "fixtures: every recipe agent_id splits into rule-table harness/provider/mo
     }
 }
 
-test "fixtures: every fixture carries a valid origin; from-ids fixtures carry empty evidence" {
+test "fixtures: every fixture carries a valid origin; from-identity fixtures carry empty evidence" {
     // Decision #7 — the top-level `origin` key classifies every fixture
-    // as declared (`from-ids`) or observed (`from-raw`/`from-capture`).
+    // as declared (`from-identity`) or observed (`from-raw`/`from-capture`).
     // Declared fixtures carry an empty `raw.evidence` array (nothing was
     // observed); observed fixtures carry one claim per detected dim.
     const stems = try discoverStems(testing.allocator);
@@ -526,7 +526,7 @@ test "fixtures: every fixture carries a valid origin; from-ids fixtures carry em
         defer parsed.deinit();
         const root = parsed.value.object;
         const origin = if (root.get("origin")) |o| (if (o == .string) o.string else "") else "";
-        const valid_origin = std.mem.eql(u8, origin, "from-ids") or
+        const valid_origin = std.mem.eql(u8, origin, "from-identity") or
             std.mem.eql(u8, origin, "from-raw") or
             std.mem.eql(u8, origin, "from-capture");
         if (!valid_origin) {
@@ -539,7 +539,7 @@ test "fixtures: every fixture carries a valid origin; from-ids fixtures carry em
             return error.MissingEvidence;
         };
         try testing.expect(evidence == .array);
-        if (std.mem.eql(u8, origin, "from-ids")) {
+        if (std.mem.eql(u8, origin, "from-identity")) {
             try testing.expect(evidence.array.items.len == 0);
         }
     }
@@ -550,7 +550,7 @@ test "fixtures: observed (from-raw/from-capture) fixtures pass the evidence-clai
     // attributed to a source present in raw whose value matches the
     // cooked dim. The mechanical check cannot judge semantic
     // deducibility — that is human review — but it catches "no
-    // evidence" and "evidence contradicts cooked". `from-ids` fixtures
+    // evidence" and "evidence contradicts cooked". `from-identity` fixtures
     // are declared, not observed, so they are excluded by origin.
     const stems = try discoverStems(testing.allocator);
     defer {
@@ -563,7 +563,7 @@ test "fixtures: observed (from-raw/from-capture) fixtures pass the evidence-clai
         defer parsed.deinit();
         const root = parsed.value.object;
         const origin = if (root.get("origin")) |o| (if (o == .string) o.string else "") else "";
-        if (std.mem.eql(u8, origin, "from-ids")) continue;
+        if (std.mem.eql(u8, origin, "from-identity")) continue;
         tested += 1;
         const raw = root.get("raw").?;
         const cooked = root.get("cooked").?;
