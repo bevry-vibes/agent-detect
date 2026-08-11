@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Ollama Cloud",
+    "provider_name": "ollama-cloud",
+    "provider_id": "ollamacloud",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Qwen3 Coder",
+    "model_short_title": null,
+    "model_name": "qwen3-coder",
+    "model_id": "qwen3coder",
+    "model_reciprocity": null,
+    "agent_id": "omp-ollamacloud-qwen3coder",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Qwen3 Coder <omp-ollamacloud-qwen3coder@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 59030,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 58478,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "ollama-cloud/qwen3-coder"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://ollama.com/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "ollama-cloud/qwen3-coder"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "ollama-cloud/qwen3-coder"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Qwen3 Coder <omp-ollamacloud-qwen3coder@local>",
+  "origin": "from-raw"
+}

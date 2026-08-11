@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Google Antigravity",
+    "provider_name": "google-antigravity",
+    "provider_id": "googleantigravity",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "GPT-OSS 120B",
+    "model_short_title": null,
+    "model_name": "gpt-oss-120b",
+    "model_id": "gptoss120b",
+    "model_reciprocity": null,
+    "agent_id": "omp-googleantigravity-gptoss120b",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · GPT-OSS 120B <omp-googleantigravity-gptoss120b@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 59353,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 58478,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "google-antigravity/gpt-oss-120b"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://antigravity.google/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "google-antigravity/gpt-oss-120b"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "google-antigravity/gpt-oss-120b"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · GPT-OSS 120B <omp-googleantigravity-gptoss120b@local>",
+  "origin": "from-raw"
+}

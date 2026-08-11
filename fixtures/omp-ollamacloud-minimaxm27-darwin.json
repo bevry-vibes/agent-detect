@@ -1,0 +1,88 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Ollama Cloud",
+    "provider_name": "ollama-cloud",
+    "provider_id": "ollamacloud",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "MiniMax M2.7",
+    "model_short_title": "M2.7",
+    "model_name": "minimax-m2.7",
+    "model_id": "minimaxm27",
+    "model_reciprocity": "open-weight",
+    "agent_id": "omp-ollamacloud-minimaxm27",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · MiniMax M2.7 <omp-ollamacloud-minimaxm27@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 58964,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 58478,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "ollama-cloud/minimax-m2.7"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://ollama.com/"
+    ],
+    "model-urls": [
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.7",
+      "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "ollama-cloud/minimax-m2.7"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "ollama-cloud/minimax-m2.7"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · MiniMax M2.7 <omp-ollamacloud-minimaxm27@local>",
+  "origin": "from-raw"
+}

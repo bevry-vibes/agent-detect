@@ -240,6 +240,25 @@ pub const rulesForModels = [_]ModelRule{
     // fugu-ultra-v1.1: Sakana AI Fugu Ultra v1.1 (Japanese MoE);
     // reciprocity unverified, stays null.
     .{ .name = "fugu-ultra-v1.1", .label = "Fugu Ultra v1.1", .reciprocity = null, .sources = &.{} },
+    // deepseek-v3.2: DeepSeek V3.2 (open-weight); reciprocity unverified.
+    .{ .name = "deepseek-v3.2", .label = "DeepSeek V3.2", .reciprocity = null, .sources = &.{} },
+    // glm-4.6: Z.ai GLM 4.6 (open-weight); reciprocity unverified.
+    .{ .name = "glm-4.6", .label = "Z.ai GLM 4.6", .reciprocity = null, .sources = &.{} },
+    // kimi-k2.5: Moonshot Kimi K2.5 (open-weight); reciprocity unverified.
+    .{ .name = "kimi-k2.5", .label = "Kimi K2.5", .reciprocity = null, .sources = &.{} },
+    // kimi-k2: Moonshot Kimi K2 (open-weight); reciprocity unverified.
+    .{ .name = "kimi-k2", .label = "Kimi K2", .reciprocity = null, .sources = &.{} },
+    // devstral-2: Mistral Devstral 2 (open-weight coding); unverified.
+    .{ .name = "devstral-2", .label = "Devstral 2", .reciprocity = null, .sources = &.{} },
+    // nemotron-3-ultra: NVIDIA Nemotron 3 Ultra (open-weight);
+    // reciprocity unverified.
+    .{ .name = "nemotron-3-ultra", .label = "Nemotron 3 Ultra", .reciprocity = null, .sources = &.{} },
+    // qwen3-coder: Alibaba Qwen3 Coder (open-weight); reciprocity unverified.
+    .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = null, .sources = &.{} },
+    // cogito-2.1: DeepCogito Cogito 2.1 671B (open-weight); unverified.
+    .{ .name = "cogito-2.1", .label = "Cogito 2.1", .reciprocity = null, .sources = &.{} },
+    // muse-spark-1.2: Meta Muse Spark 1.2; reciprocity unverified.
+    .{ .name = "muse-spark-1.2", .label = "Muse Spark 1.2", .reciprocity = null, .sources = &.{} },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -347,6 +366,19 @@ pub const rulesForProviders = [_]ProviderRule{
     // sakana: null/null — Sakana AI trains the Fugu/Namazu families
     // (Japanese LLMs); API policy unverified, stays null.
     .{ .name = "sakana", .label = "Sakana AI", .closed_training = null, .open_training = null, .sources = &.{ "https://sakana.ai/" } },
+    // ollama-cloud: null/null — Ollama's cloud inference tier serving
+    // many open-weight models (`deepseek-v3.2`, `glm-5.2`, ...);
+    // policy unverified, stays null.
+    .{ .name = "ollama-cloud", .label = "Ollama Cloud", .closed_training = null, .open_training = null, .sources = &.{ "https://ollama.com/" } },
+    // meta: null/null — Meta's hosted tier for its open-weight families
+    // (Llama, Muse); policy unverified, stays null.
+    .{ .name = "meta", .label = "Meta", .closed_training = null, .open_training = null, .sources = &.{ "https://ai.meta.com/" } },
+    // google-antigravity: null/null — Google Antigravity's hosted tier;
+    // policy unverified, stays null.
+    .{ .name = "google-antigravity", .label = "Google Antigravity", .closed_training = null, .open_training = null, .sources = &.{ "https://antigravity.google/" } },
+    // kimi-code: mirrors `kimi`/`moonshot` — the kimi-code CLI's own
+    // provider key (`k3` models); same Moonshot upstream, unverified.
+    .{ .name = "kimi-code", .label = "Kimi Code", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
 };
 /// static metadata the rule declared to the matcher. Useful for auditing
 /// when a rule misfires; not a runtime observation.
@@ -3852,22 +3884,22 @@ const capture_prompt = "run `agent-detect-dev fixtures capture` in the current w
 
 pub const recipesForFixtures = [_]RecipesForFixtures{
     // cline — clinepass/kimi-k3 (keep, no launch spec — not in the usable set), deepseek/v4-flash, minimax/m3, openrouter/v4-flash (no launch spec — not in the usable set)
-    .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=cline-pass/kimi-k3", capture_prompt } },
     .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=deepseek", "--model=deepseek-v4-flash", "--thinking", "high", capture_prompt } },
     .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=minimax", "--model=minimax/minimax-m3", capture_prompt } },
-    .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv },
+    .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=openrouter", "--model=openrouter/deepseek-v4-flash", capture_prompt } },
     // cline additions (real usable combos): clinepass/step-3.7-flash and clinepass/free-deepseek-v4-flash
     .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=stepfun/step-3.7-flash", capture_prompt } },
     .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=free/deepseek-v4-flash", capture_prompt } },
     // goose — goose/claude-sonnet-4 (contributor-scope example, keeps the harness→recipe test green)
-    .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .buildEnv = buildGooseEnv },
+    .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .buildEnv = buildGooseEnv, .launch = &.{ "goose", "run", "-t", capture_prompt } },
     // kimi — minimax/m3 (keep), deepseek/v4-flash, kimi/k3
     .{ .agent_id = "kimicode-minimax-minimaxm3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     .{ .agent_id = "kimicode-deepseek-deepseekv4flash", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     .{ .agent_id = "kimicode-kimi-kimik3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
     // mmx — minimax/m3 (keep), minimax/m2.7
-    .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv },
-    .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv },
+    .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
+    .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
     // pi — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash, minimax/m3
     .{ .agent_id = "pi-anthropic-claudesonnet4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
     .{ .agent_id = "pi-deepseek-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-flash", "-p", capture_prompt } },
@@ -3898,33 +3930,45 @@ pub const recipesForFixtures = [_]RecipesForFixtures{
     .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     // omp — minimax-code/m3 (keep), deepseek/v4-flash, openrouter/v4-flash
-    .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-openrouter-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "minimax-code/MiniMax-M3", capture_prompt } },
+    .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "deepseek/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "omp-openrouter-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "openrouter/deepseek-v4-flash", capture_prompt } },
     // omp evergreen+free additions (2026-08-11): free models on the
     // newly-added providers, constrained to the evergreen top-50 set.
     // Service ids carry a -free suffix (e.g. zenmux "kimi-k3-free");
     // the recipe stores the coalesced canonical model, the -free is the
     // free-tier variation on that provider.
-    .{ .agent_id = "omp-zenmux-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-zenmux-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-zenmux-step37flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-zenmux-grok45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-zenmux-gemini35flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-zenmux-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-siliconflow-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-siliconflow-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-siliconflow-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
-    .{ .agent_id = "omp-sakana-fuguultrav11", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv },
+    .{ .agent_id = "omp-zenmux-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/deepseek/deepseek-v4-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/moonshotai/kimi-k3-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-step37flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/stepfun/step-3.7-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-grok45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/x-ai/grok-4.5-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-gemini35flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/google/gemini-3.5-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/z-ai/glm-4.7-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-siliconflow-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "siliconflow/MiniMaxAI/MiniMax-M3", capture_prompt } },
+    .{ .agent_id = "omp-siliconflow-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "siliconflow/moonshotai/Kimi-K3", capture_prompt } },
+    .{ .agent_id = "omp-siliconflow-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731", capture_prompt } },
+    .{ .agent_id = "omp-sakana-fuguultrav11", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "sakana/fugu-ultra-v1.1", capture_prompt } },
+    // omp batch 2 (evergreen+free): ollama-cloud, kimi-code, meta, google-antigravity
+    .{ .agent_id = "omp-ollamacloud-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-deepseekv32", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/deepseek-v3.2", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-glm52", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/glm-5.2", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/kimi-k3", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/minimax-m3", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-minimaxm27", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/minimax-m2.7", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-qwen3coder", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/qwen3-coder", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-kimicode-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "kimi-code/k3", capture_prompt } },
+    .{ .agent_id = "omp-meta-musespark12", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "meta/muse-spark-1.2", capture_prompt } },
+    .{ .agent_id = "omp-googleantigravity-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "google-antigravity/gpt-oss-120b", capture_prompt } },
     // reasonix — deepseek-flash/v4-flash (keep), deepseek/v4-flash, minimax/m3
     .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv, .launch = &.{ "reasonix", "run", "--permission-mode", "bypassPermissions", capture_prompt } },
     .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
     .{ .agent_id = "reasonix-minimax-minimaxm3", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
     // crush — hyper/qwen3.7-plus (keep), hyper/v4-flash, minimax/m3, deepseek/v4-flash
-    .{ .agent_id = "crush-hyper-qwen37plus", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
-    .{ .agent_id = "crush-hyper-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
-    .{ .agent_id = "crush-minimax-minimaxm3", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
-    .{ .agent_id = "crush-deepseek-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv },
+    .{ .agent_id = "crush-hyper-qwen37plus", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-minimax-minimaxm3", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-deepseek-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
     // opencode — minimax/m3 (keep), deepseek/v4-flash, hyper/v4-flash, groq/llama-4, cerebras/qwen3
     .{ .agent_id = "opencode-minimax-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
     .{ .agent_id = "opencode-deepseek-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },

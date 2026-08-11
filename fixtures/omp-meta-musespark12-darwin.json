@@ -1,0 +1,85 @@
+{
+  "cooked": {
+    "harness_label": "omp",
+    "harness_short_title": null,
+    "harness_name": "omp",
+    "harness_id": "omp",
+    "harness_license": "MIT",
+    "provider_label": "Meta",
+    "provider_name": "meta",
+    "provider_id": "meta",
+    "provider_closed_training": null,
+    "provider_open_training": null,
+    "model_label": "Muse Spark 1.2",
+    "model_short_title": null,
+    "model_name": "muse-spark-1.2",
+    "model_id": "musespark12",
+    "model_reciprocity": null,
+    "agent_id": "omp-meta-musespark12",
+    "reciprocal": false,
+    "trailer": "Co-authored-by: omp · Muse Spark 1.2 <omp-meta-musespark12@local>"
+  },
+  "raw": {
+    "platform_id": "darwin",
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "env": {
+      "OMP_API_KEY": {
+        "present": true
+      }
+    },
+    "process_lineage": [
+      {
+        "pid": 59281,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 58478,
+        "name": "agent-detect-dev"
+      }
+    ],
+    "<home>/.omp/agent/config.yml": {
+      "modelRoles.default": "meta/muse-spark-1.2"
+    },
+    "harness-urls": [
+      "https://github.com/can1357/oh-my-pi",
+      "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://ai.meta.com/"
+    ],
+    "model-urls": [],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "OMP_API_KEY",
+        "value": "omp"
+      },
+      {
+        "dim": "provider",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "meta/muse-spark-1.2"
+      },
+      {
+        "dim": "model",
+        "source": "config",
+        "name": "<home>/.omp/agent/config.yml",
+        "field": "modelRoles.default",
+        "value": "meta/muse-spark-1.2"
+      }
+    ]
+  },
+  "trailer": "Co-authored-by: omp · Muse Spark 1.2 <omp-meta-musespark12@local>",
+  "origin": "from-raw"
+}
