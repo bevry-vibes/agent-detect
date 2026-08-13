@@ -307,3 +307,19 @@ Question: "How do --recipes/--all queue their sweeps (plan §4b) — lazy seed r
 
 Question: "Where do failed attempts land their completion timestamp (plan §7b)?"
 > Rename the invalid json table as errors instead, then use valid_or_invalid and successful_or_unsuccessful to filter the errors table based on the error, generally successful/unsuccessful will have both a fixture and an error entry, whereas invalid will probably only have an error entry.  Also, we can undo the invalid_or_valid, known_or_unknown, successful_or_unsuccful and just have tbem as nullable booleans on their affirmatives, so known/valid/successful:[null|false|true]
+
+## 30 — 23:18 — user
+
+> We don't need the scope parent object here:
+>       "scope": { "stale_by_minutes": 7 },
+>
+> Why do we even have this, we just need started_at and finished_at to move to the queue entry, and rmove this pending thing:
+>       "pending": { "cline-clinepass-kimik3-darwin": { "started_at": 1750000010, "finished_at": null } }
+
+## 31 — 23:24 — user
+
+> Good point, we can purge finished_at
+
+## 32 — 23:25 — user
+
+> The queue json is missing the `free` filter, the reason we created `free_provider_to_model`

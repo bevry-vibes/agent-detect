@@ -9,8 +9,7 @@ the traceability rule in §2).
 
 ## Status
 
-Implementation-ready — all design forks are resolved, including the
-failure-outcome model and the queue-filter rethink.
+Implementation-ready — all design forks are resolved.
 
 **Resolved decisions:**
 1. Launch/version data live in fixture rows (`prompt_launch` / `version_launch`,
@@ -23,20 +22,21 @@ failure-outcome model and the queue-filter rethink.
 5. Migration: one-off throwaway conversion by the implementing agent; no
    shipped migrate code; sqlite purge is complete.
 6. Timestamps: the ledger set only — `identity.declared_at`,
-   `capture.captured_at`, `errors.<key>.outcome_at`, `queue[].started_at`,
-   `pending.{started_at,finished_at}` (§7).
-7. `invalid` is renamed **`errors`** — the evaluation ledger. Value =
-   `{ "outcome", "reason", "outcome_at" }`. Successful/unsuccessful combos
-   have a fixture row **and** an error entry; invalid combos have only the
-   error entry. The row-level `available`/`successful` markers die.
-8. Queue = array of filter entries — dims, mode, `scope` (stale-by-* /
-   missing-fixture-file only), and three nullable affirmative booleans
-   `known`/`valid`/`successful` (null|false|true) — plus `started_at` and
-   in-flight-only `pending`. The queue never expands; only the daemon
-   expands (§4b, §4e).
+   `capture.captured_at`, `errors.<key>.failed_at`, `queue[].started_at`
+   (§7).
+7. `invalid` is renamed **`errors`** — the failure ledger, purge-on-success.
+   Value = `{ "reason", "failed_at" }`; a successful capture/declaration
+   deletes the entry. The row-level `available`/`successful` markers die.
+8. Queue = array of filter entries — dims, mode, **flat marker fields**,
+   `known`/`valid`/`successful`/`free` nullable affirmatives, `started_at`
+   on the entry — **no `pending`, no `scope` parent object, no
+   `finished_at`**. Fully-satisfied entries are **purged** (deleted on
+   completion — the sweep history is the fixtures/errors ledger, not the
+   queue). The queue never expands; only the daemon expands (§4b, §4e).
 9. CLI: `--known`/`--unknown` → `known: true|false`; `--valid`/`--invalid`
    → `valid: true|false`; `--successful`/`--unsuccessful` → `successful:
-   true|false`. Defaults: known=true, valid=true, successful=unset.
+   true|false`; `--free`/`--paid` → `free: true|false`. Defaults:
+   known=true, valid=true, successful=unset, free=unset.
    `--recipes`/`--all`/`--available`/`--unavailable` flags die.
 10. Exit code 12 repurposed to "index store error".
 11. Locking = `std.Io.File.lock` on `fixtures/index.json.lock` + temp/rename
@@ -128,18 +128,21 @@ Add to the repo-root `kilo.md` three project tweaks:
     }
   },
   "errors": {
-    "cline-clinepass-kimik3-darwin": { "outcome": "successful", "reason": "captured", "outcome_at": 1750000001 },
-    "pi-null-null-windows": { "outcome": "unsuccessful", "reason": "unavailable", "outcome_at": 1750000002 },
-    "null-null-null-null": { "outcome": "invalid", "reason": "malformed queue row", "outcome_at": 1750000000 }
+    "pi-null-null-windows": { "reason": "unavailable", "failed_at": 1750000002 },
+    "null-null-null-null": { "reason": "malformed queue row", "failed_at": 1750000000 }
   },
   "queue": [
     {
       "harness": null, "provider": null, "model": null, "platform": null,
       "mode": "from-identity",
-      "scope": { "stale_by_minutes": 7 },
-      "known": null, "valid": null, "successful": null,
-      "runner": 12345, "started_at": null,
-      "pending": { "cline-clinepass-kimik3-darwin": { "started_at": 1750000010, "finished_at": null } }
+      "missing_fixture_file": null,
+      "stale_by_minutes": 7,
+      "stale_by_version": null,
+      "stale_by_detect": null,
+      "stale_by_hash": null,
+      "known": null, "valid": null, "successful": null, "free": null,
+      "runner": 12345,
+      "started_at": null
     }
   ]
 }
@@ -152,7 +155,7 @@ Add to the repo-root `kilo.md` three project tweaks:
   explicit dims; error entries carry their dims in the key (§4c).
 - Row payload, self-contained by design:
   - `runner`, `agent_detect_version` — unchanged semantics. **No
-    `available`/`successful` markers** — outcomes live in `errors` (§4c).
+    `available`/`successful` markers** — failures live in `errors` (§4c).
   - `identity` = `{ declared_at, hash }` (BLAKE3 of the channel object);
     `capture` = `{ captured_at, hash, harness_version }` — harness_version
     nests under capture because only capture stamps it; `--stale-by-version`
@@ -184,92 +187,89 @@ Add to the repo-root `kilo.md` three project tweaks:
 
 ### 4b. queue — array of filter entries; only the daemon expands
 
-- Array, one entry per (dims, mode, scope, known, valid, successful) tuple
-  (upsert = scan for an equal entry, replace in place, **preserving
-  `started_at` and `pending`** so a re-asserted sweep keeps its progress).
+- Array, one entry per (dims, mode, markers, known, valid, successful,
+  free) tuple. A **queue-command** re-assert of an existing tuple replaces
+  the entry in place and resets `started_at` to null (a fresh sweep); the
+  daemon's own writes preserve it.
 - Entry fields:
-  - `harness`/`provider`/`model`/`platform` — filters, each optional (null
-    = any; a "everything" entry is all-null).
-  - `mode` — `from-identity` | `from-capture` (one entry per mode; omitting
-    both mode flags queues two entries).
-  - `scope` — optional single marker: `"missing-fixture-file"` |
-    `{"stale_by_minutes": N}` | `"stale-by-version"` | `"stale-by-detect"` |
-    `"stale-by-hash"` (absent = bare sweep). Marker scopes require
+  - `harness`/`provider`/`model`/`platform` — optional dim filters (null =
+    any; an all-null entry is a full sweep).
+  - `mode` — `from-identity` | `from-capture` (one entry per mode;
+    omitting both mode flags queues two entries).
+  - **flat marker fields** (at most one set — enforced by the existing
+    `validateQueueRow`, no parent object): `missing_fixture_file` (true|
+    null), `stale_by_minutes` (minutes int|null), `stale_by_version` /
+    `stale_by_detect` / `stale_by_hash` (true|null). Marker sweeps require
     `known: true` (§4e).
-  - `known`/`valid`/`successful` — nullable affirmative booleans
-    (null|false|true), §4e.
-  - `runner`, `started_at` (null until the daemon first works the entry).
-  - `pending` — **in-flight only**: `{ "<fixture_id>": { started_at,
-    finished_at } }`, items removed on completion. NOT the expansion.
-- **Expansion happens only in the daemon** (§4e defines the universes); the
-  queue itself never materializes candidates.
-- **Pop protocol** (replaces the per-row pending drain):
+  - `known`/`valid`/`successful`/`free` — nullable affirmative booleans
+    (§4e).
+  - `runner` — the queueing process pid.
+  - `started_at` — null until the daemon first works the entry; the pop
+    protocol's comparison anchor.
+- **No `pending`.** In-flight per-item bookkeeping is gone — crash-resume
+  derives from the completion ledger: a candidate without a completion
+  timestamp ≥ `started_at` is simply re-attempted (a capture that died with
+  the daemon left no channel write, so it re-runs).
+- **Pop protocol** (replaces `materializeSeedPending`/`popQueueRow`/pending
+  drain):
   1. Scan entries in mode-rank order (from-identity first), then array
-     order, skipping entries whose expansion has no remaining task for THIS
+     order; skip entries whose expansion has no remaining task for THIS
      host.
-  2. Expand the entry's universe per §4e, filtered by dims, platform
-     (= entry's or host when null), scope marker evaluations, and the
-     `successful` axis.
-  3. Remaining task for a candidate = its completion timestamp is
-     **missing or older than the entry's `started_at`**: from-identity →
+  2. Expand the universe per §4e, filtered by dims, platform (= entry's or
+     host when null), marker evaluations, and the filter axes.
+  3. A candidate's completion timestamp is: from-identity →
      `identity.declared_at`, from-capture → `capture.captured_at`, either →
-     `errors.<key>.outcome_at` (an evaluated combo counts as done even when
-     the last outcome was a failure).
-  4. Work the next remaining host-platform task (stamp `pending.started_at`,
-     remove the pending item on completion).
-  5. If the entry has no remaining tasks at all (every candidate across all
-     platforms has a completion timestamp ≥ `started_at`) → delete the
-     entry. If tasks remain but none for this host → **keep the entry** and
-     move to the next one (another host's portion).
-- Cross-host: completion timestamps ride git, so an entry drains on
-  whichever host pops it after the last result lands — this replaces the
-  per-platform splitting idea entirely (one entry, shared ledger).
-- Pop order and pacing unchanged otherwise (one item per poll, adaptive
-  pacing, mode rank first).
+     `errors.<key>.failed_at`. A candidate is done when its timestamp is
+     present AND ≥ the entry's `started_at`; stamp `started_at` on first
+     work of the entry.
+  4. Work ONE remaining host-platform candidate per poll (adaptive pacing
+     unchanged).
+  5. No candidates remaining anywhere (all platforms): **delete the
+     entry** and move on (the fixtures/errors ledger is the sweep record;
+     no `finished_at`). Candidates remain but none for this host: keep the
+     entry, move on (another host's portion).
+- Cross-host: the completion ledger rides git, so an entry finishes on
+  whichever host pops it after the last result lands — one entry, shared
+  ledger, no per-platform splitting.
 
-### 4c. errors — the evaluation ledger (renamed from `invalid`)
+### 4c. errors — the failure ledger (renamed from `invalid`)
 
 - Hash map keyed by the dash-joined dims tuple with `null` for each unknown
   dim (`"cline-clinepass-kimik3-darwin"`, `"null-null-null-null"`). Entries
   with no dims share the single `"null-null-null-null"` key (last write
   wins); a tuple with unknown-but-present dims keys by those slugs and
   cannot collide with a real combo.
-- Value = `{ "outcome": "successful" | "unsuccessful" | "invalid",
-  "reason": "<detail>", "outcome_at": <unix seconds> }`:
-  - `successful` — the combo has a fixture row and its last evaluation
-    succeeded (`captured`/`declared`). Written by the same writers that
-    stamp the channels.
-  - `unsuccessful` — the combo has a fixture row but its last evaluation
-    failed; `reason` ∈ `"capture failed"`, `"unavailable"`,
-    `"post-check mismatch"`. This **replaces `markCaptureOutcome`'s
-    `available`/`successful` markers** — those row fields die, and the
-    `--available`/`--unavailable` flags die with them (availability is an
-    unsuccessful-class reason).
-  - `invalid` — structural breakage, error-only (no fixture row); `reason`
-    ∈ `"no launch spec"`, `"unknown fixture file"`, `"malformed fixture
-    id"`, `"malformed queue row"`.
-- Re-inserts overwrite (map put) with a fresh `outcome_at`. A successful
-  re-evaluation of a previously-invalid combo deletes the entry's `invalid`
-  classification by overwriting with the new outcome (or the writer deletes
-  the key when a fixture row now covers it).
-- `outcome_at` is the completion timestamp the pop protocol (§4b) and the
-  filter axes (§4e) compare against. The `successful`/`valid` filters
-  classify on `outcome`, and `reason` stays a human-readable detail.
+- Value = `{ "reason": "<closed set>", "failed_at": <unix seconds> }`.
+  **An entry exists only while the combo is failed/broken — a successful
+  capture/declaration purges the entry** (entry presence is the outcome
+  signal; no `outcome` field).
+- The reason set is closed and **partitioned by class** (what the filter
+  axes classify on — "based on the error"):
+  - `unsuccessful` class (combo has a fixture row, last evaluation failed):
+    `"capture failed"`, `"unavailable"`, `"post-check mismatch"` — replaces
+    `markCaptureOutcome`'s `available`/`successful` markers, which die, and
+    the `--available`/`--unavailable` flags die with them.
+  - `invalid` class (structural breakage, error-only):
+    `"no launch spec"`, `"unknown fixture file"`, `"malformed fixture id"`,
+    `"malformed queue row"`.
+- Re-inserts overwrite (map put) with a fresh `failed_at`; success deletes
+  the key. `failed_at` is the completion timestamp the pop protocol (§4b)
+  and the filter axes (§4e) compare against.
 
 ### 4d. `free_provider_to_model`
 
-- Provider id → [canonical model ids]. Consumed by the deferred `--free`
-  scope later; lands now as data + tests:
+- Provider id → [canonical model ids] — the data behind the `free` filter
+  axis (§4e). Landed as data + tests:
   - every entry resolves to known provider+model rules;
   - every row whose (provider, model) is listed must carry a free-signal in
     its `prompt_launch` model spec (`:free`, `-free`, `free/`, `-free`
     service ids).
 
-### 4e. The three filter axes — `known`, `valid`, `successful`
+### 4e. The four filter axes — `known`, `valid`, `successful`, `free`
 
 Stored on queue entries as nullable affirmative booleans (null = unset);
 the daemon applies defaults at expansion: **known=true, valid=true,
-successful=unset (no outcome filter)**.
+successful=unset (no filter), free=unset (no filter)**.
 
 - **`known`** selects the expansion universe:
   - true (default): the `fixtures` map (rows matching dims, platform =
@@ -281,24 +281,35 @@ successful=unset (no outcome filter)**.
     generated combos into `fixtures/` (the new-rule seeding workflow);
     `--unknown --from-capture` routes everything to errors ("no launch
     spec") — allowed, near-useless, documented.
-- **`valid`** selects error-entry participation:
-  - true (default): errors entries are excluded from the universe.
-  - false: `"invalid"`-class error entries become candidates again
+- **`valid`** selects error-entry participation by class:
+  - true (default): `invalid`-class entries are excluded from the universe.
+  - false: `invalid`-class error entries become candidates again
     (re-evaluated): for known they join the fixtures rows; for unknown
     they stop being subtracted from the generated set. A successful
-    re-attempt overwrites the error entry's outcome.
-- **`successful`** filters the known universe by last outcome:
-  - null (default): no outcome filter (the bare sweep re-evaluates
-    everything known, mirroring `--all`).
-  - true: only candidates whose error entry is `successful`.
-  - false: only candidates whose error entry is `unsuccessful` (replaces
-    `--unsuccessful`/`--unavailable` sweeps).
+    re-attempt deletes the entry (purge-on-success).
+- **`successful`** filters the known universe by entry presence:
+  - null (default): no filter (the bare sweep re-evaluates everything
+    known, mirroring `--all`).
+  - true: only candidates with no error entry (purge-on-success makes
+    "no entry" the successful signal).
+  - false: only candidates with an `unsuccessful`-class error entry
+    (replaces `--unsuccessful`/`--unavailable` sweeps).
+- **`free`** filters candidates by the free table:
+  - null (default): no filter.
+  - true (`--free`): only candidates whose (provider, model) is listed in
+    `free_provider_to_model`.
+  - false (`--paid`): only candidates whose (provider, model) is NOT
+    listed. Unlike the marker fields, free-ness is derivable for generated
+    combos too (dims are known from the cross-product), so
+    `--unknown --free` is allowed.
 - XOR/conflicts (exit 3): `--known`+`--unknown`, `--valid`+`--invalid`,
-  `--successful`+`--unsuccessful`, `--unknown` + any marker scope
-  (`--stale-by-*`, `--missing-fixture-file`) or a non-default `successful`
-  axis (generated combos have no markers/outcomes to filter on).
+  `--successful`+`--unsuccessful`, `--free`+`--paid`, `--unknown` + any
+  marker (`--stale-by-*`, `--missing-fixture-file`) or a non-default
+  `successful` axis (generated combos have no markers/outcomes to filter
+  on).
 - CLI surface: `--known`/`--unknown`, `--valid`/`--invalid`,
-  `--successful`/`--unsuccessful`; `dequeue` accepts the same axes.
+  `--successful`/`--unsuccessful`, `--free`/`--paid`; `dequeue` accepts
+  the same axes.
 
 ## 5. Resolved forks (answers recorded in the .prompts.md)
 
@@ -306,9 +317,10 @@ successful=unset (no outcome filter)**.
 - Key separator: dash == filename stem.
 - Migration: one-off conversion, no shipped code.
 - Timestamps: the ledger set only (§7).
-- `invalid` → `errors` ledger; row markers die (user's answer to the
-  failure-outcome fork).
-- Sweep shape: lazy filter entries expanded only by the daemon.
+- `invalid` → `errors` ledger with purge-on-success; row markers die.
+- Queue shape: flat filter entries with entry-level `started_at`; no
+  `pending`, no `scope` parent object; fully-satisfied entries are purged
+  (deleted — the ledger is the history); expansion daemon-only.
 
 ## 6. One-off conversion (migration decision B)
 
@@ -319,17 +331,16 @@ The implementing agent converts once with a throwaway script (system
   channel objects from the four generation columns (`identity.declared_at`/
   `hash`, `capture.captured_at`/`hash`/`harness_version`),
   `agent_detect_version`/`runner` verbatim. Markers and `generated_at` are
-  not carried; instead an `errors` entry is derived where the row carries
-  `available=0`/`successful=0` (outcome `unsuccessful`, reason
-  `unavailable`/`unsuccessful`, outcome_at from `generated_at`), and
-  `successful` otherwise (outcome `successful`, `captured`/`declared`,
-  outcome_at from the newest generation column).
+  not carried; instead an `errors` entry is derived **only for failed
+  rows**: `available=0`/`successful=0` → `{ reason: "unavailable" |
+  "unsuccessful", failed_at: generated_at }`; fully-successful rows carry
+  no error entry (purge-on-success).
 - `queue` rows (692) → entries in rowid order: dims/mode from the columns,
-  `scope` from the one marker set, `known`/`valid`/`successful` = null,
-  `started_at = null`, `pending = {}`. `created_at` is not carried (array
+  the one set marker column → its flat field, `known`/`valid`/`successful`/
+  `free` = null, `started_at` = null. `created_at` is not carried (array
   order replaces it).
-- `invalid` rows (16) → `errors` entries keyed by the dims tuple; outcome
-  `invalid`; `reason` from the column; `outcome_at` from `created_at`.
+- `invalid` rows (16) → `errors` entries keyed by the dims tuple;
+  `reason` from the column; `failed_at` from `created_at`.
 - **531 seeded rows** from `recipesForFixtures` (177 combos × 3 platforms):
   `prompt_launch` from the recipe's `launch` (argv[0] = bare stem on
   darwin/linux; windows argv[0] per the CONTRIBUTING install table —
@@ -346,15 +357,14 @@ The implementing agent converts once with a throwaway script (system
 
 - `identity.declared_at` — the identity channel write.
 - `capture.captured_at` — the capture channel write.
-- `errors.<key>.outcome_at` — when the combo was last evaluated
-  (successful/unsuccessful/invalid) — the user's `capture/declare/failed_at`
-  trio, with the failure leg generalized to any outcome.
-- `queue[].started_at` — stamped by the daemon on first work of the entry
-  (the pop protocol's comparison anchor; null = never worked).
-- `pending.{started_at,finished_at}` — in-flight protocol only.
+- `errors.<key>.failed_at` — when the combo last failed (purged on
+  success).
+- `queue[].started_at` — stamped by the daemon on first work of the entry;
+  the pop protocol's comparison anchor. No `finished_at`: fully-satisfied
+  entries are deleted (the ledger is the history).
 - The `--stale-by-minutes` check is mode-scoped (§4a). Everything else is
   dropped: fixtures row-level `updated_at` (ex-`generated_at`), queue
-  `created_at` (array order), the marker model's implicit timestamps.
+  `created_at` (array order), pending item timestamps (pending is gone).
 
 ## 8. Locking + write protocol
 
@@ -379,24 +389,27 @@ meaning; usage text + DESIGN registry row + MSG_ constant updated.
 
 ## 10. Code impact
 
-**Deleted (~1,200 lines):** the sqlite layer (`ensureSchema`, `sqliteRun`,
+**Deleted (~1,300 lines):** the sqlite layer (`ensureSchema`, `sqliteRun`,
 `sqliteQuery`, `sqlQuote`, `sqlOptStr`, `sqlOptInt`, all ~20 row accessors,
 `parseJsonCount`, `appendCond`, dev `sj*` accessors — no sqlite remains in
 dev.zig); `recipesForFixtures` + `recipeForAgent` + `capture_prompt`;
 `spawnVersion`'s hardcoded `--version` + `findBinary`; argv[0] cycling in
 `runOneComboCapture` and `harnessVersion`; `derivedAgentId`/
-`derivedFixtureId`; `validateQueueRow`'s scope-count half; `scopeCandidates`
-recipe/all/available/successful enumeration (moves into the daemon
-expansion + the new filter axes); `markCaptureOutcome`'s marker writes
-(replaced by the errors-ledger writer); queue-time pending materialization.
+`derivedFixtureId`; `validateQueueRow`'s scope-count half stays (flat
+markers, "at most one"); `scopeCandidates` recipe/all/available/successful
+enumeration (moves into the daemon expansion + the filter axes);
+`markCaptureOutcome` (replaced by the errors-ledger writer); the entire
+pending protocol (`insertPendingRow`, `nextUnfinishedPending`,
+`markPendingStarted/Finished`, `pendingDrained`, `clearPendingAndQueueRow`,
+`queueRowById`, `deleteQueueRowById`).
 
-**Added (~450 lines):** `IndexStore` (load/save under lock), key builders,
-map/array accessors, the `scope`/`known`/`valid`/`successful` parse/
-serialize pairs, lock-retry helper, the **rule cross-product generator**
-(`known: false` — iterate the three rule tables × 3 platforms, subtract
-`fixtures` and `errors` keys), the **errors-ledger writer** (outcome
-upserts from capture/identity/outcome paths), and the **pop protocol**
-(§4b) replacing `materializeSeedPending`/`popQueueRow`/pending drain.
+**Added (~400 lines):** `IndexStore` (load/save under lock), key builders,
+map/array accessors, the flat-marker + `known`/`valid`/`successful`/`free`
+parse/
+serialize helpers, lock-retry helper, the **rule cross-product generator**
+(`known: false`), the **errors-ledger writer** (purge-on-success upserts
+from the capture/identity/outcome paths), and the **pop protocol** (§4b)
+replacing `materializeSeedPending`/`popQueueRow`.
 
 **Kept:** daemon loop + phases, `runOneComboCapture`/`runOneComboIdentity`
 (minus cycling), post-checks, staleness conjunction (mode-scoped channel
@@ -415,14 +428,13 @@ only.
   provider/model rule appears in ≥1 row (the seeding guard);
   `prompt_launch[0]`/`version_launch[0]` ∈ `binary_names` (host platform);
   free table entries resolve + free-signal consistency; queue entries
-  match their fields' invariants (mode, scope ∈ the closed set,
-  known/valid/successful ∈ null|false|true, pending keys 4-part); error
-  keys are dims tuples or `null-null-null-null` with
-  `{ outcome ∈ closed set, reason, outcome_at }` values.
+  match their fields' invariants (mode, at most one flat marker,
+  known/valid/successful/free ∈ null|false|true); error keys are dims tuples or
+  `null-null-null-null` with `{ reason ∈ closed set, failed_at }` values.
 - Unit-shape tests for the pop protocol: expansion (known rows vs unknown
   cross-product-minus-maps), remaining-task computation against
-  `started_at`/`declared_at`/`captured_at`/`outcome_at`, keep-vs-drain
-  decision, the conflict matrix (§4e).
+  `started_at`/`declared_at`/`captured_at`/`failed_at`, skip/delete/keep
+  decisions, the conflict matrix (§4e), purge-on-success.
 - Released-binary isolation grep/compile check (index.json never
   referenced outside `src/dev/dev.zig`).
 - DESIGN.md — rewrite "SQLite state store" → "index.json state store" (new
@@ -442,15 +454,17 @@ only.
 
 1. kilo.md rule additions (§2).
 2. `IndexStore` + lock/atomic-write layer in dev.zig.
-3. Rewire fixtures/queue/pending/errors accessors onto the store; delete
-   the sqlite layer.
-4. Implement the queue filter axes (`known`/`valid`/`successful`,
-   `started_at`) + the pop protocol (§4b) + the rule cross-product
-   generator + the errors-ledger writer; delete `recipesForFixtures`/
-   `recipeForAgent`/`capture_prompt`; rewire launch/version resolution
-   onto rows; retire `markCaptureOutcome`'s markers.
+3. Rewire fixtures/queue/errors accessors onto the store; delete the sqlite
+   layer + the pending protocol.
+4. Implement the queue filter axes (`known`/`valid`/`successful`/`free`,
+   flat
+   markers, `started_at`/`finished_at`) + the pop protocol (§4b) + the rule
+   cross-product generator + the errors-ledger writer (purge-on-success);
+   delete `recipesForFixtures`/`recipeForAgent`/`capture_prompt`; rewire
+   launch/version resolution onto rows; retire `markCaptureOutcome`.
 5. CLI: `--known`/`--unknown`/`--valid`/`--invalid`/`--successful`/
-   `--unsuccessful` (+ dequeue parity), the conflict matrix, removal of
+   `--unsuccessful`/`--free`/`--paid` (+ dequeue parity), the conflict
+   matrix, removal of
    `--recipes`/`--all`/`--available`/`--unavailable`.
 6. Exit-12 repurpose + usage text updates.
 7. One-off conversion + 531 seeded rows → commit `fixtures/index.json`,
