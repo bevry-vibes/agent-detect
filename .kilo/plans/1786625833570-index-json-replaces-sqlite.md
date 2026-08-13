@@ -149,16 +149,20 @@ AGENTS.md/meta.md) two project tweaks:
     `["kilo.cmd", "--version"]`). Availability probe = spawn `version_launch`,
     exit 0 ⇒ installed; `harnessVersion` = spawn `version_launch` +
     `scanVersionToken`. Absent ⇒ version/availability probes fail closed.
-- **No row-level timestamp.** The age anchor for `--stale-by-minutes` (the
-  only consumer of the old `generated_at`) is
-  `min(identity.declared_at, capture.captured_at)` — the row is age-stale
-  when **either** channel's timestamp is older than the threshold (e.g. an
-  identity declaration from 7 days ago makes the row stale even when the
-  capture is fresh), and a missing channel timestamp counts as stale.
-  Consequence (accepted, decision 6): outcome-only attempts
-  (`markCaptureOutcome` availability/successful stamps) do NOT refresh the
-  age clock, so age sweeps retry failed rows eagerly instead of
-  rate-limiting by attempt time.
+- **No row-level timestamp.** The age check for `--stale-by-minutes` (the
+  only consumer of the old `generated_at`) is **mode-scoped**, exactly like
+  `--stale-by-hash`'s channel selection (DESIGN.md already specs the
+  mode-picks-the-channel pattern for hash): a `from-identity` queue row is
+  age-stale iff `identity.declared_at` is missing or older than the
+  threshold; a `from-capture` row iff `capture.captured_at` is missing or
+  older. No mode flag queues both rows, so the default sweep is the
+  "either date older than N" (OR) behavior — whichever channel is age-stale
+  gets re-queued under its own mode. Specifying both mode flags together
+  still errors (exit 3, existing `parseFilters` conflict); omitting them is
+  how the OR is expressed. Consequence (accepted, decision 6): outcome-only
+  attempts (`markCaptureOutcome` availability/successful stamps) do NOT
+  refresh any channel date, so age sweeps retry failed rows eagerly instead
+  of rate-limiting by attempt time.
 - **The recipes table is gone.** `--recipes` scope = rows whose platform is
   the host; seed expansion = host-platform rows matching the seed's set dims;
   `--missing-fixture-file` = host rows whose `<fixture_id>.json` is absent.
@@ -260,10 +264,12 @@ Only two timestamps exist in the whole store, both inside channel objects:
 Plus `pending.started_at`/`pending.finished_at` (crash-resume protocol, not
 log metadata — kept). Everything else dropped: fixtures top-level
 `updated_at` (ex-`generated_at`), queue `created_at`, invalid `created_at`.
-The `--stale-by-minutes` anchor becomes
-`min(identity.declared_at, capture.captured_at)` — **stale when either
-channel is older than the threshold** (user directive), a missing channel
-timestamp counting as stale. This is
+The `--stale-by-minutes` check becomes **mode-scoped**: the queue row's
+mode picks the channel date (identity row → `identity.declared_at`;
+capture row → `capture.captured_at`; missing → stale). The default
+no-mode-flag queueing of both rows is what yields the user's "stale if
+either date is older than N" behavior — never a min/max of the two dates
+inside one row's check. This is
 not sqlite legacy being dropped blindly — queue order now lives in the array
 order and invalid's timestamp was write-only — but note the accepted
 semantic change for the fixtures anchor in §4a.
@@ -319,8 +325,9 @@ helper.
 
 **Kept:** daemon loop + phases, `runOneComboCapture`/`runOneComboIdentity`
 (minus cycling), post-checks, staleness conjunction (`rowMarkersAllFresh`
-over new shapes, age via `min(declared_at, captured_at)` — stale if either
-is older), `parseFilters`/
+over new shapes, age mode-scoped to the row's channel date — identity row
+checks `identity.declared_at`, capture row checks `capture.captured_at`,
+missing → stale), `parseFilters`/
 `scopeCandidates` enumeration, fixture-file I/O (`mergeWriteFixture`/
 `channelJson`/`generationHash`), `assertNotInAgent`, timeout worker, usage
 texts (wording updates: index.json, exit 12 meaning).
@@ -340,8 +347,10 @@ daemon guard only — probing/launching no longer read it.
 - Released-binary isolation grep/compile check (index.json never referenced
   outside `src/dev/dev.zig`).
 - DESIGN.md — rewrite "SQLite state store" → "index.json state store" (new
-  schema, locking, guarantees, timestamp cuts + the `--stale-by-minutes`
-  anchor change), rewrite decision #3 (sqlite via CLI → JSON store + native
+  schema, locking, guarantees, timestamp cuts + the mode-scoped
+  `--stale-by-minutes` channel-date check — mirroring the hash scope's
+  existing "mode flags pick the channel" wording; both mode flags together
+  stay exit 3), rewrite decision #3 (sqlite via CLI → JSON store + native
   locks), scope section (the `fixtures` workflow loses the sqlite3 CLI
   runtime requirement), exit-12 row. CONTRIBUTING.md — store sections,
   per-platform `prompt_launch`/`version_launch` curation guidance when adding
