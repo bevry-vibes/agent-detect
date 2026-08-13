@@ -121,9 +121,9 @@ Add to the repo-root `kilo.md` three project tweaks:
     "cline-clinepass-kimik3-darwin": {
       "runner": 12345,
       "agent_detect_version": "2026.8.11-1",
-      "identity": { "declared_at": 1750000000 },
-      "capture": { "captured_at": 1750000001, "harness_version": "3.14.2" },
-      "fixture_hash": "4567…",
+      "identity": { "declared_at": 1750000000, "identify_hash": "0123…" },
+      "capture": { "captured_at": 1750000001, "harness_version": "3.14.2", "identify_hash": "4567…" },
+      "fixture_hash": "abc…",
       "prompt_launch": ["cline", "--auto-approve", "--provider=cline-pass", "--model=cline-pass/kimi-k3", "run `agent-detect-dev fixtures capture` in the current working directory and report the result"],
       "version_launch": ["cline", "--version"]
     }
@@ -142,6 +142,7 @@ Add to the repo-root `kilo.md` three project tweaks:
       "stale_by_harness_version": null,
       "stale_by_detect_version": null,
       "stale_by_fixture_hash": null,
+      "stale_by_identify_hash": null,
       "known": null, "valid": null, "successful": null, "free": null,
       "runner": 12345,
       "started_at": null
@@ -158,21 +159,24 @@ Add to the repo-root `kilo.md` three project tweaks:
 - Row payload, self-contained by design:
   - `runner`, `agent_detect_version` — unchanged semantics. **No
     `available`/`successful` markers** — failures live in `errors` (§4c).
-  - `identity` = `{ declared_at }`; `capture` = `{ captured_at,
-    harness_version }` — harness_version
+  - `identity` = `{ declared_at, identify_hash }`; `capture` =
+    `{ captured_at, harness_version, identify_hash }` — harness_version
     nests under capture because only capture stamps it;
     `--stale-by-harness-version`
     reads it there. Absent objects/channels = not yet written.
-  - `fixture_hash` — ONE hash per row, the BLAKE3 of the **most-recently
-    written channel's object**. Which channel it covers is derived, not
-    stored: each write stamps its channel's timestamp and the hash
-    together, so the newest of `declared_at`/`captured_at` always names the
-    channel the hash covers. Absent until a channel is written.
-    `--stale-by-fixture-hash` re-computes the BLAKE3 of the file's latest
-    channel object (latest per the row's timestamps) and compares —
-    mismatch/missing → stale. (Semantic change from the old per-channel
-    hash columns: the check follows the latest channel; the entry's mode
-    picks the work, not the channel.)
+  - `identify_hash` (per channel) — the BLAKE3 of that channel's
+    **identify output object** (the `identify` block the worker wrote into
+    the fixture file), stamped by the channel's writer.
+  - `fixture_hash` — the BLAKE3 of the **whole fixture file**, stamped by
+    every file writer. `--stale-by-fixture-hash` re-hashes the committed
+    file and compares — missing/mismatch → stale (detects any unrecorded
+    file change; hand edits and git merges included).
+  - `--stale-by-identify-hash` (new marker, §4b) — stale iff
+    `identity.identify_hash` and `capture.identify_hash` are **not both
+    present and equal**: divergence (the captured identify no longer
+    matches the declared one) or nulls (channels not yet written) both
+    count stale. The check is cross-channel; the entry's mode picks the
+    work (identity entry re-declares, capture entry re-captures).
   - `prompt_launch`: the launch argv that (re)captures this fixture —
     argv[0] = the concrete binary for this platform (`.cmd`/`.ps1` shims
     written explicitly on Windows rows), args per harness (implied combos
@@ -187,8 +191,7 @@ Add to the repo-root `kilo.md` three project tweaks:
   `identity.declared_at` is missing or older than the threshold; a
   `from-capture` entry iff `capture.captured_at` is missing or older.
   Both mode flags together still exit 3; omitting them queues both modes'
-  entries (the OR behavior). DESIGN.md's hash-scope wording gains the same
-  latest-channel derivation as `--stale-by-fixture-hash` above.
+  entries (the OR behavior).
 - **Seeding a new rule (harness/provider/model):** add the rule tables
   entries, then run `fixtures queue --unknown --from-identity` (optionally
   narrowed by dims) — the daemon generates the new combos from the rules
@@ -217,7 +220,8 @@ Add to the repo-root `kilo.md` three project tweaks:
     store entries whose fixture file is absent, re-queued for
     re-capture), `stale_by_minutes` (minutes int|null),
     `stale_by_harness_version` / `stale_by_detect_version` /
-    `stale_by_fixture_hash` (true|null). Marker sweeps
+    `stale_by_fixture_hash` / `stale_by_identify_hash` (true|null) — the
+    identify-hash marker's divergence check is §4a. Marker sweeps
     require `known: true` (§4e).
   - `known`/`valid`/`successful`/`free` — nullable affirmative booleans
     (§4e).
@@ -348,8 +352,11 @@ The implementing agent converts once with a throwaway script (system
 
 - `fixtures` rows (177) → map entries keyed by their dash-joined fixture_id:
   channel objects from the four generation columns (`identity.declared_at`,
-  `capture.captured_at`/`harness_version`), and `fixture_hash` = the
-  generation hash of whichever channel's `*_generation_at` is newest,
+  `capture.captured_at`/`harness_version`), `identity.identify_hash`/
+  `capture.identify_hash` computed from the committed fixture file's
+  channel identify objects, and `fixture_hash` = the BLAKE3 of the whole
+  committed fixture file (all three computed at conversion time — the
+  files are committed),
   `agent_detect_version`/`runner` verbatim. Markers and `generated_at` are
   not carried; instead an `errors` entry is derived **only for failed
   rows**: `available=0`/`successful=0` → `{ reason: "unavailable" |
@@ -434,7 +441,8 @@ replacing `materializeSeedPending`/`popQueueRow`.
 **Kept:** daemon loop + phases, `runOneComboCapture`/`runOneComboIdentity`
 (minus cycling), post-checks, staleness conjunction (mode-scoped channel
 dates), `parseFilters`, fixture-file I/O (`mergeWriteFixture`/`channelJson`/
-`generationHash` → the single `fixture_hash` stamp), `assertNotInAgent`,
+`generationHash` → the `fixture_hash` + per-channel `identify_hash`
+stamps), `assertNotInAgent`,
 timeout worker, usage texts (updated:
 the three axes, index.json, exit 12).
 
@@ -448,9 +456,9 @@ only.
   tables; every harness rule has ≥1 row per platform and every
   provider/model rule appears in ≥1 row (the seeding guard);
   `prompt_launch[0]`/`version_launch[0]` ∈ `binary_names` (host platform);
-  `fixture_hash` present iff ≥1 channel exists, and equal to the BLAKE3 of
-  the latest channel's file object (latest per `declared_at`/
-  `captured_at`); free table entries resolve + free-signal consistency;
+  `fixture_hash` = the BLAKE3 of the whole fixture file, and each
+  channel's `identify_hash` = the BLAKE3 of its identify object in the
+  file; free table entries resolve + free-signal consistency;
   queue entries
   match their fields' invariants (mode, at most one flat marker,
   known/valid/successful/free ∈ null|false|true); error keys are dims tuples or
@@ -458,7 +466,9 @@ only.
 - Unit-shape tests for the pop protocol: expansion (known rows vs unknown
   cross-product-minus-maps), remaining-task computation against
   `started_at`/`declared_at`/`captured_at`/`failed_at`, skip/delete/keep
-  decisions, the conflict matrix (§4e), purge-on-success.
+  decisions, the conflict matrix (§4e), purge-on-success, and the
+  identify-hash divergence check (both null / one null / unequal → stale;
+  equal → fresh).
 - Released-binary isolation grep/compile check (index.json never
   referenced outside `src/dev/dev.zig`).
 - DESIGN.md — rewrite "SQLite state store" → "index.json state store" (new
