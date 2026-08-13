@@ -77,3 +77,7 @@ fixtures/.index.json.lock
 fixtures/.index.json.tmp
 fixtures/index.sqlite3*
 fixtures/index.sqlite3-*
+
+# ignore codewhale files
+.codewhale/state/subagents.v1.json
+.codewhale/state/subagent-transcripts/1582a76ef2a920d8343028b0135bde1c92a993feb845e6fe28ec7b33479378c4.jsonl
