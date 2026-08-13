@@ -66,24 +66,40 @@ with `zig 0.16.0`.
   `std.Io.Dir.cwd().openDir(io, "fixtures", .{ .iterate = true })` and
   iterate *that*; `cwd().iterate()` will never yield
   `fixtures/*.json` entries.
-- **Shelling out to `sqlite3 -json -batch <db> <sql>`** — every result
-  row returns as a JSON array line (even a scalar `PRAGMA` setter emits
-  `[{"timeout":N}]`, discardable). DML that reads tables must go through
-  `sqliteQuery` (which runs `ensureSchema`); calling `sqliteRun` directly
-  against a freshly-created DB yields "no such table: queue".
+- **Shelling out to `sqlite3 -json -batch <db> <sql>`** — still used by
+  the *released* binary's read-only session-store reads
+  (`core.kiloSqliteJson`, kilo/opencode/copilot session DBs only).
+  Every result row returns as a JSON array line (even a scalar `PRAGMA`
+  setter emits `[{"timeout":N}]`, discardable). The dev fixtures store
+  no longer uses sqlite at all — it is the local `fixtures/index.json`.
+- **`std.Io.File.lock` / `tryLock`** — `file.lock(io, .exclusive)` /
+  `file.tryLock(io, .exclusive)` (returns `bool`; `LockError`).
+  Kernel-managed: the lock releases when the process exits/crashes —
+  no stale-lock heuristics. The dev store locks
+  `fixtures/index.json.lock` (lock the lock file, never the data file),
+  retries `tryLock` every 50ms on a ~5s budget, then mutates the
+  parsed tree and writes atomically (serialize → `index.json.tmp` →
+  `rename` over `index.json` — rename replaces an existing target).
+  Readers take no lock: temp+rename makes visibility atomic.
 
 ## Patterns this repo uses
 
-- `optStringValue(a, opt)` / `sqlOptStr` / `sqlOptInt` — render
-  optional strings/ints as quoted literals or `NULL`.
+- `optStringValue(a, opt)` — render optional strings as a JSON string or
+  `null`.
 - `jstr`/`jint` (core) pull typed fields out of a `std.json.ObjectMap`
   without panicking (return `?[]const u8` / `?i64`); dev's
-  `sjstr`/`sjint` are thin wrappers over them (missing → `""`/`0`).
+  `sjstr`/`sjint` are thin wrappers over them (missing → `""`/`0`),
+  and dev's `jbool` does the same for booleans.
 - `@intFromBool`, `@as(usize, ...)`, `@intCast` — the usual coercions;
   optional fields read as `row.x.?` after a `!= null` guard.
-- sqlite is shelled out to the `sqlite3` binary (`sqliteRun`), and every
-  query passes through `ensureSchema` (idempotent DDL). SELECT output
-  arrives as JSON (`-json`), parsed with `std.json`.
+- The index.json store: `std.json.Value` trees, loaded with
+  `std.json.parseFromSlice` (std.json **preserves object key insertion
+  order** on parse, so re-serializing a parsed object reproduces
+  canonical bytes — this is what makes the BLAKE3 `fixture_hash` /
+  `channel_hash` comparable across writers) and written with
+  `std.json.Stringify.valueAlloc(a, value, .{ .whitespace =
+  .indent_2 })`. Hand-editing `fixtures/index.json` is fine — the
+  tests re-verify the hashes (`zig build test`).
 - Windows process control uses direct `pub extern "kernel32"` declarations
   (`GetProcessId`, `OpenProcess`, `TerminateProcess`, `CloseHandle`) at
   the top of `src/lib/core.zig` — dev aliases them via `core.*`.
@@ -92,7 +108,8 @@ with `zig 0.16.0`.
   `std`/`builtin`) ← `src/lib/core.zig` (ladder + policy) ←
   `src/dev/dev.zig` (the `pub const dev =
   if (build_options.dev) struct {...} else struct {}` gate lives here —
-  compiled out of released builds at the type level) ← `src/main.zig`
+  compiled out of released builds at the type level; it is the ONLY
+  file that may reference `fixtures/index.json`) ← `src/main.zig`
   (thin entry + `main.*` re-exports the test-facing names).
 - `readChildOutput(a, io, child, comptime stderr)` — the one
   child-stdout/stderr drain loop (stderr bounded at 64 KiB); callers
@@ -106,3 +123,15 @@ with `zig 0.16.0`.
 - Tests run in `ReleaseSmall` (see `build.zig`) — a test that only
   passes in Debug modes will bite you; keep asserts structural
   (expect/print), not timing-based.
+- **Never free an arena slice that a returned value aliases.** The
+  arena free-list only recycles the most-recent allocation; freeing a
+  slice that a returned `std.json.Value` (or a `?[]const u8` view into
+  the parsed tree) aliases lets the caller's next allocations reclaim
+  and clobber the bytes mid-use. `readChannelObject` / `indexLoad`
+  callers must not free the parsed buffer while derived values live.
+- **Mutate `std.json` maps through pointers, not copies.** `ObjectMap`
+  stores its internal header pointer by value — `map.get(key)` returns
+  a *copy*. Mutating that copy (e.g. `swapRemove`) updates the copy's
+  pointer field while the stored map still points at the freed header
+  (dangling read on the next `get`). Use `getPtr(key)` for mutations
+  (see `errorsClearPure` in `src/dev/dev.zig`).
