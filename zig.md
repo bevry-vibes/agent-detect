@@ -1,8 +1,8 @@
 # zig.md
 
-Zig 0.16 working notes for this repo (installed via scoop). AGENTS.md
-will reference this file alongside `windows.md`. Everything here is
-verified against the stdlib shipped with `zig 0.16.0`.
+Zig 0.16 working notes for this repo (installed via scoop); AGENTS.md
+points here. Everything here is verified against the stdlib shipped
+with `zig 0.16.0`.
 
 ## Build / test loop
 
@@ -61,6 +61,16 @@ verified against the stdlib shipped with `zig 0.16.0`.
 - **`inline for` cannot contain runtime `continue`.** "comptime control
   flow inside runtime block" — if you need `orelse continue` inside an
   `inline for`, switch to a plain `for`.
+- **`Dir.iterate()` iterates that dir's immediate children only.** To
+  walk a subdirectory you must open it first:
+  `std.Io.Dir.cwd().openDir(io, "fixtures", .{ .iterate = true })` and
+  iterate *that*; `cwd().iterate()` will never yield
+  `fixtures/*.json` entries.
+- **Shelling out to `sqlite3 -json -batch <db> <sql>`** — every result
+  row returns as a JSON array line (even a scalar `PRAGMA` setter emits
+  `[{"timeout":N}]`, discardable). DML that reads tables must go through
+  `sqliteQuery` (which runs `ensureSchema`); calling `sqliteRun` directly
+  against a freshly-created DB yields "no such table: queue".
 
 ## Patterns this repo uses
 

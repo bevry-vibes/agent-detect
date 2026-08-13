@@ -55,38 +55,18 @@ should use modern syntax where appropriate — pipeline chain operators
 definitions, native-command `2>&1` stderr capture — instead of legacy
 forms.
 
-### Set-Content -NoNewline with an array concatenates, it does not join
+The machine-specific gotchas — the `Set-Content` line-ending traps
+(`Set-Content -NoNewline` concatenates arrays; plain `Set-Content`
+rewrites LF files as CRLF, and `* -text` means git won't fix it),
+regex-timeout IndexOf splicing, stale-line-number splices, this host's
+tooling fallbacks, and the sqlite3 verification patterns — live in
+`powershell.md`. Never round-trip a bulk rewrite through `Set-Content`.
 
-`Set-Content -Value <array> -NoNewline` writes every array element
-back-to-back with **no separator** — the file comes back as one giant
-line, not an array of lines. `Set-Content` without `-NoNewline`
-separates array elements with the platform newline (CRLF on Windows),
-and even then it **rewrites the file with the platform newline**,
-silently converting an LF file to CRLF.
+## zig
 
-For any bulk file rewrite (splices, large replacements, line-ending
-normalization), never round-trip through `Set-Content`. Build the final
-content as a single string with explicit `"`n"` joins and write it as
-raw bytes:
-
-```powershell
-$content = ($lines[0..4684] -join "`n") + "`n" + $newblock + "`n" +
-           ($lines[5000..($lines.Count - 1)] -join "`n")
-[System.IO.File]::WriteAllText(
-    (Resolve-Path src/main.zig),
-    $content,
-    [System.Text.UTF8Encoding]::new($false)   # LF, no BOM
-)
-```
-
-`Get-Content -Raw` yields a single string; a plain `.Replace(old, new)`
-on it followed by the byte-level write above is the safe way to do
-targeted edits without disturbing every other line. This project's
-`* -text` git attribute means git will **not** normalize line endings
-for you — a CRLF-converted file shows up as a full-file diff, so always
-verify `git diff --stat` stayed small after any rewrite and confirm the
-file is LF. This gotcha cost a full revert during the strip-raw
-implementation (2026-08-13).
+Build with `zig build` (released), `zig build dev` (maintainer
+`fixtures` binary), and `zig build test`. Zig 0.16 API notes, this
+repo's patterns, and its gotchas live in `zig.md`.
 
 ## harness configuration
 
