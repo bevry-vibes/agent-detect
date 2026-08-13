@@ -104,6 +104,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "run zig tests");
     const test_files = [_][]const u8{
         "src/known_fixtures.test.zig",
+        "src/index_store.test.zig",
         "src/exit_statuses.test.zig",
     };
     inline for (test_files) |file| {

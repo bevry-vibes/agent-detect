@@ -59,7 +59,7 @@ pub const EXIT_UNABLE_TO_DETECT: u8 = 8;
 pub const EXIT_AGENT_DATA_INCOMPLETE: u8 = 9;
 pub const EXIT_REQUIREMENT_FAILED: u8 = 10;
 pub const EXIT_OUT_OF_MEMORY: u8 = 11;
-pub const EXIT_SQLITE_QUERY: u8 = 12;
+pub const EXIT_INDEX_STORE: u8 = 12;
 pub const EXIT_IO: u8 = 13;
 
 // Error-message strings = the exit-status registry names, verbatim.
@@ -76,7 +76,7 @@ pub const MSG_ENV_INCOMPLETE = "incomplete environment preventing run\n";
 pub const MSG_AGENT_DATA_INCOMPLETE = "agent (harness, provider, model) data incomplete to make a determination\n";
 pub const MSG_REQUIREMENT_FAILED = "agent (harness, provider, model) data complete and requirement failed\n";
 pub const MSG_OUT_OF_MEMORY = "out of memory\n";
-pub const MSG_SQLITE_QUERY = "sqlite query error\n";
+pub const MSG_INDEX_STORE = "index store error\n";
 pub const MSG_IO = "filesystem I/O error\n";
 
 /// exit-7 stderr message for recipe mode, reporting which of the three
@@ -1504,9 +1504,9 @@ pub fn readChildOutput(a: std.mem.Allocator, io: std.Io, child: std.process.Chil
 /// aliases into it, and Zig 0.16's arena free-list would reclaim
 /// this most-recent allocation into the parse's own allocations
 /// (use-after-free clobbering the bytes mid-parse).
-/// Deliberate mirror of the dev-only `dev.sqliteRun` — this one takes
-/// a db-path arg and ships in the released binary (Kilo DB reads);
-/// `dev.sqliteRun` is fixed to `fixtures/index.sqlite3` and dev-gated.
+/// The dev fixtures store no longer shells out to sqlite — the
+/// released binary's read-only session-store reads (kilo/opencode/
+/// copilot DBs) are the only sqlite use left.
 fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
     const db_z = try a.dupeZ(u8, db);
     defer a.free(db_z);

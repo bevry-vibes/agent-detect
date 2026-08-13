@@ -43,7 +43,7 @@ const EXIT_UNABLE_TO_DETECT = core.EXIT_UNABLE_TO_DETECT;
 const EXIT_AGENT_DATA_INCOMPLETE = core.EXIT_AGENT_DATA_INCOMPLETE;
 const EXIT_REQUIREMENT_FAILED = core.EXIT_REQUIREMENT_FAILED;
 const EXIT_OUT_OF_MEMORY = core.EXIT_OUT_OF_MEMORY;
-const EXIT_SQLITE_QUERY = core.EXIT_SQLITE_QUERY;
+const EXIT_INDEX_STORE = core.EXIT_INDEX_STORE;
 const EXIT_IO = core.EXIT_IO;
 
 const MSG_UNRECOGNISED_ARG = core.MSG_UNRECOGNISED_ARG;
@@ -56,7 +56,7 @@ const MSG_ENV_INCOMPLETE = core.MSG_ENV_INCOMPLETE;
 const MSG_AGENT_DATA_INCOMPLETE = core.MSG_AGENT_DATA_INCOMPLETE;
 const MSG_REQUIREMENT_FAILED = core.MSG_REQUIREMENT_FAILED;
 const MSG_OUT_OF_MEMORY = core.MSG_OUT_OF_MEMORY;
-const MSG_SQLITE_QUERY = core.MSG_SQLITE_QUERY;
+const MSG_INDEX_STORE = core.MSG_INDEX_STORE;
 const MSG_IO = core.MSG_IO;
 
 // --- re-exports (tests compile through `main.*`)
@@ -138,13 +138,13 @@ pub fn main(init: std.process.Init) u8 {
             // Each writes its registry-name message to stderr (matching
             // the "exact message verbage" scheme) plus its exit code.
             if (dev_build) {
-                if (err == error.SqliteSpawnFailed) {
-                    writeErr(init.io, MSG_ENV_INCOMPLETE);
-                    break :blk EXIT_ENV_INCOMPLETE;
+                if (err == error.IndexStoreError) {
+                    writeErr(init.io, MSG_INDEX_STORE);
+                    break :blk EXIT_INDEX_STORE;
                 }
-                if (err == error.SqliteError) {
-                    writeErr(init.io, MSG_SQLITE_QUERY);
-                    break :blk EXIT_SQLITE_QUERY;
+                if (err == error.IndexStoreLockTimeout) {
+                    writeErr(init.io, MSG_IO);
+                    break :blk EXIT_IO;
                 }
                 if (err == error.FilesystemIoError) {
                     writeErr(init.io, MSG_IO);

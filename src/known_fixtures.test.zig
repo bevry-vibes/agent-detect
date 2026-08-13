@@ -1,5 +1,6 @@
-// Schema/shape tests for the fixtures under `fixtures/`. See DESIGN.md
-// for the fixture lifecycle (daemon + capture + sqlite queue) and
+// Schema/shape tests for the fixtures under `fixtures/` and the
+// committed `fixtures/index.json` state store. See DESIGN.md
+// for the fixture lifecycle (daemon + capture + index.json store) and
 // CONTRIBUTING.md for adding agents to the rule registry.
 //
 // The suite validates committed-file shape only. Regeneration
@@ -7,7 +8,8 @@
 // (still on disk until their queued regeneration lands on their
 // platform's host) fail it — that failure is the regen signal, not a
 // code bug. Channel-scoped tests skip files that lack the channel they
-// inspect.
+// inspect. The index.json tests skip when the store is absent (it is
+// committed by the store-conversion commit).
 
 const std = @import("std");
 const testing = std.testing;
@@ -26,8 +28,11 @@ fn discoverStems(a: std.mem.Allocator) ![][]u8 {
         const suffix = ".json";
         if (name.len <= suffix.len) continue;
         if (std.mem.endsWith(u8, name, suffix)) {
-            // filter to *.json so the sqlite store (`index.sqlite3`) and any non-fixture files are ignored
-            try stems.append(a, try a.dupe(u8, name[0 .. name.len - suffix.len]));
+            // filter to *.json fixture files so the index.json store and
+            // any non-fixture files are ignored
+            const stem = name[0 .. name.len - suffix.len];
+            if (std.mem.eql(u8, stem, "index")) continue;
+            try stems.append(a, try a.dupe(u8, stem));
         }
     }
     return stems.toOwnedSlice(a);
@@ -41,6 +46,21 @@ fn readFixtureParsed(a: std.mem.Allocator, stem: []const u8) !?std.json.Parsed(s
     const data = std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, a, @enumFromInt(1 << 20)) catch return null;
     defer a.free(data);
     return try std.json.parseFromSlice(std.json.Value, a, data, .{});
+}
+
+/// Load the committed `fixtures/index.json` store as a parsed JSON
+/// value, or null when the store is absent (the store tests then skip).
+fn readIndexParsed(a: std.mem.Allocator) !?std.json.Parsed(std.json.Value) {
+    const data = std.Io.Dir.cwd().readFileAlloc(std.testing.io, "fixtures/index.json", a, @enumFromInt(1 << 26)) catch return null;
+    defer a.free(data);
+    return try std.json.parseFromSlice(std.json.Value, a, data, .{});
+}
+
+/// BLAKE3 hex of `bytes` (lowercase), mirroring the store's hashes.
+fn blake3Hex(a: std.mem.Allocator, bytes: []const u8) ![]u8 {
+    var digest: [32]u8 = undefined;
+    std.crypto.hash.Blake3.hash(bytes, &digest, .{});
+    return a.dupe(u8, &std.fmt.bytesToHex(digest, .lower));
 }
 
 /// The 17 canonical `identify` fields, in emission order. No `trailer`
@@ -565,15 +585,39 @@ test "fixtures: envelope combo-match — from-identity.identify ids equal the fi
     }
 }
 
-test "fixtures: every recipe agent_id splits into rule-table harness/provider/model; every harness rule has ≥1 recipe" {
-    // Decision #1/2d — the matrix recipes must only reference known
-    // rules (an unknown dim is a typo that would silently fail the
-    // identity/capture sweep), and every harness in scope must have at
-    // least one recipe so `fixtures queue --recipes` covers the matrix.
-    for (main.dev.recipesForFixtures) |r| {
-        const parts = split3(r.agent_id) orelse {
-            std.debug.print("recipe {s} has a malformed agent_id\n", .{r.agent_id});
-            return error.MalformedRecipeId;
+test "index.json: store_version is 1" {
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    try testing.expect(parsed.value == .object);
+    const sv = parsed.value.object.get("store_version") orelse return error.MissingStoreVersion;
+    try testing.expect(sv == .integer);
+    try testing.expectEqual(@as(i64, 1), sv.integer);
+}
+
+test "index.json: fixture keys split 4-way; dims resolve to rules; every harness has ≥1 row per platform; every provider/model rule appears in ≥1 row" {
+    // The seeding guard: the fixtures map is the known universe, so its
+    // rows must reference known rule dims, and every rule must appear —
+    // harnesses on all three platforms (the `--unknown` seeding workflow
+    // declares one row per platform), providers/models at least once.
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    try testing.expect(parsed.value == .object);
+    const fixtures = parsed.value.object.get("fixtures") orelse return error.MissingFixtures;
+    try testing.expect(fixtures == .object);
+
+    var harness_platforms = std.StringHashMap(u8).init(testing.allocator);
+    defer harness_platforms.deinit();
+    var providers_seen = std.StringHashMap(void).init(testing.allocator);
+    defer providers_seen.deinit();
+    var models_seen = std.StringHashMap(void).init(testing.allocator);
+    defer models_seen.deinit();
+
+    var it = fixtures.object.iterator();
+    while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        const parts = (split4(key)) orelse {
+            std.debug.print("index.json fixture key {s} is not a 4-part <h>-<p>-<m>-<platform> id\n", .{key});
+            return error.MalformedFixtureKey;
         };
         var h_ok = false;
         for (main.rulesForHarnesses) |rr| {
@@ -588,33 +632,354 @@ test "fixtures: every recipe agent_id splits into rule-table harness/provider/mo
             if (slugifyMatches(rr.name, parts[2])) m_ok = true;
         }
         if (!h_ok or !p_ok or !m_ok) {
-            std.debug.print("recipe {s} references an unknown dim (h:{}, p:{}, m:{})\n", .{ r.agent_id, h_ok, p_ok, m_ok });
-            return error.UnknownRecipeDim;
+            std.debug.print("index.json fixture key {s} references an unknown dim (h:{}, p:{}, m:{})\n", .{ key, h_ok, p_ok, m_ok });
+            return error.UnknownFixtureDim;
+        }
+        var plat_ok = false;
+        for ([_][]const u8{ "darwin", "linux", "windows" }) |plat| {
+            if (std.mem.eql(u8, plat, parts[3])) plat_ok = true;
+        }
+        if (!plat_ok) {
+            std.debug.print("index.json fixture key {s} has an unknown platform {s}\n", .{ key, parts[3] });
+            return error.UnknownPlatform;
+        }
+        const gop = try harness_platforms.getOrPut(parts[0]);
+        if (!gop.found_existing) gop.value_ptr.* = 0;
+        gop.value_ptr.* |= if (std.mem.eql(u8, parts[3], "darwin"))
+            @as(u8, 0b001)
+        else if (std.mem.eql(u8, parts[3], "linux"))
+            @as(u8, 0b010)
+        else
+            @as(u8, 0b100);
+        try providers_seen.put(parts[1], {});
+        try models_seen.put(parts[2], {});
+    }
+
+    for (main.rulesForHarnesses) |rr| {
+        const slug = try main.slugId(testing.allocator, rr.name);
+        defer testing.allocator.free(slug);
+        const mask = harness_platforms.get(slug) orelse {
+            std.debug.print("harness rule {s} has no rows in index.json fixtures\n", .{rr.name});
+            return error.HarnessWithoutRows;
+        };
+        // bit0 = darwin, bit1 = linux, bit2 = windows
+        if (mask != 0b111) {
+            std.debug.print("harness rule {s} is missing a platform's rows (mask 0b{b})\n", .{ rr.name, mask });
+            return error.HarnessMissingPlatform;
         }
     }
-    for (main.rulesForHarnesses) |rr| {
+    // Rule-only entries — detection-coverage rules no recipe combo uses
+    // yet (a provider alias/mirror, or a model registered for detection
+    // without a curated launch). The guard still fires for any NEW rule
+    // that lands without rows; these are the pre-existing exemptions.
+    const rule_only_providers = [_][]const u8{ "cline", "google", "moonshot", "qwen3.7-plus" };
+    const rule_only_models = [_][]const u8{
+        "claude-haiku-4", "claude-opus-4", "devstral-2", "gemini-3.1-pro",
+        "glm-4.6",        "gpt-5.5",       "grok-3-mini", "qwen3.5",
+    };
+    for (main.rulesForProviders) |rr| {
+        var exempt = false;
+        for (rule_only_providers) |name| {
+            if (std.mem.eql(u8, rr.name, name)) exempt = true;
+        }
+        if (exempt) continue;
         var found = false;
-        for (main.dev.recipesForFixtures) |r| {
-            const parts = split3(r.agent_id) orelse continue;
-            if (slugifyMatches(rr.name, parts[0])) found = true;
+        var it2 = providers_seen.iterator();
+        while (it2.next()) |kv| {
+            if (slugifyMatches(rr.name, kv.key_ptr.*)) found = true;
         }
         if (!found) {
-            std.debug.print("harness rule {s} has no recipe in recipesForFixtures\n", .{rr.name});
-            return error.HarnessWithoutRecipe;
+            std.debug.print("provider rule {s} appears in no index.json fixture rows\n", .{rr.name});
+            return error.ProviderWithoutRows;
+        }
+    }
+    for (main.rulesForModels) |rr| {
+        var exempt = false;
+        for (rule_only_models) |name| {
+            if (std.mem.eql(u8, rr.name, name)) exempt = true;
+        }
+        if (exempt) continue;
+        var found = false;
+        var it2 = models_seen.iterator();
+        while (it2.next()) |kv| {
+            if (slugifyMatches(rr.name, kv.key_ptr.*)) found = true;
+        }
+        if (!found) {
+            std.debug.print("model rule {s} appears in no index.json fixture rows\n", .{rr.name});
+            return error.ModelWithoutRows;
         }
     }
 }
 
-test "fixtures: every recipe's harness segment resolves to a harness rule" {
-    // The recipes' per-row probeNames were deleted — probe/launch names
-    // now come from the harness rules via `harnessRuleForFixtureId`. A
-    // recipe whose first `agent_id` segment doesn't resolve would be
-    // silently unprobable/unlaunchable.
-    for (main.dev.recipesForFixtures) |r| {
-        if (main.harnessRuleForFixtureId(testing.allocator, r.agent_id) == null) {
-            std.debug.print("recipe {s} harness segment does not resolve to a harness rule\n", .{r.agent_id});
-            return error.UnresolvedHarnessSegment;
+test "index.json: prompt_launch/version_launch argv[0] ∈ the harness rule's binary_names (host platform)" {
+    // The curated argv must name a real binary for the platform the row
+    // targets. Only the rows for the platform this test runs on are
+    // checked — the other platforms' name lists differ at compile time.
+    const host = main.dev.platformId();
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    const fixtures = parsed.value.object.get("fixtures") orelse return;
+    if (fixtures != .object) return;
+    var it = fixtures.object.iterator();
+    while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        const parts = (split4(key)) orelse continue;
+        if (!std.mem.eql(u8, parts[3], host)) continue;
+        if (kv.value_ptr.* != .object) continue;
+        const o = kv.value_ptr.object;
+        const rule = main.harnessRuleForFixtureId(testing.allocator, key) orelse continue;
+        for ([_][]const u8{ "prompt_launch", "version_launch" }) |field| {
+            const arr_v = o.get(field) orelse continue;
+            if (arr_v != .array or arr_v.array.items.len == 0) continue;
+            const argv0 = arr_v.array.items[0];
+            if (argv0 != .string) return error.InvalidLaunchArgv;
+            var found = false;
+            for (rule.binary_names) |name| {
+                if (std.mem.eql(u8, name, argv0.string)) found = true;
+            }
+            if (!found) {
+                std.debug.print("index.json row {s} {s} argv[0] {s} is not in the harness rule's binary_names\n", .{ key, field, argv0.string });
+                return error.UnknownLaunchBinary;
+            }
         }
+    }
+}
+
+test "index.json: fixture_hash equals the BLAKE3 of the whole fixture file" {
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    const fixtures = parsed.value.object.get("fixtures") orelse return;
+    if (fixtures != .object) return;
+    var it = fixtures.object.iterator();
+    while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        if (kv.value_ptr.* != .object) continue;
+        const stored = kv.value_ptr.object.get("fixture_hash") orelse continue;
+        if (stored != .string) continue;
+        const path = try std.fmt.allocPrint(testing.allocator, "fixtures/{s}.json", .{key});
+        defer testing.allocator.free(path);
+        const file_bytes = std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, testing.allocator, @enumFromInt(1 << 24)) catch continue;
+        defer testing.allocator.free(file_bytes);
+        const cur = try blake3Hex(testing.allocator, file_bytes);
+        defer testing.allocator.free(cur);
+        if (!std.mem.eql(u8, stored.string, cur)) {
+            std.debug.print("index.json row {s} fixture_hash does not match the committed file\n", .{key});
+            return error.FixtureHashMismatch;
+        }
+    }
+}
+
+test "index.json: channel_hash equals the BLAKE3 of the whole channel object in the file" {
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    const fixtures = parsed.value.object.get("fixtures") orelse return;
+    if (fixtures != .object) return;
+    var it = fixtures.object.iterator();
+    while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        if (kv.value_ptr.* != .object) continue;
+        const o = kv.value_ptr.object;
+        for ([_][]const u8{ "identity", "capture" }) |ledger| {
+            const ledger_v = o.get(ledger) orelse continue;
+            if (ledger_v != .object) continue;
+            const stored = ledger_v.object.get("channel_hash") orelse continue;
+            if (stored != .string) continue;
+            const channel = if (std.mem.eql(u8, ledger, "identity")) "from-identity" else "from-capture";
+            const path = try std.fmt.allocPrint(testing.allocator, "fixtures/{s}.json", .{key});
+            defer testing.allocator.free(path);
+            const file_bytes = std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, testing.allocator, @enumFromInt(1 << 24)) catch continue;
+            const file_parsed = std.json.parseFromSlice(std.json.Value, testing.allocator, file_bytes, .{}) catch continue;
+            defer file_parsed.deinit();
+            if (file_parsed.value != .object) continue;
+            const ch = file_parsed.value.object.get(channel) orelse continue;
+            if (ch != .object) continue;
+            const ch_bytes = try std.json.Stringify.valueAlloc(testing.allocator, ch, .{ .whitespace = .indent_2 });
+            defer testing.allocator.free(ch_bytes);
+            const cur = try blake3Hex(testing.allocator, ch_bytes);
+            defer testing.allocator.free(cur);
+            if (!std.mem.eql(u8, stored.string, cur)) {
+                std.debug.print("index.json row {s} {s}.channel_hash does not match the file's channel object\n", .{ key, ledger });
+                return error.ChannelHashMismatch;
+            }
+        }
+    }
+}
+
+/// is `(provider, model)` (strict slugs) listed in the free table?
+fn isListed(free_map: std.json.ObjectMap, provider: []const u8, model: []const u8) bool {
+    const arr = free_map.get(provider) orelse return false;
+    if (arr != .array) return false;
+    for (arr.array.items) |item| {
+        if (item == .string and std.mem.eql(u8, item.string, model)) return true;
+    }
+    return false;
+}
+
+test "index.json: free_provider_to_model entries resolve to known rules; listed rows carry a free-signal in their launch model spec" {
+    // The free table maps provider slugs → model slugs. Every entry must
+    // resolve to a known provider+model rule, and every row whose
+    // (provider, model) is listed must carry a free signal (`:free`,
+    // `-free`, `free/`) in its prompt_launch model spec — rows whose
+    // launch implies the model via harness config (no model-spec arg at
+    // all) are exempt.
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    const free = parsed.value.object.get("free_provider_to_model") orelse return;
+    if (free != .object) return;
+
+    var fit = free.object.iterator();
+    while (fit.next()) |kv| {
+        const provider = kv.key_ptr.*;
+        var p_ok = false;
+        for (main.rulesForProviders) |rr| {
+            if (slugifyMatches(rr.name, provider)) p_ok = true;
+        }
+        if (!p_ok) {
+            std.debug.print("free_provider_to_model provider {s} resolves to no rule\n", .{provider});
+            return error.UnknownFreeProvider;
+        }
+        if (kv.value_ptr.* != .array) return error.InvalidFreeTable;
+        for (kv.value_ptr.array.items) |item| {
+            if (item != .string) return error.InvalidFreeTable;
+            var m_ok = false;
+            for (main.rulesForModels) |rr| {
+                if (slugifyMatches(rr.name, item.string)) m_ok = true;
+            }
+            if (!m_ok) {
+                std.debug.print("free_provider_to_model model {s}/{s} resolves to no rule\n", .{ provider, item.string });
+                return error.UnknownFreeModel;
+            }
+        }
+    }
+
+    const fixtures = parsed.value.object.get("fixtures") orelse return;
+    if (fixtures != .object) return;
+    var it = fixtures.object.iterator();
+    while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        const parts = (split4(key)) orelse continue;
+        if (kv.value_ptr.* != .object) continue;
+        const o = kv.value_ptr.object;
+        if (!isListed(free.object, parts[1], parts[2])) continue;
+        const launch_v = o.get("prompt_launch") orelse continue;
+        if (launch_v != .array) continue;
+        var has_model_spec = false;
+        var has_free_signal = false;
+        for (launch_v.array.items) |arg| {
+            if (arg != .string) continue;
+            if (std.mem.startsWith(u8, arg.string, "--model") or
+                std.mem.indexOfScalar(u8, arg.string, '/') != null or
+                std.mem.indexOfScalar(u8, arg.string, ':') != null)
+            {
+                has_model_spec = true;
+            }
+            if (std.mem.indexOf(u8, arg.string, ":free") != null or
+                std.mem.indexOf(u8, arg.string, "-free") != null or
+                std.mem.indexOf(u8, arg.string, "free/") != null)
+            {
+                has_free_signal = true;
+            }
+        }
+        if (has_model_spec and !has_free_signal) {
+            std.debug.print("index.json row {s} is free-listed but its prompt_launch carries no free signal\n", .{key});
+            return error.MissingFreeSignal;
+        }
+    }
+}
+
+test "index.json: queue entries match their field invariants" {
+    // mode ∈ {from-identity, from-capture}; at most one flat marker;
+    // markers true|null; stale_by_minutes ≥ 1 when set; the axes are
+    // nullable booleans (null | false | true).
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    const queue = parsed.value.object.get("queue") orelse return;
+    if (queue != .array) return error.InvalidQueue;
+    for (queue.array.items) |item| {
+        if (item != .object) return error.InvalidQueueEntry;
+        const o = item.object;
+        const mode = o.get("mode") orelse return error.InvalidQueueEntry;
+        if (mode != .string or
+            (!std.mem.eql(u8, mode.string, "from-identity") and !std.mem.eql(u8, mode.string, "from-capture")))
+        {
+            return error.InvalidQueueMode;
+        }
+        const markers = [_][]const u8{
+            "stale_by_missing_entry",   "stale_by_missing_fixture",
+            "stale_by_harness_version", "stale_by_detect_version",
+            "stale_by_fixture_hash",    "stale_by_channel_hash",
+        };
+        var marker_count: usize = 0;
+        for (markers) |m| {
+            const v = o.get(m) orelse continue;
+            if (v == .bool) {
+                if (!v.bool) return error.InvalidQueueMarker;
+                marker_count += 1;
+            } else if (v == .null) {
+                // unset — fine
+            } else return error.InvalidQueueMarker;
+        }
+        const mins = o.get("stale_by_minutes") orelse return error.InvalidQueueEntry;
+        if (mins == .integer) {
+            if (mins.integer < 1) return error.InvalidQueueMarker;
+            marker_count += 1;
+        } else if (mins != .null) return error.InvalidQueueMarker;
+        if (marker_count > 1) return error.TooManyMarkers;
+        for ([_][]const u8{ "known", "valid", "successful", "free" }) |axis| {
+            const v = o.get(axis) orelse continue;
+            if (v != .bool and v != .null) return error.InvalidQueueAxis;
+        }
+    }
+}
+
+test "index.json: errors keys are dims tuples; values are {reason ∈ closed set, failed_at}" {
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    const errors = parsed.value.object.get("errors") orelse return;
+    if (errors != .object) return error.InvalidErrors;
+    const closed_reasons = [_][]const u8{
+        "capture failed",   "unavailable",         "post-check mismatch",
+        "no launch spec",   "unknown fixture file", "malformed fixture id",
+        "malformed queue row",
+    };
+    var it = errors.object.iterator();
+    while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        var kit = std.mem.tokenizeScalar(u8, key, '-');
+        var parts: usize = 0;
+        while (kit.next()) |part| {
+            if (part.len == 0) return error.InvalidErrorKey;
+            if (!std.mem.eql(u8, part, "null")) {
+                for (part) |c| {
+                    if (!std.ascii.isAlphanumeric(c)) return error.InvalidErrorKey;
+                }
+            }
+            parts += 1;
+        }
+        if (parts != 4) {
+            std.debug.print("errors key {s} is not a 4-part dims tuple\n", .{key});
+            return error.InvalidErrorKey;
+        }
+        if (kv.value_ptr.* != .object) return error.InvalidErrorEntry;
+        const o = kv.value_ptr.object;
+        const reason = o.get("reason") orelse return error.InvalidErrorEntry;
+        if (reason != .string) return error.InvalidErrorEntry;
+        var known = false;
+        for (closed_reasons) |r| {
+            if (std.mem.eql(u8, r, reason.string)) known = true;
+        }
+        if (!known) {
+            std.debug.print("errors entry {s} has an unknown reason {s}\n", .{ key, reason.string });
+            return error.UnknownErrorReason;
+        }
+        const failed_at = o.get("failed_at") orelse return error.InvalidErrorEntry;
+        if (failed_at != .integer) return error.InvalidErrorEntry;
     }
 }
 
