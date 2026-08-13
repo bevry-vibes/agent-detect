@@ -121,8 +121,8 @@ Add to the repo-root `kilo.md` three project tweaks:
     "cline-clinepass-kimik3-darwin": {
       "runner": 12345,
       "agent_detect_version": "2026.8.11-1",
-      "identity": { "declared_at": 1750000000, "identify_hash": "0123…" },
-      "capture": { "captured_at": 1750000001, "harness_version": "3.14.2", "identify_hash": "4567…" },
+      "identity": { "declared_at": 1750000000, "channel_hash": "0123…" },
+      "capture": { "captured_at": 1750000001, "harness_version": "3.14.2", "channel_hash": "4567…" },
       "fixture_hash": "abc…",
       "prompt_launch": ["cline", "--auto-approve", "--provider=cline-pass", "--model=cline-pass/kimi-k3", "run `agent-detect-dev fixtures capture` in the current working directory and report the result"],
       "version_launch": ["cline", "--version"]
@@ -142,7 +142,7 @@ Add to the repo-root `kilo.md` three project tweaks:
       "stale_by_harness_version": null,
       "stale_by_detect_version": null,
       "stale_by_fixture_hash": null,
-      "stale_by_identify_hash": null,
+      "stale_by_channel_hash": null,
       "known": null, "valid": null, "successful": null, "free": null,
       "runner": 12345,
       "started_at": null
@@ -150,6 +150,81 @@ Add to the repo-root `kilo.md` three project tweaks:
   ]
 }
 ```
+
+The fixture **files** keep today's envelope contract (unchanged by this
+plan — fixture-file I/O is kept): top-level channels `from-identity` /
+`from-capture` / `from-capture-raw`. The index.json hashes derive from
+them: `fixture_hash` = BLAKE3 of the whole file,
+`identity.channel_hash` = BLAKE3 of the **whole** `from-identity` channel
+object (identify + trailers), `capture.channel_hash` = BLAKE3 of the
+**whole** `from-capture` channel object.
+
+Proposed/result fixture file, `fixtures/cline-clinepass-kimik3-darwin.json`
+(corresponding to the fixtures-table row above):
+
+```json
+{
+  "from-identity": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": "Cline",
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "MIT",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Kimi K3",
+      "model_short_title": "Kimi",
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "cline-clinepass-kimik3",
+      "reciprocal": false
+    },
+    "trailer co-author": "Cline · Kimi K3 <cline-clinepass-kimik3@local>",
+    "trailer assisted-by": "Cline · Kimi K3 <cline-clinepass-kimik3@local>"
+  },
+  "from-capture": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": "Cline",
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "MIT",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Kimi K3",
+      "model_short_title": "Kimi",
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "cline-clinepass-kimik3",
+      "reciprocal": false
+    },
+    "trailer co-author": "Cline · Kimi K3 <cline-clinepass-kimik3@local>",
+    "trailer assisted-by": "Cline · Kimi K3 <cline-clinepass-kimik3@local>"
+  },
+  "from-capture-raw": {
+    "platform_id": "darwin",
+    "detectable": ["harness", "provider", "model"],
+    "detected": ["harness", "provider", "model"],
+    "process_lineage": [],
+    "env_vars": [],
+    "session_files": []
+  }
+}
+```
+
+The `from-identity` and `from-capture` `identify` objects are the
+declared and captured identify outputs; `from-capture-raw` is shapeless
+source evidence (the `channel_hash` fields above cover the **whole**
+`from-identity`/`from-capture` channel objects — identify + trailers).
 
 ### 4a. fixtures table — the known universe + the state
 
@@ -159,21 +234,21 @@ Add to the repo-root `kilo.md` three project tweaks:
 - Row payload, self-contained by design:
   - `runner`, `agent_detect_version` — unchanged semantics. **No
     `available`/`successful` markers** — failures live in `errors` (§4c).
-  - `identity` = `{ declared_at, identify_hash }`; `capture` =
-    `{ captured_at, harness_version, identify_hash }` — harness_version
+  - `identity` = `{ declared_at, channel_hash }`; `capture` =
+    `{ captured_at, harness_version, channel_hash }` — harness_version
     nests under capture because only capture stamps it;
     `--stale-by-harness-version`
     reads it there. Absent objects/channels = not yet written.
-  - `identify_hash` (per channel) — the BLAKE3 of that channel's
-    **identify output object** (the `identify` block the worker wrote into
-    the fixture file), stamped by the channel's writer.
+  - `channel_hash` (per channel) — the BLAKE3 of that channel's
+    **whole channel object** (identify + trailers, as written into the
+    fixture file), stamped by the channel's writer.
   - `fixture_hash` — the BLAKE3 of the **whole fixture file**, stamped by
     every file writer. `--stale-by-fixture-hash` re-hashes the committed
     file and compares — missing/mismatch → stale (detects any unrecorded
     file change; hand edits and git merges included).
-  - `--stale-by-identify-hash` (new marker, §4b) — stale iff
-    `identity.identify_hash` and `capture.identify_hash` are **not both
-    present and equal**: divergence (the captured identify no longer
+  - `--stale-by-channel-hash` (new marker, §4b) — stale iff
+    `identity.channel_hash` and `capture.channel_hash` are **not both
+    present and equal**: divergence (the capture channel no longer
     matches the declared one) or nulls (channels not yet written) both
     count stale. The check is cross-channel; the entry's mode picks the
     work (identity entry re-declares, capture entry re-captures).
@@ -220,8 +295,8 @@ Add to the repo-root `kilo.md` three project tweaks:
     store entries whose fixture file is absent, re-queued for
     re-capture), `stale_by_minutes` (minutes int|null),
     `stale_by_harness_version` / `stale_by_detect_version` /
-    `stale_by_fixture_hash` / `stale_by_identify_hash` (true|null) — the
-    identify-hash marker's divergence check is §4a. Marker sweeps
+    `stale_by_fixture_hash` / `stale_by_channel_hash` (true|null) — the
+    channel-hash marker's divergence check is §4a. Marker sweeps
     require `known: true` (§4e).
   - `known`/`valid`/`successful`/`free` — nullable affirmative booleans
     (§4e).
@@ -352,9 +427,9 @@ The implementing agent converts once with a throwaway script (system
 
 - `fixtures` rows (177) → map entries keyed by their dash-joined fixture_id:
   channel objects from the four generation columns (`identity.declared_at`,
-  `capture.captured_at`/`harness_version`), `identity.identify_hash`/
-  `capture.identify_hash` computed from the committed fixture file's
-  channel identify objects, and `fixture_hash` = the BLAKE3 of the whole
+  `capture.captured_at`/`harness_version`), `identity.channel_hash`/
+  `capture.channel_hash` computed from the committed fixture file's whole
+  channel objects, and `fixture_hash` = the BLAKE3 of the whole
   committed fixture file (all three computed at conversion time — the
   files are committed),
   `agent_detect_version`/`runner` verbatim. Markers and `generated_at` are
@@ -441,7 +516,7 @@ replacing `materializeSeedPending`/`popQueueRow`.
 **Kept:** daemon loop + phases, `runOneComboCapture`/`runOneComboIdentity`
 (minus cycling), post-checks, staleness conjunction (mode-scoped channel
 dates), `parseFilters`, fixture-file I/O (`mergeWriteFixture`/`channelJson`/
-`generationHash` → the `fixture_hash` + per-channel `identify_hash`
+`generationHash` → the `fixture_hash` + per-channel `channel_hash`
 stamps), `assertNotInAgent`,
 timeout worker, usage texts (updated:
 the three axes, index.json, exit 12).
@@ -457,7 +532,7 @@ only.
   provider/model rule appears in ≥1 row (the seeding guard);
   `prompt_launch[0]`/`version_launch[0]` ∈ `binary_names` (host platform);
   `fixture_hash` = the BLAKE3 of the whole fixture file, and each
-  channel's `identify_hash` = the BLAKE3 of its identify object in the
+  channel's `channel_hash` = the BLAKE3 of its whole channel object in the
   file; free table entries resolve + free-signal consistency;
   queue entries
   match their fields' invariants (mode, at most one flat marker,
@@ -467,7 +542,7 @@ only.
   cross-product-minus-maps), remaining-task computation against
   `started_at`/`declared_at`/`captured_at`/`failed_at`, skip/delete/keep
   decisions, the conflict matrix (§4e), purge-on-success, and the
-  identify-hash divergence check (both null / one null / unequal → stale;
+  channel-hash divergence check (both null / one null / unequal → stale;
   equal → fresh).
 - Released-binary isolation grep/compile check (index.json never
   referenced outside `src/dev/dev.zig`).

@@ -363,3 +363,15 @@ Question: "Where do failed attempts land their completion timestamp (plan §7b)?
 ## 39 — 23:46 — user
 
 > Wait... We need to be clear what hash is, and we weren't so that caused confusion. fixture_hash is for the fixture file, if we are doing per-channel hashes, so one for the output has identify and what for the output of identify from capture, then that should be `identify_hash` inside `identity`, and `capture` objects. And then we can add filters for `--stale-by-identify-hash` which checks them for divergence between each other (the identity.identify_hash and capture.identify_hash or both null).
+
+## 40 — 23:49 — user
+
+> Finally, for verbosity and clarity, andd an example of the proposed/result schema of `cline-clinepass-kimik3-darwin.json` fixture file to the schema exampe section
+
+## 41 — 23:51 — user
+
+> Okay, so `stale-by-identify-hash` won't cut it, we would need `stale-by-detect-hash`, as it should be hashing the full `from-identity` and `from-capture` objects
+
+## 42 — 23:52 — user
+
+> Or call it `stale-by-channel-hash` if that makes more sense
