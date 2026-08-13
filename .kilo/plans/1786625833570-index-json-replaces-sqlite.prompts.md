@@ -262,3 +262,7 @@ Question: "Why the timestamps exist and which survive (plan §7) — fixtures' i
 ## 23 — 22:38 — user
 
 > Note that that --stale-by-minutes as either only applies when neither --from-identy and --from-capture are specified; so when --from-identity is specified it only checks for whether the identity date is stale/missing; and when --from-capture is specified, it only checks if the capture date is stale/missing; and when --from-identity and --from-capture are specified (the default) it still errors as arguments are AND and they should be oimtted for the OR functioanlity - this should alreayd be spec'd in DESIGN.md
+
+## 24 — 22:40 — user
+
+> Plan file is still missing the assisted-by line in its instroduction. This should be a kilo.md spec
