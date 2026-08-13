@@ -212,6 +212,7 @@ Proposed/result fixture file, `fixtures/cline-clinepass-kimik3-darwin.json`
   },
   "from-capture-raw": {
     "platform_id": "darwin",
+    "harness_version": "3.14.2",
     "detectable": ["harness", "provider", "model"],
     "detected": ["harness", "provider", "model"],
     "process_lineage": [],
@@ -223,8 +224,11 @@ Proposed/result fixture file, `fixtures/cline-clinepass-kimik3-darwin.json`
 
 The `from-identity` and `from-capture` `identify` objects are the
 declared and captured identify outputs; `from-capture-raw` is shapeless
-source evidence (the `channel_hash` fields above cover the **whole**
-`from-identity`/`from-capture` channel objects — identify + trailers).
+source evidence but carries `harness_version` immediately after
+`platform_id` — the live version snapshot, **null when the agent's
+version is not yet knowable** (the `channel_hash` fields above cover the
+**whole** `from-identity`/`from-capture` channel objects — identify +
+trailers).
 
 ### 4a. fixtures table — the known universe + the state
 

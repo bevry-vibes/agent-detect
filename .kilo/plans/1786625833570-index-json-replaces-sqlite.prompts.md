@@ -375,3 +375,7 @@ Question: "Where do failed attempts land their completion timestamp (plan §7b)?
 ## 42 — 23:52 — user
 
 > Or call it `stale-by-channel-hash` if that makes more sense
+
+## 43 — 23:54 — user
+
+> "from-capture-raw" should include the harness_version right after platform_id - it should be null if we odn't yet know how to figure it out for that agent
