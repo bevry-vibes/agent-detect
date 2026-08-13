@@ -135,7 +135,7 @@ Add to the repo-root `kilo.md` three project tweaks:
     {
       "harness": null, "provider": null, "model": null, "platform": null,
       "mode": "from-identity",
-      "missing_fixture_file": null,
+      "stale_by_fixture": null,
       "stale_by_minutes": 7,
       "stale_by_version": null,
       "stale_by_detect": null,
@@ -197,7 +197,7 @@ Add to the repo-root `kilo.md` three project tweaks:
   - `mode` — `from-identity` | `from-capture` (one entry per mode;
     omitting both mode flags queues two entries).
   - **flat marker fields** (at most one set — enforced by the existing
-    `validateQueueRow`, no parent object): `missing_fixture_file` (true|
+    `validateQueueRow`, no parent object): `stale_by_fixture` (true|
     null), `stale_by_minutes` (minutes int|null), `stale_by_version` /
     `stale_by_detect` / `stale_by_hash` (true|null). Marker sweeps require
     `known: true` (§4e).
@@ -304,7 +304,7 @@ successful=unset (no filter), free=unset (no filter)**.
     `--unknown --free` is allowed.
 - XOR/conflicts (exit 3): `--known`+`--unknown`, `--valid`+`--invalid`,
   `--successful`+`--unsuccessful`, `--free`+`--paid`, `--unknown` + any
-  marker (`--stale-by-*`, `--missing-fixture-file`) or a non-default
+  marker (`--stale-by-*`, `--stale-by-fixture`) or a non-default
   `successful` axis (generated combos have no markers/outcomes to filter
   on).
 - CLI surface: `--known`/`--unknown`, `--valid`/`--invalid`,
@@ -441,7 +441,8 @@ only.
   schema, locking, guarantees, the pop protocol, the timestamp ledger, the
   errors table, the filter axes), rewrite decision #3, scope section
   (sqlite3 CLI requirement disappears; `--recipes`/`--all`/
-  `--available`/`--unavailable` die), exit-12 row. CONTRIBUTING.md — store
+  `--available`/`--unavailable` die; `--missing-fixture-file` is renamed
+  `--stale-by-fixture`), exit-12 row. CONTRIBUTING.md — store
   sections, per-platform `prompt_launch`/`version_launch` curation, the
   new-rule `--unknown` seeding workflow, the one-off conversion note.
   `.gitignore` — drop sqlite journal lines; ignore

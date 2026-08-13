@@ -323,3 +323,7 @@ Question: "Where do failed attempts land their completion timestamp (plan §7b)?
 ## 32 — 23:25 — user
 
 > The queue json is missing the `free` filter, the reason we created `free_provider_to_model`
+
+## 33 — 23:28 — user
+
+> rename missing_fixture_file as stale_by_fixture, same purpose, different name
