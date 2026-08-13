@@ -68,9 +68,12 @@ fixtures/daemon.log
 # by the daemon after acting — never committed)
 fixtures/daemon.ctl
 
-# SQLite fixtures/queue DB — COMMITTED (the cross-host work queue + state;
-# see DESIGN.md "SQLite state store"). Journals and the daemon's
-# telemetry/control files are never committed.
-fixtures/index.sqlite3-journal
-fixtures/index.sqlite3-wal
-fixtures/index.sqlite3-shm
+# index.json store runtime files — the lock file and the atomic-write
+# temp file are never committed; `fixtures/index.json` itself IS
+# committed (the cross-host fixtures map + errors ledger + work queue;
+# see DESIGN.md "index.json state store"). The old sqlite store and its
+# journals are ignored for hygiene (long removed).
+fixtures/index.json.lock
+fixtures/index.json.tmp
+fixtures/index.sqlite3*
+fixtures/index.sqlite3-*
