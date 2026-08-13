@@ -19,7 +19,7 @@ real CLI — the old root `trailer`/`cooked`/`origin` keys are gone).
 with `-<platform>` (e.g. `cline-clinepass-kimik3-darwin`). The binary
 is the only thing that writes fixtures — agents never hand-author them.
 
-`fixtures/index.json` is the committed state store — its four tables
+`fixtures/.index.json` is the committed state store — its four tables
 (`fixtures` the known universe, `errors` the failure ledger, `queue`
 the filter-entry array, `free_provider_to_model` the free axis) and
 the row shapes are specified in DESIGN.md "index.json state store".
@@ -193,9 +193,9 @@ the entry simply stays queued there until a darwin daemon finishes it:
 
 ### committed-store hygiene
 
-`fixtures/index.json` is **committed** with each landing (it is the
+`fixtures/.index.json` is **committed** with each landing (it is the
 cross-host fixtures map + errors ledger + work queue). Never commit
-`index.json.lock` / `index.json.tmp` or the daemon files
+`.index.json.lock` / `.index.json.tmp` or the daemon files
 (`daemon.log`, `daemon.ctl`) — they are gitignored. The store dirties
 on every mutation; commit when work lands. The dev agent reads the
 `errors` ledger and the channel ledgers to review regeneration
@@ -208,7 +208,7 @@ ladder. The matrix **policy** — harness scope, model/provider policy,
 the paid default, the global-settings rule, evidence attribution —
 lives in DESIGN.md "test matrix"; the install table below is the
 what-to-do side. The matrix itself is the `fixtures` map of
-`fixtures/index.json` — one row per `agent_id`-per-platform, carrying
+`fixtures/.index.json` — one row per `agent_id`-per-platform, carrying
 the curated `prompt_launch`/`version_launch` argv — expanded by the
 daemon from queue entries and captured per platform.
 
@@ -257,9 +257,9 @@ store rows → captures on their platform):
 
 A bulk/maintenance model addition (a sweep, expanding a harness across a
 batch of providers, or a free-catalog import) adds a model only when it
-clears the evergreen top-100 rank set — the policy is DESIGN.md decision
+clears the evergreen model set (top 25 open / top 25 closed / top 50 overall, deduplicated) — the policy is DESIGN.md decision
 #13 and the tracked coalesced set is
-`fixtures/evergreen-top100-models.txt`. This does not apply
+`fixtures/.evergreen-models.txt`. This does not apply
 retroactively to models already in the matrix, and it does not apply to
 an individual addition a user explicitly needs. Free-vs-paid only
 decides whether a free launch/capture is attached — query the
@@ -276,7 +276,7 @@ conventions" section below).
 ### monitoring + control runbook
 
 Run the daemon with `fixtures daemon --write-log` (log:
-`fixtures/daemon.log`) and poll that log at ~1s — the daemon writes a
+`fixtures/.daemon.log`) and poll that log at ~1s — the daemon writes a
 status heartbeat every ~1s, faster than the iteration delays.
 Pacing: `from-identity` jobs process at ~5s intervals
 (`--poll-seconds=N`); each `from-capture` is announced ~15s ahead
@@ -284,9 +284,9 @@ Pacing: `from-identity` jobs process at ~5s intervals
 review pause. Control is the same on macOS/Linux/Windows:
 
 ```sh
-printf 'pause\n'  > fixtures/daemon.ctl   # pause: finish in-flight, then no new pops
-printf 'resume\n' > fixtures/daemon.ctl   # resume
-printf 'stop\n'   > fixtures/daemon.ctl   # stop after the in-flight job
+printf 'pause\n'  > fixtures/.daemon.ctl   # pause: finish in-flight, then no new pops
+printf 'resume\n' > fixtures/.daemon.ctl   # resume
+printf 'stop\n'   > fixtures/.daemon.ctl   # stop after the in-flight job
 ```
 
 The daemon checks the file every ~1s and clears it after acting; Ctrl+C
@@ -412,7 +412,7 @@ After adding the rule:
    argv that runs `fixtures capture` inside a live session — argv[0] is
    the concrete per-platform binary, the last element is the capture
    prompt) and `version_launch` (`[<binary>, "--version"]`) on each
-   platform's row in `fixtures/index.json`, then
+   platform's row in `fixtures/.index.json`, then
    `fixtures queue --from-capture --harness=<harness_id>` and run the
    daemon again (token-consuming, user-confirmed).
 4. Commit the new rules, the declared fixtures, and the store.

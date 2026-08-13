@@ -63,17 +63,17 @@ zig-pkg/
 
 # dev daemon telemetry (written by `fixtures daemon --write-log`; already
 # covered by **/*.log above, listed explicitly for discoverability)
-fixtures/daemon.log
+fixtures/.daemon.log
 # dev daemon control file (pause/resume/stop; written by the user, cleared
 # by the daemon after acting — never committed)
-fixtures/daemon.ctl
+fixtures/.daemon.ctl
 
 # index.json store runtime files — the lock file and the atomic-write
-# temp file are never committed; `fixtures/index.json` itself IS
+# temp file are never committed; `fixtures/.index.json` itself IS
 # committed (the cross-host fixtures map + errors ledger + work queue;
 # see DESIGN.md "index.json state store"). The old sqlite store and its
 # journals are ignored for hygiene (long removed).
-fixtures/index.json.lock
-fixtures/index.json.tmp
+fixtures/.index.json.lock
+fixtures/.index.json.tmp
 fixtures/index.sqlite3*
 fixtures/index.sqlite3-*

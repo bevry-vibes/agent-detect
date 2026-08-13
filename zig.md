@@ -71,15 +71,15 @@ with `zig 0.16.0`.
   (`core.kiloSqliteJson`, kilo/opencode/copilot session DBs only).
   Every result row returns as a JSON array line (even a scalar `PRAGMA`
   setter emits `[{"timeout":N}]`, discardable). The dev fixtures store
-  no longer uses sqlite at all — it is the local `fixtures/index.json`.
+  no longer uses sqlite at all — it is the local `fixtures/.index.json`.
 - **`std.Io.File.lock` / `tryLock`** — `file.lock(io, .exclusive)` /
   `file.tryLock(io, .exclusive)` (returns `bool`; `LockError`).
   Kernel-managed: the lock releases when the process exits/crashes —
   no stale-lock heuristics. The dev store locks
-  `fixtures/index.json.lock` (lock the lock file, never the data file),
+  `fixtures/.index.json.lock` (lock the lock file, never the data file),
   retries `tryLock` every 50ms on a ~5s budget, then mutates the
-  parsed tree and writes atomically (serialize → `index.json.tmp` →
-  `rename` over `index.json` — rename replaces an existing target).
+  parsed tree and writes atomically (serialize → `.index.json.tmp` →
+  `rename` over `.index.json` — rename replaces an existing target).
   Readers take no lock: temp+rename makes visibility atomic.
 
 ## Patterns this repo uses
@@ -98,7 +98,7 @@ with `zig 0.16.0`.
   canonical bytes — this is what makes the BLAKE3 `fixture_hash` /
   `channel_hash` comparable across writers) and written with
   `std.json.Stringify.valueAlloc(a, value, .{ .whitespace =
-  .indent_2 })`. Hand-editing `fixtures/index.json` is fine — the
+  .indent_2 })`. Hand-editing `fixtures/.index.json` is fine — the
   tests re-verify the hashes (`zig build test`).
 - Windows process control uses direct `pub extern "kernel32"` declarations
   (`GetProcessId`, `OpenProcess`, `TerminateProcess`, `CloseHandle`) at
@@ -109,7 +109,7 @@ with `zig 0.16.0`.
   `src/dev/dev.zig` (the `pub const dev =
   if (build_options.dev) struct {...} else struct {}` gate lives here —
   compiled out of released builds at the type level; it is the ONLY
-  file that may reference `fixtures/index.json`) ← `src/main.zig`
+  file that may reference `fixtures/.index.json`) ← `src/main.zig`
   (thin entry + `main.*` re-exports the test-facing names).
 - `readChildOutput(a, io, child, comptime stderr)` — the one
   child-stdout/stderr drain loop (stderr bounded at 64 KiB); callers

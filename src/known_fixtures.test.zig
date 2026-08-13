@@ -1,6 +1,6 @@
 // Schema/shape tests for the fixtures under `fixtures/` and the
-// committed `fixtures/index.json` state store. See DESIGN.md
-// for the fixture lifecycle (daemon + capture + index.json store) and
+// committed `fixtures/.index.json` state store. See DESIGN.md
+// for the fixture lifecycle (daemon + capture + .index.json store) and
 // CONTRIBUTING.md for adding agents to the rule registry.
 //
 // The suite validates committed-file shape only. Regeneration
@@ -8,7 +8,7 @@
 // (still on disk until their queued regeneration lands on their
 // platform's host) fail it — that failure is the regen signal, not a
 // code bug. Channel-scoped tests skip files that lack the channel they
-// inspect. The index.json tests skip when the store is absent (it is
+// inspect. The .index.json tests skip when the store is absent (it is
 // committed by the store-conversion commit).
 
 const std = @import("std");
@@ -28,10 +28,10 @@ fn discoverStems(a: std.mem.Allocator) ![][]u8 {
         const suffix = ".json";
         if (name.len <= suffix.len) continue;
         if (std.mem.endsWith(u8, name, suffix)) {
-            // filter to *.json fixture files so the index.json store and
-            // any non-fixture files are ignored
+            // filter to *.json fixture files so the .index.json store and
+            // any non-fixture files are ignored (skip any dot-file)
             const stem = name[0 .. name.len - suffix.len];
-            if (std.mem.eql(u8, stem, "index")) continue;
+            if (stem.len > 0 and stem[0] == '.') continue;
             try stems.append(a, try a.dupe(u8, stem));
         }
     }
@@ -48,10 +48,10 @@ fn readFixtureParsed(a: std.mem.Allocator, stem: []const u8) !?std.json.Parsed(s
     return try std.json.parseFromSlice(std.json.Value, a, data, .{});
 }
 
-/// Load the committed `fixtures/index.json` store as a parsed JSON
+/// Load the committed `fixtures/.index.json` store as a parsed JSON
 /// value, or null when the store is absent (the store tests then skip).
 fn readIndexParsed(a: std.mem.Allocator) !?std.json.Parsed(std.json.Value) {
-    const data = std.Io.Dir.cwd().readFileAlloc(std.testing.io, "fixtures/index.json", a, @enumFromInt(1 << 26)) catch return null;
+    const data = std.Io.Dir.cwd().readFileAlloc(std.testing.io, "fixtures/.index.json", a, @enumFromInt(1 << 26)) catch return null;
     defer a.free(data);
     return try std.json.parseFromSlice(std.json.Value, a, data, .{});
 }
@@ -581,6 +581,43 @@ test "fixtures: envelope combo-match — from-identity.identify ids equal the fi
         {
             std.debug.print("fixture {s}: identify ids '{s}/{s}/{s}' do not match the filename '{s}/{s}/{s}'\n", .{ stem, h.string, p.string, m.string, parts[0], parts[1], parts[2] });
             return error.IdMismatch;
+        }
+    }
+}
+
+test "index.json: prompt_launch carries exactly one <prompt> placeholder; version_launch is [<binary>, --version]" {
+    // The store saves the literal `"<prompt>"` placeholder in place of
+    // the launch prompt (the daemon interpolates the real prompt at
+    // spawn time) — usually the last element, but not always (e.g. mmx
+    // places it mid-argv). version_launch is always the same binary plus
+    // `--version`.
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    const fixtures = parsed.value.object.get("fixtures") orelse return;
+    if (fixtures != .object) return;
+    var it = fixtures.object.iterator();
+    while (it.next()) |kv| {
+        if (kv.value_ptr.* != .object) continue;
+        const o = kv.value_ptr.object;
+        const launch = o.get("prompt_launch") orelse continue;
+        if (launch != .array or launch.array.items.len == 0) return error.InvalidLaunchArgv;
+        var placeholders: usize = 0;
+        for (launch.array.items) |arg| {
+            if (arg == .string and std.mem.eql(u8, arg.string, "<prompt>")) placeholders += 1;
+        }
+        if (placeholders != 1) {
+            std.debug.print("index.json row {s} prompt_launch has {d} <prompt> placeholders (want 1)\n", .{ kv.key_ptr.*, placeholders });
+            return error.InvalidPromptPlaceholder;
+        }
+        const vl = o.get("version_launch") orelse continue;
+        if (vl != .array or vl.array.items.len != 2) return error.InvalidVersionLaunch;
+        const v0 = vl.array.items[0];
+        const v1 = vl.array.items[1];
+        if (v0 != .string or v1 != .string or !std.mem.eql(u8, v1.string, "--version")) return error.InvalidVersionLaunch;
+        if (launch.array.items[0] != .string or !std.mem.eql(u8, launch.array.items[0].string, v0.string)) {
+            std.debug.print("index.json row {s} version_launch argv[0] != prompt_launch argv[0]\n", .{kv.key_ptr.*});
+            return error.InvalidVersionLaunch;
         }
     }
 }

@@ -28,7 +28,7 @@
 // than papered over.
 //
 // `fixtures daemon` is the long-running user-side mode: it
-// watches the `queue` array of `fixtures/index.json` and, per poll,
+// watches the `queue` array of `fixtures/.index.json` and, per poll,
 // expands one queue entry's filter tuple into its candidate set
 // (marker evaluations + the known/valid/successful/free axes) and
 // works ONE remaining host-platform candidate (runFixturesCapture
@@ -147,6 +147,12 @@ const pending_binary_names = if (builtin.os.tag == .windows)
 else
     [_][]const u8{ "claude", "codex", "grok", "gemini" };
 
+/// the launch prompt the daemon interpolates into a row's `prompt_launch`
+/// in place of the `"<prompt>"` placeholder (the store saves the
+/// placeholder, never the verbatim instruction, so the instruction can
+/// evolve without rewriting every row).
+const capture_prompt = "run `agent-detect-dev fixtures capture` in the current working directory and report the result";
+
 pub const dev = if (build_options.dev) struct {
     /// dev-struct exposure of the env-value allow-list check so tests
     /// can assert the evidence-redaction decision (the implementation
@@ -162,7 +168,7 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\usage: agent-detect fixtures <subcommand> [flags]
         \\
-        \\state: fixtures/index.json is the single committed JSON store —
+        \\state: fixtures/.index.json is the single committed JSON store —
         \\`fixtures` (the known universe: one object per 4-tuple
         \\harness/provider/model/platform, keyed by the dash-joined fixture id,
         \\carrying the per-platform `prompt_launch`/`version_launch` argv, the
@@ -173,15 +179,15 @@ pub const dev = if (build_options.dev) struct {
         \\`free_provider_to_model` (the free-axis data). fixtures/<id>.json are the
         \\generated fixtures — top-level per-channel keys `from-identity` /
         \\`from-capture` / `from-capture-raw`. Writers take an exclusive lock on
-        \\fixtures/index.json.lock and write atomically (temp + rename).
+        \\fixtures/.index.json.lock and write atomically (temp + rename).
         \\
         \\daemon flags:
-        \\  --write-log                 tee daemon output to fixtures/daemon.log
+        \\  --write-log                 tee daemon output to fixtures/.daemon.log
         \\  --poll-seconds=N            base poll interval (default 5)
         \\  --capture-review-seconds=N  pre/post capture pause (default 15)
         \\  --capture-timeout-seconds=N from-capture worker timeout (default 600)
         \\
-        \\control: write pause/resume/stop to fixtures/daemon.ctl (checked every
+        \\control: write pause/resume/stop to fixtures/.daemon.ctl (checked every
         \\~1s; the daemon clears it after acting). Ctrl+C is the graceful stop.
         \\
         \\subcommands (see each subcommand's `--help` for its flags — modes,
@@ -193,7 +199,7 @@ pub const dev = if (build_options.dev) struct {
         \\                              candidate per poll — run as a user,
         \\                              never inside an agent; --write-log also
         \\                              writes all daemon output to
-        \\                              fixtures/daemon.log
+        \\                              fixtures/.daemon.log
         \\  capture                    capture the current session into a single
         \\                              fixtures/<id>.json + its fixtures entry
         \\                              (spawned by the daemon; fixtures only)
@@ -454,9 +460,9 @@ pub const dev = if (build_options.dev) struct {
     // index.json state store (fixtures map + errors ledger + queue array)
     // ------------------------------------------------------------------
 
-    const INDEX_PATH = "fixtures/index.json";
-    const INDEX_LOCK_PATH = "fixtures/index.json.lock";
-    const INDEX_TMP_PATH = "fixtures/index.json.tmp";
+    const INDEX_PATH = "fixtures/.index.json";
+    const INDEX_LOCK_PATH = "fixtures/.index.json.lock";
+    const INDEX_TMP_PATH = "fixtures/.index.json.tmp";
     const INDEX_STORE_VERSION: i64 = 1;
     const INDEX_LOCK_BUDGET_MS: u64 = 5000;
     const INDEX_LOCK_RETRY_MS: u64 = 50;
@@ -481,7 +487,7 @@ pub const dev = if (build_options.dev) struct {
         return root;
     }
 
-    /// acquire the exclusive lock on `fixtures/index.json.lock` (creating
+    /// acquire the exclusive lock on `fixtures/.index.json.lock` (creating
     /// it when missing). Retries with `tryLock` on a ~5s budget (the
     /// busy-timeout the old store shelled out to), sleeping 50ms between
     /// attempts. Kernel-managed locks release on exit/crash — no
@@ -504,7 +510,7 @@ pub const dev = if (build_options.dev) struct {
         return lock_file;
     }
 
-    /// parse `fixtures/index.json` into a `std.json.Value` tree. Missing
+    /// parse `fixtures/.index.json` into a `std.json.Value` tree. Missing
     /// file → the empty store; corrupt/unparseable/unknown `store_version`
     /// → `error.IndexStoreError` (exit 12). Readers take no lock (the
     /// temp+rename write protocol makes visibility atomic).
@@ -520,7 +526,7 @@ pub const dev = if (build_options.dev) struct {
         return parsed.value;
     }
 
-    /// serialize `root` and atomically write it over `fixtures/index.json`
+    /// serialize `root` and atomically write it over `fixtures/.index.json`
     /// (temp + rename). Called while holding the exclusive lock.
     fn indexSave(io: std.Io, a: std.mem.Allocator, root: std.json.Value) !void {
         const json_bytes = std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 }) catch return error.IndexStoreError;
@@ -2399,7 +2405,11 @@ pub const dev = if (build_options.dev) struct {
             try putErrorEntry(io, a, h, p, m_d, plat, "capture failed", now);
             return false;
         }
-        for (launch, 0..) |arg, idx| argv_buf[idx] = arg;
+        for (launch, 0..) |arg, idx| {
+            // the store saves the `"<prompt>"` placeholder; the daemon
+            // interpolates the real launch prompt at spawn time.
+            argv_buf[idx] = if (std.mem.eql(u8, arg, "<prompt>")) capture_prompt else arg;
+        }
         const child = std.process.spawn(io, .{
             .argv = argv_buf[0..launch.len],
             .environ_map = init.environ_map,
@@ -2598,8 +2608,8 @@ pub const dev = if (build_options.dev) struct {
                     return EXIT_IO;
                 },
             };
-            const log_file = std.Io.Dir.cwd().createFile(io, "fixtures/daemon.log", .{}) catch |err| {
-                daemonWriteErr(io, "daemon: cannot open fixtures/daemon.log: ");
+            const log_file = std.Io.Dir.cwd().createFile(io, "fixtures/.daemon.log", .{}) catch |err| {
+                daemonWriteErr(io, "daemon: cannot open fixtures/.daemon.log: ");
                 daemonWriteErr(io, @errorName(err));
                 daemonWriteErr(io, "\n");
                 return EXIT_IO;
@@ -2620,13 +2630,13 @@ pub const dev = if (build_options.dev) struct {
             const m = std.fmt.bufPrint(buf[0..], "  poll rate: {d}s (from-capture review: {d}s, timeout: {d}s)\n", .{ poll_seconds, review_seconds, capture_timeout_seconds }) catch "  poll rate: 5s\n";
             daemonWrite(io, m);
         }
-        daemonWrite(io, "  index file: fixtures/index.json\n");
-        daemonWrite(io, "  control file: fixtures/daemon.ctl (write pause/resume/stop)\n");
-        if (write_log) daemonWrite(io, "  log file: fixtures/daemon.log\n");
+        daemonWrite(io, "  index file: fixtures/.index.json\n");
+        daemonWrite(io, "  control file: fixtures/.daemon.ctl (write pause/resume/stop)\n");
+        if (write_log) daemonWrite(io, "  log file: fixtures/.daemon.log\n");
         daemonWrite(io, "  press Ctrl+C to stop\n");
 
         // decision #12 — one cross-platform control mechanism: the
-        // daemon checks `fixtures/daemon.ctl` every ~1s heartbeat and
+        // daemon checks `fixtures/.daemon.ctl` every ~1s heartbeat and
         // acts on pause/resume/stop, clearing the file after acting.
         var paused = false;
         var stop_requested = false;
@@ -2678,7 +2688,7 @@ pub const dev = if (build_options.dev) struct {
                     daemonWrite(io, "daemon: pre-capture review — capture starts in ");
                     const remaining = @max(@divTrunc(phase_until.raw.nanoseconds - boot_now_ns, std.time.ns_per_s) + 1, 1);
                     daemonWriteCount(io, remaining);
-                    daemonWrite(io, "s (write stop to fixtures/daemon.ctl to cancel)\n");
+                    daemonWrite(io, "s (write stop to fixtures/.daemon.ctl to cancel)\n");
                     if (boot_now_ns >= phase_until.raw.nanoseconds) {
                         const job = pending_capture orelse {
                             phase = .idle;
@@ -2755,7 +2765,7 @@ pub const dev = if (build_options.dev) struct {
                                 phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
                                 daemonWrite(io, "daemon: from-capture job — announcing ");
                                 daemonWriteCount(io, review_seconds);
-                                daemonWrite(io, "s before capture (write stop to fixtures/daemon.ctl to cancel)\n");
+                                daemonWrite(io, "s before capture (write stop to fixtures/.daemon.ctl to cancel)\n");
                                 continue;
                             }
 
@@ -2858,15 +2868,15 @@ pub const dev = if (build_options.dev) struct {
         daemonWriteErr(io, std.fmt.bufPrint(&buf, "{d}", .{n}) catch return);
     }
 
-    /// read `fixtures/daemon.ctl`, clear it, and return the action word
+    /// read `fixtures/.daemon.ctl`, clear it, and return the action word
     /// (`pause` / `resume` / `stop`) or null when absent/empty. The
     /// daemon clears the file after acting (decision #12).
     fn readControlAction(a: std.mem.Allocator, io: std.Io) ?[]const u8 {
-        const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/daemon.ctl", a, @enumFromInt(4096)) catch return null;
+        const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/.daemon.ctl", a, @enumFromInt(4096)) catch return null;
         // no `a.free(data)` — the returned word aliases `data` (Zig 0.16
         // arena free-list would reclaim it into the daemon's next
         // allocations, clobbering the action word mid-use).
-        std.Io.Dir.cwd().deleteFile(io, "fixtures/daemon.ctl") catch {};
+        std.Io.Dir.cwd().deleteFile(io, "fixtures/.daemon.ctl") catch {};
         const t = std.mem.trim(u8, data, " \t\r\n");
         if (t.len == 0) return null;
         if (std.mem.eql(u8, t, "pause") or std.mem.eql(u8, t, "resume") or std.mem.eql(u8, t, "stop")) return t;

@@ -38,7 +38,7 @@ block in `src/dev/dev.zig`. The released binary cannot accidentally
 include dev code paths.
 
 The split is about **code**, not portability: the `fixtures` workflow
-is cross-platform. The state store is the local `fixtures/index.json`
+is cross-platform. The state store is the local `fixtures/.index.json`
 (read/written with Zig-native file locks — no external tools), so
 `fixtures` runs anywhere the released binary does. `zig build dist`
 emits only the released binary — no dev variants are produced.
@@ -106,7 +106,7 @@ A reader can instantly see what a fixture claims without scanning the
 
 ### index.json state store (cross-process coordination)
 
-The store is a single committed JSON document, `fixtures/index.json`,
+The store is a single committed JSON document, `fixtures/.index.json`,
 with **four tables**:
 
 - `fixtures` — the known universe: one object per 4-tuple
@@ -152,10 +152,10 @@ with **four tables**:
 - `free_provider_to_model` — provider slug → [canonical model slugs],
   the data behind the `free` filter axis.
 
-Writers take an exclusive lock on `fixtures/index.json.lock` (a
+Writers take an exclusive lock on `fixtures/.index.json.lock` (a
 gitignored lock file; kernel locks release on exit/crash — no
 stale-lock heuristics) and write atomically (serialize →
-`index.json.tmp` → rename). Readers take no lock — the temp+rename
+`.index.json.tmp` → rename). Readers take no lock — the temp+rename
 protocol makes visibility atomic. Failure modes: lock timeout → exit
 13; corrupt/unparseable/unknown-`store_version` index.json → exit 12;
 write/rename failure → exit 13.
@@ -317,7 +317,7 @@ reflects the recipe (up to all three dims).
   see [README.md](./README.md) for the per-platform binary table.
 - **Zero runtime dependencies.** The *released* binary is one file,
   no shared libraries, no runtime. The maintainer `fixtures` workflow
-  reads and writes the local `fixtures/index.json` with Zig-native
+  reads and writes the local `fixtures/.index.json` with Zig-native
   file locks — no external tools are required.
 - **Never guess.** When detection can't fully resolve harness +
   provider + model, the binary exits 8 (unable to detect) with a
@@ -352,7 +352,7 @@ README.md mentions exit codes contextually per example only.
 | 9 | agent data incomplete to make a determination | identity resolved, policy data missing |
 | 10 | agent data complete and requirement failed | determination definitive + negative (e.g. not reciprocal) |
 | 11 | out of memory | allocation failed (released + dev) |
-| 12 | index store error | fixtures/index.json corrupt/unparseable/unknown store_version (dev) |
+| 12 | index store error | fixtures/.index.json corrupt/unparseable/unknown store_version (dev) |
 | 13 | filesystem I/O error | read/write/dir/lock op failed (dev capture/daemon) |
 
 Examples per group:
@@ -396,7 +396,7 @@ Examples per group:
   model/provider dims are unverified.
 - **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.)
   → `error.OutOfMemory`.
-- **12** — dev `fixtures *` where `fixtures/index.json` is corrupt or
+- **12** — dev `fixtures *` where `fixtures/.index.json` is corrupt or
   carries an unknown `store_version` → `index store error`. Released
   `kiloSqliteJson` catches its own, so hard store errors are dev-only.
 - **13** — dev capture/daemon `createDirPath`/`openDir`/`writeFile`/
@@ -426,7 +426,7 @@ names the shipped behavior and why it was chosen.
    not "fill missing combos" — the daemon expands the entry into its
    candidate set and works one per poll. Only the daemon expands.
 3. **index.json via Zig-native locks, not sqlite.** The single committed
-   `fixtures/index.json` gives cross-process coordination (an exclusive
+   `fixtures/.index.json` gives cross-process coordination (an exclusive
    lock on a lock file + temp/rename atomic writes) and
    git-friendly, hand-editable storage with zero new dependencies in
    the released binary — and zero runtime dependencies in the
@@ -479,11 +479,12 @@ names the shipped behavior and why it was chosen.
      are strictly lowercase-alphanumeric slugs of the canonical `*_name`
      (no separators). `*_name` carries the service's own spelling; the
      ids are what machine matching and fixture filenames use.
- 13. **Bulk model additions are constrained to the evergreen top 100.**
+ 13. **Bulk model additions are constrained to the evergreen model set.**
      When models are added en masse (maintenance sweeps, expanding a
      harness across a batch of providers, free-catalog imports), every
      new model — paid or free, on any provider — must clear the coalesced
-     evergreen top-100 rank set. This guard is for bulk/maintenance work
+     evergreen model set (top 25 open-weight, top 25 closed, top 50
+     overall, deduplicated). This guard is for bulk/maintenance work
      only and does NOT apply retroactively to models already in the
      matrix, and it does NOT apply to an individual addition a user
      explicitly needs (a one-off `--harness= --provider= --model=` combo
@@ -517,8 +518,8 @@ names the shipped behavior and why it was chosen.
      APIs, so the coalesced set is curated from the accessible signals
      (the artificialanalysis page + OpenRouter/HF model catalogs) rather
      than scraped. The tracked set is
-     `fixtures/evergreen-top100-models.txt`. See CONTRIBUTING.md
-     "probing scope + runbook" (evergreen top 100).
+     `fixtures/.evergreen-models.txt`. See CONTRIBUTING.md
+     "probing scope + runbook" (evergreen model set).
  14. **`binary_names` is the single name origin.** Each harness rule
      carries one hand-maintained list of executable names
      (`HarnessRule.binary_names`, written inline as a platform ternary:
@@ -575,7 +576,7 @@ re-litigating scope.
   e.g. kilo's sqlite session store) are logged follow-ups, never faked.
   Declared fixtures carry no evidence at all.
 - **Cross-platform daemon control principle (decision #12):** one
-  `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop` across
+  `fixtures/.daemon.ctl` protocol for `pause`/`resume`/`stop` across
   macOS/Linux/Windows — no per-platform signal doubles. Ctrl+C stays
   the terminal graceful-stop shortcut; the daemon clears the control
   file after acting.

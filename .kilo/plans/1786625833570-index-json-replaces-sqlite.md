@@ -610,3 +610,20 @@ Suggested commit grouping: (a) code = tasks 2–6; (b) store conversion = 7;
   not a live daemon.
 - `git diff fixtures/index.json` after a command run shows clean,
   reviewable JSON changes.
+
+## amendments (post-implementation)
+
+1. **Prompt placeholder in the store.** `fixtures` rows store the
+   literal `"<prompt>"` as the last `prompt_launch` element (not the
+   verbatim capture instruction). At launch the daemon interpolates it
+   with the actual prompt (`capture_prompt` in `src/dev/dev.zig`).
+2. **Dot-prefixed store + daemon files.** `fixtures/index.json` →
+   `fixtures/.index.json` (and `.index.json.lock` / `.index.json.tmp`);
+   the evergreen list and the daemon files also move to dot-names:
+   `.evergreen-models.txt`, `.daemon.log`, `.daemon.ctl`.
+3. **Evergreen list restructured.** Renamed
+   `evergreen-top100-models.txt` → `.evergreen-models.txt`, now three
+   deduplicated sections — top 25 open-weight models, top 25 closed
+   models, then the top 50 overall (deduplicated against the first two,
+   so the total varies): the contract changes from "top 100" to "top 25
+   open / top 25 closed / top 50 overall (deduplicated)".
