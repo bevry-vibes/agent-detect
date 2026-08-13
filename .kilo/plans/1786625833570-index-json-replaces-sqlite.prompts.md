@@ -266,3 +266,44 @@ Question: "Why the timestamps exist and which survive (plan §7) — fixtures' i
 ## 24 — 22:40 — user
 
 > Plan file is still missing the assisted-by line in its instroduction. This should be a kilo.md spec
+
+## 25 — 22:46 — user
+
+> Re   "invalid": [
+>     { "harness": "cline", "provider": "clinepass", "model": "kimik3", "platform": "darwin",
+>       "reason": "unknown fixture file" }
+>   ],
+>
+> When exactly would "invalid["null-null-null-null"] = "<reason>" not be good enough? it seems it would be fine, so we can go back to a hashmap instead of array - as before you said there could be cases where are none are defined - sure but that is a single case, not cases.
+
+## 26 — 22:48 — user (re-sent with correction)
+
+> I'm not talking about min/max we already solved that. There seems to be a bug in your context or something. Let me try again.
+>
+> Re   "invalid": [
+>     { "harness": "cline", "provider": "clinepass", "model": "kimik3", "platform": "darwin",
+>       "reason": "unknown fixture file" }
+>   ],
+>
+> When exactly would "invalid["null-null-null-null"] = "<reason>" not be good enough? it seems it would be fine, so we can go back to a hashmap instead of array - as before you said there could be cases where are none are defined - sure but that is a single case, not cases.
+
+## 27 — 22:50 — user (question answer)
+
+Question: "How do --recipes/--all queue their sweeps (plan §4b) — lazy seed rows the daemon expands, or concrete rows per candidate?"
+> this is complex, stop prompting me with simople choices
+
+## 28 — 23:06 — user
+
+> Rename/think `--all` and `--recipes` as `--known` and `--unknown`, `--known` operates on our existing fixtures+invalid map, `--unknown` operates on the rules to generate new combinations (minus fixtures+invalid). As per the splitting on platforms for queue, that seems like a good idea on the surface, but that is what its:
+>  "started_at": 1750000010, "finished_at": null is already for - that queue item doesn't get popped until all fixture+invalid (so we do need a timestamp on invalid) have capture/declare/failed_at dates after started_at, then it can pop - if there is no more tasks for that queue entry on our daemon, the daemon keeps it there but moves onto the next queue entry.
+>
+> I should note this rethink has known/unknown has filters inside the queue; they are not expanded by the queue, still only expanded by the daemon.
+>
+> I should also note that `--known` now replaces `--all` semantics when used in combination with others, so say `queue --stale-by-days=7` only works on known fixtures/invalid, not on unknown, we would have to add `--unknown` to change it. Also --known and --unknown are exclusive, same as how the stale-by-{minutes,days} are xor too.
+>
+> Add a --valid and --invalid filter, if there isn't one, also only assume --valid, in the same way --known is also assumed by default. So invalid options are only re-evaluated if --invalid was provided in the queue; it will be okay to compound there queue entries, so known_unknown: "known", invalid_valid: "valid"
+
+## 29 — 23:15 — user (question answer)
+
+Question: "Where do failed attempts land their completion timestamp (plan §7b)?"
+> Rename the invalid json table as errors instead, then use valid_or_invalid and successful_or_unsuccessful to filter the errors table based on the error, generally successful/unsuccessful will have both a fixture and an error entry, whereas invalid will probably only have an error entry.  Also, we can undo the invalid_or_valid, known_or_unknown, successful_or_unsuccful and just have tbem as nullable booleans on their affirmatives, so known/valid/successful:[null|false|true]
