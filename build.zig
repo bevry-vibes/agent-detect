@@ -67,7 +67,7 @@ pub fn build(b: *std.Build) void {
 
     // `zig build dev` — builds the maintainer-only dev binary with
     // `-Ddev=true`. Same source as the released binary, but the
-    // dev-only subcommands (the `fixtures` namespace + `refresh run`
+    // dev-only subcommands (the `fixtures` namespace
     // + the standalone `raw` action)
     // and the RecipesForFixtures table are linked in. The
     // released binary is unaffected (built with dev=false).
@@ -114,8 +114,8 @@ pub fn build(b: *std.Build) void {
                 .optimize = optimize,
             }),
         });
-        // Tests need the dev struct (fixture evidence validation +
-        // recipes) — build them with dev=true like the dev binary.
+        // Tests need the dev struct (fixture recipes + raw building) —
+        // build them with dev=true like the dev binary.
         test_exe.root_module.addImport("build_options", dev_options.createModule());
         const run = b.addRunArtifact(test_exe);
         test_step.dependOn(&run.step);

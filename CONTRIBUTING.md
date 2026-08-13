@@ -7,47 +7,66 @@ design, see [DESIGN.md](./DESIGN.md).
 
 ## refresh a fixture
 
-A fixture is a single `fixtures/<fixture_id>.json` file with three
-top-level keys: `cooked` (the 18-field canonical object), `raw` (the
-runtime observations), and `trailer` (the `Co-authored-by` string).
+A fixture is a single `fixtures/<fixture_id>.json` file whose top-level
+keys are per-channel **channel objects**: `from-identity` (required —
+the declared identification), `from-capture` (the live session's
+identification), and `from-capture-raw` (the live session's raw
+observations). Each `from-*` channel object carries `identify` (the
+17-field canonical object) plus `"trailer co-author"` and
+`"trailer assisted-by"` (the two trailer variants, spawned from the
+real CLI — the old root `trailer`/`cooked`/`origin` keys are gone).
 `fixture_id` encodes `<harness>-<provider>-<model>` and is suffixed
 with `-<platform>` (e.g. `cline-clinepass-kimik3-darwin`). The binary
 is the only thing that writes fixtures — agents never hand-author them.
 
 `fixtures/index.sqlite3` is the state store (a single SQLite database
-read and written via the system `sqlite3` CLI). It has two tables:
+read and written via the system `sqlite3` CLI). It has **four** tables:
 `fixtures` (one row per captured 4-tuple `(harness, provider, model,
-platform)`, `platform` always the host) and `queue` (the work queue:
-dims + scope columns + `available` probe status). Rows in `queue`
-with missing dims are **seeds**: the daemon expands them over the known
-recipes (`recipesForFixtures`), queuing each applicable full combo.
-Rows the daemon cannot expand are warned once per run and left
-unchanged.
+platform)`, carrying `available`/`successful` outcome markers, the
+capturing `agent_detect_version`, the per-channel generation columns
+`identity_generation_at/hash` + `capture_generation_at/hash`, and the
+derived `agent_id`/`fixture_id`), `queue` (the work queue: dims + scope
+markers + `mode`), `pending` (one row per work item under a popped
+queue row — `started_at`/`finished_at` make crash-resume safe), and
+`invalid` (bad-id rows — unknown fixture files, no-launch from-capture
+candidates — for dev-agent remedy; purging files is user discretion).
+Queue rows with missing dims are **seeds**: the daemon expands them over
+the known recipes (`recipesForFixtures`) into `pending` rows, one per
+applicable full combo on the host platform.
 
 **Tooling note:** the `fixtures` workflow requires the system `sqlite3`
 CLI on PATH (every OS ships one); the *released* binary has zero
 runtime dependencies — sqlite3 is only a maintainer-tooling
 requirement.
 
-The refresh flow uses two binaries with strict role separation:
+The refresh flow uses three binaries/actions with strict role
+separation:
 
 - **`agent-detect-dev fixtures daemon`** — only the *user* runs this,
-  never the agent. It pops one `queue` row per poll, expands seeds
-  over known recipes first, lazily backfills the `fixtures` row from
-  any valid committed `fixtures/<id>.json`, then spawns captures for
-  full combos that still need them.
+  never the agent (it refuses to start inside an agent; see
+  DESIGN.md "user-only daemon"). It is **pure**: it pops one host-platform
+  queue row per poll, materializes its `pending` rows, evaluates each
+  (`from-identity`: declared generation, zero tokens; `from-capture`:
+  probe then launch the real harness session), stamps `fixtures`, and
+  drains the row's pending rows. It never writes `fixtures` outside pop
+  processing and never inserts queue rows. The queue row itself stays
+  queued until its pending rows all finish — it is the crash-resume
+  anchor, so a daemon crash mid-seed simply resumes on the next run.
 - **`agent-detect-dev fixtures capture`** — runs *inside an agent*
-  session; captures the current session into a single
-  `fixtures/<id>.json` and upserts a `fixtures` row. **Fixtures
+  session; captures the current session into `fixtures/<id>.json`
+  (merge-writes `from-capture` + `from-capture-raw`, preserving any
+  existing `from-identity`) and upserts a `fixtures` row. **Fixtures
   only** — a partial detection exits 8 with no store change (never
   writes `queue`).
 - **`agent-detect-dev fixtures queue`** — **enumerate + upsert only,
-  no evaluation.** With a scope flag it upserts each candidate into
-  `queue`; without one it creates a seed row with the positive dims
-  (`--harness=`, `--provider=`, `--model=`, `--platform=`, or the
-  composite `--agent=`/`--fixture=`) and the rest `null`.
+  no evaluation.** With a scope flag it upserts each candidate per
+  selected mode into `queue`; without one it creates a seed row with
+  the positive dims (`--harness=`, `--provider=`, `--model=`,
+  `--platform=`, or the composite `--agent=`/`--fixture=`) and the rest
+  `null`.
 - **`agent-detect-dev fixtures dequeue`** — **DELETE only.** Deletes
-  the matching `queue` rows; never touches `fixtures`.
+  the matching `queue` rows (by dims + stored markers); never touches
+  `fixtures`.
 
 The shared filters (at least one required for `queue`/`dequeue`):
 `--harness=H`, `--provider=P`, `--model=M`, `--platform=PLAT` constrain
@@ -57,35 +76,45 @@ with `--platform=`). Dim filters compose (AND) with the scope flags
 below. (There are no `--no-*` flags — an unset dim is expressed by
 simply omitting it.)
 
+The **refresh modes** (`--from-identity` / `--from-capture`) select the
+worker. No mode flag → **both** rows are queued per candidate (the
+declared pass first, then the capture upgrade). Both flags together →
+exit 3. `dequeue` filters by the stored mode the same way (no flag →
+all modes).
+
 The scope flags (shared by `queue`/`dequeue`) select a candidate set
-instead of a dim filter. They all AND together — the only incompatible
-combination is two `--stale-by-*` age thresholds:
-- `--all` — the default scope made explicit: every `fixtures` row on
-  this platform. It is absorbed by any other scope flag (e.g.
-  `queue --all --recipes` is the same as `queue --recipes`).
+instead of a dim filter; each is **pure enqueue** (or pure row filter
+for dequeue — stored markers, never a probe):
+- `--all` — the default scope made explicit: every `fixtures` row.
 - `--stale-by-days=N`, `--stale-by-hours=N`, `--stale-by-minutes=N` —
   age-threshold scopes. The queued row always stores the age in
-  **minutes** (`stale_by_minutes`); days/hours convert at stamp time,
-  so the table has a single age column. Every candidate row is queued
-  (no age pre-filter at queue time) and the daemon skips only when the
-  fixture is still age-fresh.
+  **minutes** (`stale_by_minutes`); days/hours convert at stamp time.
+  The daemon skips only when the fixture is still age-fresh.
 - `--stale-by-version` — version-marker scope. The daemon compares a
   live `--version` call against the fixture's captured
   `harness_version` (a `fixtures` column stamped at capture time;
-  `from-identity` rows carry null). Combine it with an age threshold to
-  skip only when the fixture is age-fresh **and** version-equal.
-- `--partial` — `queue` rows with at least one missing dim (seeds).
-- `--recipes` — every known recipe (`recipesForFixtures`,
-  host platform).
-- `--missing-fixture` — recipes whose `fixtures/<id>.json` is absent
-  from disk (absorbs `--recipes`).
-`queue` upserts the candidates into `queue`; `dequeue` deletes them.
-By default nothing is gated on harness availability; `--available` (a
-modifier) probes each candidate's harness and records `1` (available)
-or `0` (unavailable) into the `available` column. Unavailable rows are
-**kept queued** as handoff work for the next agent/platform;
-`--unavailable` (dequeue only, alias `--available=0`) matches those
-`available=0` rows.
+  `from-identity` rows carry null).
+- `--stale-by-detect` — re-capture when the fixture's
+  `agent_detect_version` is NULL or differs from this binary's version
+  (the designated sweep after a version bump; also enumerates
+  `--missing-fixture-entry` rows, whose version is NULL).
+- `--stale-by-hash` — re-capture when the stored per-channel generation
+  hash is NULL or differs from the current fixture file's channel
+  object (BLAKE3 over the channel). The mode flags pick the channel;
+  no mode flag checks both, one row per stale channel's mode.
+- `--recipes` — every known recipe (`recipesForFixtures`, host
+  platform).
+- `--missing-fixture-file` — recipes whose `fixtures/<id>.json` is
+  absent from disk (absorbs `--recipes`).
+- `--available` / `--unavailable` — enqueue fixtures rows whose
+  `available` marker is 1/0; `--successful` / `--unsuccessful` — the
+  same for the `successful` marker. `--unsuccessful` is the designated
+  catch vector for captures whose detection was partial: valid ids,
+  last attempt failed. No probing happens anywhere.
+- `--missing-fixture-entry` — (queue only) scan `fixtures/*.json`;
+  files with no `fixtures` row are re-registered (valid ids → a
+  `fixtures` entry with generation columns NULL; invalid ids →
+  `invalid` row); **the file persists**.
 
 To refresh one fixture end-to-end:
 
@@ -93,7 +122,8 @@ To refresh one fixture end-to-end:
    ```sh
    ./zig-out/bin/agent-detect-dev fixtures daemon
    ```
-2. From inside an agent session for the harness to capture:
+2. Queue the work (from the user's terminal or an agent session —
+   enqueue is pure):
    ```sh
    ./zig-out/bin/agent-detect-dev fixtures queue \
      --harness=<harness_id> \
@@ -101,52 +131,70 @@ To refresh one fixture end-to-end:
      --model=<model_id> \
      --platform=darwin
    ```
-3. The daemon pops the queue row, spawns `fixtures capture`, which
-   writes the single `fixtures/<id>.json` and upserts the matching
-   `fixtures` row. If a valid committed `fixtures/<id>.json` already
-   exists, the daemon backfills the row from it instead of
-   re-capturing.
+3. The daemon pops the queue row, materializes `pending` rows, and
+   evaluates each: the `from-identity` pass merge-writes the declared
+   `from-identity` channel (zero tokens), and the `from-capture` pass
+   launches the harness headlessly so it runs `fixtures capture` inside
+   a live model session (token-consuming — announce with the
+   pre-capture review window and confirm with the user first).
 
-For batch refreshes: `fixtures queue --all` re-queues every row in
-`fixtures`, `fixtures queue --stale-by-minutes=1440` stamps every row
-with an age marker (the daemon skips fresh ones and re-captures stale
-ones), `fixtures queue --stale-by-version` stamps rows whose live
-harness `--version` differs from the captured `harness_version`,
-`fixtures queue --recipes` re-queues every committed recipe, and
-`fixtures queue --missing-fixture` queues recipes whose fixture files
-are missing. Combine a `--stale-by-*` age threshold with
-`--stale-by-version` to re-capture only what is age-stale **or**
-version-changed (the daemon skips only when both are fresh). Add
-`--available` to probe-and-record harness availability instead of
-dropping unavailable harnesses.
-
-`--all` means every known agent recorded in `fixtures/index.sqlite3`
-(the `fixtures` table), filtered by the other filters
-(`--harness=`, `--provider=`, `--model=`, `--platform=`).
-`--all --available` means all of those, each probed and recorded with
-its harness availability (`available` 1/0); unavailable rows stay
-queued as handoff work for the next agent/platform.
+For batch refreshes: `fixtures queue --recipes` queues the whole matrix
+(both modes per recipe; no-launch recipes get their `from-identity` row
+plus an `invalid` entry for the suppressed capture side), `fixtures
+queue --stale-by-detect` re-queues everything whose
+`agent_detect_version` drifted, `fixtures queue --stale-by-hash` re-
+queues combos whose file channel diverged from its stored hash, and
+`fixtures queue --unsuccessful` re-queues the valid-id failures. Failed
+jobs are **consumed** — there is no auto-retry; retry explicitly via
+`--unsuccessful` / `--unavailable`.
 
 ### common expected failures when refreshing
 
-Queue jobs run in three modes with different failure surfaces. The
-`from-raw` worker (default) never invokes a model — a failed `from-raw`
-capture is a **detection-code bug** (unresolved detection, missing
-config read, contradictory evidence claim), surfaced as
-`daemon: worker failed for <combo> (exit code N) — re-queued` with the
-worker stderr, and the row stays queued. Fix the detection/rule and let
-the daemon re-run.
+Queue jobs run in two modes with different failure surfaces. The
+`from-identity` worker resolves declared identification from provided
+ids — a failure there is a **rule-table bug** (unknown dims, malformed
+combo), surfaced as `daemon: from-identity failed for <combo>` with the
+row stamped `successful=0` and consumed. Fix the rules and re-queue.
 
 Account-level failures — **credits depleted** (insufficient balance /
 credits error in the worker stderr), **rate limit encountered**
 (`429` / "too many requests" — back off, do not retry in a tight loop),
 **upgraded plan required** (`401`/`403`, "upgrade your plan") — are
-only reachable on `from-capture` jobs (a `from-raw` capture fabricates
-the runtime and never talks to a provider). Treat those as
-**environment-level failures**, not detection bugs: resolve the account
-condition and re-queue, or skip the combo. A `from-capture` row
-re-queues at most 3 times, then dequeues with a warning (token
-protection).
+only reachable on `from-capture` jobs (the real harness session talks
+to the provider). Treat those as **environment-level failures**, not
+detection bugs: resolve the account condition and re-queue with
+`fixtures queue --unsuccessful`, or skip the combo. A `from-capture`
+failure (timeout / nonzero exit / post-check fail / detection-partial
+exit 8) stamps `successful=0` (`available=1` if the probe passed) and
+**consumes the item** — no re-queue, no spin. An uninstalled harness
+probe failure stamps `available=0, successful=0`. Retry manually:
+`fixtures queue --unsuccessful` (valid ids, failed attempt) or
+`fixtures queue --unavailable` (harness missing).
+
+### cross-device runbook
+
+Queue rows and fixtures sync across hosts via the committed DB +
+fixture files. Only the matching platform's daemon pops a row
+(`AND (platform IS NULL OR platform = '<host>')`), so a
+`platform='darwin'` row is never popped on Windows:
+
+1. On host A (e.g. macOS): run the daemon, let the platform's rows
+   drain, then commit the DB + fixtures (single-writer workflow — pull
+   before daemon, commit after).
+2. On host B (e.g. Windows): `git pull`, `zig build dev`, run the
+   daemon — it pops only the host-platform rows that remain queued.
+3. Failed rows retry via `fixtures queue --unsuccessful` /
+   `--unavailable` on the host that can reach the harness.
+
+### committed-store hygiene
+
+`fixtures/index.sqlite3` is **committed** with each landing (it is the
+cross-host work queue + state). Never commit `index.sqlite3-journal` /
+`-wal` / `-shm` or the daemon files (`daemon.log`, `daemon.ctl`) — they
+are gitignored. The DB dirties on every upsert; commit when work lands.
+The dev agent reads the `invalid` table and the generation columns to
+review regeneration completeness; purging fixture files is user
+discretion.
 
 ## test matrix: harnesses, providers, models
 
@@ -186,19 +234,18 @@ The maintainer probes the free combos + the MiniMax subscription:
 
 ```sh
 zig build dev
-./zig-out/bin/agent-detect-dev fixtures queue --recipes --available   # default from-raw, zero tokens
+./zig-out/bin/agent-detect-dev fixtures queue --recipes   # both modes per recipe; pure enqueue, zero tokens
 ./zig-out/bin/agent-detect-dev fixtures daemon --write-log
 ```
 
-The daemon pops rows in order `from-identity` → `from-raw` → `from-capture`
-and captures each recipe to `fixtures/<id>-<platform>.json`. Review each
-fixture's evidence claims as they land. Contributors add other combos
-(rules → recipes → captures on their platform):
+The daemon pops rows in order `from-identity` → `from-capture`
+(declared work first, capture upgrades after) and captures each recipe
+to `fixtures/<id>-<platform>.json`. Review each fixture's evidence
+claims as they land. Contributors add other combos (rules → recipes →
+captures on their platform):
 
 - `--from-identity` — declared-only population: the harness is not installed
   or won't run. Zero tokens; the fixture is declared, not observed.
-- `--from-raw` (default) — fabricated runtime + live detection ladder.
-  Zero tokens.
 - `--from-capture` — real re-captures only (token-consuming,
   user-confirmed).
 
@@ -236,7 +283,7 @@ launch/capture attachment).
 Run the daemon with `fixtures daemon --write-log` (log:
 `fixtures/daemon.log`) and poll that log at ~1s — the daemon writes a
 status heartbeat every ~1s, faster than the iteration delays.
-Pacing: `from-identity`/`from-raw` jobs process at ~5s intervals
+Pacing: `from-identity` jobs process at ~5s intervals
 (`--poll-seconds=N`); each `from-capture` is announced ~15s ahead
 (`--capture-review-seconds=N`, cancellable) and followed by a ~15s
 review pause. Control is the same on macOS/Linux/Windows:
@@ -318,10 +365,8 @@ NSSM on Windows. The plain terminal run stays the universal baseline.
 
 ### refresh / token warning
 
-Queue jobs run in three modes. `from-identity` resolves cooked from provided
+Queue jobs run in two modes. `from-identity` resolves cooked from provided
 ids — zero tokens, no harness, declared-not-observed fixtures.
-`from-raw` (default) fabricates env markers + config files and runs the
-detection ladder via `refresh run` — zero tokens, no harness session.
 `from-capture` launches the real harness headlessly so it runs
 `fixtures capture` inside a live model session — that session consumes
 tokens (free-tier quota or subscription) and must be confirmed with the
@@ -331,9 +376,10 @@ consumes that session's tokens.
 ### global-settings rule
 
 Never change a global harness/provider/model setting to make a fixture
-pass — use env/arg/scope flags only. `from-raw` captures write config
-under a sandboxed HOME (per-fixture cache dir), never the user's real
-harness config; flag any needed global change instead.
+pass — use env/arg/scope flags only. `agent-detect` reads harness
+configs read-only and performs no config writes (nothing lands in a
+sandboxed HOME or anywhere else); flag any needed global change
+instead.
 
 ## recipe-mode identify / trailer (hard-to-detect agents)
 

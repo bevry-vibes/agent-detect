@@ -20,7 +20,11 @@ only — do not pull their contents into this file.
   gate themselves on model and harness).
 - https://github.com/bevry-vibes/skills/blob/main/kilo.md —
   **applies** when the running harness is `kilo` (its rules gate
-  themselves on harness).
+  themselves on harness), with this project's tweak (to be upstreamed):
+  every plan file the agent generates records its provenance at the top
+  of the file — the original prompt that initiated the plan, every
+  followup prompt that shaped it (verbatim, in order), and the agent
+  model that generated it (as reported by the harness).
 
 This file is not policy — it is a pointer.
 
@@ -51,6 +55,39 @@ should use modern syntax where appropriate — pipeline chain operators
 definitions, native-command `2>&1` stderr capture — instead of legacy
 forms.
 
+### Set-Content -NoNewline with an array concatenates, it does not join
+
+`Set-Content -Value <array> -NoNewline` writes every array element
+back-to-back with **no separator** — the file comes back as one giant
+line, not an array of lines. `Set-Content` without `-NoNewline`
+separates array elements with the platform newline (CRLF on Windows),
+and even then it **rewrites the file with the platform newline**,
+silently converting an LF file to CRLF.
+
+For any bulk file rewrite (splices, large replacements, line-ending
+normalization), never round-trip through `Set-Content`. Build the final
+content as a single string with explicit `"`n"` joins and write it as
+raw bytes:
+
+```powershell
+$content = ($lines[0..4684] -join "`n") + "`n" + $newblock + "`n" +
+           ($lines[5000..($lines.Count - 1)] -join "`n")
+[System.IO.File]::WriteAllText(
+    (Resolve-Path src/main.zig),
+    $content,
+    [System.Text.UTF8Encoding]::new($false)   # LF, no BOM
+)
+```
+
+`Get-Content -Raw` yields a single string; a plain `.Replace(old, new)`
+on it followed by the byte-level write above is the safe way to do
+targeted edits without disturbing every other line. This project's
+`* -text` git attribute means git will **not** normalize line endings
+for you — a CRLF-converted file shows up as a full-file diff, so always
+verify `git diff --stat` stayed small after any rewrite and confirm the
+file is LF. This gotcha cost a full revert during the strip-raw
+implementation (2026-08-13).
+
 ## harness configuration
 
 Never create, modify, or overwrite a harness's config/auth files or set
@@ -59,7 +96,6 @@ API keys on the user's machine — this includes anything under
 stores. Harness setup, logins, and API keys are the user's
 responsibility alone, and the user decides when configs change. This is
 a hard rule; do not probe for, ask for, offer to set, or write
-credentials. `agent-detect` reads these files read-only; the only
-config writes in this project are the from-raw fixture worker's, which
-land in a per-fixture sandboxed HOME (`~/.cache/agent-detect/workers`),
-never the real one.
+credentials. `agent-detect` reads these files read-only; the project
+performs no harness config writes — nothing lands in a sandboxed HOME or
+anywhere else.

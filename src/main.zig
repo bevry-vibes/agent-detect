@@ -908,8 +908,7 @@ fn providerMetaForName(name: []const u8) ?ProviderRule {
 
 /// map an openai-compatible `base_url` host back to the canonical
 /// provider id. Used by `detectQwen` to resolve the upstream service
-/// behind qwen's `modelProviders[].baseUrl`, and mirrored by the dev
-/// provider metadata the from-raw fabricator writes. Unknown hosts
+/// behind qwen's `modelProviders[].baseUrl`. Unknown hosts
 /// fall back to "minimax" (the well-fixtures endpoint).
 fn providerForBaseUrl(base_url: []const u8) []const u8 {
     const table = [_][2][]const u8{
@@ -1655,9 +1654,9 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
                         config_value = m;
                         // mmx config stores the bare model id; when a
                         // "provider/model" prefix is present it is the
-                        // upstream provider (the from-raw fabricator
-                        // writes that form to exercise non-minimax
-                        // combos). Bare ids keep the intrinsic default.
+                        // upstream provider (a "provider/model" form
+                        // exercises non-minimax combos). Bare ids keep the
+                        // intrinsic default.
                         const lower = std.ascii.allocLowerString(a, m) catch m;
                         const slash = std.mem.findScalar(u8, lower, '/');
                         if (slash) |i| {
@@ -1738,8 +1737,7 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     // qwen's auth.selectedType is the route key, not the underlying
     // provider. Look at modelProviders[<key>][*].baseUrl to find the
     // actual upstream service; the baseUrl host is mapped to the
-    // provider id (dev-only provider metadata carries the per-provider
-    // base_urls the from-raw fabricator writes). Unknown hosts default
+    // provider id (`providerForBaseUrl`). Unknown hosts default
     // to "minimax" (the well-fixtures case: api.minimax.io).
     var provider_name: []const u8 = "minimax";
     var provider_base_url: []const u8 = "";
@@ -1891,7 +1889,7 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     // entry) for the model id:
     //   [[providers]]
     //   name = "deepseek-flash"
-    //   default = "deepseek-v4-flash"     (fabricated from-raw configs)
+    //   default = "deepseek-v4-flash"
     //   models = ["deepseek-v4-flash"]    (real configs, aligned)
     const provider_name: []const u8 = dm;
     var model_name: []const u8 = dm;
@@ -1960,8 +1958,7 @@ fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     // crush's `default_large_model_id` is the "current" model — the
     // launcher wrote it into hyper.json from the user's `crush
     // update-providers` run. Format: "<provider>/<model>". The path
-    // follows HOME (the from-raw fabricator writes it into the sandboxed
-    // HOME, so it must NOT be hardcoded).
+    // follows HOME, so it must NOT be hardcoded.
     const cwd_dir = std.Io.Dir.cwd();
     const path = try std.fs.path.join(a, &.{ home, ".local/share/crush/hyper.json" });
     const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
@@ -2295,8 +2292,7 @@ fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     // active model without going through the config. Launcher uses
     // this to capture whatever model the user is currently running.
     // Mistral Vibe is a Mistral product, so the underlying provider is
-    // Mistral unless the launcher overrides it (VIBE_ACTIVE_PROVIDER) —
-    // the from-raw fabricator uses that to exercise non-Mistral combos.
+    // Mistral unless the launcher overrides it (VIBE_ACTIVE_PROVIDER).
     const model_name = env.get("VIBE_ACTIVE_MODEL") orelse return;
     if (model_name.len == 0) return;
     const provider_id = env.get("VIBE_ACTIVE_PROVIDER") orelse "mistral";
@@ -2537,16 +2533,17 @@ pub fn computeReciprocal(d: *const Detection) bool {
     return std.mem.eql(u8, pct, "never") or std.mem.eql(u8, pct, "opt-in") or std.mem.eql(u8, pct, "opt-out");
 }
 
-/// The detection report is a JSON object assembled from three
-/// components:
-/// - `buildCooked` — the shape-stable 18-field canonical object,
-///   grouped by entity (harness / provider / model / agent).
+/// The detection report is a JSON object assembled from:
+/// - `buildCooked` — the shape-stable 17-field canonical object,
+///   grouped by entity (harness / provider / model / agent). The
+///   `trailer` field was removed so the identify output no longer
+///   carries it (fixture channels persist both trailer variants as
+///   separate keys).
 /// - `buildRaw` — the shapeless raw observations object (dev binary
 ///   only), whose top-level keys identify source evidence.
-/// - `buildTrailer` — the `Co-authored-by` string.
 /// The released binary's `identify` action serializes `buildCooked` at
-/// the root; the dev binary's fixture format embeds all three as
-/// `{cooked, raw, trailer}`.
+/// the root; the dev binary's fixture format embeds channel objects
+/// (`from-identity` / `from-capture` / `from-capture-raw`).
 
 /// Extract the user's home directory once so we can redact it from
 /// every emitted string — fixtures must be portable across machines.
@@ -2556,7 +2553,7 @@ fn reporterHome(env: *const std.process.Environ.Map) []const u8 {
     return env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
 }
 
-/// Build the canonical `cooked` object (18 fields, grouped by entity).
+/// Build the canonical `cooked` object (17 fields, grouped by entity).
 /// Returns a heap-allocated `std.json.Value` the caller owns.
 fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     const V = std.json.Value;
@@ -2593,7 +2590,6 @@ fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     } else {
         try canonical.object.put(a, "reciprocal", .null);
     }
-    try canonical.object.put(a, "trailer", optStringValue(a, d.trailer));
     return canonical;
 }
 
@@ -2765,15 +2761,13 @@ const devUsage = if (dev_build)
     \\dev actions (maintainer-only binary — `fixtures help` has the full namespace,
     \\including the refresh-mode, scope, and daemon flags):
     \\  fixtures daemon   long-running queue worker (user-only, never inside an agent);
-    \\                    pops rows in order from-identity → from-raw → from-capture with
+    \\                    pops rows in order from-identity → from-capture with
     \\                    adaptive pacing; pause/resume/stop via fixtures/daemon.ctl
     \\  fixtures capture  capture the current session into fixtures/<id>.json
     \\                    (daemon-spawned, or run by hand inside a harness session)
-    \\  fixtures queue    upsert queue rows [scope flags] [--from-identity|--from-raw|--from-capture]
-    \\  fixtures dequeue  DELETE matching queue rows [--from-identity|--from-raw|--from-capture]
+    \\  fixtures queue    upsert queue rows [scope flags] [--from-identity|--from-capture]
+    \\  fixtures dequeue  DELETE matching queue rows [--from-identity|--from-capture]
     \\  fixtures help     the fixtures namespace's full help
-    \\  refresh run       internal: the `from-raw` capture worker; agent-detect spawning
-    \\                    itself under the daemon-prepared env
     \\  raw               print only the raw observations block
     \\
 else
@@ -3015,14 +3009,14 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
 
 // ============================================================================
 // fixtures agent — captures the current real session into
-// `fixtures/<stem>.json` (single `{cooked, raw, trailer}` file).
-// Designed to be invoked by an agent harness
+// `fixtures/<stem>.json` (top-level `from-capture` + `from-capture-raw`
+// channel keys). Designed to be invoked by an agent harness
 // from inside its own environment: the daemon (see CONTRIBUTING.md)
-// drives per-harness launches that call this via `refresh run`.
+// drives per-harness launches that call this via `fixtures capture`.
 //
 // Contract: a fixture only exists when the current session fully
 // identified harness + provider + model. Anything less (one of them
-// null) is a failure — the binary exits 2 and writes no file. Such a
+// null) is a failure — the binary exits 8 and writes no file. Such a
 // fixture would not be "evidence of what the session produced", it
 // would be a backfill the maintainer would have to justify. Detection
 // code that can't resolve provider or model should be fixed rather
@@ -3030,9 +3024,9 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
 //
 // The dev binary (built with -Ddev=true) is the only one with this
 // capture path. `fixtures daemon` is the long-running user-side mode: it
-// watches the sqlite `queue` table and, for each queue row, spawns
-// a child `refresh run` that runs the capture (dev.runFixturesCapture)
-// in-process with the environment the daemon prepared. The released
+// watches the sqlite `queue` table and, for each queue row, materializes
+// `pending` rows it processes (dev.runFixturesCapture runs in-process in
+// the session the daemon launched). The released
 // binary (built with -Ddev=false, the default) has none of this — its
 // CLI surface is `identify` (JSON report), `trailer co-author` /
 // `trailer assisted-by`, `check-reciprocal`, `help`, and
@@ -3054,12 +3048,17 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\usage: agent-detect fixtures <subcommand> [flags]
         \\
-        \\state: fixtures/index.sqlite3 holds two tables — `fixtures` (one row
-        \\per captured 4-tuple harness/provider/model/platform) and `queue`
-        \\(the work queue). fixtures/<id>.json are the generated fixtures
-        \\(single file, top-level `cooked`/`raw`/`trailer`/`origin` keys). Queue rows
-        \\with missing dims are seeds: the daemon expands them over fixtures
-        \\recipes (full combos queued, other seeds warned and kept).
+        \\state: fixtures/index.sqlite3 holds four tables — `fixtures` (one row
+        \\per captured 4-tuple harness/provider/model/platform, carrying the
+        \\available/successful markers, the capturing `agent_detect_version`, and
+        \\per-channel generation columns), `queue` (the work queue), `pending`
+        \\(per-job work items under a popped queue row; crash-resume safe), and
+        \\`invalid` (bad-id rows for dev-agent remedy). fixtures/<id>.json are the
+        \\generated fixtures — top-level per-channel keys `from-identity` /
+        \\`from-capture` / `from-capture-raw`, each channel object carrying
+        \\`identify` + both trailer variants (the root `trailer`/`origin` keys are
+        \\gone). Queue rows with missing dims are seeds: the daemon expands them
+        \\into `pending` rows over fixtures recipes (full combos), never a scope.
         \\
         \\daemon flags:
         \\  --write-log                 tee daemon output to fixtures/daemon.log
@@ -3073,8 +3072,10 @@ pub const dev = if (build_options.dev) struct {
         \\subcommands (see each subcommand's `--help` for its flags — modes,
         \\filters, and scope flags are shared and documented once):
         \\  (none), help, --help, -h   this help
-        \\  daemon                     pop queue rows from fixtures/index.sqlite3 and
-        \\                              capture (poll ~1s heartbeat; 5s poll base) —
+        \\  daemon                     pop host-platform queue rows from
+        \\                              fixtures/index.sqlite3, materialize `pending`
+        \\                              rows, and evaluate them (identity: declared
+        \\                              generation; capture: real harness session) —
         \\                              run as a user, never inside an agent;
         \\                              --write-log also writes all daemon output
         \\                              to fixtures/daemon.log
@@ -3098,12 +3099,10 @@ pub const dev = if (build_options.dev) struct {
     /// filters, scope flags). Referenced by both subcommand usages so
     /// the common surface is documented once.
     pub const queueDequeueFlags =
-        \\refresh modes (queue stamps rows, dequeue filters them; exactly one,
-        \\default from-raw; two+ together → exit 3):
+        \\refresh modes (queue stamps rows, dequeue filters them; both together
+        \\→ exit 3; no flag → BOTH modes are queued per candidate):
         \\  --from-identity        resolve cooked from provided ids — declared, not
         \\                    observed; zero tokens; harness binary not required
-        \\  --from-raw        (default) fabricate env markers + config files and
-        \\                    run the detection ladder via `refresh run` — zero tokens
         \\  --from-capture    launch the real harness so it runs `fixtures capture`
         \\                    in a live model session — token-consuming,
         \\                    user-confirmed only
@@ -3113,26 +3112,30 @@ pub const dev = if (build_options.dev) struct {
         \\  --agent=ID    3-part <h>-<p>-<m> id (platform unfiltered)
         \\  --harness=H   constrain harness to H (any of H/P/M/PLAT)
         \\
-        \\scope flags (all AND together; the only conflict is two
-        \\--stale-by-* age thresholds; compose with the dim filters above):
-        \\  --all            the default scope made explicit (every fixture
-        \\                   row); absorbed by any other scope flag
+        \\scope flags (each selects a candidate set that is enqueued per selected
+        \\mode; compose with the dim filters above; dequeue matches the stored
+        \\marker instead):
+        \\  --all            every fixtures row (the default scope made explicit)
         \\  --stale-by-days=N      age threshold in days
         \\  --stale-by-hours=N     age threshold in hours
         \\  --stale-by-minutes=N   age threshold in minutes — the daemon skips
         \\                   only when the fixture is still age-fresh
         \\  --stale-by-version  version-marker scope: re-capture when the live
-        \\                   harness version differs from the captured one;
-        \\                   combines with a --stale-by-* age threshold (skip
-        \\                   only when age-fresh AND version-equal) or stands alone
-        \\  --partial        queue rows with at least one missing dim (seeds)
+        \\                   harness version differs from the captured one
+        \\  --stale-by-detect  re-capture when the fixture's `agent_detect_version`
+        \\                   is NULL or differs from this binary's version
+        \\  --stale-by-hash   re-capture when the stored per-channel generation
+        \\                   hash is NULL or differs from the current fixture
+        \\                   file's channel object (mode flags pick the channel;
+        \\                   no mode flag checks both, one row per stale channel)
         \\  --recipes        every known recipe (host platform)
-        \\  --missing-fixture recipes whose fixtures/<id>.json is absent from disk
-        \\  --available      modifier: probe each candidate's harness and record
-        \\                   1/0 into the available column (unavailable rows stay
-        \\                   queued as handoff; from-identity records but does not gate)
-        \\  --unavailable    modifier (dequeue only): match rows whose harness
-        \\                   is unavailable (available=0)
+        \\  --missing-fixture-file  recipes whose fixtures/<id>.json is absent
+        \\  --available      enqueue fixtures rows whose available marker is 1
+        \\  --unavailable    enqueue fixtures rows whose available marker is 0
+        \\  --successful     enqueue fixtures rows whose successful marker is 1
+        \\  --unsuccessful   enqueue fixtures rows whose successful marker is 0
+        \\                   (the designated vector for captures whose detection
+        \\                   was partial — valid ids, last attempt failed)
         \\
     ;
 
@@ -3144,8 +3147,9 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\usage: agent-detect fixtures queue [scope] [filters] [mode]
         \\
-        \\With a scope flag, every candidate is upserted into `queue`. Without
-        \\one, a seed row is created from the positive dims (`--harness=`/
+        \\With a scope flag, every candidate is upserted into `queue` per selected
+        \\mode (no mode flag → both `--from-identity` and `--from-capture` rows).
+        \\Without one, a seed row is created from the positive dims (`--harness=`/
         \\`--provider=`/`--model=`/`--platform=` or the composite `--agent=`/
         \\`--fixture=`) with the rest `null` — the daemon expands seeds over
         \\the known recipes.
@@ -3165,7 +3169,9 @@ pub const dev = if (build_options.dev) struct {
         \\usage: agent-detect fixtures dequeue [scope] [filters] [mode]
         \\
         \\Deletes every `queue` row matching the filters/scope. Filters are
-        \\required; no evaluation happens, nothing is captured.
+        \\required; no evaluation happens, nothing is captured. Scope flags match
+        \\the stored markers the queue command stamped; no mode flag matches all
+        \\modes.
         \\
         ++ queueDequeueFlags ++
         \\exit codes: 0 = ok, 2 = unrecognised argument, 3 = conflicting argument,
@@ -3365,7 +3371,7 @@ pub const dev = if (build_options.dev) struct {
         return out.toOwnedSlice(a);
     }
 
-    /// Ensure the `fixtures/` dir and the two-table schema exist (idempotent).
+    /// Ensure the `fixtures/` dir and the four-table schema exist (idempotent).
     /// Called before every query.
     fn ensureSchema(a: std.mem.Allocator, io: std.Io) !void {
         std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
@@ -3382,30 +3388,62 @@ pub const dev = if (build_options.dev) struct {
             \\    runner                  INTEGER NOT NULL,
             \\    generated_at            INTEGER NOT NULL,
             \\    harness_version         TEXT,
+            \\    available               INTEGER,
+            \\    successful              INTEGER,
+            \\    agent_detect_version    TEXT,
+            \\    identity_generation_at  INTEGER,
+            \\    identity_generation_hash TEXT,
+            \\    capture_generation_at   INTEGER,
+            \\    capture_generation_hash TEXT,
+            \\    agent_id                TEXT,
+            \\    fixture_id              TEXT,
             \\    PRIMARY KEY (harness, provider, model, platform)
             \\);
+            \\CREATE UNIQUE INDEX IF NOT EXISTS fixtures_fixture_id ON fixtures (fixture_id);
             \\CREATE TABLE IF NOT EXISTS queue (
-            \\    harness              TEXT,
-            \\    provider             TEXT,
-            \\    model                TEXT,
-            \\    platform             TEXT,
-            \\    scope_partial        INTEGER,
-            \\    scope_recipes        INTEGER,
-            \\    scope_missing_fixture INTEGER,
-            \\    stale_by_minutes     INTEGER,
-            \\    stale_by_version     INTEGER,
-            \\    available            INTEGER,
-            \\    runner               INTEGER NOT NULL,
-            \\    created_at           INTEGER NOT NULL,
-            \\    mode                 TEXT NOT NULL DEFAULT 'from-raw'
+            \\    queue_id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            \\    harness                   TEXT,
+            \\    provider                  TEXT,
+            \\    model                     TEXT,
+            \\    platform                  TEXT,
+            \\    scope_recipes             INTEGER,
+            \\    scope_missing_fixture_file INTEGER,
+            \\    stale_by_minutes          INTEGER,
+            \\    stale_by_version          INTEGER,
+            \\    stale_by_detect           INTEGER,
+            \\    stale_by_hash             INTEGER,
+            \\    available                 INTEGER,
+            \\    successful                INTEGER,
+            \\    runner                    INTEGER NOT NULL,
+            \\    created_at                INTEGER NOT NULL,
+            \\    mode                      TEXT NOT NULL
             \\);
             \\CREATE UNIQUE INDEX IF NOT EXISTS queue_dedupe
             \\    ON queue (COALESCE(harness,''), COALESCE(provider,''), COALESCE(model,''),
-            \\                COALESCE(platform,''), COALESCE(scope_partial,0),
-            \\                COALESCE(scope_recipes,0), COALESCE(scope_missing_fixture,0),
+            \\                COALESCE(platform,''), COALESCE(scope_recipes,0),
+            \\                COALESCE(scope_missing_fixture_file,0),
             \\                COALESCE(stale_by_minutes,0),
             \\                COALESCE(stale_by_version,0),
-            \\                COALESCE(available,0));
+            \\                COALESCE(stale_by_detect,0),
+            \\                COALESCE(stale_by_hash,0),
+            \\                COALESCE(available,0), COALESCE(successful,0), mode);
+            \\CREATE TABLE IF NOT EXISTS pending (
+            \\    queue_id    INTEGER NOT NULL,
+            \\    fixture_id  TEXT NOT NULL,
+            \\    started_at  INTEGER,
+            \\    finished_at INTEGER,
+            \\    UNIQUE (queue_id, fixture_id)
+            \\);
+            \\CREATE TABLE IF NOT EXISTS invalid (
+            \\    fixture_id  TEXT,
+            \\    agent_id    TEXT,
+            \\    harness_id  TEXT,
+            \\    provider_id TEXT,
+            \\    model_id    TEXT,
+            \\    platform_id TEXT,
+            \\    reason      TEXT,
+            \\    created_at  INTEGER
+            \\);
             \\
         );
     }
@@ -3418,36 +3456,44 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// One row in the `queue` table. `mode` is the refresh flavour
-    /// (`"from-identity" | "from-raw" | "from-capture"`, default `from-raw`)
-    /// — stamped by `fixtures queue`, inherited by seed expansions,
-    /// and used as the daemon's pop-order + worker selector. Deliberately
-    /// NOT part of `queue_dedupe`: one mode per combo, re-queueing with a
-    /// different mode flag upgrades/downgrades the single row in place.
-    /// `stale_by_minutes` is the single age marker (days/hours flags
-    /// convert to minutes at stamp time); `stale_by_version` marks a row
-    /// for version-based staleness evaluation at pop (the daemon compares
-    /// a live `--version` call against the fixture's captured
-    /// `harness_version`).
+    /// (`"from-identity" | "from-capture"`) — always stamped explicitly by
+    /// `fixtures queue` (no default), used as the daemon's pop-order +
+    /// worker selector, and part of `queue_dedupe` so identity and
+    /// capture rows for the same candidate coexist. `stale_by_minutes`
+    /// is the single age marker (days/hours flags convert to minutes at
+    /// stamp time); `stale_by_version` / `stale_by_detect` /
+    /// `stale_by_hash` mark the other staleness vectors; `available` /
+    /// `successful` are pure scope markers. `queue_id` is the row's
+    /// autoincrement key (excluded from `queue_dedupe`).
     const QueueRow = struct {
+        queue_id: i64 = 0,
         harness: ?[]const u8 = null,
         provider: ?[]const u8 = null,
         model: ?[]const u8 = null,
         platform: ?[]const u8 = null,
-        scope_partial: ?i64 = null,
         scope_recipes: ?i64 = null,
-        scope_missing_fixture: ?i64 = null,
+        scope_missing_fixture_file: ?i64 = null,
         stale_by_minutes: ?i64 = null,
         stale_by_version: ?i64 = null,
+        stale_by_detect: ?i64 = null,
+        stale_by_hash: ?i64 = null,
         available: ?i64 = null,
+        successful: ?i64 = null,
         runner: i64 = 0,
         created_at: i64 = 0,
-        mode: []const u8 = "from-raw",
+        mode: []const u8 = "",
     };
 
-    /// One row in the `fixtures` state table (always full; platform = host).
-    /// `harness_version` is the version captured by a live `--version`
-    /// call during the capture (decision #6); null when the version
-    /// couldn't be read or the row was declared (`from-identity`).
+    /// One row in the `fixtures` state table (always full dims; platform
+    /// may be any recorded platform). `harness_version` is the version
+    /// captured by a live `--version` call during the capture; null when
+    /// the version couldn't be read or the row was declared
+    /// (`from-identity`). `available`/`successful` are daemon-written
+    /// outcome markers; `agent_detect_version` is the capturing binary's
+    /// version (NULL = stale / never captured); the four generation
+    /// columns track per-channel (`from-identity` / `from-capture`)
+    /// write times + BLAKE3 hashes; `agent_id`/`fixture_id` are the
+    /// derived `#`-joined ids, written by every upsert.
     const FixtureRow = struct {
         harness: []const u8,
         provider: []const u8,
@@ -3456,6 +3502,40 @@ pub const dev = if (build_options.dev) struct {
         runner: i64,
         generated_at: i64,
         harness_version: ?[]const u8 = null,
+        available: ?i64 = null,
+        successful: ?i64 = null,
+        agent_detect_version: ?[]const u8 = null,
+        identity_generation_at: ?i64 = null,
+        identity_generation_hash: ?[]const u8 = null,
+        capture_generation_at: ?i64 = null,
+        capture_generation_hash: ?[]const u8 = null,
+    };
+
+    /// One row in the `pending` table — a single work item under a
+    /// popped `queue` row (`queue_id` + a concrete `fixture_id`).
+    /// `started_at`/`finished_at` make crash-resume safe; the
+    /// `UNIQUE(queue_id, fixture_id)` index keeps re-materialization
+    /// idempotent.
+    const PendingRow = struct {
+        queue_id: i64,
+        fixture_id: []const u8,
+        started_at: ?i64 = null,
+        finished_at: ?i64 = null,
+    };
+
+    /// One row in the `invalid` table — a bad-id row (unknown fixture
+    /// file, no-launch from-capture candidate, malformed seed) that the
+    /// dev agent reads for remedy. Written by queue time, seed
+    /// expansion, and `--missing-fixture-entry`; never evaluated.
+    const InvalidRow = struct {
+        fixture_id: ?[]const u8 = null,
+        agent_id: ?[]const u8 = null,
+        harness_id: ?[]const u8 = null,
+        provider_id: ?[]const u8 = null,
+        model_id: ?[]const u8 = null,
+        platform_id: ?[]const u8 = null,
+        reason: []const u8,
+        created_at: i64 = 0,
     };
 
     /// current unix epoch seconds (staleness source / queue order).
@@ -3493,6 +3573,7 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// `INSERT OR REPLACE INTO queue` — idempotent via `queue_dedupe`.
+    /// `queue_id` is autoincrement; never set by callers.
     fn upsertQueueRow(a: std.mem.Allocator, io: std.Io, row: QueueRow) !void {
         const h = try sqlOptStr(a, row.harness);
         defer a.free(h);
@@ -3502,37 +3583,52 @@ pub const dev = if (build_options.dev) struct {
         defer a.free(m);
         const pl = try sqlOptStr(a, row.platform);
         defer a.free(pl);
-        const sp = try sqlOptInt(a, row.scope_partial);
-        defer a.free(sp);
         const sr = try sqlOptInt(a, row.scope_recipes);
         defer a.free(sr);
-        const sm = try sqlOptInt(a, row.scope_missing_fixture);
-        defer a.free(sm);
+        const smf = try sqlOptInt(a, row.scope_missing_fixture_file);
+        defer a.free(smf);
         const sd = try sqlOptInt(a, row.stale_by_minutes);
         defer a.free(sd);
         const sv = try sqlOptInt(a, row.stale_by_version);
         defer a.free(sv);
+        const sdet = try sqlOptInt(a, row.stale_by_detect);
+        defer a.free(sdet);
+        const shash = try sqlOptInt(a, row.stale_by_hash);
+        defer a.free(shash);
         const av = try sqlOptInt(a, row.available);
         defer a.free(av);
+        const succ = try sqlOptInt(a, row.successful);
+        defer a.free(succ);
         const sql = try std.fmt.allocPrint(a,
-            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d},{s})",
-            .{ h, p, m, pl, sp, sr, sm, sd, sv, av, row.runner, row.created_at, try sqlQuote(a, row.mode) },
+            "INSERT OR REPLACE INTO queue(harness,provider,model,platform,scope_recipes,scope_missing_fixture_file,stale_by_minutes,stale_by_version,stale_by_detect,stale_by_hash,available,successful,runner,created_at,mode) VALUES({s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s},{d},{d},{s})",
+            .{ h, p, m, pl, sr, smf, sd, sv, sdet, shash, av, succ, row.runner, row.created_at, try sqlQuote(a, row.mode) },
         );
         defer a.free(sql);
         _ = try sqliteQuery(a, io, sql);
     }
 
-    /// `INSERT OR REPLACE INTO fixtures` — state, written only by `fixtures
-    /// agent` and the daemon. No `available` column. `harness_version` is
-    /// the live `--version` snapshot from the capture (null for
-    /// declared `from-identity` rows and backfills).
+    /// `INSERT OR REPLACE INTO fixtures` — state, written only by
+    /// `fixtures capture`, the identity worker, and the daemon. Derived
+    /// `agent_id`/`fixture_id` are maintained here (authoritative for DB
+    /// joins; filenames keep the dash-joined form).
     fn upsertFixture(a: std.mem.Allocator, io: std.Io, f: FixtureRow) !void {
+        const agent_id = try derivedAgentId(a, f.harness, f.provider, f.model);
+        defer a.free(agent_id);
+        const fixture_id = try derivedFixtureId(a, f.harness, f.provider, f.model, f.platform);
+        defer a.free(fixture_id);
         const sql = try std.fmt.allocPrint(a,
-            "INSERT OR REPLACE INTO fixtures(harness,provider,model,platform,runner,generated_at,harness_version) VALUES({s},{s},{s},{s},{d},{d},{s})",
+            "INSERT OR REPLACE INTO fixtures(harness,provider,model,platform,runner,generated_at,harness_version,available,successful,agent_detect_version,identity_generation_at,identity_generation_hash,capture_generation_at,capture_generation_hash,agent_id,fixture_id) VALUES({s},{s},{s},{s},{d},{d},{s},{s},{s},{s},{s},{s},{s},{s},{s},{s})",
             .{
                 try sqlQuote(a, f.harness), try sqlQuote(a, f.provider),
                 try sqlQuote(a, f.model), try sqlQuote(a, f.platform),
                 f.runner, f.generated_at, try sqlOptStr(a, f.harness_version),
+                try sqlOptInt(a, f.available), try sqlOptInt(a, f.successful),
+                try sqlOptStr(a, f.agent_detect_version),
+                try sqlOptInt(a, f.identity_generation_at),
+                try sqlOptStr(a, f.identity_generation_hash),
+                try sqlOptInt(a, f.capture_generation_at),
+                try sqlOptStr(a, f.capture_generation_hash),
+                try sqlQuote(a, agent_id), try sqlQuote(a, fixture_id),
             },
         );
         defer a.free(sql);
@@ -3541,7 +3637,7 @@ pub const dev = if (build_options.dev) struct {
 
     /// every `fixtures` row (for `--all` / stale-scope enumeration).
     fn selectFixtures(a: std.mem.Allocator, io: std.Io) ![]FixtureRow {
-        const out = try sqliteQuery(a, io, "SELECT harness,provider,model,platform,runner,generated_at,harness_version FROM fixtures");
+        const out = try sqliteQuery(a, io, "SELECT harness,provider,model,platform,runner,generated_at,harness_version,available,successful,agent_detect_version,identity_generation_at,identity_generation_hash,capture_generation_at,capture_generation_hash FROM fixtures");
         defer a.free(out);
         if (out.len == 0) return &.{};
         const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return &.{};
@@ -3563,20 +3659,16 @@ pub const dev = if (build_options.dev) struct {
                 .runner = sjint(o, "runner"),
                 .generated_at = sjint(o, "generated_at"),
                 .harness_version = sjoptstr(o, "harness_version"),
+                .available = sjoptint(o, "available"),
+                .successful = sjoptint(o, "successful"),
+                .agent_detect_version = sjoptstr(o, "agent_detect_version"),
+                .identity_generation_at = sjoptint(o, "identity_generation_at"),
+                .identity_generation_hash = sjoptstr(o, "identity_generation_hash"),
+                .capture_generation_at = sjoptint(o, "capture_generation_at"),
+                .capture_generation_hash = sjoptstr(o, "capture_generation_hash"),
             }) catch continue;
         }
         return rows.toOwnedSlice(a);
-    }
-
-    /// every `queue` row whose dims are all NULL (seeds) — for `--partial`.
-    fn selectSeedQueueRows(a: std.mem.Allocator, io: std.Io) ![]QueueRow {
-        const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue WHERE harness IS NULL OR provider IS NULL OR model IS NULL OR platform IS NULL",
-        );
-        defer a.free(out);
-        if (out.len == 0) return &.{};
-        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return &.{};
-        return jsonToQueueRows(a, parsed.value);
     }
 
     fn jsonToQueueRows(a: std.mem.Allocator, v: std.json.Value) ![]QueueRow {
@@ -3594,16 +3686,19 @@ pub const dev = if (build_options.dev) struct {
 
     fn jsonToQueueRow(o: std.json.ObjectMap) !QueueRow {
         return .{
+            .queue_id = sjint(o, "queue_id"),
             .harness = sjoptstr(o, "harness"),
             .provider = sjoptstr(o, "provider"),
             .model = sjoptstr(o, "model"),
             .platform = sjoptstr(o, "platform"),
-            .scope_partial = sjoptint(o, "scope_partial"),
             .scope_recipes = sjoptint(o, "scope_recipes"),
-            .scope_missing_fixture = sjoptint(o, "scope_missing_fixture"),
+            .scope_missing_fixture_file = sjoptint(o, "scope_missing_fixture_file"),
             .stale_by_minutes = sjoptint(o, "stale_by_minutes"),
             .stale_by_version = sjoptint(o, "stale_by_version"),
+            .stale_by_detect = sjoptint(o, "stale_by_detect"),
+            .stale_by_hash = sjoptint(o, "stale_by_hash"),
             .available = sjoptint(o, "available"),
+            .successful = sjoptint(o, "successful"),
             .runner = sjint(o, "runner"),
             .created_at = sjint(o, "created_at"),
             .mode = sjstr(o, "mode"),
@@ -3661,7 +3756,7 @@ pub const dev = if (build_options.dev) struct {
     /// the `fixtures` row for the given dims, or null if absent.
     fn fixtureRow(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?FixtureRow {
         const sql = try std.fmt.allocPrint(a,
-            "SELECT harness,provider,model,platform,runner,generated_at,harness_version FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
+            "SELECT harness,provider,model,platform,runner,generated_at,harness_version,available,successful,agent_detect_version,identity_generation_at,identity_generation_hash,capture_generation_at,capture_generation_hash FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
             .{ try sqlQuote(a, h), try sqlQuote(a, p), try sqlQuote(a, m), try sqlQuote(a, plat) },
         );
         defer a.free(sql);
@@ -3673,32 +3768,146 @@ pub const dev = if (build_options.dev) struct {
         return rows[0];
     }
 
-    /// atomically pop the oldest pending queue row. Returns null when empty.
+    /// read the oldest platform-eligible queue row (SELECT only — the row
+    /// stays queued until its `pending` rows drain; see `runFixturesDaemon`).
+    /// Returns null when empty. Non-host-platform rows are never selected.
     fn popQueueRow(a: std.mem.Allocator, io: std.Io) !?QueueRow {
-        // sweep ordering (decision #9): from-identity, then from-raw, then
-        // from-capture — cheaper/declared work always precedes
-        // token-consuming captures.
-        const out = try sqliteQuery(a, io,
-            "SELECT harness,provider,model,platform,scope_partial,scope_recipes,scope_missing_fixture,stale_by_minutes,stale_by_version,available,runner,created_at,mode FROM queue ORDER BY CASE mode WHEN 'from-identity' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1",
+        // sweep ordering: from-identity, then from-capture — cheaper/declared
+        // work always precedes token-consuming captures.
+        const host = platformId();
+        const sql = try std.fmt.allocPrint(a,
+            "SELECT queue_id,harness,provider,model,platform,scope_recipes,scope_missing_fixture_file,stale_by_minutes,stale_by_version,stale_by_detect,stale_by_hash,available,successful,runner,created_at,mode FROM queue WHERE platform IS NULL OR platform = {s} ORDER BY CASE mode WHEN 'from-identity' THEN 0 ELSE 1 END, created_at,rowid LIMIT 1",
+            .{try sqlQuote(a, host)},
         );
+        defer a.free(sql);
+        const out = try sqliteQuery(a, io, sql);
         defer a.free(out);
-        var row: ?QueueRow = null;
-        if (out.len > 0) {
-            const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
-            const rows = try jsonToQueueRows(a, parsed.value);
-            if (rows.len > 0) row = rows[0];
-        }
-        // delete the row we just read (single consumer per host; the daemon
-        // is the only evaluator). Use generated_at as a tie-break handle.
-        if (row) |_| {
-            const sql = try std.fmt.allocPrint(a,
-                "DELETE FROM queue WHERE rowid = (SELECT rowid FROM queue ORDER BY CASE mode WHEN 'from-identity' THEN 0 WHEN 'from-raw' THEN 1 ELSE 2 END, created_at,rowid LIMIT 1)",
-                .{},
-            );
-            defer a.free(sql);
-            _ = try sqliteQuery(a, io, sql);
-        }
-        return row;
+        if (out.len == 0) return null;
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
+        const rows = try jsonToQueueRows(a, parsed.value);
+        if (rows.len == 0) return null;
+        return rows[0];
+    }
+
+    /// the `queue` row for a `queue_id`, or null if absent (the pending
+    /// protocol reads the row's mode during crash-resume).
+    fn queueRowById(a: std.mem.Allocator, io: std.Io, queue_id: i64) !?QueueRow {
+        const sql = try std.fmt.allocPrint(a,
+            "SELECT queue_id,harness,provider,model,platform,scope_recipes,scope_missing_fixture_file,stale_by_minutes,stale_by_version,stale_by_detect,stale_by_hash,available,successful,runner,created_at,mode FROM queue WHERE queue_id={d}",
+            .{queue_id},
+        );
+        defer a.free(sql);
+        const out = try sqliteQuery(a, io, sql);
+        defer a.free(out);
+        if (out.len == 0) return null;
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
+        const rows = try jsonToQueueRows(a, parsed.value);
+        if (rows.len == 0) return null;
+        return rows[0];
+    }
+
+    /// delete a queue row by its `queue_id` (used when its pending rows
+    /// drain or when validation fails at pop).
+    fn deleteQueueRowById(a: std.mem.Allocator, io: std.Io, queue_id: i64) !void {
+        const sql = try std.fmt.allocPrint(a, "DELETE FROM queue WHERE queue_id={d}", .{queue_id});
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
+    }
+
+    /// `INSERT OR IGNORE INTO pending` — materialize work items for a
+    /// popped queue row. The `UNIQUE(queue_id, fixture_id)` index makes
+    /// re-materialization (and crash-resume) idempotent.
+    fn insertPendingRow(a: std.mem.Allocator, io: std.Io, queue_id: i64, fixture_id: []const u8) !void {
+        const sql = try std.fmt.allocPrint(a,
+            "INSERT OR IGNORE INTO pending(queue_id,fixture_id) VALUES({d},{s})",
+            .{ queue_id, try sqlQuote(a, fixture_id) },
+        );
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
+    }
+
+    /// the oldest unfinished pending row for a `queue_id`, or null when
+    /// drained (all finished).
+    fn nextUnfinishedPending(a: std.mem.Allocator, io: std.Io, queue_id: i64) !?PendingRow {
+        const sql = try std.fmt.allocPrint(a,
+            "SELECT queue_id,fixture_id,started_at,finished_at FROM pending WHERE queue_id={d} AND finished_at IS NULL ORDER BY fixture_id,rowid LIMIT 1",
+            .{queue_id},
+        );
+        defer a.free(sql);
+        const out = try sqliteQuery(a, io, sql);
+        defer a.free(out);
+        if (out.len == 0) return null;
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
+        if (parsed.value != .array or parsed.value.array.items.len == 0) return null;
+        const o = parsed.value.array.items[0];
+        if (o != .object) return null;
+        return .{
+            .queue_id = sjint(o.object, "queue_id"),
+            .fixture_id = sjstr(o.object, "fixture_id"),
+            .started_at = sjoptint(o.object, "started_at"),
+            .finished_at = sjoptint(o.object, "finished_at"),
+        };
+    }
+
+    /// mark a pending row started (crash-resume signal).
+    fn markPendingStarted(a: std.mem.Allocator, io: std.Io, queue_id: i64, fixture_id: []const u8, started_at: i64) !void {
+        const sql = try std.fmt.allocPrint(a,
+            "UPDATE pending SET started_at={d} WHERE queue_id={d} AND fixture_id={s}",
+            .{ started_at, queue_id, try sqlQuote(a, fixture_id) },
+        );
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
+    }
+
+    /// mark a pending row finished.
+    fn markPendingFinished(a: std.mem.Allocator, io: std.Io, queue_id: i64, fixture_id: []const u8, finished_at: i64) !void {
+        const sql = try std.fmt.allocPrint(a,
+            "UPDATE pending SET finished_at={d} WHERE queue_id={d} AND fixture_id={s}",
+            .{ finished_at, queue_id, try sqlQuote(a, fixture_id) },
+        );
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
+    }
+
+    /// true when every pending row for `queue_id` is finished.
+    fn pendingDrained(a: std.mem.Allocator, io: std.Io, queue_id: i64) !bool {
+        const sql = try std.fmt.allocPrint(a,
+            "SELECT COUNT(*) AS c FROM pending WHERE queue_id={d} AND finished_at IS NULL",
+            .{queue_id},
+        );
+        defer a.free(sql);
+        const out = try sqliteQuery(a, io, sql);
+        defer a.free(out);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return true;
+        if (parsed.value != .array or parsed.value.array.items.len == 0) return true;
+        const o = parsed.value.array.items[0];
+        if (o != .object) return true;
+        return sjint(o.object, "c") == 0;
+    }
+
+    /// delete a drained queue row's pending rows and the queue row itself.
+    fn clearPendingAndQueueRow(a: std.mem.Allocator, io: std.Io, queue_id: i64) !void {
+        const sql = try std.fmt.allocPrint(a,
+            "DELETE FROM pending WHERE queue_id={d}; DELETE FROM queue WHERE queue_id={d};",
+            .{ queue_id, queue_id },
+        );
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
+    }
+
+    /// `INSERT INTO invalid` — a bad-id row for dev-agent remedy.
+    fn insertInvalid(a: std.mem.Allocator, io: std.Io, row: InvalidRow) !void {
+        const sql = try std.fmt.allocPrint(a,
+            "INSERT INTO invalid(fixture_id,agent_id,harness_id,provider_id,model_id,platform_id,reason,created_at) VALUES({s},{s},{s},{s},{s},{s},{s},{d})",
+            .{
+                try sqlOptStr(a, row.fixture_id), try sqlOptStr(a, row.agent_id),
+                try sqlOptStr(a, row.harness_id), try sqlOptStr(a, row.provider_id),
+                try sqlOptStr(a, row.model_id), try sqlOptStr(a, row.platform_id),
+                try sqlQuote(a, row.reason), row.created_at,
+            },
+        );
+        defer a.free(sql);
+        _ = try sqliteQuery(a, io, sql);
     }
 
     /// `DELETE FROM queue` matching the filter. Returns rows deleted.
@@ -3711,20 +3920,25 @@ pub const dev = if (build_options.dev) struct {
         if (f.model.len > 0) try where.appendSlice(a, appendCond(a, "model", f.model) catch return 0);
         if (f.platform.len > 0) try where.appendSlice(a, appendCond(a, "platform", f.platform) catch return 0);
         // `--all` is the explicit default scope — it adds no constraint
-        // of its own (it is absorbed by any other scope flag).
-        if (f.partial) try where.appendSlice(a, " AND scope_partial=1");
-        // mirror the queue stamping: `--missing-fixture` absorbs `--recipes`.
-        if (f.missing_fixture) try where.appendSlice(a, " AND scope_missing_fixture=1") else if (f.recipes) try where.appendSlice(a, " AND scope_recipes=1");
+        // of its own.
+        if (f.recipes) try where.appendSlice(a, " AND scope_recipes=1");
+        if (f.missing_fixture_file) try where.appendSlice(a, " AND scope_missing_fixture_file=1");
         if (f.stale_by_days != null or f.stale_by_hours != null or f.stale_by_minutes != null) try where.appendSlice(a, " AND stale_by_minutes IS NOT NULL");
         if (f.stale_by_version) try where.appendSlice(a, " AND stale_by_version=1");
+        if (f.stale_by_detect) try where.appendSlice(a, " AND stale_by_detect=1");
+        if (f.stale_by_hash) try where.appendSlice(a, " AND stale_by_hash=1");
         if (f.available) try where.appendSlice(a, " AND available=1");
         if (f.unavailable) try where.appendSlice(a, " AND available=0");
+        if (f.successful) try where.appendSlice(a, " AND successful=1");
+        if (f.unsuccessful) try where.appendSlice(a, " AND successful=0");
         if (f.mode.len > 0) try where.appendSlice(a, appendCond(a, "mode", f.mode) catch return 0);
         // DELETE + SELECT changes() in ONE sqlite3 invocation so the count is
         // connection-local (changes() in a fresh process would read 0).
+        // Via sqliteQuery so the schema is ensured (dequeue works on a
+        // freshly-recreated store).
         const sql = try std.fmt.allocPrint(a, "DELETE FROM queue {s}; SELECT changes() AS c;", .{where.items});
         defer a.free(sql);
-        const out = try sqliteRun(a, io, sql);
+        const out = try sqliteQuery(a, io, sql);
         defer a.free(out);
         return parseJsonCount(a, out) catch 0;
     }
@@ -3749,23 +3963,30 @@ pub const dev = if (build_options.dev) struct {
         return std.fmt.allocPrint(a, " AND {s}={s}", .{ col, q });
     }
 
-    /// the shared validator — single source of truth for valid filter
-    /// combinations. Called by BOTH writer paths and the daemon reader.
+    /// the shared validator — single source of truth for valid queue
+    /// rows. Called by BOTH writer paths and the daemon reader. A row
+    /// carries at most one scope marker: a recipe/missing-fixture-file
+    /// scope, one staleness unit (age OR version OR detection OR hash),
+    /// an available marker, or a successful marker.
     fn validateQueueRow(row: QueueRow) !void {
-        const scope_count = @as(usize, @intFromBool(row.scope_partial != null and row.scope_partial.? == 1)) +
-            @as(usize, @intFromBool(row.scope_recipes != null and row.scope_recipes.? == 1)) +
-            @as(usize, @intFromBool(row.scope_missing_fixture != null and row.scope_missing_fixture.? == 1)) +
-            // the staleness scope is one unit: an age marker, a version
-            // marker, or both (a `--stale-by-* --stale-by-version` row
-            // carries both; the daemon skips only when both are fresh).
-            @as(usize, @intFromBool(row.stale_by_minutes != null or (row.stale_by_version != null and row.stale_by_version.? == 1)));
+        const staleness = @as(usize, @intFromBool(row.stale_by_minutes != null or
+            (row.stale_by_version != null and row.stale_by_version.? == 1) or
+            (row.stale_by_detect != null and row.stale_by_detect.? == 1) or
+            (row.stale_by_hash != null and row.stale_by_hash.? == 1)));
+        const scope_count = @as(usize, @intFromBool(row.scope_recipes != null and row.scope_recipes.? == 1)) +
+            @as(usize, @intFromBool(row.scope_missing_fixture_file != null and row.scope_missing_fixture_file.? == 1)) +
+            staleness +
+            @as(usize, @intFromBool(row.available != null)) +
+            @as(usize, @intFromBool(row.successful != null));
         if (scope_count > 1) return error.InvalidQueueRow;
         if (row.stale_by_minutes != null and row.stale_by_minutes.? < 1) return error.InvalidQueueRow;
-        if (row.stale_by_version != null and (row.stale_by_version.? != 0 and row.stale_by_version.? != 1)) return error.InvalidQueueRow;
-        if (row.available != null and (row.available.? != 0 and row.available.? != 1)) return error.InvalidQueueRow;
-        if (row.available != null and scope_count == 0) return error.InvalidQueueRow;
-        const scopes = [_]?i64{ row.scope_partial, row.scope_recipes, row.scope_missing_fixture };
-        for (scopes) |s| {
+        const flags = [_]?i64{
+            row.scope_recipes,       row.scope_missing_fixture_file,
+            row.stale_by_version,    row.stale_by_detect,
+            row.stale_by_hash,       row.available,
+            row.successful,
+        };
+        for (flags) |s| {
             if (s != null and (s.? != 0 and s.? != 1)) return error.InvalidQueueRow;
         }
     }
@@ -3798,17 +4019,6 @@ pub const dev = if (build_options.dev) struct {
         return list.toOwnedSlice(a);
     }
 
-const EnvSetup = struct {
-    env: []const [2][]const u8,
-    writes: []const WriteSpec = &.{},
-    cwd: []const u8,
-
-    const WriteSpec = struct {
-        path: []const u8,
-        content: []const u8,
-    };
-};
-
 const RecipesForFixtures = struct {
     /// Stable composite id in the form
     /// "<harness_id>-<provider_id>-<model_id>"
@@ -3820,20 +4030,11 @@ const RecipesForFixtures = struct {
     agent_id: []const u8,
     /// Binary names to probe on PATH for harness-availability checks.
     probeNames: []const []const u8,
-    /// Build the env+files a child `refresh run` needs to detect as
-    /// this fixture's agent. One parameterized function per harness —
-    /// the combo (provider/model) is derived from `combo.agent_id`, so
-    /// a new combo is one line in `recipesForFixtures`.
-    buildEnv: *const fn (
-        a: std.mem.Allocator,
-        env_map: *const std.process.Environ.Map,
-        io: std.Io,
-        combo: *const RecipesForFixtures,
-    ) anyerror!EnvSetup,
-    /// Headless launch argv for `from-capture` jobs (2g): the harness
+    /// Headless launch argv for `from-capture` jobs: the harness
     /// binary + args that run `agent-detect-dev fixtures capture` inside
     /// a live model session. `null` = no reliable headless mode → the
-    /// recipe is `from-identity`/`from-raw` only. Starter set only.
+    /// recipe is `from-identity` only (from-capture candidates without a
+    /// launch spec route to the `invalid` table at queue/expansion time).
     launch: ?[]const []const u8 = null,
 };
 
@@ -3901,699 +4102,382 @@ fn tupleKey(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, p
     return std.fmt.allocPrint(a, "{s}~{s}~{s}~{s}", .{ h, p, m, plat });
 }
 
-    pub fn resolveHome(env_map: *const std.process.Environ.Map) []const u8 {
-    return env_map.get("HOME") orelse env_map.get("USERPROFILE") orelse
-        if (builtin.os.tag == .windows) "C:/Users/default" else "/tmp";
-}
-
-/// Dev-only provider metadata (2b): the openai-compatible base_url +
-/// API-key env var per provider, used by the from-raw fabricator to
-/// write plausible harness configs (e.g. qwen's settings.json
-/// modelProviders baseUrl + envKey). `providerForBaseUrl` mirrors the
-/// base_url hosts back to provider ids so detection resolves the same
-/// upstream the fabricator wrote.
-const DevProviderMeta = struct {
-    provider: []const u8,
-    base_url: []const u8,
-    key_env: []const u8,
-};
-const devProviderMeta = [_]DevProviderMeta{
-    .{ .provider = "minimax", .base_url = "https://api.minimax.io/v1", .key_env = "MINIMAX_API_KEY" },
-    .{ .provider = "minimax-code", .base_url = "https://api.minimax.io/v1", .key_env = "MINIMAX_API_KEY" },
-    .{ .provider = "deepseek", .base_url = "https://api.deepseek.com", .key_env = "DEEPSEEK_API_KEY" },
-    .{ .provider = "deepseek-flash", .base_url = "https://api.deepseek.com", .key_env = "DEEPSEEK_API_KEY" },
-    .{ .provider = "anthropic", .base_url = "https://api.anthropic.com", .key_env = "ANTHROPIC_API_KEY" },
-    .{ .provider = "openrouter", .base_url = "https://openrouter.ai/api/v1", .key_env = "OPENROUTER_API_KEY" },
-    .{ .provider = "groq", .base_url = "https://api.groq.com/openai/v1", .key_env = "GROQ_API_KEY" },
-    .{ .provider = "cerebras", .base_url = "https://api.cerebras.ai/v1", .key_env = "CEREBRAS_API_KEY" },
-    .{ .provider = "zai", .base_url = "https://api.z.ai/api/paas/v4", .key_env = "ZAI_API_KEY" },
-    .{ .provider = "kimi", .base_url = "https://api.moonshot.ai/v1", .key_env = "MOONSHOT_API_KEY" },
-    .{ .provider = "moonshot", .base_url = "https://api.moonshot.ai/v1", .key_env = "MOONSHOT_API_KEY" },
-    .{ .provider = "qwen", .base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1", .key_env = "DASHSCOPE_API_KEY" },
-    .{ .provider = "mistral", .base_url = "https://api.mistral.ai/v1", .key_env = "MISTRAL_API_KEY" },
-    .{ .provider = "hyper", .base_url = "https://hyper.charm.land/api/v1/fantasy", .key_env = "HYPER_API_KEY" },
-    .{ .provider = "goose", .base_url = "https://api.anthropic.com", .key_env = "ANTHROPIC_API_KEY" },
-    .{ .provider = "cline-pass", .base_url = "https://api.cline.bot", .key_env = "CLINE_API_KEY" },
-    .{ .provider = "cline", .base_url = "https://api.cline.bot", .key_env = "CLINE_API_KEY" },
-    .{ .provider = "remote", .base_url = "https://api.anthropic.com", .key_env = "ANTHROPIC_API_KEY" },
-    .{ .provider = "xai", .base_url = "https://api.x.ai/v1", .key_env = "XAI_API_KEY" },
-    .{ .provider = "openai", .base_url = "https://api.openai.com/v1", .key_env = "OPENAI_API_KEY" },
-    .{ .provider = "alibaba", .base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1", .key_env = "DASHSCOPE_API_KEY" },
-    .{ .provider = "fireworks-ai", .base_url = "https://api.fireworks.ai/inference/v1", .key_env = "FIREWORKS_API_KEY" },
-    .{ .provider = "google", .base_url = "https://generativelanguage.googleapis.com/v1beta/openai", .key_env = "GEMINI_API_KEY" },
-};
-
-fn devProviderMetaFor(name: []const u8) ?DevProviderMeta {
-    for (devProviderMeta) |m| {
-        if (std.mem.eql(u8, m.provider, name)) return m;
+    /// derived `agent_id` — `harness#provider#model` (`#`-joined so the
+    /// stored id is unambiguous; the dash-joined form is reserved for
+    /// fixture filenames). Caller owns the returned slice.
+    fn derivedAgentId(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) ![]u8 {
+        return std.fmt.allocPrint(a, "{s}#{s}#{s}", .{ h, p, m });
     }
-    return null;
-}
 
-/// canonical (dash-spelling) harness rule name for a strict slug (or
-/// any alias form — `canonicalIdFor` is the shared resolver).
-fn canonicalHarnessName(a: std.mem.Allocator, slug: []const u8) ?[]const u8 {
-    return canonicalIdFor(a, HarnessRule, &rulesForHarnesses, slug);
-}
-
-/// canonical (dash-spelling) provider rule name for a strict slug.
-fn canonicalProviderName(a: std.mem.Allocator, slug: []const u8) ?[]const u8 {
-    return canonicalIdFor(a, ProviderRule, &rulesForProviders, slug);
-}
-
-/// canonical (dash-spelling) model rule name for a strict slug.
-fn canonicalModelName(a: std.mem.Allocator, slug: []const u8) ?[]const u8 {
-    return canonicalIdFor(a, ModelRule, &rulesForModels, slug);
-}
-
-/// resolve a combo's `agent_id` (strict slugs) into the three canonical
-/// (dash-spelling) names. Caller owns the three returned slices.
-fn comboDims(a: std.mem.Allocator, combo: *const RecipesForFixtures) ![3][]u8 {
-    const parts = try splitAgentId(a, combo.agent_id);
-    defer {
-        a.free(parts[0]);
-        a.free(parts[1]);
-        a.free(parts[2]);
+    /// derived `fixture_id` — `harness#provider#model#platform`. Caller
+    /// owns the returned slice.
+    fn derivedFixtureId(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) ![]u8 {
+        return std.fmt.allocPrint(a, "{s}#{s}#{s}#{s}", .{ h, p, m, plat });
     }
-    const h = canonicalHarnessName(a, parts[0]) orelse return error.InvalidAgentId;
-    const p = canonicalProviderName(a, parts[1]) orelse return error.InvalidAgentId;
-    const m = canonicalModelName(a, parts[2]) orelse return error.InvalidAgentId;
-    return .{
-        try a.dupe(u8, h),
-        try a.dupe(u8, p),
-        try a.dupe(u8, m),
-    };
-}
 
-    pub fn buildClineEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
+    /// BLAKE3 (std-only, no package) of the given bytes, hex-lowercase
+    /// (64 chars). Caller owns the returned slice.
+    fn generationHash(a: std.mem.Allocator, bytes: []const u8) ![]u8 {
+        var digest: [32]u8 = undefined;
+        std.crypto.hash.Blake3.hash(bytes, &digest, .{});
+        return a.dupe(u8, &std.fmt.bytesToHex(digest, .lower));
     }
-    const p = dims[1];
-    const m = dims[2];
-    const env = [_][2][]const u8{
-        .{ "CLINE_BUILD_ENV", "dev" },
-        .{ "CLINE_NO_INTERACTIVE", "true" },
-        .{ "CLINE_WRAPPER_PATH", "/opt/cline/wrapper" },
-        .{ "CLINE_RUN_AS_HUB_DAEMON", "true" },
-        .{ "CLINE_CONNECTOR_CLI_LAUNCH", "true" },
-        .{ "", "" },
-    };
-    const providers_path = try std.fs.path.join(a, &.{ home, ".cline/data/settings/providers.json" });
-    const json = try std.fmt.allocPrint(a,
-        \\{{
-        \\  "lastUsedProvider": "{s}",
-        \\  "providers": {{
-        \\    "{s}": {{
-        \\      "updatedAt": "2025-08-01T00:00:00Z",
-        \\      "settings": {{ "model": "{s}/{s}" }}
-        \\    }}
-        \\  }}
-        \\}}
-        \\
-    , .{ p, p, p, m });
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = providers_path, .content = json },
-    };
-    if (std.fs.path.dirname(providers_path)) |dir| {
-        std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
+
+    /// canonical serialization of a per-channel object (`identify` +
+    /// both trailer variants) — the single source of truth for BOTH
+    /// writing a channel into a fixture file AND computing its
+    /// generation hash, so the two can never diverge. Caller owns.
+    fn channelJson(a: std.mem.Allocator, identify: std.json.Value, co_author: ?[]const u8, assisted_by: ?[]const u8) ![]u8 {
+        var ch: std.json.Value = .{ .object = .empty };
+        try ch.object.put(a, "identify", identify);
+        try ch.object.put(a, "trailer co-author", optStringValue(a, co_author));
+        try ch.object.put(a, "trailer assisted-by", optStringValue(a, assisted_by));
+        return std.json.Stringify.valueAlloc(a, ch, .{ .whitespace = .indent_2 });
+    }
+
+    /// spawn the current executable's `trailer <subtype>` action and
+    /// return its stdout, trimmed (single-line string). Empty `combo_h`
+    /// = bare run (session-env detection); non-empty = recipe-mode combo
+    /// flags. Returns null on any failure.
+    fn spawnTrailerLine(a: std.mem.Allocator, io: std.Io, self_path: []const u8, subtype: []const u8, combo_h: []const u8, combo_p: []const u8, combo_m: []const u8) !?[]const u8 {
+        var argv_buf: [8][]const u8 = undefined;
+        var n: usize = 0;
+        argv_buf[n] = self_path;
+        n += 1;
+        argv_buf[n] = "trailer";
+        n += 1;
+        argv_buf[n] = subtype;
+        n += 1;
+        if (combo_h.len > 0) {
+            argv_buf[n] = try std.fmt.allocPrint(a, "--harness={s}", .{combo_h});
+            n += 1;
+            argv_buf[n] = try std.fmt.allocPrint(a, "--provider={s}", .{combo_p});
+            n += 1;
+            argv_buf[n] = try std.fmt.allocPrint(a, "--model={s}", .{combo_m});
+            n += 1;
+        }
+        const argv = argv_buf[0..n];
+        var child = std.process.spawn(io, .{
+            .argv = argv,
+            .stdout = .pipe,
+            .stderr = .ignore,
+        }) catch return null;
+        var out: std.ArrayList(u8) = .empty;
+        defer out.deinit(a);
+        try out.ensureTotalCapacity(a, 512);
+        var buf: [1024]u8 = undefined;
+        var reader = child.stdout.?.reader(io, &buf);
+        while (true) {
+            var chunk: [1024]u8 = undefined;
+            const got = reader.interface.readSliceShort(&chunk) catch break;
+            if (got == 0) break;
+            try out.appendSlice(a, chunk[0..got]);
+        }
+        const term = child.wait(io) catch return null;
+        if (term != .exited or term.exited != 0) return null;
+        const t = std.mem.trim(u8, out.items, " \t\r\n");
+        if (t.len == 0) return null;
+        return @as(?[]const u8, try a.dupe(u8, t));
+    }
+
+    /// merge-write channels into `fixtures/<f_id>.json`: load the
+    /// existing root object (when present + parseable), replace only the
+    /// given top-level keys, and atomically replace the file
+    /// (temp + rename). On any failure the previous file is untouched.
+    fn mergeWriteFixture(a: std.mem.Allocator, io: std.Io, f_id: []const u8, keys: []const []const u8, values: []const std.json.Value) !void {
+        const path = try std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id});
+        defer a.free(path);
+        var root: std.json.Value = .{ .object = .empty };
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 24)) catch null;
+        if (data) |d| {
+            defer a.free(d);
+            const parsed = std.json.parseFromSlice(std.json.Value, a, d, .{}) catch null;
+            if (parsed) |p| {
+                if (p.value == .object) root = p.value;
+            }
+        }
+        for (keys, values) |k, v| {
+            try root.object.put(a, k, v);
+        }
+        const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
+        defer a.free(json_bytes);
+        std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
             error.PathAlreadyExists => {},
-            else => |e| return e,
+            else => return error.FilesystemIoError,
         };
+        const tmp_path = try std.fmt.allocPrint(a, "{s}.tmp", .{path});
+        defer a.free(tmp_path);
+        std.Io.Dir.cwd().writeFile(io, .{ .sub_path = tmp_path, .data = json_bytes }) catch return error.FilesystemIoError;
+        std.Io.Dir.rename(std.Io.Dir.cwd(), tmp_path, std.Io.Dir.cwd(), path, io) catch return error.FilesystemIoError;
     }
-    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
 
-    pub fn buildKimiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
+    /// parse a channel object (`from-identity` / `from-capture`) out of
+    /// a fixture file, or null when the file or channel key is missing.
+    fn readChannelObject(a: std.mem.Allocator, io: std.Io, f_id: []const u8, channel: []const u8) !?std.json.Value {
+        const path = try std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id});
+        defer a.free(path);
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 24)) catch return null;
+        defer a.free(data);
+        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
+        if (parsed.value != .object) return null;
+        const ch = parsed.value.object.get(channel) orelse return null;
+        if (ch != .object) return null;
+        return ch;
     }
-    const dir = try std.fs.path.join(a, &.{ home, ".kimi-code" });
-    const env = [_][2][]const u8{
-        .{ "KIMI_CODE_HOME", dir },
-        .{ "KIMI_BASE_URL", "https://api.example.invalid" },
-        .{ "", "" },
-    };
-    const cfg = try std.fmt.allocPrint(a, "default_model = \"{s}/{s}\"\n", .{ dims[1], dims[2] });
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = try std.fs.path.join(a, &.{ dir, "config.toml" }), .content = cfg },
-    };
-    std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
-        error.PathAlreadyExists => {},
-        else => |e| return e,
-    };
-    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
-    pub fn buildMmxEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const dir = try std.fs.path.join(a, &.{ home, ".mmx" });
-    const env = [_][2][]const u8{
-        .{ "MMX_CONFIG_DIR", dir },
-        .{ "", "" },
-    };
-    // mmx stores a bare model id natively; the from-raw fabricator writes
-    // the "<provider>/<model>" form so `detectMmx` can also resolve a
-    // non-default provider (detectMmx falls back to the bare-model
-    // intrinsic minimax otherwise).
-    const cfg = try std.fmt.allocPrint(a, "{{\"defaultTextModel\":\"{s}/{s}\"}}\n", .{ dims[1], dims[2] });
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = try std.fs.path.join(a, &.{ dir, "config.json" }), .content = cfg },
-    };
-    std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
-        error.PathAlreadyExists => {},
-        else => |e| return e,
-    };
-    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
-    pub fn buildGooseEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, io: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const env = [_][2][]const u8{
-        .{ "GOOSE_TERMINAL", "true" },
-        .{ "GOOSE_MODE", "auto" },
-        .{ "GOOSE_WORKING_DIR", home },
-        .{ "", "" },
-    };
-    const yaml = try std.fmt.allocPrint(a,
-        \\active_provider: {s}
-        \\providers:
-        \\  {s}:
-        \\    model: {s}
-        \\
-    , .{ dims[1], dims[1], dims[2] });
-    const config_path = try std.fs.path.join(a, &.{ home, ".config/goose/config.yaml" });
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = config_path, .content = yaml },
-    };
-    if (std.fs.path.dirname(config_path)) |parent| {
-        std.Io.Dir.cwd().createDirPath(io, parent) catch |err| switch (err) {
-            error.PathAlreadyExists => {},
-            else => |e| return e,
-        };
-    }
-    return .{ .env = try a.dupe([2][]const u8, &env), .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
-    pub fn buildPiEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const env = try a.alloc([2][]const u8, 4);
-    env[0] = .{ "PI_CODING_AGENT", "true" };
-    env[1] = .{ "PI_PROVIDER", dims[1] };
-    env[2] = .{ "PI_MODEL", dims[2] };
-    env[3] = .{ "", "" };
-    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &.{}), .cwd = home };
-}
-
-    pub fn buildQwenEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const p = dims[1];
-    const m = dims[2];
-    const meta = devProviderMetaFor(p) orelse devProviderMetaFor("minimax").?;
-    const qwen_dir = try std.fs.path.join(a, &.{ home, ".qwen" });
-    defer a.free(qwen_dir);
-    const settings_path = try std.fs.path.join(a, &.{ qwen_dir, "settings.json" });
-    defer a.free(settings_path);
-    const settings_body = try std.fmt.allocPrint(a,
-        \\{{
-        \\  "security": {{ "auth": {{ "selectedType": "openai" }} }},
-        \\  "model": {{ "name": "{s}" }},
-        \\  "modelProviders": {{
-        \\    "openai": [{{
-        \\      "id": "{s}",
-        \\      "name": "[{s}] {s}",
-        \\      "baseUrl": "{s}",
-        \\      "envKey": "{s}"
-        \\    }}]
-        \\  }}
-        \\}}
-        \\
-    , .{ m, m, p, m, meta.base_url, meta.key_env });
-    const env = try a.alloc([2][]const u8, 2);
-    env[0] = .{ "QWEN_API_KEY", "fake" };
-    env[1] = .{ "", "" };
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = settings_path, .content = settings_body },
-    };
-    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
-    pub fn buildOmpEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const omp_dir = try std.fs.path.join(a, &.{ home, ".omp/agent" });
-    defer a.free(omp_dir);
-    const config_path = try std.fs.path.join(a, &.{ omp_dir, "config.yml" });
-    defer a.free(config_path);
-    const config_body = try std.fmt.allocPrint(a,
-        \\modelRoles:
-        \\  default: {s}/{s}
-        \\
-    , .{ dims[1], dims[2] });
-    const env = try a.alloc([2][]const u8, 2);
-    env[0] = .{ "OMP_API_KEY", "fake" };
-    env[1] = .{ "", "" };
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = config_path, .content = config_body },
-    };
-    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
-    pub fn buildReasonixEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const p = dims[1];
-    const m = dims[2];
-    const meta = devProviderMetaFor(p) orelse devProviderMetaFor("deepseek").?;
-    const config_path = try std.fs.path.join(a, &.{ home, ".reasonix/config.toml" });
-    defer a.free(config_path);
-    const config_body = try std.fmt.allocPrint(a,
-        \\default_model = "{s}"
-        \\
-        \\[[providers]]
-        \\name = "{s}"
-        \\kind = "openai"
-        \\base_url = "{s}"
-        \\models = ["{s}"]
-        \\default = "{s}"
-        \\api_key_env = "{s}"
-        \\
-    , .{ p, p, meta.base_url, m, m, meta.key_env });
-    const env = try a.alloc([2][]const u8, 2);
-    env[0] = .{ "REASONIX_API_KEY", "fake" };
-    env[1] = .{ "", "" };
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = config_path, .content = config_body },
-    };
-    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
-    pub fn buildCrushEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const hyper_path = try std.fs.path.join(a, &.{ home, ".local/share/crush/hyper.json" });
-    defer a.free(hyper_path);
-    const hyper_body = try std.fmt.allocPrint(a,
-        \\{{
-        \\  "name": "Charm Hyper",
-        \\  "id": "hyper",
-        \\  "type": "openai-compat",
-        \\  "api_endpoint": "https://hyper.charm.land/api/v1/fantasy",
-        \\  "default_large_model_id": "{s}/{s}",
-        \\  "default_small_model_id": "{s}/{s}"
-        \\}}
-        \\
-    , .{ dims[1], dims[2], dims[1], dims[2] });
-    const env = try a.alloc([2][]const u8, 2);
-    env[0] = .{ "CRUSH_API_KEY", "fake" };
-    env[1] = .{ "", "" };
-    const writes = [_]EnvSetup.WriteSpec{
-        .{ .path = hyper_path, .content = hyper_body },
-    };
-    return .{ .env = env, .writes = try a.dupe(EnvSetup.WriteSpec, &writes), .cwd = home };
-}
-
-    pub fn buildKiloEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
-    const env = try a.alloc([2][]const u8, 3);
-    env[0] = .{ "KILO_API_KEY", "fake" };
-    env[1] = .{ "KILO_MODEL", model_full };
-    env[2] = .{ "", "" };
-    return .{ .env = env, .writes = &.{}, .cwd = home };
-}
-
-    pub fn buildOpencodeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
-    const env = try a.alloc([2][]const u8, 3);
-    env[0] = .{ "OPENCODE_API_KEY", "fake" };
-    env[1] = .{ "OPENCODE_MODEL", model_full };
-    env[2] = .{ "", "" };
-    return .{ .env = env, .writes = &.{}, .cwd = home };
-}
-
-    pub fn buildVibeEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const env = try a.alloc([2][]const u8, 4);
-    env[0] = .{ "VIBE_API_KEY", "fake" };
-    env[1] = .{ "VIBE_ACTIVE_MODEL", dims[2] };
-    env[2] = .{ "VIBE_ACTIVE_PROVIDER", dims[1] };
-    env[3] = .{ "", "" };
-    return .{ .env = env, .writes = &.{}, .cwd = home };
-}
-
-    pub fn buildCursorEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
-    const env = try a.alloc([2][]const u8, 3);
-    env[0] = .{ "CURSOR_API_KEY", "fake" };
-    env[1] = .{ "CURSOR_MODEL", model_full };
-    env[2] = .{ "", "" };
-    return .{ .env = env, .writes = &.{}, .cwd = home };
-}
-
-    pub fn buildCopilotEnv(a: std.mem.Allocator, env_map: *const std.process.Environ.Map, _: std.Io, combo: *const RecipesForFixtures) anyerror!EnvSetup {
-    const home = resolveHome(env_map);
-    const dims = try comboDims(a, combo);
-    defer {
-        a.free(dims[0]);
-        a.free(dims[1]);
-        a.free(dims[2]);
-    }
-    const model_full = try std.fmt.allocPrint(a, "{s}/{s}", .{ dims[1], dims[2] });
-    const env = try a.alloc([2][]const u8, 3);
-    env[0] = .{ "COPILOT_ALLOW_ALL", "true" };
-    env[1] = .{ "COPILOT_MODEL", model_full };
-    env[2] = .{ "", "" };
-    return .{ .env = env, .writes = &.{}, .cwd = home };
-}
-
-/// the capture prompt the from-capture worker hands a headless harness:
+/// the capture prompt the from-capture worker/// the capture prompt the from-capture worker hands a headless harness:
 /// the model session runs `agent-detect-dev fixtures capture` in the
 /// current working directory and reports the result.
 const capture_prompt = "run `agent-detect-dev fixtures capture` in the current working directory and report the result";
 
 pub const recipesForFixtures = [_]RecipesForFixtures{
     // cline — clinepass/kimi-k3 (keep, no launch spec — not in the usable set), deepseek/v4-flash, minimax/m3, openrouter/v4-flash (no launch spec — not in the usable set)
-    .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=cline-pass/kimi-k3", capture_prompt } },
-    .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=deepseek", "--model=deepseek-v4-flash", "--thinking", "high", capture_prompt } },
-    .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=minimax", "--model=minimax/minimax-m3", capture_prompt } },
-    .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=openrouter", "--model=openrouter/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "cline-clinepass-kimik3", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=cline-pass/kimi-k3", capture_prompt } },
+    .{ .agent_id = "cline-deepseek-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .launch = &.{ "cline", "--auto-approve", "--provider=deepseek", "--model=deepseek-v4-flash", "--thinking", "high", capture_prompt } },
+    .{ .agent_id = "cline-minimax-minimaxm3", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .launch = &.{ "cline", "--auto-approve", "--provider=minimax", "--model=minimax/minimax-m3", capture_prompt } },
+    .{ .agent_id = "cline-openrouter-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .launch = &.{ "cline", "--auto-approve", "--provider=openrouter", "--model=openrouter/deepseek-v4-flash", capture_prompt } },
     // cline additions (real usable combos): clinepass/step-3.7-flash and clinepass/free-deepseek-v4-flash
-    .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=stepfun/step-3.7-flash", capture_prompt } },
-    .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .buildEnv = buildClineEnv, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=free/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "cline-clinepass-step37flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=stepfun/step-3.7-flash", capture_prompt } },
+    .{ .agent_id = "cline-clinepass-deepseekv4flash", .probeNames = &.{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }, .launch = &.{ "cline", "--auto-approve", "--provider=cline-pass", "--model=free/deepseek-v4-flash", capture_prompt } },
     // goose — goose/claude-sonnet-4 (contributor-scope example, keeps the harness→recipe test green)
-    .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .buildEnv = buildGooseEnv, .launch = &.{ "goose", "run", "-t", capture_prompt } },
+    .{ .agent_id = "goose-goose-claudesonnet4", .probeNames = &.{ "goose", "goose.exe", "goosed", "goosed.exe" }, .launch = &.{ "goose", "run", "-t", capture_prompt } },
     // kimi — minimax/m3 (keep), deepseek/v4-flash, kimi/k3
-    .{ .agent_id = "kimicode-minimax-minimaxm3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-deepseek-deepseekv4flash", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-kimi-kimik3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-minimax-minimaxm3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-deepseek-deepseekv4flash", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-kimi-kimik3", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
     // kimi catalog inference (2026-08-11, `kimi provider catalog list`,
     // models.dev): per the ordering spec — all-providers-free step
     // (openrouter `:free` models that clear the evergreen top-50) —
     // then minimax all-models (M2.7) and deepseek all-models (v4-pro)
     // steps. All provider/model rules already exist; `buildKimiEnv`
     // writes `default_model = "<provider>/<model>"` for each.
-    .{ .agent_id = "kimicode-openrouter-gemma431b", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-openrouter-nemotron3ultra", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-openrouter-nemotron3super", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-openrouter-nemotron3nano", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-minimax-minimaxm27", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
-    .{ .agent_id = "kimicode-deepseek-deepseekv4pro", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .buildEnv = buildKimiEnv, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-gemma431b", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3ultra", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3super", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-openrouter-nemotron3nano", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-minimax-minimaxm27", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
+    .{ .agent_id = "kimicode-deepseek-deepseekv4pro", .probeNames = &.{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe", "kimi.cmd", "kimi.ps1" }, .launch = &.{ "kimi", "-p", capture_prompt } },
     // mmx — minimax/m3 (keep), minimax/m2.7
-    .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe", "mmx.cmd", "mmx.ps1" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
-    .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe", "mmx.cmd", "mmx.ps1" }, .buildEnv = buildMmxEnv, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
+    .{ .agent_id = "mmx-minimax-minimaxm3", .probeNames = &.{ "mmx", "mmx.exe", "mmx.cmd", "mmx.ps1" }, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
+    .{ .agent_id = "mmx-minimax-minimaxm27", .probeNames = &.{ "mmx", "mmx.exe", "mmx.cmd", "mmx.ps1" }, .launch = &.{ "mmx", "text", "chat", "--message", capture_prompt, "--non-interactive" } },
     // pi — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash, minimax/m3
-    .{ .agent_id = "pi-anthropic-claudesonnet4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
-    .{ .agent_id = "pi-deepseek-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-flash", "-p", capture_prompt } },
-    .{ .agent_id = "pi-minimax-minimaxm3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "minimax", "--model", "MiniMax-M3", "-p", capture_prompt } },
+    .{ .agent_id = "pi-anthropic-claudesonnet4", .probeNames = &.{ "pi", "pi.exe" } },
+    .{ .agent_id = "pi-deepseek-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-flash", "-p", capture_prompt } },
+    .{ .agent_id = "pi-minimax-minimaxm3", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "minimax", "--model", "MiniMax-M3", "-p", capture_prompt } },
     // pi additions (pi authed with these providers 2026-08-11). The
     // groq/cerebras/xai/moonshot recipes have no launch spec: this
     // account's groq key 404s llama-4, cerebras 404s every catalog id,
     // xai reports no credits (403), moonshot is rate-limited (429) —
-    // from-identity/from-raw still cover them.
-    .{ .agent_id = "pi-openrouter-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "deepseek/deepseek-v4-flash", "-p", capture_prompt } },
-    .{ .agent_id = "pi-groq-llama4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    // from-identity still covers them.
+    .{ .agent_id = "pi-openrouter-deepseekv4flash", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "openrouter", "--model", "deepseek/deepseek-v4-flash", "-p", capture_prompt } },
+    .{ .agent_id = "pi-groq-llama4", .probeNames = &.{ "pi", "pi.exe" } },
     // cerebras free-trial models (verified working 2026-08-11):
     // gpt-oss-120b (production) and gemma-4-31b (preview).
-    .{ .agent_id = "pi-cerebras-gptoss120b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gpt-oss-120b", "-p", capture_prompt } },
-    .{ .agent_id = "pi-cerebras-gemma431b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gemma-4-31b", "-p", capture_prompt } },
-    .{ .agent_id = "pi-cerebras-zaiglm47", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "cerebras", "--model", "zai-glm-4.7", "-p", capture_prompt } },
-    .{ .agent_id = "pi-mistral-mistrallargelatest", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "mistral", "--model", "mistral-large-latest", "-p", capture_prompt } },
-    .{ .agent_id = "pi-xai-grok4", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
-    .{ .agent_id = "pi-kimi-kimik3", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
+    .{ .agent_id = "pi-cerebras-gptoss120b", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gpt-oss-120b", "-p", capture_prompt } },
+    .{ .agent_id = "pi-cerebras-gemma431b", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "cerebras", "--model", "gemma-4-31b", "-p", capture_prompt } },
+    .{ .agent_id = "pi-cerebras-zaiglm47", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "cerebras", "--model", "zai-glm-4.7", "-p", capture_prompt } },
+    .{ .agent_id = "pi-mistral-mistrallargelatest", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "mistral", "--model", "mistral-large-latest", "-p", capture_prompt } },
+    .{ .agent_id = "pi-xai-grok4", .probeNames = &.{ "pi", "pi.exe" } },
+    .{ .agent_id = "pi-kimi-kimik3", .probeNames = &.{ "pi", "pi.exe" } },
     // pi batch 2 (2026-08-11, catalog inference): free-tier openrouter
     // `:free` models + groq free-tier models (evergreen-clearing, per
     // the ordering spec's "all providers' free models" step), then
     // minimax/deepseek all-models steps (their named-provider override
     // bypasses the evergreen gate). Groq has no launch spec — this
     // account's groq key 404s (see the batch-1 comment).
-    .{ .agent_id = "pi-openrouter-gemma431b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "google/gemma-4-31b-it:free", "-p", capture_prompt } },
-    .{ .agent_id = "pi-openrouter-nemotron3ultra", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-ultra-550b-a55b:free", "-p", capture_prompt } },
-    .{ .agent_id = "pi-openrouter-nemotron3super", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-super-120b-a12b:free", "-p", capture_prompt } },
-    .{ .agent_id = "pi-openrouter-nemotron3nano", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-nano-30b-a3b:free", "-p", capture_prompt } },
-    .{ .agent_id = "pi-groq-llama3370b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
-    .{ .agent_id = "pi-groq-llama318b", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv },
-    .{ .agent_id = "pi-minimax-minimaxm27", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "minimax", "--model", "MiniMax-M2.7", "-p", capture_prompt } },
-    .{ .agent_id = "pi-deepseek-deepseekv4pro", .probeNames = &.{ "pi", "pi.exe" }, .buildEnv = buildPiEnv, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-pro", "-p", capture_prompt } },
+    .{ .agent_id = "pi-openrouter-gemma431b", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "openrouter", "--model", "google/gemma-4-31b-it:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-openrouter-nemotron3ultra", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-ultra-550b-a55b:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-openrouter-nemotron3super", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-super-120b-a12b:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-openrouter-nemotron3nano", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "openrouter", "--model", "nvidia/nemotron-3-nano-30b-a3b:free", "-p", capture_prompt } },
+    .{ .agent_id = "pi-groq-llama3370b", .probeNames = &.{ "pi", "pi.exe" } },
+    .{ .agent_id = "pi-groq-llama318b", .probeNames = &.{ "pi", "pi.exe" } },
+    .{ .agent_id = "pi-minimax-minimaxm27", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "minimax", "--model", "MiniMax-M2.7", "-p", capture_prompt } },
+    .{ .agent_id = "pi-deepseek-deepseekv4pro", .probeNames = &.{ "pi", "pi.exe" }, .launch = &.{ "pi", "--provider", "deepseek", "--model", "deepseek-v4-pro", "-p", capture_prompt } },
     // qwen — minimax/m3 (keep), deepseek/v4-flash, qwen/qwen3.8-max
-    .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-qwen-qwen38max", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-minimax-minimaxm3", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-deepseek-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-qwen-qwen38max", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
     // qwen catalog inference (2026-08-11, `~/.qwen/settings.json`
     // `modelProviders`): minimax/deepseek all-models steps per the
     // ordering spec, then evergreen-clearing xai/requesty/dashscope
     // combos. baseUrl hosts map via `providerForBaseUrl` (requesty and
     // x.ai added to the table this batch).
-    .{ .agent_id = "qwen-minimax-minimaxm25", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-minimax-minimaxm27", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-deepseek-deepseekv4pro", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-xai-grok45", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-xai-grok420", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-openai-gpt4o", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
-    .{ .agent_id = "qwen-qwen-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .buildEnv = buildQwenEnv, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-minimax-minimaxm25", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-minimax-minimaxm27", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-deepseek-deepseekv4pro", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-xai-grok45", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-xai-grok420", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-openai-gpt4o", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
+    .{ .agent_id = "qwen-qwen-deepseekv4flash", .probeNames = &.{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }, .launch = &.{ "qwen", "-p", capture_prompt } },
     // kilo — anthropic/claude-sonnet-4 (keep), deepseek/v4-flash (keep), minimax/m3, openrouter/v4-flash, zai/glm-5.2
-    .{ .agent_id = "kilo-anthropic-claudesonnet4", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-deepseek-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-minimax-minimaxm3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-anthropic-claudesonnet4", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-deepseek-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-minimax-minimaxm3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-openrouter-deepseekv4flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-zai-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     // kilo catalog inference (2026-08-11, `kilo models`, 481 models):
     // free-tier `~*-latest` router aliases that clear the evergreen
     // top-50 (provider `kilo`), then minimax/clinepass/deepseek
     // all-models steps per the ordering spec, then evergreen-clearing
     // hyper/ollama-cloud/fireworks-ai combos. Scoped to kilo's authed
     // providers.
-    .{ .agent_id = "kilo-kilo-gemini35flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~google/gemini-flash-latest", capture_prompt } },
-    .{ .agent_id = "kilo-kilo-grok45", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~x-ai/grok-latest", capture_prompt } },
-    .{ .agent_id = "kilo-kilo-kimik3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~moonshotai/kimi-latest", capture_prompt } },
-    .{ .agent_id = "kilo-minimax-minimaxm27", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-clinepass-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-clinepass-kimik27code", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-deepseek-deepseekv4pro", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-hyper-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-hyper-kimik3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-ollamacloud-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-ollamacloud-kimik25", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
-    .{ .agent_id = "kilo-fireworksai-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .buildEnv = buildKiloEnv, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-gemini35flash", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~google/gemini-flash-latest", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-grok45", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~x-ai/grok-latest", capture_prompt } },
+    .{ .agent_id = "kilo-kilo-kimik3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", "--model", "kilo/~moonshotai/kimi-latest", capture_prompt } },
+    .{ .agent_id = "kilo-minimax-minimaxm27", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-clinepass-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-clinepass-kimik27code", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-deepseek-deepseekv4pro", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-hyper-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-hyper-kimik3", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-ollamacloud-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-ollamacloud-kimik25", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
+    .{ .agent_id = "kilo-fireworksai-glm52", .probeNames = &.{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }, .launch = &.{ "kilo", "run", "--auto", capture_prompt } },
     // omp — minimax-code/m3 (keep), deepseek/v4-flash, openrouter/v4-flash
-    .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "minimax-code/MiniMax-M3", capture_prompt } },
-    .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "deepseek/deepseek-v4-flash", capture_prompt } },
-    .{ .agent_id = "omp-openrouter-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "openrouter/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "omp-minimaxcode-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "minimax-code/MiniMax-M3", capture_prompt } },
+    .{ .agent_id = "omp-deepseek-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "deepseek/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "omp-openrouter-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "openrouter/deepseek-v4-flash", capture_prompt } },
     // omp evergreen+free additions (2026-08-11): free models on the
     // newly-added providers, constrained to the evergreen top-50 set.
     // Service ids carry a -free suffix (e.g. zenmux "kimi-k3-free");
     // the recipe stores the coalesced canonical model, the -free is the
     // free-tier variation on that provider.
-    .{ .agent_id = "omp-zenmux-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/deepseek/deepseek-v4-flash-free", capture_prompt } },
-    .{ .agent_id = "omp-zenmux-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/moonshotai/kimi-k3-free", capture_prompt } },
-    .{ .agent_id = "omp-zenmux-step37flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/stepfun/step-3.7-flash-free", capture_prompt } },
-    .{ .agent_id = "omp-zenmux-grok45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/x-ai/grok-4.5-free", capture_prompt } },
-    .{ .agent_id = "omp-zenmux-gemini35flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/google/gemini-3.5-flash-free", capture_prompt } },
-    .{ .agent_id = "omp-zenmux-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "zenmux/z-ai/glm-4.7-flash-free", capture_prompt } },
-    .{ .agent_id = "omp-siliconflow-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "siliconflow/MiniMaxAI/MiniMax-M3", capture_prompt } },
-    .{ .agent_id = "omp-siliconflow-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "siliconflow/moonshotai/Kimi-K3", capture_prompt } },
-    .{ .agent_id = "omp-siliconflow-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731", capture_prompt } },
-    .{ .agent_id = "omp-sakana-fuguultrav11", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "sakana/fugu-ultra-v1.1", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "zenmux/deepseek/deepseek-v4-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "zenmux/moonshotai/kimi-k3-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-step37flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "zenmux/stepfun/step-3.7-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-grok45", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "zenmux/x-ai/grok-4.5-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-gemini35flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "zenmux/google/gemini-3.5-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-zenmux-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "zenmux/z-ai/glm-4.7-flash-free", capture_prompt } },
+    .{ .agent_id = "omp-siliconflow-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "siliconflow/MiniMaxAI/MiniMax-M3", capture_prompt } },
+    .{ .agent_id = "omp-siliconflow-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "siliconflow/moonshotai/Kimi-K3", capture_prompt } },
+    .{ .agent_id = "omp-siliconflow-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731", capture_prompt } },
+    .{ .agent_id = "omp-sakana-fuguultrav11", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "sakana/fugu-ultra-v1.1", capture_prompt } },
     // omp batch 2 (evergreen+free): ollama-cloud, kimi-code, meta, google-antigravity
-    .{ .agent_id = "omp-ollamacloud-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/deepseek-v4-flash", capture_prompt } },
-    .{ .agent_id = "omp-ollamacloud-deepseekv32", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/deepseek-v3.2", capture_prompt } },
-    .{ .agent_id = "omp-ollamacloud-glm52", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/glm-5.2", capture_prompt } },
-    .{ .agent_id = "omp-ollamacloud-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/kimi-k3", capture_prompt } },
-    .{ .agent_id = "omp-ollamacloud-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/minimax-m3", capture_prompt } },
-    .{ .agent_id = "omp-ollamacloud-minimaxm27", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/minimax-m2.7", capture_prompt } },
-    .{ .agent_id = "omp-ollamacloud-qwen3coder", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/qwen3-coder", capture_prompt } },
-    .{ .agent_id = "omp-ollamacloud-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "ollama-cloud/nemotron-3-ultra", capture_prompt } },
-    .{ .agent_id = "omp-kimicode-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "kimi-code/k3", capture_prompt } },
-    .{ .agent_id = "omp-meta-musespark12", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "meta/muse-spark-1.2", capture_prompt } },
-    .{ .agent_id = "omp-googleantigravity-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "google-antigravity/gpt-oss-120b", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-deepseekv4flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/deepseek-v4-flash", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-deepseekv32", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/deepseek-v3.2", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-glm52", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/glm-5.2", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/kimi-k3", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-minimaxm3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/minimax-m3", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-minimaxm27", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/minimax-m2.7", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-qwen3coder", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/qwen3-coder", capture_prompt } },
+    .{ .agent_id = "omp-ollamacloud-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "ollama-cloud/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-kimicode-kimik3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "kimi-code/k3", capture_prompt } },
+    .{ .agent_id = "omp-meta-musespark12", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "meta/muse-spark-1.2", capture_prompt } },
+    .{ .agent_id = "omp-googleantigravity-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "google-antigravity/gpt-oss-120b", capture_prompt } },
     // omp batch 3 (evergreen+free): gmi-cloud, nanogpt, huggingface, cursor
-    .{ .agent_id = "omp-gmicloud-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/openai/gpt-4o", capture_prompt } },
-    .{ .agent_id = "omp-gmicloud-grok45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/x-ai/grok-4.5", capture_prompt } },
-    .{ .agent_id = "omp-gmicloud-kimik2", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/moonshotai/kimi-k2", capture_prompt } },
-    .{ .agent_id = "omp-gmicloud-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/nvidia/nemotron-3-ultra", capture_prompt } },
-    .{ .agent_id = "omp-gmicloud-glm47", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/zai-org/glm-4.7", capture_prompt } },
-    .{ .agent_id = "omp-gmicloud-deepseekr1", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/deepseek-ai/deepseek-r1", capture_prompt } },
-    .{ .agent_id = "omp-gmicloud-gemini3flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/google/gemini-3-flash", capture_prompt } },
-    .{ .agent_id = "omp-gmicloud-claudefable5", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "gmi-cloud/anthropic/claude-fable-5", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-deepseekr1", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/deepseek-ai/deepseek-r1", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/openai/chatgpt-4o", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-grok3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/grok-3", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-kimik2", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/baseten/kimi-k2", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/nvidia/nemotron-3-ultra", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-phi4mini", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/phi-4-mini", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-olmo332bthink", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/allenai/olmo-3-32b-think", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-ling30flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/inclusionai/ling-3.0-flash", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-doubaoseed21", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/bytedance/doubao-seed-2.1", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-ernie45", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/baidu/ernie-4.5", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-hunyuant1", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/hunyuan-t1", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/TEE/gpt-oss-120b", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-gemma327b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/gemma-3-27b", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-mistralsmall3", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/mistral-small-3", capture_prompt } },
-    .{ .agent_id = "omp-nanogpt-qwen36", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "nanogpt/alibaba/qwen3.6", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-phi4", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/microsoft/phi-4", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/zai-org/glm-4.7-flash", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/nvidia/nemotron-3-ultra", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-llama318b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/meta-llama/llama-3.1-8b", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-ling261t", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/inclusionai/ling-2.6-1t", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-cogito21", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/deepcogito/cogito-2.1", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/openai/gpt-oss-120b", capture_prompt } },
-    .{ .agent_id = "omp-huggingface-commanda", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "huggingface/cohere/command-a", capture_prompt } },
-    .{ .agent_id = "omp-cursor-gpt5mini", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/gpt-5-mini", capture_prompt } },
-    .{ .agent_id = "omp-cursor-gemini3flash", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/gemini-3-flash", capture_prompt } },
-    .{ .agent_id = "omp-cursor-glm52", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/glm-5.2", capture_prompt } },
-    .{ .agent_id = "omp-cursor-claudefable5", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/claude-fable-5", capture_prompt } },
-    .{ .agent_id = "omp-cursor-kimik25", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "cursor/kimi-k2.5", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/openai/gpt-4o", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-grok45", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/x-ai/grok-4.5", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-kimik2", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/moonshotai/kimi-k2", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/nvidia/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-glm47", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/zai-org/glm-4.7", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-deepseekr1", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/deepseek-ai/deepseek-r1", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-gemini3flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/google/gemini-3-flash", capture_prompt } },
+    .{ .agent_id = "omp-gmicloud-claudefable5", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "gmi-cloud/anthropic/claude-fable-5", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-deepseekr1", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/deepseek-ai/deepseek-r1", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/openai/chatgpt-4o", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-grok3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/grok-3", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-kimik2", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/baseten/kimi-k2", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/nvidia/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-phi4mini", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/phi-4-mini", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-olmo332bthink", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/allenai/olmo-3-32b-think", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-ling30flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/inclusionai/ling-3.0-flash", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-doubaoseed21", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/bytedance/doubao-seed-2.1", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-ernie45", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/baidu/ernie-4.5", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-hunyuant1", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/hunyuan-t1", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/TEE/gpt-oss-120b", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-gemma327b", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/gemma-3-27b", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-mistralsmall3", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/mistral-small-3", capture_prompt } },
+    .{ .agent_id = "omp-nanogpt-qwen36", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "nanogpt/alibaba/qwen3.6", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-phi4", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/microsoft/phi-4", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-glm47flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/zai-org/glm-4.7-flash", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-nemotron3ultra", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/nvidia/nemotron-3-ultra", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-llama318b", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/meta-llama/llama-3.1-8b", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-ling261t", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/inclusionai/ling-2.6-1t", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-cogito21", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/deepcogito/cogito-2.1", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-gptoss120b", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/openai/gpt-oss-120b", capture_prompt } },
+    .{ .agent_id = "omp-huggingface-commanda", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "huggingface/cohere/command-a", capture_prompt } },
+    .{ .agent_id = "omp-cursor-gpt5mini", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "cursor/gpt-5-mini", capture_prompt } },
+    .{ .agent_id = "omp-cursor-gemini3flash", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "cursor/gemini-3-flash", capture_prompt } },
+    .{ .agent_id = "omp-cursor-glm52", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "cursor/glm-5.2", capture_prompt } },
+    .{ .agent_id = "omp-cursor-claudefable5", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "cursor/claude-fable-5", capture_prompt } },
+    .{ .agent_id = "omp-cursor-kimik25", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "cursor/kimi-k2.5", capture_prompt } },
     // omp batch 4 (evergreen+free): github-copilot
-    .{ .agent_id = "omp-githubcopilot-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "github-copilot/gpt-4o", capture_prompt } },
-    .{ .agent_id = "omp-githubcopilot-gemini3pro", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "github-copilot/gemini-3-pro", capture_prompt } },
-    .{ .agent_id = "omp-githubcopilot-gpt5mini", .probeNames = &.{ "omp", "omp.exe" }, .buildEnv = buildOmpEnv, .launch = &.{ "omp", "--model", "github-copilot/gpt-5-mini", capture_prompt } },
+    .{ .agent_id = "omp-githubcopilot-gpt4o", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "github-copilot/gpt-4o", capture_prompt } },
+    .{ .agent_id = "omp-githubcopilot-gemini3pro", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "github-copilot/gemini-3-pro", capture_prompt } },
+    .{ .agent_id = "omp-githubcopilot-gpt5mini", .probeNames = &.{ "omp", "omp.exe" }, .launch = &.{ "omp", "--model", "github-copilot/gpt-5-mini", capture_prompt } },
     // reasonix — deepseek-flash/v4-flash (keep), deepseek/v4-flash, minimax/m3
-    .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv, .launch = &.{ "reasonix", "run", "--permission-mode", "bypassPermissions", capture_prompt } },
-    .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
-    .{ .agent_id = "reasonix-minimax-minimaxm3", .probeNames = &.{ "reasonix", "reasonix.exe" }, .buildEnv = buildReasonixEnv },
+    .{ .agent_id = "reasonix-deepseekflash-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" }, .launch = &.{ "reasonix", "run", "--permission-mode", "bypassPermissions", capture_prompt } },
+    .{ .agent_id = "reasonix-deepseek-deepseekv4flash", .probeNames = &.{ "reasonix", "reasonix.exe" } },
+    .{ .agent_id = "reasonix-minimax-minimaxm3", .probeNames = &.{ "reasonix", "reasonix.exe" } },
     // crush — hyper/qwen3.7-plus (keep), hyper/v4-flash, minimax/m3, deepseek/v4-flash
-    .{ .agent_id = "crush-hyper-qwen37plus", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-minimax-minimaxm3", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-deepseek-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen37plus", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-minimax-minimaxm3", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-deepseek-deepseekv4flash", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
     // crush catalog inference (2026-08-11): `crush models` lists the
     // full models.dev catalog (1435 entries) but the runtime provider is
     // hyper only — confirmed from `~/.local/share/crush/hyper.json`
     // (the runnable set). Adds hyper-provider models that clear the
     // evergreen top-50; no recipes for catalog providers crush cannot
     // actually run.
-    .{ .agent_id = "crush-hyper-deepseekv4pro", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-glm52", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-kimik25", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-kimik27code", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-kimik3", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-llama3370b", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-llama4maverick", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-minimaxm27", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-qwen36max", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-qwen37flash", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-qwen38max", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
-    .{ .agent_id = "crush-hyper-qwen3coder", .probeNames = &.{ "crush", "crush.exe" }, .buildEnv = buildCrushEnv, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-deepseekv4pro", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-glm52", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-kimik25", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-kimik27code", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-kimik3", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-llama3370b", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-llama4maverick", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-minimaxm27", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen36max", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen37flash", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen38max", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
+    .{ .agent_id = "crush-hyper-qwen3coder", .probeNames = &.{ "crush", "crush.exe" }, .launch = &.{ "crush", "run", capture_prompt } },
     // opencode — minimax/m3 (keep), deepseek/v4-flash, hyper/v4-flash, groq/llama-4, cerebras/qwen3
-    .{ .agent_id = "opencode-minimax-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-deepseek-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-hyper-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-groq-llama4", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-cerebras-qwen3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-minimax-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-deepseek-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-hyper-deepseekv4flash", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-groq-llama4", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-cerebras-qwen3", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
     // opencode's built-in free tier (opencode router, no API key needed)
-    .{ .agent_id = "opencode-opencode-deepseekv4flashfree", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", "--model", "opencode/deepseek-v4-flash-free", capture_prompt } },
+    .{ .agent_id = "opencode-opencode-deepseekv4flashfree", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", "--model", "opencode/deepseek-v4-flash-free", capture_prompt } },
     // opencode catalog inference (2026-08-11, `opencode models`, 83
     // models): free-tier router model that clears the evergreen top-50
     // (nemotron-3-ultra), then minimax/clinepass/deepseek all-models
     // steps per the ordering spec, then evergreen-clearing alibaba
     // combos. scoped to opencode's authed providers.
-    .{ .agent_id = "opencode-opencode-nemotron3ultra", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", "--model", "opencode/nemotron-3-ultra-free", capture_prompt } },
-    .{ .agent_id = "opencode-minimax-minimaxm25", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-minimax-minimaxm27", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-clinepass-glm52", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-clinepass-kimik27code", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-clinepass-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-clinepass-deepseekv4pro", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-deepseek-deepseekv4pro", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-alibaba-glm52", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-alibaba-qwen3coder", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
-    .{ .agent_id = "opencode-alibaba-qwen38max", .probeNames = &.{ "opencode", "opencode.exe" }, .buildEnv = buildOpencodeEnv, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-opencode-nemotron3ultra", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", "--model", "opencode/nemotron-3-ultra-free", capture_prompt } },
+    .{ .agent_id = "opencode-minimax-minimaxm25", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-minimax-minimaxm27", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-glm52", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-kimik27code", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-minimaxm3", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-clinepass-deepseekv4pro", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-deepseek-deepseekv4pro", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-alibaba-glm52", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-alibaba-qwen3coder", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
+    .{ .agent_id = "opencode-alibaba-qwen38max", .probeNames = &.{ "opencode", "opencode.exe" }, .launch = &.{ "opencode", "run", capture_prompt } },
     // vibe — mistral/mistral-large-latest (keep), mistral/mistral-small-latest, minimax/m3
-    .{ .agent_id = "vibe-mistral-mistrallargelatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
-    .{ .agent_id = "vibe-mistral-mistralsmalllatest", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
-    .{ .agent_id = "vibe-minimax-minimaxm3", .probeNames = &.{ "vibe", "vibe.exe" }, .buildEnv = buildVibeEnv, .launch = &.{ "vibe", "--prompt", capture_prompt } },
+    .{ .agent_id = "vibe-mistral-mistrallargelatest", .probeNames = &.{ "vibe", "vibe.exe" }, .launch = &.{ "vibe", "--prompt", capture_prompt } },
+    .{ .agent_id = "vibe-mistral-mistralsmalllatest", .probeNames = &.{ "vibe", "vibe.exe" }, .launch = &.{ "vibe", "--prompt", capture_prompt } },
+    .{ .agent_id = "vibe-minimax-minimaxm3", .probeNames = &.{ "vibe", "vibe.exe" }, .launch = &.{ "vibe", "--prompt", capture_prompt } },
     // cursor (2026-08-11, installed `cursor-agent` from brew
     // `cursor-cli`, authed). Cursor's CLI takes `--model` per run over
     // its first-party router; recipes are evergreen-clearing catalog
     // models (flat subscription — no per-model free/paid split).
-    .{ .agent_id = "cursor-cursor-claudefable5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-fable-5-thinking-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-claudesonnet5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-sonnet-5-thinking-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-claudeopus5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "claude-opus-5-thinking-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-gpt56sol", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-sol-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-gpt56luna", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-luna-high", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-gpt52", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.2", capture_prompt } },
-    .{ .agent_id = "cursor-cursor-grok45", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .buildEnv = buildCursorEnv, .launch = &.{ "cursor-agent", "-p", "--model", "cursor-grok-4.5-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudefable5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .launch = &.{ "cursor-agent", "-p", "--model", "claude-fable-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudesonnet5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .launch = &.{ "cursor-agent", "-p", "--model", "claude-sonnet-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-claudeopus5", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .launch = &.{ "cursor-agent", "-p", "--model", "claude-opus-5-thinking-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt56sol", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-sol-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt56luna", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.6-luna-high", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-gpt52", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .launch = &.{ "cursor-agent", "-p", "--model", "gpt-5.2", capture_prompt } },
+    .{ .agent_id = "cursor-cursor-grok45", .probeNames = &.{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }, .launch = &.{ "cursor-agent", "-p", "--model", "cursor-grok-4.5-high", capture_prompt } },
     // copilot (2026-08-11, installed `copilot` from brew `copilot-cli`,
     // authed). Copilot routes GitHub-hosted models; recipes are
     // evergreen-clearing models its CLI exposes (`-p` headless verified;
     // the `gpt-5-mini` session model was confirmed live).
-    .{ .agent_id = "copilot-githubcopilot-gpt52", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "gpt-5.2", capture_prompt } },
-    .{ .agent_id = "copilot-githubcopilot-gemini25pro", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "gemini-2.5-pro", capture_prompt } },
-    .{ .agent_id = "copilot-githubcopilot-grok45", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "grok-4.5", capture_prompt } },
-    .{ .agent_id = "copilot-githubcopilot-claudesonnet5", .probeNames = &.{ "copilot", "copilot.exe" }, .buildEnv = buildCopilotEnv, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "claude-sonnet-5", capture_prompt } },
+    .{ .agent_id = "copilot-githubcopilot-gpt52", .probeNames = &.{ "copilot", "copilot.exe" }, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "gpt-5.2", capture_prompt } },
+    .{ .agent_id = "copilot-githubcopilot-gemini25pro", .probeNames = &.{ "copilot", "copilot.exe" }, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "gemini-2.5-pro", capture_prompt } },
+    .{ .agent_id = "copilot-githubcopilot-grok45", .probeNames = &.{ "copilot", "copilot.exe" }, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "grok-4.5", capture_prompt } },
+    .{ .agent_id = "copilot-githubcopilot-claudesonnet5", .probeNames = &.{ "copilot", "copilot.exe" }, .launch = &.{ "copilot", "-p", "--allow-all", "--model", "claude-sonnet-5", capture_prompt } },
 };
 
 // ----------------------------------------------------------------------------
@@ -4733,19 +4617,22 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         platform: []const u8 = "",
         fixture: ?[]const u8 = null,
         agent: ?[]const u8 = null,
-        /// scope flags: `--all`/`--stale-by-*`/`--partial` target index rows;
-        /// `--recipes`/`--missing-fixture` target the recipe table.
-        /// Exactly one scope flag may be set.
+        /// scope flags: `--all`/`--stale-by-*` target the fixtures table;
+        /// `--recipes`/`--missing-fixture-file` target the recipe table;
+        /// `--available`/`--unavailable`/`--successful`/`--unsuccessful`
+        /// target fixtures rows by their stored markers.
         all: bool = false,
-        partial: bool = false,
         recipes: bool = false,
-        missing_fixture: bool = false,
-        /// `--available`: probe-and-record harness availability into the
-        /// `available` column (1/0). Modifier only (never a scope flag).
+        missing_fixture_file: bool = false,
+        missing_fixture_entry: bool = false,
+        /// `--available`/`--unavailable` (`fixtures.available` 1/0) and
+        /// `--successful`/`--unsuccessful` (`fixtures.successful` 1/0):
+        /// pure scope markers — enqueue/dequeue by stored state, never a
+        /// probe.
         available: bool = false,
-        /// `--unavailable` / `--available=0`: dequeue match for available=0
-        /// handoff rows. Modifier only.
         unavailable: bool = false,
+        successful: bool = false,
+        unsuccessful: bool = false,
         /// age thresholds. Each is a scope flag by itself; at most one of
         /// the three may be set. The queued row always stores the age in
         /// MINUTES in the `stale_by_minutes` column (days/hours convert at
@@ -4753,20 +4640,26 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         stale_by_days: ?i64 = null,
         stale_by_hours: ?i64 = null,
         stale_by_minutes: ?i64 = null,
-        /// `--stale-by-version`: version-marker staleness. All scope
-        /// flags AND together; this one combines with an age threshold
-        /// (the daemon skips only when the fixture is age-fresh AND
-        /// version-equal) or stands alone. The daemon compares a live
-        /// `--version` call against the fixture's captured
-        /// `harness_version`.
+        /// `--stale-by-version`: version-marker staleness. The daemon
+        /// compares a live `--version` call against the fixture's
+        /// captured `harness_version`.
         stale_by_version: bool = false,
+        /// `--stale-by-detect`: re-capture when the fixture's
+        /// `agent_detect_version` is NULL or differs from this binary's.
+        stale_by_detect: bool = false,
+        /// `--stale-by-hash`: re-capture when the stored per-channel
+        /// generation hash is NULL or differs from the current fixture
+        /// file's channel object. Mode flags pick the channel; no mode
+        /// flag checks both.
+        stale_by_hash: bool = false,
         any: bool = false,
         /// true when `--fixture=` or `--agent=` (the composite ids)
         /// contributed the equality dims — used for the creation path.
         composite: bool = false,
-        /// refresh mode: `"from-identity" | "from-raw" | "from-capture"`,
-        /// or `""` when no mode flag was given. `queue` stamps it on
-        /// rows (default `from-raw`); `dequeue` filters by it.
+        /// refresh mode: `"from-identity" | "from-capture"`, or `""`
+        /// when no mode flag was given. `queue` stamps one row per
+        /// selected mode per candidate (no flag → both); `dequeue`
+        /// filters by it (no flag → all modes).
         mode: []const u8 = "",
     };
 
@@ -4797,17 +4690,12 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         var seen_provider = false;
         var seen_model = false;
         var seen_platform = false;
-        var is_dequeue = false;
 
         var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return FilterError.NoFilter;
         defer args_it.deinit();
         _ = args_it.skip(); // argv0
         _ = args_it.skip(); // "fixtures"
-        if (args_it.next()) |sub| {
-            is_dequeue = std.mem.eql(u8, sub, "dequeue");
-        } else {
-            return FilterError.NoFilter;
-        }
+        _ = args_it.next() orelse return FilterError.NoFilter; // <subcommand>
         while (args_it.next()) |arg| {
             if (std.mem.startsWith(u8, arg, "--fixture=")) {
                 f.fixture = arg["--fixture=".len..];
@@ -4831,41 +4719,43 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                 f.all = true;
             } else if (std.mem.eql(u8, arg, "--stale-by-version")) {
                 f.stale_by_version = true;
-            } else if (std.mem.eql(u8, arg, "--partial")) {
-                f.partial = true;
+            } else if (std.mem.eql(u8, arg, "--stale-by-detect")) {
+                f.stale_by_detect = true;
+            } else if (std.mem.eql(u8, arg, "--stale-by-hash")) {
+                f.stale_by_hash = true;
             } else if (std.mem.eql(u8, arg, "--recipes")) {
                 f.recipes = true;
-            } else if (std.mem.eql(u8, arg, "--missing-fixture")) {
-                f.missing_fixture = true;
+            } else if (std.mem.eql(u8, arg, "--missing-fixture-file")) {
+                f.missing_fixture_file = true;
+            } else if (std.mem.eql(u8, arg, "--missing-fixture-entry")) {
+                f.missing_fixture_entry = true;
             } else if (std.mem.eql(u8, arg, "--available")) {
                 f.available = true;
             } else if (std.mem.eql(u8, arg, "--unavailable") or std.mem.eql(u8, arg, "--available=0")) {
                 f.unavailable = true;
+            } else if (std.mem.eql(u8, arg, "--successful")) {
+                f.successful = true;
+            } else if (std.mem.eql(u8, arg, "--unsuccessful") or std.mem.eql(u8, arg, "--successful=0")) {
+                f.unsuccessful = true;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-days=")) {
                 f.stale_by_days = std.fmt.parseInt(i64, arg["--stale-by-days=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-hours=")) {
                 f.stale_by_hours = std.fmt.parseInt(i64, arg["--stale-by-hours=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-minutes=")) {
                 f.stale_by_minutes = std.fmt.parseInt(i64, arg["--stale-by-minutes=".len..], 10) catch return FilterError.InvalidThreshold;
-            } else if (std.mem.eql(u8, arg, "--from-identity") or std.mem.eql(u8, arg, "--from-raw") or std.mem.eql(u8, arg, "--from-capture")) {
-                // exactly one mode flag (two+ → conflicting). The stored
-                // value is the FULL "from-*" string (not the prefix
-                // stripped off) so modeRank and the daemon's worker
-                // branch can compare it verbatim.
+            } else if (std.mem.eql(u8, arg, "--from-identity") or std.mem.eql(u8, arg, "--from-capture")) {
+                // exactly one mode flag (both → conflicting). No flag means
+                // both modes are queued per candidate. The stored value is
+                // the FULL "from-*" string so modeRank and the daemon's
+                // worker branch can compare it verbatim.
                 const m = arg[2..];
                 if (f.mode.len > 0 and !std.mem.eql(u8, f.mode, m)) return FilterError.ConflictingFilters;
                 f.mode = m;
             }
         }
 
-        // default mode when none given: queue stamps `from-raw`; dequeue
-        // leaves "" = "all modes" (filters, does not stamp).
-        if (f.mode.len == 0 and !is_dequeue) f.mode = "from-raw";
-
         // stale-by-* age scopes: at most one of days/hours/minutes may be
-        // set (they are the only mutually-conflicting scope flags — every
-        // other scope flag ANDs with them), and the value must be a
-        // positive integer.
+        // set, and the value must be a positive integer.
         const age_scopes = @as(usize, @intFromBool(f.stale_by_days != null)) +
             @as(usize, @intFromBool(f.stale_by_hours != null)) +
             @as(usize, @intFromBool(f.stale_by_minutes != null));
@@ -4874,23 +4764,28 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             (f.stale_by_hours != null and f.stale_by_hours.? < 1) or
             (f.stale_by_minutes != null and f.stale_by_minutes.? < 1)) return FilterError.ConflictingFilters;
 
-        // all other scope flags combine (AND). scope_count is used below
-        // only as a "has any scope" probe. `--all` is the explicit default
-        // scope (every fixture row), so it counts as a scope flag.
+        // scope flags combine (AND); scope_count is a "has any scope" probe.
         const scope_count = @as(usize, @intFromBool(f.all)) + age_scopes +
-            @as(usize, @intFromBool(f.stale_by_version)) + @as(usize, @intFromBool(f.partial)) +
-            @as(usize, @intFromBool(f.recipes)) + @as(usize, @intFromBool(f.missing_fixture));
+            @as(usize, @intFromBool(f.stale_by_version)) +
+            @as(usize, @intFromBool(f.stale_by_detect)) +
+            @as(usize, @intFromBool(f.stale_by_hash)) +
+            @as(usize, @intFromBool(f.recipes)) +
+            @as(usize, @intFromBool(f.missing_fixture_file)) +
+            @as(usize, @intFromBool(f.missing_fixture_entry)) +
+            @as(usize, @intFromBool(f.available)) +
+            @as(usize, @intFromBool(f.unavailable)) +
+            @as(usize, @intFromBool(f.successful)) +
+            @as(usize, @intFromBool(f.unsuccessful));
 
-        // --available / --unavailable are modifiers: with no other scope flag
-        // they imply the `--all` default scope, so `--all --available` ≡
-        // `--available`. The two modifiers still conflict with each other.
-        if (f.available or f.unavailable) {
-            if (scope_count == 0) f.all = true;
+        // `--missing-fixture-entry` is its own filesystem scope — the
+        // handler ignores every other filter (no queue rows are written).
+        if (f.missing_fixture_entry) {
+            f.any = true;
+            return f;
         }
-        if (f.available and f.unavailable) return FilterError.ConflictingFilters;
 
         f.any = seen_fixture or seen_agent or seen_harness or seen_provider or
-            seen_model or seen_platform or scope_count > 0 or f.available or f.unavailable;
+            seen_model or seen_platform or scope_count > 0;
         if (!f.any) return FilterError.NoFilter;
 
         if (seen_fixture) {
@@ -4957,27 +4852,52 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         return f;
     }
 
-    /// how many scope flags are set. All scope flags AND together; only
-    /// conflicting `--stale-by-*` age thresholds are rejected (in
-    /// `parseFilters`). This is only a "has any scope" probe for
-    /// `fixtures queue`'s scope-path dispatch. `--all` is the explicit
+    /// the set of modes to emit for a queue request: no mode flag → both
+    /// (`from-identity` first); one flag → that mode only.
+    fn queueModes(f: FilterOptions) [2]?[]const u8 {
+        if (f.mode.len > 0) return .{ f.mode, null };
+        return .{ "from-identity", "from-capture" };
+    }
+
+    /// find the recipe for a dash-joined `agent_id`, or null.
+    fn recipeForAgent(agent: []const u8) ?RecipesForFixtures {
+        for (recipesForFixtures) |c| {
+            if (std.mem.eql(u8, c.agent_id, agent)) return c;
+        }
+        return null;
+    }
+
+    /// how many scope flags are set (a "has any scope" probe for
+    /// `fixtures queue`'s scope-path dispatch). `--all` is the explicit
     /// default scope (every fixture row), so it counts as a scope flag.
     fn scopeCount(f: FilterOptions) usize {
         const age_scopes = @as(usize, @intFromBool(f.stale_by_days != null)) +
             @as(usize, @intFromBool(f.stale_by_hours != null)) +
             @as(usize, @intFromBool(f.stale_by_minutes != null));
         return @as(usize, @intFromBool(f.all)) + age_scopes +
-            @as(usize, @intFromBool(f.stale_by_version)) + @as(usize, @intFromBool(f.partial)) +
-            @as(usize, @intFromBool(f.recipes)) + @as(usize, @intFromBool(f.missing_fixture));
+            @as(usize, @intFromBool(f.stale_by_version)) +
+            @as(usize, @intFromBool(f.stale_by_detect)) +
+            @as(usize, @intFromBool(f.stale_by_hash)) +
+            @as(usize, @intFromBool(f.recipes)) +
+            @as(usize, @intFromBool(f.missing_fixture_file)) +
+            @as(usize, @intFromBool(f.missing_fixture_entry)) +
+            @as(usize, @intFromBool(f.available)) +
+            @as(usize, @intFromBool(f.unavailable)) +
+            @as(usize, @intFromBool(f.successful)) +
+            @as(usize, @intFromBool(f.unsuccessful));
     }
 
-    /// the scope candidate set for `f`, as queue rows. All scope flags
-    /// AND together; `--all` is the explicit form of the default scope
-    /// and is absorbed by any other scope flag. The only conflicting
-    /// combination is two `--stale-by-*` age thresholds (rejected in
-    /// `parseFilters`). Candidates come from one of three tables — the
-    /// recipe table (`--recipes`/`--missing-fixture`), the seed queue
-    /// (`--partial`), or the fixtures table (`--all`/`--stale-by-*`).
+    /// the scope candidate set for `f`, as queue rows. Every scope only
+    /// INSERTs queue rows (plus the sanctioned `invalid`-table routing for
+    /// no-launch from-capture candidates) — no evaluation, no probing.
+    /// Candidates come from one of two universes:
+    ///  - the recipe table (`--recipes`/`--missing-fixture-file`, host
+    ///    platform)
+    ///  - the fixtures table (`--all`/`--stale-by-*`/`--available`/
+    ///    `--unavailable`/`--successful`/`--unsuccessful`; rows keep
+    ///    their stored platform)
+    /// Each candidate yields one row per selected mode; `--stale-by-hash`
+    /// constrains the channel via the mode flags.
     fn scopeCandidates(a: std.mem.Allocator, io: std.Io, f: FilterOptions) !std.ArrayListUnmanaged(QueueRow) {
         var out: std.ArrayListUnmanaged(QueueRow) = .empty;
         const host = platformId();
@@ -4993,16 +4913,11 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         else
             null;
 
-        // `--all` is the explicit default scope — every fixture row — and
-        // is absorbed by any other scope flag (which already enumerates that
-        // set). `--available`/`--unavailable` with no other scope flag imply
-        // `--all` (see parseFilters).
-
-        // recipe-table candidates (`--recipes` / `--missing-fixture`).
-        // `--missing-fixture` absorbs `--recipes` (missing ∩ recipes =
-        // missing). Stale/partial flags do not apply to the recipe
-        // universe, so they don't change this enumeration.
-        if (f.recipes or f.missing_fixture) {
+        // recipe-table candidates (`--recipes` / `--missing-fixture-file`).
+        // `--missing-fixture-file` absorbs `--recipes` (missing ∩ recipes =
+        // missing). Stale/marker scopes do not apply to the recipe universe.
+        if (f.recipes or f.missing_fixture_file) {
+            const modes = queueModes(f);
             for (recipesForFixtures) |c| {
                 const parts = try splitAgentId(a, c.agent_id);
                 defer {
@@ -5014,7 +4929,7 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                 if (f.provider.len > 0 and !std.mem.eql(u8, f.provider, parts[1])) continue;
                 if (f.model.len > 0 and !std.mem.eql(u8, f.model, parts[2])) continue;
                 if (f.platform.len > 0 and !std.mem.eql(u8, f.platform, host)) continue;
-                if (f.missing_fixture) {
+                if (f.missing_fixture_file) {
                     const fixture_id_v = try fixtureId(a, c.agent_id);
                     defer a.free(fixture_id_v);
                     const json_path = try std.fmt.allocPrint(a, "fixtures/{s}.json", .{fixture_id_v});
@@ -5025,107 +4940,152 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                     } else |_| {}
                     if (json_exists) continue;
                 }
-                var row: QueueRow = .{
-                    .harness = try a.dupe(u8, parts[0]),
-                    .provider = try a.dupe(u8, parts[1]),
-                    .model = try a.dupe(u8, parts[2]),
-                    .platform = try a.dupe(u8, host),
-                    .runner = getParentPid(),
-                    .created_at = now,
-                    .mode = f.mode,
-                };
-                if (f.missing_fixture) {
-                    row.scope_missing_fixture = 1;
-                } else {
-                    row.scope_recipes = 1;
+                for (modes) |mode_opt| {
+                    const mode = mode_opt orelse continue;
+                    // no-launch recipes under from-capture → invalid, not
+                    // queued (a warning suggests --from-identity).
+                    if (std.mem.eql(u8, mode, "from-capture") and c.launch == null) {
+                        try insertInvalid(a, io, .{
+                            .fixture_id = try fixtureId(a, c.agent_id),
+                            .agent_id = try a.dupe(u8, c.agent_id),
+                            .harness_id = try a.dupe(u8, parts[0]),
+                            .provider_id = try a.dupe(u8, parts[1]),
+                            .model_id = try a.dupe(u8, parts[2]),
+                            .platform_id = try a.dupe(u8, host),
+                            .reason = "no launch spec",
+                            .created_at = now,
+                        });
+                        writeOut(io, "fixtures queue: warning: ");
+                        writeOut(io, c.agent_id);
+                        writeOut(io, " has no launch spec — capture side suppressed; use --from-identity for it\n");
+                        continue;
+                    }
+                    var row: QueueRow = .{
+                        .harness = try a.dupe(u8, parts[0]),
+                        .provider = try a.dupe(u8, parts[1]),
+                        .model = try a.dupe(u8, parts[2]),
+                        .platform = try a.dupe(u8, host),
+                        .runner = getParentPid(),
+                        .created_at = now,
+                        .mode = try a.dupe(u8, mode),
+                    };
+                    if (f.missing_fixture_file) {
+                        row.scope_missing_fixture_file = 1;
+                    } else {
+                        row.scope_recipes = 1;
+                    }
+                    try validateQueueRow(row);
+                    try out.append(a, row);
                 }
-                if (f.available) {
-                    row.available = if (harnessAvailable(io, c.agent_id)) 1 else 0;
-                }
-                try validateQueueRow(row);
-                try out.append(a, row);
             }
             return out;
         }
 
-        // seed-queue candidates (`--partial`). Seeds are partial-dim rows,
-        // disjoint from the full-dim recipe/fixture universes, so ANDing
-        // `--partial` with a recipe/fixture scope yields an empty set.
-        if (f.partial) {
-            if (f.recipes or f.missing_fixture or stale_min != null or f.stale_by_version) return out;
-            const seeds = try selectSeedQueueRows(a, io);
-            for (seeds) |s| {
-                if (f.harness.len > 0 and !std.mem.eql(u8, s.harness orelse "", f.harness)) continue;
-                if (f.provider.len > 0 and !std.mem.eql(u8, s.provider orelse "", f.provider)) continue;
-                if (f.model.len > 0 and !std.mem.eql(u8, s.model orelse "", f.model)) continue;
-                if (f.platform.len > 0 and !std.mem.eql(u8, s.platform orelse "", f.platform)) continue;
-                var row = s;
-                row.scope_partial = 1;
-                row.runner = getParentPid();
-                row.created_at = now;
-                try validateQueueRow(row);
-                try out.append(a, row);
-            }
-            return out;
-        }
-
-        // fixtures-table candidates (`--all` / `--stale-by-*`). Staleness
-        // is NOT age-filtered at queue time (decision #6): every candidate
+        // fixtures-table candidates (`--all` / `--stale-by-*` /
+        // `--available`/`--unavailable`/`--successful`/`--unsuccessful`).
+        // Staleness is NOT pre-filtered at queue time: every candidate
         // row is queued with the marker the flag requested and the daemon
-        // evaluates it at pop. `--all` enumerates every fixture row; a stale
-        // marker subsumes it (both enumerate every fixture row).
+        // evaluates it at pop. Fixtures rows keep their stored platform.
         const fixtures = try selectFixtures(a, io);
         for (fixtures) |fx| {
             if (f.harness.len > 0 and !std.mem.eql(u8, f.harness, fx.harness)) continue;
             if (f.provider.len > 0 and !std.mem.eql(u8, f.provider, fx.provider)) continue;
             if (f.model.len > 0 and !std.mem.eql(u8, f.model, fx.model)) continue;
             if (f.platform.len > 0 and !std.mem.eql(u8, f.platform, fx.platform)) continue;
-            var row: QueueRow = .{
-                .harness = try a.dupe(u8, fx.harness),
-                .provider = try a.dupe(u8, fx.provider),
-                .model = try a.dupe(u8, fx.model),
-                .platform = try a.dupe(u8, fx.platform),
-                .runner = getParentPid(),
-                .created_at = now,
-                .mode = f.mode,
-            };
-            if (stale_min != null) row.stale_by_minutes = stale_min;
-            if (f.stale_by_version) row.stale_by_version = 1;
-            if (f.available) {
-                const agent = (try agentIdFrom(a, fx.harness, fx.provider, fx.model)) orelse continue;
-                row.available = if (harnessAvailable(io, agent)) 1 else 0;
+            if (f.available and !(fx.available != null and fx.available.? == 1)) continue;
+            if (f.unavailable and !(fx.available != null and fx.available.? == 0)) continue;
+            if (f.successful and !(fx.successful != null and fx.successful.? == 1)) continue;
+            if (f.unsuccessful and !(fx.successful != null and fx.successful.? == 0)) continue;
+
+            const modes = queueModes(f);
+            for (modes) |mode_opt| {
+                const mode = mode_opt orelse continue;
+                if (f.stale_by_hash) {
+                    const channel = if (std.mem.eql(u8, mode, "from-identity")) "from-identity" else "from-capture";
+                    if (!(try channelStaleByHash(a, io, fx, channel))) continue;
+                }
+                // no-launch recipes under from-capture → invalid, not queued.
+                if (std.mem.eql(u8, mode, "from-capture")) {
+                    const agent = (try agentIdFrom(a, fx.harness, fx.provider, fx.model)) orelse continue;
+                    const combo = recipeForAgent(agent);
+                    if (combo == null or combo.?.launch == null) {
+                        try insertInvalid(a, io, .{
+                            .fixture_id = (try fixtureIdFrom(a, fx.harness, fx.provider, fx.model, fx.platform)) orelse null,
+                            .agent_id = agent,
+                            .harness_id = fx.harness,
+                            .provider_id = fx.provider,
+                            .model_id = fx.model,
+                            .platform_id = fx.platform,
+                            .reason = "no launch spec",
+                            .created_at = now,
+                        });
+                        continue;
+                    }
+                }
+                var row: QueueRow = .{
+                    .harness = try a.dupe(u8, fx.harness),
+                    .provider = try a.dupe(u8, fx.provider),
+                    .model = try a.dupe(u8, fx.model),
+                    .platform = try a.dupe(u8, fx.platform),
+                    .runner = getParentPid(),
+                    .created_at = now,
+                    .mode = try a.dupe(u8, mode),
+                };
+                if (stale_min != null) row.stale_by_minutes = stale_min;
+                if (f.stale_by_version) row.stale_by_version = 1;
+                if (f.stale_by_detect) row.stale_by_detect = 1;
+                if (f.stale_by_hash) row.stale_by_hash = 1;
+                if (f.available) row.available = 1;
+                if (f.unavailable) row.available = 0;
+                if (f.successful) row.successful = 1;
+                if (f.unsuccessful) row.successful = 0;
+                try validateQueueRow(row);
+                try out.append(a, row);
             }
-            try validateQueueRow(row);
-            try out.append(a, row);
         }
         return out;
     }
 
+    /// true when the fixture row's channel generation hash is stale: the
+    /// stored hash IS NULL OR differs from the BLAKE3 of the current
+    /// fixture file's channel object (missing file or missing channel
+    /// object = stale).
+    fn channelStaleByHash(a: std.mem.Allocator, io: std.Io, fx: FixtureRow, channel: []const u8) !bool {
+        const f_id = (try fixtureIdFrom(a, fx.harness, fx.provider, fx.model, fx.platform)) orelse return true;
+        defer a.free(f_id);
+        const ch = (try readChannelObject(a, io, f_id, channel)) orelse return true;
+        const bytes = try std.json.Stringify.valueAlloc(a, ch, .{ .whitespace = .indent_2 });
+        defer a.free(bytes);
+        const cur = try generationHash(a, bytes);
+        defer a.free(cur);
+        const stored = if (std.mem.eql(u8, channel, "from-identity")) fx.identity_generation_hash else fx.capture_generation_hash;
+        if (stored) |s| {
+            if (std.mem.eql(u8, s, cur)) return false;
+        }
+        return true;
+    }
+
     // ----------------------------------------------------------------
+    // refresh subcommands    // ----------------------------------------------------------------
     // refresh subcommands
     // ----------------------------------------------------------------
 
-    /// `refresh run` — capture the current session and write the
-    /// fixture + upsert the matching fixtures row. Failure semantics:
-    /// if the detection ladder fails to resolve harness *or* provider
-    /// *or* model, exit 2 with no fixture written and no store change.
-    /// Partial detections are bad data and must be fixed, not papered
-    /// over. The agent runs this directly; the daemon also runs it as
-    /// a child after preparing the env for a target harness.
+    /// `fixtures capture` — capture the current real session into
+    /// `fixtures/<id>.json` (top-level `from-capture` + `from-capture-raw`
+    /// channel keys; any existing `from-identity` channel preserved) and
+    /// upsert the matching `fixtures` row. Failure semantics: if the
+    /// detection ladder fails to resolve harness *or* provider *or* model,
+    /// exit 8 with no fixture written and no store change (partial
+    /// detection is bad data per DESIGN). The daemon spawns this via the
+    /// recipe's launch argv inside a live model session; a hand-run
+    /// capture is a real session too.
     ///
     /// **Filename contract** — the fixture is written as a single
-    /// `fixtures/<fixture_id>.json` with top-level keys `cooked`, `raw`,
-    /// and `trailer`, where `fixture_id = agent_id + "-" + platform_id`
-    /// (e.g. `cline-clinepass-kimik3-darwin`). The `-<platform>` suffix
-    /// keeps per-platform config paths from churning each other
-    /// across CI runs; see DESIGN.md "per-platform fixtures" for the
-    /// rationale.
-    // Note on partial detection (the seed path): a daemon-spawned
-    // child that partially fails on a full combo writes a partial seed
-    // with a *different* tuple than the combo row; the combo row stays
-    // `refresh:true` (retry) and the seed re-enters expansion on the
-    // daemon's next poll — a bounded retry loop surfaced by the daemon
-    // warning. No extra bookkeeping is needed.
+    /// `fixtures/<fixture_id>.json`, where `fixture_id = agent_id + "-" +
+    /// platform_id` (e.g. `cline-clinepass-kimik3-darwin`). The
+    /// `-<platform>` suffix keeps per-platform config paths from churning
+    /// each other across CI runs; see DESIGN.md "per-platform fixtures"
+    /// for the rationale.
     pub fn runFixturesCapture(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -5142,8 +5102,8 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             (if (model_aid != null) @as(usize, 1) else 0);
 
         // partial detection (1 or 2 dims): partial is bad data per DESIGN —
-        // report + exit 8, NO store change. Seeds are only created via
-        // `fixtures queue`. Nothing is written if zero dims resolve.
+        // report + exit 8, NO store change. Nothing is written if zero
+        // dims resolve.
         if (resolved >= 1 and resolved < 3) {
             writeErr(io, "fixtures capture: partial detection (");
             var n_buf: [16]u8 = undefined;
@@ -5163,89 +5123,60 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
 
         const fixture_id = try fixtureId(a, agent_aid);
 
-        // assemble the single `{cooked, raw, trailer}` fixture file.
+        // from-capture channel: identify from the live detection, both
+        // trailer variants from spawning the current binary's `trailer`
+        // action in the session env (bare — session-env detection).
         const cooked = try buildCooked(a, &d);
+        var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const self_path_len = std.process.executablePath(io, &self_path_buf) catch 0;
+        const co = if (self_path_len > 0) try spawnTrailerLine(a, io, self_path_buf[0..self_path_len], "co-author", "", "", "") else null;
+        const ab = if (self_path_len > 0) try spawnTrailerLine(a, io, self_path_buf[0..self_path_len], "assisted-by", "", "", "") else null;
+        const channel = try channelJson(a, cooked, co, ab);
+        defer a.free(channel);
+        const ch_v = try std.json.parseFromSlice(std.json.Value, a, channel, .{});
         const raw = try buildRaw(a, &d, init.environ_map);
-        var root = std.json.Value{ .object = .empty };
-        try root.object.put(a, "cooked", cooked);
-        try root.object.put(a, "raw", raw);
-        if (d.trailer) |t| {
-            try root.object.put(a, "trailer", .{ .string = t });
-        }
-        // decision #7 — every fixture carries a top-level `origin`
-        // classifying it as observed (`from-raw` when the daemon
-        // fabricated the runtime, `from-capture` for a real session)
-        // or declared (`from-identity`, written by the from-identity worker, which
-        // never reaches this capture path). The daemon sets
-        // AGENT_DETECT_FIXTURE_ORIGIN on the `refresh run` child; a hand-run
-        // capture is a real session → `from-capture`.
-        try root.object.put(a, "origin", .{ .string = init.environ_map.get("AGENT_DETECT_FIXTURE_ORIGIN") orelse "from-capture" });
-        const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
-        defer a.free(json_bytes);
-
-        // write fixture
-        std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
-            error.PathAlreadyExists => {},
-            else => {
-                writeErr(io, MSG_IO);
-                return EXIT_IO;
-            },
-        };
-        const dir = std.Io.Dir.cwd().openDir(io, "fixtures", .{}) catch {
-            writeErr(io, "fixtures capture: cannot open fixtures/ dir\n");
-            return EXIT_IO;
-        };
-        defer dir.close(io);
-
-        const json_name = try std.fmt.allocPrint(a, "{s}.json", .{fixture_id});
-        dir.writeFile(io, .{ .sub_path = json_name, .data = json_bytes }) catch {
-            writeErr(io, MSG_IO);
-            return EXIT_IO;
-        };
+        try mergeWriteFixture(a, io, fixture_id, &.{ "from-capture", "from-capture-raw" }, &.{ ch_v.value, raw });
 
         // fixtures only: upsert the state row (never touches `queue`).
-        // Stamp the live harness `--version` snapshot (decision #6) so
-        // a later `--stale-by-version` sweep can compare against it.
+        // Stamp the live harness `--version` snapshot so a later
+        // `--stale-by-version` sweep can compare against it.
         const hver = harnessVersion(a, io, agent_aid);
+        const now = unixNow(io);
+        const hash = try generationHash(a, channel);
+        defer a.free(hash);
         try upsertFixture(a, io, .{
             .harness = harness_aid orelse unreachable,
             .provider = provider_aid orelse unreachable,
             .model = model_aid orelse unreachable,
             .platform = platformId(),
             .runner = getParentPid(),
-            .generated_at = unixNow(io),
+            .generated_at = now,
             .harness_version = hver,
+            .available = 1,
+            .successful = 1,
+            .agent_detect_version = build_options.version,
+            .capture_generation_at = now,
+            .capture_generation_hash = hash,
         });
 
         writeOut(io, "fixtures capture: wrote fixtures/");
-        writeOut(io, json_name);
-        writeOut(io, "\n");
+        writeOut(io, fixture_id);
+        writeOut(io, ".json\n");
         return 0;
     }
 
-    /// `fixtures queue [scope] <filters>` — set `refresh:true` on a set of
-    /// rows. Without a scope flag, the generic path is create-or-flip:
-    /// with the shared dim filters (`--fixture=`, `--agent=`, `--harness=`,
-    /// `--provider=`, `--model=`, `--platform=`), if any
-    /// existing row matches, flip them all to `refresh:true` (dims and
-    /// runner preserved, `generated_at` refreshes). If none match,
-    /// create a **seed** row: the positive dims set, the remaining dims
-    /// `null`, `refresh:true`. Unknown ids are allowed — that is the
-    /// seed path (the daemon expands seeds over fixtures recipes; see
-    /// `runFixturesDaemon`).
-    ///
-    /// With a scope flag (`--all`/`--stale-by-*`/`--partial`/`--recipes`/
-    /// `--missing-fixture`) the target set is computed instead (see
-    /// `scopeCandidates`) and every candidate is queued (recipe-scope
-    /// candidates are created as full `refresh:true` rows). `--available`
-    /// narrows candidates to harnesses whose binary is available.
-    ///
-    /// At least one filter option or scope flag is required (else exit
-    /// 2). A dimless call is not a valid seed — at least one positive
-    /// dim, `--agent=`, or `--fixture=` is required for creation.
-    ///
-    /// Idempotent: re-running a seed request re-matches the existing
-    /// seed and takes the flip path, so no duplicate row is written.
+    /// `fixtures queue [scope] <filters>` — enumerate + upsert queue rows
+    /// (pure enqueue; no evaluation). Without a scope flag, a **seed** row
+    /// is created per selected mode from the positive dims (`--harness=`,
+    /// `--provider=`, `--model=`, `--platform=` or the composite
+    /// `--agent=`/`--fixture=`) with the rest `null`; the daemon expands
+    /// seeds over the recipes. With a scope flag (`--all`/`--stale-by-*`/
+    /// `--recipes`/`--missing-fixture-file`/`--available`/`--unavailable`/
+    /// `--successful`/`--unsuccessful`) the candidate set is computed (see
+    /// `scopeCandidates`) and every candidate is queued per selected mode.
+    /// `--missing-fixture-entry` re-registers orphaned fixture files
+    /// instead of queuing. At least one filter option or scope flag is
+    /// required (else exit 4). Idempotent via `queue_dedupe`.
     pub fn runFixturesQueue(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -5268,11 +5199,16 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             return if (err == error.NoFilter) EXIT_MISSING_ARG else if (err == error.ConflictingFilters) EXIT_CONFLICTING_ARG else if (err == error.OutOfMemory) EXIT_OUT_OF_MEMORY else EXIT_UNRECOGNISED_ARG;
         };
 
+        if (f.missing_fixture_entry) {
+            return runMissingFixtureEntry(init);
+        }
+
         if (scopeCount(f) > 0) {
             return runFixturesQueueScope(init, f);
         }
 
-        // bare dims / --agent= / --fixture=: create a seed row (no scope).
+        // bare dims / --agent= / --fixture=: create a seed row per selected
+        // mode (no scope).
         const positive = f.harness.len > 0 or f.provider.len > 0 or
             f.model.len > 0 or f.platform.len > 0 or f.composite;
         if (!positive) {
@@ -5281,21 +5217,105 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             return EXIT_MISSING_ARG;
         }
 
-        const row: QueueRow = .{
-            .harness = if (f.harness.len > 0) f.harness else null,
-            .provider = if (f.provider.len > 0) f.provider else null,
-            .model = if (f.model.len > 0) f.model else null,
-            .platform = if (f.platform.len > 0) f.platform else null,
-            .runner = getParentPid(),
-            .created_at = unixNow(io),
-            .mode = f.mode,
-        };
-        try validateQueueRow(row);
-        try upsertQueueRow(a, io, row);
+        var queued: usize = 0;
+        const modes = queueModes(f);
+        for (modes) |mode_opt| {
+            const mode = mode_opt orelse continue;
+            const row: QueueRow = .{
+                .harness = if (f.harness.len > 0) f.harness else null,
+                .provider = if (f.provider.len > 0) f.provider else null,
+                .model = if (f.model.len > 0) f.model else null,
+                .platform = if (f.platform.len > 0) f.platform else null,
+                .runner = getParentPid(),
+                .created_at = unixNow(io),
+                .mode = mode,
+            };
+            try validateQueueRow(row);
+            try upsertQueueRow(a, io, row);
+            queued += 1;
+        }
 
         writeOut(io, "fixtures queue: queued ");
-        writeOut(io, try describeQueueRow(a, row));
-        writeOut(io, "\n");
+        var n_buf: [16]u8 = undefined;
+        writeOut(io, try std.fmt.bufPrint(&n_buf, "{d}", .{queued}));
+        writeOut(io, " seed(s)\n");
+        return 0;
+    }
+
+    /// `fixtures queue --missing-fixture-entry` — scan every
+    /// `fixtures/*.json`; files with no `fixtures` row are re-registered:
+    /// valid ids (known rule dims + filename platform) → INSERT a
+    /// `fixtures` entry (`successful=1`, `harness_version`/`available`/
+    /// `agent_detect_version`/generation columns NULL, derived ids) — no
+    /// queue row; invalid ids → `invalid` row (reason `unknown fixture
+    /// file`); the file always persists.
+    fn runMissingFixtureEntry(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+        const now = unixNow(io);
+        var entered: usize = 0;
+        var invalid_count: usize = 0;
+        var fixtures_dir = std.Io.Dir.cwd().openDir(io, "fixtures", .{ .iterate = true }) catch |err| {
+            writeErr(io, MSG_IO);
+            writeErr(io, @errorName(err));
+            writeErr(io, "\n");
+            return EXIT_IO;
+        };
+        defer fixtures_dir.close(io);
+        var dir_it = fixtures_dir.iterate();
+        while (dir_it.next(io) catch null) |ent| {
+            if (ent.kind != .file) continue;
+            const name = ent.name;
+            if (!std.mem.endsWith(u8, name, ".json")) continue;
+            if (std.mem.endsWith(u8, name, "index.sqlite3")) continue;
+            const stem = name[0 .. name.len - ".json".len];
+            const parts = splitFixtureId(a, stem) catch {
+                try insertInvalid(a, io, .{ .fixture_id = try a.dupe(u8, stem), .reason = "unknown fixture file", .created_at = now });
+                invalid_count += 1;
+                continue;
+            };
+            defer {
+                a.free(parts[0]);
+                a.free(parts[1]);
+                a.free(parts[2]);
+                a.free(parts[3]);
+            }
+            if (canonicalIdFor(a, HarnessRule, &rulesForHarnesses, parts[0]) == null or
+                canonicalIdFor(a, ProviderRule, &rulesForProviders, parts[1]) == null or
+                canonicalIdFor(a, ModelRule, &rulesForModels, parts[2]) == null)
+            {
+                try insertInvalid(a, io, .{
+                    .fixture_id = try a.dupe(u8, stem),
+                    .agent_id = (try agentIdFrom(a, parts[0], parts[1], parts[2])) orelse null,
+                    .harness_id = try a.dupe(u8, parts[0]),
+                    .provider_id = try a.dupe(u8, parts[1]),
+                    .model_id = try a.dupe(u8, parts[2]),
+                    .platform_id = try a.dupe(u8, parts[3]),
+                    .reason = "unknown fixture file",
+                    .created_at = now,
+                });
+                invalid_count += 1;
+                continue;
+            }
+            if (try fixtureExists(a, io, parts[0], parts[1], parts[2], parts[3])) continue;
+            try upsertFixture(a, io, .{
+                .harness = try a.dupe(u8, parts[0]),
+                .provider = try a.dupe(u8, parts[1]),
+                .model = try a.dupe(u8, parts[2]),
+                .platform = try a.dupe(u8, parts[3]),
+                .runner = getParentPid(),
+                .generated_at = now,
+                .successful = 1,
+            });
+            entered += 1;
+        }
+        writeOut(io, "fixtures queue: --missing-fixture-entry — entered ");
+        var n1: [16]u8 = undefined;
+        writeOut(io, try std.fmt.bufPrint(&n1, "{d}", .{entered}));
+        writeOut(io, " fixture row(s), recorded ");
+        var n2: [16]u8 = undefined;
+        writeOut(io, try std.fmt.bufPrint(&n2, "{d}", .{invalid_count}));
+        writeOut(io, " invalid file(s)\n");
         return 0;
     }
 
@@ -5353,11 +5373,10 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         return probeBinary(io, probe_names);
     }
 
-    /// `fixtures dequeue [scope] <filters>` — **DELETE only; shared validator.**
-    /// Builds the WHERE from dims + scope columns (three-valued predicate)
-    /// + optional available match and deletes matching `queue` rows. No
-    /// staleness/file checks; no fixture mutation. At least one filter or
-    /// scope flag is required.
+    /// `fixtures dequeue [scope] <filters>` — **DELETE only; pure row
+    /// filters.** Builds the WHERE from dims + stored scope/marker columns
+    /// + optional mode and deletes matching `queue` rows. No evaluation,
+    /// no fixture mutation. At least one filter or scope flag is required.
     pub fn runFixturesDequeue(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -5389,69 +5408,26 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         return 0;
     }
 
-    /// sweep fixtures for malformed files: delete `fixtures/*.json`
-    /// files that don't parse as a JSON object with a `cooked` block
-    /// carrying the harness/provider/model names. Single-file format —
-    /// no trailer sibling. Returns the count removed.
-    fn purgeMalformedFixtures(a: std.mem.Allocator, io: std.Io) usize {
-        var fixture_purged: usize = 0;
-        var json_path_buf: [4096]u8 = undefined;
-        const cwd = std.Io.Dir.cwd();
-        var dir_it = cwd.iterate();
-        while (dir_it.next(io) catch null) |ent| {
-            if (ent.kind != .file) continue;
-            const name = ent.name;
-            if (!std.mem.endsWith(u8, name, ".json")) continue;
-            // skip the sqlite store — it lives beside the fixtures and
-            // is not JSON content.
-            if (std.mem.endsWith(u8, name, "index.sqlite3")) continue;
-            const full_path = std.fmt.bufPrint(&json_path_buf, "fixtures/{s}", .{name}) catch continue;
-            const data = std.Io.Dir.cwd().readFileAlloc(io, full_path, a, @enumFromInt(1 << 20)) catch continue;
-            defer a.free(data);
-            const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch continue;
-            defer parsed.deinit();
-            var bad = false;
-            if (parsed.value != .object) {
-                bad = true;
-            } else if (parsed.value.object.get("cooked")) |cooked| {
-                if (cooked != .object) {
-                    bad = true;
-                } else {
-                    const cob = cooked.object;
-                    bad = (cob.get("harness_name") == null) or
-                        (cob.get("provider_name") == null) or
-                        (cob.get("model_name") == null);
-                }
-            } else {
-                bad = true;
-            }
-            if (bad) {
-                std.Io.Dir.cwd().deleteFile(io, full_path) catch {};
-                fixture_purged += 1;
-            }
-        }
-        return fixture_purged;
-    }
-
-    /// `fixtures daemon` — long-running. **Owns all evaluation.** Every poll
-    /// it atomically pops one pending action, runs the SHARED validator on
-    /// it (warn + drop if invalid), then decides by the row's scope columns
-    /// + dims + current `fixtures`/filesystem: expand seeds (any NULL dim),
-    /// re-validate staleness with the row's threshold,
-    /// re-probe `available` (never trust the stored value), then spawn
-    /// `refresh run`. Success → upsert `fixtures` (action already popped);
-    /// failure → re-queue. Idle → `purgeMalformedFixtures` + sleep.
+    /// `fixtures daemon` — long-running. **Owns all evaluation.** Every
+    /// poll it reads the oldest host-platform queue row (SELECT only),
+    /// materializes `pending` work items for it, and processes one
+    /// unfinished pending row. from-identity jobs resolve the declared
+    /// channel (zero tokens); from-capture jobs probe availability then
+    /// launch the real harness session (with a pre-capture review window,
+    /// token-consuming, user-confirmed only). Pending rows are marked
+    /// started/finished around each job; when a queue row's pending rows
+    /// all finish, the pending rows and the queue row are deleted. The
+    /// queue row is never deleted at pop — it is the crash-resume anchor
+    /// (unfinished pending rows resume on the next run). Non-host-platform
+    /// rows are never selected. **The daemon never writes `fixtures`
+    /// outside pop processing and never inserts queue rows.**
     ///
     /// **USER-ONLY**: refuses to start if running inside an agent
     /// (see `assertNotInAgent`). The agent must never run the daemon
     /// — its process tree would pollute the captured
-    /// `raw.process_lineage` (the daemon would appear as the runner's
-    /// grandparent), and its env vars would contaminate the fixture
-    /// the daemon then spawns. If the agent's workflow stalls because
-    /// the daemon isn't running, the correct action is to surface the
-    /// command to the user; see DESIGN.md "user-only daemon" for the
-    /// rationale and CONTRIBUTING.md "refresh a fixture" for the
-    /// correct role split.
+    /// `raw.process_lineage`, and its env vars would contaminate the
+    /// capture. See DESIGN.md "user-only daemon" for the rationale and
+    /// CONTRIBUTING.md "refresh a fixture" for the correct role split.
     pub fn runFixturesDaemon(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -5519,18 +5495,12 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         // decision #12 — one cross-platform control mechanism: the
         // daemon checks `fixtures/daemon.ctl` every ~1s heartbeat and
         // acts on pause/resume/stop, clearing the file after acting.
-        // The heartbeat also writes the current state to the log every
-        // ~1s so a watcher polling at 1s always sees live state,
-        // decoupled from the 5s/30s iteration delays. Signals are not
-        // relied on beyond terminal Ctrl+C (SIGINT = graceful stop).
         var paused = false;
         var stop_requested = false;
         var phase: enum { idle, pre_capture, post_review } = .idle;
-        var pending: ?QueueRow = null;
+        var pending_capture: ?PendingRow = null;
         var phase_until: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot };
-        var next_poll: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot }; // 0 = poll on the first tick
-        var capture_attempts = std.StringHashMap(u8).init(a);
-        defer capture_attempts.deinit();
+        var next_poll: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot };
 
         while (true) {
             const now = std.Io.Clock.Timestamp.now(io, .boot);
@@ -5551,15 +5521,15 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                 }
             }
 
-            if (stop_requested and phase == .idle and pending == null) {
+            if (stop_requested and phase == .idle and pending_capture == null) {
                 daemonWrite(io, "daemon: stopped\n");
                 return EXIT_OK;
             }
             // a stop during the pre-capture window cancels the pending
             // capture (it has consumed no tokens yet).
-            if (stop_requested and phase == .pre_capture and pending != null) {
+            if (stop_requested and phase == .pre_capture and pending_capture != null) {
                 daemonWrite(io, "daemon: stop during pre-capture review — canceled the pending capture\n");
-                pending = null;
+                pending_capture = null;
                 phase = .idle;
                 return EXIT_OK;
             }
@@ -5578,63 +5548,34 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                     daemonWrite(io, try std.fmt.bufPrint(&nb, "{d}", .{remaining}));
                     daemonWrite(io, "s (write stop to fixtures/daemon.ctl to cancel)\n");
                     if (boot_now_ns >= phase_until.raw.nanoseconds) {
-                        const action = pending orelse {
+                        const job = pending_capture orelse {
                             phase = .idle;
                             continue;
                         };
-                        pending = null;
-                        const desc = try describeQueueRow(a, action);
+                        pending_capture = null;
                         daemonWrite(io, "daemon: starting capture for ");
-                        daemonWrite(io, desc);
+                        daemonWrite(io, job.fixture_id);
                         daemonWrite(io, "\n");
-                        const ok = runOneComboCapture(a, io, init, action, capture_timeout_seconds) catch |err| blk: {
+                        const ok = runOneComboCapture(a, io, init, job.fixture_id, capture_timeout_seconds) catch |err| blk: {
                             daemonWriteErr(io, "daemon: capture worker error: ");
                             daemonWriteErr(io, @errorName(err));
                             daemonWriteErr(io, "\n");
                             break :blk false;
                         };
+                        try markPendingFinished(a, io, job.queue_id, job.fixture_id, unixNow(io));
+                        if (try pendingDrained(a, io, job.queue_id)) {
+                            try clearPendingAndQueueRow(a, io, job.queue_id);
+                        }
                         phase = .post_review;
                         phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
                         if (ok) {
-                            capture_attempts.put(desc, 0) catch {};
-                            const h = action.harness.?;
-                            const p = action.provider.?;
-                            const m_d = action.model.?;
-                            const plat = action.platform.?;
-                            const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
-                            try upsertFixture(a, io, .{
-                                .harness = h,
-                                .provider = p,
-                                .model = m_d,
-                                .platform = plat,
-                                .runner = getParentPid(),
-                                .generated_at = unixNow(io),
-                                .harness_version = harnessVersion(a, io, agent),
-                            });
                             daemonWrite(io, "daemon: captured ");
-                            daemonWrite(io, desc);
+                            daemonWrite(io, job.fixture_id);
                             daemonWrite(io, "\n");
                         } else {
-                            // token protection: at most 3 attempts, then
-                            // dequeue with a warning (decision #12 runbook).
-                            const attempts = (capture_attempts.get(desc) orelse 0) + 1;
-                            capture_attempts.put(desc, attempts) catch {};
-                            if (attempts >= 3) {
-                                daemonWriteErr(io, "daemon: from-capture failed ");
-                                var nbuf: [16]u8 = undefined;
-                                daemonWriteErr(io, try std.fmt.bufPrint(&nbuf, "{d}", .{attempts}));
-                                daemonWriteErr(io, " times for ");
-                                daemonWriteErr(io, desc);
-                                daemonWriteErr(io, " — dequeued with a warning (token protection)\n");
-                            } else {
-                                daemonWriteErr(io, "daemon: from-capture failed for ");
-                                daemonWriteErr(io, desc);
-                                daemonWriteErr(io, " — re-queued (attempt ");
-                                var nbuf2: [16]u8 = undefined;
-                                daemonWriteErr(io, try std.fmt.bufPrint(&nbuf2, "{d}", .{attempts}));
-                                daemonWriteErr(io, "/3)\n");
-                                try upsertQueueRow(a, io, action);
-                            }
+                            daemonWriteErr(io, "daemon: from-capture failed for ");
+                            daemonWriteErr(io, job.fixture_id);
+                            daemonWriteErr(io, " — item consumed; retry via `fixtures queue --unsuccessful`\n");
                         }
                         daemonWrite(io, "daemon: capture finished — human review window ");
                         var nb2: [32]u8 = undefined;
@@ -5653,202 +5594,190 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                     if (boot_now_ns < next_poll.raw.nanoseconds) {
                         daemonWrite(io, "daemon: idle\n");
                     } else {
-                        const row = try popQueueRow(a, io);
                         // one row per poll (decision #10): schedule the next
-                        // poll `poll_seconds` out on EVERY path below, so a
-                        // from-identity/from-raw batch processes at ~5s intervals.
+                        // poll `poll_seconds` out on EVERY path below.
                         next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
+                        const row = try popQueueRow(a, io);
                         if (row) |action| {
                             const desc = try describeQueueRow(a, action);
                             var msg_buf: [320]u8 = undefined;
                             const m = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s} [{s}]\n", .{ desc, action.mode }) catch "daemon: processing\n";
                             daemonWrite(io, m);
 
-                            // shared validator: invalid → warn + drop (already popped).
+                            // shared validator: invalid → warn + drop.
                             validateQueueRow(action) catch {
                                 daemonWriteErr(io, "daemon: invalid action row — dropping: ");
                                 daemonWriteErr(io, desc);
                                 daemonWriteErr(io, "\n");
+                                try deleteQueueRowById(a, io, action.queue_id);
                                 continue;
                             };
 
+                            const qid = action.queue_id;
+                            // materialize pending rows (INSERT OR IGNORE —
+                            // crash-resume safe; a full row → one pending
+                            // row, a seed → one per applicable recipe).
                             const full = action.harness != null and action.provider != null and
                                 action.model != null and action.platform != null;
                             if (!full) {
-                                try expandSeed(a, io, action);
-                                continue;
-                            }
-
-                            const h = action.harness.?;
-                            const p = action.provider.?;
-                            const m_d = action.model.?;
-                            const plat = action.platform.?;
-
-                            // queued full combos always re-capture —
-                            // there is no "already captured, don't
-                            // re-capture" skip. The only skip mechanisms
-                            // are the `--stale-by-*` markers re-validated
-                            // below. `from-capture` rows never skip: they
-                            // are token-consuming and user-confirmed.
-                            if (!std.mem.eql(u8, action.mode, "from-capture")) {
-                                // decision #6 lazy file-based backfill: no
-                                // sqlite row yet, but a valid committed
-                                // `fixtures/<id>.json` exists → origin-aware
-                                // backfill: only when the existing fixture's
-                                // origin ranks ≥ the queued mode (a
-                                // `from-raw` row re-captures over a stale
-                                // `from-identity` fixture; `from-capture`
-                                // never backfills). Once a store row exists,
-                                // re-capture.
-                                if (!(try fixtureExists(a, io, h, p, m_d, plat))) {
-                                    if (try fixtureFileOriginRank(a, io, h, p, m_d, plat)) |rank| {
-                                        if (rank >= modeRank(action.mode)) {
-                                            try upsertFixture(a, io, .{
-                                                .harness = h,
-                                                .provider = p,
-                                                .model = m_d,
-                                                .platform = plat,
-                                                .runner = getParentPid(),
-                                                .generated_at = unixNow(io),
-                                            });
-                                            daemonWrite(io, "daemon: committed fixture for ");
-                                            daemonWrite(io, desc);
-                                            daemonWrite(io, " is valid — backfilled fixtures row without re-capture\n");
-                                            continue;
-                                        }
-                                        daemonWrite(io, "daemon: committed fixture for ");
-                                        daemonWrite(io, desc);
-                                        daemonWrite(io, " ranks below the queued mode — re-capturing\n");
-                                    }
-                                }
-                            }
-
-                            // staleness re-validation with the row's stored
-                            // markers (decision #6): the daemon evaluates at
-                            // pop. A row carries at most one marker — the age
-                            // threshold (`stale_by_minutes`) or the version
-                            // marker — and skips only when its marker says
-                            // the fixture is still fresh.
-                            if (action.stale_by_minutes != null or
-                                (action.stale_by_version != null and action.stale_by_version.? == 1))
-                            {
-                                const fx = try fixtureRow(a, io, h, p, m_d, plat);
-                                var age_fresh = false;
-                                if (action.stale_by_minutes != null) {
-                                    if (fx) |f| {
-                                        age_fresh = !isStale(io, f.generated_at, action.stale_by_minutes.?);
-                                    }
-                                }
-                                var version_equal = false;
-                                if (action.stale_by_version != null and action.stale_by_version.? == 1) {
-                                    if (fx) |f| {
-                                        if (f.harness_version) |stored_v| {
-                                            const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
-                                            if (harnessVersion(a, io, agent)) |live_v| {
-                                                if (std.mem.eql(u8, live_v, stored_v)) version_equal = true;
-                                            }
-                                            // uninstalled harness → inconclusive →
-                                            // not version-equal (proceeds to capture).
-                                        }
-                                        // no stored version → version-stale → capture.
-                                    }
-                                    // no fixture row → version-stale → capture.
-                                }
-                                const age_ok = (action.stale_by_minutes == null) or age_fresh;
-                                const version_ok = (action.stale_by_version == null) or version_equal;
-                                if (age_ok and version_ok) {
-                                    daemonWrite(io, "daemon: fixture for ");
-                                    daemonWrite(io, desc);
-                                    daemonWrite(io, " is still fresh by its markers — completing early\n");
-                                    continue;
-                                }
-                            }
-
-                            // --available rows: re-probe LIVE; if unavailable, re-queue as
-                            // handoff work (available=0, original created_at), never capture.
-                            // `from-identity` records availability but does NOT gate on it.
-                            if (action.available != null and !std.mem.eql(u8, action.mode, "from-identity")) {
-                                const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
-                                if (!harnessAvailable(io, agent)) {
-                                    daemonWrite(io, "daemon: harness unavailable for ");
-                                    daemonWrite(io, desc);
-                                    daemonWrite(io, " — re-queued as handoff for the next agent/platform\n");
-                                    var requeue = action;
-                                    requeue.available = 0;
-                                    try upsertQueueRow(a, io, requeue);
-                                    continue;
-                                }
-                            }
-
-                            // branch the worker on the row's mode (decision #7).
-                            if (std.mem.eql(u8, action.mode, "from-capture")) {
-                                if (pending != null) {
-                                    daemonWrite(io, "daemon: already have a pending from-capture job — re-queuing\n");
-                                    try upsertQueueRow(a, io, action);
-                                } else {
-                                    pending = action;
-                                    phase = .pre_capture;
-                                    phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
-                                    daemonWrite(io, "daemon: from-capture job — announcing ");
-                                    var nb3: [32]u8 = undefined;
-                                    daemonWrite(io, try std.fmt.bufPrint(&nb3, "{d}", .{review_seconds}));
-                                    daemonWrite(io, "s before capture (write stop to fixtures/daemon.ctl to cancel)\n");
-                                }
-                                continue;
-                            }
-
-                            const captured = try (if (std.mem.eql(u8, action.mode, "from-identity"))
-                                runOneComboIdentity(a, io, action)
-                            else
-                                runOneComboResult(a, io, init, action));
-                            if (captured) {
-                                capture_attempts.put(desc, 0) catch {};
-                                // version stamp (decision #6): from-raw captures
-                                // record the live harness `--version`; declared
-                                // from-identity fixtures carry null (no binary ran).
-                                const hver = if (std.mem.eql(u8, action.mode, "from-identity"))
-                                    null
-                                else
-                                    harnessVersion(a, io, (try agentIdFrom(a, h, p, m_d)) orelse continue);
-                                try upsertFixture(a, io, .{
-                                    .harness = h,
-                                    .provider = p,
-                                    .model = m_d,
-                                    .platform = plat,
-                                    .runner = getParentPid(),
-                                    .generated_at = unixNow(io),
-                                    .harness_version = hver,
-                                });
+                                try materializeSeedPending(a, io, action);
                             } else {
-                                // failure → re-queue (refresh available only for --available rows)
-                                var requeue = action;
-                                if (action.available != null) {
-                                    const agent = (try agentIdFrom(a, h, p, m_d)) orelse continue;
-                                    requeue.available = if (harnessAvailable(io, agent)) 1 else 0;
+                                const f_id = (try fixtureIdFrom(a, action.harness.?, action.provider.?, action.model.?, action.platform.?)) orelse {
+                                    // empty-string dim on a full row: malformed — drop.
+                                    try insertInvalid(a, io, .{ .reason = "malformed queue row", .created_at = unixNow(io) });
+                                    try deleteQueueRowById(a, io, qid);
+                                    continue;
+                                };
+                                try insertPendingRow(a, io, qid, f_id);
+                            }
+
+                            const job = (try nextUnfinishedPending(a, io, qid)) orelse {
+                                // already drained (e.g. empty seed expansion).
+                                try clearPendingAndQueueRow(a, io, qid);
+                                continue;
+                            };
+                            const parts = splitFixtureId(a, job.fixture_id) catch {
+                                try insertInvalid(a, io, .{ .fixture_id = try a.dupe(u8, job.fixture_id), .reason = "malformed fixture id", .created_at = unixNow(io) });
+                                try markPendingFinished(a, io, qid, job.fixture_id, unixNow(io));
+                                continue;
+                            };
+                            defer {
+                                a.free(parts[0]);
+                                a.free(parts[1]);
+                                a.free(parts[2]);
+                                a.free(parts[3]);
+                            }
+                            const h = parts[0];
+                            const p = parts[1];
+                            const m_d = parts[2];
+                            const plat = parts[3];
+
+                            // staleness conjunction: a row skips only when
+                            // every marker it carries is fresh.
+                            if (action.stale_by_minutes != null or
+                                (action.stale_by_version != null and action.stale_by_version.? == 1) or
+                                (action.stale_by_detect != null and action.stale_by_detect.? == 1) or
+                                (action.stale_by_hash != null and action.stale_by_hash.? == 1))
+                            {
+                                if (try rowMarkersAllFresh(a, io, action, job.fixture_id)) {
+                                    daemonWrite(io, "daemon: fixture for ");
+                                    daemonWrite(io, job.fixture_id);
+                                    daemonWrite(io, " is still fresh by its markers — completing early\n");
+                                    try markPendingFinished(a, io, qid, job.fixture_id, unixNow(io));
+                                    if (try pendingDrained(a, io, qid)) {
+                                        try clearPendingAndQueueRow(a, io, qid);
+                                    }
+                                    continue;
                                 }
-                                try upsertQueueRow(a, io, requeue);
+                            }
+
+                            try markPendingStarted(a, io, qid, job.fixture_id, unixNow(io));
+
+                            if (std.mem.eql(u8, action.mode, "from-capture")) {
+                                if (pending_capture != null) {
+                                    daemonWrite(io, "daemon: already have a pending from-capture job — skipping\n");
+                                    continue;
+                                }
+                                pending_capture = job;
+                                phase = .pre_capture;
+                                phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
+                                daemonWrite(io, "daemon: from-capture job — announcing ");
+                                var nb3: [32]u8 = undefined;
+                                daemonWrite(io, try std.fmt.bufPrint(&nb3, "{d}", .{review_seconds}));
+                                daemonWrite(io, "s before capture (write stop to fixtures/daemon.ctl to cancel)\n");
+                                continue;
+                            }
+
+                            const ok = runOneComboIdentity(a, io, h, p, m_d, plat) catch |err| blk: {
+                                daemonWriteErr(io, "daemon: identity worker error: ");
+                                daemonWriteErr(io, @errorName(err));
+                                daemonWriteErr(io, "\n");
+                                break :blk false;
+                            };
+                            if (ok) {
+                                var buf2: [256]u8 = undefined;
+                                const msg = std.fmt.bufPrint(buf2[0..], "daemon: declared {s}\n", .{job.fixture_id}) catch "daemon: declared\n";
+                                daemonWrite(io, msg);
+                            } else {
+                                daemonWriteErr(io, "daemon: from-identity failed for ");
+                                daemonWriteErr(io, job.fixture_id);
+                                daemonWriteErr(io, "\n");
+                            }
+                            try markPendingFinished(a, io, qid, job.fixture_id, unixNow(io));
+                            if (try pendingDrained(a, io, qid)) {
+                                try clearPendingAndQueueRow(a, io, qid);
                             }
                         } else {
                             next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
-                            _ = purgeMalformedFixtures(a, io);
                             daemonWrite(io, "daemon: idle, queue empty\n");
                         }
                     }
                 },
             }
-            // the ~1s tick — also the control-check cadence. Breaking the
-            // sleep up this way is what lets a 15s review window stay
-            // responsive (a single long sleep could not).
+            // the ~1s tick — also the control-check cadence.
             try std.Io.sleep(io, .{ .nanoseconds = std.time.ns_per_s }, .boot);
         }
     }
 
-    /// rank a refresh mode / fixture origin for ordering:
-    /// `from-identity` (0) < `from-raw` (1) < `from-capture` (2).
+    /// rank a refresh mode for ordering: `from-identity` (0) <
+    /// `from-capture` (1). Declared work precedes token-consuming
+    /// captures.
     fn modeRank(mode: []const u8) u8 {
         if (std.mem.eql(u8, mode, "from-identity")) return 0;
-        if (std.mem.eql(u8, mode, "from-raw")) return 1;
-        return 2;
+        return 1;
+    }
+
+    /// true when every staleness marker a queue row carries says the
+    /// fixture is still fresh (the daemon skips such rows early). A row
+    /// with no staleness markers returns false (never skip).
+    fn rowMarkersAllFresh(a: std.mem.Allocator, io: std.Io, action: QueueRow, f_id: []const u8) !bool {
+        const fx = if (action.harness != null and action.provider != null and action.model != null and action.platform != null)
+            try fixtureRow(a, io, action.harness.?, action.provider.?, action.model.?, action.platform.?)
+        else
+            null;
+        var any: bool = false;
+        if (action.stale_by_minutes != null) {
+            any = true;
+            if (fx) |f| {
+                if (isStale(io, f.generated_at, action.stale_by_minutes.?)) return false;
+            } else return false; // no fixture row → age-stale
+        }
+        if (action.stale_by_version != null and action.stale_by_version.? == 1) {
+            any = true;
+            if (fx) |f| {
+                if (f.harness_version) |stored_v| {
+                    const h = action.harness orelse return false;
+                    const p = action.provider orelse return false;
+                    const m = action.model orelse return false;
+                    const agent = (try agentIdFrom(a, h, p, m)) orelse return false;
+                    if (harnessVersion(a, io, agent)) |live_v| {
+                        if (!std.mem.eql(u8, live_v, stored_v)) return false;
+                    } else return false; // uninstalled → not version-equal → stale
+                } else return false; // no stored version → stale
+            } else return false; // no fixture row → stale
+        }
+        if (action.stale_by_detect != null and action.stale_by_detect.? == 1) {
+            any = true;
+            if (fx) |f| {
+                if (f.agent_detect_version) |v| {
+                    if (!std.mem.eql(u8, v, build_options.version)) return false;
+                } else return false; // NULL → not fresh
+            } else return false; // no fixture row → stale
+        }
+        if (action.stale_by_hash != null and action.stale_by_hash.? == 1) {
+            any = true;
+            const channel = if (std.mem.eql(u8, action.mode, "from-identity")) "from-identity" else "from-capture";
+            const ch = (try readChannelObject(a, io, f_id, channel)) orelse return false;
+            const bytes = try std.json.Stringify.valueAlloc(a, ch, .{ .whitespace = .indent_2 });
+            defer a.free(bytes);
+            const cur = try generationHash(a, bytes);
+            defer a.free(cur);
+            const stored = if (fx) |f| (if (std.mem.eql(u8, channel, "from-identity")) f.identity_generation_hash else f.capture_generation_hash) else null;
+            if (stored) |s| {
+                if (!std.mem.eql(u8, s, cur)) return false;
+            } else return false; // no stored hash → stale
+        }
+        return any;
     }
 
     /// read `fixtures/daemon.ctl`, clear it, and return the action word
@@ -5870,86 +5799,45 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         return now - generated_at > threshold_minutes * 60;
     }
 
-    /// Origin-aware lazy file-based backfill. Given a full combo
-    /// `(h, p, m, plat)`, returns the existing committed
-    /// `fixtures/<fixture_id>.json`'s origin rank (0 = from-identity, 1 =
-    /// from-raw, 2 = from-capture) when a valid file exists whose
-    /// `cooked` block parses AND carries the exact dims; null
-    /// otherwise. The daemon backfills only when the rank is ≥ the
-    /// queued mode's rank (a `from-raw` row re-captures over a stale
-    /// `from-identity` fixture; `from-capture` never backfills).
-    fn fixtureFileOriginRank(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?u8 {
-        _ = plat;
-        const agent = (agentIdFrom(a, h, p, m) catch return null) orelse return null;
-        defer a.free(agent);
-        const f_id = fixtureId(a, agent) catch return null;
-        defer a.free(f_id);
-        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return null;
-        defer a.free(path);
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return null;
-        defer a.free(data);
-        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
-        defer parsed.deinit();
-        if (parsed.value != .object) return null;
-        const cooked = parsed.value.object.get("cooked") orelse return null;
-        if (cooked != .object) return null;
-        const cob = cooked.object;
-        const ch = sjstr(cob, "harness_id");
-        const cp = sjstr(cob, "provider_id");
-        const cm = sjstr(cob, "model_id");
-        if (!(std.mem.eql(u8, ch, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m))) return null;
-        const origin = if (parsed.value.object.get("origin")) |ov| switch (ov) {
-            .string => |s| s,
-            else => "from-capture", // legacy fixtures predate the origin key
-        } else "from-capture";
-        return modeRank(origin);
-    }
-
-    /// expand a partial (seed) action over the `recipesForFixtures`
-    /// recipes. A seed is a queue row: "capture every applicable recipe
-    /// matching these dims". Every applicable recipe (set dims equal,
-    /// platform empty or host) is queued as a full action, then the seed is
-    /// dropped (already popped).
-    fn expandSeed(a: std.mem.Allocator, io: std.Io, seed: QueueRow) !void {
+    /// expand a partial (seed) action into `pending` rows. A seed is a
+    /// queue row: "capture every applicable recipe matching these dims".
+    /// Every applicable recipe (set dims equal, platform empty or host)
+    /// gets one pending row on the host platform; no-launch recipes under
+    /// from-capture → `invalid`, excluded. INSERT OR IGNORE keeps
+    /// crash-resume re-materialization idempotent.
+    fn materializeSeedPending(a: std.mem.Allocator, io: std.Io, seed: QueueRow) !void {
         const host = platformId();
-        const now = unixNow(io);
-
-        var applicable: std.ArrayListUnmanaged(RecipesForFixtures) = .empty;
-        defer applicable.deinit(a);
+        var any: bool = false;
         for (recipesForFixtures) |c| {
             if (!recipeMatchesAction(seed, c, host)) continue;
-            try applicable.append(a, c);
+            const f_id = try fixtureId(a, c.agent_id);
+            defer a.free(f_id);
+            if (std.mem.eql(u8, seed.mode, "from-capture") and c.launch == null) {
+                const parts = try splitAgentId(a, c.agent_id);
+                defer {
+                    a.free(parts[0]);
+                    a.free(parts[1]);
+                    a.free(parts[2]);
+                }
+                try insertInvalid(a, io, .{
+                    .fixture_id = try a.dupe(u8, f_id),
+                    .agent_id = try a.dupe(u8, c.agent_id),
+                    .harness_id = try a.dupe(u8, parts[0]),
+                    .provider_id = try a.dupe(u8, parts[1]),
+                    .model_id = try a.dupe(u8, parts[2]),
+                    .platform_id = try a.dupe(u8, host),
+                    .reason = "no launch spec",
+                    .created_at = unixNow(io),
+                });
+                continue;
+            }
+            try insertPendingRow(a, io, seed.queue_id, f_id);
+            any = true;
         }
-
-        if (applicable.items.len == 0) {
+        if (!any) {
             daemonWriteErr(io, "daemon: warning: no capture recipe applicable for ");
             daemonWriteErr(io, try describeQueueRow(a, seed));
             daemonWriteErr(io, "\n");
-            return;
-        }
-
-        for (applicable.items) |c| {
-            const parts = try splitAgentId(a, c.agent_id);
-            defer {
-                a.free(parts[0]);
-                a.free(parts[1]);
-                a.free(parts[2]);
-            }
-            var combo: QueueRow = .{
-                .harness = parts[0],
-                .provider = parts[1],
-                .model = parts[2],
-                .platform = try a.dupe(u8, host),
-                .runner = getParentPid(),
-                .created_at = now,
-                // each expanded full row inherits the seed's mode.
-                .mode = seed.mode,
-            };
-            if (seed.available != null) {
-                combo.available = if (harnessAvailable(io, c.agent_id)) 1 else 0;
-            }
-            try validateQueueRow(combo);
-            try upsertQueueRow(a, io, combo);
         }
     }
 
@@ -5976,411 +5864,78 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         return true;
     }
 
-    /// spawn `agent-detect-dev refresh run` for a single queued combo
-    /// (`from-raw` mode). Returns true on successful capture (child exit
-    /// 0 AND the post-check passing). The child inherits the daemon's
-    /// env plus the fabricated markers, but its HOME is sandboxed to a
-    /// per-fixture cache dir (2a) so `from-raw` captures never touch the
-    /// user's real harness config and reruns are idempotent.
-    fn runOneComboResult(a: std.mem.Allocator, io: std.Io, init: std.process.Init, action: QueueRow) !bool {
-        const h = action.harness orelse return false;
-        const p = action.provider orelse return false;
-        const m_d = action.model orelse return false;
-
-        // 1. find the recipe for the harness.
-        const target_agent_aid = (try agentIdFrom(a, h, p, m_d)) orelse {
-            daemonWriteErr(io, "daemon: no recipe applicable for ");
-            daemonWriteErr(io, try describeQueueRow(a, action));
-            daemonWriteErr(io, " — skipping\n");
-            return false;
-        };
-        var combo: ?RecipesForFixtures = null;
-        for (recipesForFixtures) |c| {
-            if (std.mem.eql(u8, c.agent_id, target_agent_aid)) {
-                combo = c;
-                break;
-            }
-        }
-        const c = combo orelse {
-            daemonWriteErr(io, "daemon: no RecipesForFixtures recipe for ");
-            daemonWriteErr(io, target_agent_aid);
-            daemonWriteErr(io, " — skipping\n");
-            return false;
-        };
-
-        // 2. build env (writes config files, env vars). HOME is
-        // sandboxed BEFORE buildEnv runs so the fabricator's config
-        // writes land in the per-fixture cache dir, never the real one.
-        var env_map = std.process.Environ.Map.init(a);
-        defer env_map.deinit();
-        var parent_it = init.environ_map.iterator();
-        while (parent_it.next()) |kv| {
-            try env_map.put(kv.key_ptr.*, kv.value_ptr.*);
-        }
-        const real_home = init.environ_map.get("HOME") orelse (init.environ_map.get("USERPROFILE") orelse "");
-        const xdg_cache = init.environ_map.get("XDG_CACHE_HOME") orelse blk: {
-            if (real_home.len == 0) break :blk "";
-            break :blk try std.fs.path.join(a, &.{ real_home, ".cache" });
-        };
-        const sandbox_home = try std.fs.path.join(a, &.{ xdg_cache, "agent-detect/workers", target_agent_aid });
-        std.Io.Dir.cwd().createDirPath(io, sandbox_home) catch |err| switch (err) {
-            error.PathAlreadyExists => {},
-            else => {
-                daemonWriteErr(io, "daemon: cannot create sandbox HOME for from-raw worker: ");
-                daemonWriteErr(io, @errorName(err));
-                daemonWriteErr(io, "\n");
-                return false;
-            },
-        };
-        try env_map.put("HOME", sandbox_home);
-        if (builtin.os.tag == .windows) try env_map.put("USERPROFILE", sandbox_home);
-        try env_map.put("AGENT_DETECT_FIXTURE_ORIGIN", "from-raw");
-
-        const setup = c.buildEnv(a, &env_map, io, &c) catch |err| {
-            daemonWriteErr(io, "daemon: buildEnv failed: ");
-            daemonWriteErr(io, @errorName(err));
-            daemonWriteErr(io, "\n");
-            return false;
-        };
-        for (setup.env) |kv| {
-            if (kv[0].len == 0) break;
-            try env_map.put(kv[0], kv[1]);
-        }
-        for (setup.writes) |w| {
-            if (std.fs.path.dirname(w.path)) |dir| {
-                std.Io.Dir.cwd().createDirPath(io, dir) catch |err| switch (err) {
-                    error.PathAlreadyExists => {},
-                    else => {
-                        daemonWriteErr(io, "daemon: createDirPath failed for ");
-                        daemonWriteErr(io, dir);
-                        daemonWriteErr(io, ": ");
-                        daemonWriteErr(io, @errorName(err));
-                        daemonWriteErr(io, "\n");
-                        return false;
-                    },
-                };
-            }
-            std.Io.Dir.cwd().writeFile(io, .{ .sub_path = w.path, .data = w.content }) catch |err| {
-                daemonWriteErr(io, "daemon: writeFile failed for ");
-                daemonWriteErr(io, w.path);
-                daemonWriteErr(io, ": ");
-                daemonWriteErr(io, @errorName(err));
-                daemonWriteErr(io, "\n");
-                return false;
-            };
-        }
-
-        // 3. spawn the child (`refresh run` / `fixtures agent`)
-        var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const self_path_len = std.process.executablePath(io, &self_path_buf) catch |err| {
-            daemonWriteErr(io, "daemon: executablePath failed: ");
-            daemonWriteErr(io, @errorName(err));
-            daemonWriteErr(io, "\n");
-            return false;
-        };
-        const argv0 = self_path_buf[0..self_path_len];
-        var argv = [_][]const u8{ argv0, "refresh", "run" };
-        var child = std.process.spawn(io, .{
-            .argv = &argv,
-            .environ_map = &env_map,
-            .stdout = .ignore,
-            .stderr = .pipe,
-        }) catch |err| {
-            daemonWriteErr(io, "daemon: spawn failed: ");
-            daemonWriteErr(io, @errorName(err));
-            daemonWriteErr(io, " (argv0=");
-            daemonWriteErr(io, argv0);
-            daemonWriteErr(io, ")\n");
-            return false;
-        };
-        var stderr_capture = try std.ArrayList(u8).initCapacity(a, 4096);
-        defer stderr_capture.deinit(a);
-        var stderr_buf: [4096]u8 = undefined;
-        var stderr_reader = child.stderr.?.reader(io, &stderr_buf);
-        while (stderr_capture.items.len < 1 << 16) {
-            const n = stderr_reader.interface.readSliceShort(stderr_capture.unusedCapacitySlice()) catch break;
-            if (n == 0) break;
-            stderr_capture.shrinkRetainingCapacity(stderr_capture.items.len + n);
-        }
-        const term = child.wait(io) catch |err| {
-            daemonWriteErr(io, "daemon: child wait failed: ");
-            daemonWriteErr(io, @errorName(err));
-            daemonWriteErr(io, "\n");
-            return false;
-        };
-        switch (term) {
-            .exited => |code| {
-                if (code != 0) {
-                    daemonWriteErr(io, "daemon: worker failed for ");
-                    daemonWriteErr(io, try describeQueueRow(a, action));
-                    daemonWriteErr(io, " (exit code ");
-                    var n_buf: [16]u8 = undefined;
-                    daemonWriteErr(io, try std.fmt.bufPrint(&n_buf, "{d}", .{code}));
-                    daemonWriteErr(io, ") — re-queued\n");
-                    if (stderr_capture.items.len > 0) {
-                        daemonWriteErr(io, "  worker stderr: ");
-                        daemonWriteErr(io, stderr_capture.items);
-                        if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
-                    }
-                    return false;
-                }
-                // decision #11 post-check: the child wrote
-                // `fixtures/<id>.json` and upserted a `fixtures` row.
-                // Validate combo-match + evidence claims BEFORE accepting;
-                // failure → delete the file AND the row the child
-                // upserted, then re-queue.
-                if (!(try postCheckComboFixture(a, io, action, "from-raw"))) {
-                    deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
-                    return false;
-                }
-                {
-                    var buf2: [256]u8 = undefined;
-                    const msg = std.fmt.bufPrint(buf2[0..], "daemon: captured {s}\n", .{try describeQueueRow(a, action)}) catch "daemon: captured\n";
-                    daemonWrite(io, msg);
-                }
-                return true;
-            },
-            else => {
-                daemonWriteErr(io, "daemon: child terminated abnormally for ");
-                daemonWriteErr(io, try describeQueueRow(a, action));
-                daemonWriteErr(io, "\n");
-                return false;
-            },
-        }
-    }
-
-    /// decision #11/#12 post-check for an observed fixture produced by a
-    /// `from-raw`/`from-capture` worker: parse `fixtures/<id>.json`,
-    /// verify the top-level `origin` equals `expected_origin`, verify
-    /// combo-match (`cooked.agent_id` == the queued agent), and verify
-    /// the evidence claims pass `evidenceClaimsValid`. Returns false on
-    /// any failure (the caller deletes the file + fixtures row and
-    /// re-queues).
-    fn postCheckComboFixture(a: std.mem.Allocator, io: std.Io, action: QueueRow, expected_origin: []const u8) !bool {
-        const h = action.harness orelse return false;
-        const p = action.provider orelse return false;
-        const m_d = action.model orelse return false;
-        const agent = (agentIdFrom(a, h, p, m_d) catch return false) orelse return false;
-        defer a.free(agent);
-        const f_id = fixtureId(a, agent) catch return false;
+    /// post-check for a captured fixture: parse `fixtures/<id>.json`,
+    /// verify combo-match — the `from-capture.identify` object's
+    /// harness/provider/model ids equal the queued dims. Returns false on
+    /// any failure (the caller stamps `successful=0`; the committed file
+    /// is left intact).
+    fn postCheckComboFixture(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !bool {
+        const f_id = (try fixtureIdFrom(a, h, p, m, plat)) orelse return false;
         defer a.free(f_id);
-        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return false;
-        defer a.free(path);
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch {
-            daemonWriteErr(io, "daemon: post-check: fixture file missing: ");
-            daemonWriteErr(io, path);
+        const ch = (try readChannelObject(a, io, f_id, "from-capture")) orelse {
+            daemonWriteErr(io, "daemon: post-check: missing from-capture channel: ");
+            daemonWriteErr(io, f_id);
             daemonWriteErr(io, "\n");
             return false;
         };
-        defer a.free(data);
-        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch {
-            daemonWriteErr(io, "daemon: post-check: unparsable fixture: ");
-            daemonWriteErr(io, path);
-            daemonWriteErr(io, "\n");
-            return false;
-        };
-        defer parsed.deinit();
-        if (parsed.value != .object) return false;
-        const cooked = parsed.value.object.get("cooked") orelse return false;
-        const raw = parsed.value.object.get("raw") orelse return false;
-        if (cooked != .object or raw != .object) return false;
-        const cooked_agent = sjstr(cooked.object, "agent_id");
-        if (!std.mem.eql(u8, cooked_agent, agent)) {
-            daemonWriteErr(io, "daemon: post-check: combo mismatch — cooked agent_id '");
-            daemonWriteErr(io, cooked_agent);
+        const identify = ch.object.get("identify") orelse return false;
+        if (identify != .object) return false;
+        const cob = identify.object;
+        const ch_id = sjstr(cob, "harness_id");
+        const cp = sjstr(cob, "provider_id");
+        const cm = sjstr(cob, "model_id");
+        if (!(std.mem.eql(u8, ch_id, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m))) {
+            daemonWriteErr(io, "daemon: post-check: combo mismatch — from-capture identify ids '");
+            daemonWriteErr(io, ch_id);
+            daemonWriteErr(io, "/");
+            daemonWriteErr(io, cp);
+            daemonWriteErr(io, "/");
+            daemonWriteErr(io, cm);
             daemonWriteErr(io, "' != queued '");
-            daemonWriteErr(io, agent);
+            daemonWriteErr(io, h);
+            daemonWriteErr(io, "/");
+            daemonWriteErr(io, p);
+            daemonWriteErr(io, "/");
+            daemonWriteErr(io, m);
             daemonWriteErr(io, "'\n");
-            return false;
-        }
-        const origin = if (parsed.value.object.get("origin")) |ov| switch (ov) {
-            .string => |s| s,
-            else => "from-capture", // legacy fixtures predate the origin key
-        } else "from-capture";
-        if (!std.mem.eql(u8, origin, expected_origin)) {
-            daemonWriteErr(io, "daemon: post-check: origin '");
-            daemonWriteErr(io, origin);
-            daemonWriteErr(io, "' != expected '");
-            daemonWriteErr(io, expected_origin);
-            daemonWriteErr(io, "'\n");
-            return false;
-        }
-        if (!evidenceClaimsValid(raw, cooked)) {
-            daemonWriteErr(io, "daemon: post-check: evidence claims invalid for ");
-            daemonWriteErr(io, agent);
-            daemonWriteErr(io, "\n");
             return false;
         }
         return true;
     }
 
-    /// `from-identity` post-check (decision #7): parse the declared fixture,
-    /// confirm `origin == "from-identity"` and the cooked identity dims match
-    /// the queue row. Declared fixtures carry no evidence, so the
-    /// evidence-claim check is skipped.
-    fn postCheckDeclaredFixture(a: std.mem.Allocator, io: std.Io, action: QueueRow) !bool {
-        const h = action.harness orelse return false;
-        const p = action.provider orelse return false;
-        const m_d = action.model orelse return false;
-        const agent = (agentIdFrom(a, h, p, m_d) catch return false) orelse return false;
-        defer a.free(agent);
-        const f_id = fixtureId(a, agent) catch return false;
+    /// `from-identity` post-check: parse the declared fixture and confirm
+    /// the `from-identity.identify` dims match the queue row. Declared
+    /// fixtures carry no evidence, so no evidence check applies.
+    fn postCheckDeclaredFixture(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !bool {
+        const f_id = (try fixtureIdFrom(a, h, p, m, plat)) orelse return false;
         defer a.free(f_id);
-        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return false;
-        defer a.free(path);
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return false;
-        defer a.free(data);
-        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return false;
-        defer parsed.deinit();
-        if (parsed.value != .object) return false;
-        const origin = if (parsed.value.object.get("origin")) |ov| switch (ov) {
-            .string => |s| s,
-            else => "",
-        } else "";
-        if (!std.mem.eql(u8, origin, "from-identity")) return false;
-        const cooked = parsed.value.object.get("cooked") orelse return false;
-        if (cooked != .object) return false;
-        const ch = sjstr(cooked.object, "harness_id");
-        const cp = sjstr(cooked.object, "provider_id");
-        const cm = sjstr(cooked.object, "model_id");
-        return std.mem.eql(u8, ch, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m_d);
+        const ch = (try readChannelObject(a, io, f_id, "from-identity")) orelse return false;
+        const identify = ch.object.get("identify") orelse return false;
+        if (identify != .object) return false;
+        const cob = identify.object;
+        const ch_id = sjstr(cob, "harness_id");
+        const cp = sjstr(cob, "provider_id");
+        const cm = sjstr(cob, "model_id");
+        return std.mem.eql(u8, ch_id, h) and std.mem.eql(u8, cp, p) and std.mem.eql(u8, cm, m);
     }
 
-    /// delete the `fixtures/<id>.json` file AND the `fixtures` row the
-    /// child already upserted (runFixturesCapture upserts before the
-    /// daemon's post-check runs) — a failed post-check must not leave
-    /// "captured" state behind.
-    fn deleteFixtureFileAndRow(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) void {
-        const agent = (agentIdFrom(a, h, p, m) catch return) orelse return;
-        defer a.free(agent);
-        const f_id = fixtureId(a, agent) catch return;
-        defer a.free(f_id);
-        const path = std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id}) catch return;
-        defer a.free(path);
-        std.Io.Dir.cwd().deleteFile(io, path) catch {};
-        const qh = sqlQuote(a, h) catch return;
-        defer a.free(qh);
-        const qp = sqlQuote(a, p) catch return;
-        defer a.free(qp);
-        const qm = sqlQuote(a, m) catch return;
-        defer a.free(qm);
-        const qplat = sqlQuote(a, plat) catch return;
-        defer a.free(qplat);
-        const sql = std.fmt.allocPrint(a,
-            "DELETE FROM fixtures WHERE harness={s} AND provider={s} AND model={s} AND platform={s}",
-            .{ qh, qp, qm, qplat },
-        ) catch return;
-        defer a.free(sql);
-        _ = sqliteQuery(a, io, sql) catch {};
-        daemonWriteErr(io, "daemon: post-check failure — deleted ");
-        daemonWriteErr(io, path);
-        daemonWriteErr(io, " and its fixtures row\n");
-    }
-
-    /// decision #11 — mechanical evidence-claim validation. For every
-    /// dim in `raw.detected`, at least one `raw.evidence` claim must:
-    ///   - have that `dim`,
-    ///   - point at a source that is present in raw (lineage name in
-    ///     raw.process_lineage — env/config/session sources are no
-    ///     longer verifiable in the slimmed raw block, so their
-    ///     presence is assumed from the claim itself), and
-    ///   - have a `value` that equals/contains the cooked dim's
-    ///     canonical name (case-insensitive) — OR be the literal
-    ///     `"<redacted>"` (a secret-shaped env-source value that was
-    ///     redacted on write; the claim's dim/source/name chain is
-    ///     accepted on its own).
-    /// This verifies the attribution chain only — semantic
-    /// deducibility is human review. `from-identity` fixtures are excluded
-    /// by their origin (declared, not observed).
-    pub fn evidenceClaimsValid(raw_v: std.json.Value, cooked_v: std.json.Value) bool {
-        if (raw_v != .object or cooked_v != .object) return false;
-        const raw = raw_v.object;
-        const cooked = cooked_v.object;
-        const detected = raw.get("detected") orelse return false;
-        const evidence = raw.get("evidence") orelse return false;
-        const lineage = raw.get("process_lineage") orelse return false;
-        if (detected != .array or evidence != .array) return false;
-        outer: for (detected.array.items) |item| {
-            if (item != .string) continue;
-            const dim = item.string;
-            for (evidence.array.items) |ev| {
-                if (ev != .object) continue;
-                const eo = ev.object;
-                const cdim = jstr(eo, "dim") orelse continue;
-                if (!std.mem.eql(u8, cdim, dim)) continue;
-                const source = jstr(eo, "source") orelse continue;
-                const name = jstr(eo, "name") orelse continue;
-                // source present in raw? (env/config/session sources are
-                // not verifiable in the slimmed raw block — the claim's
-                // dim/source/name chain is the attribution; only lineage
-                // claims are checked against raw.process_lineage.)
-                var present = true;
-                if (std.mem.eql(u8, source, "lineage")) {
-                    present = false;
-                    for (lineage.array.items) |ent| {
-                        if (ent == .object) {
-                            const nm = jstr(ent.object, "name") orelse "";
-                            if (std.mem.eql(u8, nm, name)) {
-                                present = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!present) continue;
-                const value = jstr(eo, "value") orelse "";
-                // a redacted secret value is accepted as-is: the claim
-                // records the attribution chain but never the secret.
-                if (std.mem.eql(u8, value, "<redacted>")) continue :outer;
-                if (valueMatchesDim(value, dim, cooked)) continue :outer;
-            }
-            return false; // no valid claim for this dim
-        }
-        return true;
-    }
-
-    /// does `value` (the claim's recorded value) equal or contain the
-    /// cooked canonical name/id for `dim`? Case-insensitive; the
-    /// canonical reference is the `*_name` field (dash-spelled), with
-    /// the `*_id` slug as fallback. For provider claims derived from an
-    /// openai-compatible base_url (qwen), the value maps to the provider
-    /// via `providerForBaseUrl` — the same derivation the detector ran.
-    fn valueMatchesDim(value: []const u8, dim: []const u8, cooked: std.json.ObjectMap) bool {
-        const names = [_][2][]const u8{
-            .{ "harness", "harness_name" },
-            .{ "provider", "provider_name" },
-            .{ "model", "model_name" },
-        };
-        for (names) |pair| {
-            if (!std.mem.eql(u8, pair[0], dim)) continue;
-            const name = jstr(cooked, pair[1]) orelse "";
-            if (name.len > 0 and std.ascii.indexOfIgnoreCase(value, name) != null) return true;
-            const id_key = if (std.mem.eql(u8, dim, "harness")) "harness_id" else if (std.mem.eql(u8, dim, "provider")) "provider_id" else "model_id";
-            const id = jstr(cooked, id_key) orelse "";
-            if (id.len > 0 and std.ascii.indexOfIgnoreCase(value, id) != null) return true;
-            // base_url-derived provider: the value is the endpoint, and
-            // the provider id was derived FROM it.
-            if (std.mem.eql(u8, dim, "provider")) {
-                const pname = jstr(cooked, "provider_name") orelse "";
-                if (pname.len > 0 and std.mem.eql(u8, providerForBaseUrl(value), pname)) return true;
-            }
-            return false;
-        }
-        return false;
-    }
-
-    /// `from-identity` worker (2f): resolve the combo via `resolveRecipe`
+    /// `from-identity` worker: resolve the combo via `resolveRecipe`
     /// (recipe-mode, no detection, zero tokens, no harness required),
-    /// assemble the fixture with `cooked` fully populated, `raw` =
-    /// platform_id/detectable/detected/empty-env/real-lineage/
-    /// empty-evidence/static *-urls, and top-level `origin: "from-identity"`.
-    /// Declared, not observed.
-    fn runOneComboIdentity(a: std.mem.Allocator, io: std.Io, action: QueueRow) !bool {
-        const h = action.harness orelse return false;
-        const p = action.provider orelse return false;
-        const m_d = action.model orelse return false;
-        var d = (try resolveRecipe(a, h, p, m_d)) orelse {
+    /// assemble the `from-identity` channel (`identify` = the 17-field
+    /// buildCooked object; `trailer co-author`/`trailer assisted-by` from
+    /// spawning the real CLI with the combo flags), merge-write it into
+    /// `fixtures/<id>.json` (preserving `from-capture`/`from-capture-raw`),
+    /// and upsert the fixtures row with the identity generation columns.
+    /// Declared, not observed. Returns success; failure stamps
+    /// `successful=0` with `generated_at=now`.
+    fn runOneComboIdentity(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !bool {
+        var d = (try resolveRecipe(a, h, p, m)) orelse {
             daemonWriteErr(io, "daemon: from-identity: combo not in the rule tables — cannot declare a fixture\n");
+            try upsertFixture(a, io, .{
+                .harness = h, .provider = p, .model = m, .platform = plat,
+                .runner = getParentPid(), .generated_at = unixNow(io),
+                .successful = 0,
+            });
             return false;
         };
         // real process lineage (like detect() would emit) so the
@@ -6395,75 +5950,110 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
         var empty_env = std.process.Environ.Map.init(a);
         defer empty_env.deinit();
         const cooked = try buildCooked(a, &d);
-        const raw = try buildRaw(a, &d, &empty_env);
-        var root = std.json.Value{ .object = .empty };
-        try root.object.put(a, "cooked", cooked);
-        try root.object.put(a, "raw", raw);
-        if (d.trailer) |t| {
-            try root.object.put(a, "trailer", .{ .string = t });
-        }
-        try root.object.put(a, "origin", .{ .string = "from-identity" });
-        const json_bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
-        defer a.free(json_bytes);
 
-        std.Io.Dir.cwd().createDirPath(io, "fixtures") catch |err| switch (err) {
-            error.PathAlreadyExists => {},
-            else => return false,
-        };
-        const dir = std.Io.Dir.cwd().openDir(io, "fixtures", .{}) catch return false;
-        defer dir.close(io);
-        const agent = (try agentIdFrom(a, h, p, m_d)) orelse return false;
-        defer a.free(agent);
-        const f_id = fixtureId(a, agent) catch return false;
+        var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const self_path_len = std.process.executablePath(io, &self_path_buf) catch 0;
+        const co = if (self_path_len > 0) try spawnTrailerLine(a, io, self_path_buf[0..self_path_len], "co-author", h, p, m) else null;
+        const ab = if (self_path_len > 0) try spawnTrailerLine(a, io, self_path_buf[0..self_path_len], "assisted-by", h, p, m) else null;
+
+        const channel = try channelJson(a, cooked, co, ab);
+        defer a.free(channel);
+        const ch_v = try std.json.parseFromSlice(std.json.Value, a, channel, .{});
+        const f_id = (try fixtureIdFrom(a, h, p, m, plat)) orelse return false;
         defer a.free(f_id);
-        const json_name = try std.fmt.allocPrint(a, "{s}.json", .{f_id});
-        dir.writeFile(io, .{ .sub_path = json_name, .data = json_bytes }) catch {
-            daemonWriteErr(io, "daemon: from-identity: cannot write fixture file\n");
-            return false;
-        };
-        if (!(try postCheckDeclaredFixture(a, io, action))) {
-            daemonWriteErr(io, "daemon: from-identity: post-check failed — deleting fixture\n");
-            std.Io.Dir.cwd().deleteFile(io, try std.fs.path.join(a, &.{ "fixtures", json_name })) catch {};
+        try mergeWriteFixture(a, io, f_id, &.{"from-identity"}, &.{ch_v.value});
+
+        if (!(try postCheckDeclaredFixture(a, io, h, p, m, plat))) {
+            daemonWriteErr(io, "daemon: from-identity: post-check failed — marking unsuccessful\n");
+            try upsertFixture(a, io, .{
+                .harness = h, .provider = p, .model = m, .platform = plat,
+                .runner = getParentPid(), .generated_at = unixNow(io),
+                .successful = 0,
+            });
             return false;
         }
+
+        const now = unixNow(io);
+        const hash = try generationHash(a, channel);
+        defer a.free(hash);
+        try upsertFixture(a, io, .{
+            .harness = h, .provider = p, .model = m, .platform = plat,
+            .runner = getParentPid(),
+            .generated_at = now,
+            .successful = 1,
+            .agent_detect_version = build_options.version,
+            .identity_generation_at = now,
+            .identity_generation_hash = hash,
+        });
         return true;
     }
 
-    /// `from-capture` worker (2g): launch the real harness headlessly so
-    /// it runs `fixtures capture` inside a live model session. Uses the
-    /// REAL environment (unsandboxed HOME — real API keys/config are
-    /// required); cwd stays the daemon's (the repo root) so the session
-    /// writes `fixtures/<id>.json` into the repo. A watchdog subprocess
+    /// `from-capture` worker: launch the real harness headlessly so it
+    /// runs `fixtures capture` inside a live model session. Uses the
+    /// REAL environment (real API keys/config are required); cwd stays
+    /// the daemon's (the repo root) so the session writes
+    /// `fixtures/<id>.json` into the repo. A watchdog subprocess
     /// (`fixtures __timeout`) enforces `--capture-timeout-seconds` so a
     /// hung harness fails out instead of blocking the poll loop forever.
-    /// Success = child exit 0 AND the post-check passing; the caller
-    /// handles re-queue/cap semantics. Token-consuming — user-confirmed
-    /// only.
-    fn runOneComboCapture(a: std.mem.Allocator, io: std.Io, init: std.process.Init, action: QueueRow, timeout_seconds: u64) !bool {
-        const h = action.harness orelse return false;
-        const p = action.provider orelse return false;
-        const m_d = action.model orelse return false;
-        const agent = (agentIdFrom(a, h, p, m_d) catch return false) orelse return false;
-        defer a.free(agent);
-        var combo: ?RecipesForFixtures = null;
-        for (recipesForFixtures) |c| {
-            if (std.mem.eql(u8, c.agent_id, agent)) {
-                combo = c;
-                break;
-            }
+    /// Success = child exit 0 AND the post-check passing. Failures
+    /// consume the item: launch-spec/availability/spawn/nonzero/
+    /// post-check failures stamp the appropriate `available`/`successful`
+    /// markers (never re-queue, never delete the committed file).
+    /// Token-consuming — user-confirmed only.
+    fn runOneComboCapture(a: std.mem.Allocator, io: std.Io, init: std.process.Init, fixture_id: []const u8, timeout_seconds: u64) !bool {
+        const parts = try splitFixtureId(a, fixture_id);
+        defer {
+            a.free(parts[0]);
+            a.free(parts[1]);
+            a.free(parts[2]);
+            a.free(parts[3]);
         }
+        const h = parts[0];
+        const p = parts[1];
+        const m_d = parts[2];
+        const plat = parts[3];
+        const agent = (try agentIdFrom(a, h, p, m_d)) orelse return false;
+        defer a.free(agent);
+        const combo = recipeForAgent(agent);
         const c = combo orelse {
             daemonWriteErr(io, "daemon: from-capture: no recipe for ");
             daemonWriteErr(io, agent);
             daemonWriteErr(io, "\n");
+            try upsertFixture(a, io, .{
+                .harness = h, .provider = p, .model = m_d, .platform = plat,
+                .runner = getParentPid(), .generated_at = unixNow(io),
+                .available = 1, .successful = 0,
+            });
             return false;
         };
+        // launch-spec backstop guard: no launch → invalid, no fixtures
+        // write.
         const launch = c.launch orelse {
-            daemonWriteErr(io, "daemon: from-capture: no launch spec for ");
-            daemonWriteErr(io, agent);
-            daemonWriteErr(io, " — headless capture not supported; use from-identity/from-raw\n");
+            try insertInvalid(a, io, .{
+                .fixture_id = try a.dupe(u8, fixture_id),
+                .agent_id = try a.dupe(u8, agent),
+                .harness_id = try a.dupe(u8, h),
+                .provider_id = try a.dupe(u8, p),
+                .model_id = try a.dupe(u8, m_d),
+                .platform_id = try a.dupe(u8, plat),
+                .reason = "no launch spec",
+                .created_at = unixNow(io),
+            });
             return false;
         };
+        // availability probe: uninstalled harness → available=0,
+        // successful=0, consumed.
+        if (!harnessAvailable(io, agent)) {
+            daemonWriteErr(io, "daemon: from-capture: harness unavailable for ");
+            daemonWriteErr(io, agent);
+            daemonWriteErr(io, " — available=0, successful=0\n");
+            try upsertFixture(a, io, .{
+                .harness = h, .provider = p, .model = m_d, .platform = plat,
+                .runner = getParentPid(), .generated_at = unixNow(io),
+                .available = 0, .successful = 0,
+            });
+            return false;
+        }
 
         var child = std.process.spawn(io, .{
             .argv = launch,
@@ -6474,6 +6064,11 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             daemonWriteErr(io, "daemon: from-capture: spawn failed: ");
             daemonWriteErr(io, @errorName(err));
             daemonWriteErr(io, "\n");
+            try upsertFixture(a, io, .{
+                .harness = h, .provider = p, .model = m_d, .platform = plat,
+                .runner = getParentPid(), .generated_at = unixNow(io),
+                .available = 1, .successful = 0,
+            });
             return false;
         };
 
@@ -6504,6 +6099,11 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             daemonWriteErr(io, "daemon: from-capture: child wait failed: ");
             daemonWriteErr(io, @errorName(err));
             daemonWriteErr(io, "\n");
+            try upsertFixture(a, io, .{
+                .harness = h, .provider = p, .model = m_d, .platform = plat,
+                .runner = getParentPid(), .generated_at = unixNow(io),
+                .available = 1, .successful = 0,
+            });
             return false;
         };
         switch (term) {
@@ -6520,11 +6120,23 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                         daemonWriteErr(io, stderr_capture.items);
                         if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
                     }
-                    deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
+                    // detection-partial (exit 8) lands here too — valid ids,
+                    // failed attempt → successful=0, retried via --unsuccessful.
+                    try upsertFixture(a, io, .{
+                        .harness = h, .provider = p, .model = m_d, .platform = plat,
+                        .runner = getParentPid(), .generated_at = unixNow(io),
+                        .available = 1, .successful = 0,
+                    });
                     return false;
                 }
-                if (!(try postCheckComboFixture(a, io, action, "from-capture"))) {
-                    deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
+                if (!(try postCheckComboFixture(a, io, h, p, m_d, plat))) {
+                    // override the row the session wrote (it stamped
+                    // successful=1); the committed file is left intact.
+                    try upsertFixture(a, io, .{
+                        .harness = h, .provider = p, .model = m_d, .platform = plat,
+                        .runner = getParentPid(), .generated_at = unixNow(io),
+                        .available = 1, .successful = 0,
+                    });
                     return false;
                 }
                 return true;
@@ -6533,13 +6145,17 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
                 daemonWriteErr(io, "daemon: from-capture child terminated abnormally for ");
                 daemonWriteErr(io, agent);
                 daemonWriteErr(io, "\n");
-                deleteFixtureFileAndRow(a, io, h, p, m_d, platformId());
+                try upsertFixture(a, io, .{
+                    .harness = h, .provider = p, .model = m_d, .platform = plat,
+                    .runner = getParentPid(), .generated_at = unixNow(io),
+                    .available = 1, .successful = 0,
+                });
                 return false;
             },
         }
     }
 
-    /// `fixtures __timeout <seconds> <pid>` — internal watchdog used by
+    /// `fixtures __timeout <seconds> <pid>`    /// `fixtures __timeout <seconds> <pid>` — internal watchdog used by
     /// the from-capture worker: sleeps N seconds (1s increments), then
     /// sends SIGTERM to the capture child so a hung harness fails out at
     /// `--capture-timeout-seconds` instead of blocking the poll loop.
@@ -6593,9 +6209,9 @@ fn harnessVersion(a: std.mem.Allocator, io: std.Io, agent_id: []const u8) ?[]con
             "GOOSE_TERMINAL",  "GOOSE_MODE",        "GOOSE_WORKING_DIR",
             "CLINE_NO_INTERACTIVE", "QWEN_API_KEY",  "OMP_API_KEY",     "REASONIX_API_KEY",  "CRUSH_API_KEY",
             "KILO_API_KEY",    "OPENCODE_API_KEY",  "VIBE_API_KEY",
-            // launcher model-selector markers (from-raw/from-capture
-            // workers set these in the child env, never the daemon's —
-            // but if a stray one reaches a real shell the daemon should
+            // launcher model-selector markers (from-capture workers set
+            // these in the child env, never the daemon's — but if a
+            // stray one reaches a real shell the daemon should
             // still refuse, since it indicates a harness-session env).
             "KILO_MODEL", "OPENCODE_MODEL", "PI_PROVIDER", "PI_MODEL",
             "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER",
@@ -6704,8 +6320,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     // subcommand namespace: `fixtures --help`, `fixtures daemon`,
     // `fixtures capture`, `fixtures queue [--harness=...]
     // [--provider=...] [--model=...]`, `fixtures queue --recipes`,
-    // `fixtures dequeue`, plus `refresh run`. The
-    // `raw`/`fixtures`/`refresh` dispatch is compiled out of the
+    // `fixtures dequeue`. The
+    // `raw`/`fixtures` dispatch is compiled out of the
     // released binary (dev_build is false) — the released and dev
     // binaries both run the action parser below: `identify`, `trailer`,
     // `check-reciprocal`, `help`, `version` (with no arguments showing
@@ -6757,15 +6373,6 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 writeOut(io, dev.fixturesUsage);
                 return EXIT_UNRECOGNISED_ARG;
             }
-        } else if (std.mem.eql(u8, cmd, "refresh") and std.mem.eql(u8, sub, "run")) {
-            // `refresh run` — invoked by the daemon as a child to
-            // capture the current session into a single
-            // `fixtures/<fixture_id>.json` and upsert the matching
-            // fixtures row. The child inherits the harness env and
-            // config files the daemon set up via the
-            // `RecipesForFixtures.buildEnv` recipe, so detection should
-            // resolve to that harness.
-            return dev.runFixturesCapture(init);
         } else if (std.mem.eql(u8, cmd, "raw")) {
             return dev.runRawAction(init);
         }
