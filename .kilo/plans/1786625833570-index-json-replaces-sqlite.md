@@ -140,7 +140,7 @@ Add to the repo-root `kilo.md` three project tweaks:
       "stale_by_minutes": 7,
       "stale_by_harness_version": null,
       "stale_by_detect_version": null,
-      "stale_by_hash": null,
+      "stale_by_fixture_hash": null,
       "known": null, "valid": null, "successful": null, "free": null,
       "runner": 12345,
       "started_at": null
@@ -177,7 +177,7 @@ Add to the repo-root `kilo.md` three project tweaks:
   `from-capture` entry iff `capture.captured_at` is missing or older.
   Both mode flags together still exit 3; omitting them queues both modes'
   entries (the OR behavior). DESIGN.md already specs the mode-picks-channel
-  pattern for `--stale-by-hash`.
+  pattern for `--stale-by-fixture-hash`.
 - **Seeding a new rule (harness/provider/model):** add the rule tables
   entries, then run `fixtures queue --unknown --from-identity` (optionally
   narrowed by dims) — the daemon generates the new combos from the rules
@@ -206,7 +206,7 @@ Add to the repo-root `kilo.md` three project tweaks:
     store entries whose fixture file is absent, re-queued for
     re-capture), `stale_by_minutes` (minutes int|null),
     `stale_by_harness_version` / `stale_by_detect_version` /
-    `stale_by_hash` (true|null). Marker sweeps
+    `stale_by_fixture_hash` (true|null). Marker sweeps
     require `known: true` (§4e).
   - `known`/`valid`/`successful`/`free` — nullable affirmative booleans
     (§4e).

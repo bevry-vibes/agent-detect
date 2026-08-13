@@ -346,3 +346,7 @@ Question: "Where do failed attempts land their completion timestamp (plan §7b)?
 ## 36 — 23:38 — user
 
 > You are still missing more filters. Such as --stale-by-harness-version and --stale-by-detect-version
+
+## 37 — 23:39 — user
+
+> stale-by-hash to stale-by-fixture-hash
