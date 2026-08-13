@@ -138,8 +138,8 @@ Add to the repo-root `kilo.md` three project tweaks:
       "stale_by_missing_entry": null,
       "stale_by_missing_fixture": null,
       "stale_by_minutes": 7,
-      "stale_by_version": null,
-      "stale_by_detect": null,
+      "stale_by_harness_version": null,
+      "stale_by_detect_version": null,
       "stale_by_hash": null,
       "known": null, "valid": null, "successful": null, "free": null,
       "runner": 12345,
@@ -159,7 +159,8 @@ Add to the repo-root `kilo.md` three project tweaks:
     `available`/`successful` markers** — failures live in `errors` (§4c).
   - `identity` = `{ declared_at, hash }` (BLAKE3 of the channel object);
     `capture` = `{ captured_at, hash, harness_version }` — harness_version
-    nests under capture because only capture stamps it; `--stale-by-version`
+    nests under capture because only capture stamps it;
+    `--stale-by-harness-version`
     reads it there. Absent objects/channels = not yet written.
   - `prompt_launch`: the launch argv that (re)captures this fixture —
     argv[0] = the concrete binary for this platform (`.cmd`/`.ps1` shims
@@ -203,8 +204,9 @@ Add to the repo-root `kilo.md` three project tweaks:
     for it is the registration pass, idempotent, purged when no
     unregistered files remain), `stale_by_missing_fixture` (true|null —
     store entries whose fixture file is absent, re-queued for
-    re-capture), `stale_by_minutes` (minutes int|null), `stale_by_version`
-    / `stale_by_detect` / `stale_by_hash` (true|null). Marker sweeps
+    re-capture), `stale_by_minutes` (minutes int|null),
+    `stale_by_harness_version` / `stale_by_detect_version` /
+    `stale_by_hash` (true|null). Marker sweeps
     require `known: true` (§4e).
   - `known`/`valid`/`successful`/`free` — nullable affirmative booleans
     (§4e).

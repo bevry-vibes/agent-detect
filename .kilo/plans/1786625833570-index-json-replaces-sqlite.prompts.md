@@ -342,3 +342,7 @@ Question: "Where do failed attempts land their completion timestamp (plan §7b)?
 ## 35 — 23:35 — user
 
 > Wait, change it to `--stale-by-missing-entry`, and `--stale-by-missing-fixture`, that is more clear on what they are.
+
+## 36 — 23:38 — user
+
+> You are still missing more filters. Such as --stale-by-harness-version and --stale-by-detect-version
