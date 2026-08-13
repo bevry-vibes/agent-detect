@@ -53,8 +53,6 @@ const MSG_MISSING_ARG_TRAILER_SUBTYPE = core.MSG_MISSING_ARG_TRAILER_SUBTYPE;
 const MSG_MISSING_ARG = core.MSG_MISSING_ARG;
 const MSG_ENV_INCOMPATIBLE = core.MSG_ENV_INCOMPATIBLE;
 const MSG_ENV_INCOMPLETE = core.MSG_ENV_INCOMPLETE;
-const MSG_MISSING_SPECIFIED_AGENT = core.MSG_MISSING_SPECIFIED_AGENT;
-const MSG_UNABLE_TO_DETECT = core.MSG_UNABLE_TO_DETECT;
 const MSG_AGENT_DATA_INCOMPLETE = core.MSG_AGENT_DATA_INCOMPLETE;
 const MSG_REQUIREMENT_FAILED = core.MSG_REQUIREMENT_FAILED;
 const MSG_OUT_OF_MEMORY = core.MSG_OUT_OF_MEMORY;
@@ -381,7 +379,9 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             return EXIT_MISSING_ARG;
         }
         const d = (try resolveRecipe(a, combo_h, combo_p, combo_m)) orelse {
-            writeErr(io, MSG_MISSING_SPECIFIED_AGENT);
+            // report which dims resolved (strict slug id) and which did
+            // not (null) so the unknown dim is visible at a glance.
+            core.writeMissingSpecifiedAgent(io, rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, combo_h), rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, combo_p), rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, combo_m));
             return EXIT_MISSING_SPECIFIED_AGENT;
         };
         return runAction(init, &d, action, trailer_type);
@@ -404,7 +404,7 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
     // identity incomplete → unable to detect: stderr only, no stdout
     // (no sensible data). Applies to every action.
     if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
-        writeErr(io, MSG_UNABLE_TO_DETECT);
+        core.writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
         return EXIT_UNABLE_TO_DETECT;
     }
 

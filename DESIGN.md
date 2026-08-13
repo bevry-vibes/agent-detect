@@ -308,11 +308,13 @@ Examples per group:
   environment preventing run`.
 - **7** — `identify`/`trailer co-author`/`check-reciprocal`
   `--harness=foo --provider=bar --model=baz` → `missing specified
-  agent (harness, provider, model)`.
+  agent (harness = "<resolved>", provider = "<resolved>", model = null)`
+  — each dim reports its resolved strict-slug id or `null`.
 - **8** — `identify`/`trailer co-author`/`check-reciprocal` when live
   detection resolves nothing (plain shell); dev `fixtures capture`
-  partial → `unable to detect unspecified agent (harness, provider,
-  model)`.
+  partial → `unable to detect unspecified agent (harness = "<resolved>",
+  provider = "<resolved>", model = null)` — each dim reports its
+  resolved strict-slug id or `null`.
 - **9** — `check-reciprocal` with identity resolved but
   `harness_license`/`model_reciprocity`/`provider_closed_training`
   null (e.g. crush/hyper/qwen3.7-plus), or `harness_license` is

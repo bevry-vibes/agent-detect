@@ -73,13 +73,54 @@ pub const MSG_MISSING_ARG_TRAILER_SUBTYPE = "missing required arguments: trailer
 pub const MSG_MISSING_ARG = "missing required arguments\n";
 pub const MSG_ENV_INCOMPATIBLE = "incompatible environment refusing run\n";
 pub const MSG_ENV_INCOMPLETE = "incomplete environment preventing run\n";
-pub const MSG_MISSING_SPECIFIED_AGENT = "missing specified agent (harness, provider, model)\n";
-pub const MSG_UNABLE_TO_DETECT = "unable to detect unspecified agent (harness, provider, model)\n";
 pub const MSG_AGENT_DATA_INCOMPLETE = "agent (harness, provider, model) data incomplete to make a determination\n";
 pub const MSG_REQUIREMENT_FAILED = "agent (harness, provider, model) data complete and requirement failed\n";
 pub const MSG_OUT_OF_MEMORY = "out of memory\n";
 pub const MSG_SQLITE_QUERY = "sqlite query error\n";
 pub const MSG_IO = "filesystem I/O error\n";
+
+/// exit-7 stderr message for recipe mode, reporting which of the three
+/// dims resolved to a known rule (as its strict alphanumeric slug id)
+/// and which did not (`null`) — so the user sees at a glance which dim
+/// is the unknown one:
+/// `missing specified agent (harness = "kilo", provider = null, model = "deepseekv4pro")`
+pub fn writeMissingSpecifiedAgent(io: std.Io, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) void {
+    writeErr(io, "missing specified agent (");
+    writeAgentDims(io, h, p, m);
+    writeErr(io, ")\n");
+}
+
+/// exit-8 stderr message for live detection, reporting which of the
+/// three dims resolved (as its strict alphanumeric id) and which did
+/// not (`null`):
+/// `unable to detect unspecified agent (harness = "kilo", provider = null, model = null)`
+pub fn writeUnableToDetect(io: std.Io, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) void {
+    writeErr(io, "unable to detect unspecified agent (");
+    writeAgentDims(io, h, p, m);
+    writeErr(io, ")\n");
+}
+
+/// the shared `harness = "<id>", provider = "<id>", model = "<id>"`
+/// dims block for the resolved-dims error messages.
+fn writeAgentDims(io: std.Io, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) void {
+    writeErr(io, "harness = ");
+    writeErrIdOrNull(io, h);
+    writeErr(io, ", provider = ");
+    writeErrIdOrNull(io, p);
+    writeErr(io, ", model = ");
+    writeErrIdOrNull(io, m);
+}
+
+/// write `"<id>"` when present, bare `null` when absent.
+fn writeErrIdOrNull(io: std.Io, id: ?[]const u8) void {
+    if (id) |s| {
+        writeErr(io, "\"");
+        writeErr(io, s);
+        writeErr(io, "\"");
+    } else {
+        writeErr(io, "null");
+    }
+}
 
 // macOS process walking (libproc + sysctl). zig 0.16 std has no darwin.zig,
 // so the headers are pulled in directly. `<libproc.h>` is *not* imported
@@ -1378,7 +1419,6 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
     defer a.free(sql);
 
     const out = kiloSqliteJson(a, io, db, sql) catch return null;
-    defer a.free(out);
     if (out.len == 0) return null;
     const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
     if (outer.value != .array or outer.value.array.items.len == 0) return null;
@@ -1459,7 +1499,11 @@ pub fn readChildOutput(a: std.mem.Allocator, io: std.Io, child: std.process.Chil
     return out.toOwnedSlice(a);
 }
 
-/// spawn `sqlite3 -json <db> <sql>`; return stdout (caller frees).
+/// spawn `sqlite3 -json <db> <sql>`; return stdout. Caller owns the
+/// returned slice — do NOT free it here: the caller's JSON parse
+/// aliases into it, and Zig 0.16's arena free-list would reclaim
+/// this most-recent allocation into the parse's own allocations
+/// (use-after-free clobbering the bytes mid-parse).
 /// Deliberate mirror of the dev-only `dev.sqliteRun` — this one takes
 /// a db-path arg and ships in the released binary (Kilo DB reads);
 /// `dev.sqliteRun` is fixed to `fixtures/index.sqlite3` and dev-gated.
@@ -1473,7 +1517,6 @@ fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const
         .stderr = .ignore,
     }) catch return error.SqliteSpawnFailed;
     const out = readChildOutput(a, io, child, false) catch return error.SqliteSpawnFailed;
-    defer a.free(out);
     const term = child.wait(io) catch return error.SqliteSpawnFailed;
     switch (term) {
         .exited => |code| if (code != 0) return error.SqliteError,

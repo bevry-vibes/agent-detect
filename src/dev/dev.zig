@@ -85,13 +85,12 @@ const MSG_MISSING_ARG_TRAILER_SUBTYPE = core.MSG_MISSING_ARG_TRAILER_SUBTYPE;
 const MSG_MISSING_ARG = core.MSG_MISSING_ARG;
 const MSG_ENV_INCOMPATIBLE = core.MSG_ENV_INCOMPATIBLE;
 const MSG_ENV_INCOMPLETE = core.MSG_ENV_INCOMPLETE;
-const MSG_MISSING_SPECIFIED_AGENT = core.MSG_MISSING_SPECIFIED_AGENT;
-const MSG_UNABLE_TO_DETECT = core.MSG_UNABLE_TO_DETECT;
 const MSG_AGENT_DATA_INCOMPLETE = core.MSG_AGENT_DATA_INCOMPLETE;
 const MSG_REQUIREMENT_FAILED = core.MSG_REQUIREMENT_FAILED;
 const MSG_OUT_OF_MEMORY = core.MSG_OUT_OF_MEMORY;
 const MSG_SQLITE_QUERY = core.MSG_SQLITE_QUERY;
 const MSG_IO = core.MSG_IO;
+const writeUnableToDetect = core.writeUnableToDetect;
 
 const HarnessRule = rules.HarnessRule;
 const ProviderRule = rules.ProviderRule;
@@ -433,7 +432,7 @@ pub const dev = if (build_options.dev) struct {
         const json_bytes = try std.json.Stringify.valueAlloc(a, raw_v, .{ .whitespace = .indent_2 });
         defer a.free(json_bytes);
         if (!ok) {
-            writeErr(io, MSG_UNABLE_TO_DETECT);
+            writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
             return EXIT_UNABLE_TO_DETECT;
         }
         writeOut(io, json_bytes);
@@ -454,7 +453,10 @@ pub const dev = if (build_options.dev) struct {
     const INDEX_DB_PATH = "fixtures/index.sqlite3";
 
     /// Spawn `sqlite3 -json <db> <sql>` and return its stdout. Empty for
-    /// statements that return no rows. Caller owns the returned slice.
+    /// statements that return no rows. Caller owns the returned slice —
+    /// do NOT free it here (Zig 0.16 arena free-list: freeing this
+    /// most-recent allocation lets the caller's next allocations reclaim
+    /// and clobber the bytes mid-parse).
     /// Does NOT create the dir or ensure the schema (see `sqliteQuery`).
     /// Deliberate mirror of the released-binary `kiloSqliteJson` — this
     /// one is fixed to `fixtures/index.sqlite3` and compiled out of the
@@ -467,7 +469,6 @@ pub const dev = if (build_options.dev) struct {
             .stderr = .ignore,
         }) catch return error.SqliteSpawnFailed;
         const out = readChildOutput(a, io, child, false) catch return error.SqliteSpawnFailed;
-        defer a.free(out);
         const term = child.wait(io) catch return error.SqliteSpawnFailed;
         switch (term) {
             .exited => |code| if (code != 0) return error.SqliteError,
@@ -1304,7 +1305,9 @@ pub const dev = if (build_options.dev) struct {
         const path = try std.fmt.allocPrint(a, "fixtures/{s}.json", .{f_id});
         defer a.free(path);
         const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 24)) catch return null;
-        defer a.free(data);
+        // no `a.free(data)` — the returned channel Value aliases `data`
+        // (Zig 0.16 arena free-list would reclaim it into the caller's
+        // next allocations, clobbering the channel mid-use).
         const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
         if (parsed.value != .object) return null;
         const ch = parsed.value.object.get(channel) orelse return null;
@@ -2843,7 +2846,9 @@ pub const dev = if (build_options.dev) struct {
     /// daemon clears the file after acting (decision #12).
     fn readControlAction(a: std.mem.Allocator, io: std.Io) ?[]const u8 {
         const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/daemon.ctl", a, @enumFromInt(4096)) catch return null;
-        defer a.free(data);
+        // no `a.free(data)` — the returned word aliases `data` (Zig 0.16
+        // arena free-list would reclaim it into the daemon's next
+        // allocations, clobbering the action word mid-use).
         std.Io.Dir.cwd().deleteFile(io, "fixtures/daemon.ctl") catch {};
         const t = std.mem.trim(u8, data, " \t\r\n");
         if (t.len == 0) return null;
