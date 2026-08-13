@@ -19,20 +19,12 @@ real CLI — the old root `trailer`/`cooked`/`origin` keys are gone).
 with `-<platform>` (e.g. `cline-clinepass-kimik3-darwin`). The binary
 is the only thing that writes fixtures — agents never hand-author them.
 
-`fixtures/index.sqlite3` is the state store (a single SQLite database
-read and written via the system `sqlite3` CLI). It has **four** tables:
-`fixtures` (one row per captured 4-tuple `(harness, provider, model,
-platform)`, carrying `available`/`successful` outcome markers, the
-capturing `agent_detect_version`, the per-channel generation columns
-`identity_generation_at/hash` + `capture_generation_at/hash`, and the
-derived `agent_id`/`fixture_id`), `queue` (the work queue: dims + scope
-markers + `mode`), `pending` (one row per work item under a popped
-queue row — `started_at`/`finished_at` make crash-resume safe), and
-`invalid` (bad-id rows — unknown fixture files, no-launch from-capture
-candidates — for dev-agent remedy; purging files is user discretion).
-Queue rows with missing dims are **seeds**: the daemon expands them over
-the known recipes (`recipesForFixtures`) into `pending` rows, one per
-applicable full combo on the host platform.
+`fixtures/index.sqlite3` is the state store — the four tables
+(`fixtures`, `queue`, `pending`, `invalid`) and their columns are
+specified in DESIGN.md "SQLite state store". Queue rows with missing
+dims are **seeds**: the daemon expands them over the known recipes
+(`recipesForFixtures`) into `pending` rows, one per applicable full
+combo on the host platform.
 
 **Tooling note:** the `fixtures` workflow requires the system `sqlite3`
 CLI on PATH (every OS ships one); the *released* binary has zero
@@ -169,7 +161,10 @@ exit 8) stamps `successful=0` (`available=1` if the probe passed) and
 **consumes the item** — no re-queue, no spin. An uninstalled harness
 probe failure stamps `available=0, successful=0`. Retry manually:
 `fixtures queue --unsuccessful` (valid ids, failed attempt) or
-`fixtures queue --unavailable` (harness missing).
+`fixtures queue --unavailable` (harness missing). A `from-capture`
+job launches a real model session and consumes tokens (free-tier
+quota or subscription) — confirm with the user first; a hand-run
+`fixtures capture` consumes that session's tokens.
 
 ### cross-device runbook
 
@@ -199,12 +194,12 @@ discretion.
 ## test matrix: harnesses, providers, models
 
 The committed fixtures double as the integration test of the detection
-ladder (see DESIGN.md "test matrix" for the policy). The matrix is the
-`recipesForFixtures` table — one recipe per `agent_id` — expanded by
-`fixtures queue --recipes` and captured by the daemon. Scope: the 13
-coding harnesses (`cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`,
-`omp`, `reasonix`, `crush`, `opencode`, `vibe`, `cursor`, `copilot`)
-plus the `goose` contributor-scope example.
+ladder. The matrix **policy** — harness scope, model/provider policy,
+the paid default, the global-settings rule, evidence attribution —
+lives in DESIGN.md "test matrix"; the install table below is the
+what-to-do side. The matrix itself is the `recipesForFixtures` table —
+one recipe per `agent_id` — expanded by `fixtures queue --recipes` and
+captured by the daemon.
 
 ### per-harness install table
 
@@ -251,32 +246,21 @@ captures on their platform):
 
 A bulk/maintenance model addition (a sweep, expanding a harness across a
 batch of providers, or a free-catalog import) adds a model only when it
-is in the evergreen top-50 rank set (see DESIGN.md "bulk model additions
-are constrained to the evergreen top 50") — regardless of whether it is
-paid or free, or which provider serves it. This does not apply
+clears the evergreen top-100 rank set — the policy is DESIGN.md decision
+#13 and the tracked coalesced set is
+`fixtures/evergreen-top100-models.txt`. This does not apply
 retroactively to models already in the matrix, and it does not apply to
-an individual addition a user explicitly needs (a one-off
-`--harness= --provider= --model=` combo added on request is always
-allowed). Whether a model is free on a given provider only decides if a
-free launch/capture is attached — free on one provider is not free on
-another. Query free/paid from the harness's own model catalog first
-(e.g. omp's `~/.omp/agent/models.db` per-provider `cost`: input==0 →
-free); OpenRouter's `/api/v1/models` (explicit `:free` ids + `pricing`)
-and artificialanalysis.ai (per-model price) are good cross-checks.
-arena.ai (LMArena) and HF trending are not free/paid sources — they
-report rankings and published weights, not serving prices. Name
+an individual addition a user explicitly needs. Free-vs-paid only
+decides whether a free launch/capture is attached — query the
+harness's own model catalog first (e.g. omp's
+`~/.omp/agent/models.db` per-provider `cost`: input==0 → free);
+OpenRouter's `/api/v1/models` (explicit `:free` ids + `pricing`) and
+artificialanalysis.ai (per-model price) are the cross-checks. Name
 variations across services (`:free` vs `-free`, release stamps like
 `-0731`, reasoning-effort suffixes) are coalesced into one canonical
-model per family and recorded as variations on the recipe — never added
-as duplicates. This documented convention is mirrored at the code level
-by each rule's `variations` field (see "add a new model or provider
-rule" below): `--model=`/`--provider=`/`--harness=` CLI flags resolve
-any alias that is the rule's `name`, `label`, `short_title`, or a
-`variations` entry, normalized to a strict slug. Reference cache:
-`docs/evergreen-top50-models.txt`
-(the tracked coalesced evergreen top-50 set that bulk additions must clear;
-a harness's own model catalog intersects it per provider to decide free
-launch/capture attachment).
+model per family and recorded as variations on the recipe — never
+added as duplicates (the CLI-side alias resolution is the "alias
+conventions" section below).
 
 ### monitoring + control runbook
 
@@ -299,18 +283,12 @@ in the daemon terminal is the graceful-stop shortcut.
 
 ### daemon launch: macOS LaunchAgent bootstrap (macOS-only, no sudo)
 
-The daemon is user-only (`assertNotInAgent`): it refuses to start when
-an ancestor process matches a harness agent (e.g. `kilo`), so it must
-run as a plain user process with a clean ancestry and environment. A
-terminal is the baseline way to do that on every platform.
-
-On macOS the daemon can instead be registered with the per-user
-LaunchAgent domain via `launchctl bootstrap`, which needs **no sudo and
-no permission dialogs**: `gui/$(id -u)` is your own launchd adopting
-your own agent, so no privilege escalation or TCC prompt is involved.
-The job then survives the terminal closing, and launchd respawns it on
-crash. The plist may live anywhere — `bootstrap` takes a path, not just
-`~/Library/LaunchAgents`:
+The daemon is user-only: it refuses to start when an ancestor process
+matches a harness agent, so it must run as a plain user process with a
+clean ancestry. A terminal run is the universal baseline; on macOS the
+daemon can instead be registered per-user via `launchctl bootstrap`
+(no sudo, survives the terminal closing, respawns on crash). Save this
+plist and bootstrap it:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -342,7 +320,6 @@ launchd does not inherit your shell PATH, and the daemon spawns harness
 binaries by bare name (e.g. `cline`), so without it every real capture
 fails with `spawn failed: FileNotFound`. Include the directories holding
 your harness binaries (homebrew `/opt/homebrew/bin`, npm/uv shims, etc.).
-The daemon restarts pick it up on the next `bootstrap`.
 
 ```sh
 launchctl bootstrap "gui/$(id -u)" /path/to/agent-detect.fixtures.plist   # start
@@ -350,36 +327,15 @@ launchctl bootout  "gui/$(id -u)"/com.agent-detect.fixtures               # stop
 launchctl list | rg com.agent-detect.fixtures                             # status
 ```
 
-Because launchd parents the job directly, the daemon's environment and
-`process_lineage` are clean — the same user context the guard requires,
-so a fixture captured this way is indistinguishable from one captured
-from a terminal. Only the `system/` domain (root `LaunchDaemon`s) needs
-sudo; per-user `gui/` jobs never do.
-
-Limitations: the caller must already be inside the user's GUI session
-(a terminal or app) — headless `ssh` sessions are not attached to it,
-so `bootstrap` fails there; use `tmux`/`screen` instead. This is
-macOS-only; the sudo-free equivalents elsewhere are `systemd --user`
-(`systemctl --user enable --now <unit>`) on Linux and Task Scheduler /
-NSSM on Windows. The plain terminal run stays the universal baseline.
-
-### refresh / token warning
-
-Queue jobs run in two modes. `from-identity` resolves cooked from provided
-ids — zero tokens, no harness, declared-not-observed fixtures.
-`from-capture` launches the real harness headlessly so it runs
-`fixtures capture` inside a live model session — that session consumes
-tokens (free-tier quota or subscription) and must be confirmed with the
-user first. A `fixtures capture` run by hand inside an agent session
-consumes that session's tokens.
+Headless `ssh` sessions can't `bootstrap` (not attached to the GUI
+session — use `tmux`/`screen` there). The sudo-free equivalents are
+`systemd --user` on Linux and Task Scheduler / NSSM on Windows.
 
 ### global-settings rule
 
 Never change a global harness/provider/model setting to make a fixture
-pass — use env/arg/scope flags only. `agent-detect` reads harness
-configs read-only and performs no config writes (nothing lands in a
-sandboxed HOME or anywhere else); flag any needed global change
-instead.
+pass — use env/arg/scope flags only (policy + rationale: DESIGN.md
+"test matrix", global-settings rule).
 
 ## recipe-mode identify / trailer (hard-to-detect agents)
 
@@ -396,20 +352,15 @@ All three of `--harness=`, `--provider=`, `--model=` are required (or
 none — then live detection runs). A partial combo exits 4; an id not
 in the rule tables exits 7. Ids may be given in canonical, strict-slug,
 label, or case-variation form (`cline-pass`, `clinepass`, `Cline Pass`,
-or `CLINE_PASS` all work) — each is normalized (lowercase + strip
-non-alphanumeric, whole-string) and matched against the rule's alias
-set (canonical `name`, `label`, `short_title`, and `variations`), with
-exact-name precedence (so `cline` always means `cline`, never
-`cline-pass`). An alias matching two rules is rejected by the
-alias-uniqueness test; the resolver itself is deterministic
-(first rule in array order wins). This is how a harness whose
+or `CLINE_PASS` all work) — resolution follows the "alias conventions"
+section below. This is how a harness whose
 provider/model can't be auto-detected still gets a report and
 trailer.
 
 ## add a new harness rule
 
 Add a `HarnessRule` entry to the `rulesForHarnesses` array in
-`src/main.zig`. Required fields:
+`src/lib/rules.zig`. Required fields:
 
 | field             | how to fill                                                                                                |
 | ----------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -418,22 +369,22 @@ Add a `HarnessRule` entry to the `rulesForHarnesses` array in
 | `license`         | SPDX keyword per the table below                                                                           |
 | `license_sources` | two URLs: the project page + the LICENSE file linked from it. `null`/`NOASSERTION` license keeps this empty |
 | `env_markers`     | env-var names unique to this harness (one or more). Run the harness' `--help` and inspect its config to discover |
-| `proc_names`      | lowercase exe names matched against the process ancestry. Many node-based harnesses use generic exes — leave empty |
+| `binary_names`    | the executable names for ancestry matching, probing, launching, and the daemon guard — written inline as a platform ternary: bare stems first, then platform extensions (`.cmd`/`.ps1` only for npm-shimmed harnesses; `.exe`-only otherwise) |
 | `variations`      | optional extra alias display-strings not covered by `name`/`label`/`short_title` (e.g. `"Kilo Code CLI"`). Keep minimal — see the alias conventions below |
 
-`license` semantics (per SPDX spec):
+`license` semantics (per SPDX spec) — the reciprocity consequences of
+each value (exit 9/10) are DESIGN.md's exit-status registry:
 
-| value            | meaning                                                    | reciprocity            |
-| ---------------- | ---------------------------------------------------------- | ---------------------- |
-| `null`           | no data available                                          | `.unknown` (exit 9)    |
-| `"NOASSERTION"`  | attempted, inconclusive                                    | `.unknown` (exit 9)    |
-| `"NONE"`         | concluded: no license present (verified proprietary/closed) | `.not_reciprocal` (exit 10) |
-| SPDX id (`MIT`, `Apache-2.0`, …) | open license                                | computed as today      |
+| value            | meaning                                                    |
+| ---------------- | ---------------------------------------------------------- |
+| `null`           | no data available                                          |
+| `"NOASSERTION"`  | attempted, inconclusive                                    |
+| `"NONE"`         | concluded: no license present (verified proprietary/closed) |
+| SPDX id (`MIT`, `Apache-2.0`, …) | open license                                |
 
-`"NONE"` forces `.not_reciprocal` even when the model/provider dims
-are null. Example: `cursor` and `copilot` are closed-source harnesses
-verified as no-license, so their rules carry `license = "NONE"` with
-their project/terms URLs as `license_sources`.
+Example: `cursor` and `copilot` are closed-source harnesses verified as
+no-license, so their rules carry `license = "NONE"` with their
+project/terms URLs as `license_sources`.
 
 After adding the rule:
 
@@ -450,7 +401,7 @@ auto-detected at all, the rule alone is enough for recipe-mode
 ## add a new model or provider rule
 
 Model and provider rules live alongside the harness rules in
-`src/main.zig` as `rulesForModels` and `rulesForProviders` arrays.
+`src/lib/rules.zig` as `rulesForModels` and `rulesForProviders` arrays.
 Their structs are `ModelRule` and `ProviderRule`.
 
 **Model rule fields:**

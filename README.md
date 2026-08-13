@@ -62,15 +62,10 @@ Check your agent (harness, model, provider)'s reciprocity compliance via:
 .\agent-detect.exe check-reciprocal   # machine-readable JSON report
 ```
 
-Rules for this use case, by exit code:
-
-| exit | stdout           | what it means                                                              | what to do                                                                                |
-| ---- | ---------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 0    | `is reciprocal`  | the harness, provider, and model are all reciprocal                        | proceed                                                                                   |
-| 10   | `not reciprocal` | either the harness, provider, model is not reciprocal                      | not permitted - stop                                                                      |
-| 9    | —                | identity resolved, but reciprocity data is incomplete (policy fields null) | agent-detect must be updated for the reciprocity of your agent (harness, provider, model) |
-| 8    | —                | live detection couldn't resolve the identity                               | `agent-detect` must be updated to detect your agent (harness, provider, model)            |
-| 7    | —                | the named combo is not a known recipe                                      | check the spelling against the rule tables                                                |
+Exit codes — 0 = reciprocal, 10 = not reciprocal, 9 = policy data
+incomplete, 8 = undetectable, 7 = unknown combo — follow the registry
+in DESIGN.md "exit status registry"; see it for what each means and
+what to do.
 
 ### co-author trailer
 

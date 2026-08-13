@@ -1,30 +1,25 @@
 # AGENTS.md
 
 This project conforms to Bevry's skills. Reference their remote URLs
-only — do not pull their contents into this file.
+only — do not pull their contents into this file. When a referenced
+skill applies with this project's tweaks, the local `<name>.md` file at
+this repo root references the remote URL and lists the tweaks
+underneath; this process is documented in [meta.md](./meta.md).
 
 - https://github.com/bevry-vibes/skills/blob/main/policy.md —
   **not applied to this project.** agent-detect is the enforcement
   mechanism that policy.md delegates to, so this project must run
   on all agents, including those that violate that policy; it cannot
   apply the policy to itself.
-- https://github.com/bevry-vibes/skills/blob/main/commits.md —
-  **applies**, with this project's tweaks: build via `zig build`,
-  generate the co-author trailer with
-  `./zig-out/bin/agent-detect trailer co-author`, attach it with
-  `git commit --trailer "$(./zig-out/bin/agent-detect trailer co-author)"`.
-  Never guess or cache the trailer; if generation fails, fix it rather
-  than commit without it.
+- [commits.md](./commits.md) —
+  **applies**, with this project's tweaks (zig build, generated
+  co-author trailer).
 - https://github.com/bevry-vibes/skills/blob/main/minimax.md —
   **applies** when the running agent is a MiniMax M3 model (its rules
   gate themselves on model and harness).
-- https://github.com/bevry-vibes/skills/blob/main/kilo.md —
+- [kilo.md](./kilo.md) —
   **applies** when the running harness is `kilo` (its rules gate
-  themselves on harness), with this project's tweak (to be upstreamed):
-  every plan file the agent generates records its provenance at the top
-  of the file — the original prompt that initiated the plan, every
-  followup prompt that shaped it (verbatim, in order), and the agent
-  model that generated it (as reported by the harness).
+  themselves on harness), with this project's tweak (to be upstreamed).
 
 This file is not policy — it is a pointer.
 
@@ -65,8 +60,12 @@ tooling fallbacks, and the sqlite3 verification patterns — live in
 ## zig
 
 Build with `zig build` (released), `zig build dev` (maintainer
-`fixtures` binary), and `zig build test`. Zig 0.16 API notes, this
-repo's patterns, and its gotchas live in `zig.md`.
+`fixtures` binary), and `zig build test`. The source is split across
+four files — `src/lib/rules.zig` (rule tables + pure name resolution),
+`src/lib/core.zig` (ladder + policy), `src/dev/dev.zig` (the dev-gated
+fixtures surface), `src/main.zig` (thin entry + re-exports) — in a
+strict no-cycles import DAG. Zig 0.16 API notes, this repo's patterns,
+and its gotchas live in `zig.md`.
 
 ## harness configuration
 

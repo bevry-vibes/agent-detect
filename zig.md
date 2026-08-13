@@ -76,20 +76,27 @@ with `zig 0.16.0`.
 
 - `optStringValue(a, opt)` / `sqlOptStr` / `sqlOptInt` — render
   optional strings/ints as quoted literals or `NULL`.
-- `sjstr`/`sjoptstr`/`sjint`/`sjoptint` — pull typed fields out of a
-  `std.json.ObjectMap` without panicking (return `""` / `null`).
+- `jstr`/`jint` (core) pull typed fields out of a `std.json.ObjectMap`
+  without panicking (return `?[]const u8` / `?i64`); dev's
+  `sjstr`/`sjint` are thin wrappers over them (missing → `""`/`0`).
 - `@intFromBool`, `@as(usize, ...)`, `@intCast` — the usual coercions;
   optional fields read as `row.x.?` after a `!= null` guard.
 - sqlite is shelled out to the `sqlite3` binary (`sqliteRun`), and every
   query passes through `ensureSchema` (idempotent DDL). SELECT output
   arrives as JSON (`-json`), parsed with `std.json`.
-- Windows process control uses direct `extern "kernel32"` declarations
-  (`GetProcessId`, `OpenProcess`, `TerminateProcess`, `CloseHandle`) —
-  that pattern is at the top of `src/main.zig`.
-- The dev struct (`main.dev`) is `if (build_options.dev) struct {...}
-  else struct {}` — tests import it for `recipesForFixtures` and the
-  raw builders; compile-out is at the type level, so released builds
-  never link the fixtures surface.
+- Windows process control uses direct `pub extern "kernel32"` declarations
+  (`GetProcessId`, `OpenProcess`, `TerminateProcess`, `CloseHandle`) at
+  the top of `src/lib/core.zig` — dev aliases them via `core.*`.
+- The split is a strict import DAG with no cycles:
+  `src/lib/rules.zig` (rule tables + pure name resolution; imports only
+  `std`/`builtin`) ← `src/lib/core.zig` (ladder + policy) ←
+  `src/dev/dev.zig` (the `pub const dev =
+  if (build_options.dev) struct {...} else struct {}` gate lives here —
+  compiled out of released builds at the type level) ← `src/main.zig`
+  (thin entry + `main.*` re-exports the test-facing names).
+- `readChildOutput(a, io, child, comptime stderr)` — the one
+  child-stdout/stderr drain loop (stderr bounded at 64 KiB); callers
+  still own `child.wait`.
 
 ## Gotchas
 

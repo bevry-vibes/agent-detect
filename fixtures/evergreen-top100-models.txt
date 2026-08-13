@@ -1,4 +1,4 @@
-# Coalesced evergreen top-50 model set (canonical variants)
+# Coalesced evergreen top-100 model set (canonical variants)
 # Contract: bulk/maintenance model additions must clear this set; see DESIGN.md.
 # Per-service name variations coalesce to these canonical variants; individual
 # user-needed additions are always allowed.
@@ -6,21 +6,30 @@
   claude       claude-sonnet-5
   claude       claude-haiku-4.5
   claude       claude-fable-5
+  claude       claude-sonnet-4
+  claude       claude-opus-4
+  claude       claude-haiku-4
   gpt          gpt-5.6-sol
   gpt          gpt-5.6-luna
   gpt          gpt-5.6-terra
   gpt          gpt-5.2
   gpt          gpt-4o
   gpt          o4-mini
+  gpt          gpt-5.5
+  gpt          gpt-5-mini
   gemini       gemini-3.6-pro
   gemini       gemini-3.5-flash
   gemini       gemini-3-pro
   gemini       gemini-3-flash
   gemini       gemini-2.5-pro
+  gemini       gemini-3.1-pro
   grok         grok-4.20
   grok         grok-4.5
   grok         grok-4.1
   grok         grok-3
+  grok         grok-4
+  grok         grok-3-mini
+  grok         grok-4.6
   kimi         kimi-k3
   kimi         kimi-k2.7-code
   kimi         kimi-k2.5
@@ -36,6 +45,7 @@
   minimax      minimax-m3
   minimax      minimax-m2.7
   minimax      minimax-h3
+  minimax      minimax-m2.5
   mistral      mistral-large-3
   mistral      mistral-small-3
   mistral      devstral-2
@@ -48,6 +58,9 @@
   qwen         qwen3.6-max
   qwen         qwen3-coder
   qwen         qwen2.5-coder
+  qwen         qwen3.5
+  qwen         qwen3
+  qwen         qwen3.6
   llama        llama-4-maverick
   llama        llama-4-scout
   llama        llama-3.3-70b
@@ -58,6 +71,7 @@
   nemotron     nemotron-3-ultra
   nemotron     nemotron-3-super
   nemotron     nemotron-3-nano
+  nemotron     nemotron-3.5-lightning
   phi          phi-4
   phi          phi-4-mini
   command      command-a+
@@ -83,3 +97,8 @@
   sakana       fugu-ultra-v1.1
   sakana       sakana-namazu
   aurora       aurora-alpha
+  solar        solar-pro-4
+  solar        solar-open2-250b
+  ax           ax-k2
+  motif        motif-3
+  exaone       k-exaone-2.0-0803

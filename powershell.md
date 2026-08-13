@@ -103,8 +103,10 @@ for ($i = 0; $i -lt $b.Length; $i++) {
 
 ## sqlite3 CLI verification patterns
 
-The store is reached by shelling out to `sqlite3`; these are the
-fast checks for the `fixtures/index.sqlite3` state:
+The store is reached by shelling out to `sqlite3` (the Zig-side
+semantics — `sqliteRun` vs `sqliteQuery`, `ensureSchema` — are
+zig.md's); these are the shell-side checks for the
+`fixtures/index.sqlite3` state:
 
 - `sqlite3 -json -batch db "<sql>"` — every result row comes back as a
   JSON array line; a scalar statement still emits a row, e.g. a
@@ -116,22 +118,10 @@ fast checks for the `fixtures/index.sqlite3` state:
 - Schema/state spot-checks: `sqlite3 db ".tables"`,
   `"PRAGMA table_info(queue)"`, and
   `"SELECT mode, COUNT(*) FROM queue GROUP BY mode;"`.
-- **Fresh-store gotcha:** a command that only runs DML (e.g.
-  `fixtures dequeue --all`) fails with "no such table" against a
-  freshly-deleted DB unless the schema is ensured first. In the Zig
-  code this is the `sqliteRun` vs `sqliteQuery` distinction — only
-  `sqliteQuery` runs `ensureSchema`. When recreating the store, run a
-  schema-ensuring command first. (Found when the migration's
-  `Remove-Item fixtures/index.sqlite3` made the next `dequeue` fail;
-  fixed by routing `deleteQueueRows` through `sqliteQuery`.)
-
-## Iterate the right directory
-
-`std.Io.Dir.cwd().iterate()` iterates the CWD's immediate children —
-it does **not** recurse into `fixtures/`. Filtering its entries for
-`fixtures/*.json` silently finds nothing (a real no-op bug: the
-`--missing-fixture-entry` scan found 0 files until it was switched to
-`openDir(io, "fixtures", .{ .iterate = true })`).
+- **Fresh-store gotcha:** a command that only runs DML fails with
+  "no such table" against a freshly-deleted DB unless the schema is
+  ensured first — run a schema-ensuring command first when recreating
+  the store.
 
 ## Cleanup scoping
 

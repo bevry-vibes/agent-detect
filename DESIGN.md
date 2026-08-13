@@ -21,7 +21,7 @@ read a harness's config file. The detection ladder therefore reads in
 this order: env markers → ancestor process names → per-harness config
 files → the running session → the last model in the session log. The
 implementation and the ladder's exact steps live in the doc block
-above `pub fn detect` in `src/main.zig`.
+above `pub fn detect` in `src/lib/core.zig`.
 
 ### two-binary split (released + dev-only)
 
@@ -34,7 +34,7 @@ standalone `raw` action (raw observations block) and the `fixtures`
 subcommand namespace (capture / daemon / queue / dequeue). The split
 is enforced at compile time via the `dev` flag in `build.zig` and the
 `pub const dev = if (build_options.dev) struct { ... } else struct {};`
-block in `src/main.zig`. The released binary cannot accidentally
+block in `src/dev/dev.zig`. The released binary cannot accidentally
 include dev code paths.
 
 The split is about **code**, not portability: the `fixtures` workflow
@@ -52,7 +52,7 @@ absolute paths to private files, and positional-secret arguments —
 committing it to a fixture would leak those into git history. The
 basename-only contract is what makes the fixture safe to commit; the
 exact mechanics and the Ancestor struct definition live in the
-`RawObservation.process_lineage` doc comment in `src/main.zig`.
+`RawObservation.process_lineage` doc comment in `src/lib/core.zig`.
 
 ### per-platform fixtures (no churn across platforms)
 
@@ -87,7 +87,7 @@ which is what makes the trailer-variations coverage possible).
 
 The `-<platform>` suffix keeps per-platform config paths from churning
 each other across CI runs. The filename contract is defined on the
-`fixtures capture` command (`dev.runFixturesCapture`) in `src/main.zig`.
+`fixtures capture` command (`dev.runFixturesCapture`) in `src/dev/dev.zig`.
 
 ### the `detectable` / `detected` raw fields
 
@@ -224,7 +224,7 @@ agent (env-marker + ancestry check). If the agent's workflow stalls
 because the daemon isn't running, the correct action is for the
 agent to surface the command and the directory the user should run
 it in. The agent never runs the daemon. The exact guard and what it
-checks is documented on `runFixturesDaemon` in `src/main.zig`.
+checks is documented on `runFixturesDaemon` in `src/dev/dev.zig`.
 A user run from a terminal is the baseline; on macOS the same clean
 user context can be achieved without a terminal via the per-user
 LaunchAgent bootstrap (no sudo, launchd-parented), which is documented
@@ -380,15 +380,15 @@ names the shipped behavior and why it was chosen.
 7. **Daemon is user-only.** The agent never runs the daemon; the
    env-marker + ancestry guard fails closed (`runFixturesDaemon`).
 8. **Released binary stays minimal.** No SQLite, no `fixtures`, no raw
-   dump in the released artifact — the `dev` modular
-   (comptime-gated) block in `src/main.zig` drops that code at
+   dump in the released artifact — the `dev` module
+   (comptime-gated) in `src/dev/dev.zig` drops that code at
     compile time. Released actions: `identify`, `trailer co-author`,
     `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
 9. **The 17-field canonical identify contract.** Test-enforced
    (see `src/known_fixtures.test.zig`); the raw block is shapeless
    (source-grouped keys, embedded as the `from-capture-raw` channel),
    and harness rule *static* data
-   (env-marker/proc-name lists) is intentionally NOT re-emitted in
+   (env-marker/binary-name lists) is intentionally NOT re-emitted in
    raw.
 10. **`fixtures dequeue` = DELETE, `fixtures capture` = fixtures-only.**
     Dequeue never mutates fixtures; capture never touches queue; the
@@ -405,16 +405,16 @@ names the shipped behavior and why it was chosen.
      are strictly lowercase-alphanumeric slugs of the canonical `*_name`
      (no separators). `*_name` carries the service's own spelling; the
      ids are what machine matching and fixture filenames use.
- 13. **Bulk model additions are constrained to the evergreen top 50.**
+ 13. **Bulk model additions are constrained to the evergreen top 100.**
      When models are added en masse (maintenance sweeps, expanding a
      harness across a batch of providers, free-catalog imports), every
      new model — paid or free, on any provider — must clear the coalesced
-     evergreen top-50 rank set. This guard is for bulk/maintenance work
+     evergreen top-100 rank set. This guard is for bulk/maintenance work
      only and does NOT apply retroactively to models already in the
      matrix, and it does NOT apply to an individual addition a user
      explicitly needs (a one-off `--harness= --provider= --model=` combo
      added on request is always allowed). The rank set is the union of
-     what perennially clears the top-50 leaderboards of:
+     what perennially clears the top-100 leaderboards of:
      - [artificialanalysis.ai](https://artificialanalysis.ai)
        (Intelligence Index leaders),
      - [lmarena.ai / arena.ai](https://arena.ai) (LMArena leaderboard),
@@ -442,7 +442,22 @@ names the shipped behavior and why it was chosen.
      Note: these leaderboards are JS-rendered and mostly lack public rank
      APIs, so the coalesced set is curated from the accessible signals
      (the artificialanalysis page + OpenRouter/HF model catalogs) rather
-     than scraped. See CONTRIBUTING.md "bulk additions, evergreen top 50".
+     than scraped. The tracked set is
+     `fixtures/evergreen-top100-models.txt`. See CONTRIBUTING.md
+     "probing scope + runbook" (evergreen top 100).
+ 14. **`binary_names` is the single name origin.** Each harness rule
+     carries one hand-maintained list of executable names
+     (`HarnessRule.binary_names`, written inline as a platform ternary:
+     bare stems first, then platform extensions — `.cmd`/`.ps1` only for
+     the npm-shimmed harnesses). The detection ancestry scan, the
+     availability probe, the `--version` probe, launch argv[0]
+     substitution, and the daemon guard all read that one list, so they
+     can never drift. Per-recipe name lists no longer exist;
+     `harnessRuleForFixtureId` slug-resolves a recipe's first `agent_id`
+     segment through `canonicalIdFor` (`kimicode` → the `kimi-code`
+     rule). The guard additionally covers `pending_binary_names` (the
+     not-yet-ruled harnesses). Adding a harness rule therefore means
+     filling in one field, not five lists.
 
 ## test matrix: harnesses, providers, models
 
@@ -491,17 +506,12 @@ re-litigating scope.
   the terminal graceful-stop shortcut; the daemon clears the control
   file after acting.
 - **Refresh flavours:** every queue job runs in one of two modes —
-  `from-identity` (resolve cooked from provided ids; declared, not observed;
-  zero tokens; harness not required) and `from-capture` (launch the real
-  harness so it runs `fixtures capture` in a live model session;
-  token-consuming, user-confirmed only). **No mode flag → both rows are
-  queued per candidate** (declared first by mode rank, capture upgrade
-  after); exactly one flag → that mode only; both flags → exit 3.
-  Every fixture file's top-level keys are per-channel objects —
-  `from-identity` (required), `from-capture`, `from-capture-raw` — each
-  `from-*` channel carrying `identify` (the 17-field canonical object)
-  + `"trailer co-author"` + `"trailer assisted-by"` (the root
-  `trailer`/`cooked`/`origin` keys are gone; `from-capture-raw` is the
-  dev `raw` output verbatim). The internal builders
-  `buildCooked`/`buildRaw`/`buildTrailerLine` keep their names. See
+  `from-identity` (resolve the declared identification from provided
+  ids; declared, not observed; zero tokens; harness not required) and
+  `from-capture` (launch the real harness so it runs `fixtures capture`
+  in a live model session; token-consuming, user-confirmed only).
+  **No mode flag → both rows are queued per candidate** (declared first
+  by mode rank, capture upgrade after); exactly one flag → that mode
+  only; both flags → exit 3. The fixture envelope is the per-channel
+  object shape defined above ("per-platform fixtures"). See
   CONTRIBUTING.md for installs and the probing runbook.
