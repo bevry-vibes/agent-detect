@@ -46,23 +46,23 @@ fn readFixtureParsed(a: std.mem.Allocator, stem: []const u8) !?std.json.Parsed(s
 /// The 17 canonical `identify` fields, in emission order. No `trailer`
 /// key (the root trailer and the cooked trailer are gone).
 const identify_keys = [_][]const u8{
-    "harness_label",             // harness group
+    "harness_label", // harness group
     "harness_short_title",
     "harness_name",
     "harness_id",
     "harness_license",
-    "provider_label",            // provider group
+    "provider_label", // provider group
     "provider_name",
     "provider_id",
     "provider_closed_training",
     "provider_open_training",
-    "model_label",               // model group
+    "model_label", // model group
     "model_short_title",
     "model_name",
     "model_id",
     "model_reciprocity",
-    "agent_id",                  // composed from harness+provider+model
-    "reciprocal",                // policy / output
+    "agent_id", // composed from harness+provider+model
+    "reciprocal", // policy / output
 };
 
 /// strict-slug equality: is `name`'s lowercase-alphanumeric slug equal
@@ -298,7 +298,7 @@ test "fixtures: from-capture-raw matches the dev-raw schema — exactly the raw 
     // platform_id, detectable, detected, process_lineage, *-urls,
     // evidence. No env/file objects; secret env evidence is `<redacted>`.
     const fixed_keys = [_][]const u8{
-        "platform_id", "detectable", "detected", "process_lineage",
+        "platform_id",  "detectable",    "detected",   "process_lineage",
         "harness-urls", "provider-urls", "model-urls", "evidence",
     };
     const stems = try discoverStems(testing.allocator);
@@ -399,7 +399,7 @@ test "fixtures: every fixture's identify has all 8 identity fields populated" {
         testing.allocator.free(stems);
     }
     const required_non_null = [_][]const u8{
-        "harness_label", "harness_name",
+        "harness_label",  "harness_name",
         "provider_label", "provider_name",
         "model_label",    "model_name",
         "reciprocal",
@@ -601,6 +601,48 @@ test "fixtures: every recipe agent_id splits into rule-table harness/provider/mo
         if (!found) {
             std.debug.print("harness rule {s} has no recipe in recipesForFixtures\n", .{rr.name});
             return error.HarnessWithoutRecipe;
+        }
+    }
+}
+
+test "fixtures: every recipe's harness segment resolves to a harness rule" {
+    // The recipes' per-row probeNames were deleted — probe/launch names
+    // now come from the harness rules via `harnessRuleForFixtureId`. A
+    // recipe whose first `agent_id` segment doesn't resolve would be
+    // silently unprobable/unlaunchable.
+    for (main.dev.recipesForFixtures) |r| {
+        if (main.harnessRuleForFixtureId(testing.allocator, r.agent_id) == null) {
+            std.debug.print("recipe {s} harness segment does not resolve to a harness rule\n", .{r.agent_id});
+            return error.UnresolvedHarnessSegment;
+        }
+    }
+}
+
+test "fixtures: every harness rule's binary_names is non-empty, lowercase, and Windows-complete" {
+    // binary_names is the single hand-maintained name list (probe,
+    // launch, ancestry, daemon guard). Contract: non-empty; only
+    // lowercase letters/digits/./-; and on Windows every bare stem
+    // (no `.` extension) has its `<stem>.exe` twin so the .exe-first
+    // process ancestry and .cmd-shim launching both find their name.
+    const builtin = @import("builtin");
+    for (main.rulesForHarnesses) |rule| {
+        try testing.expect(rule.binary_names.len >= 1);
+        for (rule.binary_names) |name| {
+            for (name) |c| {
+                if (std.ascii.isAlphabetic(c)) try testing.expect(std.ascii.isLower(c));
+            }
+            if (builtin.os.tag == .windows and std.mem.indexOfScalar(u8, name, '.') == null) {
+                const exe = try std.fmt.allocPrint(testing.allocator, "{s}.exe", .{name});
+                defer testing.allocator.free(exe);
+                var found = false;
+                for (rule.binary_names) |other| {
+                    if (std.mem.eql(u8, other, exe)) found = true;
+                }
+                if (!found) {
+                    std.debug.print("harness rule {s}: bare stem {s} has no {s} twin\n", .{ rule.name, name, exe });
+                    return error.MissingExeTwin;
+                }
+            }
         }
     }
 }
