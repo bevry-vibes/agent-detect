@@ -327,3 +327,18 @@ Question: "Where do failed attempts land their completion timestamp (plan §7b)?
 ## 33 — 23:28 — user
 
 > rename missing_fixture_file as stale_by_fixture, same purpose, different name
+
+## 34 — 23:30 — user
+
+> > Hmm — but there's ambiguity: --stale-by-fixture vs the --missing-fixture-entry action. Distinct names, fine.
+> --missing-fixture-entry should be replaced by --unknown
+>
+> ACtually, yeah `--unknown` isn't a good replacement for `--missing-fixture-entry`, but we want consistent names. Rename `--missing-fixture-entry` as `--phantom`; finally we want all of these filters to be in the queue json - you keep mentioning them in your reasoning, but failing to surface them in the json - remember, `qeueue` action only adds a `qeueue` entry - so we need the awareness of all the filters it has as args in the queue entry json
+>
+> Let me decide instead, do `--stale-by-missing-entry` (`--missing-fixture-entry`) and `--stale-by-missing-file` (for `--phatom`, `--missing-fixture-file`). This is consistent names.
+>
+> You are frustating. The flags are `--stale-by-fixture-entry`/`stale_by_fixture_entry` (what replaces `--missing-fixture-entry`), and `--stale-by-fixture-file`/`stale_by_fixture_file` (what replaced `--missing-fixture-file`) - any other filters not in the queue entry json?
+
+## 35 — 23:35 — user
+
+> Wait, change it to `--stale-by-missing-entry`, and `--stale-by-missing-fixture`, that is more clear on what they are.

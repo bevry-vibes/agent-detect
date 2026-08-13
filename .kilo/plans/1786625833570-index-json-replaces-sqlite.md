@@ -135,7 +135,8 @@ Add to the repo-root `kilo.md` three project tweaks:
     {
       "harness": null, "provider": null, "model": null, "platform": null,
       "mode": "from-identity",
-      "stale_by_fixture": null,
+      "stale_by_missing_entry": null,
+      "stale_by_missing_fixture": null,
       "stale_by_minutes": 7,
       "stale_by_version": null,
       "stale_by_detect": null,
@@ -197,10 +198,14 @@ Add to the repo-root `kilo.md` three project tweaks:
   - `mode` — `from-identity` | `from-capture` (one entry per mode;
     omitting both mode flags queues two entries).
   - **flat marker fields** (at most one set — enforced by the existing
-    `validateQueueRow`, no parent object): `stale_by_fixture` (true|
-    null), `stale_by_minutes` (minutes int|null), `stale_by_version` /
-    `stale_by_detect` / `stale_by_hash` (true|null). Marker sweeps require
-    `known: true` (§4e).
+    `validateQueueRow`, no parent object): `stale_by_missing_entry`
+    (true|null — fixture files with no store entry: the daemon's expansion
+    for it is the registration pass, idempotent, purged when no
+    unregistered files remain), `stale_by_missing_fixture` (true|null —
+    store entries whose fixture file is absent, re-queued for
+    re-capture), `stale_by_minutes` (minutes int|null), `stale_by_version`
+    / `stale_by_detect` / `stale_by_hash` (true|null). Marker sweeps
+    require `known: true` (§4e).
   - `known`/`valid`/`successful`/`free` — nullable affirmative booleans
     (§4e).
   - `runner` — the queueing process pid.
@@ -304,7 +309,8 @@ successful=unset (no filter), free=unset (no filter)**.
     `--unknown --free` is allowed.
 - XOR/conflicts (exit 3): `--known`+`--unknown`, `--valid`+`--invalid`,
   `--successful`+`--unsuccessful`, `--free`+`--paid`, `--unknown` + any
-  marker (`--stale-by-*`, `--stale-by-fixture`) or a non-default
+  marker (`--stale-by-*` — incl. `--stale-by-missing-entry` and
+  `--stale-by-missing-fixture`) or a non-default
   `successful` axis (generated combos have no markers/outcomes to filter
   on).
 - CLI surface: `--known`/`--unknown`, `--valid`/`--invalid`,
@@ -441,8 +447,9 @@ only.
   schema, locking, guarantees, the pop protocol, the timestamp ledger, the
   errors table, the filter axes), rewrite decision #3, scope section
   (sqlite3 CLI requirement disappears; `--recipes`/`--all`/
-  `--available`/`--unavailable` die; `--missing-fixture-file` is renamed
-  `--stale-by-fixture`), exit-12 row. CONTRIBUTING.md — store
+  `--available`/`--unavailable` die; `--missing-fixture-entry` →
+  `--stale-by-missing-entry` and `--missing-fixture-file` →
+  `--stale-by-missing-fixture`), exit-12 row. CONTRIBUTING.md — store
   sections, per-platform `prompt_launch`/`version_launch` curation, the
   new-rule `--unknown` seeding workflow, the one-off conversion note.
   `.gitignore` — drop sqlite journal lines; ignore
@@ -465,8 +472,11 @@ only.
    launch/version resolution onto rows; retire `markCaptureOutcome`.
 5. CLI: `--known`/`--unknown`/`--valid`/`--invalid`/`--successful`/
    `--unsuccessful`/`--free`/`--paid` (+ dequeue parity), the conflict
-   matrix, removal of
-   `--recipes`/`--all`/`--available`/`--unavailable`.
+   matrix, removal of `--recipes`/`--all`/`--available`/`--unavailable`,
+   renames `--missing-fixture-entry` → `--stale-by-missing-entry` and
+   `--missing-fixture-file` → `--stale-by-missing-fixture` (the
+   registration pass moves into the daemon's expansion of the entry
+   marker).
 6. Exit-12 repurpose + usage text updates.
 7. One-off conversion + 531 seeded rows → commit `fixtures/index.json`,
    `git rm fixtures/index.sqlite3`.
@@ -485,7 +495,7 @@ Suggested commit grouping: (a) code = tasks 2–6; (b) store conversion = 7;
   rejects `fixtures`; grep: no index.json reference outside
   `src/dev/dev.zig`; no sqlite references outside core session reads.
 - Converted index.json: 531 fixture rows + 692 queue entries + ~16 error
-  entries; `fixtures queue --missing-fixture-entry` and dims-filtered
+  entries; `fixtures queue --stale-by-missing-entry` and dims-filtered
   sweeps behave identically; the pop protocol covered by unit-shape tests.
   **Daemon/fixtures execution is user-confirmed only — the implementing
   agent must not run the daemon or real captures.**
