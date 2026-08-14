@@ -257,9 +257,11 @@ store rows → captures on their platform):
 
 A bulk/maintenance model addition (a sweep, expanding a harness across a
 batch of providers, or a free-catalog import) adds a model only when it
-clears the evergreen model set (top 25 open / top 25 closed / top 50 overall, deduplicated) — the policy is DESIGN.md decision
-#13 and the tracked coalesced set is
-`fixtures/.evergreen-models.txt`. This does not apply
+clears the evergreen model set (top 100 weekly models from OpenRouter's models API, filtered to models that support tool calling: `supported_parameters` contains `tools`) — the policy is DESIGN.md decision
+#13 and the tracked set is
+`fixtures/.evergreen-models.json`, regenerated from OpenRouter alone as
+part of maintenance (no CI task; see DESIGN.md #13 for the dropped
+alternative sources). This does not apply
 retroactively to models already in the matrix, and it does not apply to
 an individual addition a user explicitly needs. Free-vs-paid only
 decides whether a free launch/capture is attached — query the
@@ -272,6 +274,22 @@ variations across services (`:free` vs `-free`, release stamps like
 model per family and recorded as variations on the recipe — never
 added as duplicates (the CLI-side alias resolution is the "alias
 conventions" section below).
+
+As part of maintenance, regenerate the tracked evergreen snapshots
+from OpenRouter (top 100 weekly tool-calling-capable models, and the
+available providers) with authenticated calls:
+
+```sh
+curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+  "https://openrouter.ai/api/v1/models?sort=top-weekly&limit=100" \
+  | jq '[.data[] | select((.supported_parameters // []) | index("tools"))]' \
+  > fixtures/.evergreen-models.json
+
+curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+  "https://openrouter.ai/api/v1/providers" \
+  | jq '.data' \
+  > fixtures/.evergreen-providers.json
+```
 
 ### monitoring + control runbook
 
@@ -423,6 +441,32 @@ them in once verified. If the harness' provider/model can't be
 auto-detected at all, the rule alone is enough for recipe-mode
 `identify`/`trailer` (see above) — you don't need a live capture.
 
+### harness quality filters
+
+Bulk/maintenance harness additions must clear the tracked evergreen
+harness set — `fixtures/.evergreen-harnesses.txt`, the top 50
+programming/code agents curated from the two agent directories
+referenced in that file's header (deepseek-ai/awesome-deepseek-agent
+and vercel-labs/skills). The quality filters the dev agent applies
+when regenerating it:
+
+- **code-focused** — the agent is a programming/coding agent (terminal,
+  editor, or IDE-embedded); general chat assistants, desktop clients,
+  and skill-only runners are excluded.
+- **active/maintained** — the project has recent commits and releases,
+  an open issue tracker, and an actively-maintained integration guide
+  (DeepSeek guide + agent-skills support are the two directory signals
+  used as a proxy).
+- **high-quality** — credible ecosystem footprint: multi-model support,
+  agent-skills (SKILL.md) support, and editor+CLI reach.
+- **canonical id** — the entry's id is the harness rule's `name` in
+  `rulesForHarnesses` once the rule exists; otherwise the id appears as
+  a "pending harnesses" bullet until a contributor adds the rule.
+
+This guard is for bulk/maintenance work only — a rule for an individual
+agent a user explicitly needs is always allowed, and an agent that
+stalls (unmaintained, archived) is dropped on regeneration.
+
 ## add a new model or provider rule
 
 Model and provider rules live alongside the harness rules in
@@ -561,6 +605,13 @@ maintains them.
   `~/.firebender/`; rules + recipes when a contributor picks them up.
 - [ ] **continue / cody / windsurf** — other VS Code-embedded agents
   (need a different ladder step to detect extension-host children).
+- [ ] **trae / junie / augment / codebuddy** — IDE-native agents (Trae,
+  JetBrains Junie, Augment Code, Tencent CodeBuddy) from the evergreen
+  harness set; rules + from-identity fixtures when a contributor picks
+  them up.
+- [ ] **aider-desk / antigravity / kiro / zed** — additional evergreen
+  harness set entries (AiderDesk, Google Antigravity, Kiro CLI, Zed);
+  rules + recipes when a contributor picks them up.
 
 ### catalog-inference verdicts (recorded so they aren't re-litigated)
 

@@ -1,0 +1,86 @@
+# Curated evergreen harness set — the top 50 programming/code agents the
+# maintainer targets. Contract: bulk/maintenance harness additions must
+# clear this set; see DESIGN.md #13 and CONTRIBUTING.md "probing scope +
+# runbook". Individual user-needed additions are always allowed.
+#
+# How the dev agent generates this file (informational — this is a
+# curated set, not a raw dump; there is no CI task for it):
+#   - Start from two independent agent directories:
+#       - https://github.com/deepseek-ai/awesome-deepseek-agent
+#         (agents with maintained DeepSeek integration guides)
+#       - https://github.com/vercel-labs/skills#supported-agents
+#         (agents that support the open Agent Skills spec)
+#   - Take the union, keep only programming/code agents (exclude general
+#     chat assistants, desktop clients, and skill-only runners), then rank
+#     by adoption (multi-source presence first, then ecosystem reach:
+#     multi-model support, agent-skills support, editor+CLI footprint).
+#   - Apply the harness quality filters from CONTRIBUTING.md "harness
+#     quality filters": active/maintained, high-quality, code-focused.
+#   - Append any harness this project already ships a rule for in
+#     src/lib/rules.zig even when the directories under-rank it
+#     (project support is itself a quality signal); those rank after the
+#     directory-derived entries.
+#
+# The canonical id is the harness rule's `name` in
+# src/lib/rules.zig `rulesForHarnesses` (lowercase-alphanumeric strict
+# slug). Ids without a rule yet are the "pending harnesses" bullets in
+# CONTRIBUTING.md. Regenerate by re-reading the two directory pages and
+# re-applying the filters; drop any entry that stalls.
+
+# --- top 50 programming/code harnesses (directory-derived) ---
+claude-code      Claude Code
+codex            Codex
+opencode         OpenCode
+cline            Cline
+cursor           Cursor
+copilot          GitHub Copilot CLI
+qwen             Qwen Code
+kilo             Kilo Code
+crush            Crush
+pi               Pi
+gemini           Gemini CLI
+goose            Goose
+grok             Grok Build
+windsurf         Windsurf
+roo              Roo Code
+trae             Trae
+codebuddy        CodeBuddy
+kimi-code        Kimi Code CLI
+reasonix         Reasonix
+openhands        OpenHands
+devin            Devin for Terminal
+junie            Junie
+augment          Augment
+continue         Continue
+aider-desk       AiderDesk
+amp              Amp
+antigravity      Antigravity
+droid            Droid
+kiro             Kiro CLI
+zed              Zed
+qoder            Qoder
+hermes-agent     Hermes
+command-code     Command Code
+zencoder         Zencoder
+lingma           Lingma
+minimax-code     MiniMax Code
+rovo-dev         Rovo Dev
+tabnine-cli      Tabnine CLI
+deep-agents      Deep Agents
+openclaw         OpenClaw
+firebender       Firebender
+forgecode        ForgeCode
+cortex           Cortex Code
+bob              IBM Bob
+codemaker        Codemaker
+codestudio       Code Studio
+codearts-agent   CodeArts Agent
+autohand-code    Autohand Code CLI
+mux              Mux
+kimchi           Kimchi
+
+# --- project-supported addendum (rules exist; directory signal weak) ---
+omp              omp (oh-my-pi)
+vibe             Vibe (Mistral)
+mmx              MiniMax CLI
+

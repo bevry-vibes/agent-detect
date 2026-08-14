@@ -483,21 +483,26 @@ names the shipped behavior and why it was chosen.
      When models are added en masse (maintenance sweeps, expanding a
      harness across a batch of providers, free-catalog imports), every
      new model — paid or free, on any provider — must clear the coalesced
-     evergreen model set (top 25 open-weight, top 25 closed, top 50
-     overall, deduplicated). This guard is for bulk/maintenance work
-     only and does NOT apply retroactively to models already in the
-     matrix, and it does NOT apply to an individual addition a user
-     explicitly needs (a one-off `--harness= --provider= --model=` combo
-     added on request is always allowed). The rank set is the union of
-     what perennially clears the top-100 leaderboards of:
+     evergreen model set (top 100 weekly models from OpenRouter's models
+     API, filtered to models that support tool calling: `supported_parameters` contains `tools`).
+     The tracked set is regenerated from OpenRouter alone (one
+     authenticated call, see below) as part of maintenance; it is not
+     maintained by hand and there is no CI task for it.
+     Dropped alternatives — how the set used to be sourced, kept for
+     information only:
      - [artificialanalysis.ai](https://artificialanalysis.ai)
        (Intelligence Index leaders),
      - [lmarena.ai / arena.ai](https://arena.ai) (LMArena leaderboard),
      - [llm-stats.com](https://llm-stats.com),
      - [huggingface.co/models](https://huggingface.co/models) (trending
        base-weights, finetunes/GGUF/image/audio models excluded),
-     - [openrouter.ai/models?order=top-weekly](https://openrouter.ai/models?order=top-weekly).
-     "Free on that provider" only decides whether a free launch/capture
+     - [openrouter.ai/models?order=top-weekly](https://openrouter.ai/models?order=top-weekly)
+       (the website, superseded by the `/api/v1/models` call below).
+     This guard is for bulk/maintenance work
+     only and does NOT apply retroactively to models already in the
+     matrix, and it does NOT apply to an individual addition a user
+     explicitly needs (a one-off `--harness= --provider= --model=` combo
+     added on request is always allowed). "Free on that provider" only decides whether a free launch/capture
      is attached — a model free on one provider is not assumed free on
      another. Source of truth for free-vs-paid: a harness's own model
      catalog (omp's `models.db` per-provider `cost`) is the best
@@ -514,11 +519,18 @@ names the shipped behavior and why it was chosen.
      `:free` vs `-free` vs `-0731` stamps) are coalesced into one
      canonical model per family, and the service-specific spellings are
      recorded as variations on the recipe, never added as duplicates.
-     Note: these leaderboards are JS-rendered and mostly lack public rank
-     APIs, so the coalesced set is curated from the accessible signals
-     (the artificialanalysis page + OpenRouter/HF model catalogs) rather
-     than scraped. The tracked set is
-     `fixtures/.evergreen-models.txt`. See CONTRIBUTING.md
+     The tracked set is a direct snapshot of OpenRouter's own ranking —
+     the raw `data` array of
+     `GET /api/v1/models?sort=top-weekly&limit=100`, jq-filtered to
+     models whose `supported_parameters` includes `tools`
+     (`fixtures/.evergreen-models.json`), regenerable with one
+     authenticated call. The available-providers snapshot is
+     `fixtures/.evergreen-providers.json` (the raw `data` array of
+     `GET /api/v1/providers`), regenerated the same way. The harness
+     target set is `fixtures/.evergreen-harnesses.txt` (top 50
+     programming/code agents, curated from the two agent directories
+     referenced in its header; see CONTRIBUTING.md "harness quality
+     filters"). See CONTRIBUTING.md
      "probing scope + runbook" (evergreen model set).
  14. **`binary_names` is the single name origin.** Each harness rule
      carries one hand-maintained list of executable names
