@@ -17,9 +17,10 @@ underneath; this process is documented in [meta.md](./meta.md).
 - https://github.com/bevry-vibes/skills/blob/main/minimax.md —
   **applies** when the running agent is a MiniMax M3 model (its rules
   gate themselves on model and harness).
-- [kilo.md](./kilo.md) —
-  **applies** when the running harness is `kilo` (its rules gate
-  themselves on harness), with this project's tweak (to be upstreamed).
+- [plans.md](./plans.md) —
+  **applies to every harness** that writes a plan for this project
+  (plans + `.prompts.md` companions in `.plans/`; supersedes the
+  retired `kilo.md`, whose plan tweaks it absorbed).
 
 This file is not policy — it is a pointer.
 
