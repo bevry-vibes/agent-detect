@@ -15,11 +15,11 @@ const dev = main.dev;
 const QueueEntry = dev.QueueEntry;
 const FixtureUpdate = dev.FixtureUpdate;
 
-/// build an in-memory store root with the four top-level tables.
+/// build an in-memory store root with the three store tables (the free
+/// axis lives in fixtures/.providers_freemodels.csv, not the store).
 fn emptyStoreRoot(a: std.mem.Allocator) !std.json.Value {
     var root: std.json.Value = .{ .object = .empty };
     try root.object.put(a, "store_version", .{ .integer = 1 });
-    try root.object.put(a, "free_provider_to_model", .{ .object = .empty });
     try root.object.put(a, "fixtures", .{ .object = .empty });
     try root.object.put(a, "errors", .{ .object = .empty });
     try root.object.put(a, "queue", .{ .array = std.json.Array.init(a) });
@@ -35,9 +35,10 @@ fn putRow(a: std.mem.Allocator, root: *std.json.Value, key: []const u8, declared
     try dev.fixtureRowUpdatePure(a, root, key, update);
 }
 
-/// expand helper with a host parameter.
+/// expand helper with a host parameter (empty free grid).
 fn expand(a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, host: []const u8) !dev.ExpandResult {
-    return dev.expandEntry(std.testing.io, a, root, entry, host);
+    var fg = dev.FreeGrid.empty(a);
+    return dev.expandEntry(std.testing.io, a, root, &fg, entry, host);
 }
 
 test "expandEntry: known universe — fresh entry lists every matching row (started_at null ⇒ no done rule)" {
@@ -165,26 +166,23 @@ test "expandEntry: successful axis — true keeps no-error rows, false keeps uns
     try testing.expectEqualStrings("kilo-deepseek-deepseekv4pro-darwin", fail.host_candidates[0].fixture_id);
 }
 
-test "expandEntry: free axis filters by free_provider_to_model" {
+test "expandEntry: free axis filters by .providers_freemodels.csv membership (FreeGrid)" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
     var root = try emptyStoreRoot(a);
     try putRow(a, &root, "pi-openrouter-nemotron3ultra-darwin", 100, null);
     try putRow(a, &root, "pi-openrouter-deepseekv4flash-darwin", 100, null);
-    var free_map: std.json.Value = .{ .object = .empty };
-    var models: std.json.Value = .{ .array = std.json.Array.init(a) };
-    try models.array.append(.{ .string = "nemotron3ultra" });
-    try free_map.object.put(a, "openrouter", models);
-    try root.object.put(a, "free_provider_to_model", free_map);
+    var free_grid = dev.FreeGrid.empty(a);
+    try free_grid.put(a, "openrouter", "nemotron3ultra");
 
     const free_entry: QueueEntry = .{ .mode = "from-identity", .free = true };
-    const free_result = try expand(a, &root, free_entry, "darwin");
+    const free_result = try dev.expandEntry(std.testing.io, a, &root, &free_grid, free_entry, "darwin");
     try testing.expectEqual(@as(usize, 1), free_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-nemotron3ultra-darwin", free_result.host_candidates[0].fixture_id);
 
     const paid_entry: QueueEntry = .{ .mode = "from-identity", .free = false };
-    const paid_result = try expand(a, &root, paid_entry, "darwin");
+    const paid_result = try dev.expandEntry(std.testing.io, a, &root, &free_grid, paid_entry, "darwin");
     try testing.expectEqual(@as(usize, 1), paid_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", paid_result.host_candidates[0].fixture_id);
 }

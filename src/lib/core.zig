@@ -157,6 +157,7 @@ pub const Detection = struct {
     model_name: ?[]const u8 = null, // canonical bare slug (whatever casing the service uses canonically), e.g. "kimi-k3"
     model_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `model_name` (no separators), e.g. "kimi-k3" -> "kimik3"
     model_reciprocity: ?[]const u8 = null, // "open-source" | "open-weight" | "closed" | null
+    model_license: ?[]const u8 = null, // SPDX license id of the model weights (same semantics as harness_license); null when unverified
     // agent (composed from harness + provider + model)
     agent_id: ?[]const u8 = null, // "<harness_id>-<provider_id>-<model_id>" — the user-visible identity of the agent
     // policy / output
@@ -282,11 +283,17 @@ fn addEvidenceClaim(a: std.mem.Allocator, d: *Detection, claim: EvidenceClaim) !
 /// provider prefix on the config value stays out of the canonical model
 /// identity.
 pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_input: []const u8) !void {
-    d.model_name = name;
     const lower = try std.ascii.allocLowerString(a, name);
     const canonical_name = if (std.mem.findScalar(u8, lower, '/')) |i| lower[i + 1 ..] else lower;
     defer a.free(lower);
-    const mi = try modelForName(a, canonical_name);
+    // fold provider-served id spellings (e.g. chutes' TEE-stamped
+    // "Qwen3.8-27B-TEE") through the rule's variation aliases before
+    // the exact-name lookup — never-guess: an id no variation names
+    // keeps the raw passthrough + family/titleCase fallback below.
+    const folded_name = canonicalIdFor(a, ModelRule, &rulesForModels, canonical_name);
+    const lookup_name = folded_name orelse canonical_name;
+    d.model_name = folded_name orelse name;
+    const mi = try modelForName(a, lookup_name);
     // display name is emitted verbatim from the rules table — the
     // rules are the source of truth and maintainers edit them
     // directly when adding new harnesses/models.
@@ -295,8 +302,9 @@ pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_inp
     // Consumers should fall back to `model_label` (or `model_name`) when this
     // is null.
     if (mi.short_title) |st| d.model_short_title = try a.dupe(u8, st);
-    d.model_id = try slugId(a, canonical_name);
+    d.model_id = try slugId(a, lookup_name);
     d.model_reciprocity = mi.reciprocity;
+    d.model_license = mi.license;
     if (mi.sources.len > 0) d.raw.model_urls = mi.sources;
     _ = raw_input; // caller is responsible for recording it in a config_file observation
     // recompute the agent id now that model_id is fixtures —
@@ -321,11 +329,22 @@ pub fn writeErr(io: std.Io, bytes: []const u8) void {
 /// so detectors that use the three-line `provider_name + label + meta`
 /// pattern still keep the slug id in lockstep with the name.
 fn applyProviderMeta(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
-    d.provider_id = try slugId(a, id);
-    if (providerMetaForName(id)) |meta| {
+    // Provider spelling folding, symmetric with applyModel's model
+    // fold: an alternate key that resolves to a known provider rule
+    // via its alias set (e.g. omp's `minimax-code`, reasonix's
+    // `deepseek-flash` config entries) reports the canonical provider
+    // the user is engaged with — never the harness's internal routing
+    // name. Unknown ids keep today's raw passthrough (never-guess).
+    const canonical = canonicalIdFor(a, ProviderRule, &rulesForProviders, id) orelse id;
+    if (providerMetaForName(canonical)) |meta| {
+        d.provider_name = meta.name;
+        d.provider_label = meta.label;
+        d.provider_id = try slugId(a, meta.name);
         d.provider_closed_training = meta.closed_training;
         d.provider_open_training = meta.open_training;
         d.raw.provider_urls = meta.sources;
+    } else {
+        d.provider_id = try slugId(a, canonical);
     }
 }
 
@@ -1262,16 +1281,23 @@ fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
 
     const slash = std.mem.findScalar(u8, dm, '/');
     if (slash) |i| {
-        const prov = dm[0..i];
+        var prov = dm[0..i];
         const model_only = dm[i + 1 ..];
+        // crush's hyper.json routes the user's Charm Hyper subscription;
+        // a provider key that is no known provider but IS a known model
+        // id (e.g. "qwen3.7-plus/…") is hyper's internal routing alias —
+        // the provider the user engages is `hyper`.
+        if (providerMetaForName(prov) == null and canonicalIdFor(a, ModelRule, &rulesForModels, prov) != null) prov = "hyper";
         d.provider_name = prov;
         d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
         try applyProviderMeta(a, d, prov);
         try applyModel(a, d, model_only, dm);
     } else {
-        d.provider_name = dm;
-        d.provider_label = providerForName(dm) orelse try titleCase(a, dm);
-        try applyProviderMeta(a, d, dm);
+        var prov = dm;
+        if (providerMetaForName(dm) == null and canonicalIdFor(a, ModelRule, &rulesForModels, dm) != null) prov = "hyper";
+        d.provider_name = prov;
+        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+        try applyProviderMeta(a, d, prov);
         try applyModel(a, d, dm, dm);
     }
 
@@ -1829,7 +1855,7 @@ pub fn computeReciprocal(d: *const Detection) bool {
 }
 
 /// The detection report is a JSON object assembled from:
-/// - `buildCooked` — the shape-stable 17-field canonical object,
+/// - `buildCooked` — the shape-stable 18-field canonical object,
 ///   grouped by entity (harness / provider / model / agent). The
 ///   `trailer` field was removed so the identify output no longer
 ///   carries it (fixture channels persist both trailer variants as
@@ -1847,7 +1873,7 @@ pub fn reporterHome(env: *const std.process.Environ.Map) []const u8 {
     return env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
 }
 
-/// Build the canonical identification object (17 fields, grouped by entity).
+/// Build the canonical identification object (18 fields, grouped by entity).
 /// Returns a heap-allocated `std.json.Value` the caller owns.
 pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     const V = std.json.Value;
@@ -1873,6 +1899,7 @@ pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     try canonical.object.put(a, "model_name", optStringValue(a, d.model_name));
     try canonical.object.put(a, "model_id", optStringValue(a, d.model_id));
     try canonical.object.put(a, "model_reciprocity", optStringValue(a, d.model_reciprocity));
+    try canonical.object.put(a, "model_license", optStringValue(a, d.model_license));
     // agent id is composed of the three sub-ids above; emitted in the
     // model block (after model_id) so the canonical
     // block reads harness → provider → model → agent.
@@ -2120,6 +2147,7 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     d.model_name = model.name;
     d.model_id = try slugId(a, model.name);
     d.model_reciprocity = model.reciprocity;
+    d.model_license = model.license;
     d.raw.model_urls = model.sources;
     try setAgentId(a, &d);
     d.reciprocal = computeReciprocal(&d);

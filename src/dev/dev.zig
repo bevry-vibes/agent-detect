@@ -174,9 +174,11 @@ pub const dev = if (build_options.dev) struct {
         \\carrying the per-platform `prompt_launch`/`version_launch` argv, the
         \\`identity`/`capture` channel ledgers, and the whole-file `fixture_hash`),
         \\`errors` (the failure ledger keyed by dims tuples — an entry exists only
-        \\while a combo is failed; success purges it), `queue` (an array of filter
-        \\entries the daemon expands — it never holds concrete work items), and
-        \\`free_provider_to_model` (the free-axis data). fixtures/<id>.json are the
+        \\while a combo is failed; success purges it), and `queue` (an array of
+        \\filter entries the daemon expands — it never holds concrete work
+        \\items). The free axis is sourced from
+        \\fixtures/.providers_freemodels.csv (the free-models source of truth).
+        \\fixtures/<id>.json are the
         \\generated fixtures — top-level per-channel keys `from-identity` /
         \\`from-capture` / `from-capture-raw`. Writers take an exclusive lock on
         \\fixtures/.index.json.lock and write atomically (temp + rename).
@@ -260,7 +262,7 @@ pub const dev = if (build_options.dev) struct {
         \\                   or re-evaluated as candidates
         \\  --successful / --unsuccessful  only no-error candidates vs only
         \\                   unsuccessful-class error entries
-        \\  --free / --paid     free_provider_to_model membership
+        \\  --free / --paid     membership in .providers_freemodels.csv
         \\
     ;
 
@@ -480,7 +482,6 @@ pub const dev = if (build_options.dev) struct {
     fn emptyRoot(a: std.mem.Allocator) !std.json.Value {
         var root: std.json.Value = .{ .object = .empty };
         try root.object.put(a, "store_version", .{ .integer = INDEX_STORE_VERSION });
-        try root.object.put(a, "free_provider_to_model", .{ .object = .empty });
         try root.object.put(a, "fixtures", .{ .object = .empty });
         try root.object.put(a, "errors", .{ .object = .empty });
         try root.object.put(a, "queue", .{ .array = std.json.Array.init(a) });
@@ -519,10 +520,13 @@ pub const dev = if (build_options.dev) struct {
             error.FileNotFound => return emptyRoot(a),
             else => return error.IndexStoreError,
         };
-        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return error.IndexStoreError;
+        var parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return error.IndexStoreError;
         if (parsed.value != .object) return error.IndexStoreError;
         const sv = parsed.value.object.get("store_version") orelse return error.IndexStoreError;
         if (sv != .integer or sv.integer != INDEX_STORE_VERSION) return error.IndexStoreError;
+        // The free axis moved to fixtures/.providers_freemodels.csv —
+        // drop the legacy table so it never re-serializes.
+        _ = parsed.value.object.orderedRemove("free_provider_to_model");
         return parsed.value;
     }
 
@@ -776,18 +780,55 @@ pub const dev = if (build_options.dev) struct {
         return fx.object.contains(key);
     }
 
-    /// is `(provider, model)` (strict slugs) listed in the free table?
-    fn freeTableHas(root: *const std.json.Value, provider: []const u8, model: []const u8) bool {
-        if (root.* != .object) return false;
-        const ft = root.object.get("free_provider_to_model") orelse return false;
-        if (ft != .object) return false;
-        const arr = ft.object.get(provider) orelse return false;
-        if (arr != .array) return false;
-        for (arr.array.items) |item| {
-            if (item == .string and std.mem.eql(u8, item.string, model)) return true;
+    /// Free-model membership, sourced from
+    /// `fixtures/.providers_freemodels.csv` — the source of truth for
+    /// free models (replacing the
+    /// legacy `free_provider_to_model` store table, which is dropped at
+    /// load and never re-serialized). Sparse grid: header
+    /// `provider,<model-slug>...`, rows only for providers with ≥1 free
+    /// model, columns only for models free somewhere, cells the
+    /// provider's free model-id string, `-` where not offered. A missing
+    /// file loads as the empty set.
+    pub const FreeGrid = struct {
+        set: std.StringHashMap(void),
+
+        pub fn empty(a: std.mem.Allocator) FreeGrid {
+            return .{ .set = std.StringHashMap(void).init(a) };
         }
-        return false;
-    }
+
+        pub fn put(self: *FreeGrid, a: std.mem.Allocator, provider: []const u8, model: []const u8) !void {
+            try self.set.put(try std.fmt.allocPrint(a, "{s}|{s}", .{ provider, model }), {});
+        }
+
+        pub fn has(self: *const FreeGrid, provider: []const u8, model: []const u8) bool {
+            var buf: [256]u8 = undefined;
+            const key = std.fmt.bufPrint(&buf, "{s}|{s}", .{ provider, model }) catch return false;
+            return self.set.contains(key);
+        }
+
+        pub fn load(io: std.Io, a: std.mem.Allocator) !FreeGrid {
+            var self = empty(a);
+            const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/.providers_freemodels.csv", a, @enumFromInt(1 << 20)) catch return self;
+            var lines = std.mem.tokenizeScalar(u8, data, '\n');
+            const header = lines.next() orelse return self;
+            var cols = std.mem.tokenizeScalar(u8, header, ',');
+            _ = cols.next(); // the "provider" label cell
+            var names: std.ArrayList([]const u8) = .empty;
+            while (cols.next()) |c| try names.append(a, std.mem.trim(u8, c, " \r\t"));
+            while (lines.next()) |line| {
+                var cells = std.mem.tokenizeScalar(u8, line, ',');
+                const provider = std.mem.trim(u8, cells.next() orelse continue, " \r\t");
+                var idx: usize = 0;
+                while (cells.next()) |cell| : (idx += 1) {
+                    if (idx >= names.items.len) break;
+                    const v = std.mem.trim(u8, cell, " \r\t");
+                    if (v.len == 0 or std.mem.eql(u8, v, "-")) continue;
+                    try self.put(a, provider, names.items[idx]);
+                }
+            }
+            return self;
+        }
+    };
 
     // ------------------------------------------------------------------
     // id splitting / joining
@@ -1037,25 +1078,29 @@ pub const dev = if (build_options.dev) struct {
     // ------------------------------------------------------------------
 
     fn queueEntryValue(a: std.mem.Allocator, e: QueueEntry) !std.json.Value {
+        // Null-as-absent: unset optional fields are omitted from the
+        // store (the reader treats missing as null), keeping the
+        // committed JSON free of `: null` bloat. Structure source of
+        // truth: `fixtures/.index.d.ts`.
         var o: std.json.Value = .{ .object = .empty };
-        try o.object.put(a, "harness", optStringValue(a, e.harness));
-        try o.object.put(a, "provider", optStringValue(a, e.provider));
-        try o.object.put(a, "model", optStringValue(a, e.model));
-        try o.object.put(a, "platform", optStringValue(a, e.platform));
+        if (e.harness) |v| try o.object.put(a, "harness", .{ .string = v });
+        if (e.provider) |v| try o.object.put(a, "provider", .{ .string = v });
+        if (e.model) |v| try o.object.put(a, "model", .{ .string = v });
+        if (e.platform) |v| try o.object.put(a, "platform", .{ .string = v });
         try o.object.put(a, "mode", .{ .string = e.mode });
-        try o.object.put(a, "stale_by_missing_entry", optBoolValue(e.stale_by_missing_entry));
-        try o.object.put(a, "stale_by_missing_fixture", optBoolValue(e.stale_by_missing_fixture));
-        try o.object.put(a, "stale_by_minutes", if (e.stale_by_minutes) |v| .{ .integer = v } else .null);
-        try o.object.put(a, "stale_by_harness_version", optBoolValue(e.stale_by_harness_version));
-        try o.object.put(a, "stale_by_detect_version", optBoolValue(e.stale_by_detect_version));
-        try o.object.put(a, "stale_by_fixture_hash", optBoolValue(e.stale_by_fixture_hash));
-        try o.object.put(a, "stale_by_channel_hash", optBoolValue(e.stale_by_channel_hash));
-        try o.object.put(a, "known", optBoolValue(e.known));
-        try o.object.put(a, "valid", optBoolValue(e.valid));
-        try o.object.put(a, "successful", optBoolValue(e.successful));
-        try o.object.put(a, "free", optBoolValue(e.free));
+        if (e.stale_by_missing_entry) |v| try o.object.put(a, "stale_by_missing_entry", .{ .bool = v });
+        if (e.stale_by_missing_fixture) |v| try o.object.put(a, "stale_by_missing_fixture", .{ .bool = v });
+        if (e.stale_by_minutes) |v| try o.object.put(a, "stale_by_minutes", .{ .integer = v });
+        if (e.stale_by_harness_version) |v| try o.object.put(a, "stale_by_harness_version", .{ .bool = v });
+        if (e.stale_by_detect_version) |v| try o.object.put(a, "stale_by_detect_version", .{ .bool = v });
+        if (e.stale_by_fixture_hash) |v| try o.object.put(a, "stale_by_fixture_hash", .{ .bool = v });
+        if (e.stale_by_channel_hash) |v| try o.object.put(a, "stale_by_channel_hash", .{ .bool = v });
+        if (e.known) |v| try o.object.put(a, "known", .{ .bool = v });
+        if (e.valid) |v| try o.object.put(a, "valid", .{ .bool = v });
+        if (e.successful) |v| try o.object.put(a, "successful", .{ .bool = v });
+        if (e.free) |v| try o.object.put(a, "free", .{ .bool = v });
         try o.object.put(a, "runner", .{ .integer = e.runner });
-        try o.object.put(a, "started_at", if (e.started_at) |v| .{ .integer = v } else .null);
+        if (e.started_at) |v| try o.object.put(a, "started_at", .{ .integer = v });
         return o;
     }
 
@@ -1364,12 +1409,12 @@ pub const dev = if (build_options.dev) struct {
     /// present AND ≥ the entry's `started_at`; an entry never worked
     /// (started_at null) has no done candidates (the fresh sweep
     /// re-evaluates everything).
-    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, host: []const u8) !ExpandResult {
+    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, entry: QueueEntry, host: []const u8) !ExpandResult {
         const platforms: []const []const u8 = if (entry.platform) |p| &.{p} else &platforms_all;
         var host_list: std.ArrayListUnmanaged(Candidate) = .empty;
         var remaining: usize = 0;
         for (platforms) |plat| {
-            const list = try expandForPlatform(io, a, root, entry, plat);
+            const list = try expandForPlatform(io, a, root, free, entry, plat);
             remaining += list.len;
             if (std.mem.eql(u8, plat, host)) {
                 for (list) |c| try host_list.append(a, c);
@@ -1379,17 +1424,17 @@ pub const dev = if (build_options.dev) struct {
         return .{ .host_candidates = try host_list.toOwnedSlice(a), .remaining_anywhere = remaining };
     }
 
-    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, plat: []const u8) ![]Candidate {
+    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, entry: QueueEntry, plat: []const u8) ![]Candidate {
         if (entry.stale_by_missing_entry == true) return expandMissingEntryPlatform(io, a, root, entry, plat);
         const known = entry.known orelse true;
-        if (known) return expandKnownPlatform(io, a, root, entry, plat);
-        return expandUnknownPlatform(io, a, root, entry, plat);
+        if (known) return expandKnownPlatform(io, a, root, free, entry, plat);
+        return expandUnknownPlatform(io, a, root, free, entry, plat);
     }
 
     /// the known universe: the `fixtures` map rows matching the entry's
     /// dims + platform, surviving the axes, marker evaluations, and the
     /// completion-timestamp done rule.
-    fn expandKnownPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, plat: []const u8) ![]Candidate {
+    fn expandKnownPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, entry: QueueEntry, plat: []const u8) ![]Candidate {
         var out: std.ArrayListUnmanaged(Candidate) = .empty;
         if (root.* != .object) return &.{};
         const fx_v = root.object.get("fixtures") orelse return &.{};
@@ -1421,7 +1466,7 @@ pub const dev = if (build_options.dev) struct {
                 }
             }
             if (entry.free) |fr| {
-                if (fr != freeTableHas(root, parts[1], parts[2])) continue;
+                if (fr != free.has(parts[1], parts[2])) continue;
             }
             // marker evaluation — fresh ⇒ not a candidate
             if (!(try entryMarkerStale(io, a, entry, row, key))) continue;
@@ -1441,7 +1486,7 @@ pub const dev = if (build_options.dev) struct {
     /// discovery sweep. Generated combos have no launch/version argv and
     /// no outcomes, so markers and the successful axis never combine with
     /// `--unknown` (CLI conflict).
-    fn expandUnknownPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, plat: []const u8) ![]Candidate {
+    fn expandUnknownPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, entry: QueueEntry, plat: []const u8) ![]Candidate {
         _ = io;
         var out: std.ArrayListUnmanaged(Candidate) = .empty;
         for (rulesForHarnesses) |hr| {
@@ -1468,7 +1513,7 @@ pub const dev = if (build_options.dev) struct {
                         if ((entry.valid orelse true) or cls == .unsuccessful) continue;
                     }
                     if (entry.free) |fr| {
-                        if (fr != freeTableHas(root, ps, ms)) continue;
+                        if (fr != free.has(ps, ms)) continue;
                     }
                     try out.append(a, .{ .fixture_id = key, .harness = hs, .provider = ps, .model = ms, .platform = plat });
                 }
@@ -2264,7 +2309,7 @@ pub const dev = if (build_options.dev) struct {
 
     /// `from-identity` worker: resolve the combo via `resolveRecipe`
     /// (recipe-mode, no detection, zero tokens, no harness required),
-    /// assemble the `from-identity` channel (`identify` = the 17-field
+    /// assemble the `from-identity` channel (`identify` = the 18-field
     /// buildCooked object; `trailer co-author`/`trailer assisted-by` from
     /// spawning the real CLI with the combo flags), merge-write it into
     /// `fixtures/<id>.json` (preserving `from-capture`/`from-capture-raw`),
@@ -2495,6 +2540,7 @@ pub const dev = if (build_options.dev) struct {
         const lock_file = try acquireIndexLock(io);
         defer lock_file.close(io);
         var root = try indexLoad(io, a);
+        const free_grid = try FreeGrid.load(io, a);
         const q = try getOrPutArray(a, &root, "queue");
         const host = platformId();
         var dirty = false;
@@ -2520,7 +2566,7 @@ pub const dev = if (build_options.dev) struct {
                     i += 1;
                     continue;
                 }
-                const exp = try expandEntry(io, a, &root, entry, host);
+                const exp = try expandEntry(io, a, &root, &free_grid, entry, host);
                 if (exp.remaining_anywhere == 0) {
                     _ = q.orderedRemove(i);
                     dirty = true;
@@ -2535,7 +2581,7 @@ pub const dev = if (build_options.dev) struct {
                 // completion-timestamp done rule live.
                 entry.started_at = unixNow(io);
                 q.items[i] = try queueEntryValue(a, entry);
-                const exp2 = try expandEntry(io, a, &root, entry, host);
+                const exp2 = try expandEntry(io, a, &root, &free_grid, entry, host);
                 if (exp2.host_candidates.len > 0) {
                     pick = .{ .queue_index = i, .candidate = exp2.host_candidates[0], .entry = entry };
                 }

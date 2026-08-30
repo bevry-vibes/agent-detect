@@ -226,7 +226,7 @@ test "canonicalIdFor: cline stays cline; cline-pass wins its aliases" {
     }
 }
 
-test "canonicalIdFor: minimax-m3 aliases; deepseek-v4-flash family stays distinct" {
+test "canonicalIdFor: minimax-m3 aliases; deepseek-v4-flash free tier folds to the model" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
@@ -239,11 +239,16 @@ test "canonicalIdFor: minimax-m3 aliases; deepseek-v4-flash family stays distinc
     try testing.expectEqualStrings("deepseek-v4-flash", got);
     const got2 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "DeepSeek V4 Flash") orelse return error.TestUnexpectedResult;
     try testing.expectEqualStrings("deepseek-v4-flash", got2);
+    // the free-tier alias is a serving spelling of the same weights —
+    // folded into the model rule as a variation (2026-08-29, option B
+    // of .plans/1787978000867-retroactive-folding-options.md)
     const got3 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "deepseek-v4-flash-free") orelse return error.TestUnexpectedResult;
-    try testing.expectEqualStrings("deepseek-v4-flash-free", got3);
-    // the free alias must never resolve to the plain model
+    try testing.expectEqualStrings("deepseek-v4-flash", got3);
     const got4 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "deepseekv4flashfree") orelse return error.TestUnexpectedResult;
-    try testing.expectEqualStrings("deepseek-v4-flash-free", got4);
+    try testing.expectEqualStrings("deepseek-v4-flash", got4);
+    // the folded zai- spelling resolves to the canonical glm-4.7 rule
+    const got5 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "zai-glm-4.7") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("glm-4.7", got5);
 }
 
 test "canonicalIdFor: empty/unknown input resolves null" {
@@ -298,4 +303,131 @@ test "modelFromSessionRow: id + providerID resolve" {
     const mm = (try main.modelFromSessionRow(a, model)) orelse return error.TestUnexpectedResult;
     try testing.expectEqualStrings("deepseek-v4-flash-0731", mm.model_full);
     try testing.expectEqualStrings("hyper", mm.provider_id);
+}
+
+// ============================================================================
+// provider-served id folding (chutes TEE stamps, endpoint/tier spellings)
+// ============================================================================
+
+test "canonicalIdFor: qwen3.8-27b aliases incl. chutes TEE forms; max stays distinct" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const forms = [_][]const u8{
+        "qwen3.8-27b", "Qwen3.8 27B", "qwen3827b",
+        "Qwen3.8-27B-TEE", "qwen3.8-27b-tee", "QWEN3.8-27B-TEE",
+        "Qwen/Qwen3.8-27B-TEE",
+    };
+    for (forms) |f| {
+        const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("qwen3.8-27b", got);
+    }
+    // the closed flagship is never folded into the open size rule
+    const max = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "qwen3.8-max") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("qwen3.8-max", max);
+}
+
+test "canonicalIdFor: providers chutes and opencode-go resolve" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    for ([_][]const u8{ "chutes", "Chutes", "CHUTES" }) |f| {
+        const got = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("chutes", got);
+    }
+    for ([_][]const u8{ "opencode-go", "OpenCode Go", "opencodego" }) |f| {
+        const got = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("opencode-go", got);
+    }
+    // whole-string slugs: `opencode` never resolves to `opencode-go`
+    const oc = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, "opencode") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("opencode", oc);
+}
+
+test "canonicalIdFor: catalog spellings fold to their canonical rules" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const folds = [_][2][]const u8{
+        .{ "Kimi-K3-TEE", "kimi-k3" },
+        .{ "moonshotai/Kimi-K3-TEE", "kimi-k3" },
+        .{ "zai-org/GLM-5.2-TEE", "glm-5.2" },
+        .{ "GLM-5.1-TEE", "glm-5.1" },
+        .{ "deepseek-ai/DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash" },
+        .{ "deepseek-v4-flash-vision-exp", "deepseek-v4-flash" },
+        .{ "Qwen/Qwen3-235B-A22B-Thinking-2507-TEE", "qwen3-235b-a22b" },
+        .{ "Qwen/Qwen3.5-397B-A17B-TEE", "qwen3.5-397b-a17b" },
+        .{ "google/gemma-4-31B-turbo-TEE", "gemma-4-31b" },
+        .{ "unsloth/Mistral-Nemo-Instruct-2407-TEE", "mistral-nemo-instruct-2407" },
+        .{ "Nemotron-3-Nano-Omni-30B-TEE", "nemotron-3-nano-omni" },
+        .{ "muse-spark-1.2-contributor", "muse-spark-1.2" },
+        .{ "qwen3.8-flash", "qwen3.8-flash" },
+        .{ "Qwen3.8 Flash", "qwen3.8-flash" },
+    };
+    for (folds) |pair| {
+        const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, pair[0]) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings(pair[1], got);
+    }
+}
+
+test "canonicalIdFor: unobserved tee ids stay null (never-guess)" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    try testing.expect(main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "foo-tee") == null);
+    try testing.expect(main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "Qwen3.9-27B-TEE") == null);
+    try testing.expect(main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "qwen3.8-2.4t-a95b-tee") == null);
+}
+
+test "applyModel: chutes TEE-stamped id folds to the canonical model" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // kimi-code's `default_model` = "chutes/Qwen/Qwen3.8-27B-TEE":
+    // detectKimi strips the first segment before calling applyModel.
+    var d = main.Detection{};
+    try main.applyModel(a, &d, "Qwen/Qwen3.8-27B-TEE", "chutes/Qwen/Qwen3.8-27B-TEE");
+    try testing.expectEqualStrings("qwen3.8-27b", d.model_name.?);
+    try testing.expectEqualStrings("Qwen3.8 27B", d.model_label.?);
+    try testing.expectEqualStrings("qwen3827b", d.model_id.?);
+    try testing.expectEqualStrings("open-weight", d.model_reciprocity.?);
+    try testing.expectEqualStrings("Apache-2.0", d.model_license.?);
+    // a detector that passes the full 3-segment id unstripped folds
+    // through the namespaced variation.
+    var d2 = main.Detection{};
+    try main.applyModel(a, &d2, "chutes/Qwen/Qwen3.8-27B-TEE", "chutes/Qwen/Qwen3.8-27B-TEE");
+    try testing.expectEqualStrings("qwen3.8-27b", d2.model_name.?);
+    try testing.expectEqualStrings("qwen3827b", d2.model_id.?);
+}
+
+test "applyModel: unknown id keeps raw passthrough (never-guess)" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var d = main.Detection{};
+    try main.applyModel(a, &d, "foo-tee", "foo/foo-tee");
+    try testing.expectEqualStrings("foo-tee", d.model_name.?);
+    try testing.expectEqualStrings("Foo Tee", d.model_label.?);
+    try testing.expectEqualStrings("footee", d.model_id.?);
+    try testing.expect(d.model_reciprocity == null);
+    try testing.expect(d.model_license == null);
+}
+
+test "buildTrailerLine: kimi-code chutes and opencode-go combos" {
+    var d = main.Detection{
+        .harness_label = "Kimi Code",
+        .model_label = "Qwen3.8 27B",
+        .agent_id = "kimicode-chutes-qwen3827b",
+    };
+    const line = (try main.buildTrailerLine(testing.allocator, &d, "Co-authored-by")).?;
+    defer testing.allocator.free(line);
+    try testing.expectEqualStrings("Co-authored-by: Kimi Code · Qwen3.8 27B <kimicode-chutes-qwen3827b@local>", line);
+    var d2 = main.Detection{
+        .harness_label = "Kimi Code",
+        .model_label = "Qwen3.8 Flash",
+        .agent_id = "kimicode-opencodego-qwen38flash",
+    };
+    const line2 = (try main.buildTrailerLine(testing.allocator, &d2, "Assisted-by")).?;
+    defer testing.allocator.free(line2);
+    try testing.expectEqualStrings("Assisted-by: Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>", line2);
 }

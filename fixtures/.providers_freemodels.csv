@@ -1,0 +1,5 @@
+provider,deepseekv4flash,gemini35flash,gemma431b,glm47flash,grok45,kimik3,nemotron3nano,nemotron3super,nemotron3ultra,step37flash
+clinepass,free/deepseek-v4-flash,-,-,-,-,-,-,-,-,-
+opencode,deepseek-v4-flash-free,-,-,-,-,-,-,-,nemotron-3-ultra-free,-
+openrouter,-,-,google/gemma-4-31b-it:free,-,-,-,nvidia/nemotron-3-nano-30b-a3b:free,nvidia/nemotron-3-super-120b-a12b:free,nvidia/nemotron-3-ultra-550b-a55b:free,-
+zenmux,deepseek/deepseek-v4-flash-free,google/gemini-3.5-flash-free,-,z-ai/glm-4.7-flash-free,x-ai/grok-4.5-free,moonshotai/kimi-k3-free,-,-,-,stepfun/step-3.7-flash-free

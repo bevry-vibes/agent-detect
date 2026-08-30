@@ -9,6 +9,17 @@
     "datacenters": null
   },
   {
+    "name": "Morph",
+    "slug": "morph",
+    "privacy_policy_url": "https://morphllm.com/privacy",
+    "terms_of_service_url": "https://www.morphllm.com/privacy/tos",
+    "status_page_url": null,
+    "headquarters": "US",
+    "datacenters": [
+      "US"
+    ]
+  },
+  {
     "name": "Deepgram",
     "slug": "deepgram",
     "privacy_policy_url": "https://deepgram.com/privacy",
@@ -65,17 +76,6 @@
     "datacenters": null
   },
   {
-    "name": "Morph",
-    "slug": "morph",
-    "privacy_policy_url": "https://morphllm.com/privacy",
-    "terms_of_service_url": "https://www.morphllm.com/privacy/tos",
-    "status_page_url": null,
-    "headquarters": "US",
-    "datacenters": [
-      "US"
-    ]
-  },
-  {
     "name": "Reka",
     "slug": "reka",
     "privacy_policy_url": "https://reka.ai/legal/privacy-policy",
@@ -83,17 +83,6 @@
     "status_page_url": null,
     "headquarters": null,
     "datacenters": []
-  },
-  {
-    "name": "Z.AI",
-    "slug": "z-ai",
-    "privacy_policy_url": "https://chat.z.ai/legal-agreement/privacy-policy",
-    "terms_of_service_url": "https://chat.z.ai/legal-agreement/terms-of-service",
-    "status_page_url": null,
-    "headquarters": "SG",
-    "datacenters": [
-      "SG"
-    ]
   },
   {
     "name": "Arcee AI",
@@ -133,6 +122,17 @@
     "headquarters": "SG",
     "datacenters": [
       "US"
+    ]
+  },
+  {
+    "name": "Z.AI",
+    "slug": "z-ai",
+    "privacy_policy_url": "https://chat.z.ai/legal-agreement/privacy-policy",
+    "terms_of_service_url": "https://chat.z.ai/legal-agreement/terms-of-service",
+    "status_page_url": null,
+    "headquarters": "SG",
+    "datacenters": [
+      "SG"
     ]
   },
   {
@@ -199,6 +199,18 @@
     "status_page_url": "https://status.groq.com/",
     "headquarters": "US",
     "datacenters": null
+  },
+  {
+    "name": "Xiaomi",
+    "slug": "xiaomi",
+    "privacy_policy_url": "https://platform.xiaomimimo.com/#/docs/terms/privacy-policy",
+    "terms_of_service_url": "https://platform.xiaomimimo.com/#/docs/terms/user-agreement",
+    "status_page_url": null,
+    "headquarters": "CN",
+    "datacenters": [
+      "SG",
+      "NL"
+    ]
   },
   {
     "name": "Crusoe",
@@ -304,15 +316,13 @@
     "datacenters": null
   },
   {
-    "name": "Tencent",
-    "slug": "tencent",
-    "privacy_policy_url": "https://www.tencentcloud.com/en/document/product/1300/78952",
-    "terms_of_service_url": "https://www.tencentcloud.com/en/document/product/301/78869",
-    "status_page_url": "https://status.tencentcloud.com",
-    "headquarters": "CN",
-    "datacenters": [
-      "SG"
-    ]
+    "name": "xAI",
+    "slug": "xai",
+    "privacy_policy_url": "https://x.ai/legal/privacy-policy",
+    "terms_of_service_url": "https://x.ai/legal/terms-of-service-enterprise",
+    "status_page_url": "https://status.x.ai/",
+    "headquarters": "US",
+    "datacenters": null
   },
   {
     "name": "Sail Research",
@@ -324,13 +334,24 @@
     "datacenters": []
   },
   {
-    "name": "xAI",
-    "slug": "xai",
-    "privacy_policy_url": "https://x.ai/legal/privacy-policy",
-    "terms_of_service_url": "https://x.ai/legal/terms-of-service-enterprise",
-    "status_page_url": "https://status.x.ai/",
-    "headquarters": "US",
-    "datacenters": null
+    "name": "Ollama",
+    "slug": "ollama",
+    "privacy_policy_url": null,
+    "terms_of_service_url": null,
+    "status_page_url": null,
+    "headquarters": null,
+    "datacenters": []
+  },
+  {
+    "name": "Tencent",
+    "slug": "tencent",
+    "privacy_policy_url": "https://www.tencentcloud.com/en/document/product/1300/78952",
+    "terms_of_service_url": "https://www.tencentcloud.com/en/document/product/301/78869",
+    "status_page_url": "https://status.tencentcloud.com",
+    "headquarters": "CN",
+    "datacenters": [
+      "SG"
+    ]
   },
   {
     "name": "Krea",
@@ -353,27 +374,13 @@
     ]
   },
   {
-    "name": "Mara",
-    "slug": "mara",
-    "privacy_policy_url": "https://www.mara.com/mara-legals/ai-policies#cloud-pp",
-    "terms_of_service_url": "https://www.mara.com/mara-legals/ai-policies#cloud-toc",
+    "name": "Cosine",
+    "slug": "cosine",
+    "privacy_policy_url": null,
+    "terms_of_service_url": null,
     "status_page_url": null,
-    "headquarters": "US",
-    "datacenters": [
-      "US"
-    ]
-  },
-  {
-    "name": "Xiaomi",
-    "slug": "xiaomi",
-    "privacy_policy_url": "https://platform.xiaomimimo.com/#/docs/terms/privacy-policy",
-    "terms_of_service_url": "https://platform.xiaomimimo.com/#/docs/terms/user-agreement",
-    "status_page_url": null,
-    "headquarters": "CN",
-    "datacenters": [
-      "SG",
-      "NL"
-    ]
+    "headquarters": null,
+    "datacenters": null
   },
   {
     "name": "Azure",
@@ -410,6 +417,17 @@
     "status_page_url": null,
     "headquarters": null,
     "datacenters": []
+  },
+  {
+    "name": "Mara",
+    "slug": "mara",
+    "privacy_policy_url": "https://www.mara.com/mara-legals/ai-policies#cloud-pp",
+    "terms_of_service_url": "https://www.mara.com/mara-legals/ai-policies#cloud-toc",
+    "status_page_url": null,
+    "headquarters": "US",
+    "datacenters": [
+      "US"
+    ]
   },
   {
     "name": "Fish Audio",
@@ -564,19 +582,10 @@
     "datacenters": []
   },
   {
-    "name": "Relace",
-    "slug": "relace",
-    "privacy_policy_url": "https://www.relace.ai/privacy-policy",
-    "terms_of_service_url": "https://www.relace.ai/terms-of-use",
-    "status_page_url": null,
-    "headquarters": null,
-    "datacenters": []
-  },
-  {
     "name": "ModelRun",
     "slug": "modelrun",
-    "privacy_policy_url": "https://modelrun.org/privacy-policy.html",
-    "terms_of_service_url": "https://modelrun.org/TOS.html",
+    "privacy_policy_url": "https://www.modular.com/legal/privacy",
+    "terms_of_service_url": "https://www.modular.com/legal/terms",
     "status_page_url": null,
     "headquarters": "US",
     "datacenters": [
@@ -667,15 +676,6 @@
     "datacenters": null
   },
   {
-    "name": "Amazon Bedrock",
-    "slug": "amazon-bedrock",
-    "privacy_policy_url": "https://aws.amazon.com/privacy",
-    "terms_of_service_url": "https://aws.amazon.com/service-terms/",
-    "status_page_url": "https://health.aws.amazon.com/health/status",
-    "headquarters": "US",
-    "datacenters": null
-  },
-  {
     "name": "DigitalOcean",
     "slug": "digitalocean",
     "privacy_policy_url": "https://www.digitalocean.com/legal/privacy-policy",
@@ -694,15 +694,6 @@
     "datacenters": [
       "SG"
     ]
-  },
-  {
-    "name": "Thinking Machines",
-    "slug": "thinkingmachines",
-    "privacy_policy_url": null,
-    "terms_of_service_url": null,
-    "status_page_url": null,
-    "headquarters": null,
-    "datacenters": null
   },
   {
     "name": "Chutes",
@@ -734,12 +725,21 @@
     "datacenters": []
   },
   {
-    "name": "Google AI Studio",
-    "slug": "google-ai-studio",
-    "privacy_policy_url": "https://cloud.google.com/terms/cloud-privacy-notice",
-    "terms_of_service_url": "https://cloud.google.com/terms/",
-    "status_page_url": null,
+    "name": "Amazon Bedrock",
+    "slug": "amazon-bedrock",
+    "privacy_policy_url": "https://aws.amazon.com/privacy",
+    "terms_of_service_url": "https://aws.amazon.com/service-terms/",
+    "status_page_url": "https://health.aws.amazon.com/health/status",
     "headquarters": "US",
+    "datacenters": null
+  },
+  {
+    "name": "Thinking Machines",
+    "slug": "thinkingmachines",
+    "privacy_policy_url": "https://thinkingmachines.ai/legal/tml-free-research-api-tier-privacy-notice.pdf",
+    "terms_of_service_url": "https://thinkingmachines.ai/legal/tml-free-research-api-tier-terms-of-service.pdf",
+    "status_page_url": null,
+    "headquarters": null,
     "datacenters": null
   },
   {
@@ -752,11 +752,29 @@
     "datacenters": null
   },
   {
+    "name": "Google AI Studio",
+    "slug": "google-ai-studio",
+    "privacy_policy_url": "https://cloud.google.com/terms/cloud-privacy-notice",
+    "terms_of_service_url": "https://cloud.google.com/terms/",
+    "status_page_url": null,
+    "headquarters": "US",
+    "datacenters": null
+  },
+  {
     "name": "Parasail",
     "slug": "parasail",
     "privacy_policy_url": "https://www.parasail.io/legal/privacy-policy",
     "terms_of_service_url": "https://parasail.io/legal/terms-of-service",
     "status_page_url": null,
+    "headquarters": "US",
+    "datacenters": null
+  },
+  {
+    "name": "Databricks",
+    "slug": "databricks",
+    "privacy_policy_url": "https://www.databricks.com/legal/privacynotice",
+    "terms_of_service_url": "https://www.databricks.com/terms-of-use",
+    "status_page_url": "https://status.databricks.com",
     "headquarters": "US",
     "datacenters": null
   },
@@ -790,13 +808,22 @@
     "datacenters": null
   },
   {
-    "name": "Databricks",
-    "slug": "databricks",
-    "privacy_policy_url": "https://www.databricks.com/legal/privacynotice",
-    "terms_of_service_url": "https://www.databricks.com/terms-of-use",
-    "status_page_url": "https://status.databricks.com",
-    "headquarters": "US",
+    "name": "Makora",
+    "slug": "makora",
+    "privacy_policy_url": null,
+    "terms_of_service_url": null,
+    "status_page_url": "https://makora.statuspage.io",
+    "headquarters": null,
     "datacenters": null
+  },
+  {
+    "name": "Relace",
+    "slug": "relace",
+    "privacy_policy_url": "https://www.relace.ai/privacy-policy",
+    "terms_of_service_url": "https://www.relace.ai/terms-of-use",
+    "status_page_url": null,
+    "headquarters": null,
+    "datacenters": []
   },
   {
     "name": "Alibaba",

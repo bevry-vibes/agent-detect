@@ -12,17 +12,20 @@ keys are per-channel **channel objects**: `from-identity` (required —
 the declared identification), `from-capture` (the live session's
 identification), and `from-capture-raw` (the live session's raw
 observations). Each `from-*` channel object carries `identify` (the
-17-field canonical object) plus `"trailer co-author"` and
+18-field canonical object) plus `"trailer co-author"` and
 `"trailer assisted-by"` (the two trailer variants, spawned from the
 real CLI — the old root `trailer`/`cooked`/`origin` keys are gone).
 `fixture_id` encodes `<harness>-<provider>-<model>` and is suffixed
 with `-<platform>` (e.g. `cline-clinepass-kimik3-darwin`). The binary
 is the only thing that writes fixtures — agents never hand-author them.
 
-`fixtures/.index.json` is the committed state store — its four tables
+`fixtures/.index.json` is the committed state store — its three tables
 (`fixtures` the known universe, `errors` the failure ledger, `queue`
-the filter-entry array, `free_provider_to_model` the free axis) and
-the row shapes are specified in DESIGN.md "index.json state store".
+the filter-entry array) are
+declared normatively in TypeScript at `fixtures/.index.d.ts` (the
+source of truth for structure — unset optionals are omitted, never
+serialized as `null`), with the semantics in DESIGN.md "index.json
+state store".
 Queue entries are **filter tuples** (dims, mode, at most one marker,
 the known/valid/successful/free axes) — only the daemon expands them
 into concrete candidates, one per poll.
@@ -109,7 +112,10 @@ unset):
   unsuccessful-class error entries (`--unsuccessful` is the designated
   catch vector for captures whose detection was partial: valid ids,
   last attempt failed). No probing happens anywhere.
-- `--free` / `--paid` — `free_provider_to_model` membership.
+- `--free` / `--paid` — membership in the free-models grid
+  `fixtures/.providers_freemodels.csv` (the source of truth for free
+  models, replacing the retired `free_provider_to_model` store table;
+  the zig store code reads this one grid at expansion time).
 
 Conflicts (exit 3): the XOR axis pairs, two age thresholds, two
 markers, and `--unknown` with any marker or a non-default
@@ -234,6 +240,33 @@ over web scripts.
 | copilot   | `brew install copilot-cli`                        | — (binaries: `copilot`)                                         | `scoop install copilot-cli` → `~\scoop\shims\copilot.exe`                                                     |
 | goose     | —                                                  | — (contributor-scope example)                               | `scoop install goose-cli` → `~\scoop\shims\goose.exe` (contributor-scope example)                             |
 
+### provider model discovery (three sources)
+
+When adding a new provider, enumerate its models from three sources
+and record the outcome in the reference grids (see "committed-store
+hygiene"):
+
+1. **Provider's own API** — OpenAI-compatible endpoints generally
+   expose `GET {base_url}/models` unauthenticated, e.g.
+   `curl -s https://llm.chutes.ai/v1/models | jq -r '.data[].id'`
+   (14 TEE-stamped ids) or
+   `curl -s https://opencode.ai/zen/go/v1/models | jq -r '.data[].id'`
+   (33 ids).
+2. **OpenRouter** — `GET /api/v1/models` (`hugging_face_id` +
+   `supported_parameters`), and for per-provider availability
+   `GET /api/v1/models/<id>/endpoints`, which lists the serving
+   providers of a model (e.g. `qwen/qwen3.8-27b` → Chutes, AkashML,
+   Phala, …).
+3. **Harness surface** — the harness's own provider/model commands
+   and config: `kimi provider list [--json]`, the
+   `[models."<provider>/<id>"]` sections of
+   `~/.kimi-code/config.toml`, `kimi provider catalog` (models.dev
+   registry import).
+
+Keep only models suitable for coding — the evergreen set's
+tool-calling constraint (`supported_parameters` contains `tools`) is
+the documented filter.
+
 ### probing scope + runbook
 
 The maintainer probes the free combos + the MiniMax subscription:
@@ -263,7 +296,13 @@ clears the evergreen model set (top 100 weekly models from OpenRouter's models A
 part of maintenance (no CI task; see DESIGN.md #13 for the dropped
 alternative sources). This does not apply
 retroactively to models already in the matrix, and it does not apply to
-an individual addition a user explicitly needs. Free-vs-paid only
+an individual addition a user explicitly needs. The gate is on
+additions only — a supported model is dropped when the harness or
+provider whose addition made it supported no longer offers it, never
+merely because it fell out of the evergreen set (someone is using
+agent-detect for the added dim). Observed-but-unadded ids (the
+non-evergreen remainder of a provider catalog) are recorded in
+`fixtures/.providers_models.csv`. Free-vs-paid only
 decides whether a free launch/capture is attached — query the
 harness's own model catalog first (e.g. omp's
 `~/.omp/agent/models.db` per-provider `cost`: input==0 → free);
@@ -290,6 +329,25 @@ curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
   | jq '.data' \
   > fixtures/.evergreen-providers.json
 ```
+
+(The authenticated calls above are canonical; an unauthenticated
+request returns the same public ranking when no key is available.)
+
+Three reference grids complement the snapshots. The two coverage
+grids are pure developer reference — committed, maintained by hand
+alongside each provider catalog enumeration (append the provider's
+row), and never sourced by the zig program:
+`fixtures/.providers_models.csv` (rows = provider alphanumeric ids,
+columns = model alphanumeric ids, cell = that provider's served
+model-id string or `-`) and `fixtures/.harnesses_providers.csv`
+(rows = harness ids, columns = provider ids, cell = the harness's
+provider-id string or `-`). The third is normative and read by the
+store code at expansion time: `fixtures/.providers_freemodels.csv` —
+the SOURCE OF TRUTH for free models (replacing the retired
+`free_provider_to_model` store table). It is SPARSE: rows only for
+providers with ≥1 free model, columns only for models that are free
+at some provider, cell = that provider's free model-id string, `-`
+otherwise.
 
 ### monitoring + control runbook
 
@@ -481,6 +539,7 @@ Their structs are `ModelRule` and `ProviderRule`.
 | `label`      | the canonical display label (e.g. `Kimi K3`)                                                                                    |
 | `short_title`| optional shorter brand form (e.g. `M3` for `MiniMax M3`); `null` when there's no established short form                       |
 | `reciprocity`| one of `open-source`, `open-weight`, or `closed`                                                                                |
+| `license`    | SPDX id of the model weights (`Apache-2.0`, `MIT`), `NOASSERTION` when a custom non-SPDX license exists, `NONE` for a verified closed model with no license granted, or `null` when unverified — same semantics as the harness license table. Emitted as `model_license` in the canonical output |
 | `sources`    | independent cross-references that informed the reciprocity decision — typically the HF model page + its LICENSE file           |
 | `variations` | optional extra alias display-strings not covered by `name`/`label`/`short_title` (default `&.{}`)                              |
 
@@ -500,6 +559,73 @@ Reciprocity and training values are *derived from public docs*, not
 guessed. If you can't verify a value, leave it `null` — a maintainer
 fills it in once verified.
 
+**Opt-in-by-model (hard rule).** A provider whose catalog includes
+models that train on user data — reachable only by *choosing* those
+models (contributor tiers, free-period tiers, and the like) — must
+NOT record `never` on the axis those models span: closed models that
+train → `closed_training` becomes at least `opt-in`; open-weight /
+open-source models that train → `open_training` becomes at least
+`opt-in`. Values already at `opt-out` or `enforced` capture training
+and need no change. `never` is reserved for providers where **no**
+served model trains. When cataloging a new provider, audit its
+`.providers_models.csv` row for tier spellings (`:free`, `-free`,
+`-contributor`, free-period exceptions named in its policy docs)
+before writing any `never` — this is exactly the slip that made
+OpenRouter's contributor tiers and OpenCode's free-period models
+first land as `never`.
+
+### model rule identity & family folding
+
+Rule identity is model version × param size × license, with naming by
+**official claim** and distinction by **discernment need**:
+
+- Name a model as the service officially names it. A distinction
+  (param size, `-pro`, template suffix) belongs in the id only where
+  it's needed to discern the model from a competing claim on the
+  non-distinct name. A version known officially as `blah-version`
+  keeps the plain id even where the line has other sizes (`qwen3.5` —
+  `Qwen/Qwen3.5` holds the bare name as an official claim); a version
+  released in multiple param sizes with no official (or competing)
+  claim on the non-distinct name gets one size-bearing rule per size
+  (`qwen3.8-27b`, `qwen3.8-2.4t-a95b` — both official spellings; bare
+  "Qwen3.8" is contested collection-level); a single-size release has
+  no contest, so its id omits the size (`nemotron-3-nano-omni`,
+  `minimax-m3`).
+- Provider serving spellings — secure-environment stamps (Chutes'
+  `-TEE` suffix), endpoint/tier variants (`-vision-exp`,
+  `-contributor`), release stamps (`-0731`, `-2507`), quantizations,
+  and `provider/model` namespaces — fold into the size's rule as
+  `variations`, and only for ids actually observed (never
+  speculative).
+- Never fold spellings that differ in `model_license` or param size;
+  `model_license` is emitted in the canonical output precisely so
+  the license dimension stays visible in every report.
+- Closed derivatives keep their own rules (`qwen3.8-max` is the
+  closed version based on the open `Qwen3.8-2.4T-A95B` — its own
+  rule, `license NONE`).
+- **Phantom-provider guard:** provider rules mirror provider SURFACES
+  the user configures (`minimax-code`, `deepseek-flash`, `kimi-code`,
+  `cline-pass` — a harness's own named entry, each with its own
+  policy surface). Never mint a provider rule whose name is a model
+  id: crush's hyper.json key `qwen3.7-plus/…` is hyper's internal
+  routing alias, and the real identity is `crush-hyper-qwen37plus`
+  (detector + rule comments carry the fold; the phantom
+  `qwen3.7-plus` provider rule was removed 2026-08-29). When a
+  harness's config nests models under a router, the router is the
+  provider.
+- Grandfathered splits retired 2026-08-29: `deepseek-v4-flash-free`
+  and `zai-glm-4.7` folded into their parents as tier/prefix
+  spellings (option B of
+  `.plans/1787978000867-retroactive-folding-options.md`); no
+  same-model split remains, and the non-retroactivity clause covers
+  everything else.
+- Hugging Face collections bound families: `qwen38` and
+  `qwen38-flash-next` are distinct families despite the shared name
+  prefix. See a family via the collection page,
+  `GET https://huggingface.co/api/collections/<owner>/<slug>` (the
+  `.items` array), a card's "Model tree" link, or
+  `GET /api/models?author=<org>&search=<name>`.
+
 ### alias conventions (harness / provider / model rules)
 
 Every rule's CLI alias set is `name` + `label` + `short_title` (if
@@ -515,6 +641,10 @@ then first-rule-in-array-order over the normalized alias set. Add
 A slug that would match two rules in the same table fails the
 alias-uniqueness test — keep every rule's alias set globally distinct
 within its table (same-name labels across *different* tables are fine).
+Provider-served id forms carrying a serving-environment suffix (e.g.
+Chutes' TEE-stamped `Kimi-K3-TEE` / `moonshotai/Kimi-K3-TEE`) are
+recorded as `variations` on the base model rule when observed —
+never trimmed programmatically, never added speculatively.
 
 ## cut a release
 
@@ -623,3 +753,18 @@ configured `[[providers]]`, currently deepseek-flash); **goose**,
 **mmx**, **vibe** are **not inferable** (no enumerable local model
 catalog — goose is local-inference only, mmx is oauth-only, vibe
 exposes only `active_model`).
+
+Provider catalog verdicts (2026-08-29, kimi-code host): **chutes** is
+inferable from all three sources (provider API unauthenticated = 14
+TEE-stamped ids, agreeing with the kimi-code config surface and
+OpenRouter's `…/endpoints` listing); the two non-evergreen ids
+(`Qwen/Qwen3-32B-TEE`, `Qwen/Qwen3.6-27B-TEE`) are grid-recorded, not
+ruled. **opencode-go** (OpenCode Zen's Go subscription,
+`https://opencode.ai/zen/go/v1`) is inferable from its unauthenticated
+`/v1/models` (33 ids); the evergreen subset got rules, the
+non-evergreen remainder (`longcat-2.0`, `qwen3.7-max`,
+`qwen3.6-plus`, `qwen3.5-plus`, `mimo-v2-pro`, `mimo-v2-omni`,
+`hy3-preview`) is grid-recorded. The live-combo alias
+`qwen3.8-flash` has its own rule with reciprocity/license `null`
+pending a backing audit (no `Qwen/Qwen3.8-Flash` HF repo; the 3.8
+flash open line is the separate `qwen38-flash-next` collection).

@@ -64,7 +64,7 @@ platform's committed files. Each platform has its own
 per-channel objects:
 
 - `from-identity` (required) — the declared identification channel:
-  `identify` (the 17-field canonical object: `harness_id`,
+  `identify` (the 18-field canonical object: `harness_id`,
   `provider_id`, `model_id`, `agent_id`, policy fields, no `trailer`)
   plus `"trailer co-author"` and `"trailer assisted-by"`.
 - `from-capture` — the live session's identification channel (same
@@ -107,28 +107,36 @@ A reader can instantly see what a fixture claims without scanning the
 ### index.json state store (cross-process coordination)
 
 The store is a single committed JSON document, `fixtures/.index.json`,
-with **four tables**:
+with **three tables** (`fixtures` the known universe, `errors` the
+failure ledger, `queue` the filter-entry array; the free axis is
+declared by `fixtures/.providers_freemodels.csv`, not the store). The
+normative shapes — field
+names, types, key formats, optionality — are declared in TypeScript at
+**`fixtures/.index.d.ts`**: the schema file is the source of truth for
+structure and this section documents only the semantics. (The zig
+program never imports TypeScript; the schema exists so the docs stop
+re-describing the shape in prose.) **Null-as-absent:** unset optional
+fields are omitted from the store entirely — never serialized as
+`null` — and the schema's `?:` optionality is exactly that contract
+(readers treat a missing field as unset).
 
-- `fixtures` — the known universe: one object per 4-tuple
+- `fixtures` — the known universe: one row per 4-tuple
   `(harness, provider, model, platform)`, keyed by the dash-joined
   fixture id (== the fixture filename stem; dims are never repeated
-  inside the row). The row is self-contained: `runner` and
-  `agent_detect_version` (the capturing binary's version),
-  `identity`/`capture` — the per-channel ledgers (`declared_at` /
-  `captured_at` channel dates + `channel_hash` = BLAKE3 of the whole
-  channel object as written into the fixture file;
-  `capture.harness_version` is the version captured by a live
-  `version_launch` probe) — `fixture_hash` (BLAKE3 of the whole fixture
-  file, stamped by every file writer), and the curated
-  `prompt_launch`/`version_launch` argv (concrete per-platform binaries;
-  absent ⇒ from-identity-only row / version probe fails closed). There
-  is **no row-level timestamp** — age checks are mode-scoped on the
-  channel dates, and there are **no `available`/`successful` markers**
-  — failures live in `errors`. Written by `fixtures capture`, the
-  daemon's identity worker, and the `--stale-by-missing-entry`
-  registration pass.
-- `errors` — the failure ledger, keyed by dash-joined dims tuples with
-  the literal `null` for each unknown dim (`cline-null-null-windows`;
+  inside the row). A row's `identity`/`capture` ledgers date the
+  channels and carry `channel_hash` = BLAKE3 of the whole channel
+  object as written into the fixture file; `capture.harness_version`
+  is the version a live `version_launch` probe reported, and
+  `agent_detect_version` is the capturing binary's version. There is
+  **no row-level timestamp** — age checks are mode-scoped on the
+  channel dates, and there are **no `available`/`successful`
+  markers** — failures live in `errors`. An absent `version_launch`
+  means the version probe fails closed; absent launch argv marks a
+  from-identity-only row. Written by `fixtures capture`, the daemon's
+  identity worker, and the `--stale-by-missing-entry` registration
+  pass.
+- `errors` — the failure ledger keyed by dash-joined dims with the
+  literal `null` for each unknown dim (`cline-null-null-windows`;
   all-unknown entries share `null-null-null-null`). The value is
   `{ "reason", "failed_at" }` from a closed reason set partitioned by
   class: `unsuccessful` ("capture failed", "unavailable",
@@ -140,17 +148,22 @@ with **four tables**:
   outcome signal). `failed_at` is the completion timestamp the pop
   protocol and the filter axes compare against.
 - `queue` — the work **queue**: an array of **filter entries**, never
-  concrete work items (only the daemon expands). Each entry carries the
-  nullable dims, `mode` (`from-identity` | `from-capture`), the seven
-  flat marker fields (at most one set), the `known`/`valid`/
-  `successful`/`free` nullable affirmative booleans (null = unset; the
-  daemon applies defaults at expansion: known=true, valid=true,
-  successful/free unset), `runner`, and `started_at` — stamped by the
-  daemon on first work of the entry, the pop protocol's comparison
-  anchor. There is **no `finished_at`**: fully-satisfied entries are
+  concrete work items (only the daemon expands). Semantics: at most
+  one `stale_by_*` marker set; the `known`/`valid`/`successful`/`free`
+  axes are affirmative booleans whose absent state takes the
+  expansion defaults (known=true, valid=true, successful/free
+  unset); `started_at` is stamped by the daemon on the entry's first
+  work and anchors the pop protocol's done rule. There is **no
+  `finished_at`**: fully-satisfied entries are
   purged (deleted — the fixtures/errors ledger is the sweep record).
-- `free_provider_to_model` — provider slug → [canonical model slugs],
-  the data behind the `free` filter axis.
+- The free axis lives in **`fixtures/.providers_freemodels.csv`** — a
+  sparse provider×model grid (rows only for providers with ≥1 free
+  model, columns only for models free somewhere, cell = the
+  provider's free model-id or `-`). It is the source of truth for
+  free models: the zig store code reads it at expansion time (the
+  one grid it does read — the other two stay pure dev reference), and
+  the retired `free_provider_to_model` store table is dropped on load
+  and never re-serialized.
 
 Writers take an exclusive lock on `fixtures/.index.json.lock` (a
 gitignored lock file; kernel locks release on exit/crash — no
@@ -162,7 +175,7 @@ write/rename failure → exit 13.
 
 Idempotency on `queue` is by tuple: a queue-command re-assert of an
 existing (dims, mode, markers, axes) tuple replaces the entry in place
-and resets `started_at` to null (a fresh sweep); the daemon's own
+and resets `started_at` to absent (a fresh sweep); the daemon's own
 writes preserve it.
 
 The **pop protocol** (the daemon's per-poll expansion):
@@ -224,7 +237,7 @@ valid=true, successful=unset, free=unset**.
 - **`free`** filters candidates by the free table:
   - null (default): no filter.
   - true (`--free`): only candidates whose (provider, model) is listed
-    in `free_provider_to_model`.
+    (non-`-` cell) in `fixtures/.providers_freemodels.csv`.
   - false (`--paid`): only candidates whose (provider, model) is NOT
     listed. Unlike the marker fields, free-ness is derivable for
     generated combos too (dims are known from the cross-product), so
@@ -324,7 +337,7 @@ reflects the recipe (up to all three dims).
   single-line error
   and writes no fixture. A partial detection is bad data, not a
   placeholder. The test suite (`src/known_fixtures.test.zig`)
-  enforces the 17-field identify contract (and that every committed
+  enforces the 18-field identify contract (and that every committed
   fixture carries a `from-identity` channel), so a "backfill to make
   tests pass" approach can't slip in.
 
@@ -431,8 +444,9 @@ names the shipped behavior and why it was chosen.
    git-friendly, hand-editable storage with zero new dependencies in
    the released binary — and zero runtime dependencies in the
    `fixtures` workflow either. Curated data (the per-platform
-   `prompt_launch`/`version_launch` argv, the
-   `free_provider_to_model` table) lives in the store, not in Zig.
+   `prompt_launch`/`version_launch` argv) lives in the store, not in
+   Zig; the free axis lives in its own grid CSV
+   (`fixtures/.providers_freemodels.csv`).
 4. **Kilo live-DB fallback.** Live identity inference falls back
    env marker → `KILO_MODEL` → a direct read of the live
    `~/.local/share/kilo/kilo.db`. The *active* session is the
@@ -458,7 +472,7 @@ names the shipped behavior and why it was chosen.
    (comptime-gated) in `src/dev/dev.zig` drops that code at
     compile time. Released actions: `identify`, `trailer co-author`,
     `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
-9. **The 17-field canonical identify contract.** Test-enforced
+9. **The 18-field canonical identify contract.** Test-enforced
    (see `src/known_fixtures.test.zig`); the raw block is shapeless
    (source-grouped keys, embedded as the `from-capture-raw` channel),
    and harness rule *static* data
@@ -485,6 +499,12 @@ names the shipped behavior and why it was chosen.
      new model — paid or free, on any provider — must clear the coalesced
      evergreen model set (top 100 weekly models from OpenRouter's models
      API, filtered to models that support tool calling: `supported_parameters` contains `tools`).
+     The gate is on additions only — a supported model is dropped when the
+     harness or provider whose addition made it supported no longer offers
+     it, never merely because it fell out of the set (an added dim is
+     something someone is using agent-detect for). Observed-but-unadded
+     provider catalog ids are recorded in the
+     `fixtures/.providers_models.csv` reference grid.
      The tracked set is regenerated from OpenRouter alone (one
      authenticated call, see below) as part of maintenance; it is not
      maintained by hand and there is no CI task for it.
@@ -519,6 +539,13 @@ names the shipped behavior and why it was chosen.
      `:free` vs `-free` vs `-0731` stamps) are coalesced into one
      canonical model per family, and the service-specific spellings are
      recorded as variations on the recipe, never added as duplicates.
+     Provider serving-environment stamps (Chutes' TEE suffix) and
+     endpoint/tier variants fold the same way; folding never crosses
+     `model_license` or param-size differences, and ids carry a size
+     distinction only where competing claims on the non-distinct name
+     make it necessary to discern the model (official-claim naming;
+     `model_license`, the 18th canonical field, keeps the license
+     dimension explicit in every report).
      The tracked set is a direct snapshot of OpenRouter's own ranking —
      the raw `data` array of
      `GET /api/v1/models?sort=top-weekly&limit=100`, jq-filtered to

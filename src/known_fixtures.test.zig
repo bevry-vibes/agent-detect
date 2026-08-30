@@ -63,7 +63,7 @@ fn blake3Hex(a: std.mem.Allocator, bytes: []const u8) ![]u8 {
     return a.dupe(u8, &std.fmt.bytesToHex(digest, .lower));
 }
 
-/// The 17 canonical `identify` fields, in emission order. No `trailer`
+/// The 18 canonical `identify` fields, in emission order. No `trailer`
 /// key (the root trailer and the cooked trailer are gone).
 const identify_keys = [_][]const u8{
     "harness_label", // harness group
@@ -81,6 +81,7 @@ const identify_keys = [_][]const u8{
     "model_name",
     "model_id",
     "model_reciprocity",
+    "model_license",
     "agent_id", // composed from harness+provider+model
     "reciprocal", // policy / output
 };
@@ -188,7 +189,7 @@ test "fixtures: envelope shape — top-level keys ⊆ {from-identity, from-captu
     try testing.expect(new_shape >= 1);
 }
 
-test "fixtures: identify has all 17 grouped keys in emission order, no trailer key" {
+test "fixtures: identify has all 18 grouped keys in emission order, no trailer key" {
     const stems = try discoverStems(testing.allocator);
     defer {
         for (stems) |s| testing.allocator.free(s);
@@ -315,11 +316,16 @@ test "fixtures: from-capture-raw.process_lineage entries are subobjects with pid
 
 test "fixtures: from-capture-raw matches the dev-raw schema — exactly the raw output keys" {
     // The `from-capture-raw` channel is the dev `raw` output verbatim:
-    // platform_id, detectable, detected, process_lineage, *-urls,
-    // evidence. No env/file objects; secret env evidence is `<redacted>`.
+    // platform_id, harness_version (DESIGN: headed by platform_id, then
+    // the live version snapshot), detectable, detected, process_lineage,
+    // *-urls, evidence. No env/file objects; secret env evidence is
+    // `<redacted>`. Pre-keyset-growth fixtures may carry fewer keys —
+    // the check is "no unexpected keys", and the queued regen sweeps
+    // bring older files up to the full set.
     const fixed_keys = [_][]const u8{
-        "platform_id",  "detectable",    "detected",   "process_lineage",
-        "harness-urls", "provider-urls", "model-urls", "evidence",
+        "platform_id",  "harness_version", "detectable",    "detected",
+        "process_lineage", "harness-urls", "provider-urls", "model-urls",
+        "evidence",
     };
     const stems = try discoverStems(testing.allocator);
     defer {
@@ -709,7 +715,7 @@ test "index.json: fixture keys split 4-way; dims resolve to rules; every harness
     // yet (a provider alias/mirror, or a model registered for detection
     // without a curated launch). The guard still fires for any NEW rule
     // that lands without rows; these are the pre-existing exemptions.
-    const rule_only_providers = [_][]const u8{ "cline", "google", "moonshot", "qwen3.7-plus" };
+    const rule_only_providers = [_][]const u8{ "cline", "google", "moonshot" };
     const rule_only_models = [_][]const u8{
         "claude-haiku-4", "claude-opus-4", "devstral-2", "gemini-3.1-pro",
         "glm-4.6",        "gpt-5.5",       "grok-3-mini", "qwen3.5",
@@ -828,6 +834,7 @@ test "index.json: channel_hash equals the BLAKE3 of the whole channel object in 
             const path = try std.fmt.allocPrint(testing.allocator, "fixtures/{s}.json", .{key});
             defer testing.allocator.free(path);
             const file_bytes = std.Io.Dir.cwd().readFileAlloc(std.testing.io, path, testing.allocator, @enumFromInt(1 << 24)) catch continue;
+            defer testing.allocator.free(file_bytes);
             const file_parsed = std.json.parseFromSlice(std.json.Value, testing.allocator, file_bytes, .{}) catch continue;
             defer file_parsed.deinit();
             if (file_parsed.value != .object) continue;
@@ -845,54 +852,115 @@ test "index.json: channel_hash equals the BLAKE3 of the whole channel object in 
     }
 }
 
-/// is `(provider, model)` (strict slugs) listed in the free table?
-fn isListed(free_map: std.json.ObjectMap, provider: []const u8, model: []const u8) bool {
-    const arr = free_map.get(provider) orelse return false;
-    if (arr != .array) return false;
-    for (arr.array.items) |item| {
-        if (item == .string and std.mem.eql(u8, item.string, model)) return true;
+/// Minimal parse of the free-grid CSV: header model slugs + (provider,
+/// cells) rows. Cells are `-` or the provider's free model-id; ids
+/// contain no commas, so naive splitting is sufficient.
+const FreeGridFile = struct {
+    cols: []const []const u8,
+    providers: []const []const u8,
+    cells: []const []const []const u8,
+};
+
+fn parseFreeGrid(a: std.mem.Allocator, data: []const u8) !FreeGridFile {
+    var lines = std.mem.tokenizeScalar(u8, data, '\n');
+    var cols: std.ArrayList([]const u8) = .empty;
+    var providers: std.ArrayList([]const u8) = .empty;
+    var cells: std.ArrayList([]const []const u8) = .empty;
+    const header = lines.next() orelse return error.InvalidFreeGrid;
+    var hc = std.mem.tokenizeScalar(u8, header, ',');
+    _ = hc.next(); // the "provider" label cell
+    while (hc.next()) |c| try cols.append(a, std.mem.trim(u8, c, " \r\t"));
+    while (lines.next()) |line| {
+        var rc = std.mem.tokenizeScalar(u8, line, ',');
+        const p = rc.next() orelse continue;
+        try providers.append(a, std.mem.trim(u8, p, " \r\t"));
+        var row: std.ArrayList([]const u8) = .empty;
+        while (rc.next()) |c| try row.append(a, std.mem.trim(u8, c, " \r\t"));
+        if (row.items.len != cols.items.len) return error.InvalidFreeGrid;
+        try cells.append(a, row.items);
+    }
+    return .{ .cols = cols.items, .providers = providers.items, .cells = cells.items };
+}
+
+fn freeGridListed(grid: FreeGridFile, provider: []const u8, model: []const u8) bool {
+    for (grid.providers, grid.cells) |p, row| {
+        if (!std.mem.eql(u8, p, provider)) continue;
+        for (row, grid.cols) |cell, col| {
+            if (std.mem.eql(u8, col, model) and cell.len > 0 and !std.mem.eql(u8, cell, "-")) return true;
+        }
     }
     return false;
 }
 
-test "index.json: free_provider_to_model entries resolve to known rules; listed rows carry a free-signal in their launch model spec" {
-    // The free table maps provider slugs → model slugs. Every entry must
-    // resolve to a known provider+model rule, and every row whose
-    // (provider, model) is listed must carry a free signal (`:free`,
-    // `-free`, `free/`) in its prompt_launch model spec — rows whose
-    // launch implies the model via harness config (no model-spec arg at
-    // all) are exempt.
-    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
-    defer parsed.deinit();
-    if (parsed.value != .object) return;
-    const free = parsed.value.object.get("free_provider_to_model") orelse return;
-    if (free != .object) return;
+fn freeCell(cell: []const u8) bool {
+    return cell.len > 0 and !std.mem.eql(u8, cell, "-");
+}
 
-    var fit = free.object.iterator();
-    while (fit.next()) |kv| {
-        const provider = kv.key_ptr.*;
+test "providers_freemodels.csv: free-grid entries resolve to known rules, stay sparse, and listed rows carry a free-signal in their launch model spec" {
+    // The grid is the free-axis source of truth (replacing the legacy
+    // free_provider_to_model store table): rows only for providers with
+    // ≥1 free model, columns only for models free somewhere, cells the
+    // provider's free model-id or `-`. Every listed (provider, model)
+    // row in the store must carry a free signal (`:free`, `-free`,
+    // `free/`) in its prompt_launch model spec — rows whose launch
+    // implies the model via harness config are exempt.
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const data = std.Io.Dir.cwd().readFileAlloc(std.testing.io, "fixtures/.providers_freemodels.csv", a, @enumFromInt(1 << 20)) catch {
+        std.debug.print("fixtures/.providers_freemodels.csv is missing — it is the free-axis source of truth\n", .{});
+        return error.MissingFreeGrid;
+    };
+    const grid = try parseFreeGrid(a, data);
+    if (grid.cols.len == 0 or grid.providers.len == 0) return error.InvalidFreeGrid;
+
+    for (grid.cols) |col| {
+        var m_ok = false;
+        for (main.rulesForModels) |rr| {
+            if (slugifyMatches(rr.name, col)) m_ok = true;
+        }
+        if (!m_ok) {
+            std.debug.print("free grid column {s} resolves to no model rule\n", .{col});
+            return error.UnknownFreeModel;
+        }
+    }
+    for (grid.providers, 0..) |p, ri| {
         var p_ok = false;
         for (main.rulesForProviders) |rr| {
-            if (slugifyMatches(rr.name, provider)) p_ok = true;
+            if (slugifyMatches(rr.name, p)) p_ok = true;
         }
         if (!p_ok) {
-            std.debug.print("free_provider_to_model provider {s} resolves to no rule\n", .{provider});
+            std.debug.print("free grid provider {s} resolves to no rule\n", .{p});
             return error.UnknownFreeProvider;
         }
-        if (kv.value_ptr.* != .array) return error.InvalidFreeTable;
-        for (kv.value_ptr.array.items) |item| {
-            if (item != .string) return error.InvalidFreeTable;
-            var m_ok = false;
-            for (main.rulesForModels) |rr| {
-                if (slugifyMatches(rr.name, item.string)) m_ok = true;
-            }
-            if (!m_ok) {
-                std.debug.print("free_provider_to_model model {s}/{s} resolves to no rule\n", .{ provider, item.string });
-                return error.UnknownFreeModel;
-            }
+        var any = false;
+        for (grid.cells[ri]) |cell| {
+            if (freeCell(cell)) any = true;
+        }
+        if (!any) {
+            std.debug.print("free grid row {s} has no free model — sparse grid violation\n", .{p});
+            return error.NonSparseFreeRow;
+        }
+    }
+    for (grid.cols, 0..) |col, ci| {
+        var any = false;
+        for (grid.cells) |row| {
+            if (freeCell(row[ci])) any = true;
+        }
+        if (!any) {
+            std.debug.print("free grid column {s} has no free provider — sparse grid violation\n", .{col});
+            return error.NonSparseFreeColumn;
         }
     }
 
+    const parsed = (try readIndexParsed(testing.allocator)) orelse return;
+    defer parsed.deinit();
+    if (parsed.value != .object) return;
+    // the store must no longer carry the legacy table
+    if (parsed.value.object.get("free_provider_to_model") != null) {
+        std.debug.print("index.json still carries free_provider_to_model — the CSV is the source of truth\n", .{});
+        return error.LegacyFreeTablePresent;
+    }
     const fixtures = parsed.value.object.get("fixtures") orelse return;
     if (fixtures != .object) return;
     var it = fixtures.object.iterator();
@@ -901,7 +969,7 @@ test "index.json: free_provider_to_model entries resolve to known rules; listed 
         const parts = (split4(key)) orelse continue;
         if (kv.value_ptr.* != .object) continue;
         const o = kv.value_ptr.object;
-        if (!isListed(free.object, parts[1], parts[2])) continue;
+        if (!freeGridListed(grid, parts[1], parts[2])) continue;
         const launch_v = o.get("prompt_launch") orelse continue;
         if (launch_v != .array) continue;
         var has_model_spec = false;
@@ -930,8 +998,10 @@ test "index.json: free_provider_to_model entries resolve to known rules; listed 
 
 test "index.json: queue entries match their field invariants" {
     // mode ∈ {from-identity, from-capture}; at most one flat marker;
-    // markers true|null; stale_by_minutes ≥ 1 when set; the axes are
-    // nullable booleans (null | false | true).
+    // markers true|absent; stale_by_minutes ≥ 1 when set; the axes are
+    // optional booleans (absent — null-as-absent per
+    // fixtures/.index.d.ts — | false | true; a literal null is read as
+    // absent for legacy files).
     const parsed = (try readIndexParsed(testing.allocator)) orelse return;
     defer parsed.deinit();
     if (parsed.value != .object) return;
@@ -961,11 +1031,12 @@ test "index.json: queue entries match their field invariants" {
                 // unset — fine
             } else return error.InvalidQueueMarker;
         }
-        const mins = o.get("stale_by_minutes") orelse return error.InvalidQueueEntry;
-        if (mins == .integer) {
-            if (mins.integer < 1) return error.InvalidQueueMarker;
-            marker_count += 1;
-        } else if (mins != .null) return error.InvalidQueueMarker;
+        if (o.get("stale_by_minutes")) |mins| {
+            if (mins == .integer) {
+                if (mins.integer < 1) return error.InvalidQueueMarker;
+                marker_count += 1;
+            } else if (mins != .null) return error.InvalidQueueMarker;
+        }
         if (marker_count > 1) return error.TooManyMarkers;
         for ([_][]const u8{ "known", "valid", "successful", "free" }) |axis| {
             const v = o.get(axis) orelse continue;

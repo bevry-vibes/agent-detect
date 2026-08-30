@@ -88,6 +88,10 @@ pub fn buildTrailerLine(a: std.mem.Allocator, d: *const Detection, keyword: []co
     return core.buildTrailerLine(a, d, keyword);
 }
 
+pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_input: []const u8) !void {
+    return core.applyModel(a, d, name, raw_input);
+}
+
 pub fn modelFromMessageData(a: std.mem.Allocator, data: []const u8) !?core.ActiveSessionModel {
     return core.modelFromMessageData(a, data);
 }
