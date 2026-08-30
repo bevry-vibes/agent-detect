@@ -49,3 +49,25 @@ and no timestamps were fabricated.
 11. > Inside `fixtures` keep a `.provider_models.csv` and `.harness_providers.csv` with cells with the provider model-id and the harness provider id as the cells (or a dash if no data), so rows are our alphanumeric id of the harness or provider, and the columns our alphanumeric id of the provider or model. This will make it easier for us to see what providers have what. This is merely a developer reference file similar to the evergreen files, it should not be sourced by our zig program.
 
 12. > Actually all them `.providers_models.csv`, and `.harnesses_providers.csv`
+
+## Post-approval steers (executed directly, logged here)
+
+13. > Note that the OpenRouter API ... contributor tiers ... opencode free models ... these should not be "never" values but "opt-in" values — this must be noted as a harder rule ... (opt-in-by-model: closed trainers flip closed_training, open trainers flip open_training; opt-out/enforced unchanged)
+
+    → `openrouter` open_training never→opt-in; `opencode-go` opt-in/opt-in; hard rule in CONTRIBUTING.
+14. > Are there any known model rules/ids that would be affected by the folding rules, if we retroactively applied them?
+
+    → audit; proposal `.plans/1787978000867-retroactive-folding-options.md`.
+15. > Give me an expanded plan on the options and their wins/gains and their losses/effects.
+16. > B is good. I don't understand C and D. Do B then go into more details about C and D ...
+
+    → B executed (rules folded, store migrated, free-table remapped, grids regenerated). C/D explained; decision pending.
+17. > Furthermore, `.index.json` needs a typescript schema defined (even though zig doesn't use typescript). The docs can then reference the typescript schema as the source of truth, rather than using written words to describe the schema. Furthermore, in `.index.json` fields with `null` values can be omitted, as they cause too much bloat to the output.
+
+    → `fixtures/.index.d.ts` written as the normative structure; DESIGN state-store section now semantics-only pointing at it; `queueEntryValue` switched to null-as-absent; store normalized (8,105 nulls removed, 534KB→283KB); queue-invariants test updated to treat absent as unset.
+18. > Add `.providers_freemodels.csv` where the rows are the providers, the columns are our alphanumeric model ids, and the cells are the provider's model id - only have rows and columns for when there is a free model id. This will be the source of truth for free models instead of `.index.json:free_provider_to_model`
+
+    → `fixtures/.providers_freemodels.csv` created (4 providers × 10 free-capable models, provider-native free spellings); `FreeGrid` loader replaces the store table in dev.zig (expansion reads it; `indexLoad` drops the legacy table); store migrated (table removed → three tables); `.index.d.ts`, DESIGN, CONTRIBUTING, dev help text, and both test suites updated (free-grid test asserts rule resolution, sparsity, launch free-signals, and absence of the legacy table).
+19. > "...this is wrong on our part, the provider there is hyper, it should be `crush-hyper-qwen37plus`... Check other harness provider combos for such a discrepancy. Re C. I don't know what you mean, if you are talking about the queue, you are overthinking it. The queue does not need ids checked/modified. IDs are popped at runtime, and if they are invalid or variations, then those are known cases then. RE D. The paramater size should not necessarily be a hard rule, but a rule in combination with the other factors. So if the model is primarily known as blah-version then we don't need blah-version-param distinction in its name, any distinction is only important if the distinction is necessary to discern it from a non-distinct name - e.g. if the model is released with multiple param sizes or other distinctions, and none of them have official claim nor competing claims on the non-distinct model name. If there is any competing claim on the official name, then we hard rule we need the distinction of param, etc."
+
+    → Phantom `qwen3.7-plus` provider rule removed (audit: it was the only provider rule whose name is a model id; minimax-code/deepseek-flash/kimi-code/cline-pass are genuine configured surfaces and stay); `detectCrush` folds model-id-as-hyper-key to `hyper`; `applyProviderMeta` folds provider spellings via `canonicalIdFor`; C voided (the orphan rules are test-exempted; no queue curation); D rewritten as official-claim naming with distinction-only-when-contested (CONTRIBUTING + DESIGN #13 + rule comments).

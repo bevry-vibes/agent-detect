@@ -3,7 +3,21 @@ Assisted-by: Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>
 
 # Retroactive folding — options and trade-offs
 
-Status: proposal awaiting a decision. Companion to
+Status: **decided** — B taken and executed 2026-08-29. C: VOID —
+the orphan rules are already exempted by name in the contract test's
+`rule_only_*` lists, so there is no latent-red treadmill; per the
+user, no queue-id curation is needed (filter tuples expand and pop at
+runtime; invalid/variation candidates are known cases). D: resolved
+with a refined doctrine — naming by OFFICIAL CLAIM; distinctions
+(param size etc.) are added only where competing claims on the
+non-distinct name make them necessary (CONTRIBUTING "model rule
+identity & family folding", DESIGN #13). Additionally executed: the
+phantom `qwen3.7-plus` PROVIDER rule (a model id masquerading as a
+provider — crush's real provider is hyper, and `crush-hyper-
+qwen37plus` rows already exist) was removed, `detectCrush` now folds
+model-id-as-hyper-key to `hyper`, and `applyProviderMeta` folds
+provider spellings through `canonicalIdFor` (symmetric with models).
+Related:
 [1787972028734-chutes-opencodego-model-license.md](./1787972028734-chutes-opencodego-model-license.md),
 which shipped the forward-looking folding policy; this document asks
 what, if anything, to retrofit.
