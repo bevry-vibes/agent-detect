@@ -3103,7 +3103,12 @@
       "copilot-githubcopilot-claudesonnet5-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gemini25pro-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gpt52-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
-      "copilot-githubcopilot-grok45-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n"
+      "copilot-githubcopilot-grok45-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
+      "crush-deepseek-deepseekv4flash-darwin": "post-check mismatch",
+      "crush-hyper-deepseekv4flash-darwin": "post-check mismatch",
+      "crush-hyper-deepseekv4pro-darwin": "post-check mismatch",
+      "crush-hyper-glm52-darwin": "post-check mismatch",
+      "crush-hyper-kimik25-darwin": "post-check mismatch"
     }
   },
   "invocations": {
@@ -3267,10 +3272,10 @@
       "prompt_invocation": [
         "copilot",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "claude-sonnet-5",
-        "<prompt>"
+        "claude-sonnet-5"
       ],
       "version_invocation": [
         "copilot",
@@ -3281,10 +3286,10 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "claude-sonnet-5",
-        "<prompt>"
+        "claude-sonnet-5"
       ],
       "version_invocation": [
         "copilot.exe",
@@ -3295,10 +3300,10 @@
       "prompt_invocation": [
         "copilot",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "gemini-2.5-pro",
-        "<prompt>"
+        "gemini-2.5-pro"
       ],
       "version_invocation": [
         "copilot",
@@ -3309,10 +3314,10 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "gemini-2.5-pro",
-        "<prompt>"
+        "gemini-2.5-pro"
       ],
       "version_invocation": [
         "copilot.exe",
@@ -3323,10 +3328,10 @@
       "prompt_invocation": [
         "copilot",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "gpt-5.2",
-        "<prompt>"
+        "gpt-5.2"
       ],
       "version_invocation": [
         "copilot",
@@ -3337,10 +3342,10 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "gpt-5.2",
-        "<prompt>"
+        "gpt-5.2"
       ],
       "version_invocation": [
         "copilot.exe",
@@ -3351,10 +3356,10 @@
       "prompt_invocation": [
         "copilot",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "grok-4.5",
-        "<prompt>"
+        "grok-4.5"
       ],
       "version_invocation": [
         "copilot",
@@ -3365,10 +3370,10 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
+        "<prompt>",
         "--allow-all",
         "--model",
-        "grok-4.5",
-        "<prompt>"
+        "grok-4.5"
       ],
       "version_invocation": [
         "copilot.exe",
