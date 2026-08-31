@@ -92,3 +92,7 @@ Prompts verbatim, in order, untruncated.
 22.
 
 > unknown_agents should be unknown_harnesses
+
+23.
+
+> we lost lot errors for general failures that can be retried, so known_but_failed["dim"]: "stderr or whatever"

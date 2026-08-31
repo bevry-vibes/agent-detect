@@ -313,13 +313,42 @@ queue:
 - Items still unresolvable / still argv-less stay in the backlog;
   the repair pop logs them.
 
+**known_but_failed** (second store table — retryable operational
+failures, distinct from the backlog's structural items):
+
+```jsonc
+"known_but_failed": {
+  "pi-chutes-kimik3-darwin": {
+    "from-capture": { "at": 1788143986, "detail": "<redacted stderr tail>" }
+  }
+}
+```
+
+- Keyed by fixture id ("dim"), sub-keyed by mode — identity and
+  capture failures are independent claims (the old ledger's mode
+  conflation, not repeated). `detail` is the failure output (stderr
+  tail or the worker's diagnostic), truncated and redacted (home
+  paths, key-shaped strings) before it touches the committed store.
+- Written by the workers on operational failure: capture exit != 0,
+  unavailable (version probe), post-check mismatch. Last-failure-
+  wins per mode; removed on that mode's success (the fixture file is
+  the success memory, this is the failure memory).
+- Retry gating: a known_but_failed candidate is skipped by default
+  sweeps, and ages back in when its `at` crosses the staleness
+  horizon (the same days=27 default — the failure timestamp acts as
+  the completion timestamp, exactly like the old `failed_at`).
+  `--repair` pops them immediately: upsert a `--fixture=<id>` entry
+  for the failed mode; a repeat failure overwrites `at` + `detail`,
+  a success removes the entry.
+
 **Done rule / failure memory** (errors ledger fully dropped):
 completion timestamp = the mode's success `meta.updated_at`, else
-this daemon session already failed it (in-memory damping — one
-attempt per candidate per daemon run), else it is a candidate.
-Failures persist only in `.daemon.log` for the dev agent to discern;
-the targeted retry workflow is a dims-filtered `--refresh` re-queue,
-not a ledger query.
+the mode's `known_but_failed.at`, else this daemon session already
+failed it (in-memory damping — one attempt per candidate per daemon
+run), else it is a candidate. Failures persist as
+`known_but_failed` rows plus `.daemon.log` for the dev agent to
+discern; the targeted retry workflow is `--repair` (immediate) or
+staleness age-out (automatic), not a ledger query.
 
 **`fixtures status`** (new dev action): the derived snapshot — counts
 and ids per backlog set, feasible-unfixtured totals, stale/fresh
@@ -358,8 +387,9 @@ on dequeue matches criteria-less entries.
   `capturePathFor` path helpers; identify deep-compare
   (`identifyEqual` — canonical stringify + mem.eql); the backlog
   table accessors (idempotent union/remove of unique slugs);
-  `runFixturesStatus` (the derived snapshot action); grid readers
-  for feasibility (`.providers_models.csv`,
+  `known_but_failed` accessors (mode-scoped put/age/purge, detail
+  truncation + redaction); `runFixturesStatus` (the derived snapshot
+  action); grid readers for feasibility (`.providers_models.csv`,
   `.harnesses_providers.csv` — the reference grids become
   zig-read); `--repair` backlog-pop logic on the queue action.
 - Changed: candidate expansion becomes one universe — resolvable
@@ -372,10 +402,11 @@ on dequeue matches criteria-less entries.
   (`runFixturesCapture`) and the daemon's identity worker write
   their whole file atomically per §3c's meta-preservation rule;
   the daemon gains session-scoped failure damping (in-memory, one
-  attempt per candidate per run) replacing the errors-ledger done
-  rule; `INDEX_STORE_VERSION` → 2 with load-time drop of the legacy
-  `fixtures` AND `errors` tables (same pattern as the dropped
-  `free_provider_to_model`); usage texts (`fixturesUsage`,
+  attempt per candidate per run) layered on `known_but_failed`
+  age-out replacing the errors-ledger done rule; `INDEX_STORE_VERSION`
+  → 2 with load-time drop of the legacy `fixtures` AND `errors`
+  tables (same pattern as the dropped `free_provider_to_model`);
+  usage texts (`fixturesUsage`,
   `queueDequeueFlags`, `queueUsage`, `dequeueUsage`) updated for
   the staleness model, backlog, and folder layout.
 - Unchanged: daemon guard, pop protocol order, free grid,
@@ -435,13 +466,14 @@ on dequeue matches criteria-less entries.
      with no file, **minimizing non-essential flags per the
      minimal-invocation policy** (§5);
    - rewrite `.index.json` without the `fixtures` and `errors`
-     tables (queue `runner` fields untouched) and seed the `backlog`
+     tables (queue `runner` fields untouched), seed the `backlog`
      from a full scan: unknown_harnesses / unknown_providers /
      unknown_models (unique dim slugs from unresolvable stems),
      needs_curation (fixtured from-capture files without
-     `meta.prompt_launch` — e.g. tonight's pi-opencodego);
-     cross-check curated argv against grid spellings while at it
-     (the completeness audit).
+     `meta.prompt_launch` — e.g. tonight's pi-opencodego), and seed
+     `known_but_failed` from the old errors ledger's retryable
+     entries (reason → initial detail); cross-check curated argv
+     against grid spellings while at it (the completeness audit).
 3. Re-queue the pi-chutes captures (tonight's original goal) and
    commit.
 
@@ -468,4 +500,6 @@ on dequeue matches criteria-less entries.
 - `--repair` smoke: with a deliberately-unknown model slug in a
   fixture stem, status must list it under unknown_models; after
   adding a rule for it, `fixtures queue --repair` must remove it
-  from the backlog and upsert a `--model=<slug>` entry.
+  from the backlog and upsert a `--model=<slug>` entry. A
+  known-but-failed combo must be skipped by default sweeps, retried
+  by `--repair`, and purge on success.
