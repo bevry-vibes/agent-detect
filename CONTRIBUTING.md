@@ -7,66 +7,76 @@ design, see [DESIGN.md](./DESIGN.md).
 
 ## refresh a fixture
 
-A fixture is a single `fixtures/<fixture_id>.json` file whose top-level
-keys are per-channel **channel objects**: `from-identity` (required —
-the declared identification), `from-capture` (the live session's
-identification), and `from-capture-raw` (the live session's raw
-observations). Each `from-*` channel object carries `identify` (the
-18-field canonical object) plus `"trailer co-author"` and
-`"trailer assisted-by"` (the two trailer variants, spawned from the
-real CLI — the old root `trailer`/`cooked`/`origin` keys are gone).
-`fixture_id` encodes `<harness>-<provider>-<model>` and is suffixed
-with `-<platform>` (e.g. `cline-clinepass-kimik3-darwin`). The binary
-is the only thing that writes fixtures — agents never hand-author them.
+A fixture's state is split across per-channel files under
+`fixtures/from-identity/` and `fixtures/from-capture/` — each a whole
+self-contained `{ outputs, meta }` envelope (normative schema:
+`fixtures/fixture.d.ts`). The **directory IS the channel**: the
+filename stem is the `<harness>-<provider>-<model>-<platform>` fixture
+id (e.g. `cline-clinepass-kimik3-darwin`), and `outputs` carries
+`identify` (the 18-field canonical object) plus `"trailer co-author"`
+and `"trailer assisted-by"` — for from-capture also `raw`. `meta`
+carries the ledger (`updated_at`, `agent_detect_version`, and for
+captures `harness_version`) and the curated launch argv. The binary is
+the only thing that writes fixtures — agents never hand-author them.
+A stem present in both folders has both channels; channel presence =
+file existence.
 
-`fixtures/.index.json` is the committed state store — its three tables
-(`fixtures` the known universe, `errors` the failure ledger, `queue`
-the filter-entry array) are
+`fixtures/.index.json` is the committed state store — it holds only the
+**non-derivable** state (`queue` the filter-entry array, `backlog` the
+actionable gaps, `known_but_failed` the retryable failure messages),
 declared normatively in TypeScript at `fixtures/.index.d.ts` (the
 source of truth for structure — unset optionals are omitted, never
-serialized as `null`), with the semantics in DESIGN.md "index.json
-state store".
-Queue entries are **filter tuples** (dims, mode, at most one marker,
-the known/valid/successful/free axes) — only the daemon expands them
-into concrete candidates, one per poll.
+serialized as `null`), with the semantics in DESIGN.md "the state
+split". Queue entries are **filter tuples** (dims, mode, the staleness
+criteria set, `free`) — only the daemon expands them into concrete
+candidates, one per poll.
 
 The refresh flow uses three binaries/actions with strict role
 separation:
 
 - **`agent-detect-dev fixtures daemon`** — only the *user* runs this,
   never the agent (it refuses to start inside an agent; see
-  DESIGN.md "user-only daemon"). It is **pure**: every poll it scans
-  the queue-entry array (from-identity entries first), purges entries
-  whose expansion has no remaining candidates anywhere, expands the
-  first entry with remaining host-platform work (stamping `started_at`
-  on its first work), and evaluates ONE candidate (`from-identity`:
-  declared generation, zero tokens; `from-capture`: probe
-  `version_launch` then launch the real harness session via
-  `prompt_launch`). It never writes `fixtures` outside pop processing
-  and never inserts queue entries. Crash-resume derives from the
-  completion ledger (channel dates + errors `failed_at` vs the entry's
-  `started_at`) — a capture that died with the daemon simply re-runs.
+  DESIGN.md "user-only daemon"). It is **pure**: every poll it
+  refreshes the backlog from a folder scan, scans the queue-entry
+  array (from-identity entries first), purges entries whose expansion
+  has no remaining candidates anywhere, expands the first entry with
+  remaining host-platform work (stamping `started_at` on its first
+  work), and evaluates ONE candidate (`from-identity`: declared
+  generation, zero tokens; `from-capture`: probe the file's
+  `meta.version_launch` then launch the real harness session via its
+  `meta.prompt_launch`). It never writes fixture files outside pop
+  processing and never inserts queue entries. Crash-resume derives
+  from the fixture files — a capture that died with the daemon simply
+  re-runs. Failed candidates damp for the daemon run (one attempt per
+  candidate per run) and persist their redacted message in
+  `known_but_failed` + `.daemon.log`; pops never gate on failure.
 - **`agent-detect-dev fixtures capture`** — runs *inside an agent*
-  session; captures the current session into `fixtures/<id>.json`
-  (merge-writes `from-capture` + `from-capture-raw`, preserving any
-  existing `from-identity`) and merge-writes the row's capture ledger
-  (captured_at + channel_hash + harness_version + fixture_hash),
-  purging any errors entry. **Fixtures only** — a partial detection
-  exits 8 with no store change (never writes `queue`).
+  session; captures the current session into
+  `fixtures/from-capture/<id>.json` (whole-file atomic write;
+  the curated `meta.prompt_launch`/`meta.version_launch` persist, the
+  ledger stamps fresh) and clears the combo's `known_but_failed`
+  entry. **Fixtures only** — a partial detection exits 8 with no file
+  written (never writes `queue`).
 - **`agent-detect-dev fixtures queue`** — **upsert only, no
   evaluation.** One queue entry per selected mode is stamped from the
-  given dims, markers, and axes; the daemon expands.
+  given dims and staleness flags; the daemon expands. `--repair` pops
+  the backlog instead (see below).
 - **`agent-detect-dev fixtures dequeue`** — **DELETE only.** Deletes
-  the matching `queue` entries (by dims + stored markers/axes); never
-  touches `fixtures`.
+  the matching `queue` entries (by dims + the stamped staleness
+  criteria); never touches fixture files.
+- **`agent-detect-dev fixtures status`** — the derived snapshot:
+  fixtured counts per folder, the backlog sets (it maintains them),
+  feasible-unfixtured totals, stale/fresh breakdowns under the
+  `--stale` composite. Run it whenever you need to discern what the
+  fixture universe needs next.
 
 The shared filters (at least one required for `queue`/`dequeue`):
 `--harness=H`, `--provider=P`, `--model=M`, `--platform=PLAT` constrain
 their dim to equality; `--fixture=<h>-<p>-<m>-<plat>` is an exact
 4-part id; `--agent=<h>-<p>-<m>` sets h-p-m (platform may be added
-with `--platform=`). Dim filters compose (AND) with the markers and
-axes below. (There are no `--no-*` flags — an unset dim is expressed by
-simply omitting it.)
+with `--platform=`). Dim filters compose (AND) with the staleness
+flags and `--free`/`--paid` below. (There are no `--no-*` flags — an
+unset dim is expressed by simply omitting it.)
 
 The **refresh modes** (`--from-identity` / `--from-capture`) select the
 worker. No mode flag → **both** entries are queued per candidate (the
@@ -74,52 +84,49 @@ declared pass first, then the capture upgrade). Both flags together →
 exit 3. `dequeue` filters by the stored mode the same way (no flag →
 all modes).
 
-The **markers** (shared by `queue`/`dequeue`; at most one; each selects
-the stale candidates at the daemon's expansion; marker sweeps require
-`--known`) are **pure enqueue** (or pure row filter for dequeue —
-stored fields, never a probe):
-- `--stale-by-missing-entry` — fixture files with no store entry: the
-  daemon's expansion for it is the registration pass (valid ids → a
-  `fixtures` entry with `fixture_hash` + per-channel hashes from the
-  committed file; invalid ids → `errors`; **the file persists**).
-- `--stale-by-missing-fixture` — store entries whose fixture file is
-  absent.
-- `--stale-by-days=N`, `--stale-by-hours=N`, `--stale-by-minutes=N` —
-  mode-scoped age thresholds (the entry stores MINUTES): a
-  `from-identity` entry checks `identity.declared_at`, a
-  `from-capture` entry checks `capture.captured_at`; missing/older →
-  stale.
-- `--stale-by-harness-version` — the row's `capture.harness_version`
-  differs from a live `version_launch` probe (a harness upgrade
-  re-captures without waiting for an age threshold).
-- `--stale-by-detect-version` — the row's `agent_detect_version` is
-  null or differs from this binary's version (the designated sweep
-  after a `build.zig.zon` bump).
-- `--stale-by-fixture-hash` — the row's `fixture_hash` differs from
-  the committed file's BLAKE3 (hand edits and git merges included).
-- `--stale-by-channel-hash` — `identity.channel_hash` and
-  `capture.channel_hash` missing or diverged from each other.
-
-The **axes** (shared; stored as nullable booleans; the pairs are XOR;
-defaults applied at expansion: known=true, valid=true, successful/free
-unset):
-- `--known` / `--unknown` — the `fixtures` map vs the rule
-  cross-product minus the known maps (the discovery sweep; see
-  "adding a rule" below).
-- `--valid` / `--invalid` — invalid-class error entries are excluded
-  (default) or re-evaluated as candidates.
-- `--successful` / `--unsuccessful` — only no-error candidates vs only
-  unsuccessful-class error entries (`--unsuccessful` is the designated
-  catch vector for captures whose detection was partial: valid ids,
-  last attempt failed). No probing happens anywhere.
+The **staleness family** (shared by `queue`/`dequeue`) is **pure
+enqueue** (or pure row filter for dequeue — a criteria-set comparison,
+never a probe at queue time). An entry carries a **set** of criteria;
+a candidate is stale iff ANY carried criterion says stale; absent
+evidence ⇒ stale:
+- `--stale-by-output-drift` — the two channel files' `outputs.identify`
+  are not both present and deep-equal (a missing channel counts stale).
+- `--stale-by-days=N` / `--stale-by-hours=N` / `--stale-by-minutes=N` —
+  mode-scoped age of `meta.updated_at` (the entry stores MINUTES).
+- `--stale-by-harness-version` — the capture file's
+  `meta.harness_version` differs from a live `version_launch` probe (a
+  harness upgrade re-captures without waiting for an age threshold).
+- `--stale-by-detect-version` — the file's `meta.agent_detect_version`
+  is absent or differs from this binary's version (the designated
+  sweep after a `build.zig.zon` bump).
+- `--stale` — the composite: output-drift OR days=27 OR
+  harness-version OR detect-version. **Defaulted on**: a queue upsert
+  with no staleness flags carries the full composite. An explicit
+  `--stale-*` forms the criteria set alone; `--stale` plus an explicit
+  `--stale-*` overwrites just that composite component (`--stale
+  --stale-by-days=0`, `--stale --stale-by-days=999999999`).
+- `--refresh` — carry NO criteria: every candidate is worked regardless
+  of freshness. Conflicts with `--stale` and every `--stale-*` (exit 3).
 - `--free` / `--paid` — membership in the free-models grid
   `fixtures/.providers_freemodels.csv` (the source of truth for free
-  models, replacing the retired `free_provider_to_model` store table;
-  the zig store code reads this one grid at expansion time).
+  models; the zig store code reads this grid at expansion time, along
+  with the feasibility grids `.harnesses_providers.csv` and
+  `.providers_models.csv`).
 
-Conflicts (exit 3): the XOR axis pairs, two age thresholds, two
-markers, and `--unknown` with any marker or a non-default
-`successful` axis.
+Dequeue defaulting mirrors queue: a bare dims-only dequeue matches
+exactly the entry a bare upsert created (the composite); `--refresh`
+matches criteria-less entries.
+
+**`--repair`** (on `fixtures queue`) pops the backlog and re-queues the
+now-actionable items against the current rule tables and grids: a
+`needs_curation` id whose from-capture file now carries
+`meta.prompt_launch` → removed + a targeted `--fixture=<id>`
+from-capture entry; an unknown harness/provider/model slug that a new
+rule made resolvable → removed + a from-identity entry filtered on
+that dim; the unfixtured (feasible grid combos with no fixture) → one
+from-identity entry over the feasible universe, honoring dims filters.
+Items still unresolvable or still argv-less stay in the backlog; run
+`fixtures status` to see what remains and why.
 
 To refresh one fixture end-to-end:
 
@@ -136,32 +143,35 @@ To refresh one fixture end-to-end:
      --model=<model_id> \
      --platform=darwin
    ```
+   With no staleness flag this carries the full `--stale` composite;
+   re-assert the SAME flags when refreshing (the criteria set is part
+   of the dedupe identity).
 3. The daemon expands the queue entry and evaluates candidates one per
-   poll: the `from-identity` pass merge-writes the declared
-   `from-identity` channel (zero tokens), and the `from-capture` pass
-   launches the harness headlessly via the row's `prompt_launch` so it
-   runs `fixtures capture` inside a live model session
-   (token-consuming — announce with the pre-capture review window and
-   confirm with the user first).
+   poll: the `from-identity` pass writes the declared
+   `from-identity/<id>.json` (zero tokens), and the `from-capture`
+   pass launches the harness headlessly via the file's
+   `meta.prompt_launch` so it runs `fixtures capture` inside a live
+   model session (token-consuming — announce with the pre-capture
+   review window and confirm with the user first).
 
 For batch refreshes: `fixtures queue --stale-by-detect-version`
-re-queues everything whose `agent_detect_version` drifted, `fixtures
-queue --stale-by-fixture-hash` re-queues combos whose file hash
-diverged, and `fixtures queue --unsuccessful` re-queues the valid-id
-failures. A bare dims-only queue command (`fixtures queue
---harness=cline --from-identity`) sweeps every known row matching those
-dims. Failed jobs are **consumed** — the errors entry's `failed_at` is
-the completion timestamp, so there is no auto-retry; retry explicitly
-via `--unsuccessful` (or re-assert the same queue entry for a fresh
-sweep).
+re-queues everything whose `agent_detect_version` drifted;
+`fixtures queue --refresh` re-evaluates a whole filter unconditionally.
+A bare dims-only queue command (`fixtures queue --harness=cline
+--from-identity`) sweeps every fixtured-or-feasible combo matching
+those dims under the composite criteria. Failed candidates are damped
+for the daemon run and remembered in `known_but_failed` — pops never
+gate on failure, so a re-assert of the entry (or `--repair`) retries
+them; fix the cause first and the next success clears the entry.
 
 ### common expected failures when refreshing
 
 Queue jobs run in two modes with different failure surfaces. The
 `from-identity` worker resolves declared identification from provided
 ids — a failure there is a **rule-table bug** (unknown dims, malformed
-combo), surfaced as `daemon: from-identity failed for <combo>` with an
-errors entry stamped and consumed. Fix the rules and re-queue.
+combo), surfaced as `daemon: from-identity failed for <combo>` with the
+failure remembered in `known_but_failed` + `.daemon.log`. Fix the
+rules and re-queue.
 
 Account-level failures — **credits depleted** (insufficient balance /
 credits error in the worker stderr), **rate limit encountered**
@@ -169,43 +179,59 @@ credits error in the worker stderr), **rate limit encountered**
 **upgraded plan required** (`401`/`403`, "upgrade your plan") — are
 only reachable on `from-capture` jobs (the real harness session talks
 to the provider). Treat those as **environment-level failures**, not
-detection bugs: resolve the account condition and re-queue with
-`fixtures queue --unsuccessful`, or skip the combo. A `from-capture`
-failure (timeout / nonzero exit / post-check fail / detection-partial
-exit 8) stamps an errors entry (`capture failed` / `post-check
-mismatch`) and **consumes the item** — no re-queue, no spin. An
-uninstalled harness (no `version_launch` or the probe exits nonzero)
-stamps `unavailable`. Retry manually: `fixtures queue --unsuccessful`
-(valid ids, failed attempt). A `from-capture` job launches a real model
-session and consumes tokens (free-tier quota or subscription) —
-confirm with the user first; a hand-run `fixtures capture` consumes
-that session's tokens.
+detection bugs: resolve the account condition, then re-assert the
+queue entry (or `fixtures queue --refresh` for a forced pass). A
+`from-capture` failure (timeout / nonzero exit / post-check fail /
+detection-partial exit 8) records a redacted message in
+`known_but_failed` and damps the candidate for that daemon run — no
+spin. An uninstalled harness (no `meta.version_launch` or the probe
+exits nonzero) records "harness unavailable". A `from-capture` job
+launches a real model session and consumes tokens (free-tier quota or
+subscription) — confirm with the user first; a hand-run
+`fixtures capture` consumes that session's tokens.
 
 ### cross-device runbook
 
-Queue entries, the fixtures map, and the errors ledger sync across
-hosts via the committed index.json + fixture files. Only the matching
-platform's daemon expands a candidate (`platform = the entry's or the
-host's`), so a `platform='darwin'` entry is never worked on Windows —
-the entry simply stays queued there until a darwin daemon finishes it:
+The store and the fixture files sync across hosts via git. Only the
+matching platform's daemon expands a candidate (`platform = the
+entry's or the host's`), so a `platform='darwin'` entry is never
+worked on Windows — the entry simply stays queued there until a darwin
+daemon finishes it:
 
 1. On host A (e.g. macOS): run the daemon, let the platform's work
-   drain, then commit index.json + fixtures (single-writer workflow —
-   pull before daemon, commit after).
+   drain, then commit index.json + fixture files (single-writer
+   workflow — pull before daemon, commit after).
 2. On host B (e.g. Windows): `git pull`, `zig build dev`, run the
    daemon — it works only the host-platform candidates that remain.
-3. Failed candidates retry via `fixtures queue --unsuccessful` on the
-   host that can reach the harness.
+3. Failed candidates retry on the host that can reach the harness
+   (re-assert the entry or use `--repair`).
 
 ### committed-store hygiene
 
 `fixtures/.index.json` is **committed** with each landing (it is the
-cross-host fixtures map + errors ledger + work queue). Never commit
+cross-host work queue + failure memory). Never commit
 `.index.json.lock` / `.index.json.tmp` or the daemon files
-(`daemon.log`, `daemon.ctl`) — they are gitignored. The store dirties
-on every mutation; commit when work lands. The dev agent reads the
-`errors` ledger and the channel ledgers to review regeneration
-completeness; purging fixture files is user discretion.
+(`daemon.log`, `daemon.ctl`) — they are gitignored. The store is quiet
+by design — the per-channel fixture files carry the fixture state, so
+the store only changes when the queue/backlog/failure tables change.
+The dev agent reads `known_but_failed` + `.daemon.log` +
+`fixtures status` to review regeneration completeness; purging fixture
+files is user discretion.
+
+## minimal invocation (curated launch argv)
+
+Curated `meta.prompt_launch` invocations carry only the arguments
+**necessary** to pin harness + provider + model and run the capture
+prompt. Extra flags that merely alter runtime behaviour (e.g. cline's
+`--thinking <level>`) are **dropped unless documented as necessary**
+by the harness for the invocation to work headlessly. Permission /
+approval flags (`--auto-approve`, `--auto`, `--allow-all`,
+`--permission-mode bypassPermissions`, `--non-interactive`) are
+necessary — a headless session cannot answer interactive prompts.
+Prompt-passing flags (`-p`, `--prompt`, `--message`, `run`/`text`
+subcommands) are the invocation's spine. When you add a curation,
+audit it against this policy; `fixtures status` +
+`git diff fixtures/` keeps the drift visible.
 
 ## test matrix: harnesses, providers, models
 
@@ -213,10 +239,11 @@ The committed fixtures double as the integration test of the detection
 ladder. The matrix **policy** — harness scope, model/provider policy,
 the paid default, the global-settings rule, evidence attribution —
 lives in DESIGN.md "test matrix"; the install table below is the
-what-to-do side. The matrix itself is the `fixtures` map of
-`fixtures/.index.json` — one row per `agent_id`-per-platform, carrying
-the curated `prompt_launch`/`version_launch` argv — expanded by the
-daemon from queue entries and captured per platform.
+what-to-do side. The matrix itself is the union of the two channel folders' filename
+stems (`fixtures/from-identity/` + `fixtures/from-capture/`) — one
+fixture id per `agent_id`-per-platform, the capture files carrying the
+curated `meta.prompt_launch`/`meta.version_launch` argv — expanded by
+the daemon from queue entries and captured per platform.
 
 ### per-harness install table
 
@@ -273,7 +300,7 @@ The maintainer probes the free combos + the MiniMax subscription:
 
 ```sh
 zig build dev
-./zig-out/bin/agent-detect-dev fixtures queue --known   # both modes, every known row; pure enqueue, zero tokens
+./zig-out/bin/agent-detect-dev fixtures queue   # both modes, the whole default universe; pure enqueue, zero tokens
 ./zig-out/bin/agent-detect-dev fixtures daemon --write-log
 ```
 
@@ -476,22 +503,28 @@ project/terms URLs as `license_sources`.
 After adding the rule:
 
 1. Build the dev binary: `zig build dev`.
-2. Seed the rule's store rows — the discovery sweep generates every
-   harness × provider × model × platform combination with no store
-   entry, declared into `fixtures/`:
+2. Declare the rule's combos — the feasible-unfixtured universe (the
+   grid-filtered cross-product minus the fixtured stems) expands
+   automatically once the harness/provider/model pairs are feasible per
+   the reference grids (`.harnesses_providers.csv` /
+   `.providers_models.csv` — add the cells if the pairs are new):
    ```sh
-   # every new combo the rule participates in (both modes per combo):
-   ./zig-out/bin/agent-detect-dev fixtures queue --unknown --harness=<harness_id> --from-identity
+   ./zig-out/bin/agent-detect-dev fixtures queue --harness=<harness_id> --from-identity
    ./zig-out/bin/agent-detect-dev fixtures daemon
    ```
-3. Curate the rows that should capture: set `prompt_launch` (the launch
-   argv that runs `fixtures capture` inside a live session — argv[0] is
-   the concrete per-platform binary, the last element is the capture
-   prompt) and `version_launch` (`[<binary>, "--version"]`) on each
-   platform's row in `fixtures/.index.json`, then
+   (Any dim the new rule makes resolvable that was sitting in the
+   backlog's unknown_* sets clears via `fixtures queue --repair`.)
+3. Curate the combos that should capture: write a meta-only
+   from-capture file `fixtures/from-capture/<id>.json` with
+   `meta.prompt_launch` (the launch argv that runs `fixtures capture`
+   inside a live session — argv[0] is the concrete per-platform
+   binary, the last element is the capture prompt placeholder
+   `<prompt>`) and `meta.version_launch` (`[<binary>, "--version"]`),
+   per the minimal-invocation policy above, then
    `fixtures queue --from-capture --harness=<harness_id>` and run the
    daemon again (token-consuming, user-confirmed).
-4. Commit the new rules, the declared fixtures, and the store.
+4. Commit the new rules, the grids, the declared fixtures, the curation
+   stubs, and the store.
 
 If the harness is closed-source and you can't verify the SPDX license,
 leave `license: null` and `license_sources: &.{}` — a maintainer fills

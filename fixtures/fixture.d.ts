@@ -1,0 +1,144 @@
+/**
+ * `fixtures/from-identity/<id>.json` and
+ * `fixtures/from-capture/<id>.json` — the normative schemas for the
+ * per-channel fixture files. Each channel is a whole self-contained
+ * file under its own directory, owned exclusively by its writer: a
+ * writer serializes the entire file and atomically replaces it
+ * (temp + rename); there is no merge-write and no store row. The
+ * directory IS the channel — no channel key prefixes inside files.
+ *
+ * `<id>` is the dash-joined fixture id
+ * `<harness>-<provider>-<model>-<platform>`, all strict slugs — the
+ * filename is the only channel key, and the dims are never repeated
+ * inside the file.
+ *
+ * Every file has exactly two top-level objects:
+ * - `outputs` — the saved outputs of the channel;
+ * - `meta` — everything else: ledger dates, writer version, and the
+ *   curated launch argv (from-capture only).
+ *
+ * Channel presence = file existence — no JSON parse needed to know
+ * whether a channel ran. A stem present in both folders has both
+ * channels. See fixtures/.index.d.ts for the store and DESIGN.md for
+ * the semantics.
+ */
+
+/** Platforms a daemon can capture on. */
+export type Platform = "darwin" | "linux" | "windows";
+
+/** `<harness>-<provider>-<model>-<platform>`, all strict slugs. */
+export type FixtureId = string;
+
+/**
+ * The 18-field identify contract — the canonical identification
+ * object (`buildCooked` output, frozen by DESIGN.md). Grouped by
+ * entity: harness, provider, model, then the composed agent fields.
+ * The four policy fields (harness_license, model_reciprocity,
+ * provider_closed_training, provider_open_training) may be `null`.
+ */
+export interface Identify {
+  harness_label: string;
+  harness_short_title: string | null;
+  harness_name: string;
+  harness_id: string;
+  harness_license: string | null;
+  provider_label: string;
+  provider_name: string;
+  provider_id: string;
+  provider_closed_training: string | null;
+  provider_open_training: string | null;
+  model_label: string;
+  model_short_title: string | null;
+  model_name: string;
+  model_id: string;
+  model_reciprocity: string | null;
+  model_license: string | null;
+  agent_id: string;
+  reciprocal: boolean;
+}
+
+/**
+ * The shapeless runtime observations block (the dev `raw` output
+ * verbatim). Keys: `platform_id`, `harness_version` (the live version
+ * snapshot — null when not yet knowable), `detectable` + `detected`,
+ * `process_lineage`, the `*-urls` arrays, and `evidence`. Env-source
+ * claims on non-allowlisted env vars carry the literal `"<redacted>"`.
+ */
+export interface Raw {
+  platform_id: Platform;
+  harness_version?: string | null;
+  detectable: string[];
+  detected: string[];
+  process_lineage: { pid: number; name: string }[];
+  "harness-urls": string[];
+  "provider-urls": string[];
+  "model-urls": string[];
+  evidence: {
+    dim: string;
+    source: string;
+    name: string;
+    field?: string;
+    value?: string;
+  }[];
+}
+
+/** Declared-identification file (from-identity worker; zero tokens).
+ *  Always carries `outputs` — there is no meta-only identity stub. */
+export interface IdentityFile {
+  outputs: {
+    identify: Identify;
+    "trailer co-author": string;
+    "trailer assisted-by": string;
+  };
+  meta: {
+    /** was identity.declared_at — the channel WAS the declaration. */
+    updated_at: number;
+    /** the agent-detect version that declared it. */
+    agent_detect_version: string;
+  };
+}
+
+/**
+ * Live-capture file (`fixtures capture` in a real session, or the
+ * daemon's from-capture worker) — full outputs + full meta — OR a
+ * curated meta-only stub (no outputs, no ledger dates).
+ */
+export interface CaptureFile {
+  outputs?: {
+    identify: Identify;
+    "trailer co-author": string;
+    "trailer assisted-by": string;
+    /** the raw observations block, verbatim. */
+    raw: Raw;
+  };
+  meta:
+    | {
+        /** was capture.captured_at. */
+        updated_at: number;
+        /** the agent-detect version that captured it. */
+        agent_detect_version: string;
+        /** was capture.harness_version — the live version snapshot. */
+        harness_version?: string;
+        /**
+         * Launch argv that runs `fixtures capture` inside a live
+         * session. argv[0] is the concrete per-platform binary; the
+         * last element is the capture prompt placeholder `<prompt>`.
+         * Minimal invocation: only the arguments necessary to pin
+         * harness + provider + model and run the capture prompt —
+         * extra flags that merely alter runtime behaviour are dropped
+         * unless documented as necessary by the harness (see
+         * CONTRIBUTING.md "minimal invocation").
+         */
+        prompt_launch: string[];
+        /** e.g. ["kimi", "--version"] — availability probe + version source. */
+        version_launch?: string[];
+      }
+    // curated meta-only stub — the curation of record for a
+    // not-yet-run combo. On a successful capture the SAME file gains
+    // its `outputs` + the remaining `meta` fields; the launch argv
+    // persists untouched.
+    | {
+        prompt_launch: string[];
+        version_launch?: string[];
+      };
+}

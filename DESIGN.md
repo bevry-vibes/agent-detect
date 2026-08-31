@@ -31,7 +31,7 @@ Its CLI surface is `identify`, `trailer co-author`, `trailer assisted-by`,
 `check-reciprocal`, `help`, `version`. The dev
 binary (`agent-detect-dev`) carries the maintainer's full toolkit: the
 standalone `raw` action (raw observations block) and the `fixtures`
-subcommand namespace (capture / daemon / queue / dequeue). The split
+subcommand namespace (capture / daemon / queue / dequeue / status). The split
 is enforced at compile time via the `dev` flag in `build.zig` and the
 `pub const dev = if (build_options.dev) struct { ... } else struct {};`
 block in `src/dev/dev.zig`. The released binary cannot accidentally
@@ -59,32 +59,38 @@ Harness config locations differ per platform (macOS uses
 `~/Library/Application Support/...`, Linux uses `~/.config/...`,
 Windows uses `%APPDATA%\...`). The fixture filename includes the
 `platform_id` so a CI run on one platform never invalidates another
-platform's committed files. Each platform has its own
-`fixtures/<fixture_id>.json`, a single file whose top-level keys are
-per-channel objects:
+platform's committed files. Each platform's fixture id
+(`<harness>-<provider>-<model>-<platform>`) names two per-channel
+files, each a whole self-contained `{ outputs, meta }` envelope
+(normative schema: `fixtures/fixture.d.ts`):
 
-- `from-identity` (required) — the declared identification channel:
-  `identify` (the 18-field canonical object: `harness_id`,
-  `provider_id`, `model_id`, `agent_id`, policy fields, no `trailer`)
-  plus `"trailer co-author"` and `"trailer assisted-by"`.
-- `from-capture` — the live session's identification channel (same
-  shape as `from-identity`, written by a real capture).
-- `from-capture-raw` — the slimmed shapeless runtime observations,
-  headed by `platform_id`, then `harness_version` (the live version
-  snapshot — null when the agent's version is not yet knowable), then
-  `detectable`, and `detected`, then
-  `process_lineage`, the `*-urls` reference arrays, and the `evidence`
-  claims — the dev `raw` output verbatim. The block deliberately does
-  NOT duplicate the env vars / config files / session files verbatim
-  (decision #4 — raw slimming): the `evidence` section documents the
-  source that informed each canonical deduction. Env-source evidence
-  claims on non-allowlisted env vars carry the literal `"<redacted>"`
-  value so secrets never reach disk while the attribution chain stays
-  audit-trailable.
+- `fixtures/from-identity/<id>.json` — the declared identification
+  channel, written by the from-identity worker (zero tokens):
+  `outputs` = `identify` (the 18-field canonical object:
+  `harness_id`, `provider_id`, `model_id`, `agent_id`, policy fields)
+  plus `"trailer co-author"` and `"trailer assisted-by"`; `meta` =
+  `updated_at` + `agent_detect_version`.
+- `fixtures/from-capture/<id>.json` — the live-capture channel,
+  written by `fixtures capture` (or a curation stub before it runs):
+  `outputs` = identify + trailers + `raw` (the slimmed shapeless
+  runtime observations, headed by `platform_id`, then
+  `harness_version` (the live version snapshot — null when the
+  agent's version is not yet knowable), then `detectable` and
+  `detected`, then `process_lineage`, the `*-urls` reference arrays,
+  and the `evidence` claims — the dev `raw` output verbatim); `meta` =
+  `updated_at` + `agent_detect_version` (+ `harness_version`, + the
+  curated `prompt_launch`/`version_launch` argv). The raw block
+  deliberately does NOT duplicate the env vars / config files /
+  session files verbatim (decision #4 — raw slimming): the `evidence`
+  section documents the source that informed each canonical
+  deduction. Env-source evidence claims on non-allowlisted env vars
+  carry the literal `"<redacted>"` value so secrets never reach disk
+  while the attribution chain stays audit-trailable.
 
-The old top-level `cooked`/`raw`/`trailer`/`origin` keys are gone; the
-root `trailer` no longer exists (the trailer variants live per-channel,
-which is what makes the trailer-variations coverage possible).
+The legacy single-file layout (top-level `cooked`/`raw`/`trailer`/
+`origin`, then the `from-identity`/`from-capture`/`from-capture-raw`
+channel keys) is gone — the envelope replaced it, which is what makes
+the trailer-variations coverage and per-channel ownership possible.
 
 The `-<platform>` suffix keeps per-platform config paths from churning
 each other across CI runs. The filename contract is defined on the
@@ -92,7 +98,8 @@ each other across CI runs. The filename contract is defined on the
 
 ### the `detectable` / `detected` raw fields
 
-Both live at the top of the `from-capture-raw` block, adjacent to each
+Both live at the top of the from-capture file's `outputs.raw` block,
+adjacent to each
 other and right after `platform_id`:
 
 - `detectable` — the dims (`harness` / `provider` / `model`) this run
@@ -104,92 +111,127 @@ other and right after `platform_id`:
 A reader can instantly see what a fixture claims without scanning the
 `identify` block.
 
-### index.json state store (cross-process coordination)
+### the state split: store + per-channel fixture files (cross-process coordination)
 
-The store is a single committed JSON document, `fixtures/.index.json`,
-with **three tables** (`fixtures` the known universe, `errors` the
-failure ledger, `queue` the filter-entry array; the free axis is
-declared by `fixtures/.providers_freemodels.csv`, not the store). The
-normative shapes — field
-names, types, key formats, optionality — are declared in TypeScript at
-**`fixtures/.index.d.ts`**: the schema file is the source of truth for
-structure and this section documents only the semantics. (The zig
-program never imports TypeScript; the schema exists so the docs stop
-re-describing the shape in prose.) **Null-as-absent:** unset optional
-fields are omitted from the store entirely — never serialized as
-`null` — and the schema's `?:` optionality is exactly that contract
-(readers treat a missing field as unset).
+The fixture state lives in two places, split by derivability:
 
-- `fixtures` — the known universe: one row per 4-tuple
-  `(harness, provider, model, platform)`, keyed by the dash-joined
-  fixture id (== the fixture filename stem; dims are never repeated
-  inside the row). A row's `identity`/`capture` ledgers date the
-  channels and carry `channel_hash` = BLAKE3 of the whole channel
-  object as written into the fixture file; `capture.harness_version`
-  is the version a live `version_launch` probe reported, and
-  `agent_detect_version` is the capturing binary's version. There is
-  **no row-level timestamp** — age checks are mode-scoped on the
-  channel dates, and there are **no `available`/`successful`
-  markers** — failures live in `errors`. An absent `version_launch`
-  means the version probe fails closed; absent launch argv marks a
-  from-identity-only row. Written by `fixtures capture`, the daemon's
-  identity worker, and the `--stale-by-missing-entry` registration
-  pass.
-- `errors` — the failure ledger keyed by dash-joined dims with the
-  literal `null` for each unknown dim (`cline-null-null-windows`;
-  all-unknown entries share `null-null-null-null`). The value is
-  `{ "reason", "failed_at" }` from a closed reason set partitioned by
-  class: `unsuccessful` ("capture failed", "unavailable",
-  "post-check mismatch" — the combo has a fixture row, last evaluation
-  failed) and `invalid` ("no launch spec", "unknown fixture file",
-  "malformed fixture id", "malformed queue row" — structural breakage,
-  error-only). **An entry exists only while the combo is failed — a
-  successful capture/declaration purges it** (entry presence is the
-  outcome signal). `failed_at` is the completion timestamp the pop
-  protocol and the filter axes compare against.
+- **`fixtures/.index.json`** — the committed state store, holding only
+  the **non-derivable** state: `queue` (work intent), `backlog`
+  (actionable gaps), and `known_but_failed` (retryable failure
+  messages). The legacy store v1 `fixtures` map and `errors` ledger are
+  dropped on load and never re-serialized — back-compat by drop, not
+  dual-read.
+- **The fixture files themselves** — `fixtures/from-identity/<id>.json`
+  (declared identifications) and `fixtures/from-capture/<id>.json`
+  (live captures and curated meta-only stubs), each a whole
+  self-contained `{ outputs, meta }` envelope. The **directory IS the
+  channel** — no channel key prefixes inside files. Channel presence =
+  file existence — no JSON parse needed. A stem present in both folders
+  has both channels. The normative shapes are declared in TypeScript at
+  **`fixtures/fixture.d.ts`** (the envelope) and
+  **`fixtures/.index.d.ts`** (the store): the schema files are the
+  source of truth for structure and this section documents only the
+  semantics. (The zig program never imports TypeScript.) **Null-as-
+  absent:** unset optional fields are omitted entirely — never
+  serialized as `null` — and the schema's `?:` optionality is exactly
+  that contract (readers treat a missing field as unset).
+
+**Per-channel file ownership.** Each channel is owned exclusively by
+its writer: a writer serializes the entire file and atomically replaces
+it (temp + rename); there is no merge-write, no store row, and no
+writer contention (declaration and capture never touch the same bytes).
+Git semantics: identity churn and capture churn isolate per file; PR
+review sees exactly which channel changed; a torn write damages only
+one channel. The writer of a from-capture file preserves any
+`meta.prompt_launch` / `meta.version_launch` it finds in the file it is
+replacing (they are the curation of record) and stamps
+`updated_at` / `agent_detect_version` / `harness_version` fresh. A
+curation for a not-yet-run combo creates a meta-only from-capture file
+(launch argv, no `outputs`, no ledger dates); on a successful capture
+the SAME file gains its `outputs` + the remaining `meta` fields — no
+stub-deletion step, no separate `invoked_by` field.
+
+Store tables (semantics only — shapes in the schemas):
+
 - `queue` — the work **queue**: an array of **filter entries**, never
-  concrete work items (only the daemon expands). Semantics: at most
-  one `stale_by_*` marker set; the `known`/`valid`/`successful`/`free`
-  axes are affirmative booleans whose absent state takes the
-  expansion defaults (known=true, valid=true, successful/free
-  unset); `started_at` is stamped by the daemon on the entry's first
-  work and anchors the pop protocol's done rule. There is **no
-  `finished_at`**: fully-satisfied entries are
-  purged (deleted — the fixtures/errors ledger is the sweep record).
+  concrete work items (only the daemon expands). Each entry carries a
+  **set** of staleness criteria (a candidate is stale iff ANY carried
+  criterion says stale; all absent = a `--refresh` entry); `free` is an
+  affirmative boolean whose absent state takes the expansion default
+  (unset = no filter); `started_at` is stamped by the daemon on the
+  entry's first work and anchors the pop protocol's done rule. There is
+  **no `finished_at`**: fully-satisfied entries are purged (deleted —
+  the fixture files are the sweep record).
+- `backlog` — the actionable gaps, replacing the old errors ledger's
+  structural half: `unknown_harnesses` / `unknown_providers` /
+  `unknown_models` (unique dim slugs from unresolvable stems — a fix,
+  adding a rule, is addressable per dim) and `needs_curation` (fixture
+  ids of fixtured from-capture files whose meta lacks prompt_launch).
+  Derived from folder scans; maintained (idempotent union on write,
+  removed when resolved) by the daemon's pick and `fixtures status`.
+  The unfixtured — the feasible-unfixtured universe derived from the
+  grids minus the fixtured stems — is **never a stored list** (it is
+  hundreds of ids).
+- `known_but_failed` — retryable operational failures, flat and
+  informational: `known_but_failed[<fixture-id>] = "<message>"` — the
+  fixture id maps directly to the failure output (stderr tail or the
+  worker's diagnostic), truncated and redacted (home paths,
+  key-shaped strings) before it touches the committed store. No
+  timestamps, no schema depth. Written by the workers on operational
+  failure (capture exit ≠ 0, unavailable version probe, post-check
+  mismatch); last-failure-wins across modes; removed when any channel
+  of that combo succeeds (the fixture file is the success memory, this
+  is the failure memory). Pops never gate on failure state; the dev
+  agent reads the message and handles it. `--repair` upserts
+  `--fixture=<id>` entries so the dev agent can force a targeted
+  re-queue after fixing the cause; clearing an entry by hand is always
+  safe.
+
 - The free axis lives in **`fixtures/.providers_freemodels.csv`** — a
   sparse provider×model grid (rows only for providers with ≥1 free
   model, columns only for models free somewhere, cell = the
-  provider's free model-id or `-`). It is the source of truth for
-  free models: the zig store code reads it at expansion time (the
-  one grid it does read — the other two stay pure dev reference), and
-  the retired `free_provider_to_model` store table is dropped on load
-  and never re-serialized.
+  provider's free model-id or `-`). Source of truth for free models.
+- The **reference grids** — `fixtures/.harnesses_providers.csv`
+  (harness → provider cells) and `fixtures/.providers_models.csv`
+  (provider → model-id cells) — are load-bearing: a pair is feasible
+  iff its cell is present and not `-`. The feasible-unfixtured universe
+  (grid-filtered cross-product − fixtured) is the from-identity
+  backlog universe, so impossible combos never become candidates and
+  from-identity can never mint them.
 
-Writers take an exclusive lock on `fixtures/.index.json.lock` (a
+Store writers take an exclusive lock on `fixtures/.index.json.lock` (a
 gitignored lock file; kernel locks release on exit/crash — no
 stale-lock heuristics) and write atomically (serialize →
 `.index.json.tmp` → rename). Readers take no lock — the temp+rename
-protocol makes visibility atomic. Failure modes: lock timeout → exit
-13; corrupt/unparseable/unknown-`store_version` index.json → exit 12;
+protocol makes visibility atomic. Fixture-file writers take no store
+lock (each owns its file). Failure modes: lock timeout → exit 13;
+corrupt/unparseable/unknown-`store_version` index.json → exit 12;
 write/rename failure → exit 13.
 
 Idempotency on `queue` is by tuple: a queue-command re-assert of an
-existing (dims, mode, markers, axes) tuple replaces the entry in place
-and resets `started_at` to absent (a fresh sweep); the daemon's own
-writes preserve it.
+existing (dims, mode, stale-set, `free`) tuple replaces the entry in
+place and resets `started_at` to absent (a fresh sweep); the daemon's
+own writes preserve it. A re-assert must repeat the SAME flag set
+(defaults included) or it lands as a second, differently-defaulting
+entry.
 
 The **pop protocol** (the daemon's per-poll expansion):
-1. Scan entries in mode-rank order (from-identity first), then array
-   order; delete entries with no remaining candidates anywhere and
-   malformed entries (errors ledger + drop).
-2. Expand the entry's universe — the `fixtures` map (known=true, the
-   default) or the rule cross-product minus the known maps
-   (known=false, the discovery sweep) — filtered by dims, platform
-   (the entry's, or the host's per platform in the loop), the marker
-   evaluations, and the filter axes.
-3. A candidate is DONE when its completion timestamp (the entry's
-   mode-scoped channel date, else `errors.<key>.failed_at`) is present
-   AND ≥ the entry's `started_at`; stamp `started_at` on first work.
+1. Refresh the `backlog` from a folder scan, then scan entries in
+   mode-rank order (from-identity first), then array order; delete
+   entries with no remaining candidates anywhere and malformed entries
+   (logged + dropped — the errors ledger is gone; `.daemon.log` is the
+   dev agent's record).
+2. Expand the entry's universe — **one universe**: resolvable dims ∧
+   (fixtured ∨ feasible-unfixtured per the grids; from-capture
+   candidates further require `meta.prompt_launch` — argv-less files
+   are backlog, not candidates) — filtered by dims, platform (the
+   entry's, or the host's per platform in the loop), the staleness
+   criteria, and the free flag.
+3. A candidate is DONE when the mode's success `meta.updated_at` is
+   present AND ≥ the entry's `started_at` (a never-worked entry has no
+   done candidates); else if this daemon session already failed it
+   (in-memory damping — one attempt per candidate per run) it is
+   skipped; else it is a candidate. Stamp `started_at` on first work.
 4. Work ONE remaining host-platform candidate per poll (adaptive
    pacing unchanged).
 5. Candidates remain but none for this host: keep the entry, move on
@@ -197,104 +239,66 @@ The **pop protocol** (the daemon's per-poll expansion):
    git — an entry finishes on whichever host pops it after the last
    result lands.
 
-Crash-resume derives from the completion ledger: a capture that died
-with the daemon left no channel write, so its candidate re-runs.
+Crash-resume derives from the fixture files: a capture that died with
+the daemon left no channel write, so its candidate re-runs.
 
-The daemon is **pure**: it never writes `fixtures` outside pop
+The daemon is **pure**: it never writes fixture files outside pop
 processing and never inserts queue entries.
 
-### the four filter axes — `known`, `valid`, `successful`, `free`
+### the staleness model — `--stale`, `--refresh`, `--repair`
 
-Stored on queue entries as nullable affirmative booleans (null =
-unset); the daemon applies defaults at expansion: **known=true,
-valid=true, successful=unset, free=unset**.
+A queue entry carries a **set** of criteria; a candidate is stale iff
+ANY carried criterion says stale (OR; short-circuit per candidate).
+Absent evidence ⇒ stale, so unfixtured and backlog candidates (no
+files, no meta) fire the composite naturally; nothing is exempt from
+staleness evaluation. One candidate remains per folder stem; a
+candidate is stale iff ANY carried criterion says stale:
 
-- **`known`** selects the expansion universe:
-  - true (default): the `fixtures` map (rows matching dims, platform =
-    the entry's or the host's) — `--known` replaces `--all`/
-    `--recipes`.
-  - false: the rule cross-product (harness-rule × provider-rule ×
-    model-rule × platform) minus the `fixtures` map and (with the
-    default valid=true) the `errors` ledger — the discovery sweep:
-    `--unknown --from-identity` declares the generated combos into
-    `fixtures/` (the new-rule seeding workflow);
-    `--unknown --from-capture` routes everything to errors ("no launch
-    spec") — allowed, near-useless, documented.
-- **`valid`** selects error-entry participation by class:
-  - true (default): `invalid`-class entries are excluded from the
-    universe.
-  - false: `invalid`-class error entries become candidates again
-    (re-evaluated): for known they join the fixtures rows; for unknown
-    they stop being subtracted from the generated set. A successful
-    re-attempt deletes the entry (purge-on-success).
-- **`successful`** filters the known universe by entry presence:
-  - null (default): no filter (the bare sweep re-evaluates everything
-    known, mirroring `--all`).
-  - true: only candidates with no error entry (purge-on-success makes
-    "no entry" the successful signal).
-  - false: only candidates with an `unsuccessful`-class error entry
-    (replaces `--unsuccessful`/`--unavailable` sweeps).
-- **`free`** filters candidates by the free table:
-  - null (default): no filter.
-  - true (`--free`): only candidates whose (provider, model) is listed
-    (non-`-` cell) in `fixtures/.providers_freemodels.csv`.
-  - false (`--paid`): only candidates whose (provider, model) is NOT
-    listed. Unlike the marker fields, free-ness is derivable for
-    generated combos too (dims are known from the cross-product), so
-    `--unknown --free` is allowed.
+- **`--stale-by-output-drift`** — stale iff the two channel files'
+  `outputs.identify` objects are not both present and deep-equal (a
+  missing channel file counts stale).
+- **`--stale-by-minutes=N` / `--stale-by-hours=N` /
+  `--stale-by-days=N`** — mode-scoped age of `meta.updated_at`
+  (`from-identity/<id>.json` for from-identity,
+  `from-capture/<id>.json` for from-capture); stored in minutes.
+- **`--stale-by-harness-version`** — the capture file's
+  `meta.harness_version` vs a live `version_launch` probe (zero-token).
+- **`--stale-by-detect-version`** — the channel file's
+  `meta.agent_detect_version` absent or ≠ this binary's version (the
+  designated sweep after a `build.zig.zon` bump).
 
-XOR/conflicts (exit 3): `--known`+`--unknown`, `--valid`+`--invalid`,
-`--successful`+`--unsuccessful`, `--free`+`--paid`, `--unknown` + any
-marker (`--stale-by-*` — incl. `--stale-by-missing-entry` and
-`--stale-by-missing-fixture`) or a non-default `successful` axis
-(generated combos have no markers/outcomes to filter on).
+**`--stale`** ≡ output-drift OR days=27 OR harness-version OR
+detect-version — the composite. **Defaulting:** `--stale` is defaulted
+to true — a queue upsert with no staleness flags carries the full
+composite. Exceptions: any explicit `--stale-*` ⇒ `--stale` is NOT
+defaulted (the explicit flags alone form the entry's set); `--refresh`
+⇒ the entry carries NO criteria, so every candidate is worked
+regardless of freshness (the explicit opt-back-in to full
+re-evaluation). **Component overwrite:** `--stale` provided together
+with an explicit `--stale-*` ⇒ the explicit value overwrites the
+composite's default for that component only (`--stale --stale-by-days=0`
+= drift + days=0 + harness-version + detect-version;
+`--stale --stale-by-days=999999999` effectively disables the age
+component). **Conflicts (exit 3):** `--refresh` with `--stale` or any
+`--stale-*`. **Uniform default rule:** a queue item with no `--stale-*`
+and no `--refresh*` pops with the same `--stale` default. **Why:**
+churn prevention — with `--stale` defaulted, idle re-queues only pick
+genuinely stale combos.
 
-### `--stale-by-missing-entry` (replaces the lazy file-based backfill)
+**`--repair`** (the one action flag; on `fixtures queue`): pops the
+backlog, re-evaluates each item against the CURRENT binary's rule
+tables and grids, and re-queues the now-actionable items — unknown_*
+item now resolvable → removed from the backlog + one from-identity
+entry per item filtered on that dim; needs_curation item now curated →
+removed + a `--fixture=<id>` from-capture entry; the unfixtured → one
+from-identity entry over the feasible universe, honoring dims filters.
+Items still unresolvable / still argv-less stay in the backlog; repair
+logs them.
 
-The store is **not** backfilled at init and the daemon no longer
-backfills from files at pop. Instead, `fixtures queue
---stale-by-missing-entry` queues an entry whose expansion is the
-**registration pass**: every `fixtures/*.json` with no store entry is
-re-registered — valid ids (known rule dims + filename platform) get a
-`fixtures` entry (`fixture_hash` + the per-channel hashes from the
-committed file; the channel dates stay absent, so age checks treat the
-channels as stale until they are re-written; **no queue row**); invalid
-ids go to the `errors` ledger (reason `unknown fixture file`). **The
-file persists** either way — nothing is ever deleted. The pass is
-idempotent: the entry is purged when no unregistered files remain.
-
-### harness-version tracking + the staleness markers
-
-A captured fixture records the harness's live version snapshot in
-`capture.harness_version` (stamped by `fixtures capture` / the daemon
-via the row's `version_launch` — a zero-token probe; declared
-`from-identity` rows carry no version). The seven flat markers select
-the stale candidates at expansion:
-
-- `--stale-by-missing-entry` / `--stale-by-missing-fixture` — fixture
-  files with no store entry (the registration pass) / store entries
-  whose fixture file is absent.
-- `--stale-by-days=N`, `--stale-by-hours=N`, `--stale-by-minutes=N` —
-  mode-scoped age thresholds (always stored as MINUTES): a
-  `from-identity` entry is age-stale iff `identity.declared_at` is
-  missing or older than the threshold; a `from-capture` entry iff
-  `capture.captured_at` is.
-- `--stale-by-harness-version` — the captured version differs from a
-  live `version_launch` probe.
-- `--stale-by-detect-version` — `agent_detect_version` is null or
-  differs from this binary's version (the designated sweep after a
-  `build.zig.zon` bump).
-- `--stale-by-fixture-hash` — `fixture_hash` differs from the
-  committed file's BLAKE3 (missing file/hash = stale; detects any
-  unrecorded file change, hand edits and git merges included).
-- `--stale-by-channel-hash` — stale iff `identity.channel_hash` and
-  `capture.channel_hash` are NOT both present and equal (divergence —
-  the capture channel no longer matches the declared one — or nulls —
-  channels not yet written — both count stale).
-
-Markers are **pure enqueue** (or pure row filter for dequeue) — no
-probing happens at queue time; the daemon evaluates them at expansion.
-Marker sweeps require `known: true`.
+**`fixtures status`** — the derived snapshot: fixtured counts per
+folder, the backlog sets (maintained), feasible-unfixtured totals,
+stale/fresh breakdowns under the composite. The dev agent's
+discernment surface; the log is the timeline, status is the now.
 
 ### user-only daemon (not the agent)
 
@@ -379,7 +383,7 @@ Examples per group:
 - **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` +
   usage; `--bogus`; dev `fixtures frobnicate`.
 - **3** — `agent-detect identify trailer` → `conflicting argument` +
-  usage; dev `fixtures queue --stale-by-days=7 --stale-by-minutes=30`.
+  usage; dev `fixtures queue --refresh --stale-by-minutes=30`.
 - **4** — `identify --harness=cline` (partial combo); bare
   `agent-detect trailer`; dev `fixtures queue` without filter.
 - **5** — dev `fixtures daemon` inside an agent → `incompatible
@@ -431,8 +435,8 @@ names the shipped behavior and why it was chosen.
 
 1. **Never guess.** Partial detection exits 8 (unable to detect) and
    writes nothing to
-   the store — the fixtures-only approach means every committed
-   `fixtures/*.json` is a real capture (or a rule-derived recipe
+   the fixture files — the fixtures-only approach means every committed
+   `fixtures/from-*/*.json` is a real capture (or a rule-derived recipe
    report), never an assembly.
 2. **Queue entries are filters, never work items.** A `queue` entry
    means "re-evaluate every known row matching my dims/markers/axes",
@@ -443,10 +447,13 @@ names the shipped behavior and why it was chosen.
    lock on a lock file + temp/rename atomic writes) and
    git-friendly, hand-editable storage with zero new dependencies in
    the released binary — and zero runtime dependencies in the
-   `fixtures` workflow either. Curated data (the per-platform
-   `prompt_launch`/`version_launch` argv) lives in the store, not in
-   Zig; the free axis lives in its own grid CSV
-   (`fixtures/.providers_freemodels.csv`).
+   `fixtures` workflow either. The store holds only the non-derivable
+   state (queue / backlog / known_but_failed): the fixture files
+   themselves carry the saved outputs and the meta (ledger dates,
+   writer version, and the curated `prompt_launch`/`version_launch`
+   argv — not Zig); the free and feasibility axes live in grid CSVs
+   (`.providers_freemodels.csv`, `.harnesses_providers.csv`,
+   `.providers_models.csv`).
 4. **Kilo live-DB fallback.** Live identity inference falls back
    env marker → `KILO_MODEL` → a direct read of the live
    `~/.local/share/kilo/kilo.db`. The *active* session is the
@@ -457,14 +464,15 @@ names the shipped behavior and why it was chosen.
    `~/.local/share/opencode/opencode.db`; copilot prefers its running
    non-archived session. Production stays SQLite-free except for these
    read-only session-store reads.
-5. **No `--no-*` flags.** A `fixtures` row always has all four
-   dims NOT NULL; an unset dim is expressed as a NULL seed dim in
-   `queue` only. There is no "explicit null" CLI spelling.
-6. **No auto-reconcile.** Committed `fixtures/*.json` are
-   authoritative; `--stale-by-missing-entry` re-registers files that
-   have no store entry (valid ids → entry, invalid ids → `errors`) and
-   option B (reconcile-on-read) was rejected. The store is populated
-   explicitly, never lazily at daemon pop.
+5. **No `--no-*` flags.** Fixture ids always carry all four dims;
+   an unconstrained dim is an absent filter field on a queue entry
+   only. There is no "explicit null" CLI spelling.
+6. **No auto-reconcile.** Committed fixture files are authoritative;
+   the store holds no fixture rows to reconcile — the known universe
+   is the union of the two channel folders' filename stems, read at
+   expansion time, and the backlog is refreshed from folder scans.
+   Reconciliation work is explicit: `--repair` re-queues actionable
+   gaps, staleness criteria re-work stale channels.
 7. **Daemon is user-only.** The agent never runs the daemon; the
    env-marker + ancestry guard fails closed (`runFixturesDaemon`).
 8. **Released binary stays minimal.** No index.json store, no `fixtures`, no raw
@@ -474,7 +482,7 @@ names the shipped behavior and why it was chosen.
     `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
 9. **The 18-field canonical identify contract.** Test-enforced
    (see `src/known_fixtures.test.zig`); the raw block is shapeless
-   (source-grouped keys, embedded as the `from-capture-raw` channel),
+   (source-grouped keys, embedded as the from-capture file's `outputs.raw`),
    and harness rule *static* data
    (env-marker/binary-name lists) is intentionally NOT re-emitted in
    raw.
@@ -610,7 +618,7 @@ re-litigating scope.
 - **Evidence-attribution rule:** raw/evidence are **review artifacts** —
   the mechanical evidence check was removed. Every detected dim's
   attribution is human + dev-agent review (capture review window +
-  commit review of `from-capture-raw`); the code no longer gates on it.
+  commit review of `outputs.raw`); the code no longer gates on it.
   Sources that can't serialize into a claim (custom database formats,
   e.g. kilo's sqlite session store) are logged follow-ups, never faked.
   Declared fixtures carry no evidence at all.
