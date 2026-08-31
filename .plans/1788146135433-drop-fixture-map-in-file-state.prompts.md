@@ -40,3 +40,11 @@ Prompts verbatim, in order, untruncated.
 9.
 
 > give me these plans fleshed out some more - also consider having from-identity in its own folder and from-capture in its own folder
+
+10.
+
+> prompt_launch and version_launch should be inside the from-capture fixture file; the direcetories should be `from-identity` and `from-capture`; the saved outputs should be inside a outputs object (identify, trailer ..., [raw - if from-capture]); and the other fields in a meta object (captured_at, agent_detet_version, harness_version, prompt_launch, version_launch)
+
+11.
+
+> put agent_detect_version before the captured_at/declared_at
