@@ -20,10 +20,10 @@
       "agent_id": "cursor-cursor-claudeopus5",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Cursor \u00b7 Claude Opus 5 <cursor-cursor-claudeopus5@local>",
-    "trailer assisted-by": "Assisted-by: Cursor \u00b7 Claude Opus 5 <cursor-cursor-claudeopus5@local>"
+    "trailer co-author": "Co-authored-by: Cursor · Claude Opus 5 <cursor-cursor-claudeopus5@local>",
+    "trailer assisted-by": "Assisted-by: Cursor · Claude Opus 5 <cursor-cursor-claudeopus5@local>"
   },
   "meta": {
-    "updated_at": 1788163389
+    "updated_at": 1788168437
   }
 }

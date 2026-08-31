@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "GLM 5.2",
+      "model_short_title": null,
+      "model_name": "glm-5.2",
+      "model_id": "glm52",
+      "model_reciprocity": "open-source",
+      "model_license": "MIT",
+      "agent_id": "kimicode-openrouter-glm52",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · GLM 5.2 <kimicode-openrouter-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · GLM 5.2 <kimicode-openrouter-glm52@local>"
+  },
+  "meta": {
+    "updated_at": 1788168674
+  }
+}

@@ -20,10 +20,10 @@
       "agent_id": "crush-hyper-deepseekv4pro",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Crush \u00b7 DeepSeek V4 Pro <crush-hyper-deepseekv4pro@local>",
-    "trailer assisted-by": "Assisted-by: Crush \u00b7 DeepSeek V4 Pro <crush-hyper-deepseekv4pro@local>"
+    "trailer co-author": "Co-authored-by: Crush · DeepSeek V4 Pro <crush-hyper-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: Crush · DeepSeek V4 Pro <crush-hyper-deepseekv4pro@local>"
   },
   "meta": {
-    "updated_at": 1788163368
+    "updated_at": 1788168409
   }
 }

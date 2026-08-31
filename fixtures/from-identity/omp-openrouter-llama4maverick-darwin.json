@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Llama 4 Maverick",
+      "model_short_title": null,
+      "model_name": "llama-4-maverick",
+      "model_id": "llama4maverick",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "omp-openrouter-llama4maverick",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: omp · Llama 4 Maverick <omp-openrouter-llama4maverick@local>",
+    "trailer assisted-by": "Assisted-by: omp · Llama 4 Maverick <omp-openrouter-llama4maverick@local>"
+  },
+  "meta": {
+    "updated_at": 1788168861
+  }
+}

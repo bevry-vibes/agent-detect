@@ -20,10 +20,10 @@
       "agent_id": "omp-zenmux-gemini35flash",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>"
+    "trailer co-author": "Co-authored-by: omp · Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>"
   },
   "meta": {
-    "updated_at": 1788163620
+    "updated_at": 1788168891
   }
 }

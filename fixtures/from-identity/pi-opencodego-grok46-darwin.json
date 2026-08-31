@@ -20,10 +20,10 @@
       "agent_id": "pi-opencodego-grok46",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Pi \u00b7 Grok 4.6 <pi-opencodego-grok46@local>",
-    "trailer assisted-by": "Assisted-by: Pi \u00b7 Grok 4.6 <pi-opencodego-grok46@local>"
+    "trailer co-author": "Co-authored-by: Pi · Grok 4.6 <pi-opencodego-grok46@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Grok 4.6 <pi-opencodego-grok46@local>"
   },
   "meta": {
-    "updated_at": 1788163727
+    "updated_at": 1788169090
   }
 }

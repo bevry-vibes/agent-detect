@@ -20,10 +20,10 @@
       "agent_id": "omp-ollamacloud-deepseekv32",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 DeepSeek V3.2 <omp-ollamacloud-deepseekv32@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 DeepSeek V3.2 <omp-ollamacloud-deepseekv32@local>"
+    "trailer co-author": "Co-authored-by: omp · DeepSeek V3.2 <omp-ollamacloud-deepseekv32@local>",
+    "trailer assisted-by": "Assisted-by: omp · DeepSeek V3.2 <omp-ollamacloud-deepseekv32@local>"
   },
   "meta": {
-    "updated_at": 1788163596
+    "updated_at": 1788168792
   }
 }

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "GPT-5.6 Sol",
+      "model_short_title": null,
+      "model_name": "gpt-5.6-sol",
+      "model_id": "gpt56sol",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "omp-openrouter-gpt56sol",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · GPT-5.6 Sol <omp-openrouter-gpt56sol@local>",
+    "trailer assisted-by": "Assisted-by: omp · GPT-5.6 Sol <omp-openrouter-gpt56sol@local>"
+  },
+  "meta": {
+    "updated_at": 1788168844
+  }
+}

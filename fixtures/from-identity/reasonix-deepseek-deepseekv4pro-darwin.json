@@ -20,10 +20,10 @@
       "agent_id": "reasonix-deepseek-deepseekv4pro",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Reasonix \u00b7 DeepSeek V4 Pro <reasonix-deepseek-deepseekv4pro@local>",
-    "trailer assisted-by": "Assisted-by: Reasonix \u00b7 DeepSeek V4 Pro <reasonix-deepseek-deepseekv4pro@local>"
+    "trailer co-author": "Co-authored-by: Reasonix · DeepSeek V4 Pro <reasonix-deepseek-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: Reasonix · DeepSeek V4 Pro <reasonix-deepseek-deepseekv4pro@local>"
   },
   "meta": {
-    "updated_at": 1788163775
+    "updated_at": 1788169202
   }
 }

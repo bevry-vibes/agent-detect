@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Mistral",
+      "provider_name": "mistral",
+      "provider_id": "mistral",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": "opt-out",
+      "model_label": "Mistral Small (latest)",
+      "model_short_title": null,
+      "model_name": "mistral-small-latest",
+      "model_id": "mistralsmalllatest",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "opencode-mistral-mistralsmalllatest",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Mistral Small (latest) <opencode-mistral-mistralsmalllatest@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Mistral Small (latest) <opencode-mistral-mistralsmalllatest@local>"
+  },
+  "meta": {
+    "updated_at": 1788168981
+  }
+}

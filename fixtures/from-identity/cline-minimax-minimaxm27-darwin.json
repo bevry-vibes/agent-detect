@@ -20,10 +20,10 @@
       "agent_id": "cline-minimax-minimaxm27",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Cline \u00b7 MiniMax M2.7 <cline-minimax-minimaxm27@local>",
-    "trailer assisted-by": "Assisted-by: Cline \u00b7 MiniMax M2.7 <cline-minimax-minimaxm27@local>"
+    "trailer co-author": "Co-authored-by: Cline · MiniMax M2.7 <cline-minimax-minimaxm27@local>",
+    "trailer assisted-by": "Assisted-by: Cline · MiniMax M2.7 <cline-minimax-minimaxm27@local>"
   },
   "meta": {
-    "updated_at": 1788163348
+    "updated_at": 1788168295
   }
 }

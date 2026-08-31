@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Hy4 Preview",
+      "model_short_title": null,
+      "model_name": "hy4-preview",
+      "model_id": "hy4preview",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "omp-openrouter-hy4preview",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: omp · Hy4 Preview <omp-openrouter-hy4preview@local>",
+    "trailer assisted-by": "Assisted-by: omp · Hy4 Preview <omp-openrouter-hy4preview@local>"
+  },
+  "meta": {
+    "updated_at": 1788168852
+  }
+}

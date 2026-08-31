@@ -20,10 +20,10 @@
       "agent_id": "omp-huggingface-commanda",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Command A <omp-huggingface-commanda@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Command A <omp-huggingface-commanda@local>"
+    "trailer co-author": "Co-authored-by: omp · Command A <omp-huggingface-commanda@local>",
+    "trailer assisted-by": "Assisted-by: omp · Command A <omp-huggingface-commanda@local>"
   },
   "meta": {
-    "updated_at": 1788163560
+    "updated_at": 1788168762
   }
 }

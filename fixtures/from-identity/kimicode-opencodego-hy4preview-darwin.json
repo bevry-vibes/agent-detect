@@ -20,10 +20,10 @@
       "agent_id": "kimicode-opencodego-hy4preview",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 Hy4 Preview <kimicode-opencodego-hy4preview@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 Hy4 Preview <kimicode-opencodego-hy4preview@local>"
+    "trailer co-author": "Co-authored-by: Kimi Code · Hy4 Preview <kimicode-opencodego-hy4preview@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Hy4 Preview <kimicode-opencodego-hy4preview@local>"
   },
   "meta": {
-    "updated_at": 1788163496
+    "updated_at": 1788168637
   }
 }

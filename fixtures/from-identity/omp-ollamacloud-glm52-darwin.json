@@ -20,10 +20,10 @@
       "agent_id": "omp-ollamacloud-glm52",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 GLM 5.2 <omp-ollamacloud-glm52@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 GLM 5.2 <omp-ollamacloud-glm52@local>"
+    "trailer co-author": "Co-authored-by: omp · GLM 5.2 <omp-ollamacloud-glm52@local>",
+    "trailer assisted-by": "Assisted-by: omp · GLM 5.2 <omp-ollamacloud-glm52@local>"
   },
   "meta": {
-    "updated_at": 1788163598
+    "updated_at": 1788168798
   }
 }

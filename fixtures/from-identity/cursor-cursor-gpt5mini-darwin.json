@@ -20,10 +20,10 @@
       "agent_id": "cursor-cursor-gpt5mini",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Cursor \u00b7 GPT-5 mini <cursor-cursor-gpt5mini@local>",
-    "trailer assisted-by": "Assisted-by: Cursor \u00b7 GPT-5 mini <cursor-cursor-gpt5mini@local>"
+    "trailer co-author": "Co-authored-by: Cursor · GPT-5 mini <cursor-cursor-gpt5mini@local>",
+    "trailer assisted-by": "Assisted-by: Cursor · GPT-5 mini <cursor-cursor-gpt5mini@local>"
   },
   "meta": {
-    "updated_at": 1788163398
+    "updated_at": 1788168446
   }
 }

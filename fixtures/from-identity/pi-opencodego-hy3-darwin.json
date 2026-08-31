@@ -20,10 +20,10 @@
       "agent_id": "pi-opencodego-hy3",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi \u00b7 Hy3 <pi-opencodego-hy3@local>",
-    "trailer assisted-by": "Assisted-by: Pi \u00b7 Hy3 <pi-opencodego-hy3@local>"
+    "trailer co-author": "Co-authored-by: Pi · Hy3 <pi-opencodego-hy3@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Hy3 <pi-opencodego-hy3@local>"
   },
   "meta": {
-    "updated_at": 1788163729
+    "updated_at": 1788169091
   }
 }

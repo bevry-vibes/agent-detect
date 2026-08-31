@@ -20,10 +20,10 @@
       "agent_id": "cline-clinepass-deepseekv4pro",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Cline \u00b7 DeepSeek V4 Pro <cline-clinepass-deepseekv4pro@local>",
-    "trailer assisted-by": "Assisted-by: Cline \u00b7 DeepSeek V4 Pro <cline-clinepass-deepseekv4pro@local>"
+    "trailer co-author": "Co-authored-by: Cline · DeepSeek V4 Pro <cline-clinepass-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: Cline · DeepSeek V4 Pro <cline-clinepass-deepseekv4pro@local>"
   },
   "meta": {
-    "updated_at": 1788163337
+    "updated_at": 1788168252
   }
 }

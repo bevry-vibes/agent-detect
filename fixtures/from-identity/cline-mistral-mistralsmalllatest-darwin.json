@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Mistral",
+      "provider_name": "mistral",
+      "provider_id": "mistral",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": "opt-out",
+      "model_label": "Mistral Small (latest)",
+      "model_short_title": null,
+      "model_name": "mistral-small-latest",
+      "model_id": "mistralsmalllatest",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "cline-mistral-mistralsmalllatest",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Mistral Small (latest) <cline-mistral-mistralsmalllatest@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Mistral Small (latest) <cline-mistral-mistralsmalllatest@local>"
+  },
+  "meta": {
+    "updated_at": 1788168298
+  }
+}

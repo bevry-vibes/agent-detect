@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Hy4 Preview",
+      "model_short_title": null,
+      "model_name": "hy4-preview",
+      "model_id": "hy4preview",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "pi-openrouter-hy4preview",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · Hy4 Preview <pi-openrouter-hy4preview@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Hy4 Preview <pi-openrouter-hy4preview@local>"
+  },
+  "meta": {
+    "updated_at": 1788169148
+  }
+}

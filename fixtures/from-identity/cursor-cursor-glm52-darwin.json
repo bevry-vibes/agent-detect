@@ -20,10 +20,10 @@
       "agent_id": "cursor-cursor-glm52",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Cursor \u00b7 GLM 5.2 <cursor-cursor-glm52@local>",
-    "trailer assisted-by": "Assisted-by: Cursor \u00b7 GLM 5.2 <cursor-cursor-glm52@local>"
+    "trailer co-author": "Co-authored-by: Cursor · GLM 5.2 <cursor-cursor-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Cursor · GLM 5.2 <cursor-cursor-glm52@local>"
   },
   "meta": {
-    "updated_at": 1788163393
+    "updated_at": 1788168441
   }
 }

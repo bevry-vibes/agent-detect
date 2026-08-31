@@ -20,10 +20,10 @@
       "agent_id": "vibe-mistral-mistralsmalllatest",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Vibe \u00b7 Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>",
-    "trailer assisted-by": "Assisted-by: Vibe \u00b7 Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>"
+    "trailer co-author": "Co-authored-by: Vibe · Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>",
+    "trailer assisted-by": "Assisted-by: Vibe · Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>"
   },
   "meta": {
-    "updated_at": 1788163787
+    "updated_at": 1788169213
   }
 }

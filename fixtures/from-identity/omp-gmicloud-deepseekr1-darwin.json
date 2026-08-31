@@ -20,10 +20,10 @@
       "agent_id": "omp-gmicloud-deepseekr1",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 DeepSeek R1 <omp-gmicloud-deepseekr1@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 DeepSeek R1 <omp-gmicloud-deepseekr1@local>"
+    "trailer co-author": "Co-authored-by: omp · DeepSeek R1 <omp-gmicloud-deepseekr1@local>",
+    "trailer assisted-by": "Assisted-by: omp · DeepSeek R1 <omp-gmicloud-deepseekr1@local>"
   },
   "meta": {
-    "updated_at": 1788163549
+    "updated_at": 1788168751
   }
 }

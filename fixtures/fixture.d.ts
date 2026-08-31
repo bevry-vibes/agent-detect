@@ -95,8 +95,6 @@ export interface IdentityFile {
   meta: {
     /** was identity.declared_at — the channel WAS the declaration. */
     updated_at: number;
-    /** the agent-detect version that declared it. */
-    agent_detect_version: string;
   };
 }
 
@@ -118,8 +116,6 @@ export interface CaptureFile {
   meta: {
     /** was capture.captured_at. */
     updated_at: number;
-    /** the agent-detect version that captured it. */
-    agent_detect_version: string;
     /** was capture.harness_version — the live version snapshot. */
     harness_version?: string;
     /**

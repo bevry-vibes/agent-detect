@@ -20,10 +20,10 @@
       "agent_id": "qwen-deepseek-deepseekv4flash",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Qwen Code \u00b7 DeepSeek V4 Flash <qwen-deepseek-deepseekv4flash@local>",
-    "trailer assisted-by": "Assisted-by: Qwen Code \u00b7 DeepSeek V4 Flash <qwen-deepseek-deepseekv4flash@local>"
+    "trailer co-author": "Co-authored-by: Qwen Code · DeepSeek V4 Flash <qwen-deepseek-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code · DeepSeek V4 Flash <qwen-deepseek-deepseekv4flash@local>"
   },
   "meta": {
-    "updated_at": 1788163760
+    "updated_at": 1788169186
   }
 }

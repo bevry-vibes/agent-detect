@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "Kimi",
+      "provider_name": "kimi",
+      "provider_id": "kimi",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Kimi K2.5",
+      "model_short_title": null,
+      "model_name": "kimi-k2.5",
+      "model_id": "kimik25",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "pi-kimi-kimik25",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Pi · Kimi K2.5 <pi-kimi-kimik25@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Kimi K2.5 <pi-kimi-kimik25@local>"
+  },
+  "meta": {
+    "updated_at": 1788169067
+  }
+}

@@ -20,10 +20,10 @@
       "agent_id": "kimicode-opencodego-grok46",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 Grok 4.6 <kimicode-opencodego-grok46@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 Grok 4.6 <kimicode-opencodego-grok46@local>"
+    "trailer co-author": "Co-authored-by: Kimi Code · Grok 4.6 <kimicode-opencodego-grok46@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Grok 4.6 <kimicode-opencodego-grok46@local>"
   },
   "meta": {
-    "updated_at": 1788163494
+    "updated_at": 1788168635
   }
 }

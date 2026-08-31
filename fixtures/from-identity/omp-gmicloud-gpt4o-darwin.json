@@ -20,10 +20,10 @@
       "agent_id": "omp-gmicloud-gpt4o",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 GPT-4o <omp-gmicloud-gpt4o@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 GPT-4o <omp-gmicloud-gpt4o@local>"
+    "trailer co-author": "Co-authored-by: omp · GPT-4o <omp-gmicloud-gpt4o@local>",
+    "trailer assisted-by": "Assisted-by: omp · GPT-4o <omp-gmicloud-gpt4o@local>"
   },
   "meta": {
-    "updated_at": 1788163553
+    "updated_at": 1788168755
   }
 }

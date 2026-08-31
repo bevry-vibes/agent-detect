@@ -16,14 +16,15 @@
       "model_name": "deepseek-v4-flash",
       "model_id": "deepseekv4flash",
       "model_reciprocity": "open-weight",
+      "model_license": "MIT",
       "agent_id": "cline-clinepass-deepseekv4flash",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: Cline \u00b7 DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Cline \u00b7 DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>",
-    "trailer assisted-by": "Assisted-by: Cline \u00b7 DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>",
+    "trailer co-author": "Co-authored-by: Cline · DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Cline · DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "3.0.60",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 86578,
+          "pid": 66363,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
-        },
-        {
-          "pid": 7115,
+          "pid": 66358,
           "name": "bash"
+        },
+        {
+          "pid": 6195,
+          "name": "cline"
         }
       ],
       "harness-urls": [
@@ -79,13 +80,14 @@
           "source": "config",
           "name": "<home>/.cline/data/settings/providers.json",
           "field": "providers.cline-pass.settings.model",
-          "value": "cline-pass/deepseek-v4-flash"
+          "value": "free/deepseek-v4-flash"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786431499,
+    "updated_at": 1788169264,
+    "harness_version": "3.0.60",
     "prompt_invocation": [
       "cline",
       "--auto-approve",
@@ -96,7 +98,6 @@
     "version_invocation": [
       "cline",
       "--version"
-    ],
-    "harness_version": "3.0.60"
+    ]
   }
 }

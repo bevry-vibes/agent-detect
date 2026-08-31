@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Qwen3 Coder",
+      "model_short_title": null,
+      "model_name": "qwen3-coder",
+      "model_id": "qwen3coder",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "kimicode-openrouter-qwen3coder",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · Qwen3 Coder <kimicode-openrouter-qwen3coder@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Qwen3 Coder <kimicode-openrouter-qwen3coder@local>"
+  },
+  "meta": {
+    "updated_at": 1788168720
+  }
+}

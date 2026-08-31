@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Hy4 Preview",
+      "model_short_title": null,
+      "model_name": "hy4-preview",
+      "model_id": "hy4preview",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "opencode-opencodego-hy4preview",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Hy4 Preview <opencode-opencodego-hy4preview@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Hy4 Preview <opencode-opencodego-hy4preview@local>"
+  },
+  "meta": {
+    "updated_at": 1788169020
+  }
+}

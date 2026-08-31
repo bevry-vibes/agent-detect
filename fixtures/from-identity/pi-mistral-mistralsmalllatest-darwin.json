@@ -20,10 +20,10 @@
       "agent_id": "pi-mistral-mistralsmalllatest",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi \u00b7 Mistral Small (latest) <pi-mistral-mistralsmalllatest@local>",
-    "trailer assisted-by": "Assisted-by: Pi \u00b7 Mistral Small (latest) <pi-mistral-mistralsmalllatest@local>"
+    "trailer co-author": "Co-authored-by: Pi · Mistral Small (latest) <pi-mistral-mistralsmalllatest@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Mistral Small (latest) <pi-mistral-mistralsmalllatest@local>"
   },
   "meta": {
-    "updated_at": 1788163714
+    "updated_at": 1788169077
   }
 }

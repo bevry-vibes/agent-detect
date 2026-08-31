@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "GLM 5.3",
+      "model_short_title": null,
+      "model_name": "glm-5.3",
+      "model_id": "glm53",
+      "model_reciprocity": "open-weight",
+      "model_license": "NOASSERTION",
+      "agent_id": "opencode-opencodego-glm53",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · GLM 5.3 <opencode-opencodego-glm53@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GLM 5.3 <opencode-opencodego-glm53@local>"
+  },
+  "meta": {
+    "updated_at": 1788169013
+  }
+}

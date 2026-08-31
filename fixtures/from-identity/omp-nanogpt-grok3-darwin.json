@@ -20,10 +20,10 @@
       "agent_id": "omp-nanogpt-grok3",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Grok 3 <omp-nanogpt-grok3@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Grok 3 <omp-nanogpt-grok3@local>"
+    "trailer co-author": "Co-authored-by: omp · Grok 3 <omp-nanogpt-grok3@local>",
+    "trailer assisted-by": "Assisted-by: omp · Grok 3 <omp-nanogpt-grok3@local>"
   },
   "meta": {
-    "updated_at": 1788163579
+    "updated_at": 1788168781
   }
 }

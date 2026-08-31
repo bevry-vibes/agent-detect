@@ -20,10 +20,10 @@
       "agent_id": "omp-zenmux-step37flash",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Step 3.7 Flash <omp-zenmux-step37flash@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Step 3.7 Flash <omp-zenmux-step37flash@local>"
+    "trailer co-author": "Co-authored-by: omp · Step 3.7 Flash <omp-zenmux-step37flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Step 3.7 Flash <omp-zenmux-step37flash@local>"
   },
   "meta": {
-    "updated_at": 1788163625
+    "updated_at": 1788168896
   }
 }

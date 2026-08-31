@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "DeepSeek R1",
+      "model_short_title": null,
+      "model_name": "deepseek-r1",
+      "model_id": "deepseekr1",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "kimicode-openrouter-deepseekr1",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · DeepSeek R1 <kimicode-openrouter-deepseekr1@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · DeepSeek R1 <kimicode-openrouter-deepseekr1@local>"
+  },
+  "meta": {
+    "updated_at": 1788168660
+  }
+}

@@ -20,10 +20,10 @@
       "agent_id": "omp-huggingface-cogito21",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Cogito 2.1 <omp-huggingface-cogito21@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Cogito 2.1 <omp-huggingface-cogito21@local>"
+    "trailer co-author": "Co-authored-by: omp · Cogito 2.1 <omp-huggingface-cogito21@local>",
+    "trailer assisted-by": "Assisted-by: omp · Cogito 2.1 <omp-huggingface-cogito21@local>"
   },
   "meta": {
-    "updated_at": 1788163559
+    "updated_at": 1788168761
   }
 }

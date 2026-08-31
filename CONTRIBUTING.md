@@ -15,8 +15,8 @@ filename stem is the `<harness>-<provider>-<model>-<platform>` fixture
 id (e.g. `cline-clinepass-kimik3-darwin`), and `outputs` carries
 `identify` (the 18-field canonical object) plus `"trailer co-author"`
 and `"trailer assisted-by"` — for from-capture also `raw`. `meta`
-carries the ledger (`updated_at`, `agent_detect_version`, and for
-captures `harness_version`) and the invocation of record
+carries the ledger (`updated_at`, and for captures `harness_version`)
+and the invocation of record
 (`prompt_invocation`/`version_invocation`). The binary is the only
 thing that writes fixtures — agents never hand-author them — and a
 from-capture file is written **only on a successful capture**: no
@@ -106,9 +106,6 @@ evidence ⇒ stale:
 - `--stale-by-harness-version` — the capture file's
   `meta.harness_version` differs from a live `version_invocation` probe
   (a harness upgrade re-captures without waiting for an age threshold).
-- `--stale-by-detect-version` — the file's `meta.agent_detect_version`
-  is absent or differs from this binary's version (the designated
-  sweep after a `build.zig.zon` bump).
 - `--stale-by-invocation` — the capture file's recorded
   `meta.prompt_invocation` is missing or differs from the latest one in
   index.json's `invocations` table (an updated invocation re-captures).
@@ -169,9 +166,10 @@ To refresh one fixture end-to-end:
    model session (token-consuming — announce with the pre-capture
    review window and confirm with the user first).
 
-For batch refreshes: `fixtures queue --stale-by-detect-version`
-re-queues everything whose `agent_detect_version` drifted;
-`fixtures queue --refresh` re-evaluates a whole filter unconditionally.
+For batch refreshes: `fixtures queue --stale-by-days=0` re-queues
+everything past its declared date (date staleness covers binary
+drift); `fixtures queue --refresh` re-evaluates a whole filter
+unconditionally.
 A bare dims-only queue command (`fixtures queue --harness=cline
 --from-identity`) sweeps every fixtured-or-feasible combo matching
 those dims under the composite criteria. Failed candidates are damped

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Hy3",
+      "model_short_title": null,
+      "model_name": "hy3",
+      "model_id": "hy3",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "cline-opencodego-hy3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Hy3 <cline-opencodego-hy3@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Hy3 <cline-opencodego-hy3@local>"
+  },
+  "meta": {
+    "updated_at": 1788168313
+  }
+}

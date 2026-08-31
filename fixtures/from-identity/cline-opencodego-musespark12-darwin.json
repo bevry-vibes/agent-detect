@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Muse Spark 1.2",
+      "model_short_title": null,
+      "model_name": "muse-spark-1.2",
+      "model_id": "musespark12",
+      "model_reciprocity": null,
+      "model_license": null,
+      "agent_id": "cline-opencodego-musespark12",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Cline · Muse Spark 1.2 <cline-opencodego-musespark12@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Muse Spark 1.2 <cline-opencodego-musespark12@local>"
+  },
+  "meta": {
+    "updated_at": 1788168326
+  }
+}

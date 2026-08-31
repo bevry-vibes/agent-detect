@@ -20,10 +20,10 @@
       "agent_id": "kilo-hyper-qwen3coder",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 Qwen3 Coder <kilo-hyper-qwen3coder@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 Qwen3 Coder <kilo-hyper-qwen3coder@local>"
+    "trailer co-author": "Co-authored-by: Kilo Code · Qwen3 Coder <kilo-hyper-qwen3coder@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Qwen3 Coder <kilo-hyper-qwen3coder@local>"
   },
   "meta": {
-    "updated_at": 1788163432
+    "updated_at": 1788168495
   }
 }

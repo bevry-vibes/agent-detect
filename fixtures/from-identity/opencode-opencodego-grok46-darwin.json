@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Grok 4.6",
+      "model_short_title": null,
+      "model_name": "grok-4.6",
+      "model_id": "grok46",
+      "model_reciprocity": "closed",
+      "model_license": "NONE",
+      "agent_id": "opencode-opencodego-grok46",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Grok 4.6 <opencode-opencodego-grok46@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Grok 4.6 <opencode-opencodego-grok46@local>"
+  },
+  "meta": {
+    "updated_at": 1788169018
+  }
+}

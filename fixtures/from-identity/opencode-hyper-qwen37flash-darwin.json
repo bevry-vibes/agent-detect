@@ -20,10 +20,10 @@
       "agent_id": "opencode-hyper-qwen37flash",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 Qwen3.7-Flash <opencode-hyper-qwen37flash@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 Qwen3.7-Flash <opencode-hyper-qwen37flash@local>"
+    "trailer co-author": "Co-authored-by: OpenCode · Qwen3.7-Flash <opencode-hyper-qwen37flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3.7-Flash <opencode-hyper-qwen37flash@local>"
   },
   "meta": {
-    "updated_at": 1788163668
+    "updated_at": 1788168969
   }
 }

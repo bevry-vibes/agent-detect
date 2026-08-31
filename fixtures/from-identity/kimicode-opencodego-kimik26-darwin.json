@@ -20,10 +20,10 @@
       "agent_id": "kimicode-opencodego-kimik26",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 Kimi K2.6 <kimicode-opencodego-kimik26@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 Kimi K2.6 <kimicode-opencodego-kimik26@local>"
+    "trailer co-author": "Co-authored-by: Kimi Code · Kimi K2.6 <kimicode-opencodego-kimik26@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Kimi K2.6 <kimicode-opencodego-kimik26@local>"
   },
   "meta": {
-    "updated_at": 1788163499
+    "updated_at": 1788168640
   }
 }

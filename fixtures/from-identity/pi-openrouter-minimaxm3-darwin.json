@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "pi-openrouter-minimaxm3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · MiniMax M3 <pi-openrouter-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Pi · MiniMax M3 <pi-openrouter-minimaxm3@local>"
+  },
+  "meta": {
+    "updated_at": 1788169163
+  }
+}

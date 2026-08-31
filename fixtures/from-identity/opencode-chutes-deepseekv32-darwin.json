@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Chutes",
+      "provider_name": "chutes",
+      "provider_id": "chutes",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V3.2",
+      "model_short_title": null,
+      "model_name": "deepseek-v3.2",
+      "model_id": "deepseekv32",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "opencode-chutes-deepseekv32",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · DeepSeek V3.2 <opencode-chutes-deepseekv32@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · DeepSeek V3.2 <opencode-chutes-deepseekv32@local>"
+  },
+  "meta": {
+    "updated_at": 1788168910
+  }
+}

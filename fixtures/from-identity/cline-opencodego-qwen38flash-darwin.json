@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Qwen3.8 Flash",
+      "model_short_title": null,
+      "model_name": "qwen3.8-flash",
+      "model_id": "qwen38flash",
+      "model_reciprocity": null,
+      "model_license": null,
+      "agent_id": "cline-opencodego-qwen38flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Cline · Qwen3.8 Flash <cline-opencodego-qwen38flash@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Qwen3.8 Flash <cline-opencodego-qwen38flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788168328
+  }
+}

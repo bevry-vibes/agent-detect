@@ -16,14 +16,15 @@
       "model_name": "step-3.7-flash",
       "model_id": "step37flash",
       "model_reciprocity": null,
+      "model_license": null,
       "agent_id": "cline-clinepass-step37flash",
-      "reciprocal": false,
-      "trailer": "Co-authored-by: Cline \u00b7 Step 3.7 Flash <cline-clinepass-step37flash@local>"
+      "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Cline \u00b7 Step 3.7 Flash <cline-clinepass-step37flash@local>",
-    "trailer assisted-by": "Assisted-by: Cline \u00b7 Step 3.7 Flash <cline-clinepass-step37flash@local>",
+    "trailer co-author": "Co-authored-by: Cline · Step 3.7 Flash <cline-clinepass-step37flash@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Step 3.7 Flash <cline-clinepass-step37flash@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "3.0.60",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 86492,
+          "pid": 68392,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
-        },
-        {
-          "pid": 7115,
+          "pid": 68383,
           "name": "bash"
+        },
+        {
+          "pid": 6195,
+          "name": "cline"
         }
       ],
       "harness-urls": [
@@ -76,13 +77,14 @@
           "source": "config",
           "name": "<home>/.cline/data/settings/providers.json",
           "field": "providers.cline-pass.settings.model",
-          "value": "cline-pass/step-3.7-flash"
+          "value": "stepfun/step-3.7-flash"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786431494,
+    "updated_at": 1788169413,
+    "harness_version": "3.0.60",
     "prompt_invocation": [
       "cline",
       "--auto-approve",
@@ -93,7 +95,6 @@
     "version_invocation": [
       "cline",
       "--version"
-    ],
-    "harness_version": "3.0.60"
+    ]
   }
 }

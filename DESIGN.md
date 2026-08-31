@@ -69,7 +69,7 @@ files, each a whole self-contained `{ outputs, meta }` envelope
   `outputs` = `identify` (the 18-field canonical object:
   `harness_id`, `provider_id`, `model_id`, `agent_id`, policy fields)
   plus `"trailer co-author"` and `"trailer assisted-by"`; `meta` =
-  `updated_at` + `agent_detect_version`.
+  `updated_at`.
 - `fixtures/from-capture/<id>.json` — the live-capture channel,
   written by `fixtures capture` on success only (authored invocations
   for not-yet-captured combos live in the store's `invocations` table):
@@ -79,8 +79,8 @@ files, each a whole self-contained `{ outputs, meta }` envelope
   agent's version is not yet knowable), then `detectable` and
   `detected`, then `process_lineage`, the `*-urls` reference arrays,
   and the `evidence` claims — the dev `raw` output verbatim); `meta` =
-  `updated_at` + `agent_detect_version` (+ `harness_version`, + the
-  invocation of record — `prompt_invocation`/`version_invocation`).
+  `updated_at` (+ `harness_version`, + the invocation of record —
+  `prompt_invocation`/`version_invocation`).
   The raw block
   deliberately does NOT duplicate the env vars / config files /
   session files verbatim (decision #4 — raw slimming): the `evidence`
@@ -149,8 +149,8 @@ review sees exactly which channel changed; a torn write damages only
 one channel. The writer of a from-capture file records the **invocation
 of record** into its `meta` (`prompt_invocation` / `version_invocation`
 — the store's `invocations` table entry first, else whatever the
-replaced file recorded) and stamps `updated_at` /
-`agent_detect_version` / `harness_version` fresh. There are **no
+replaced file recorded) and stamps `updated_at` / `harness_version`
+fresh. There are **no
 meta-only stub files**: an authored invocation for a not-yet-captured
 combo lives in the store's `invocations` table, and the capture file
 appears only when a capture succeeds. Curation is a signal to the dev
@@ -287,17 +287,14 @@ candidate is stale iff ANY carried criterion says stale:
 - **`--stale-by-harness-version`** — the capture file's
   `meta.harness_version` vs a live `version_invocation` probe
   (zero-token).
-- **`--stale-by-detect-version`** — the channel file's
-  `meta.agent_detect_version` absent or ≠ this binary's version (the
-  designated sweep after a `build.zig.zon` bump).
 - **`--stale-by-invocation`** — the capture file's recorded
   `meta.prompt_invocation` is missing or differs from the latest one
   in index.json's `invocations` table (an updated invocation
   re-captures; a from-identity entry skips this criterion — declared
   files carry no invocation).
 
-**`--stale`** ≡ output OR days=27 OR harness-version OR detect-version
-OR invocation — the composite. **Defaulting:** `--stale` is defaulted
+**`--stale`** ≡ output OR days=27 OR harness-version OR invocation —
+the composite. **Defaulting:** `--stale` is defaulted
 to true — a queue upsert with no staleness flags carries the full
 composite. Exceptions: any explicit `--stale-*` ⇒ `--stale` is NOT
 defaulted (the explicit flags alone form the entry's set); `--refresh`

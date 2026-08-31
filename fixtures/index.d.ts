@@ -61,11 +61,11 @@ export interface StaleCriteria {
   stale_by_minutes?: number;
   /** meta.harness_version differs from a live version_invocation probe. */
   stale_by_harness_version?: boolean;
-  /** meta.agent_detect_version absent or ≠ this binary's version. */
-  stale_by_detect_version?: boolean;
   /** The file's recorded invocation is missing or differs from the
    *  latest one in the invocations table (from-capture only). */
   stale_by_invocation?: boolean;
+  /** Shorthand for the full composite. */
+  stale?: boolean;
 }
 
 /**
@@ -87,10 +87,10 @@ export interface QueueEntry extends StaleCriteria {
   mode: Mode;
   /** true = members of map-provider-model-freeprovidermodel.csv; false = non-members. */
   free?: boolean;
-  /** pid of the enqueueing process (provenance lives here only). */
-  runner: number;
   /** Stamped on this entry's first expansion work; null until then. */
   started_at?: number;
+  /** pid of the enqueueing process (provenance lives here only — last). */
+  runner: number;
 }
 
 /**

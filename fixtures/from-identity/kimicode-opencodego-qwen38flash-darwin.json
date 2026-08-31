@@ -20,10 +20,10 @@
       "agent_id": "kimicode-opencodego-qwen38flash",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>"
+    "trailer co-author": "Co-authored-by: Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>"
   },
   "meta": {
-    "updated_at": 1788163512
+    "updated_at": 1788168652
   }
 }

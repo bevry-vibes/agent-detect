@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M2.5",
+      "model_short_title": null,
+      "model_name": "minimax-m2.5",
+      "model_id": "minimaxm25",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "kilo-openrouter-minimaxm25",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code · MiniMax M2.5 <kilo-openrouter-minimaxm25@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · MiniMax M2.5 <kilo-openrouter-minimaxm25@local>"
+  },
+  "meta": {
+    "updated_at": 1788168575
+  }
+}

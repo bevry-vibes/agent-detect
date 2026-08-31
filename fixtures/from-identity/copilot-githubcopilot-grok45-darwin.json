@@ -20,10 +20,10 @@
       "agent_id": "copilot-githubcopilot-grok45",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: GitHub Copilot CLI \u00b7 Grok 4.5 <copilot-githubcopilot-grok45@local>",
-    "trailer assisted-by": "Assisted-by: GitHub Copilot CLI \u00b7 Grok 4.5 <copilot-githubcopilot-grok45@local>"
+    "trailer co-author": "Co-authored-by: GitHub Copilot CLI · Grok 4.5 <copilot-githubcopilot-grok45@local>",
+    "trailer assisted-by": "Assisted-by: GitHub Copilot CLI · Grok 4.5 <copilot-githubcopilot-grok45@local>"
   },
   "meta": {
-    "updated_at": 1788163363
+    "updated_at": 1788168404
   }
 }

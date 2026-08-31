@@ -20,10 +20,10 @@
       "agent_id": "omp-minimaxcode-minimaxm3",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 MiniMax M3 <omp-minimaxcode-minimaxm3@local>"
+    "trailer co-author": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>"
   },
   "meta": {
-    "updated_at": 1788163570
+    "updated_at": 1788168773
   }
 }

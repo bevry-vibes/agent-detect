@@ -20,10 +20,10 @@
       "agent_id": "omp-nanogpt-doubaoseed21",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Doubao Seed 2.1 <omp-nanogpt-doubaoseed21@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Doubao Seed 2.1 <omp-nanogpt-doubaoseed21@local>"
+    "trailer co-author": "Co-authored-by: omp · Doubao Seed 2.1 <omp-nanogpt-doubaoseed21@local>",
+    "trailer assisted-by": "Assisted-by: omp · Doubao Seed 2.1 <omp-nanogpt-doubaoseed21@local>"
   },
   "meta": {
-    "updated_at": 1788163573
+    "updated_at": 1788168775
   }
 }

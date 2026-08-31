@@ -20,10 +20,10 @@
       "agent_id": "opencode-clinepass-glm52",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 GLM 5.2 <opencode-clinepass-glm52@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 GLM 5.2 <opencode-clinepass-glm52@local>"
+    "trailer co-author": "Co-authored-by: OpenCode · GLM 5.2 <opencode-clinepass-glm52@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GLM 5.2 <opencode-clinepass-glm52@local>"
   },
   "meta": {
-    "updated_at": 1788163636
+    "updated_at": 1788168930
   }
 }

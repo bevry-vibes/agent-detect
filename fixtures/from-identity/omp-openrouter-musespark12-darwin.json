@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Muse Spark 1.2",
+      "model_short_title": null,
+      "model_name": "muse-spark-1.2",
+      "model_id": "musespark12",
+      "model_reciprocity": null,
+      "model_license": null,
+      "agent_id": "omp-openrouter-musespark12",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Muse Spark 1.2 <omp-openrouter-musespark12@local>",
+    "trailer assisted-by": "Assisted-by: omp · Muse Spark 1.2 <omp-openrouter-musespark12@local>"
+  },
+  "meta": {
+    "updated_at": 1788168868
+  }
+}

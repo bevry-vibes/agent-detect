@@ -20,10 +20,10 @@
       "agent_id": "kilo-hyper-llama4maverick",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 Llama 4 Maverick <kilo-hyper-llama4maverick@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 Llama 4 Maverick <kilo-hyper-llama4maverick@local>"
+    "trailer co-author": "Co-authored-by: Kilo Code · Llama 4 Maverick <kilo-hyper-llama4maverick@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Llama 4 Maverick <kilo-hyper-llama4maverick@local>"
   },
   "meta": {
-    "updated_at": 1788163425
+    "updated_at": 1788168484
   }
 }

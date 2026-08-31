@@ -20,10 +20,10 @@
       "agent_id": "omp-huggingface-phi4",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Phi-4 <omp-huggingface-phi4@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Phi-4 <omp-huggingface-phi4@local>"
+    "trailer co-author": "Co-authored-by: omp · Phi-4 <omp-huggingface-phi4@local>",
+    "trailer assisted-by": "Assisted-by: omp · Phi-4 <omp-huggingface-phi4@local>"
   },
   "meta": {
-    "updated_at": 1788163567
+    "updated_at": 1788168769
   }
 }

@@ -16,14 +16,15 @@
       "model_name": "qwen3.8-max",
       "model_id": "qwen38max",
       "model_reciprocity": "closed",
+      "model_license": "NONE",
       "agent_id": "crush-hyper-qwen38max",
-      "reciprocal": false,
-      "trailer": "Co-authored-by: Crush \u00b7 Qwen3.8-Max <crush-hyper-qwen38max@local>"
+      "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Crush \u00b7 Qwen3.8-Max <crush-hyper-qwen38max@local>",
-    "trailer assisted-by": "Assisted-by: Crush \u00b7 Qwen3.8-Max <crush-hyper-qwen38max@local>",
+    "trailer co-author": "Co-authored-by: Crush · Qwen3.8-Max <crush-hyper-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: Crush · Qwen3.8-Max <crush-hyper-qwen38max@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "0.91.2",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 97727,
+          "pid": 90160,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 89057,
+          "name": "crush"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 80180,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -58,34 +59,36 @@
       ],
       "model-urls": [
         "https://qwen.ai/",
-        "https://qwen.ai/blog?id=qwen3.8-max"
+        "https://qwen.ai/blog?id=qwen3.8-max",
+        "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B"
       ],
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "CRUSH_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "crush",
+          "value": "crush"
         },
         {
           "dim": "provider",
           "source": "config",
           "name": "<home>/.local/share/crush/hyper.json",
           "field": "default_large_model_id",
-          "value": "hyper/qwen3.8-max"
+          "value": "qwen3.8-max"
         },
         {
           "dim": "model",
           "source": "config",
           "name": "<home>/.local/share/crush/hyper.json",
           "field": "default_large_model_id",
-          "value": "hyper/qwen3.8-max"
+          "value": "qwen3.8-max"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786432259,
+    "updated_at": 1788171049,
+    "harness_version": "0.91.2",
     "prompt_invocation": [
       "crush",
       "run",
@@ -94,7 +97,6 @@
     "version_invocation": [
       "crush",
       "--version"
-    ],
-    "harness_version": "0.91.2"
+    ]
   }
 }

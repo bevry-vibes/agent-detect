@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Chutes",
+      "provider_name": "chutes",
+      "provider_id": "chutes",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Kimi K3",
+      "model_short_title": null,
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_reciprocity": "open-weight",
+      "model_license": "NOASSERTION",
+      "agent_id": "cline-chutes-kimik3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Kimi K3 <cline-chutes-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Kimi K3 <cline-chutes-kimik3@local>"
+  },
+  "meta": {
+    "updated_at": 1788168241
+  }
+}

@@ -20,10 +20,10 @@
       "agent_id": "pi-opencodego-glm52",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi \u00b7 GLM 5.2 <pi-opencodego-glm52@local>",
-    "trailer assisted-by": "Assisted-by: Pi \u00b7 GLM 5.2 <pi-opencodego-glm52@local>"
+    "trailer co-author": "Co-authored-by: Pi · GLM 5.2 <pi-opencodego-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Pi · GLM 5.2 <pi-opencodego-glm52@local>"
   },
   "meta": {
-    "updated_at": 1788163720
+    "updated_at": 1788169083
   }
 }

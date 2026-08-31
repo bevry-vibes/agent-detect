@@ -20,10 +20,10 @@
       "agent_id": "omp-nanogpt-ling30flash",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 Ling 3.0 Flash <omp-nanogpt-ling30flash@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 Ling 3.0 Flash <omp-nanogpt-ling30flash@local>"
+    "trailer co-author": "Co-authored-by: omp · Ling 3.0 Flash <omp-nanogpt-ling30flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Ling 3.0 Flash <omp-nanogpt-ling30flash@local>"
   },
   "meta": {
-    "updated_at": 1788163586
+    "updated_at": 1788168785
   }
 }

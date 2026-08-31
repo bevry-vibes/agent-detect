@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Step 3.7 Flash",
+      "model_short_title": null,
+      "model_name": "step-3.7-flash",
+      "model_id": "step37flash",
+      "model_reciprocity": null,
+      "model_license": null,
+      "agent_id": "kimicode-openrouter-step37flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · Step 3.7 Flash <kimicode-openrouter-step37flash@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Step 3.7 Flash <kimicode-openrouter-step37flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788168721
+  }
+}

@@ -20,10 +20,10 @@
       "agent_id": "cline-openrouter-nemotron3nano",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Cline \u00b7 Nemotron 3 Nano <cline-openrouter-nemotron3nano@local>",
-    "trailer assisted-by": "Assisted-by: Cline \u00b7 Nemotron 3 Nano <cline-openrouter-nemotron3nano@local>"
+    "trailer co-author": "Co-authored-by: Cline · Nemotron 3 Nano <cline-openrouter-nemotron3nano@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Nemotron 3 Nano <cline-openrouter-nemotron3nano@local>"
   },
   "meta": {
-    "updated_at": 1788163352
+    "updated_at": 1788168383
   }
 }

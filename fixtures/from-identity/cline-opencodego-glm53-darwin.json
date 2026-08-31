@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "GLM 5.3",
+      "model_short_title": null,
+      "model_name": "glm-5.3",
+      "model_id": "glm53",
+      "model_reciprocity": "open-weight",
+      "model_license": "NOASSERTION",
+      "agent_id": "cline-opencodego-glm53",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · GLM 5.3 <cline-opencodego-glm53@local>",
+    "trailer assisted-by": "Assisted-by: Cline · GLM 5.3 <cline-opencodego-glm53@local>"
+  },
+  "meta": {
+    "updated_at": 1788168305
+  }
+}

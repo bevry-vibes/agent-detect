@@ -20,10 +20,10 @@
       "agent_id": "mmx-minimax-minimaxm27",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: MiniMax CLI \u00b7 MiniMax M2.7 <mmx-minimax-minimaxm27@local>",
-    "trailer assisted-by": "Assisted-by: MiniMax CLI \u00b7 MiniMax M2.7 <mmx-minimax-minimaxm27@local>"
+    "trailer co-author": "Co-authored-by: MiniMax CLI · MiniMax M2.7 <mmx-minimax-minimaxm27@local>",
+    "trailer assisted-by": "Assisted-by: MiniMax CLI · MiniMax M2.7 <mmx-minimax-minimaxm27@local>"
   },
   "meta": {
-    "updated_at": 1788163522
+    "updated_at": 1788168724
   }
 }
