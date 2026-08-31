@@ -36,3 +36,7 @@ Prompts verbatim, in order, untruncated.
 8.
 
 > Drop the runner id from the fixture files - persist only in the queue.
+
+9.
+
+> give me these plans fleshed out some more - also consider having from-identity in its own folder and from-capture in its own folder
