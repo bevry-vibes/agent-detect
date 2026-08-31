@@ -7,13 +7,8 @@
 //
 // The suite validates committed-file shape only. The per-folder universe
 // is the union of the two folders' filename stems; channel presence =
-// file existence — no JSON parse needed. Dot-files (the grids, the
-// store, the log) are skipped; the subfolders are scanned only as their
-// own universes.
-//
-// Pre-migration gate: until the store-v2 migration lands (per-channel
-// folders + the slimmed store), the folder/store tests skip gracefully —
-// the legacy flat-layout tree cannot satisfy them.
+// file existence — no JSON parse needed. The subfolders are scanned only
+// as their own universes.
 
 const std = @import("std");
 const testing = std.testing;
@@ -36,7 +31,6 @@ fn discoverFolderStems(a: std.mem.Allocator, folder: []const u8) ![][]u8 {
         const suffix = ".json";
         if (name.len <= suffix.len or !std.mem.endsWith(u8, name, suffix)) continue;
         const stem = name[0 .. name.len - suffix.len];
-        if (stem.len == 0 or stem[0] == '.') continue; // temp files, nothing else
         try stems.append(a, try a.dupe(u8, stem));
     }
     const out = try stems.toOwnedSlice(a);
@@ -67,23 +61,9 @@ fn discoverStems(a: std.mem.Allocator) ![][]u8 {
     return stems.toOwnedSlice(a);
 }
 
-/// true when the store-v2 layout is on disk (per-channel folders exist).
-fn newLayoutPresent(a: std.mem.Allocator) bool {
-    for ([_][]const u8{ identity_dir, capture_dir }) |folder| {
-        var buf: [128]u8 = undefined;
-        const marker = std.fmt.bufPrint(&buf, "{s}/.layout", .{folder}) catch return false;
-        _ = marker;
-        // probe: openDir on the folder itself
-        var dir = std.Io.Dir.cwd().openDir(testing.io, folder, .{}) catch return false;
-        dir.close(testing.io);
-    }
-    _ = a;
-    return true;
-}
-
 /// Load a channel file as a parsed JSON value, or null if the file is
-/// missing/unparseable (callers skip such fixtures gracefully — except
-/// where the envelope test flags them).
+/// missing/unparseable (callers iterate the features a file may not
+/// carry — the envelope test is what flags unparseable files).
 fn readChannelParsed(a: std.mem.Allocator, folder: []const u8, stem: []const u8) !?std.json.Value {
     const path = try std.fmt.allocPrint(a, "{s}/{s}.json", .{ folder, stem });
     const data = std.Io.Dir.cwd().readFileAlloc(testing.io, path, a, @enumFromInt(1 << 20)) catch return null;
@@ -91,15 +71,12 @@ fn readChannelParsed(a: std.mem.Allocator, folder: []const u8, stem: []const u8)
     return parsed.value;
 }
 
-/// Load the committed `fixtures/index.json` store, or null when the
-/// store is absent or not yet migrated to store_version 2 (the store
-/// tests then skip).
-fn readIndexParsed(a: std.mem.Allocator) !?std.json.Value {
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index.json", a, @enumFromInt(1 << 26)) catch return null;
-    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
-    if (parsed.value != .object) return null;
-    const sv = parsed.value.object.get("store_version") orelse return null;
-    if (sv != .integer or sv.integer != 2) return null;
+/// Load the committed `fixtures/index.json` store. The store is
+/// committed — absent or unparseable is a broken tree, not a skip.
+fn readIndexParsed(a: std.mem.Allocator) !std.json.Value {
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index.json", a, @enumFromInt(1 << 26)) catch return error.MissingStore;
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return error.InvalidStore;
+    if (parsed.value != .object) return error.InvalidStore;
     return parsed.value;
 }
 
@@ -152,7 +129,6 @@ fn split4(stem: []const u8) ?[4][]const u8 {
 }
 
 test "fixtures: at least one fixture is committed" {
-    if (!newLayoutPresent(testing.allocator)) return; // pre-migration
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -168,7 +144,6 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
     // trailers); from-capture files are written only on success, so they
     // always carry `outputs` (…+ raw) too — no meta-only stubs exist. No
     // other top-level keys exist — the directory IS the channel.
-    if (!newLayoutPresent(testing.allocator)) return; // pre-migration
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -234,7 +209,6 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
 }
 
 test "fixtures: identify has all 18 grouped keys in emission order, no trailer key" {
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -265,7 +239,6 @@ test "fixtures: outputs.raw is the dev-raw schema — exactly the raw output key
     // keyset-growth fixtures may carry fewer keys — the check is "no
     // unexpected keys", and the queued regen sweeps bring older files up
     // to the full set.
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -323,7 +296,6 @@ test "fixtures: outputs.raw is the dev-raw schema — exactly the raw output key
 }
 
 test "fixtures: outputs.raw carries detectable + detected, process_lineage, and https *-urls" {
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -378,7 +350,6 @@ test "fixtures: every fixture's identify has all 8 identity fields populated" {
     // +model triad populated. The four policy fields — harness_license,
     // model_reciprocity, provider_closed_training, provider_open_training
     // — may legitimately be `null` per the schema.
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -408,7 +379,6 @@ test "fixtures: every fixture's identify has all 8 identity fields populated" {
 }
 
 test "fixtures: identify *_name fields are non-empty strings" {
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -431,7 +401,6 @@ test "fixtures: identify *_name fields are non-empty strings" {
 }
 
 test "fixtures: fixture JSON is pretty-printed (outputs/meta envelope, identify expanded)" {
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -463,7 +432,6 @@ test "fixtures: warn on null / NOASSERTION harness_license (dev should fill in f
     // `NOASSERTION` (attempted, inconclusive) warn; `NONE` (concluded:
     // verified proprietary/closed) is a deliberate, valid value and must
     // NOT warn.
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -491,7 +459,6 @@ test "fixtures: warn on null / NOASSERTION harness_license (dev should fill in f
 }
 
 test "fixtures: envelope combo-match — each folder's identify ids equal the filename's dims" {
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -542,7 +509,6 @@ test "fixtures: invocation argv — exactly one <prompt> placeholder; version_in
     // live in two places: a from-capture file's meta (the invocation it
     // ran under) and the store's `invocations` table (authored, pre- or
     // post-success).
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -556,9 +522,8 @@ test "fixtures: invocation argv — exactly one <prompt> placeholder; version_in
         try checkInvocation(aa, stem, launch, meta.object.get("version_invocation"));
     }
     // the store's invocations table too
-    const store = (try readIndexParsed(aa)) orelse return;
-    const invocations = store.object.get("invocations") orelse return;
-    if (invocations != .object) return;
+    const store = try readIndexParsed(aa);
+    const invocations = store.object.get("invocations") orelse return error.MissingInvocations;
     var it = invocations.object.iterator();
     while (it.next()) |kv| {
         const o = kv.value_ptr.object;
@@ -593,7 +558,6 @@ test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host pla
     // The curated argv must name a real binary for the platform the file
     // targets. Only the files for the platform this test runs on are
     // checked — the other platforms' name lists differ at compile time.
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -627,7 +591,7 @@ test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host pla
 test "index.json: store_version is 3 and the tables are exactly queue + backlog + invocations" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
-    const root = (try readIndexParsed(arena.allocator())) orelse return; // pre-migration
+    const root = try readIndexParsed(arena.allocator());
     for (root.object.keys()) |key| {
         if (std.mem.eql(u8, key, "store_version") or
             std.mem.eql(u8, key, "queue") or
@@ -643,7 +607,7 @@ test "index.json: store_version is 3 and the tables are exactly queue + backlog 
 test "index.json: backlog sets are unique sorted slug/id string arrays" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
-    const root = (try readIndexParsed(arena.allocator())) orelse return;
+    const root = try readIndexParsed(arena.allocator());
     const backlog = root.object.get("backlog") orelse return;
     if (backlog != .object) return error.InvalidBacklog;
     const sets = [_][]const u8{ "unknown_harnesses", "unknown_providers", "unknown_models", "unknown_invocations" };
@@ -668,7 +632,7 @@ test "index.json: unknown_invocations ids are from-capture files with no invocat
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const aa = arena.allocator();
-    const root = (try readIndexParsed(aa)) orelse return;
+    const root = try readIndexParsed(aa);
     const backlog = root.object.get("backlog") orelse return;
     if (backlog != .object) return;
     const arr = backlog.object.get("unknown_invocations") orelse return;
@@ -691,7 +655,7 @@ test "index.json: unknown_invocations ids are from-capture files with no invocat
 test "index.json: backlog.known_but_failed is a flat id → message string map" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
-    const root = (try readIndexParsed(arena.allocator())) orelse return;
+    const root = try readIndexParsed(arena.allocator());
     const backlog = root.object.get("backlog") orelse return;
     if (backlog != .object) return error.InvalidBacklog;
     const kb = backlog.object.get("known_but_failed") orelse return;
@@ -713,7 +677,7 @@ test "index.json: backlog.known_but_failed is a flat id → message string map" 
 test "index.json: queue entries match their field invariants" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
-    const root = (try readIndexParsed(arena.allocator())) orelse return;
+    const root = try readIndexParsed(arena.allocator());
     // mode ∈ {from-identity, from-capture}; the criteria set is booleans
     // (true|absent) + an age threshold in minutes ≥ 0; `free` is an
     // optional boolean.
@@ -744,7 +708,6 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     // coverage is derived at expansion time from the feasible-unfixtured
     // universe (the reference grids) and the daemon's identity drain —
     // the folder scan only has to show each rule at least once.
-    if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -776,7 +739,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         if (!h_ok or !p_ok or !m_ok) {
             // unresolvable dims are backlog items (unknown_* sets), not a
             // failure — but the store scan must have recorded them.
-            const bl = (try readIndexParsed(aa)) orelse return error.MissingStore;
+            const bl = try readIndexParsed(aa);
             const backlog = bl.object.get("backlog") orelse return error.MissingBacklog;
             const set: []const u8 = if (!h_ok) "unknown_harnesses" else if (!p_ok) "unknown_providers" else "unknown_models";
             const dim: []const u8 = if (!h_ok) parts[0] else if (!p_ok) parts[1] else parts[2];
@@ -917,7 +880,6 @@ test "providers_freemodels.csv: free-grid entries resolve to known rules, stay s
             any = true;
             if (idx >= cols.items.len) continue;
             // free-signal cross-check against the from-capture files' argv
-            if (!newLayoutPresent(a)) continue;
             const stems = try discoverFolderStems(a, capture_dir);
             for (stems) |stem| {
                 const parts = (split4(stem)) orelse continue;

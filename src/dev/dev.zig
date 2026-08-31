@@ -1057,9 +1057,7 @@ pub const dev = if (build_options.dev) struct {
         return true;
     }
 
-    /// scan one channel folder for fixture-file stems (dot-files skipped
-    /// defensively — interrupted atomic writes leave `<stem>.json.tmp`,
-    /// which the `.json` suffix check already rejects). Subfolders are
+    /// scan one channel folder for fixture-file stems. Subfolders are
     /// scanned only as their own universes.
     pub fn scanFolderStems(io: std.Io, a: std.mem.Allocator, folder: []const u8) ![][]const u8 {
         var out: std.ArrayList([]const u8) = .empty;
@@ -1072,7 +1070,6 @@ pub const dev = if (build_options.dev) struct {
             const name = ent.name;
             if (name.len <= ".json".len or !std.mem.endsWith(u8, name, ".json")) continue;
             const stem = name[0 .. name.len - ".json".len];
-            if (stem.len == 0 or stem[0] == '.') continue;
             // dupe: `ent.name` is only valid until the next iteration
             try out.append(a, try a.dupe(u8, stem));
         }
