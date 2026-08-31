@@ -60,3 +60,35 @@ Prompts verbatim, in order, untruncated.
 14.
 
 > Give me more details about these and how they will operate now: [the axes help text block]
+
+15.
+
+> without updating the plan yet, what are better names or recatogirisation for known/unknown valid/invalid - as it is pretty obtuse right now
+
+16.
+
+> how about --fixtured/--unfixtured (for whether fixture files exist), --known/unknown (for whether the dims are known)
+
+17.
+
+> change --known and --unknown to --resolvable and --unresolvable; now let's consider errors; perhaps we can change it to be like the queue or a bit divergent to the queue; what are some proposals; and we should also note that if a queue item has no stale* or refresh* then it should be popped with the same stale default
+
+18.
+
+> What if we drop errors completely and just have them in the daemon log for the dev agent to discern?
+
+19.
+
+> But when would say "no launch spec" actually occur, if it is resolvable then it should not happen- this would be for like if we tried a evergreen item that didn't exist yet right? Or is it for say for known ids, but an unknown harness-provider-model combo - how about we add fields to .index.json that contains these action items easily by their distinctions - what types of distinctions do we need? we already have pretty good error reporting / exit statuses
+
+20.
+
+> have unresolvable become unknown_agents unknown_providers and unknown_models of their alphanumeric ids, unique, no null/empty
+
+21.
+
+> now change/drop: [the axes block] and their new verisons to just be a --repair that works on these actionable errors, so when an unresolvable is now resolvable, or a needs-curation now has curation, or an unfixtured can now get fixtures - --repair should just pop them and add them back to the queue
+
+22.
+
+> unknown_agents should be unknown_harnesses
