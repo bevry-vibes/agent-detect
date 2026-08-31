@@ -318,15 +318,6 @@
     },
     {
       "harness": "pi",
-      "provider": "anthropic",
-      "model": "claudesonnet4",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
       "provider": "deepseek",
       "model": "deepseekv4flash",
       "platform": "windows",
@@ -3082,21 +3073,37 @@
     {
       "mode": "from-identity",
       "stale": true,
-      "started_at": 1788163324,
-      "runner": 22198
+      "started_at": 1788168230,
+      "runner": 43116
+    },
+    {
+      "mode": "from-capture",
+      "stale": true,
+      "started_at": 1788169216,
+      "runner": 43116
     }
   ],
   "backlog": {
     "unknown_harnesses": [],
     "unknown_providers": [],
-    "unknown_models": [
-      "qwen332btee",
-      "qwen3627btee"
-    ],
+    "unknown_models": [],
     "unknown_invocations": [],
     "known_but_failed": {
-      "goose-goose-claudesonnet4-darwin": "post-check mismatch",
-      "kimicode-opencodego-qwen38flash-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.rate_limit: 429 Error 429: You have reached your monthly Clinepass limit. The limit resets in 1d 18h, please try again later.\nSee log: <home>/.kimi-code/logs/kimi-code.log\n"
+      "cline-chutes-qwen3627btee-darwin": "post-check mismatch",
+      "kimicode-chutes-qwen3627btee-darwin": "post-check mismatch",
+      "cline-chutes-qwen332btee-darwin": "post-check mismatch",
+      "kimicode-chutes-qwen332btee-darwin": "post-check mismatch",
+      "opencode-chutes-qwen332btee-darwin": "post-check mismatch",
+      "opencode-chutes-qwen3627btee-darwin": "post-check mismatch",
+      "pi-chutes-qwen332btee-darwin": "post-check mismatch",
+      "pi-chutes-qwen3627btee-darwin": "post-check mismatch",
+      "cline-clinepass-kimik3-darwin": "capture failed (exit 1):  dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 1d 17h, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
+      "cline-minimax-minimaxm3-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
+      "cline-openrouter-deepseekv4flash-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m No cookie auth credentials found\n",
+      "copilot-githubcopilot-claudesonnet5-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
+      "copilot-githubcopilot-gemini25pro-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
+      "copilot-githubcopilot-gpt52-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
+      "copilot-githubcopilot-grok45-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n"
     }
   },
   "invocations": {

@@ -789,8 +789,9 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "grok-3-mini",              "grok-4.6",            "hy3",
         "hy4-preview",              "kimi-k2.6",           "mimo-v2.5",
         "mimo-v2.5-pro",            "mistral-nemo-instruct-2407",
-        "nemotron-3-nano-omni",     "qwen3-235b-a22b",     "qwen3.5",
-        "qwen3.5-397b-a17b",        "qwen3.8-27b",
+        "nemotron-3-nano-omni",     "qwen3-235b-a22b",     "qwen3-32b",
+        "qwen3.5",                  "qwen3.5-397b-a17b",   "qwen3.6-27b",
+        "qwen3.8-27b",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

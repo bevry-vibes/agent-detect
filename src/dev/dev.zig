@@ -2144,8 +2144,8 @@ pub const dev = if (build_options.dev) struct {
     /// the store's `invocations` table entry first, else any
     /// `meta.prompt_invocation` / `meta.version_invocation` in the file
     /// being replaced — recorded into the written file's `meta` — while
-    /// `updated_at` / `agent_detect_version` / `harness_version` are
-    /// stamped fresh. A capture with no invocation anywhere writes `meta`
+    /// `updated_at` / `harness_version` are stamped fresh. A capture
+    /// with no invocation anywhere writes `meta`
     /// without the invocation fields (the combo then sits in backlog
     /// unknown_invocations).
     pub fn runFixturesCapture(init: std.process.Init) !u8 {

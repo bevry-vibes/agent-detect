@@ -197,6 +197,12 @@ pub const rulesForModels = [_]ModelRule{
     // qwen3-coder: open-weight — Alibaba Qwen3 Coder; HF card +
     // LICENSE.
     .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" } },
+    // qwen3-32b: open-weight — the 32B dense size of the Qwen3 family;
+    // HF card + Apache-2.0 LICENSE. variations: Chutes stamps secure-
+    // enclave serving ids with "-TEE" (same model, TEE mode); the
+    // observed id `chutes/Qwen/Qwen3-32B-TEE` canonicalizes to
+    // `qwen3-32b-tee` / the namespaced form (see qwen3.8-27b).
+    .{ .name = "qwen3-32b", .label = "Qwen3 32B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-32B", "https://huggingface.co/Qwen/Qwen3-32B/blob/main/LICENSE" }, .variations = &.{ "Qwen3-32B-TEE", "Qwen/Qwen3-32B-TEE" } },
     // cogito-2.1: open-weight — DeepCogito Cogito 2.1 671B; HF card.
     .{ .name = "cogito-2.1", .label = "Cogito 2.1", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepcogito/cogito-2.1-671b", "https://huggingface.co/deepcogito/cogito-2.1-671b/blob/main/LICENSE" } },
     // muse-spark-1.2: Meta Muse Spark 1.2; reciprocity unverified.
@@ -245,6 +251,11 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "mistral-small-3", .label = "Mistral Small 3", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Small-3", "https://huggingface.co/mistralai/Mistral-Small-3/blob/main/LICENSE" } },
     // qwen3.6: open-weight — Alibaba Qwen3.6; HF card + LICENSE.
     .{ .name = "qwen3.6", .label = "Qwen3.6", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6", "https://huggingface.co/Qwen/Qwen3.6/blob/main/LICENSE" } },
+    // qwen3.6-27b: open-weight — the 27B dense size of the Qwen3.6
+    // family (same size-bearing-rule doctrine as qwen3.8-27b); HF card
+    // + Apache-2.0 LICENSE. variations: Chutes TEE serving ids (see
+    // qwen3.8-27b).
+    .{ .name = "qwen3.6-27b", .label = "Qwen3.6 27B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6-27B", "https://huggingface.co/Qwen/Qwen3.6-27B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.6-27B-TEE", "Qwen/Qwen3.6-27B-TEE" } },
     // llama-3.1-8b: open-weight — Meta Llama 3.1 8B; HF card + LICENSE.
     .{ .name = "llama-3.1-8b", .label = "Llama 3.1 8B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.1-8B", "https://huggingface.co/meta-llama/Llama-3.1-8B/blob/main/LICENSE" } },
     // nemotron-3-super: open-weight — NVIDIA Nemotron 3 Super; HF card
