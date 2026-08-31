@@ -19,7 +19,7 @@
  *
  * Channel presence = file existence — no JSON parse needed to know
  * whether a channel ran. A stem present in both folders has both
- * channels. See fixtures/.index.d.ts for the store and DESIGN.md for
+ * channels. See fixtures/index.d.ts for the store and DESIGN.md for
  * the semantics.
  */
 

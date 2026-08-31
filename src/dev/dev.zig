@@ -13,7 +13,7 @@
 // `pub const dev` below is the comptime-gated struct, so the released
 // binary never links this surface.
 //
-// The fixtures state is split two ways. `fixtures/.index.json` holds only
+// The fixtures state is split two ways. `fixtures/index.json` holds only
 // the non-derivable state — `queue` (work intent), `backlog` (unresolvable
 // dims / missing curation), and `known_but_failed` (retryable failure
 // messages). Everything else about a fixture lives in the fixture files
@@ -21,13 +21,13 @@
 // and `fixtures/from-capture/<id>.json` (live captures and curated
 // meta-only stubs), each a self-contained `{ outputs, meta }` envelope
 // owned exclusively by its writer — see fixtures/fixture.d.ts and
-// fixtures/.index.d.ts for the normative schemas. `fixtures capture` runs
+// fixtures/index.d.ts for the normative schemas. `fixtures capture` runs
 // inside a real agent session (spawned by the daemon via the file's
 // curated `meta.prompt_launch` argv, or by hand) and writes the whole
 // from-capture file atomically; no merge-write, no store row.
 //
 // `fixtures daemon` is the long-running user-side mode: it watches the
-// `queue` array of `fixtures/.index.json` and, per poll, expands one
+// `queue` array of `fixtures/index.json` and, per poll, expands one
 // queue entry into its candidate set (resolvable dims ∧ (fixtured ∨
 // feasible-unfixtured per the reference grids) ∧ the entry's staleness
 // criteria) and works ONE remaining host-platform candidate
@@ -169,7 +169,7 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\usage: agent-detect fixtures <subcommand> [flags]
         \\
-        \\state: fixtures/.index.json is the committed JSON store, holding only
+        \\state: fixtures/index.json is the committed JSON store, holding only
         \\the non-derivable state: `queue` (filter entries the daemon expands),
         \\`backlog` (actionable gaps: unknown_harnesses / unknown_providers /
         \\unknown_models / needs_curation), and `known_but_failed` (retryable
@@ -177,19 +177,19 @@ pub const dev = if (build_options.dev) struct {
         \\fixtures/from-identity/<id>.json (declared identifications) and
         \\fixtures/from-capture/<id>.json (live captures and curated meta-only
         \\stubs), each a `{ outputs, meta }` envelope — see fixtures/fixture.d.ts.
-        \\The free axis is sourced from fixtures/.providers_freemodels.csv;
-        \\feasibility from fixtures/.harnesses_providers.csv and
-        \\fixtures/.providers_models.csv. Store writers take an exclusive lock
-        \\on fixtures/.index.json.lock and write atomically (temp + rename);
+        \\The free axis is sourced from fixtures/providers-freemodels.csv;
+        \\feasibility from fixtures/harnesses-providers.csv and
+        \\fixtures/providers-models.csv. Store writers take an exclusive lock
+        \\on fixtures/index.json.lock and write atomically (temp + rename);
         \\each fixture file is owned exclusively by its channel's writer.
         \\
         \\daemon flags:
-        \\  --write-log                 tee daemon output to fixtures/.daemon.log
+        \\  --write-log                 tee daemon output to fixtures/daemon.log
         \\  --poll-seconds=N            base poll interval (default 5)
         \\  --capture-review-seconds=N  pre/post capture pause (default 15)
         \\  --capture-timeout-seconds=N from-capture worker timeout (default 600)
         \\
-        \\control: write pause/resume/stop to fixtures/.daemon.ctl (checked every
+        \\control: write pause/resume/stop to fixtures/daemon.ctl (checked every
         \\~1s; the daemon clears it after acting). Ctrl+C is the graceful stop.
         \\
         \\subcommands (see each subcommand's `--help` for its flags — modes,
@@ -201,7 +201,7 @@ pub const dev = if (build_options.dev) struct {
         \\                              candidate per poll — run as a user,
         \\                              never inside an agent; --write-log also
         \\                              writes all daemon output to
-        \\                              fixtures/.daemon.log
+        \\                              fixtures/daemon.log
         \\  capture                    capture the current session into
         \\                              fixtures/from-capture/<id>.json (spawned
         \\                              by the daemon; fixtures only)
@@ -266,7 +266,7 @@ pub const dev = if (build_options.dev) struct {
         \\                   now-actionable items against the current rule
         \\                   tables and grids; unresolvable / still-uncurated
         \\                   items stay in the backlog
-        \\  --free / --paid   membership in .providers_freemodels.csv
+        \\  --free / --paid   membership in providers-freemodels.csv
         \\
     ;
 
@@ -471,9 +471,9 @@ pub const dev = if (build_options.dev) struct {
     // index.json state store (queue + backlog + known_but_failed)
     // ------------------------------------------------------------------
 
-    const INDEX_PATH = "fixtures/.index.json";
-    const INDEX_LOCK_PATH = "fixtures/.index.json.lock";
-    const INDEX_TMP_PATH = "fixtures/.index.json.tmp";
+    const INDEX_PATH = "fixtures/index.json";
+    const INDEX_LOCK_PATH = "fixtures/index.json.lock";
+    const INDEX_TMP_PATH = "fixtures/index.json.tmp";
     const INDEX_STORE_VERSION: i64 = 2;
     const INDEX_LOCK_BUDGET_MS: u64 = 5000;
     const INDEX_LOCK_RETRY_MS: u64 = 50;
@@ -524,7 +524,7 @@ pub const dev = if (build_options.dev) struct {
         return root;
     }
 
-    /// acquire the exclusive lock on `fixtures/.index.json.lock` (creating
+    /// acquire the exclusive lock on `fixtures/index.json.lock` (creating
     /// it when missing). Retries with `tryLock` on a ~5s budget, sleeping
     /// 50ms between attempts. Kernel-managed locks release on exit/crash —
     /// no stale-lock heuristics. Caller owns the returned file; closing it
@@ -546,7 +546,7 @@ pub const dev = if (build_options.dev) struct {
         return lock_file;
     }
 
-    /// parse `fixtures/.index.json` into a `std.json.Value` tree. Missing
+    /// parse `fixtures/index.json` into a `std.json.Value` tree. Missing
     /// file → the empty store; corrupt/unparseable/unknown `store_version`
     /// → `error.IndexStoreError` (exit 12). Readers take no lock (the
     /// temp+rename write protocol makes visibility atomic). The legacy
@@ -569,7 +569,7 @@ pub const dev = if (build_options.dev) struct {
         return parsed.value;
     }
 
-    /// serialize `root` and atomically write it over `fixtures/.index.json`
+    /// serialize `root` and atomically write it over `fixtures/index.json`
     /// (temp + rename). Called while holding the exclusive lock.
     fn indexSave(io: std.Io, a: std.mem.Allocator, root: std.json.Value) !void {
         const json_bytes = std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 }) catch return error.IndexStoreError;
@@ -765,8 +765,8 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// the feasibility grids — the reference CSVs become load-bearing:
-    /// `.harnesses_providers.csv` (harness → provider cells) and
-    /// `.providers_models.csv` (provider → model-id cells). A pair is
+    /// `harnesses-providers.csv` (harness → provider cells) and
+    /// `providers-models.csv` (provider → model-id cells). A pair is
     /// feasible iff its cell is present and not `-`; feasible-unfixtured
     /// combos are the from-identity backlog universe (impossible combos
     /// never become candidates). A missing file loads as the empty set.
@@ -807,8 +807,8 @@ pub const dev = if (build_options.dev) struct {
         /// the model-id — not read here).
         pub fn load(io: std.Io, a: std.mem.Allocator) !FeasibilityGrids {
             var self = empty(a);
-            try loadPairGrid(io, a, "fixtures/.harnesses_providers.csv", &self.harness_provider);
-            try loadPairGrid(io, a, "fixtures/.providers_models.csv", &self.provider_model);
+            try loadPairGrid(io, a, "fixtures/harnesses-providers.csv", &self.harness_provider);
+            try loadPairGrid(io, a, "fixtures/providers-models.csv", &self.provider_model);
             return self;
         }
     };
@@ -972,9 +972,10 @@ pub const dev = if (build_options.dev) struct {
         return out.toOwnedSlice(a);
     }
 
-    /// scan one channel folder for fixture-file stems (dot-files skipped —
-    /// the grids, store, and log coexist at the fixture root; subfolders
-    /// are scanned only as their own universes).
+    /// scan one channel folder for fixture-file stems (dot-files skipped
+    /// defensively — interrupted atomic writes leave `<stem>.json.tmp`,
+    /// which the `.json` suffix check already rejects). Subfolders are
+    /// scanned only as their own universes.
     pub fn scanFolderStems(io: std.Io, a: std.mem.Allocator, folder: []const u8) ![][]const u8 {
         var out: std.ArrayList([]const u8) = .empty;
         const dir_path = try std.fmt.allocPrint(a, "{s}/{s}", .{ fixtures_root, folder });
@@ -1048,7 +1049,7 @@ pub const dev = if (build_options.dev) struct {
     /// serialize a queue entry. Null-as-absent: unset optional fields are
     /// omitted from the store (the reader treats missing as null), keeping
     /// the committed JSON free of `: null` bloat. Structure source of
-    /// truth: `fixtures/.index.d.ts`.
+    /// truth: `fixtures/index.d.ts`.
     fn queueEntryValue(a: std.mem.Allocator, e: QueueEntry) !std.json.Value {
         var o: std.json.Value = .{ .object = .empty };
         if (e.harness) |v| try o.object.put(a, "harness", .{ .string = v });
@@ -1511,7 +1512,7 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// Free-model membership, sourced from
-    /// `fixtures/.providers_freemodels.csv` — the source of truth for
+    /// `fixtures/providers-freemodels.csv` — the source of truth for
     /// free models (replacing the
     /// legacy `free_provider_to_model` store table, which is dropped at
     /// load and never re-serialized). Sparse grid: header
@@ -1538,7 +1539,7 @@ pub const dev = if (build_options.dev) struct {
 
         pub fn load(io: std.Io, a: std.mem.Allocator) !FreeGrid {
             var self = empty(a);
-            const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/.providers_freemodels.csv", a, @enumFromInt(1 << 20)) catch return self;
+            const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/providers-freemodels.csv", a, @enumFromInt(1 << 20)) catch return self;
             var lines = std.mem.tokenizeScalar(u8, data, '\n');
             const header = lines.next() orelse return self;
             var cols = std.mem.tokenizeScalar(u8, header, ',');
@@ -2781,7 +2782,7 @@ pub const dev = if (build_options.dev) struct {
     /// the queue-entry array in mode-rank order (from-identity first,
     /// then array order), deleting fully-satisfied entries (no remaining
     /// candidates anywhere) and malformed entries (logged + dropped — the
-    /// errors ledger is gone; `.daemon.log` is the dev agent's record),
+    /// errors ledger is gone; `daemon.log` is the dev agent's record),
     /// stamp `started_at` on the first entry with remaining host work,
     /// re-expand it, and return ONE candidate. All under one store lock
     /// cycle so the refresh + stamp + expansion + save are atomic against
@@ -2801,13 +2802,13 @@ pub const dev = if (build_options.dev) struct {
             var i: usize = 0;
             while (i < q.items.len) {
                 var entry = queueEntryFromValue(q.items[i]) catch {
-                    daemonWriteErr(io, "daemon: malformed queue entry — dropping (see .daemon.log)\n");
+                    daemonWriteErr(io, "daemon: malformed queue entry — dropping (see daemon.log)\n");
                     _ = q.orderedRemove(i);
                     dirty = true;
                     continue;
                 };
                 validateQueueEntry(entry) catch {
-                    daemonWriteErr(io, "daemon: invalid queue entry — dropping (see .daemon.log)\n");
+                    daemonWriteErr(io, "daemon: invalid queue entry — dropping (see daemon.log)\n");
                     _ = q.orderedRemove(i);
                     dirty = true;
                     continue;
@@ -2861,7 +2862,7 @@ pub const dev = if (build_options.dev) struct {
     /// crash-resume derives from the fixture files, so a capture that
     /// died with the daemon left no channel write and simply re-runs.
     /// Failures also persist as `known_but_failed` message rows plus
-    /// `.daemon.log` for the dev agent to discern; pops never gate on
+    /// `daemon.log` for the dev agent to discern; pops never gate on
     /// failure state. **The daemon never writes fixture files outside
     /// pop processing and never inserts queue entries.**
     ///
@@ -2908,8 +2909,8 @@ pub const dev = if (build_options.dev) struct {
                     return EXIT_IO;
                 },
             };
-            const log_file = std.Io.Dir.cwd().createFile(io, "fixtures/.daemon.log", .{}) catch |err| {
-                daemonWriteErr(io, "daemon: cannot open fixtures/.daemon.log: ");
+            const log_file = std.Io.Dir.cwd().createFile(io, "fixtures/daemon.log", .{}) catch |err| {
+                daemonWriteErr(io, "daemon: cannot open fixtures/daemon.log: ");
                 daemonWriteErr(io, @errorName(err));
                 daemonWriteErr(io, "\n");
                 return EXIT_IO;
@@ -2935,13 +2936,13 @@ pub const dev = if (build_options.dev) struct {
             const m = std.fmt.bufPrint(buf[0..], "  poll rate: {d}s (from-capture review: {d}s, timeout: {d}s)\n", .{ poll_seconds, review_seconds, capture_timeout_seconds }) catch "  poll rate: 5s\n";
             daemonWrite(io, m);
         }
-        daemonWrite(io, "  index file: fixtures/.index.json\n");
-        daemonWrite(io, "  control file: fixtures/.daemon.ctl (write pause/resume/stop)\n");
-        if (write_log) daemonWrite(io, "  log file: fixtures/.daemon.log\n");
+        daemonWrite(io, "  index file: fixtures/index.json\n");
+        daemonWrite(io, "  control file: fixtures/daemon.ctl (write pause/resume/stop)\n");
+        if (write_log) daemonWrite(io, "  log file: fixtures/daemon.log\n");
         daemonWrite(io, "  press Ctrl+C to stop\n");
 
         // decision #12 — one cross-platform control mechanism: the
-        // daemon checks `fixtures/.daemon.ctl` every ~1s heartbeat and
+        // daemon checks `fixtures/daemon.ctl` every ~1s heartbeat and
         // acts on pause/resume/stop, clearing the file after acting.
         var paused = false;
         var stop_requested = false;
@@ -2993,7 +2994,7 @@ pub const dev = if (build_options.dev) struct {
                     daemonWrite(io, "daemon: pre-capture review — capture starts in ");
                     const remaining = @max(@divTrunc(phase_until.raw.nanoseconds - boot_now_ns, std.time.ns_per_s) + 1, 1);
                     daemonWriteCount(io, remaining);
-                    daemonWrite(io, "s (write stop to fixtures/.daemon.ctl to cancel)\n");
+                    daemonWrite(io, "s (write stop to fixtures/daemon.ctl to cancel)\n");
                     if (boot_now_ns >= phase_until.raw.nanoseconds) {
                         const job = pending_capture orelse {
                             phase = .idle;
@@ -3018,7 +3019,7 @@ pub const dev = if (build_options.dev) struct {
                         } else {
                             daemonWriteErr(io, "daemon: from-capture failed for ");
                             daemonWriteErr(io, job.candidate.fixture_id);
-                            daemonWriteErr(io, " — attempt damped this session; see known_but_failed / .daemon.log; retry via `fixtures queue --refresh`\n");
+                            daemonWriteErr(io, " — attempt damped this session; see known_but_failed / daemon.log; retry via `fixtures queue --refresh`\n");
                         }
                         daemonWrite(io, "daemon: capture finished — human review window ");
                         daemonWriteCount(io, review_seconds);
@@ -3062,7 +3063,7 @@ pub const dev = if (build_options.dev) struct {
                                 phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
                                 daemonWrite(io, "daemon: from-capture job — announcing ");
                                 daemonWriteCount(io, review_seconds);
-                                daemonWrite(io, "s before capture (write stop to fixtures/.daemon.ctl to cancel)\n");
+                                daemonWrite(io, "s before capture (write stop to fixtures/daemon.ctl to cancel)\n");
                                 continue;
                             }
 
@@ -3079,7 +3080,7 @@ pub const dev = if (build_options.dev) struct {
                             } else {
                                 daemonWriteErr(io, "daemon: from-identity failed for ");
                                 daemonWriteErr(io, p.candidate.fixture_id);
-                                daemonWriteErr(io, " — attempt damped this session; see known_but_failed / .daemon.log\n");
+                                daemonWriteErr(io, " — attempt damped this session; see known_but_failed / daemon.log\n");
                             }
                         } else {
                             next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
@@ -3166,15 +3167,15 @@ pub const dev = if (build_options.dev) struct {
         daemonWriteErr(io, std.fmt.bufPrint(&buf, "{d}", .{n}) catch return);
     }
 
-    /// read `fixtures/.daemon.ctl`, clear it, and return the action word
+    /// read `fixtures/daemon.ctl`, clear it, and return the action word
     /// (`pause` / `resume` / `stop`) or null when absent/empty. The
     /// daemon clears the file after acting (decision #12).
     fn readControlAction(a: std.mem.Allocator, io: std.Io) ?[]const u8 {
-        const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/.daemon.ctl", a, @enumFromInt(4096)) catch return null;
+        const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/daemon.ctl", a, @enumFromInt(4096)) catch return null;
         // no `a.free(data)` — the returned word aliases `data` (Zig 0.16
         // arena free-list would reclaim it into the daemon's next
         // allocations, clobbering the action word mid-use).
-        std.Io.Dir.cwd().deleteFile(io, "fixtures/.daemon.ctl") catch {};
+        std.Io.Dir.cwd().deleteFile(io, "fixtures/daemon.ctl") catch {};
         const t = std.mem.trim(u8, data, " \t\r\n");
         if (t.len == 0) return null;
         if (std.mem.eql(u8, t, "pause") or std.mem.eql(u8, t, "resume") or std.mem.eql(u8, t, "stop")) return t;

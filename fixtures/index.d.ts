@@ -1,10 +1,10 @@
 /**
- * `fixtures/.index.json` — the committed state store. TypeScript
+ * `fixtures/index.json` — the committed state store. TypeScript
  * structure declarations are the SOURCE OF TRUTH for the store's
  * shape (the zig program never imports TypeScript; this file is the
  * normative shape humans and agents read instead of prose). Semantic
  * rules — table ownership, purity, expansion, staleness criteria,
- * crash-resume — stay in DESIGN.md "index.json state store".
+ * crash-resume — stay in DESIGN.md "the state split".
  *
  * The store holds ONLY the non-derivable state. Everything else about
  * a fixture lives in the fixture files themselves
@@ -21,10 +21,10 @@
  * optional as null.
  *
  * Note: the free axis is NOT a store table — membership is declared
- * by `fixtures/.providers_freemodels.csv` (sparse provider×model grid
+ * by `fixtures/providers-freemodels.csv` (sparse provider×model grid
  * of free model-ids), which the zig program reads at expansion time.
- * Feasibility comes from `fixtures/.harnesses_providers.csv` and
- * `fixtures/.providers_models.csv` (the reference grids — a pair is
+ * Feasibility comes from `fixtures/harnesses-providers.csv` and
+ * `fixtures/providers-models.csv` (the reference grids — a pair is
  * feasible iff its cell is present and not `-`).
  *
  * All slug keys below are strict slugs: lowercase alphanumeric with
@@ -72,7 +72,7 @@ export interface StaleCriteria {
  * `--stale` plus an explicit `--stale-*` overwrites just that
  * component of the composite; with no staleness flag the full
  * composite is stamped. `free` membership comes from
- * `fixtures/.providers_freemodels.csv`.
+ * `fixtures/providers-freemodels.csv`.
  */
 export interface QueueEntry extends StaleCriteria {
   harness?: HarnessSlug;
@@ -81,7 +81,7 @@ export interface QueueEntry extends StaleCriteria {
   /** Unset = every platform's daemon expands its own candidate. */
   platform?: Platform;
   mode: Mode;
-  /** true = members of .providers_freemodels.csv; false = non-members. */
+  /** true = members of providers-freemodels.csv; false = non-members. */
   free?: boolean;
   /** pid of the enqueueing process (provenance lives here only). */
   runner: number;
@@ -118,7 +118,7 @@ export interface Backlog {
  */
 export type KnownButFailed = Record<FixtureId, string>;
 
-/** The whole `fixtures/.index.json` document. */
+/** The whole `fixtures/index.json` document. */
 export interface IndexStore {
   store_version: 2;
   /** The filter-entry work queue (order = daemon scan order). */

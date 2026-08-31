@@ -413,7 +413,7 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     try testing.expectEqual(@as(usize, 0), cap.host_candidates.len);
 }
 
-test "expandEntry: free axis filters by .providers_freemodels.csv membership (FreeGrid)" {
+test "expandEntry: free axis filters by providers-freemodels.csv membership (FreeGrid)" {
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;

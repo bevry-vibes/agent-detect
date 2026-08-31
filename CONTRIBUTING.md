@@ -21,10 +21,10 @@ the only thing that writes fixtures — agents never hand-author them.
 A stem present in both folders has both channels; channel presence =
 file existence.
 
-`fixtures/.index.json` is the committed state store — it holds only the
+`fixtures/index.json` is the committed state store — it holds only the
 **non-derivable** state (`queue` the filter-entry array, `backlog` the
 actionable gaps, `known_but_failed` the retryable failure messages),
-declared normatively in TypeScript at `fixtures/.index.d.ts` (the
+declared normatively in TypeScript at `fixtures/index.d.ts` (the
 source of truth for structure — unset optionals are omitted, never
 serialized as `null`), with the semantics in DESIGN.md "the state
 split". Queue entries are **filter tuples** (dims, mode, the staleness
@@ -49,7 +49,7 @@ separation:
   from the fixture files — a capture that died with the daemon simply
   re-runs. Failed candidates damp for the daemon run (one attempt per
   candidate per run) and persist their redacted message in
-  `known_but_failed` + `.daemon.log`; pops never gate on failure.
+  `known_but_failed` + `daemon.log`; pops never gate on failure.
 - **`agent-detect-dev fixtures capture`** — runs *inside an agent*
   session; captures the current session into
   `fixtures/from-capture/<id>.json` (whole-file atomic write;
@@ -108,10 +108,10 @@ evidence ⇒ stale:
 - `--refresh` — carry NO criteria: every candidate is worked regardless
   of freshness. Conflicts with `--stale` and every `--stale-*` (exit 3).
 - `--free` / `--paid` — membership in the free-models grid
-  `fixtures/.providers_freemodels.csv` (the source of truth for free
+  `fixtures/providers-freemodels.csv` (the source of truth for free
   models; the zig store code reads this grid at expansion time, along
-  with the feasibility grids `.harnesses_providers.csv` and
-  `.providers_models.csv`).
+  with the feasibility grids `harnesses-providers.csv` and
+  `providers-models.csv`).
 
 Dequeue defaulting mirrors queue: a bare dims-only dequeue matches
 exactly the entry a bare upsert created (the composite); `--refresh`
@@ -170,7 +170,7 @@ Queue jobs run in two modes with different failure surfaces. The
 `from-identity` worker resolves declared identification from provided
 ids — a failure there is a **rule-table bug** (unknown dims, malformed
 combo), surfaced as `daemon: from-identity failed for <combo>` with the
-failure remembered in `known_but_failed` + `.daemon.log`. Fix the
+failure remembered in `known_but_failed` + `daemon.log`. Fix the
 rules and re-queue.
 
 Account-level failures — **credits depleted** (insufficient balance /
@@ -208,13 +208,13 @@ daemon finishes it:
 
 ### committed-store hygiene
 
-`fixtures/.index.json` is **committed** with each landing (it is the
+`fixtures/index.json` is **committed** with each landing (it is the
 cross-host work queue + failure memory). Never commit
-`.index.json.lock` / `.index.json.tmp` or the daemon files
+`index.json.lock` / `index.json.tmp` or the daemon files
 (`daemon.log`, `daemon.ctl`) — they are gitignored. The store is quiet
 by design — the per-channel fixture files carry the fixture state, so
 the store only changes when the queue/backlog/failure tables change.
-The dev agent reads `known_but_failed` + `.daemon.log` +
+The dev agent reads `known_but_failed` + `daemon.log` +
 `fixtures status` to review regeneration completeness; purging fixture
 files is user discretion.
 
@@ -319,7 +319,7 @@ A bulk/maintenance model addition (a sweep, expanding a harness across a
 batch of providers, or a free-catalog import) adds a model only when it
 clears the evergreen model set (top 100 weekly models from OpenRouter's models API, filtered to models that support tool calling: `supported_parameters` contains `tools`) — the policy is DESIGN.md decision
 #13 and the tracked set is
-`fixtures/.evergreen-models.json`, regenerated from OpenRouter alone as
+`fixtures/evergreen-models.json`, regenerated from OpenRouter alone as
 part of maintenance (no CI task; see DESIGN.md #13 for the dropped
 alternative sources). This does not apply
 retroactively to models already in the matrix, and it does not apply to
@@ -329,7 +329,7 @@ provider whose addition made it supported no longer offers it, never
 merely because it fell out of the evergreen set (someone is using
 agent-detect for the added dim). Observed-but-unadded ids (the
 non-evergreen remainder of a provider catalog) are recorded in
-`fixtures/.providers_models.csv`. Free-vs-paid only
+`fixtures/providers-models.csv`. Free-vs-paid only
 decides whether a free launch/capture is attached — query the
 harness's own model catalog first (e.g. omp's
 `~/.omp/agent/models.db` per-provider `cost`: input==0 → free);
@@ -349,12 +349,12 @@ available providers) with authenticated calls:
 curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
   "https://openrouter.ai/api/v1/models?sort=top-weekly&limit=100" \
   | jq '[.data[] | select((.supported_parameters // []) | index("tools"))]' \
-  > fixtures/.evergreen-models.json
+  > fixtures/evergreen-models.json
 
 curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
   "https://openrouter.ai/api/v1/providers" \
   | jq '.data' \
-  > fixtures/.evergreen-providers.json
+  > fixtures/evergreen-providers.json
 ```
 
 (The authenticated calls above are canonical; an unauthenticated
@@ -367,12 +367,12 @@ and the feasible-unfixtured universe (grid cross-product minus the
 fixtured stems) is what from-identity can declare — so keep them in
 sync with the fixture universe (append the provider's row alongside
 each catalog enumeration; `fixtures status` + the migration audit flag
-drift): `fixtures/.providers_models.csv` (rows = provider alphanumeric
+drift): `fixtures/providers-models.csv` (rows = provider alphanumeric
 ids, columns = model alphanumeric ids, cell = that provider's served
-model-id string or `-`) and `fixtures/.harnesses_providers.csv`
+model-id string or `-`) and `fixtures/harnesses-providers.csv`
 (rows = harness ids, columns = provider ids, cell = the harness's
 provider-id string or `-`). The third is the free axis:
-`fixtures/.providers_freemodels.csv` — the SOURCE OF TRUTH for free
+`fixtures/providers-freemodels.csv` — the SOURCE OF TRUTH for free
 models (replacing the retired `free_provider_to_model` store table).
 It is SPARSE: rows only for providers with ≥1 free model, columns
 only for models that are free at some provider, cell = that
@@ -381,7 +381,7 @@ provider's free model-id string, `-` otherwise.
 ### monitoring + control runbook
 
 Run the daemon with `fixtures daemon --write-log` (log:
-`fixtures/.daemon.log`) and poll that log at ~1s — the daemon writes a
+`fixtures/daemon.log`) and poll that log at ~1s — the daemon writes a
 status heartbeat every ~1s, faster than the iteration delays.
 Pacing: `from-identity` jobs process at ~5s intervals
 (`--poll-seconds=N`); each `from-capture` is announced ~15s ahead
@@ -389,9 +389,9 @@ Pacing: `from-identity` jobs process at ~5s intervals
 review pause. Control is the same on macOS/Linux/Windows:
 
 ```sh
-printf 'pause\n'  > fixtures/.daemon.ctl   # pause: finish in-flight, then no new pops
-printf 'resume\n' > fixtures/.daemon.ctl   # resume
-printf 'stop\n'   > fixtures/.daemon.ctl   # stop after the in-flight job
+printf 'pause\n'  > fixtures/daemon.ctl   # pause: finish in-flight, then no new pops
+printf 'resume\n' > fixtures/daemon.ctl   # resume
+printf 'stop\n'   > fixtures/daemon.ctl   # stop after the in-flight job
 ```
 
 The daemon checks the file every ~1s and clears it after acting; Ctrl+C
@@ -508,8 +508,8 @@ After adding the rule:
 2. Declare the rule's combos — the feasible-unfixtured universe (the
    grid-filtered cross-product minus the fixtured stems) expands
    automatically once the harness/provider/model pairs are feasible per
-   the reference grids (`.harnesses_providers.csv` /
-   `.providers_models.csv` — add the cells if the pairs are new):
+   the reference grids (`harnesses-providers.csv` /
+   `providers-models.csv` — add the cells if the pairs are new):
    ```sh
    ./zig-out/bin/agent-detect-dev fixtures queue --harness=<harness_id> --from-identity
    ./zig-out/bin/agent-detect-dev fixtures daemon
@@ -537,7 +537,7 @@ auto-detected at all, the rule alone is enough for recipe-mode
 ### harness quality filters
 
 Bulk/maintenance harness additions must clear the tracked evergreen
-harness set — `fixtures/.evergreen-harnesses.txt`, the top 50
+harness set — `fixtures/evergreen-harnesses.txt`, the top 50
 programming/code agents curated from the two agent directories
 referenced in that file's header (deepseek-ai/awesome-deepseek-agent
 and vercel-labs/skills). The quality filters the dev agent applies
@@ -603,7 +603,7 @@ open-source models that train → `open_training` becomes at least
 `opt-in`. Values already at `opt-out` or `enforced` capture training
 and need no change. `never` is reserved for providers where **no**
 served model trains. When cataloging a new provider, audit its
-`.providers_models.csv` row for tier spellings (`:free`, `-free`,
+`providers-models.csv` row for tier spellings (`:free`, `-free`,
 `-contributor`, free-period exceptions named in its policy docs)
 before writing any `never` — this is exactly the slip that made
 OpenRouter's contributor tiers and OpenCode's free-period models

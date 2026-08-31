@@ -38,7 +38,7 @@ block in `src/dev/dev.zig`. The released binary cannot accidentally
 include dev code paths.
 
 The split is about **code**, not portability: the `fixtures` workflow
-is cross-platform. The state store is the local `fixtures/.index.json`
+is cross-platform. The state store is the local `fixtures/index.json`
 (read/written with Zig-native file locks — no external tools), so
 `fixtures` runs anywhere the released binary does. `zig build dist`
 emits only the released binary — no dev variants are produced.
@@ -115,7 +115,7 @@ A reader can instantly see what a fixture claims without scanning the
 
 The fixture state lives in two places, split by derivability:
 
-- **`fixtures/.index.json`** — the committed state store, holding only
+- **`fixtures/index.json`** — the committed state store, holding only
   the **non-derivable** state: `queue` (work intent), `backlog`
   (actionable gaps), and `known_but_failed` (retryable failure
   messages). The legacy store v1 `fixtures` map and `errors` ledger are
@@ -129,7 +129,7 @@ The fixture state lives in two places, split by derivability:
   file existence — no JSON parse needed. A stem present in both folders
   has both channels. The normative shapes are declared in TypeScript at
   **`fixtures/fixture.d.ts`** (the envelope) and
-  **`fixtures/.index.d.ts`** (the store): the schema files are the
+  **`fixtures/index.d.ts`** (the store): the schema files are the
   source of truth for structure and this section documents only the
   semantics. (The zig program never imports TypeScript.) **Null-as-
   absent:** unset optional fields are omitted entirely — never
@@ -187,12 +187,12 @@ Store tables (semantics only — shapes in the schemas):
   re-queue after fixing the cause; clearing an entry by hand is always
   safe.
 
-- The free axis lives in **`fixtures/.providers_freemodels.csv`** — a
+- The free axis lives in **`fixtures/providers-freemodels.csv`** — a
   sparse provider×model grid (rows only for providers with ≥1 free
   model, columns only for models free somewhere, cell = the
   provider's free model-id or `-`). Source of truth for free models.
-- The **reference grids** — `fixtures/.harnesses_providers.csv`
-  (harness → provider cells) and `fixtures/.providers_models.csv`
+- The **reference grids** — `fixtures/harnesses-providers.csv`
+  (harness → provider cells) and `fixtures/providers-models.csv`
   (provider → model-id cells) — are load-bearing (a doctrine change:
   they were hand-maintained, zig-unread): a pair is feasible iff its
   cell is present and not `-`. The feasible-unfixtured universe
@@ -200,10 +200,10 @@ Store tables (semantics only — shapes in the schemas):
   backlog universe, so impossible combos never become candidates and
   from-identity can never mint them.
 
-Store writers take an exclusive lock on `fixtures/.index.json.lock` (a
+Store writers take an exclusive lock on `fixtures/index.json.lock` (a
 gitignored lock file; kernel locks release on exit/crash — no
 stale-lock heuristics) and write atomically (serialize →
-`.index.json.tmp` → rename). Readers take no lock — the temp+rename
+`index.json.tmp` → rename). Readers take no lock — the temp+rename
 protocol makes visibility atomic. Fixture-file writers take no store
 lock (each owns its file). Failure modes: lock timeout → exit 13;
 corrupt/unparseable/unknown-`store_version` index.json → exit 12;
@@ -220,7 +220,7 @@ The **pop protocol** (the daemon's per-poll expansion):
 1. Refresh the `backlog` from a folder scan, then scan entries in
    mode-rank order (from-identity first), then array order; delete
    entries with no remaining candidates anywhere and malformed entries
-   (logged + dropped — the errors ledger is gone; `.daemon.log` is the
+   (logged + dropped — the errors ledger is gone; `daemon.log` is the
    dev agent's record).
 2. Expand the entry's universe — **one universe**: resolvable dims ∧
    (fixtured ∨ feasible-unfixtured per the grids; from-capture
@@ -335,7 +335,7 @@ reflects the recipe (up to all three dims).
   see [README.md](./README.md) for the per-platform binary table.
 - **Zero runtime dependencies.** The *released* binary is one file,
   no shared libraries, no runtime. The maintainer `fixtures` workflow
-  reads and writes the local `fixtures/.index.json` with Zig-native
+  reads and writes the local `fixtures/index.json` with Zig-native
   file locks — no external tools are required.
 - **Never guess.** When detection can't fully resolve harness +
   provider + model, the binary exits 8 (unable to detect) with a
@@ -370,7 +370,7 @@ README.md mentions exit codes contextually per example only.
 | 9 | agent data incomplete to make a determination | identity resolved, policy data missing |
 | 10 | agent data complete and requirement failed | determination definitive + negative (e.g. not reciprocal) |
 | 11 | out of memory | allocation failed (released + dev) |
-| 12 | index store error | fixtures/.index.json corrupt/unparseable/unknown store_version (dev) |
+| 12 | index store error | fixtures/index.json corrupt/unparseable/unknown store_version (dev) |
 | 13 | filesystem I/O error | read/write/dir/lock op failed (dev capture/daemon) |
 
 Examples per group:
@@ -414,7 +414,7 @@ Examples per group:
   model/provider dims are unverified.
 - **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.)
   → `error.OutOfMemory`.
-- **12** — dev `fixtures *` where `fixtures/.index.json` is corrupt or
+- **12** — dev `fixtures *` where `fixtures/index.json` is corrupt or
   carries an unknown `store_version` → `index store error`. Released
   `kiloSqliteJson` catches its own, so hard store errors are dev-only.
 - **13** — dev capture/daemon `createDirPath`/`openDir`/`writeFile`/
@@ -444,7 +444,7 @@ names the shipped behavior and why it was chosen.
    not "fill missing combos" — the daemon expands the entry into its
    candidate set and works one per poll. Only the daemon expands.
 3. **index.json via Zig-native locks, not sqlite.** The single committed
-   `fixtures/.index.json` gives cross-process coordination (an exclusive
+   `fixtures/index.json` gives cross-process coordination (an exclusive
    lock on a lock file + temp/rename atomic writes) and
    git-friendly, hand-editable storage with zero new dependencies in
    the released binary — and zero runtime dependencies in the
@@ -453,8 +453,8 @@ names the shipped behavior and why it was chosen.
    themselves carry the saved outputs and the meta (ledger dates,
    writer version, and the curated `prompt_launch`/`version_launch`
    argv — not Zig); the free and feasibility axes live in grid CSVs
-   (`.providers_freemodels.csv`, `.harnesses_providers.csv`,
-   `.providers_models.csv`).
+   (`providers-freemodels.csv`, `harnesses-providers.csv`,
+   `providers-models.csv`).
 4. **Kilo live-DB fallback.** Live identity inference falls back
    env marker → `KILO_MODEL` → a direct read of the live
    `~/.local/share/kilo/kilo.db`. The *active* session is the
@@ -513,7 +513,7 @@ names the shipped behavior and why it was chosen.
      it, never merely because it fell out of the set (an added dim is
      something someone is using agent-detect for). Observed-but-unadded
      provider catalog ids are recorded in the
-     `fixtures/.providers_models.csv` reference grid.
+     `fixtures/providers-models.csv` reference grid.
      The tracked set is regenerated from OpenRouter alone (one
      authenticated call, see below) as part of maintenance; it is not
      maintained by hand and there is no CI task for it.
@@ -559,11 +559,11 @@ names the shipped behavior and why it was chosen.
      the raw `data` array of
      `GET /api/v1/models?sort=top-weekly&limit=100`, jq-filtered to
      models whose `supported_parameters` includes `tools`
-     (`fixtures/.evergreen-models.json`), regenerable with one
+     (`fixtures/evergreen-models.json`), regenerable with one
      authenticated call. The available-providers snapshot is
-     `fixtures/.evergreen-providers.json` (the raw `data` array of
+     `fixtures/evergreen-providers.json` (the raw `data` array of
      `GET /api/v1/providers`), regenerated the same way. The harness
-     target set is `fixtures/.evergreen-harnesses.txt` (top 50
+     target set is `fixtures/evergreen-harnesses.txt` (top 50
      programming/code agents, curated from the two agent directories
      referenced in its header; see CONTRIBUTING.md "harness quality
      filters"). See CONTRIBUTING.md
@@ -624,7 +624,7 @@ re-litigating scope.
   e.g. kilo's sqlite session store) are logged follow-ups, never faked.
   Declared fixtures carry no evidence at all.
 - **Cross-platform daemon control principle (decision #12):** one
-  `fixtures/.daemon.ctl` protocol for `pause`/`resume`/`stop` across
+  `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop` across
   macOS/Linux/Windows — no per-platform signal doubles. Ctrl+C stays
   the terminal graceful-stop shortcut; the daemon clears the control
   file after acting.

@@ -1,8 +1,8 @@
 // Schema/shape tests for the fixture files under `fixtures/from-identity/`
 // and `fixtures/from-capture/` (the `{ outputs, meta }` envelope — see
-// fixtures/fixture.d.ts) and the committed `fixtures/.index.json` state
-// store (see fixtures/.index.d.ts). See DESIGN.md for the fixture
-// lifecycle (daemon + capture + .index.json store) and CONTRIBUTING.md
+// fixtures/fixture.d.ts) and the committed `fixtures/index.json` state
+// store (see fixtures/index.d.ts). See DESIGN.md for the fixture
+// lifecycle (daemon + capture + index.json store) and CONTRIBUTING.md
 // for adding agents to the rule registry.
 //
 // The suite validates committed-file shape only. The per-folder universe
@@ -91,11 +91,11 @@ fn readChannelParsed(a: std.mem.Allocator, folder: []const u8, stem: []const u8)
     return parsed.value;
 }
 
-/// Load the committed `fixtures/.index.json` store, or null when the
+/// Load the committed `fixtures/index.json` store, or null when the
 /// store is absent or not yet migrated to store_version 2 (the store
 /// tests then skip).
 fn readIndexParsed(a: std.mem.Allocator) !?std.json.Value {
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/.index.json", a, @enumFromInt(1 << 26)) catch return null;
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index.json", a, @enumFromInt(1 << 26)) catch return null;
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
     if (parsed.value != .object) return null;
     const sv = parsed.value.object.get("store_version") orelse return null;
@@ -865,8 +865,8 @@ test "providers_freemodels.csv: free-grid entries resolve to known rules, stay s
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/.providers_freemodels.csv", a, @enumFromInt(1 << 20)) catch {
-        std.debug.print("fixtures/.providers_freemodels.csv is missing — it is the free-axis source of truth\n", .{});
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/providers-freemodels.csv", a, @enumFromInt(1 << 20)) catch {
+        std.debug.print("fixtures/providers-freemodels.csv is missing — it is the free-axis source of truth\n", .{});
         return error.MissingFreeGrid;
     };
     var lines = std.mem.tokenizeScalar(u8, data, '\n');
