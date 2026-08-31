@@ -96,3 +96,7 @@ Prompts verbatim, in order, untruncated.
 23.
 
 > we lost lot errors for general failures that can be retried, so known_but_failed["dim"]: "stderr or whatever"
+
+24.
+
+> we don't need that subobject schema detail, just known_but_files[dim] = "failure message"; the dev agent can then handle it; queue pops can still occur without the need for such a timestamp info
