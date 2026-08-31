@@ -255,6 +255,52 @@ Done rule / crash-resume: unchanged — completion timestamp is the
 mode's own channel date (now `meta.updated_at`, read from the mode's
 own file), else `errors.<key>.failed_at`.
 
+### 6c. Axes under the new model (unchanged flags, re-grounded)
+
+Axes stay nullable tri-state booleans on the entry; each pair is XOR
+at the CLI (exit 3); the daemon applies expansion defaults
+(known=true, valid=true, successful/free unset). What changes is the
+ground each axis stands on:
+
+- **`--known` / `--unknown`** — selects the universe, not a filter
+  within one. known (default): stems present in
+  `fixtures/from-identity/` ∪ `fixtures/from-capture/` on the
+  entry's platform — meta-only from-capture files (curated-but-unrun)
+  are KNOWN, so "known" means staged-or-run, not "has results".
+  unknown: the rule cross-product (harness × provider × model ×
+  platform, strict slugs) minus stems in either folder, minus
+  error-ledger keys per the valid axis. `--unknown` entries carry no
+  staleness criteria (§6b). A from-identity pop only needs the
+  candidate; a from-capture pop needs `meta.prompt_launch` in the
+  candidate's from-capture file to launch.
+- **`--valid` / `--invalid`** — filters against the errors-ledger
+  classes. valid (default): invalid-class entries are skipped (and
+  in the unknown universe, error keys are subtracted). invalid
+  (valid=false): invalid-class entries become candidates again — the
+  repair sweep. The invalid class NARROWS under the new model: the
+  file-shaped reasons ("unknown fixture file", "malformed fixture
+  id") die because files self-register — a malformed stem can't map
+  to rule dims, so it is skipped at scan time and surfaces via the
+  envelope test instead of the ledger. The class reduces to:
+  "no launch spec" (a daemon from-capture pop meeting a candidate
+  whose from-capture file's `meta` lacks `prompt_launch`) and
+  "malformed queue row".
+- **`--successful` / `--unsuccessful`** — errors-ledger polarity.
+  successful (default): only no-error candidates (steady state).
+  unsuccessful: only candidates with an unsuccessful-class entry
+  ("capture failed", "unavailable", "post-check mismatch") — the
+  retry sweep. Unchanged: success purges the entry; `failed_at`
+  still feeds the done rule; unsuccessful candidates also go through
+  staleness evaluation (their absent/diverged channels typically
+  fire the composite anyway).
+- **`--free` / `--paid`** — membership in
+  `.providers_freemodels.csv` (read at expansion), keyed by the
+  candidate's (provider, model-rule) dims from the stem. Unset = no
+  filtering. The reference grid `.providers_models.csv` stays
+  zig-unread. Concretely: chutes has no free-grid row, so
+  `--free --harness=pi` yields nothing and the pi-chutes captures
+  only appear on default (unset) or `--paid`.
+
 ## 7. Code-impact inventory
 
 **`src/dev/dev.zig`** (the whole change is inside the dev struct):

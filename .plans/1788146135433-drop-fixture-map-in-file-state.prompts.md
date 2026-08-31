@@ -56,3 +56,7 @@ Prompts verbatim, in order, untruncated.
 13.
 
 > rename --stale-by-channel-drift to --stale-by-output-drift; add a new `--stale` that is --stale-by-channel-drift OR --stale-by-days=27 OR --stale-by-harness-version OR --stale-by-detect-version; have it so that --stale is defaulted to true unless one of the --stale-* are added, or if --refresh is added which functions as if --stale was not defaulted/provided; if --stale is provided and --stale-* is provided then the --stale-*= value will overwrite the default of it that --stale provides; this will make it easier to prevent churn
+
+14.
+
+> Give me more details about these and how they will operate now: [the axes help text block]
