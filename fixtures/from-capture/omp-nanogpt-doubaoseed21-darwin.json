@@ -83,13 +83,13 @@
   "meta": {
     "updated_at": 1786432043,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "omp",
       "--model",
       "nanogpt/bytedance/doubao-seed-2.1",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "omp",
       "--version"
     ]

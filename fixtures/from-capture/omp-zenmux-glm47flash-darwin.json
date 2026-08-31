@@ -86,13 +86,13 @@
   "meta": {
     "updated_at": 1786431870,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "omp",
       "--model",
       "zenmux/z-ai/glm-4.7-flash-free",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "omp",
       "--version"
     ]

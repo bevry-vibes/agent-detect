@@ -84,14 +84,14 @@
   "meta": {
     "updated_at": 1786431494,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "cline",
       "--auto-approve",
       "--provider=cline-pass",
       "--model=stepfun/step-3.7-flash",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "cline",
       "--version"
     ]

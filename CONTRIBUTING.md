@@ -16,20 +16,25 @@ id (e.g. `cline-clinepass-kimik3-darwin`), and `outputs` carries
 `identify` (the 18-field canonical object) plus `"trailer co-author"`
 and `"trailer assisted-by"` — for from-capture also `raw`. `meta`
 carries the ledger (`updated_at`, `agent_detect_version`, and for
-captures `harness_version`) and the curated launch argv. The binary is
-the only thing that writes fixtures — agents never hand-author them.
-A stem present in both folders has both channels; channel presence =
-file existence.
+captures `harness_version`) and the invocation of record
+(`prompt_invocation`/`version_invocation`). The binary is the only
+thing that writes fixtures — agents never hand-author them — and a
+from-capture file is written **only on a successful capture**: no
+meta-only stubs exist. A stem present in both folders has both
+channels; channel presence = file existence.
 
 `fixtures/index.json` is the committed state store — it holds only the
-**non-derivable** state (`queue` the filter-entry array, `backlog` the
-actionable gaps, `known_but_failed` the retryable failure messages),
-declared normatively in TypeScript at `fixtures/index.d.ts` (the
-source of truth for structure — unset optionals are omitted, never
-serialized as `null`), with the semantics in DESIGN.md "the state
-split". Queue entries are **filter tuples** (dims, mode, the staleness
-criteria set, `free`) — only the daemon expands them into concrete
-candidates, one per poll.
+**non-derivable** state (`queue` the filter-entry array, `invocations`
+the authored launch argv, `backlog` the actionable gaps + the
+`known_but_failed` failure memory), declared normatively in TypeScript
+at `fixtures/index.d.ts` (the source of truth for structure — unset
+optionals are omitted, never serialized as `null`), with the semantics
+in DESIGN.md "the state split". **Invocations are the dev agent's
+signal** — authoring one says "rules/argv are ready for this combo to
+capture"; zig reads them only to handle pop and `--repair`. Queue
+entries are **filter tuples** (dims, mode, the staleness criteria set,
+`free`) — only the daemon expands them into concrete candidates, one
+per poll.
 
 The refresh flow uses three binaries/actions with strict role
 separation:
@@ -42,9 +47,9 @@ separation:
   has no remaining candidates anywhere, expands the first entry with
   remaining host-platform work (stamping `started_at` on its first
   work), and evaluates ONE candidate (`from-identity`: declared
-  generation, zero tokens; `from-capture`: probe the file's
-  `meta.version_launch` then launch the real harness session via its
-  `meta.prompt_launch`). It never writes fixture files outside pop
+  generation, zero tokens; `from-capture`: probe the invocation's
+  `version_invocation` then launch the real harness session via its
+  `prompt_invocation`). It never writes fixture files outside pop
   processing and never inserts queue entries. Crash-resume derives
   from the fixture files — a capture that died with the daemon simply
   re-runs. Failed candidates damp for the daemon run (one attempt per
@@ -52,11 +57,16 @@ separation:
   `known_but_failed` + `daemon.log`; pops never gate on failure.
 - **`agent-detect-dev fixtures capture`** — runs *inside an agent*
   session; captures the current session into
-  `fixtures/from-capture/<id>.json` (whole-file atomic write;
-  the curated `meta.prompt_launch`/`meta.version_launch` persist, the
-  ledger stamps fresh) and clears the combo's `known_but_failed`
+  `fixtures/from-capture/<id>.json` (whole-file atomic write, written
+  only on success; the invocation of record persists, the ledger
+  stamps fresh) and clears the combo's `backlog.known_but_failed`
   entry. **Fixtures only** — a partial detection exits 8 with no file
   written (never writes `queue`).
+- **`agent-detect-dev fixtures prompt`** — prints the capture prompt
+  (what a harness session is asked to run). The daemon interpolates it
+  into an invocation's `<prompt>` placeholder; a hand-run capture
+  composes its launch around it:
+  `pi --provider chutes --model X -p "$(agent-detect-dev fixtures prompt)"`.
 - **`agent-detect-dev fixtures queue`** — **upsert only, no
   evaluation.** One queue entry per selected mode is stamped from the
   given dims and staleness flags; the daemon expands. `--repair` pops
@@ -89,18 +99,22 @@ enqueue** (or pure row filter for dequeue — a criteria-set comparison,
 never a probe at queue time). An entry carries a **set** of criteria;
 a candidate is stale iff ANY carried criterion says stale; absent
 evidence ⇒ stale:
-- `--stale-by-output-drift` — the two channel files' `outputs.identify`
-  are not both present and deep-equal (a missing channel counts stale).
+- `--stale-by-output` — the two channel files' `outputs.identify` are
+  not both present and deep-equal (a missing channel counts stale).
 - `--stale-by-days=N` / `--stale-by-hours=N` / `--stale-by-minutes=N` —
   mode-scoped age of `meta.updated_at` (the entry stores MINUTES).
 - `--stale-by-harness-version` — the capture file's
-  `meta.harness_version` differs from a live `version_launch` probe (a
-  harness upgrade re-captures without waiting for an age threshold).
+  `meta.harness_version` differs from a live `version_invocation` probe
+  (a harness upgrade re-captures without waiting for an age threshold).
 - `--stale-by-detect-version` — the file's `meta.agent_detect_version`
   is absent or differs from this binary's version (the designated
   sweep after a `build.zig.zon` bump).
-- `--stale` — the composite: output-drift OR days=27 OR
-  harness-version OR detect-version. **Defaulted on**: a queue upsert
+- `--stale-by-invocation` — the capture file's recorded
+  `meta.prompt_invocation` is missing or differs from the latest one in
+  index.json's `invocations` table (an updated invocation re-captures).
+- `--stale` — the composite: output OR days=27 OR
+  harness-version OR detect-version OR invocation. **Defaulted on**: a
+  queue upsert
   with no staleness flags carries the full composite. An explicit
   `--stale-*` forms the criteria set alone; `--stale` plus an explicit
   `--stale-*` overwrites just that composite component (`--stale
@@ -118,15 +132,16 @@ exactly the entry a bare upsert created (the composite); `--refresh`
 matches criteria-less entries.
 
 **`--repair`** (on `fixtures queue`) pops the backlog and re-queues the
-now-actionable items against the current rule tables and grids: a
-`needs_curation` id whose from-capture file now carries
-`meta.prompt_launch` → removed + a targeted `--fixture=<id>`
+now-actionable items against the current rule tables and grids: an
+`unknown_invocations` id that now has an invocation of record (a store
+table entry or the file's own `meta.prompt_invocation`) → removed + a
+targeted `--fixture=<id>`
 from-capture entry; an unknown harness/provider/model slug that a new
 rule made resolvable → removed + a from-identity entry filtered on
 that dim; the unfixtured (feasible grid combos with no fixture) → one
 from-identity entry over the feasible universe, honoring dims filters.
-Items still unresolvable or still argv-less stay in the backlog; run
-`fixtures status` to see what remains and why.
+Items still unresolvable or still invocation-less stay in the backlog;
+run `fixtures status` to see what remains and why.
 
 To refresh one fixture end-to-end:
 
@@ -150,7 +165,7 @@ To refresh one fixture end-to-end:
    poll: the `from-identity` pass writes the declared
    `from-identity/<id>.json` (zero tokens), and the `from-capture`
    pass launches the harness headlessly via the file's
-   `meta.prompt_launch` so it runs `fixtures capture` inside a live
+   `prompt_invocation` so it runs `fixtures capture` inside a live
    model session (token-consuming — announce with the pre-capture
    review window and confirm with the user first).
 
@@ -160,7 +175,7 @@ re-queues everything whose `agent_detect_version` drifted;
 A bare dims-only queue command (`fixtures queue --harness=cline
 --from-identity`) sweeps every fixtured-or-feasible combo matching
 those dims under the composite criteria. Failed candidates are damped
-for the daemon run and remembered in `known_but_failed` — pops never
+for the daemon run and remembered in `backlog.known_but_failed` — pops never
 gate on failure, so a re-assert of the entry (or `--repair`) retries
 them; fix the cause first and the next success clears the entry.
 
@@ -170,8 +185,8 @@ Queue jobs run in two modes with different failure surfaces. The
 `from-identity` worker resolves declared identification from provided
 ids — a failure there is a **rule-table bug** (unknown dims, malformed
 combo), surfaced as `daemon: from-identity failed for <combo>` with the
-failure remembered in `known_but_failed` + `daemon.log`. Fix the
-rules and re-queue.
+failure remembered in `backlog.known_but_failed` + `daemon.log`. Fix
+the rules and re-queue.
 
 Account-level failures — **credits depleted** (insufficient balance /
 credits error in the worker stderr), **rate limit encountered**
@@ -183,8 +198,8 @@ detection bugs: resolve the account condition, then re-assert the
 queue entry (or `fixtures queue --refresh` for a forced pass). A
 `from-capture` failure (timeout / nonzero exit / post-check fail /
 detection-partial exit 8) records a redacted message in
-`known_but_failed` and damps the candidate for that daemon run — no
-spin. An uninstalled harness (no `meta.version_launch` or the probe
+`backlog.known_but_failed` and damps the candidate for that daemon
+run — no spin. An uninstalled harness (no `version_invocation` or the probe
 exits nonzero) records "harness unavailable". A `from-capture` job
 launches a real model session and consumes tokens (free-tier quota or
 subscription) — confirm with the user first; a hand-run
@@ -214,13 +229,13 @@ cross-host work queue + failure memory). Never commit
 (`daemon.log`, `daemon.ctl`) — they are gitignored. The store is quiet
 by design — the per-channel fixture files carry the fixture state, so
 the store only changes when the queue/backlog/failure tables change.
-The dev agent reads `known_but_failed` + `daemon.log` +
+The dev agent reads `backlog.known_but_failed` + `daemon.log` +
 `fixtures status` to review regeneration completeness; purging fixture
 files is user discretion.
 
-## minimal invocation (curated launch argv)
+## minimal invocation (authored invocations)
 
-Curated `meta.prompt_launch` invocations carry only the arguments
+Authored `prompt_invocation` entries carry only the arguments
 **necessary** to pin harness + provider + model and run the capture
 prompt. Extra flags that merely alter runtime behaviour (e.g. cline's
 `--thinking <level>`) are **dropped unless documented as necessary**
@@ -229,8 +244,8 @@ approval flags (`--auto-approve`, `--auto`, `--allow-all`,
 `--permission-mode bypassPermissions`, `--non-interactive`) are
 necessary — a headless session cannot answer interactive prompts.
 Prompt-passing flags (`-p`, `--prompt`, `--message`, `run`/`text`
-subcommands) are the invocation's spine. When you add a curation,
-audit it against this policy; `fixtures status` +
+subcommands) are the invocation's spine. When you author an
+invocation, audit it against this policy; `fixtures status` +
 `git diff fixtures/` keeps the drift visible.
 
 ## test matrix: harnesses, providers, models
@@ -242,8 +257,9 @@ lives in DESIGN.md "test matrix"; the install table below is the
 what-to-do side. The matrix itself is the union of the two channel folders' filename
 stems (`fixtures/from-identity/` + `fixtures/from-capture/`) — one
 fixture id per `agent_id`-per-platform, the capture files carrying the
-curated `meta.prompt_launch`/`meta.version_launch` argv — expanded by
-the daemon from queue entries and captured per platform.
+invocation of record (`meta.prompt_invocation`/`meta.version_invocation`)
+— expanded by the daemon from queue entries and captured per platform,
+plus the authored `invocations` table.
 
 ### per-harness install table
 
@@ -516,17 +532,19 @@ After adding the rule:
    ```
    (Any dim the new rule makes resolvable that was sitting in the
    backlog's unknown_* sets clears via `fixtures queue --repair`.)
-3. Curate the combos that should capture: write a meta-only
-   from-capture file `fixtures/from-capture/<id>.json` with
-   `meta.prompt_launch` (the launch argv that runs `fixtures capture`
-   inside a live session — argv[0] is the concrete per-platform
-   binary, the last element is the capture prompt placeholder
-   `<prompt>`) and `meta.version_launch` (`[<binary>, "--version"]`),
-   per the minimal-invocation policy above, then
-   `fixtures queue --from-capture --harness=<harness_id>` and run the
-   daemon again (token-consuming, user-confirmed).
-4. Commit the new rules, the grids, the declared fixtures, the curation
-   stubs, and the store.
+3. Author the invocations for the combos that should capture: add an
+   entry to the `invocations` table in `fixtures/index.json` keyed by
+   the fixture id, with `prompt_invocation` (the launch argv that runs
+   `fixtures capture` inside a live session — argv[0] is the concrete
+   per-platform binary, the last element is the capture prompt
+   placeholder `<prompt>`) and `version_invocation`
+   (`[<binary>, "--version"]`), per the minimal-invocation policy
+   above, then `fixtures queue --from-capture --harness=<harness_id>`
+   and run the daemon again (token-consuming, user-confirmed). A
+   successful capture records the invocation into the fixture file's
+   own meta.
+4. Commit the new rules, the grids, the declared fixtures, the
+   invocations, and the store.
 
 If the harness is closed-source and you can't verify the SPDX license,
 leave `license: null` and `license_sources: &.{}` — a maintainer fills
@@ -738,9 +756,11 @@ markdown task-list bullet here when a new harness is wanted. The
 binary itself won't act on it (the `harness_name` must be in
 `rulesForHarnesses` for the daemon to recognize), but the bullet is the
 maintainer's next-session list. When a pending harness gets its rule
-added, seed its rows with `fixtures queue --unknown --from-identity`
-(the discovery sweep — see "adding a rule" below) and curate
-`prompt_launch`/`version_launch` on the rows that should capture.
+added, queue its from-identity pass
+(`fixtures queue --harness=<harness_id> --from-identity` — see
+"adding a rule" below) and author invocations
+(`prompt_invocation`/`version_invocation`) for the combos that should
+capture.
 
 The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11)
 and scoped the rest below as follow-ups for other contributors to pick

@@ -118,6 +118,8 @@ const devUsage = if (dev_build)
         \\  fixtures dequeue  DELETE matching queue rows [--from-identity|--from-capture]
         \\  fixtures status   print the derived snapshot (fixtured counts, backlog,
         \\                    feasible-unfixtured totals, stale/fresh breakdowns)
+        \\  fixtures prompt   print the capture prompt (what a harness session
+        \\                    is asked to run)
         \\  fixtures help     the fixtures namespace's full help
         \\  raw               print only the raw observations block
         \\
@@ -228,6 +230,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 return dev.runFixturesDequeue(init);
             } else if (std.mem.eql(u8, sub, "status")) {
                 return dev.runFixturesStatus(init);
+            } else if (std.mem.eql(u8, sub, "prompt")) {
+                return dev.runFixturesPrompt(init);
             } else if (std.mem.eql(u8, sub, "__timeout")) {
                 // internal watchdog used by the from-capture worker.
                 return dev.runTimeoutWorker(init);

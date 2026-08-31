@@ -4,8 +4,10 @@
  * per-channel fixture files. Each channel is a whole self-contained
  * file under its own directory, owned exclusively by its writer: a
  * writer serializes the entire file and atomically replaces it
- * (temp + rename); there is no merge-write and no store row. The
- * directory IS the channel — no channel key prefixes inside files.
+ * (temp + rename); there is no merge-write and no store row. A
+ * from-capture file is written ONLY on a successful capture — it
+ * always carries `outputs` (no meta-only stubs exist). The directory
+ * IS the channel — no channel key prefixes inside files.
  *
  * `<id>` is the dash-joined fixture id
  * `<harness>-<provider>-<model>-<platform>`, all strict slugs — the
@@ -15,7 +17,7 @@
  * Every file has exactly two top-level objects:
  * - `outputs` — the saved outputs of the channel;
  * - `meta` — everything else: ledger dates, writer version, and the
- *   curated launch argv (from-capture only).
+ *   invocation of record (from-capture only).
  *
  * Channel presence = file existence — no JSON parse needed to know
  * whether a channel ran. A stem present in both folders has both
@@ -100,45 +102,39 @@ export interface IdentityFile {
 
 /**
  * Live-capture file (`fixtures capture` in a real session, or the
- * daemon's from-capture worker) — full outputs + full meta — OR a
- * curated meta-only stub (no outputs, no ledger dates).
+ * daemon's from-capture worker) — written only on success, so `outputs`
+ * is always present. Authored invocations for not-yet-captured combos
+ * live in the store's `invocations` table (see fixtures/index.d.ts),
+ * never in a stub file.
  */
 export interface CaptureFile {
-  outputs?: {
+  outputs: {
     identify: Identify;
     "trailer co-author": string;
     "trailer assisted-by": string;
     /** the raw observations block, verbatim. */
     raw: Raw;
   };
-  meta:
-    | {
-        /** was capture.captured_at. */
-        updated_at: number;
-        /** the agent-detect version that captured it. */
-        agent_detect_version: string;
-        /** was capture.harness_version — the live version snapshot. */
-        harness_version?: string;
-        /**
-         * Launch argv that runs `fixtures capture` inside a live
-         * session. argv[0] is the concrete per-platform binary; the
-         * last element is the capture prompt placeholder `<prompt>`.
-         * Minimal invocation: only the arguments necessary to pin
-         * harness + provider + model and run the capture prompt —
-         * extra flags that merely alter runtime behaviour are dropped
-         * unless documented as necessary by the harness (see
-         * CONTRIBUTING.md "minimal invocation").
-         */
-        prompt_launch: string[];
-        /** e.g. ["kimi", "--version"] — availability probe + version source. */
-        version_launch?: string[];
-      }
-    // curated meta-only stub — the curation of record for a
-    // not-yet-run combo. On a successful capture the SAME file gains
-    // its `outputs` + the remaining `meta` fields; the launch argv
-    // persists untouched.
-    | {
-        prompt_launch: string[];
-        version_launch?: string[];
-      };
+  meta: {
+    /** was capture.captured_at. */
+    updated_at: number;
+    /** the agent-detect version that captured it. */
+    agent_detect_version: string;
+    /** was capture.harness_version — the live version snapshot. */
+    harness_version?: string;
+    /**
+     * The invocation of record — the launch argv that ran `fixtures
+     * capture` inside this live session. argv[0] is the concrete
+     * per-platform binary; the last element is the capture prompt
+     * placeholder `<prompt>` (see `fixtures prompt`). Minimal
+     * invocation: only the arguments necessary to pin harness +
+     * provider + model and run the capture prompt (see
+     * CONTRIBUTING.md "minimal invocation"). Absent for hand-run
+     * captures with no authored invocation (the combo then sits in
+     * backlog unknown_invocations).
+     */
+    prompt_invocation?: string[];
+    /** e.g. ["kimi", "--version"] — availability probe + version source. */
+    version_invocation?: string[];
+  };
 }

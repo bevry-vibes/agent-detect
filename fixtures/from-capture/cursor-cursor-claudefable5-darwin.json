@@ -84,14 +84,14 @@
   "meta": {
     "updated_at": 1786432388,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "cursor-agent",
       "-p",
       "--model",
       "claude-fable-5-thinking-high",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "cursor-agent",
       "--version"
     ]

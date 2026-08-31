@@ -59,13 +59,13 @@
   "meta": {
     "updated_at": 1786441270,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "kilo",
       "run",
       "--auto",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "kilo",
       "--version"
     ]

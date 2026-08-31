@@ -72,7 +72,7 @@ const Universe = struct {
         }
         if (with_argv) {
             if (meta.items.len > 0) try meta.append(testing.allocator, ',');
-            try meta.appendSlice(testing.allocator, "\"prompt_launch\":[\"someharness\",\"-p\",\"<prompt>\"],\"version_launch\":[\"someharness\",\"--version\"]");
+            try meta.appendSlice(testing.allocator, "\"prompt_invocation\":[\"someharness\",\"-p\",\"<prompt>\"],\"version_invocation\":[\"someharness\",\"--version\"]");
         }
         defer meta.deinit(testing.allocator);
         var it = std.mem.tokenizeScalar(u8, stem, '-');
@@ -87,19 +87,27 @@ const Universe = struct {
 /// build an in-memory store root with the v2 tables.
 fn emptyStoreRoot(a: std.mem.Allocator) !std.json.Value {
     var root: std.json.Value = .{ .object = .empty };
-    try root.object.put(a, "store_version", .{ .integer = 2 });
+    try root.object.put(a, "store_version", .{ .integer = 3 });
     try root.object.put(a, "queue", .{ .array = std.json.Array.init(a) });
-    try root.object.put(a, "backlog", .{ .object = .empty });
-    try root.object.put(a, "known_but_failed", .{ .object = .empty });
+    var backlog: std.json.Value = .{ .object = .empty };
+    try backlog.object.put(a, "known_but_failed", .{ .object = .empty });
+    try root.object.put(a, "backlog", backlog);
+    try root.object.put(a, "invocations", .{ .object = .empty });
     return root;
 }
 
 /// expand helper with a host parameter (empty free grid + grids, no
 /// damping).
-fn expand(a: std.mem.Allocator, entry: QueueEntry, host: []const u8) !dev.ExpandResult {
+fn expand(a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, host: []const u8) !dev.ExpandResult {
     var fg = dev.FreeGrid.empty(a);
     var grids = dev.FeasibilityGrids.empty(a);
-    return dev.expandEntry(testing.io, a, &fg, &grids, entry, host, null);
+    return dev.expandEntry(testing.io, a, root, &fg, &grids, entry, host, null);
+}
+
+/// add an invocation-table entry (dev-authored argv).
+fn putInvocation(a: std.mem.Allocator, root: *std.json.Value, id: []const u8) !void {
+    const inv = root.object.getPtr("invocations") orelse return error.MissingInvocations;
+    try inv.object.put(a, id, .{ .object = .empty });
 }
 
 // ---------------------------------------------------------------------------
@@ -108,16 +116,17 @@ fn expand(a: std.mem.Allocator, entry: QueueEntry, host: []const u8) !dev.Expand
 
 test "stampCriteria: no flags → the full --stale composite" {
     const crit = dev.stampCriteria(.{});
-    try testing.expect(crit.output_drift);
+    try testing.expect(crit.output);
     try testing.expectEqual(dev.StaleCriteria.composite.minutes.?, crit.minutes.?);
     try testing.expect(crit.harness_version);
     try testing.expect(crit.detect_version);
+    try testing.expect(crit.invocation);
     try testing.expectEqual(@as(i64, 27 * 24 * 60), crit.minutes.?);
 }
 
 test "stampCriteria: any explicit --stale-* forms the set alone" {
     const crit = dev.stampCriteria(.{ .stale_by_detect_version = true });
-    try testing.expect(!crit.output_drift);
+    try testing.expect(!crit.output);
     try testing.expect(crit.minutes == null);
     try testing.expect(!crit.harness_version);
     try testing.expect(crit.detect_version);
@@ -125,7 +134,7 @@ test "stampCriteria: any explicit --stale-* forms the set alone" {
 
 test "stampCriteria: --stale plus an explicit flag overwrites just that component" {
     const crit = dev.stampCriteria(.{ .stale = true, .stale_by_days = 0 });
-    try testing.expect(crit.output_drift);
+    try testing.expect(crit.output);
     try testing.expectEqual(@as(i64, 0), crit.minutes.?);
     try testing.expect(crit.harness_version);
     try testing.expect(crit.detect_version);
@@ -133,7 +142,7 @@ test "stampCriteria: --stale plus an explicit flag overwrites just that componen
 
 test "stampCriteria: --stale-by-days=999999999 effectively disables the age component" {
     const crit = dev.stampCriteria(.{ .stale = true, .stale_by_days = 999999999 });
-    try testing.expect(crit.output_drift);
+    try testing.expect(crit.output);
     try testing.expect(crit.harness_version);
     try testing.expect(crit.detect_version);
 }
@@ -147,6 +156,8 @@ test "validateFilters: the conflict matrix" {
     // --refresh conflicts with --stale and every --stale-*
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale = true }));
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_detect_version = true }));
+    try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_invocation = true }));
+    try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_output = true }));
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_minutes = 30 }));
     // two age thresholds
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .stale_by_days = 7, .stale_by_minutes = 30 }));
@@ -269,15 +280,16 @@ test "expandEntry: fixtured universe — the from-identity folder's files, dims-
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
+    var root = try emptyStoreRoot(aa);
     try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 100);
     try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 200);
 
     // no criteria = --refresh entry: every fixtured candidate is worked
-    const result = try expand(aa, .{ .mode = "from-identity" }, "darwin");
+    const result = try expand(aa, &root, .{ .mode = "from-identity" }, "darwin");
     try testing.expectEqual(@as(usize, 2), result.host_candidates.len);
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
 
-    const filtered = try expand(aa, .{ .harness = "kilo", .mode = "from-identity" }, "darwin");
+    const filtered = try expand(aa, &root, .{ .harness = "kilo", .mode = "from-identity" }, "darwin");
     try testing.expectEqual(@as(usize, 1), filtered.host_candidates.len);
     try testing.expectEqualStrings("kilo-deepseek-deepseekv4pro-darwin", filtered.host_candidates[0].fixture_id);
 }
@@ -289,11 +301,12 @@ test "expandEntry: done rule — meta.updated_at >= started_at drops out" {
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
+    var root = try emptyStoreRoot(aa);
     try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 300); // fresh — done
     try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 100); // old — remaining
 
     const entry: QueueEntry = .{ .mode = "from-identity", .started_at = 200 };
-    const result = try expand(aa, entry, "darwin");
+    const result = try expand(aa, &root, entry, "darwin");
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
 }
@@ -305,13 +318,14 @@ test "expandEntry: keep vs delete — another host's portion keeps the entry" {
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
+    var root = try emptyStoreRoot(aa);
     try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-windows", 100);
 
     const entry: QueueEntry = .{ .mode = "from-identity" };
-    const darwin = try expand(aa, entry, "darwin");
+    const darwin = try expand(aa, &root, entry, "darwin");
     try testing.expectEqual(@as(usize, 0), darwin.host_candidates.len);
     try testing.expectEqual(@as(usize, 1), darwin.remaining_anywhere);
-    const windows = try expand(aa, entry, "windows");
+    const windows = try expand(aa, &root, entry, "windows");
     try testing.expectEqual(@as(usize, 1), windows.host_candidates.len);
     try testing.expectEqual(@as(usize, 1), windows.remaining_anywhere);
 }
@@ -324,23 +338,24 @@ test "expandEntry: staleness — age-fresh skips, age-stale lists; absent eviden
     defer arena.deinit();
     const aa = arena.allocator();
     const io = testing.io;
+    var root = try emptyStoreRoot(aa);
     const now: i64 = std.Io.Clock.Timestamp.now(io, .real).raw.toSeconds();
     try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", now - 60); // 1 min old
     try Universe.writeIdentity("cline-clinepass-kimik3-darwin", now - 10 * 60); // 10 min old
 
     // 30-min age criterion: both fresh → no candidates
-    const fresh = try expand(aa, .{ .mode = "from-identity", .stale_by_minutes = 30 }, "darwin");
+    const fresh = try expand(aa, &root, .{ .mode = "from-identity", .stale_by_minutes = 30 }, "darwin");
     try testing.expectEqual(@as(usize, 0), fresh.host_candidates.len);
     // 5-min age criterion: only the 10-min-old file is stale
-    const stale = try expand(aa, .{ .mode = "from-identity", .stale_by_minutes = 5 }, "darwin");
+    const stale = try expand(aa, &root, .{ .mode = "from-identity", .stale_by_minutes = 5 }, "darwin");
     try testing.expectEqual(@as(usize, 1), stale.host_candidates.len);
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", stale.host_candidates[0].fixture_id);
     // minutes=0: everything age-stale
-    const zero = try expand(aa, .{ .mode = "from-identity", .stale_by_minutes = 0 }, "darwin");
+    const zero = try expand(aa, &root, .{ .mode = "from-identity", .stale_by_minutes = 0 }, "darwin");
     try testing.expectEqual(@as(usize, 2), zero.host_candidates.len);
     // a file with no updated_at (meta-only capture stub) is age-stale
     try Universe.writeCapture("kilo-kilo-glm52-darwin", null, true);
-    const stub = try expand(aa, .{ .mode = "from-capture", .stale_by_minutes = 30 }, "darwin");
+    const stub = try expand(aa, &root, .{ .mode = "from-capture", .stale_by_minutes = 30 }, "darwin");
     try testing.expectEqual(@as(usize, 1), stub.host_candidates.len);
 }
 
@@ -351,36 +366,64 @@ test "expandEntry: --stale-by-output-drift — both channels present and equal �
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
+    var root = try emptyStoreRoot(aa);
     // identity + capture with identical identify objects → fresh
     try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 100);
     try Universe.writeCapture("kilo-deepseek-deepseekv4pro-darwin", 100, true);
     // identity only → the missing capture channel counts stale
     try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 100);
 
-    const entry: QueueEntry = .{ .mode = "from-identity", .stale_by_output_drift = true };
-    const result = try expand(aa, entry, "darwin");
+    const entry: QueueEntry = .{ .mode = "from-identity", .stale_by_output = true };
+    const result = try expand(aa, &root, entry, "darwin");
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
     // the drift criterion also applies to from-capture entries
-    const cap_entry: QueueEntry = .{ .mode = "from-capture", .stale_by_output_drift = true };
-    const cap_result = try expand(aa, cap_entry, "darwin");
+    const cap_entry: QueueEntry = .{ .mode = "from-capture", .stale_by_output = true };
+    const cap_result = try expand(aa, &root, cap_entry, "darwin");
     try testing.expectEqual(@as(usize, 0), cap_result.host_candidates.len);
 }
 
-test "expandEntry: from-capture requires meta.prompt_launch — argv-less files are backlog, not candidates" {
+test "expandEntry: from-capture universe — invocations known to the store (table ∪ file meta)" {
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    try Universe.writeCapture("kilo-kilo-glm52-darwin", null, false); // no argv
-    try Universe.writeCapture("kilo-kilo-kimik3-darwin", null, true); // curated
+    var root = try emptyStoreRoot(aa);
+    // a capture file recording its invocation in meta (success case)
+    try Universe.writeCapture("kilo-kilo-kimik3-darwin", null, true);
+    // a capture file with no invocation of record anywhere — backlog
+    // unknown_invocations, never a candidate
+    try Universe.writeCapture("kilo-kilo-glm52-darwin", null, false);
+    // a table-only invocation (authored, capture pending) — a candidate
+    try putInvocation(aa, &root, "kilo-kilo-glm53-darwin");
 
     const entry: QueueEntry = .{ .mode = "from-capture" };
-    const result = try expand(aa, entry, "darwin");
+    const result = try expand(aa, &root, entry, "darwin");
+    try testing.expectEqual(@as(usize, 2), result.host_candidates.len);
+    try testing.expectEqualStrings("kilo-kilo-glm53-darwin", result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("kilo-kilo-kimik3-darwin", result.host_candidates[1].fixture_id);
+}
+
+test "expandEntry: --stale-by-invocation — file invocation vs the latest one in index.json" {
+    try Universe.setup();
+    defer Universe.teardown() catch {};
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    var root = try emptyStoreRoot(aa);
+    // file with a recorded invocation, no table entry → nothing newer → fresh
+    try Universe.writeCapture("kilo-kilo-kimik3-darwin", null, true);
+    // file without a recorded invocation but a table entry → stale
+    try Universe.writeCapture("kilo-kilo-glm52-darwin", null, false);
+    try putInvocation(aa, &root, "kilo-kilo-glm52-darwin");
+
+    const entry: QueueEntry = .{ .mode = "from-capture", .stale_by_invocation = true };
+    const result = try expand(aa, &root, entry, "darwin");
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
-    try testing.expectEqualStrings("kilo-kilo-kimik3-darwin", result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("kilo-kilo-glm52-darwin", result.host_candidates[0].fixture_id);
 }
 
 test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (from-identity only)" {
@@ -390,6 +433,7 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
+    var root = try emptyStoreRoot(aa);
     try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 300);
 
     var grids = dev.FeasibilityGrids.empty(aa);
@@ -402,14 +446,15 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     // (and done under this started_at — a no-criteria entry works
     // everything, so the done rule must retire the fixtured one)
     const entry: QueueEntry = .{ .mode = "from-identity", .started_at = 200 };
-    const result = try dev.expandEntry(testing.io, aa, &fg, &grids, entry, "darwin", null);
+    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, entry, "darwin", null);
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("kilo-deepseek-deepseekv4flash-darwin", result.host_candidates[0].fixture_id);
     // dims filter applies
-    const filtered = try dev.expandEntry(testing.io, aa, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null);
+    const filtered = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null);
     try testing.expectEqual(@as(usize, 0), filtered.host_candidates.len);
-    // from-capture never expands unfixtured combos (no argv to launch)
-    const cap = try dev.expandEntry(testing.io, aa, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null);
+    // from-capture never expands the feasible-unfixtured universe —
+    // authoring the invocation is what adds a capture candidate
+    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null);
     try testing.expectEqual(@as(usize, 0), cap.host_candidates.len);
 }
 
@@ -422,14 +467,15 @@ test "expandEntry: free axis filters by providers-freemodels.csv membership (Fre
     const aa = arena.allocator();
     try Universe.writeIdentity("pi-openrouter-nemotron3ultra-darwin", 100);
     try Universe.writeIdentity("pi-openrouter-deepseekv4flash-darwin", 100);
+    var root = try emptyStoreRoot(aa);
 
     var fg = dev.FreeGrid.empty(aa);
     try fg.put(aa, "openrouter", "nemotron3ultra");
     var grids = dev.FeasibilityGrids.empty(aa);
-    const free_result = try dev.expandEntry(testing.io, aa, &fg, &grids, .{ .mode = "from-identity", .free = true }, "darwin", null);
+    const free_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = true }, "darwin", null);
     try testing.expectEqual(@as(usize, 1), free_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-nemotron3ultra-darwin", free_result.host_candidates[0].fixture_id);
-    const paid_result = try dev.expandEntry(testing.io, aa, &fg, &grids, .{ .mode = "from-identity", .free = false }, "darwin", null);
+    const paid_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = false }, "darwin", null);
     try testing.expectEqual(@as(usize, 1), paid_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", paid_result.host_candidates[0].fixture_id);
 }
@@ -445,10 +491,11 @@ test "expandEntry: session damping — failed candidates are excluded" {
     try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 100);
     var damped = std.StringHashMap(void).init(aa);
     try damped.put("kilo-deepseek-deepseekv4pro-darwin", {});
+    var root = try emptyStoreRoot(aa);
 
     var fg = dev.FreeGrid.empty(aa);
     var grids = dev.FeasibilityGrids.empty(aa);
-    const result = try dev.expandEntry(testing.io, aa, &fg, &grids, .{ .mode = "from-identity" }, "darwin", &damped);
+    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", &damped);
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
 }
@@ -463,11 +510,12 @@ test "expandEntry: stale_by_harness_version + stale_by_detect_version read the c
     // harness_version "1.2.3" in meta; the version probe would have to
     // run the (absent) `someharness` binary — probe failure ⇒ stale.
     try Universe.writeCapture("kilo-kilo-kimik3-darwin", 100, true);
+    var root = try emptyStoreRoot(aa);
 
-    const hv = try expand(aa, .{ .mode = "from-capture", .stale_by_harness_version = true }, "darwin");
+    const hv = try expand(aa, &root, .{ .mode = "from-capture", .stale_by_harness_version = true }, "darwin");
     try testing.expectEqual(@as(usize, 1), hv.host_candidates.len);
     // detect-version: meta says "test-version", this binary differs ⇒ stale
-    const dv = try expand(aa, .{ .mode = "from-capture", .stale_by_detect_version = true }, "darwin");
+    const dv = try expand(aa, &root, .{ .mode = "from-capture", .stale_by_detect_version = true }, "darwin");
     try testing.expectEqual(@as(usize, 1), dv.host_candidates.len);
 }
 
@@ -475,7 +523,7 @@ test "expandEntry: stale_by_harness_version + stale_by_detect_version read the c
 // backlog refresh (folder scan)
 // ---------------------------------------------------------------------------
 
-test "refreshBacklogPure: unknown dims union in; resolved dims removed; needs_curation tracks argv" {
+test "refreshBacklogPure: unknown dims union in; resolved dims removed; unknown_invocations tracks invocations" {
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;
@@ -483,8 +531,8 @@ test "refreshBacklogPure: unknown dims union in; resolved dims removed; needs_cu
     defer arena.deinit();
     const aa = arena.allocator();
     try Universe.writeIdentity("zzz-unknownh-unknownp-darwin", 100); // unknown harness + provider
-    try Universe.writeCapture("kilo-kilo-glm52-darwin", null, false); // no argv → needs_curation
-    try Universe.writeCapture("kilo-kilo-kimik3-darwin", null, true); // curated
+    try Universe.writeCapture("kilo-kilo-glm52-darwin", null, false); // no invocation of record
+    try Universe.writeCapture("kilo-kilo-kimik3-darwin", null, true); // invocation in file meta
 
     var root = try emptyStoreRoot(aa);
     try dev.refreshBacklogPure(testing.io, aa, &root);
@@ -498,19 +546,19 @@ test "refreshBacklogPure: unknown dims union in; resolved dims removed; needs_cu
     const um = try dev.backlogItems(aa, &root, "unknown_models");
     try testing.expectEqual(@as(usize, 1), um.len);
     try testing.expectEqualStrings("unknownp", um[0]);
-    const nc = try dev.backlogItems(aa, &root, "needs_curation");
-    try testing.expectEqual(@as(usize, 1), nc.len);
-    try testing.expectEqualStrings("kilo-kilo-glm52-darwin", nc[0]);
+    const ui = try dev.backlogItems(aa, &root, "unknown_invocations");
+    try testing.expectEqual(@as(usize, 1), ui.len);
+    try testing.expectEqualStrings("kilo-kilo-glm52-darwin", ui[0]);
 
     // a resolvable slug pre-seeded into unknown_harnesses is removed;
-    // a needs_curation id whose file now carries argv is removed.
+    // an unknown_invocations id that gains a table entry is removed.
     try dev.backlogUnionPure(aa, &root, "unknown_harnesses", &.{"kilo"});
-    try dev.backlogUnionPure(aa, &root, "needs_curation", &.{"kilo-kilo-kimik3-darwin"});
+    try putInvocation(aa, &root, "kilo-kilo-glm52-darwin");
     try dev.refreshBacklogPure(testing.io, aa, &root);
     const uh2 = try dev.backlogItems(aa, &root, "unknown_harnesses");
     try testing.expectEqual(@as(usize, 1), uh2.len); // kilo removed, zzz stays
-    const nc2 = try dev.backlogItems(aa, &root, "needs_curation");
-    try testing.expectEqual(@as(usize, 1), nc2.len);
+    const ui2 = try dev.backlogItems(aa, &root, "unknown_invocations");
+    try testing.expectEqual(@as(usize, 0), ui2.len); // table entry resolves it
 }
 
 // ---------------------------------------------------------------------------
@@ -518,7 +566,7 @@ test "refreshBacklogPure: unknown dims union in; resolved dims removed; needs_cu
 // ---------------------------------------------------------------------------
 
 test "dequeueMatches: bare filter matches the composite entry; --refresh matches criteria-less" {
-    const composite_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_output_drift = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_detect_version = true };
+    const composite_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_output = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_detect_version = true, .stale_by_invocation = true };
     const refresh_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity" };
     const explicit_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_detect_version = true };
 
@@ -534,5 +582,5 @@ test "dequeueMatches: bare filter matches the composite entry; --refresh matches
     // dims constrain
     try testing.expect(!dev.dequeueMatches(.{ .harness = "cline" }, composite_entry));
     // free matches when set
-    try testing.expect(dev.dequeueMatches(.{ .harness = "kilo", .free = true }, .{ .harness = "kilo", .mode = "from-identity", .free = true, .stale_by_output_drift = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_detect_version = true }));
+    try testing.expect(dev.dequeueMatches(.{ .harness = "kilo", .free = true }, .{ .harness = "kilo", .mode = "from-identity", .free = true, .stale_by_output = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_detect_version = true, .stale_by_invocation = true }));
 }

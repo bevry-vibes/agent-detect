@@ -84,7 +84,7 @@
   "meta": {
     "updated_at": 1786432450,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "copilot",
       "-p",
       "--allow-all",
@@ -92,7 +92,7 @@
       "claude-sonnet-5",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "copilot",
       "--version"
     ]

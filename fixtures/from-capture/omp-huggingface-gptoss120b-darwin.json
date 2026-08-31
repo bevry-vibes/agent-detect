@@ -86,13 +86,13 @@
   "meta": {
     "updated_at": 1786432115,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "omp",
       "--model",
       "huggingface/openai/gpt-oss-120b",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "omp",
       "--version"
     ]

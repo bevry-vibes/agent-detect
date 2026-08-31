@@ -165,10 +165,9 @@ test "fixtures: at least one fixture is committed" {
 
 test "fixtures: envelope shape — every channel file is exactly { outputs, meta }" {
     // from-identity files always carry `outputs` (identify + both
-    // trailers); from-capture files carry `outputs` (…+ raw) OR are
-    // curated meta-only stubs (`meta` with the launch argv, no
-    // `outputs`). No other top-level keys exist — the directory IS the
-    // channel.
+    // trailers); from-capture files are written only on success, so they
+    // always carry `outputs` (…+ raw) too — no meta-only stubs exist. No
+    // other top-level keys exist — the directory IS the channel.
     if (!newLayoutPresent(testing.allocator)) return; // pre-migration
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
@@ -189,54 +188,46 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                 std.debug.print("fixture {s}/{s}.json has disallowed top-level key '{s}'\n", .{ folder, stem, key });
                 return error.UnexpectedRootKey;
             }
-            const outputs = o.get("outputs");
+            const outputs = o.get("outputs") orelse {
+                std.debug.print("fixture {s}/{s}.json has no outputs object (meta-only stubs are not written)\n", .{ folder, stem });
+                return error.MissingOutputs;
+            };
             const meta = o.get("meta") orelse {
                 std.debug.print("fixture {s}/{s}.json has no meta object\n", .{ folder, stem });
                 return error.MissingMeta;
             };
             if (meta != .object) return error.InvalidFixtureShape;
             const mo = meta.object;
-            if (outputs) |out| {
-                // output-bearing file: identify + both trailers, and the
-                // full ledger meta.
-                if (out != .object) return error.InvalidFixtureShape;
-                const oo = out.object;
-                const identify = oo.get("identify") orelse return error.MissingIdentify;
-                if (identify != .object) return error.InvalidFixtureShape;
-                try testing.expect(oo.get("trailer co-author") != null);
-                try testing.expect(oo.get("trailer assisted-by") != null);
-                if (std.mem.eql(u8, folder, identity_dir)) {
-                    // from-identity outputs are exactly identify + trailers
-                    try testing.expectEqual(@as(usize, 3), oo.count());
-                    // meta: updated_at + agent_detect_version, nothing else
-                    try testing.expectEqual(@as(usize, 2), mo.count());
-                    try testing.expect(mo.get("updated_at") != null);
-                    try testing.expect(mo.get("agent_detect_version") != null);
-                } else {
-                    // from-capture outputs may additionally carry raw
-                    for (oo.keys()) |k| {
-                        if (std.mem.eql(u8, k, "identify") or
-                            std.mem.eql(u8, k, "trailer co-author") or
-                            std.mem.eql(u8, k, "trailer assisted-by") or
-                            std.mem.eql(u8, k, "raw")) continue;
-                        std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
-                        return error.UnexpectedOutputKey;
-                    }
-                    // meta: updated_at + agent_detect_version (+ optional
-                    // harness_version and launch argv — null-as-absent)
-                    try testing.expect(mo.get("updated_at") != null);
-                    try testing.expect(mo.get("agent_detect_version") != null);
-                }
+            // output-bearing file: identify + both trailers, and the full
+            // ledger meta.
+            if (outputs != .object) return error.InvalidFixtureShape;
+            const oo = outputs.object;
+            const identify = oo.get("identify") orelse return error.MissingIdentify;
+            if (identify != .object) return error.InvalidFixtureShape;
+            try testing.expect(oo.get("trailer co-author") != null);
+            try testing.expect(oo.get("trailer assisted-by") != null);
+            if (std.mem.eql(u8, folder, identity_dir)) {
+                // from-identity outputs are exactly identify + trailers
+                try testing.expectEqual(@as(usize, 3), oo.count());
+                // meta: updated_at + agent_detect_version, nothing else
+                try testing.expectEqual(@as(usize, 2), mo.count());
+                try testing.expect(mo.get("updated_at") != null);
+                try testing.expect(mo.get("agent_detect_version") != null);
             } else {
-                // meta-only curated stub: no outputs, meta carries the
-                // launch argv (the curation of record) — nothing else.
-                try testing.expect(std.mem.eql(u8, folder, capture_dir));
-                for (mo.keys()) |k| {
-                    if (std.mem.eql(u8, k, "prompt_launch") or std.mem.eql(u8, k, "version_launch")) continue;
-                    std.debug.print("fixture {s}/{s}.json meta-only stub has unexpected meta key '{s}'\n", .{ folder, stem, k });
-                    return error.UnexpectedStubMetaKey;
+                // from-capture outputs may additionally carry raw
+                for (oo.keys()) |k| {
+                    if (std.mem.eql(u8, k, "identify") or
+                        std.mem.eql(u8, k, "trailer co-author") or
+                        std.mem.eql(u8, k, "trailer assisted-by") or
+                        std.mem.eql(u8, k, "raw")) continue;
+                    std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
+                    return error.UnexpectedOutputKey;
                 }
-                try testing.expect(mo.get("prompt_launch") != null);
+                // meta: updated_at + agent_detect_version (+ optional
+                // harness_version and the invocation of record —
+                // null-as-absent)
+                try testing.expect(mo.get("updated_at") != null);
+                try testing.expect(mo.get("agent_detect_version") != null);
             }
         }
     }
@@ -542,12 +533,15 @@ test "fixtures: envelope combo-match — each folder's identify ids equal the fi
     }
 }
 
-test "fixtures: meta.launch argv — exactly one <prompt> placeholder; version_launch is [<binary>, --version]" {
-    // The from-capture file saves the literal `"<prompt>"` placeholder in
-    // place of the launch prompt (the daemon interpolates the real prompt
-    // at spawn time). version_launch is always the same binary plus
+test "fixtures: invocation argv — exactly one <prompt> placeholder; version_invocation is [<binary>, --version]" {
+    // An invocation saves the literal `"<prompt>"` placeholder in place
+    // of the launch prompt (the daemon interpolates the real prompt at
+    // spawn time). version_invocation is always the same binary plus
     // `--version` (minimal invocation: only the args necessary to pin
-    // harness + provider + model and run the capture prompt).
+    // harness + provider + model and run the capture prompt). Invocations
+    // live in two places: a from-capture file's meta (the invocation it
+    // ran under) and the store's `invocations` table (authored, pre- or
+    // post-success).
     if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
@@ -558,29 +552,44 @@ test "fixtures: meta.launch argv — exactly one <prompt> placeholder; version_l
         const root = (try readChannelParsed(aa, capture_dir, stem)) orelse continue;
         const meta = root.object.get("meta") orelse continue;
         if (meta != .object) continue;
-        const launch = meta.object.get("prompt_launch") orelse continue;
-        if (launch != .array or launch.array.items.len == 0) return error.InvalidLaunchArgv;
-        var placeholders: usize = 0;
-        for (launch.array.items) |arg| {
-            if (arg == .string and std.mem.eql(u8, arg.string, "<prompt>")) placeholders += 1;
-        }
-        if (placeholders != 1) {
-            std.debug.print("fixture {s} meta.prompt_launch has {d} <prompt> placeholders (want 1)\n", .{ stem, placeholders });
-            return error.InvalidPromptPlaceholder;
-        }
-        const vl = meta.object.get("version_launch") orelse continue;
-        if (vl != .array or vl.array.items.len != 2) return error.InvalidVersionLaunch;
-        const v0 = vl.array.items[0];
-        const v1 = vl.array.items[1];
-        if (v0 != .string or v1 != .string or !std.mem.eql(u8, v1.string, "--version")) return error.InvalidVersionLaunch;
-        if (launch.array.items[0] != .string or !std.mem.eql(u8, launch.array.items[0].string, v0.string)) {
-            std.debug.print("fixture {s} version_launch argv[0] != prompt_launch argv[0]\n", .{stem});
-            return error.InvalidVersionLaunch;
-        }
+        const launch = meta.object.get("prompt_invocation") orelse continue;
+        try checkInvocation(aa, stem, launch, meta.object.get("version_invocation"));
+    }
+    // the store's invocations table too
+    const store = (try readIndexParsed(aa)) orelse return;
+    const invocations = store.object.get("invocations") orelse return;
+    if (invocations != .object) return;
+    var it = invocations.object.iterator();
+    while (it.next()) |kv| {
+        const o = kv.value_ptr.object;
+        const launch = o.get("prompt_invocation") orelse return error.InvalidLaunchArgv;
+        try checkInvocation(aa, kv.key_ptr.*, launch, o.get("version_invocation"));
     }
 }
 
-test "fixtures: meta.launch argv[0] ∈ the harness rule's binary_names (host platform)" {
+fn checkInvocation(a: std.mem.Allocator, id: []const u8, launch: std.json.Value, vl: ?std.json.Value) !void {
+    _ = a;
+    if (launch != .array or launch.array.items.len == 0) return error.InvalidLaunchArgv;
+    var placeholders: usize = 0;
+    for (launch.array.items) |arg| {
+        if (arg == .string and std.mem.eql(u8, arg.string, "<prompt>")) placeholders += 1;
+    }
+    if (placeholders != 1) {
+        std.debug.print("invocation {s} has {d} <prompt> placeholders (want 1)\n", .{ id, placeholders });
+        return error.InvalidPromptPlaceholder;
+    }
+    const v = vl orelse return;
+    if (v != .array or v.array.items.len != 2) return error.InvalidVersionInvocation;
+    const v0 = v.array.items[0];
+    const v1 = v.array.items[1];
+    if (v0 != .string or v1 != .string or !std.mem.eql(u8, v1.string, "--version")) return error.InvalidVersionInvocation;
+    if (launch.array.items[0] != .string or !std.mem.eql(u8, launch.array.items[0].string, v0.string)) {
+        std.debug.print("invocation {s} version_invocation argv[0] != prompt_invocation argv[0]\n", .{id});
+        return error.InvalidVersionInvocation;
+    }
+}
+
+test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host platform)" {
     // The curated argv must name a real binary for the platform the file
     // targets. Only the files for the platform this test runs on are
     // checked — the other platforms' name lists differ at compile time.
@@ -598,7 +607,7 @@ test "fixtures: meta.launch argv[0] ∈ the harness rule's binary_names (host pl
         const meta = root.object.get("meta") orelse continue;
         if (meta != .object) continue;
         const rule = main.harnessRuleForFixtureId(aa, stem) orelse continue;
-        for ([_][]const u8{ "prompt_launch", "version_launch" }) |field| {
+        for ([_][]const u8{ "prompt_invocation", "version_invocation" }) |field| {
             const arr_v = meta.object.get(field) orelse continue;
             if (arr_v != .array or arr_v.array.items.len == 0) continue;
             const argv0 = arr_v.array.items[0];
@@ -615,7 +624,7 @@ test "fixtures: meta.launch argv[0] ∈ the harness rule's binary_names (host pl
     }
 }
 
-test "index.json: store_version is 2 and the tables are exactly queue + backlog + known_but_failed" {
+test "index.json: store_version is 3 and the tables are exactly queue + backlog + invocations" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const root = (try readIndexParsed(arena.allocator())) orelse return; // pre-migration
@@ -623,10 +632,12 @@ test "index.json: store_version is 2 and the tables are exactly queue + backlog 
         if (std.mem.eql(u8, key, "store_version") or
             std.mem.eql(u8, key, "queue") or
             std.mem.eql(u8, key, "backlog") or
-            std.mem.eql(u8, key, "known_but_failed")) continue;
+            std.mem.eql(u8, key, "invocations")) continue;
         std.debug.print("index.json has unexpected top-level key '{s}' — the fixture state lives in the fixture files now\n", .{key});
         return error.UnexpectedStoreKey;
     }
+    const sv = root.object.get("store_version").?;
+    try testing.expectEqual(@as(i64, 3), sv.integer);
 }
 
 test "index.json: backlog sets are unique sorted slug/id string arrays" {
@@ -635,7 +646,7 @@ test "index.json: backlog sets are unique sorted slug/id string arrays" {
     const root = (try readIndexParsed(arena.allocator())) orelse return;
     const backlog = root.object.get("backlog") orelse return;
     if (backlog != .object) return error.InvalidBacklog;
-    const sets = [_][]const u8{ "unknown_harnesses", "unknown_providers", "unknown_models", "needs_curation" };
+    const sets = [_][]const u8{ "unknown_harnesses", "unknown_providers", "unknown_models", "unknown_invocations" };
     for (sets) |set| {
         const arr = backlog.object.get(set) orelse continue;
         if (arr != .array) return error.InvalidBacklogSet;
@@ -653,32 +664,37 @@ test "index.json: backlog sets are unique sorted slug/id string arrays" {
     }
 }
 
-test "index.json: needs_curation ids are fixtured from-capture files without meta.prompt_launch" {
+test "index.json: unknown_invocations ids are from-capture files with no invocation of record anywhere" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const aa = arena.allocator();
     const root = (try readIndexParsed(aa)) orelse return;
     const backlog = root.object.get("backlog") orelse return;
     if (backlog != .object) return;
-    const arr = backlog.object.get("needs_curation") orelse return;
+    const arr = backlog.object.get("unknown_invocations") orelse return;
     if (arr != .array) return;
+    const invocations = root.object.get("invocations") orelse return error.MissingInvocations;
+    if (invocations != .object) return error.MissingInvocations;
     for (arr.array.items) |item| {
         if (item != .string) return error.InvalidBacklogItem;
         const root_v = (try readChannelParsed(aa, capture_dir, item.string)) orelse {
-            std.debug.print("needs_curation id {s} has no from-capture file\n", .{item.string});
-            return error.NeedsCurationWithoutFile;
+            std.debug.print("unknown_invocations id {s} has no from-capture file\n", .{item.string});
+            return error.UnknownInvocationWithoutFile;
         };
         const meta = root_v.object.get("meta") orelse return error.InvalidFixtureShape;
         if (meta != .object) return error.InvalidFixtureShape;
-        try testing.expect(meta.object.get("prompt_launch") == null);
+        try testing.expect(meta.object.get("prompt_invocation") == null);
+        try testing.expect(invocations.object.get(item.string) == null);
     }
 }
 
-test "index.json: known_but_failed is a flat id → message string map" {
+test "index.json: backlog.known_but_failed is a flat id → message string map" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const root = (try readIndexParsed(arena.allocator())) orelse return;
-    const kb = root.object.get("known_but_failed") orelse return;
+    const backlog = root.object.get("backlog") orelse return;
+    if (backlog != .object) return error.InvalidBacklog;
+    const kb = backlog.object.get("known_but_failed") orelse return;
     if (kb != .object) return error.InvalidKnownButFailed;
     var it = kb.object.iterator();
     while (it.next()) |kv| {
@@ -722,11 +738,12 @@ test "index.json: queue entries match their field invariants" {
     }
 }
 
-test "coverage: every provider/model rule appears in ≥1 fixture stem; every harness rule on ≥1 stem per platform" {
+test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" {
     // The known universe is the union of the two folders' filename
-    // stems, so coverage scans the folders (not the store). Harnesses
-    // must appear on all three platforms (the declaration workflow
-    // covers one row per platform); providers/models at least once.
+    // stems, so coverage scans the folders (not the store). Per-platform
+    // coverage is derived at expansion time from the feasible-unfixtured
+    // universe (the reference grids) and the daemon's identity drain —
+    // the folder scan only has to show each rule at least once.
     if (!newLayoutPresent(testing.allocator)) return;
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
@@ -735,7 +752,7 @@ test "coverage: every provider/model rule appears in ≥1 fixture stem; every ha
     const stems = try discoverStems(aa);
     try testing.expect(stems.len >= 1);
 
-    var harness_platforms = std.StringHashMap(u8).init(aa);
+    var harnesses_seen = std.StringHashMap(void).init(aa);
     var providers_seen = std.StringHashMap(void).init(aa);
     var models_seen = std.StringHashMap(void).init(aa);
 
@@ -786,40 +803,34 @@ test "coverage: every provider/model rule appears in ≥1 fixture stem; every ha
             std.debug.print("fixture stem {s} has an unknown platform {s}\n", .{ stem, parts[3] });
             return error.UnknownPlatform;
         }
-        const gop = try harness_platforms.getOrPut(parts[0]);
-        if (!gop.found_existing) gop.value_ptr.* = 0;
-        gop.value_ptr.* |= if (std.mem.eql(u8, parts[3], "darwin"))
-            @as(u8, 0b001)
-        else if (std.mem.eql(u8, parts[3], "linux"))
-            @as(u8, 0b010)
-        else
-            @as(u8, 0b100);
+        try harnesses_seen.put(parts[0], {});
         try providers_seen.put(parts[1], {});
         try models_seen.put(parts[2], {});
     }
 
     for (main.rulesForHarnesses) |rr| {
         const slug = try main.slugId(aa, rr.name);
-        const mask = harness_platforms.get(slug) orelse {
+        if (!harnesses_seen.contains(slug)) {
             std.debug.print("harness rule {s} has no fixture stems\n", .{rr.name});
             return error.HarnessWithoutStems;
-        };
-        // bit0 = darwin, bit1 = linux, bit2 = windows
-        if (mask != 0b111) {
-            std.debug.print("harness rule {s} is missing a platform's stems (mask 0b{b})\n", .{ rr.name, mask });
-            return error.HarnessMissingPlatform;
         }
     }
     // Rule-only entries — detection-coverage rules no fixture combo uses
     // yet (a provider alias/mirror, or a model registered for detection
     // without a curated launch). The guard still fires for any NEW rule
     // that lands without stems; these are the pre-existing exemptions.
-    const rule_only_providers = [_][]const u8{ "cline", "google", "moonshot" };
+    // chutes: the pi-chutes invocations live in the store's invocations
+    // table (their captures are pending), so no fixture stem covers it yet.
+    const rule_only_providers = [_][]const u8{ "cline", "chutes", "google", "moonshot" };
     const rule_only_models = [_][]const u8{
-        "claude-haiku-4",  "claude-opus-4", "devstral-2",   "gemini-3.1-pro",
-        "glm-4.6",         "glm-5",         "glm-5.3",      "gpt-5.5",
-        "grok-3-mini",     "grok-4.6",      "hy3",          "hy4-preview",
-        "mimo-v2.5",       "mimo-v2.5-pro", "qwen3.5",
+        "claude-haiku-4",           "claude-opus-4",       "devstral-2",
+        "gemini-3.1-pro",           "glm-4.6",             "glm-5",
+        "glm-5.1",                  "glm-5.3",             "gpt-5.5",
+        "grok-3-mini",              "grok-4.6",            "hy3",
+        "hy4-preview",              "kimi-k2.6",           "mimo-v2.5",
+        "mimo-v2.5-pro",            "mistral-nemo-instruct-2407",
+        "nemotron-3-nano-omni",     "qwen3-235b-a22b",     "qwen3.5",
+        "qwen3.5-397b-a17b",        "qwen3.8-27b",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;
@@ -914,7 +925,7 @@ test "providers_freemodels.csv: free-grid entries resolve to known rules, stay s
                 const root_v = (try readChannelParsed(a, capture_dir, stem)) orelse continue;
                 const meta = root_v.object.get("meta") orelse continue;
                 if (meta != .object) continue;
-                const launch = meta.object.get("prompt_launch") orelse continue;
+                const launch = meta.object.get("prompt_invocation") orelse continue;
                 if (launch != .array) continue;
                 var has_model_spec = false;
                 var has_free_signal = false;

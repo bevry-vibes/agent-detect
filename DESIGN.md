@@ -71,7 +71,8 @@ files, each a whole self-contained `{ outputs, meta }` envelope
   plus `"trailer co-author"` and `"trailer assisted-by"`; `meta` =
   `updated_at` + `agent_detect_version`.
 - `fixtures/from-capture/<id>.json` — the live-capture channel,
-  written by `fixtures capture` (or a curation stub before it runs):
+  written by `fixtures capture` on success only (authored invocations
+  for not-yet-captured combos live in the store's `invocations` table):
   `outputs` = identify + trailers + `raw` (the slimmed shapeless
   runtime observations, headed by `platform_id`, then
   `harness_version` (the live version snapshot — null when the
@@ -79,7 +80,8 @@ files, each a whole self-contained `{ outputs, meta }` envelope
   `detected`, then `process_lineage`, the `*-urls` reference arrays,
   and the `evidence` claims — the dev `raw` output verbatim); `meta` =
   `updated_at` + `agent_detect_version` (+ `harness_version`, + the
-  curated `prompt_launch`/`version_launch` argv). The raw block
+  invocation of record — `prompt_invocation`/`version_invocation`).
+  The raw block
   deliberately does NOT duplicate the env vars / config files /
   session files verbatim (decision #4 — raw slimming): the `evidence`
   section documents the source that informed each canonical
@@ -116,15 +118,17 @@ A reader can instantly see what a fixture claims without scanning the
 The fixture state lives in two places, split by derivability:
 
 - **`fixtures/index.json`** — the committed state store, holding only
-  the **non-derivable** state: `queue` (work intent), `backlog`
-  (actionable gaps), and `known_but_failed` (retryable failure
-  messages). The legacy store v1 `fixtures` map and `errors` ledger are
-  dropped on load and never re-serialized — back-compat by drop, not
-  dual-read.
+  the **non-derivable** state: `queue` (work intent), `invocations`
+  (the authored launch argv — the dev agent's signal for what should
+  capture), and `backlog` (actionable gaps + the `known_but_failed`
+  failure memory). The legacy store v1 `fixtures` map and `errors`
+  ledger, and the v2 top-level `known_but_failed`, are dropped on load
+  and never re-serialized — back-compat by drop, not dual-read.
 - **The fixture files themselves** — `fixtures/from-identity/<id>.json`
   (declared identifications) and `fixtures/from-capture/<id>.json`
-  (live captures and curated meta-only stubs), each a whole
-  self-contained `{ outputs, meta }` envelope. The **directory IS the
+  (live captures — **written only on success**, so a from-capture file
+  always carries `outputs`), each a whole self-contained
+  `{ outputs, meta }` envelope. The **directory IS the
   channel** — no channel key prefixes inside files. Channel presence =
   file existence — no JSON parse needed. A stem present in both folders
   has both channels. The normative shapes are declared in TypeScript at
@@ -142,14 +146,16 @@ it (temp + rename); there is no merge-write, no store row, and no
 writer contention (declaration and capture never touch the same bytes).
 Git semantics: identity churn and capture churn isolate per file; PR
 review sees exactly which channel changed; a torn write damages only
-one channel. The writer of a from-capture file preserves any
-`meta.prompt_launch` / `meta.version_launch` it finds in the file it is
-replacing (they are the curation of record) and stamps
-`updated_at` / `agent_detect_version` / `harness_version` fresh. A
-curation for a not-yet-run combo creates a meta-only from-capture file
-(launch argv, no `outputs`, no ledger dates); on a successful capture
-the SAME file gains its `outputs` + the remaining `meta` fields — no
-stub-deletion step, no separate `invoked_by` field.
+one channel. The writer of a from-capture file records the **invocation
+of record** into its `meta` (`prompt_invocation` / `version_invocation`
+— the store's `invocations` table entry first, else whatever the
+replaced file recorded) and stamps `updated_at` /
+`agent_detect_version` / `harness_version` fresh. There are **no
+meta-only stub files**: an authored invocation for a not-yet-captured
+combo lives in the store's `invocations` table, and the capture file
+appears only when a capture succeeds. Curation is a signal to the dev
+agent (rules/argv needed for a successful capture); zig reads
+invocations only to handle pop and `--repair`.
 
 Store tables (semantics only — shapes in the schemas):
 
@@ -162,17 +168,28 @@ Store tables (semantics only — shapes in the schemas):
   entry's first work and anchors the pop protocol's done rule. There is
   **no `finished_at`**: fully-satisfied entries are purged (deleted —
   the fixture files are the sweep record).
-- `backlog` — the actionable gaps, replacing the old errors ledger's
-  structural half: `unknown_harnesses` / `unknown_providers` /
-  `unknown_models` (unique dim slugs from unresolvable stems — a fix,
-  adding a rule, is addressable per dim) and `needs_curation` (fixture
-  ids of fixtured from-capture files whose meta lacks prompt_launch).
-  Derived from folder scans; maintained (idempotent union on write,
-  removed when resolved) by the daemon's pick and `fixtures status`.
-  The unfixtured — the feasible-unfixtured universe derived from the
-  grids minus the fixtured stems — is **never a stored list** (it is
-  hundreds of ids).
-- `known_but_failed` — retryable operational failures, flat and
+- `invocations` — the authored invocations, keyed by fixture id:
+  `{ "prompt_invocation": [...], "version_invocation": [...] }`. The
+  dev agent authors these (a signal for rules/etc needed for a
+  successful capture); zig reads them only to handle **pop** (the
+  launch argv + version probe — the table entry wins over the file's
+  recorded meta as "the latest") and **`--repair`** (an
+  `unknown_invocations` item that gains an entry re-queues as a
+  targeted from-capture entry). A successful capture records the
+  invocation it ran under into the fixture file's own `meta`; the
+  table entry persists as the re-capture source.
+- `backlog` — the actionable gaps + the failure memory:
+  `unknown_harnesses` / `unknown_providers` / `unknown_models` (unique
+  dim slugs from unresolvable stems — folder stems and
+  invocations-table ids alike; a fix, adding a rule, is addressable per
+  dim), `unknown_invocations` (fixture ids of from-capture files with
+  no invocation of record anywhere), and `known_but_failed` (see
+  below). Derived from folder scans; maintained (idempotent union on
+  write, removed when resolved) by the daemon's pick and
+  `fixtures status`. The unfixtured — the feasible-unfixtured universe
+  derived from the grids minus the fixtured stems — is **never a stored
+  list** (it is hundreds of ids).
+- `backlog.known_but_failed` — retryable operational failures, flat and
   informational: `known_but_failed[<fixture-id>] = "<message>"` — the
   fixture id maps directly to the failure output (stderr tail or the
   worker's diagnostic), truncated and redacted (home paths,
@@ -223,11 +240,12 @@ The **pop protocol** (the daemon's per-poll expansion):
    (logged + dropped — the errors ledger is gone; `daemon.log` is the
    dev agent's record).
 2. Expand the entry's universe — **one universe**: resolvable dims ∧
-   (fixtured ∨ feasible-unfixtured per the grids; from-capture
-   candidates further require `meta.prompt_launch` — argv-less files
-   are backlog, not candidates) — filtered by dims, platform (the
-   entry's, or the host's per platform in the loop), the staleness
-   criteria, and the free flag.
+   (fixtured ∨ feasible-unfixtured per the grids for from-identity;
+   invocation-known for from-capture — the `invocations` table ∪
+   capture files carrying `meta.prompt_invocation`; files without any
+   invocation are backlog unknown_invocations, never candidates) —
+   filtered by dims, platform (the entry's, or the host's per platform
+   in the loop), the staleness criteria, and the free flag.
 3. A candidate is DONE when the mode's success `meta.updated_at` is
    present AND ≥ the entry's `started_at` (a never-worked entry has no
    done candidates); else if this daemon session already failed it
@@ -255,7 +273,7 @@ files, no meta) fire the composite naturally; nothing is exempt from
 staleness evaluation. One candidate remains per folder stem; a
 candidate is stale iff ANY carried criterion says stale:
 
-- **`--stale-by-output-drift`** — stale iff the two channel files'
+- **`--stale-by-output`** — stale iff the two channel files'
   `outputs.identify` objects are not both present and deep-equal (a
   missing channel file counts stale).
 - **`--stale-by-minutes=N` / `--stale-by-hours=N` /
@@ -263,13 +281,19 @@ candidate is stale iff ANY carried criterion says stale:
   (`from-identity/<id>.json` for from-identity,
   `from-capture/<id>.json` for from-capture); stored in minutes.
 - **`--stale-by-harness-version`** — the capture file's
-  `meta.harness_version` vs a live `version_launch` probe (zero-token).
+  `meta.harness_version` vs a live `version_invocation` probe
+  (zero-token).
 - **`--stale-by-detect-version`** — the channel file's
   `meta.agent_detect_version` absent or ≠ this binary's version (the
   designated sweep after a `build.zig.zon` bump).
+- **`--stale-by-invocation`** — the capture file's recorded
+  `meta.prompt_invocation` is missing or differs from the latest one
+  in index.json's `invocations` table (an updated invocation
+  re-captures; a from-identity entry skips this criterion — declared
+  files carry no invocation).
 
-**`--stale`** ≡ output-drift OR days=27 OR harness-version OR
-detect-version — the composite. **Defaulting:** `--stale` is defaulted
+**`--stale`** ≡ output OR days=27 OR harness-version OR detect-version
+OR invocation — the composite. **Defaulting:** `--stale` is defaulted
 to true — a queue upsert with no staleness flags carries the full
 composite. Exceptions: any explicit `--stale-*` ⇒ `--stale` is NOT
 defaulted (the explicit flags alone form the entry's set); `--refresh`
@@ -278,7 +302,7 @@ regardless of freshness (the explicit opt-back-in to full
 re-evaluation). **Component overwrite:** `--stale` provided together
 with an explicit `--stale-*` ⇒ the explicit value overwrites the
 composite's default for that component only (`--stale --stale-by-days=0`
-= drift + days=0 + harness-version + detect-version;
+= output + days=0 + harness-version + detect-version + invocation;
 `--stale --stale-by-days=999999999` effectively disables the age
 component). **Conflicts (exit 3):** `--refresh` with `--stale` or any
 `--stale-*`. **Uniform default rule:** a queue item with no `--stale-*`
@@ -289,12 +313,12 @@ genuinely stale combos.
 **`--repair`** (the one action flag; on `fixtures queue`): pops the
 backlog, re-evaluates each item against the CURRENT binary's rule
 tables and grids, and re-queues the now-actionable items — unknown_*
-item now resolvable → removed from the backlog + one from-identity
-entry per item filtered on that dim; needs_curation item now curated →
-removed + a `--fixture=<id>` from-capture entry; the unfixtured → one
-from-identity entry over the feasible universe, honoring dims filters.
-Items still unresolvable / still argv-less stay in the backlog; repair
-logs them.
+dim item now resolvable → removed from the backlog + one from-identity
+entry per item filtered on that dim; unknown_invocations item that now
+has an invocation of record → removed + a `--fixture=<id>`
+from-capture entry; the unfixtured → one from-identity entry over the
+feasible universe, honoring dims filters. Items still unresolvable /
+still invocation-less stay in the backlog; repair logs them.
 
 **`fixtures status`** — the derived snapshot: fixtured counts per
 folder, the backlog sets (maintained), feasible-unfixtured totals,
@@ -449,10 +473,11 @@ names the shipped behavior and why it was chosen.
    git-friendly, hand-editable storage with zero new dependencies in
    the released binary — and zero runtime dependencies in the
    `fixtures` workflow either. The store holds only the non-derivable
-   state (queue / backlog / known_but_failed): the fixture files
+   state (queue / backlog / invocations): the fixture files
    themselves carry the saved outputs and the meta (ledger dates,
-   writer version, and the curated `prompt_launch`/`version_launch`
-   argv — not Zig); the free and feasibility axes live in grid CSVs
+   writer version, and the invocation of record (`prompt_invocation`/
+   `version_invocation`) — not Zig); the free and feasibility axes live
+   in grid CSVs
    (`providers-freemodels.csv`, `harnesses-providers.csv`,
    `providers-models.csv`).
 4. **Kilo live-DB fallback.** Live identity inference falls back

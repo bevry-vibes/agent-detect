@@ -85,7 +85,7 @@
   "meta": {
     "updated_at": 1786431649,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "pi",
       "--provider",
       "openrouter",
@@ -94,7 +94,7 @@
       "-p",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "pi",
       "--version"
     ]

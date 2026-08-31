@@ -88,13 +88,13 @@
   "meta": {
     "updated_at": 1786431827,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "omp",
       "--model",
       "minimax-code/MiniMax-M3",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "omp",
       "--version"
     ]

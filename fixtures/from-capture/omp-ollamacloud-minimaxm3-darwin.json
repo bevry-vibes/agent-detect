@@ -87,13 +87,13 @@
   "meta": {
     "updated_at": 1786431918,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "omp",
       "--model",
       "ollama-cloud/minimax-m3",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "omp",
       "--version"
     ]

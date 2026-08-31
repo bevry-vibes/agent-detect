@@ -86,13 +86,13 @@
   "meta": {
     "updated_at": 1786432006,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "omp",
       "--model",
       "nanogpt/openai/chatgpt-4o",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "omp",
       "--version"
     ]

@@ -86,12 +86,12 @@
   "meta": {
     "updated_at": 1786432382,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "vibe",
       "--prompt",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "vibe",
       "--version"
     ]

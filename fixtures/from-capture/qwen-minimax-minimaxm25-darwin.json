@@ -87,12 +87,12 @@
   "meta": {
     "updated_at": 1786431691,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "qwen",
       "-p",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "qwen",
       "--version"
     ]

@@ -84,14 +84,14 @@
   "meta": {
     "updated_at": 1786432307,
     "agent_detect_version": "2026.8.11-3",
-    "prompt_launch": [
+    "prompt_invocation": [
       "opencode",
       "run",
       "--model",
       "opencode/nemotron-3-ultra-free",
       "<prompt>"
     ],
-    "version_launch": [
+    "version_invocation": [
       "opencode",
       "--version"
     ]

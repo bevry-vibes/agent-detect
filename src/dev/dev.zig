@@ -18,13 +18,15 @@
 // dims / missing curation), and `known_but_failed` (retryable failure
 // messages). Everything else about a fixture lives in the fixture files
 // themselves: `fixtures/from-identity/<id>.json` (declared identifications)
-// and `fixtures/from-capture/<id>.json` (live captures and curated
-// meta-only stubs), each a self-contained `{ outputs, meta }` envelope
-// owned exclusively by its writer — see fixtures/fixture.d.ts and
-// fixtures/index.d.ts for the normative schemas. `fixtures capture` runs
-// inside a real agent session (spawned by the daemon via the file's
-// curated `meta.prompt_launch` argv, or by hand) and writes the whole
-// from-capture file atomically; no merge-write, no store row.
+// and `fixtures/from-capture/<id>.json` (live captures — written only on
+// success, so a from-capture file always carries `outputs`), each a whole
+// self-contained `{ outputs, meta }` envelope owned exclusively by its
+// writer — see fixtures/fixture.d.ts and fixtures/index.d.ts for the
+// normative schemas. `fixtures capture` runs inside a real agent session
+// (spawned by the daemon via the invocation of record — the store's
+// `invocations` table first, else the file's own `meta.prompt_invocation` —
+// or by hand via `fixtures prompt`) and writes the whole from-capture file
+// atomically; no merge-write, no store row.
 //
 // `fixtures daemon` is the long-running user-side mode: it watches the
 // `queue` array of `fixtures/index.json` and, per poll, expands one
@@ -147,10 +149,10 @@ const pending_binary_names = if (builtin.os.tag == .windows)
 else
     [_][]const u8{ "claude", "codex", "grok", "gemini" };
 
-/// the launch prompt the daemon interpolates into a row's `prompt_launch`
-/// in place of the `"<prompt>"` placeholder (the store saves the
-/// placeholder, never the verbatim instruction, so the instruction can
-/// evolve without rewriting every row).
+/// the capture prompt — interpolated into an invocation's `"<prompt>"`
+/// placeholder at spawn time, and printed verbatim by `fixtures prompt`
+/// (the invocation saves the placeholder, never the verbatim instruction,
+/// so the instruction can evolve without rewriting every invocation).
 const capture_prompt = "run `agent-detect-dev fixtures capture` in the current working directory and report the result";
 
 pub const dev = if (build_options.dev) struct {
@@ -171,14 +173,18 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\state: fixtures/index.json is the committed JSON store, holding only
         \\the non-derivable state: `queue` (filter entries the daemon expands),
-        \\`backlog` (actionable gaps: unknown_harnesses / unknown_providers /
-        \\unknown_models / needs_curation), and `known_but_failed` (retryable
-        \\failure messages). The fixtures themselves are self-contained files:
-        \\fixtures/from-identity/<id>.json (declared identifications) and
-        \\fixtures/from-capture/<id>.json (live captures and curated meta-only
-        \\stubs), each a `{ outputs, meta }` envelope — see fixtures/fixture.d.ts.
-        \\The free axis is sourced from fixtures/providers-freemodels.csv;
-        \\feasibility from fixtures/harnesses-providers.csv and
+        \\`invocations` (the authored launch argv per fixture id — the
+        \\dev agent's signal for what should capture; zig reads it only to
+        \\handle pop and --repair), and `backlog` (actionable gaps:
+        \\unknown_harnesses / unknown_providers / unknown_models /
+        \\unknown_invocations / known_but_failed). The fixtures themselves
+        \\are self-contained files: fixtures/from-identity/<id>.json (declared
+        \\identifications) and fixtures/from-capture/<id>.json (live captures
+        \\— written only on success, so a from-capture file always carries
+        \\`outputs`; its meta records the invocation it ran under), each a
+        \\`{ outputs, meta }` envelope — see fixtures/fixture.d.ts. The free
+        \\axis is sourced from fixtures/providers-freemodels.csv; feasibility
+        \\from fixtures/harnesses-providers.csv and
         \\fixtures/providers-models.csv. Store writers take an exclusive lock
         \\on fixtures/index.json.lock and write atomically (temp + rename);
         \\each fixture file is owned exclusively by its channel's writer.
@@ -205,6 +211,8 @@ pub const dev = if (build_options.dev) struct {
         \\  capture                    capture the current session into
         \\                              fixtures/from-capture/<id>.json (spawned
         \\                              by the daemon; fixtures only)
+        \\  prompt                     print the capture prompt (what a harness
+        \\                              session is asked to run)
         \\  queue                      upsert one queue entry per refresh mode
         \\                              from the given dims/staleness flags (no
         \\                              evaluation; the daemon expands);
@@ -231,8 +239,9 @@ pub const dev = if (build_options.dev) struct {
         \\→ exit 3; no flag → BOTH modes are queued per candidate):
         \\  --from-identity        resolve the declared identification from provided ids —
         \\                    observed; zero tokens; harness binary not required
-        \\  --from-capture    launch the real harness so it runs `fixtures capture`
-        \\                    in a live model session — token-consuming,
+        \\  --from-capture    launch the real harness (via the invocation of
+        \\                    record) so it runs `fixtures capture` in a live
+        \\                    model session — token-consuming,
         \\                    user-confirmed only
         \\
         \\filters (at least one required for queue/dequeue):
@@ -242,11 +251,11 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\staleness (a queue entry carries a SET of criteria; a candidate is
         \\stale iff ANY carried criterion says stale; absent evidence ⇒ stale):
-        \\  --stale                 the composite: output-drift OR age 27 days OR
-        \\                    harness-version OR detect-version — the default
-        \\                    when no staleness flag is given
-        \\  --stale-by-output-drift    the two channel files' outputs.identify are
-        \\                    not both present and deep-equal (missing = stale)
+        \\  --stale                 the composite: output OR age 27 days OR
+        \\                    harness-version OR detect-version OR invocation —
+        \\                    the default when no staleness flag is given
+        \\  --stale-by-output      the two channel files' outputs.identify are not
+        \\                    both present and deep-equal (missing = stale)
         \\  --stale-by-days=N      mode-scoped age of meta.updated_at, in days
         \\  --stale-by-hours=N     ditto, in hours
         \\  --stale-by-minutes=N   ditto, in minutes — the daemon skips only
@@ -255,6 +264,8 @@ pub const dev = if (build_options.dev) struct {
         \\                   version_launch probe
         \\  --stale-by-detect-version   meta.agent_detect_version is absent or
         \\                   differs from this binary's version
+        \\  --stale-by-invocation      the file's recorded invocation is missing
+        \\                   or differs from the latest one in index.json
         \\  --refresh         carry NO criteria — every candidate is worked
         \\                   regardless of freshness. Conflicts with --stale and
         \\                   every --stale-* (exit 3). `--stale` together with an
@@ -474,7 +485,7 @@ pub const dev = if (build_options.dev) struct {
     const INDEX_PATH = "fixtures/index.json";
     const INDEX_LOCK_PATH = "fixtures/index.json.lock";
     const INDEX_TMP_PATH = "fixtures/index.json.tmp";
-    const INDEX_STORE_VERSION: i64 = 2;
+    const INDEX_STORE_VERSION: i64 = 3;
     const INDEX_LOCK_BUDGET_MS: u64 = 5000;
     const INDEX_LOCK_RETRY_MS: u64 = 50;
 
@@ -519,8 +530,10 @@ pub const dev = if (build_options.dev) struct {
         var root: std.json.Value = .{ .object = .empty };
         try root.object.put(a, "store_version", .{ .integer = INDEX_STORE_VERSION });
         try root.object.put(a, "queue", .{ .array = std.json.Array.init(a) });
-        try root.object.put(a, "backlog", .{ .object = .empty });
-        try root.object.put(a, "known_but_failed", .{ .object = .empty });
+        var backlog: std.json.Value = .{ .object = .empty };
+        try backlog.object.put(a, "known_but_failed", .{ .object = .empty });
+        try root.object.put(a, "backlog", backlog);
+        try root.object.put(a, "invocations", .{ .object = .empty });
         return root;
     }
 
@@ -566,6 +579,10 @@ pub const dev = if (build_options.dev) struct {
         _ = parsed.value.object.orderedRemove("fixtures");
         _ = parsed.value.object.orderedRemove("errors");
         _ = parsed.value.object.orderedRemove("free_provider_to_model");
+        // store v2 strays — known_but_failed moved inside backlog, and the
+        // invocation table is `invocations` (a `curation` key never shipped).
+        _ = parsed.value.object.orderedRemove("known_but_failed");
+        _ = parsed.value.object.orderedRemove("curation");
         return parsed.value;
     }
 
@@ -616,10 +633,11 @@ pub const dev = if (build_options.dev) struct {
         model: ?[]const u8 = null,
         platform: ?[]const u8 = null,
         mode: []const u8 = "",
-        stale_by_output_drift: bool = false,
+        stale_by_output: bool = false,
         stale_by_minutes: ?i64 = null,
         stale_by_harness_version: bool = false,
         stale_by_detect_version: bool = false,
+        stale_by_invocation: bool = false,
         free: ?bool = null,
         runner: i64 = 0,
         started_at: ?i64 = null,
@@ -630,31 +648,34 @@ pub const dev = if (build_options.dev) struct {
     /// stale (OR, short-circuit per candidate); no criteria carried =
     /// a `--refresh` entry (everything is worked).
     pub const StaleCriteria = struct {
-        output_drift: bool = false,
+        output: bool = false,
         minutes: ?i64 = null,
         harness_version: bool = false,
         detect_version: bool = false,
+        invocation: bool = false,
 
-        /// the `--stale` composite: output-drift OR age 27 days OR
-        /// harness-version OR detect-version. This is what a queue
-        /// upsert carries when no staleness flag is given — idle
+        /// the `--stale` composite: output OR age 27 days OR
+        /// harness-version OR detect-version OR invocation. This is what
+        /// a queue upsert carries when no staleness flag is given — idle
         /// re-queues only pick genuinely stale combos, and `--refresh`
         /// is the one explicit opt back into full re-evaluation.
         pub const composite: StaleCriteria = .{
-            .output_drift = true,
+            .output = true,
             .minutes = 27 * 24 * 60,
             .harness_version = true,
             .detect_version = true,
+            .invocation = true,
         };
 
         pub fn isNone(self: StaleCriteria) bool {
-            return !self.output_drift and self.minutes == null and
-                !self.harness_version and !self.detect_version;
+            return !self.output and self.minutes == null and
+                !self.harness_version and !self.detect_version and !self.invocation;
         }
 
         pub fn eql(x: StaleCriteria, y: StaleCriteria) bool {
-            return x.output_drift == y.output_drift and x.minutes == y.minutes and
-                x.harness_version == y.harness_version and x.detect_version == y.detect_version;
+            return x.output == y.output and x.minutes == y.minutes and
+                x.harness_version == y.harness_version and x.detect_version == y.detect_version and
+                x.invocation == y.invocation;
         }
     };
 
@@ -675,8 +696,8 @@ pub const dev = if (build_options.dev) struct {
         updated_at: ?i64 = null,
         agent_detect_version: ?[]const u8 = null,
         harness_version: ?[]const u8 = null,
-        prompt_launch: ?[]const []const u8 = null,
-        version_launch: ?[]const []const u8 = null,
+        prompt_invocation: ?[]const []const u8 = null,
+        version_invocation: ?[]const []const u8 = null,
     };
 
     /// load `fixtures/<folder>/<stem>.json` into a `ChannelFile`. Missing
@@ -710,8 +731,8 @@ pub const dev = if (build_options.dev) struct {
                 cf.updated_at = jint(mo, "updated_at");
                 cf.agent_detect_version = jstr(mo, "agent_detect_version");
                 cf.harness_version = jstr(mo, "harness_version");
-                cf.prompt_launch = stringArrayFromValue(a, mo.get("prompt_launch"));
-                cf.version_launch = stringArrayFromValue(a, mo.get("version_launch"));
+                cf.prompt_invocation = stringArrayFromValue(a, mo.get("prompt_invocation"));
+                cf.version_invocation = stringArrayFromValue(a, mo.get("version_invocation"));
             }
         }
         return cf;
@@ -840,13 +861,16 @@ pub const dev = if (build_options.dev) struct {
     // backlog (actionable gaps) + known_but_failed (failure memory)
     // ------------------------------------------------------------------
 
-    /// the backlog sets, in store order. The three unknown_* sets hold
-    /// unique dim slugs from unresolvable stems; `needs_curation` holds
-    /// fixture ids of fixtured from-capture files whose meta lacks
-    /// prompt_launch. Never null/empty strings; a stem that can't split
-    /// 4-way attributes no dim and lands in no set (the envelope test
-    /// flags the file).
-    const backlog_sets = [_][]const u8{ "unknown_harnesses", "unknown_providers", "unknown_models", "needs_curation" };
+    /// the backlog sets, in store order. The three unknown_* dim sets
+    /// hold unique dim slugs from unresolvable stems (folder stems and
+    /// invocations-table ids alike); `unknown_invocations` holds fixture
+    /// ids of from-capture files that carry no invocation of record —
+    /// the signal to the dev agent that rules/argv are still needed for
+    /// a successful (re-)capture. `known_but_failed` lives inside the
+    /// backlog too (flat id → redacted message). Never null/empty
+    /// strings; a stem that can't split 4-way attributes no dim and
+    /// lands in no set (the envelope test flags the file).
+    const backlog_sets = [_][]const u8{ "unknown_harnesses", "unknown_providers", "unknown_models", "unknown_invocations" };
 
     fn strLess(_: void, x: []const u8, y: []const u8) bool {
         return std.mem.lessThan(u8, x, y);
@@ -914,15 +938,20 @@ pub const dev = if (build_options.dev) struct {
     /// key-shaped strings elided, and truncated before it touches the
     /// committed store. Informational only — pops never gate on it.
     pub fn knownButFailedPutPure(a: std.mem.Allocator, root: *std.json.Value, fixture_id: []const u8, message: []const u8, home: []const u8) !void {
-        const kb = try getOrPutObject(a, root, "known_but_failed");
-        try kb.put(a, fixture_id, .{ .string = try redactMessage(a, message, home) });
+        const bl = try getOrPutObject(a, root, "backlog");
+        const gop = try bl.getOrPut(a, "known_but_failed");
+        if (!gop.found_existing) gop.value_ptr.* = .{ .object = .empty };
+        if (gop.value_ptr.* != .object) return error.IndexStoreError;
+        try gop.value_ptr.object.put(a, fixture_id, .{ .string = try redactMessage(a, message, home) });
     }
 
     /// remove a `known_but_failed` entry (any channel of the combo
     /// succeeded — the fixture file is the success memory).
     pub fn knownButFailedClearPure(root: *std.json.Value, fixture_id: []const u8) void {
         if (root.* != .object) return;
-        const kb = root.object.getPtr("known_but_failed") orelse return;
+        const bl = root.object.getPtr("backlog") orelse return;
+        if (bl.* != .object) return;
+        const kb = bl.object.getPtr("known_but_failed") orelse return;
         if (kb.* != .object) return;
         _ = kb.object.swapRemove(fixture_id);
     }
@@ -930,7 +959,9 @@ pub const dev = if (build_options.dev) struct {
     /// the failure message for a fixture id, or null.
     pub fn knownButFailedFor(root: *const std.json.Value, fixture_id: []const u8) ?[]const u8 {
         if (root.* != .object) return null;
-        const kb = root.object.get("known_but_failed") orelse return null;
+        const bl = root.object.get("backlog") orelse return null;
+        if (bl != .object) return null;
+        const kb = bl.object.get("known_but_failed") orelse return null;
         if (kb != .object) return null;
         const v = kb.object.get(fixture_id) orelse return null;
         return switch (v) {
@@ -972,6 +1003,59 @@ pub const dev = if (build_options.dev) struct {
         return out.toOwnedSlice(a);
     }
 
+    /// an invocation of record — the argv that launches `fixtures
+    /// capture` inside a live session (`prompt`) plus the availability/
+    /// version probe (`version`). Authored by the dev agent into the
+    /// store's `invocations` table (the pre-success signal); a successful
+    /// capture records the invocation it ran under into the file's own
+    /// `meta`. Zig reads invocations only to handle pop and `--repair`.
+    pub const Invocation = struct {
+        prompt: ?[]const []const u8 = null,
+        version: ?[]const []const u8 = null,
+    };
+
+    /// the whole `invocations` table as a map (id → Invocation).
+    pub fn invocationsTable(a: std.mem.Allocator, root: *const std.json.Value) !std.StringHashMap(Invocation) {
+        var map = std.StringHashMap(Invocation).init(a);
+        if (root.* != .object) return map;
+        const inv = root.object.get("invocations") orelse return map;
+        if (inv != .object) return map;
+        var it = inv.object.iterator();
+        while (it.next()) |kv| {
+            if (kv.value_ptr.* != .object) continue;
+            const o = kv.value_ptr.object;
+            try map.put(kv.key_ptr.*, .{
+                .prompt = stringArrayFromValue(a, o.get("prompt_invocation")),
+                .version = stringArrayFromValue(a, o.get("version_invocation")),
+            });
+        }
+        return map;
+    }
+
+    /// the invocation of record for one fixture id from the store's
+    /// `invocations` table, or null.
+    pub fn invocationFromTable(a: std.mem.Allocator, root: *const std.json.Value, fixture_id: []const u8) !?Invocation {
+        if (root.* != .object) return null;
+        const inv = root.object.get("invocations") orelse return null;
+        if (inv != .object) return null;
+        const v = inv.object.get(fixture_id) orelse return null;
+        if (v != .object) return null;
+        return .{
+            .prompt = stringArrayFromValue(a, v.object.get("prompt_invocation")),
+            .version = stringArrayFromValue(a, v.object.get("version_invocation")),
+        };
+    }
+
+    /// element-wise argv equality (null ⇔ null).
+    fn argvEqual(x: ?[]const []const u8, y: ?[]const []const u8) bool {
+        if (x == null or y == null) return x == null and y == null;
+        if (x.?.len != y.?.len) return false;
+        for (x.?, y.?) |xa, ya| {
+            if (!std.mem.eql(u8, xa, ya)) return false;
+        }
+        return true;
+    }
+
     /// scan one channel folder for fixture-file stems (dot-files skipped
     /// defensively — interrupted atomic writes leave `<stem>.json.tmp`,
     /// which the `.json` suffix check already rejects). Subfolders are
@@ -994,16 +1078,17 @@ pub const dev = if (build_options.dev) struct {
         return out.toOwnedSlice(a);
     }
 
-    /// refresh the backlog table from a full folder scan: union in the
-    /// gaps the scan finds, remove the items that have resolved (a dim
-    /// now covered by a rule; a from-capture file that now carries
-    /// prompt_launch). Idempotent; called under the store lock by the
+    /// refresh the backlog from a full scan: union in the gaps the scan
+    /// finds, remove the items that have resolved (a dim now covered by a
+    /// rule; an invocation now authored — in the store's table or the
+    /// file's own meta). Idempotent; called under the store lock by the
     /// daemon's pick and `fixtures status`.
     pub fn refreshBacklogPure(io: std.Io, a: std.mem.Allocator, root: *std.json.Value) !void {
         var unk_h: std.ArrayList([]const u8) = .empty;
         var unk_p: std.ArrayList([]const u8) = .empty;
         var unk_m: std.ArrayList([]const u8) = .empty;
-        var needs_cur: std.ArrayList([]const u8) = .empty;
+        var unk_inv: std.ArrayList([]const u8) = .empty;
+        const inv_table = try invocationsTable(a, root);
         for ([_][]const u8{ IDENTITY_DIR, CAPTURE_DIR }) |folder| {
             const stems = try scanFolderStems(io, a, folder);
             for (stems) |stem| {
@@ -1015,15 +1100,27 @@ pub const dev = if (build_options.dev) struct {
                 if (!p_ok) try unk_p.append(a, parts[1]);
                 if (!m_ok) try unk_m.append(a, parts[2]);
                 if (std.mem.eql(u8, folder, CAPTURE_DIR)) {
+                    // no invocation of record anywhere → the dev agent
+                    // still needs to author one for a successful
+                    // (re-)capture.
                     const cf = try loadChannelFile(io, a, folder, stem);
-                    if (cf.prompt_launch == null) try needs_cur.append(a, stem);
+                    if (cf.prompt_invocation == null and !inv_table.contains(stem)) try unk_inv.append(a, stem);
                 }
             }
+        }
+        // invocations-table ids whose dims don't resolve are gaps too —
+        // authored argv for an unknown dim is exactly a rules signal.
+        var kit = inv_table.keyIterator();
+        while (kit.next()) |k| {
+            const parts = splitFixtureId(a, k.*) catch continue;
+            if (canonicalIdFor(a, HarnessRule, &rulesForHarnesses, parts[0]) == null) try unk_h.append(a, parts[0]);
+            if (canonicalIdFor(a, ProviderRule, &rulesForProviders, parts[1]) == null) try unk_p.append(a, parts[1]);
+            if (canonicalIdFor(a, ModelRule, &rulesForModels, parts[2]) == null) try unk_m.append(a, parts[2]);
         }
         try backlogUnionPure(a, root, "unknown_harnesses", unk_h.items);
         try backlogUnionPure(a, root, "unknown_providers", unk_p.items);
         try backlogUnionPure(a, root, "unknown_models", unk_m.items);
-        try backlogUnionPure(a, root, "needs_curation", needs_cur.items);
+        try backlogUnionPure(a, root, "unknown_invocations", unk_inv.items);
         // removals — an item that resolves leaves the backlog.
         for (backlog_sets, 0..) |set, si| {
             const items = try backlogItems(a, root, set);
@@ -1034,7 +1131,7 @@ pub const dev = if (build_options.dev) struct {
                     2 => canonicalIdFor(a, ModelRule, &rulesForModels, item) != null,
                     else => blk: {
                         const cf = loadChannelFile(io, a, CAPTURE_DIR, item) catch break :blk false;
-                        break :blk cf.prompt_launch != null;
+                        break :blk cf.prompt_invocation != null or inv_table.contains(item);
                     },
                 };
                 if (resolved) backlogRemovePure(root, set, item);
@@ -1057,10 +1154,11 @@ pub const dev = if (build_options.dev) struct {
         if (e.model) |v| try o.object.put(a, "model", .{ .string = v });
         if (e.platform) |v| try o.object.put(a, "platform", .{ .string = v });
         try o.object.put(a, "mode", .{ .string = e.mode });
-        if (e.stale_by_output_drift) try o.object.put(a, "stale_by_output_drift", .{ .bool = true });
+        if (e.stale_by_output) try o.object.put(a, "stale_by_output", .{ .bool = true });
         if (e.stale_by_minutes) |v| try o.object.put(a, "stale_by_minutes", .{ .integer = v });
         if (e.stale_by_harness_version) try o.object.put(a, "stale_by_harness_version", .{ .bool = true });
         if (e.stale_by_detect_version) try o.object.put(a, "stale_by_detect_version", .{ .bool = true });
+        if (e.stale_by_invocation) try o.object.put(a, "stale_by_invocation", .{ .bool = true });
         if (e.free) |v| try o.object.put(a, "free", .{ .bool = v });
         try o.object.put(a, "runner", .{ .integer = e.runner });
         if (e.started_at) |v| try o.object.put(a, "started_at", .{ .integer = v });
@@ -1076,10 +1174,11 @@ pub const dev = if (build_options.dev) struct {
             .model = jstr(o, "model"),
             .platform = jstr(o, "platform"),
             .mode = sjstr(o, "mode"),
-            .stale_by_output_drift = jbool(o, "stale_by_output_drift") orelse false,
+            .stale_by_output = jbool(o, "stale_by_output") orelse false,
             .stale_by_minutes = jint(o, "stale_by_minutes"),
             .stale_by_harness_version = jbool(o, "stale_by_harness_version") orelse false,
             .stale_by_detect_version = jbool(o, "stale_by_detect_version") orelse false,
+            .stale_by_invocation = jbool(o, "stale_by_invocation") orelse false,
             .free = jbool(o, "free"),
             .runner = sjint(o, "runner"),
             .started_at = jint(o, "started_at"),
@@ -1107,10 +1206,11 @@ pub const dev = if (build_options.dev) struct {
             optStrEq(x.model, y.model) and
             optStrEq(x.platform, y.platform) and
             std.mem.eql(u8, x.mode, y.mode) and
-            x.stale_by_output_drift == y.stale_by_output_drift and
+            x.stale_by_output == y.stale_by_output and
             x.stale_by_minutes == y.stale_by_minutes and
             x.stale_by_harness_version == y.stale_by_harness_version and
             x.stale_by_detect_version == y.stale_by_detect_version and
+            x.stale_by_invocation == y.stale_by_invocation and
             x.free == y.free;
     }
 
@@ -1142,17 +1242,19 @@ pub const dev = if (build_options.dev) struct {
         const minutes = staleMinutes(f);
         if (f.stale) {
             return .{
-                .output_drift = true,
+                .output = true,
                 .minutes = minutes orelse StaleCriteria.composite.minutes,
                 .harness_version = true,
                 .detect_version = true,
+                .invocation = true,
             };
         }
         const explicit = StaleCriteria{
-            .output_drift = f.stale_by_output_drift,
+            .output = f.stale_by_output,
             .minutes = minutes,
             .harness_version = f.stale_by_harness_version,
             .detect_version = f.stale_by_detect_version,
+            .invocation = f.stale_by_invocation,
         };
         if (!explicit.isNone()) return explicit;
         return StaleCriteria.composite;
@@ -1170,11 +1272,12 @@ pub const dev = if (build_options.dev) struct {
         if (f.platform.len > 0 and !optStrEq(e.platform, f.platform)) return false;
         if (f.mode.len > 0 and !std.mem.eql(u8, e.mode, f.mode)) return false;
         const exp = stampCriteria(f);
-        if (e.stale_by_output_drift != exp.output_drift) return false;
+        if (e.stale_by_output != exp.output) return false;
         if ((e.stale_by_minutes == null) != (exp.minutes == null)) return false;
         if (e.stale_by_minutes != null and e.stale_by_minutes.? != exp.minutes.?) return false;
         if (e.stale_by_harness_version != exp.harness_version) return false;
         if (e.stale_by_detect_version != exp.detect_version) return false;
+        if (e.stale_by_invocation != exp.invocation) return false;
         if (f.free != null and e.free != f.free) return false;
         return true;
     }
@@ -1232,15 +1335,6 @@ pub const dev = if (build_options.dev) struct {
         try indexSave(io, a, root);
     }
 
-    /// union a fixture id into a backlog set under the store lock.
-    fn markBacklog(io: std.Io, a: std.mem.Allocator, set: []const u8, item: []const u8) !void {
-        const lock_file = try acquireIndexLock(io);
-        defer lock_file.close(io);
-        var root = try indexLoad(io, a);
-        try backlogUnionPure(a, &root, set, &.{item});
-        try indexSave(io, a, root);
-    }
-
     // ------------------------------------------------------------------
     // the pop protocol — expansion (only the daemon expands)
     // ------------------------------------------------------------------
@@ -1251,19 +1345,21 @@ pub const dev = if (build_options.dev) struct {
 
     /// expand one queue entry into its remaining candidate set. The
     /// universe is one — resolvable dims ∧ (fixtured ∨ feasible-unfixtured
-    /// per the reference grids; from-identity only — a from-capture
-    /// candidate must carry meta.prompt_launch) — filtered by the entry's
-    /// dims, platform, staleness criteria, and the free flag. A candidate
-    /// is DONE when the mode's success `meta.updated_at` is present AND
-    /// ≥ the entry's `started_at` (a never-worked entry has no done
-    /// candidates); candidates this daemon session already failed are
-    /// damped out. Absent evidence ⇒ every carried criterion says stale.
-    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void)) !ExpandResult {
+    /// per the reference grids for from-identity; invocations known to the
+    /// store — its `invocations` table ∪ capture files carrying
+    /// `meta.prompt_invocation` — for from-capture) — filtered by the
+    /// entry's dims, platform, staleness criteria, and the free flag. A
+    /// candidate is DONE when the mode's success `meta.updated_at` is
+    /// present AND ≥ the entry's `started_at` (a never-worked entry has
+    /// no done candidates); candidates this daemon session already failed
+    /// are damped out. Absent evidence ⇒ every carried criterion says
+    /// stale.
+    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void)) !ExpandResult {
         const platforms: []const []const u8 = if (entry.platform) |p| &.{p} else &platforms_all;
         var host_list: std.ArrayListUnmanaged(Candidate) = .empty;
         var remaining: usize = 0;
         for (platforms) |plat| {
-            const list = try expandForPlatform(io, a, free, grids, entry, plat, damped);
+            const list = try expandForPlatform(io, a, root, free, grids, entry, plat, damped);
             remaining += list.len;
             if (std.mem.eql(u8, plat, host)) {
                 for (list) |c| try host_list.append(a, c);
@@ -1273,17 +1369,42 @@ pub const dev = if (build_options.dev) struct {
         return .{ .host_candidates = try host_list.toOwnedSlice(a), .remaining_anywhere = remaining };
     }
 
-    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, plat: []const u8, damped: ?*const std.StringHashMap(void)) ![]Candidate {
+    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, plat: []const u8, damped: ?*const std.StringHashMap(void)) ![]Candidate {
         const folder = modeFolder(entry.mode) orelse return &.{};
         var out: std.ArrayListUnmanaged(Candidate) = .empty;
         var fixtured: std.StringHashMap(void) = .init(a);
         const stems = try scanFolderStems(io, a, folder);
         for (stems) |stem| try fixtured.put(stem, {});
-        // fixtured universe — the folder's files (capture candidates must
-        // carry meta.prompt_launch; argv-less files are backlog
-        // needs_curation, never candidates).
+        // the candidate ids for this mode + platform. from-identity: the
+        // folder's files. from-capture: the invocation universe — the
+        // store's `invocations` table ∪ capture files carrying
+        // `meta.prompt_invocation` (files without any invocation are
+        // backlog unknown_invocations, never candidates).
+        var ids: std.ArrayList([]const u8) = .empty;
+        var seen: std.StringHashMap(void) = .init(a);
+        const inv_table = if (std.mem.eql(u8, entry.mode, "from-capture"))
+            try invocationsTable(a, root)
+        else
+            std.StringHashMap(Invocation).init(a);
+        {
+            var kit = inv_table.keyIterator();
+            while (kit.next()) |k| {
+                const gop = try seen.getOrPut(k.*);
+                if (gop.found_existing) continue;
+                try ids.append(a, k.*);
+            }
+        }
         for (stems) |stem| {
-            const parts = splitFixtureId(a, stem) catch continue; // unresolvable stems land in the backlog, never expand
+            const gop = try seen.getOrPut(stem);
+            if (gop.found_existing) continue;
+            if (std.mem.eql(u8, entry.mode, "from-capture")) {
+                const cf = try loadChannelFile(io, a, folder, stem);
+                if (cf.prompt_invocation == null) continue; // backlog unknown_invocations
+            }
+            try ids.append(a, stem);
+        }
+        for (ids.items) |id| {
+            const parts = splitFixtureId(a, id) catch continue; // unresolvable ids land in the backlog, never expand
             if (!std.mem.eql(u8, parts[3], plat)) continue;
             if (entry.harness) |v| {
                 if (!std.mem.eql(u8, parts[0], v)) continue;
@@ -1298,25 +1419,26 @@ pub const dev = if (build_options.dev) struct {
             if (entry.free) |fr| {
                 if (fr != free.has(parts[1], parts[2])) continue;
             }
-            const cf = try loadChannelFile(io, a, folder, stem);
-            if (std.mem.eql(u8, folder, CAPTURE_DIR) and cf.prompt_launch == null) continue;
             if (damped) |dm| {
-                if (dm.contains(stem)) continue;
+                if (dm.contains(id)) continue;
             }
-            if (!(try entryStale(io, a, entry, cf))) continue;
+            const cf = try loadChannelFile(io, a, folder, id);
+            const tinv: ?Invocation = if (inv_table.count() > 0) inv_table.get(id) else null;
+            if (!(try entryStale(io, a, entry, cf, tinv))) continue;
             // completion-timestamp done rule (only once the entry started)
             if (entry.started_at) |started| {
                 if (cf.updated_at) |t| {
                     if (t >= started) continue;
                 }
             }
-            try out.append(a, .{ .fixture_id = stem, .harness = parts[0], .provider = parts[1], .model = parts[2], .platform = parts[3] });
+            try out.append(a, .{ .fixture_id = id, .harness = parts[0], .provider = parts[1], .model = parts[2], .platform = parts[3] });
         }
         // feasible-unfixtured universe — from-identity only: the
         // grid-filtered cross-product minus the fixtured stems, so
         // impossible combos never become candidates and from-identity can
-        // never mint them. (From-capture candidates without a file have
-        // no prompt_launch — they are curation work, not capture work.)
+        // never mint them. (From-capture candidates come only from the
+        // invocation universe — authoring the invocation is the
+        // dev agent's signal that a capture is wanted.)
         if (std.mem.eql(u8, entry.mode, "from-identity")) {
             var hit = grids.harness_provider.keyIterator();
             while (hit.next()) |hk| {
@@ -1342,6 +1464,7 @@ pub const dev = if (build_options.dev) struct {
                     }
                     const stem = (try fixtureIdFrom(a, h, p, m, plat)) orelse continue;
                     if (fixtured.contains(stem)) continue;
+                    if (seen.contains(stem)) continue; // table-only invocations already queued above
                     if (!dimsResolvable(a, .{ h, p, m, plat })) continue;
                     if (entry.free) |fr| {
                         if (fr != free.has(p, m)) continue;
@@ -1370,14 +1493,15 @@ pub const dev = if (build_options.dev) struct {
     /// evaluate the entry's carried criteria for one candidate — true
     /// when ANY carried criterion says stale (work needed); all fresh ⇒
     /// false; no criteria carried (a `--refresh` entry) ⇒ true. Reads
-    /// only local state (the channel files and — for
-    /// `stale_by_harness_version` — a zero-token `version_launch` probe).
-    fn entryStale(io: std.Io, a: std.mem.Allocator, entry: QueueEntry, cf: ?ChannelFile) !bool {
-        const carried = entry.stale_by_output_drift or entry.stale_by_minutes != null or
-            entry.stale_by_harness_version or entry.stale_by_detect_version;
+    /// only local state (the channel files, the invocation table, and —
+    /// for `stale_by_harness_version` — a zero-token
+    /// `version_invocation` probe).
+    fn entryStale(io: std.Io, a: std.mem.Allocator, entry: QueueEntry, cf: ?ChannelFile, tinv: ?Invocation) !bool {
+        const carried = entry.stale_by_output or entry.stale_by_minutes != null or
+            entry.stale_by_harness_version or entry.stale_by_detect_version or entry.stale_by_invocation;
         if (!carried) return true; // --refresh: everything is worked
         const file = cf orelse return true; // absent evidence ⇒ stale
-        if (entry.stale_by_output_drift) {
+        if (entry.stale_by_output) {
             // stale iff the two channel files' outputs.identify are not
             // both present and deep-equal (a missing channel counts stale).
             var drift = true;
@@ -1395,8 +1519,14 @@ pub const dev = if (build_options.dev) struct {
         if (entry.stale_by_harness_version) {
             var fresh = false;
             if (file.harness_version) |stored| {
-                if (file.version_launch) |vl| {
-                    if (launchVersion(io, a, vl)) |live| {
+                // probe against the file's recorded version_invocation,
+                // else the table's latest.
+                var vl = file.version_invocation;
+                if (vl == null) {
+                    if (tinv) |ti| vl = ti.version;
+                }
+                if (vl) |v| {
+                    if (launchVersion(io, a, v)) |live| {
                         if (std.mem.eql(u8, live, stored)) fresh = true;
                     }
                 }
@@ -1407,13 +1537,20 @@ pub const dev = if (build_options.dev) struct {
             const v = file.agent_detect_version orelse return true;
             if (!std.mem.eql(u8, v, build_options.version)) return true;
         }
+        if (entry.stale_by_invocation and std.mem.eql(u8, entry.mode, "from-capture")) {
+            // stale iff the file's recorded invocation is missing or
+            // differs from the latest one in index.json (from-identity
+            // files carry no invocation — nothing to compare).
+            const f_inv = file.prompt_invocation orelse return true;
+            if (tinv) |ti| {
+                if (!argvEqual(f_inv, ti.prompt)) return true;
+            }
+        }
         return false;
     }
 
 
     /// one expanded candidate for a queue entry (a concrete 4-tuple).
-    /// Unknown dims (`""`) only appear for invalid-stem files under
-    /// `--stale-by-missing-entry`.
     pub const Candidate = struct {
         fixture_id: []const u8,
         harness: []const u8 = "",
@@ -1777,7 +1914,7 @@ pub const dev = if (build_options.dev) struct {
         /// staleness — `--stale` and the `--stale-*` family, plus
         /// `--refresh` (conflicts with both; validateFilters).
         stale: bool = false,
-        stale_by_output_drift: bool = false,
+        stale_by_output: bool = false,
         /// age thresholds. Each is the same criterion at a different
         /// unit; at most one may be set. The queued entry always stores
         /// the age in MINUTES in `stale_by_minutes` (days/hours convert
@@ -1787,6 +1924,7 @@ pub const dev = if (build_options.dev) struct {
         stale_by_minutes: ?i64 = null,
         stale_by_harness_version: bool = false,
         stale_by_detect_version: bool = false,
+        stale_by_invocation: bool = false,
         refresh: bool = false,
         /// (queue only) pop the backlog and re-queue actionable items;
         /// dequeue rejects it (conflict, exit 3).
@@ -1834,8 +1972,9 @@ pub const dev = if (build_options.dev) struct {
         if ((f.stale_by_days orelse 0) < 0 or
             (f.stale_by_hours orelse 0) < 0 or
             (f.stale_by_minutes orelse 0) < 0) return FilterError.ConflictingFilters;
-        if (f.refresh and (f.stale or f.stale_by_output_drift or age_scopes > 0 or
-            f.stale_by_harness_version or f.stale_by_detect_version)) return FilterError.ConflictingFilters;
+        if (f.refresh and (f.stale or f.stale_by_output or age_scopes > 0 or
+            f.stale_by_harness_version or f.stale_by_detect_version or
+            f.stale_by_invocation)) return FilterError.ConflictingFilters;
     }
 
     /// parse the shared filter flags from argv (expects argv0, "fixtures",
@@ -1877,8 +2016,10 @@ pub const dev = if (build_options.dev) struct {
                 seen_platform = true;
             } else if (std.mem.eql(u8, arg, "--stale")) {
                 f.stale = true;
-            } else if (std.mem.eql(u8, arg, "--stale-by-output-drift")) {
-                f.stale_by_output_drift = true;
+            } else if (std.mem.eql(u8, arg, "--stale-by-output")) {
+                f.stale_by_output = true;
+            } else if (std.mem.eql(u8, arg, "--stale-by-invocation")) {
+                f.stale_by_invocation = true;
             } else if (std.mem.eql(u8, arg, "--stale-by-harness-version")) {
                 f.stale_by_harness_version = true;
             } else if (std.mem.eql(u8, arg, "--stale-by-detect-version")) {
@@ -1964,12 +2105,13 @@ pub const dev = if (build_options.dev) struct {
         }
 
         const staleness_count = @as(usize, @intFromBool(f.stale)) +
-            @as(usize, @intFromBool(f.stale_by_output_drift)) +
+            @as(usize, @intFromBool(f.stale_by_output)) +
             @as(usize, @intFromBool(f.stale_by_days != null)) +
             @as(usize, @intFromBool(f.stale_by_hours != null)) +
             @as(usize, @intFromBool(f.stale_by_minutes != null)) +
             @as(usize, @intFromBool(f.stale_by_harness_version)) +
             @as(usize, @intFromBool(f.stale_by_detect_version)) +
+            @as(usize, @intFromBool(f.stale_by_invocation)) +
             @as(usize, @intFromBool(f.refresh)) +
             @as(usize, @intFromBool(f.repair));
         const axis_count = @as(usize, @intFromBool(f.free != null));
@@ -2030,8 +2172,10 @@ pub const dev = if (build_options.dev) struct {
     /// semantics: if the detection ladder fails to resolve harness *or*
     /// provider *or* model, exit 8 with no file written (partial
     /// detection is bad data per DESIGN). The daemon spawns this via the
-    /// file's `meta.prompt_launch` argv inside a live model session; a
-    /// hand-run capture is a real session too.
+    /// invocation of record (the store's `invocations` table first, else
+    /// the file's own `meta.prompt_invocation`) inside a live model
+    /// session; a hand-run capture (see `fixtures prompt`) is a real
+    /// session too.
     ///
     /// **Filename contract** — the fixture is written as a single
     /// `fixtures/from-capture/<fixture_id>.json`, where
@@ -2040,12 +2184,14 @@ pub const dev = if (build_options.dev) struct {
     /// per-platform config paths from churning each other across CI
     /// runs; see DESIGN.md "per-platform fixtures" for the rationale.
     ///
-    /// **Writer rule for `meta`** — the curation of record persists: any
-    /// `meta.prompt_launch` / `meta.version_launch` in the file being
-    /// replaced is carried over untouched, and `updated_at` /
-    /// `agent_detect_version` / `harness_version` are stamped fresh. A
-    /// capture with no curated argv writes `meta` without the launch
-    /// fields (the combo then sits in backlog needs_curation).
+    /// **Writer rule for `meta`** — the invocation of record persists:
+    /// the store's `invocations` table entry first, else any
+    /// `meta.prompt_invocation` / `meta.version_invocation` in the file
+    /// being replaced — recorded into the written file's `meta` — while
+    /// `updated_at` / `agent_detect_version` / `harness_version` are
+    /// stamped fresh. A capture with no invocation anywhere writes `meta`
+    /// without the invocation fields (the combo then sits in backlog
+    /// unknown_invocations).
     pub fn runFixturesCapture(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -2087,11 +2233,27 @@ pub const dev = if (build_options.dev) struct {
         const co = if (self_path) |sp| try spawnTrailerLine(a, io, sp, "co-author", "", "", "") else null;
         const ab = if (self_path) |sp| try spawnTrailerLine(a, io, sp, "assisted-by", "", "", "") else null;
 
-        // live harness version snapshot via the file's curated
-        // `version_launch` (absent ⇒ "not yet knowable" — the raw block
-        // carries the null too).
+        // invocation of record: the store's `invocations` table first
+        // (the latest), else whatever the replaced file recorded.
         const existing = try loadChannelFile(io, a, CAPTURE_DIR, fixture_id);
-        const hver: ?[]const u8 = if (existing.version_launch) |vl| launchVersion(io, a, vl) else null;
+        var store_root = try indexLoad(io, a);
+        const tinv = try invocationFromTable(a, &store_root, fixture_id);
+        const rec_prompt: ?[]const []const u8 = blk: {
+            if (tinv) |ti| {
+                if (ti.prompt) |p| break :blk p;
+            }
+            break :blk existing.prompt_invocation;
+        };
+        const rec_version: ?[]const []const u8 = blk: {
+            if (tinv) |ti| {
+                if (ti.version) |v| break :blk v;
+            }
+            break :blk existing.version_invocation;
+        };
+        // live harness version snapshot via the recorded
+        // `version_invocation` (absent ⇒ "not yet knowable" — the raw
+        // block carries the null too).
+        const hver: ?[]const u8 = if (rec_version) |vl| launchVersion(io, a, vl) else null;
 
         const raw = try buildRaw(a, &d, init.environ_map, hver, true);
 
@@ -2101,13 +2263,13 @@ pub const dev = if (build_options.dev) struct {
         try outputs.object.put(a, "trailer assisted-by", optStringValue(a, ab));
         try outputs.object.put(a, "raw", raw);
 
-        // meta — the curation of record persists; the ledger stamps fresh.
+        // meta — the invocation of record persists; the ledger stamps fresh.
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
         try meta.object.put(a, "agent_detect_version", .{ .string = build_options.version });
         if (hver) |v| try meta.object.put(a, "harness_version", .{ .string = v });
-        if (existing.prompt_launch) |pl| try meta.object.put(a, "prompt_launch", stringListValue(a, pl));
-        if (existing.version_launch) |vl| try meta.object.put(a, "version_launch", stringListValue(a, vl));
+        if (rec_prompt) |pl| try meta.object.put(a, "prompt_invocation", stringListValue(a, pl));
+        if (rec_version) |vl| try meta.object.put(a, "version_invocation", stringListValue(a, vl));
 
         var root: std.json.Value = .{ .object = .empty };
         try root.object.put(a, "outputs", outputs);
@@ -2167,10 +2329,11 @@ pub const dev = if (build_options.dev) struct {
                 .model = if (f.model.len > 0) f.model else null,
                 .platform = if (f.platform.len > 0) f.platform else null,
                 .mode = mode,
-                .stale_by_output_drift = crit.output_drift,
+                .stale_by_output = crit.output,
                 .stale_by_minutes = crit.minutes,
                 .stale_by_harness_version = crit.harness_version,
                 .stale_by_detect_version = crit.detect_version,
+                .stale_by_invocation = crit.invocation,
                 .free = f.free,
                 .runner = getParentPid(),
                 .started_at = null,
@@ -2249,14 +2412,15 @@ pub const dev = if (build_options.dev) struct {
     /// - an unknown_harnesses/providers/models item now resolvable →
     ///   removed from the backlog; one from-identity queue entry per item
     ///   filtered on that dim (one entry covers all of the item's combos);
-    /// - a needs_curation item whose from-capture file NOW carries
-    ///   meta.prompt_launch → removed; a `--fixture=<id>` from-capture
-    ///   entry upserted;
+    /// - an unknown_invocations item that now has an invocation of record
+    ///   (the store's `invocations` table or the file's own
+    ///   meta.prompt_invocation) → removed; a `--fixture=<id>`
+    ///   from-capture entry upserted;
     /// - the unfixtured (derived from grids − fixtured, never a stored
     ///   list) → one from-identity entry over the feasible universe,
     ///   honoring the dims filters.
-    /// Items still unresolvable / still argv-less stay in the backlog;
-    /// repair logs them.
+    /// Items still unresolvable / still invocation-less stay in the
+    /// backlog; repair logs them.
     fn runRepair(init: std.process.Init, f: FilterOptions) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -2306,10 +2470,11 @@ pub const dev = if (build_options.dev) struct {
                     .model = dims[2],
                     .platform = if (f.platform.len > 0) f.platform else null,
                     .mode = "from-identity",
-                    .stale_by_output_drift = crit.output_drift,
+                    .stale_by_output = crit.output,
                     .stale_by_minutes = crit.minutes,
                     .stale_by_harness_version = crit.harness_version,
                     .stale_by_detect_version = crit.detect_version,
+                    .stale_by_invocation = crit.invocation,
                     .free = f.free,
                     .runner = getParentPid(),
                 });
@@ -2324,36 +2489,40 @@ pub const dev = if (build_options.dev) struct {
             }
         }
 
-        // needs_curation — a from-capture file that now carries
-        // meta.prompt_launch re-queues as a targeted from-capture entry.
+        // unknown_invocations — an invocation now authored (the store's
+        // `invocations` table or the file's own meta.prompt_invocation)
+        // re-queues as a targeted from-capture entry.
         {
-            const items = try backlogItems(a, &root, "needs_curation");
+            const items = try backlogItems(a, &root, "unknown_invocations");
             for (items) |id| {
                 const cf = try loadChannelFile(io, a, CAPTURE_DIR, id);
-                if (cf.prompt_launch == null) {
+                const tinv = try invocationFromTable(a, &root, id);
+                const known = cf.prompt_invocation != null or (tinv != null and tinv.?.prompt != null);
+                if (!known) {
                     daemonWriteErr(io, "repair: ");
                     daemonWriteErr(io, id);
-                    daemonWriteErr(io, " still has no meta.prompt_launch — left in backlog needs_curation\n");
+                    daemonWriteErr(io, " still has no invocation — left in backlog unknown_invocations\n");
                     continue;
                 }
-                backlogRemovePure(&root, "needs_curation", id);
+                backlogRemovePure(&root, "unknown_invocations", id);
                 try queueUpsertPure(a, &root, .{
                     .harness = if (cf.valid_stem) cf.harness else null,
                     .provider = if (cf.valid_stem) cf.provider else null,
                     .model = if (cf.valid_stem) cf.model else null,
                     .platform = if (cf.valid_stem) cf.platform else null,
                     .mode = "from-capture",
-                    .stale_by_output_drift = crit.output_drift,
+                    .stale_by_output = crit.output,
                     .stale_by_minutes = crit.minutes,
                     .stale_by_harness_version = crit.harness_version,
                     .stale_by_detect_version = crit.detect_version,
+                    .stale_by_invocation = crit.invocation,
                     .free = f.free,
                     .runner = getParentPid(),
                 });
                 queued += 1;
                 daemonWrite(io, "repair: ");
                 daemonWrite(io, id);
-                daemonWrite(io, " is now curated — queued from-capture --fixture=");
+                daemonWrite(io, " now has an invocation — queued from-capture --fixture=");
                 daemonWrite(io, id);
                 daemonWrite(io, "\n");
             }
@@ -2368,10 +2537,11 @@ pub const dev = if (build_options.dev) struct {
             .model = if (f.model.len > 0) f.model else null,
             .platform = if (f.platform.len > 0) f.platform else null,
             .mode = "from-identity",
-            .stale_by_output_drift = crit.output_drift,
+            .stale_by_output = crit.output,
             .stale_by_minutes = crit.minutes,
             .stale_by_harness_version = crit.harness_version,
             .stale_by_detect_version = crit.detect_version,
+            .stale_by_invocation = crit.invocation,
             .free = f.free,
             .runner = getParentPid(),
         });
@@ -2383,6 +2553,18 @@ pub const dev = if (build_options.dev) struct {
         writeCount(io, queued);
         writeOut(io, " entry/entries\n");
         return 0;
+    }
+
+    /// `fixtures prompt` — output the capture prompt: the instruction a
+    /// harness session receives (the daemon interpolates it into an
+    /// invocation's `"<prompt>"` placeholder at spawn time; a hand-run
+    /// capture composes its launch around this). Data-output action: one
+    /// line on stdout, exit 0.
+    pub fn runFixturesPrompt(init: std.process.Init) !u8 {
+        const io = init.io;
+        writeOut(io, capture_prompt);
+        writeOut(io, "\n");
+        return EXIT_OK;
     }
 
     /// `fixtures status` — the derived snapshot: fixtured counts per
@@ -2436,24 +2618,26 @@ pub const dev = if (build_options.dev) struct {
         // stale/fresh breakdown under the `--stale` composite.
         const composite_entry: QueueEntry = .{
             .mode = "",
-            .stale_by_output_drift = StaleCriteria.composite.output_drift,
+            .stale_by_output = StaleCriteria.composite.output,
             .stale_by_minutes = StaleCriteria.composite.minutes,
             .stale_by_harness_version = StaleCriteria.composite.harness_version,
             .stale_by_detect_version = StaleCriteria.composite.detect_version,
+            .stale_by_invocation = StaleCriteria.composite.invocation,
         };
         var stale_id: usize = 0;
         for (id_stems) |stem| {
             const cf = try loadChannelFile(io, a, IDENTITY_DIR, stem);
             var e = composite_entry;
             e.mode = "from-identity";
-            if (try entryStale(io, a, e, cf)) stale_id += 1;
+            if (try entryStale(io, a, e, cf, null)) stale_id += 1;
         }
         var stale_cap: usize = 0;
         for (cap_stems) |stem| {
             const cf = try loadChannelFile(io, a, CAPTURE_DIR, stem);
             var e = composite_entry;
             e.mode = "from-capture";
-            if (try entryStale(io, a, e, cf)) stale_cap += 1;
+            const tinv = try invocationFromTable(a, &root, stem);
+            if (try entryStale(io, a, e, cf, tinv)) stale_cap += 1;
         }
 
         writeOut(io, "fixtures status\n");
@@ -2480,9 +2664,12 @@ pub const dev = if (build_options.dev) struct {
             writeOut(io, "\n");
         }
         {
-            const failed = root.object.get("known_but_failed");
+            const bl = root.object.get("backlog");
             var count: usize = 0;
-            if (failed != null and failed.? == .object) count = failed.?.object.count();
+            if (bl != null and bl.? == .object) {
+                const kb = bl.?.object.get("known_but_failed");
+                if (kb != null and kb.? == .object) count = kb.?.object.count();
+            }
             writeOut(io, "  known_but_failed (");
             writeCount(io, count);
             writeOut(io, ")\n");
@@ -2616,10 +2803,12 @@ pub const dev = if (build_options.dev) struct {
 
     /// `from-capture` worker: launch the real harness headlessly so it
     /// runs `fixtures capture` inside a live model session. The launch
-    /// argv is the fixture file's curated `meta.prompt_launch`, read
-    /// verbatim (no argv[0] substitution — the file names the concrete
-    /// per-platform binary); availability is probed via the file's
-    /// `meta.version_launch` (exit 0 ⇒ installed). Uses the REAL
+    /// argv is the invocation of record — the store's `invocations` table
+    /// entry first (the latest), else the file's recorded
+    /// `meta.prompt_invocation` — read verbatim (no argv[0] substitution —
+    /// the argv names the concrete per-platform binary); availability is
+    /// probed via the same source's `version_invocation` (exit 0 ⇒
+    /// installed). Uses the REAL
     /// environment (real API keys/config are required); cwd stays the
     /// daemon's (the repo root) so the session writes
     /// `fixtures/from-capture/<id>.json` into the repo. A watchdog
@@ -2638,29 +2827,42 @@ pub const dev = if (build_options.dev) struct {
         const m_d = parts[2];
         const plat = parts[3];
 
+        // the invocation of record — the store's `invocations` table
+        // first (the latest), else the file's recorded meta.
+        var store_root = try indexLoad(io, a);
+        const tinv = try invocationFromTable(a, &store_root, fixture_id);
         const cf = try loadChannelFile(io, a, CAPTURE_DIR, fixture_id);
-        // launch-spec backstop guard: no prompt_launch → backlog
-        // needs_curation, no capture. (Expansion normally excludes
-        // argv-less files — this only fires on a race.)
-        const launch = cf.prompt_launch orelse {
-            daemonWriteErr(io, "daemon: from-capture: no meta.prompt_launch for ");
+        const launch: []const []const u8 = blk: {
+            if (tinv) |ti| {
+                if (ti.prompt) |tp| break :blk tp;
+            }
+            if (cf.prompt_invocation) |fp| break :blk fp;
+            // backstop: no invocation anywhere — the combo cannot launch.
+            // (Expansion only picks invocation-known candidates; this
+            // fires on a race with an un-authored invocation.)
+            daemonWriteErr(io, "daemon: from-capture: no invocation of record for ");
             daemonWriteErr(io, fixture_id);
-            daemonWriteErr(io, " — recording needs_curation\n");
-            try markBacklog(io, a, "needs_curation", fixture_id);
+            daemonWriteErr(io, " — backlog unknown_invocations\n");
             damped.put(fixture_id, {}) catch {};
             return false;
         };
-        // availability probe via the file's version_launch (absent ⇒ the
-        // probe fails closed → unavailable).
-        const version_launch = cf.version_launch orelse {
+        // availability probe via the same source's version_invocation
+        // (absent ⇒ the probe fails closed → unavailable).
+        const version_launch: ?[]const []const u8 = blk: {
+            if (tinv) |ti| {
+                if (ti.version) |v| break :blk v;
+            }
+            break :blk cf.version_invocation;
+        };
+        const vl_probe = version_launch orelse {
             daemonWriteErr(io, "daemon: from-capture: harness unavailable for ");
             daemonWriteErr(io, fixture_id);
-            daemonWriteErr(io, " — no meta.version_launch\n");
-            try recordKnownButFailed(io, a, fixture_id, "harness unavailable — no meta.version_launch", init.environ_map);
+            daemonWriteErr(io, " — no version_invocation\n");
+            try recordKnownButFailed(io, a, fixture_id, "harness unavailable — no version_invocation", init.environ_map);
             damped.put(fixture_id, {}) catch {};
             return false;
         };
-        if (!launchExitZero(io, a, version_launch)) {
+        if (!launchExitZero(io, a, vl_probe)) {
             daemonWriteErr(io, "daemon: from-capture: harness unavailable for ");
             daemonWriteErr(io, fixture_id);
             daemonWriteErr(io, "\n");
@@ -2669,16 +2871,15 @@ pub const dev = if (build_options.dev) struct {
             return false;
         }
 
-        // spawn the curated prompt_launch verbatim — the file's argv[0] IS
-        // the concrete binary for this platform, so there is no name
-        // cycling (a failed spawn is an artifact failure, not a name
-        // miss).
+        // spawn the invocation verbatim — its argv[0] IS the concrete
+        // binary for this platform, so there is no name cycling (a failed
+        // spawn is an artifact failure, not a name miss).
         var argv_buf: [32][]const u8 = undefined;
         if (launch.len == 0 or launch.len > argv_buf.len) {
-            daemonWriteErr(io, "daemon: from-capture: malformed meta.prompt_launch for ");
+            daemonWriteErr(io, "daemon: from-capture: malformed prompt_invocation for ");
             daemonWriteErr(io, fixture_id);
             daemonWriteErr(io, "\n");
-            try recordKnownButFailed(io, a, fixture_id, "capture failed — malformed meta.prompt_launch", init.environ_map);
+            try recordKnownButFailed(io, a, fixture_id, "capture failed — malformed prompt_invocation", init.environ_map);
             damped.put(fixture_id, {}) catch {};
             return false;
         }
@@ -2817,7 +3018,7 @@ pub const dev = if (build_options.dev) struct {
                     i += 1;
                     continue;
                 }
-                const exp = try expandEntry(io, a, &free_grid, &grids, entry, host, damped);
+                const exp = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped);
                 if (exp.remaining_anywhere == 0) {
                     _ = q.orderedRemove(i);
                     dirty = true;
@@ -2832,7 +3033,7 @@ pub const dev = if (build_options.dev) struct {
                 // completion-timestamp done rule live.
                 entry.started_at = unixNow(io);
                 q.items[i] = try queueEntryValue(a, entry);
-                const exp2 = try expandEntry(io, a, &free_grid, &grids, entry, host, damped);
+                const exp2 = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped);
                 if (exp2.host_candidates.len > 0) {
                     pick = .{ .queue_index = i, .candidate = exp2.host_candidates[0], .entry = entry };
                 }
@@ -2852,9 +3053,9 @@ pub const dev = if (build_options.dev) struct {
     /// first entry with remaining host-platform work (stamping
     /// `started_at` on its first work), and processes ONE candidate.
     /// from-identity jobs resolve the declared channel (zero tokens);
-    /// from-capture jobs probe availability via the file's
-    /// `meta.version_launch` then launch the real harness session via
-    /// `meta.prompt_launch` (with a pre-capture review window,
+    /// from-capture jobs probe availability via the invocation's
+    /// `version_invocation` then launch the real harness session via its
+    /// `prompt_invocation` (with a pre-capture review window,
     /// token-consuming, user-confirmed only). A candidate's completion
     /// timestamp (the mode's success `meta.updated_at`) ≥ the entry's
     /// `started_at` makes it done; a candidate this daemon session
