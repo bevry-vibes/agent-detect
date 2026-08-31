@@ -194,21 +194,66 @@ deepseek row) are **dropped unless documented as necessary** by the
 harness for the invocation to work. The migration audits all 502
 curated rows against this policy and minimizes offenders.
 
-## 6. Staleness markers — final matrix
+## 6. Staleness model (final)
 
-| Marker | Fate |
+### 6a. Criteria flags
+
+| Flag | Criterion |
 |---|---|
-| `--stale-by-missing-entry` | **dropped** — no entry table; the file IS the registration |
-| `--stale-by-missing-fixture` | **dropped** — the store no longer references files |
-| `--stale-by-fixture-hash` | **dropped** — hash gone |
-| `--stale-by-channel-hash` | **replaced** by `--stale-by-channel-drift`: stale iff the two channel files' `outputs.identify` objects are not both present and deep-equal (a missing channel file counts stale, same semantics as the old `channelHashDivergent`) |
-| `--stale-by-minutes` / `--stale-by-hours` / `--stale-by-days` | kept — mode-scoped: `from-identity/<id>.json.meta.updated_at` for from-identity, `from-capture/<id>.json.meta.updated_at` for from-capture |
-| `--stale-by-harness-version` | kept — `from-capture/<id>.json.meta.harness_version` vs the live `version_launch` probe |
-| `--stale-by-detect-version` | kept — the channel file's `meta.agent_detect_version` vs this binary's version |
+| `--stale-by-output-drift` | (renamed from the channel-hash replacement) stale iff the two channel files' `outputs.identify` objects are not both present and deep-equal — a missing channel file counts stale, same semantics as the old `channelHashDivergent` |
+| `--stale-by-minutes=N` / `--stale-by-hours=N` / `--stale-by-days=N` | mode-scoped age of `meta.updated_at` (`from-identity/<id>.json` for from-identity, `from-capture/<id>.json` for from-capture); stored in minutes |
+| `--stale-by-harness-version` | `from-capture/<id>.json.meta.harness_version` vs the live `version_launch` probe |
+| `--stale-by-detect-version` | the channel file's `meta.agent_detect_version` vs this binary's version |
+| `--stale-by-missing-entry` / `--stale-by-missing-fixture` / `--stale-by-fixture-hash` / `--stale-by-channel-hash` | **dropped** — no entry table, no store→file references, no hashes |
+
+The old one-marker-per-entry constraint dies: a queue entry carries a
+**set** of criteria and a candidate is stale iff ANY carried criterion
+says stale (OR; short-circuit per candidate).
+
+### 6b. `--stale` composite and defaulting (user decision)
+
+- New flag **`--stale`** ≡ `--stale-by-output-drift` OR
+  `--stale-by-days=27` OR `--stale-by-harness-version` OR
+  `--stale-by-detect-version`.
+- **Default:** `--stale` is defaulted to true — a queue upsert with
+  no staleness flags carries the full composite set. Exceptions:
+  - any explicit `--stale-*` flag ⇒ `--stale` is NOT defaulted (the
+    explicit flags alone form the entry's set);
+  - `--refresh` ⇒ functions as if `--stale` was neither defaulted nor
+    provided — the entry carries NO criteria, so every candidate is
+    worked regardless of freshness (the explicit opt-back-in to full
+    re-evaluation).
+- **Component overwrite:** `--stale` provided together with an
+  explicit `--stale-*` ⇒ the explicit value overwrites the composite's
+  default for that component only. Examples: `--stale
+  --stale-by-days=0` = output-drift + days=0 + harness-version +
+  detect-version; `--stale --stale-by-days=999999999` effectively
+  disables the age component while keeping the other three.
+- **Conflicts:** `--refresh` conflicts with `--stale` and every
+  `--stale-*` (exit 3) — refresh already means "everything is stale",
+  so OR-combining explicit criteria would be a no-op. `--unknown`
+  sweeps carry no criteria (candidates have no channel files yet, so
+  staleness is inapplicable) — the `--stale` default is suppressed
+  for them, replacing today's "markers never combine with --unknown"
+  conflict.
+- **Dequeue symmetry:** `fixtures dequeue` applies the same defaulting
+  so a bare dequeue filter matches exactly the entry a bare queue
+  upsert created; `--refresh` on dequeue matches criteria-less
+  entries.
+- **Dedupe identity:** the upsert tuple becomes (dims, mode,
+  stale-set, axes); a re-assert must repeat the same flag set
+  (defaults included) or it lands as a second, differently-defaulting
+  entry — the handoff's "repeat the SAME axis flags" learning,
+  extended to staleness.
+- **Why:** churn prevention. Previously a no-marker queue entry
+  re-evaluated ALL its candidates every sweep — the staged 705-entry
+  queue would re-work combos forever. With `--stale` defaulted, idle
+  re-queues only pick genuinely stale combos; `--refresh` is the one
+  explicit way to force a full pass.
 
 Done rule / crash-resume: unchanged — completion timestamp is the
-mode's own channel date (now `meta`, read from the mode's own file),
-else `errors.<key>.failed_at`.
+mode's own channel date (now `meta.updated_at`, read from the mode's
+own file), else `errors.<key>.failed_at`.
 
 ## 7. Code-impact inventory
 
@@ -231,14 +276,17 @@ else `errors.<key>.failed_at`.
 - Changed: `expandKnownPlatform` enumerates `fixtures/from-identity/`
   + `fixtures/from-capture/` (meta-only files are from-capture
   candidates with no completion timestamp);
-  `entryMarkerStale` + `completionTimestamp` read the loaded file's
-  `meta`; the capture writer (`runFixturesCapture`) and the daemon's
-  identity worker write their whole file atomically per §3c's
-  meta-preservation rule; `INDEX_STORE_VERSION` → 2 with load-time
-  drop of the legacy `fixtures` table (same pattern as the dropped
-  `free_provider_to_model`); usage texts (`fixturesUsage`,
+  `entryMarkerStale` OR-evaluates the carried criteria set against
+  the loaded file's `meta`; the CLI parser gains `--stale` /
+  `--refresh` and the defaulting + component-overwrite rules (§6b);
+  the conflict matrix reworks to (refresh × stale × stale-* ×
+  unknown); the capture writer (`runFixturesCapture`) and the
+  daemon's identity worker write their whole file atomically per
+  §3c's meta-preservation rule; `INDEX_STORE_VERSION` → 2 with
+  load-time drop of the legacy `fixtures` table (same pattern as the
+  dropped `free_provider_to_model`); usage texts (`fixturesUsage`,
   `queueDequeueFlags`, `queueUsage`, `dequeueUsage`) updated for the
-  marker matrix and the folder layout.
+  staleness model and the folder layout.
 - Unchanged: daemon guard, pop protocol order, errors ledger, free
   grid, `--free` axis.
 
@@ -247,7 +295,13 @@ else `errors.<key>.failed_at`.
 - `src/index_store.test.zig`: helpers rebuild in-memory stores with
   the new shape; done-rule tests re-source dates from channel-file
   meta; identify-drift tests replace hash-divergence tests;
-  meta-only from-capture expansion tests.
+  meta-only from-capture expansion tests; `--stale` defaulting,
+  component-overwrite, `--refresh`, and OR-evaluation tests.
+- `QueueEntry` shape note: the seven mutually-exclusive flat marker
+  fields become a four-field stale set — `stale_by_output_drift: bool`,
+  `stale_by_minutes: ?i64`, `stale_by_harness_version: bool`,
+  `stale_by_detect_version: bool` (absent = criterion not carried;
+  all absent = a `--refresh` entry).
 - `src/known_fixtures.test.zig`: per-folder envelope tests —
   `from-identity/`: `outputs` (identify 18 fields + trailers) +
   `meta` (updated_at + agent_detect_version), nothing else;
@@ -298,7 +352,11 @@ else `errors.<key>.failed_at`.
 - `fixtures capture` re-run on this session must produce the same
   canonical identify output as the committed pre-split fixture
   (`pi-opencodego-glm53flash-darwin`), modulo the new envelope.
-- Daemon smoke: a `--stale-by-minutes=0` from-capture sweep listing
-  `--harness=pi --provider=chutes` must list exactly the 12 pi-chutes
-  darwin candidates; a from-identity drain must complete with zero
-  token spend.
+- Daemon smoke: a no-flag `fixtures queue --harness=pi
+  --provider=chutes` upsert must carry the full `--stale` composite
+  (drift + days=27 + harness-version + detect-version) in its entry;
+  a `--refresh` entry must re-list fresh candidates; a
+  `--stale-by-minutes=0` from-capture sweep listing `--harness=pi
+  --provider=chutes` must list exactly the 12 pi-chutes darwin
+  candidates; a from-identity drain must complete with zero token
+  spend.
