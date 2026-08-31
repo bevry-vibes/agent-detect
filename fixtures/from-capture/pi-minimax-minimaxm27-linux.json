@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "minimax",
+      "--model",
+      "MiniMax-M2.7",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

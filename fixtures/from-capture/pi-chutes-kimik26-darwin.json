@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "chutes",
+      "--model",
+      "moonshotai/Kimi-K2.6-TEE",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

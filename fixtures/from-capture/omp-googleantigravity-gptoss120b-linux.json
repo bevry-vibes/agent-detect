@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "google-antigravity/gpt-oss-120b",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

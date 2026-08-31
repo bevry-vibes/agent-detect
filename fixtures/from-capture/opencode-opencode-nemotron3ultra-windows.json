@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "opencode.exe",
+      "run",
+      "--model",
+      "opencode/nemotron-3-ultra-free",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "opencode.exe",
+      "--version"
+    ]
+  }
+}

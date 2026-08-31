@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "omp.exe",
+      "--model",
+      "zenmux/x-ai/grok-4.5-free",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp.exe",
+      "--version"
+    ]
+  }
+}

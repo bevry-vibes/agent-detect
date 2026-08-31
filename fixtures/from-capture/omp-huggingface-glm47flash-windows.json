@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "omp.exe",
+      "--model",
+      "huggingface/zai-org/glm-4.7-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp.exe",
+      "--version"
+    ]
+  }
+}

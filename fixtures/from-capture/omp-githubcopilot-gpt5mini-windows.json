@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "omp.exe",
+      "--model",
+      "github-copilot/gpt-5-mini",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp.exe",
+      "--version"
+    ]
+  }
+}

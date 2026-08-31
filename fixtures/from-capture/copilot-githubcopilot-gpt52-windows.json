@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "copilot.exe",
+      "-p",
+      "--allow-all",
+      "--model",
+      "gpt-5.2",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "copilot.exe",
+      "--version"
+    ]
+  }
+}

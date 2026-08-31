@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "nanogpt/inclusionai/ling-3.0-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

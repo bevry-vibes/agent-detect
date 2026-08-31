@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi.exe",
+      "--provider",
+      "minimax",
+      "--model",
+      "MiniMax-M3",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi.exe",
+      "--version"
+    ]
+  }
+}

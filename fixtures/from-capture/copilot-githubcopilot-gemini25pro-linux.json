@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "copilot",
+      "-p",
+      "--allow-all",
+      "--model",
+      "gemini-2.5-pro",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "copilot",
+      "--version"
+    ]
+  }
+}

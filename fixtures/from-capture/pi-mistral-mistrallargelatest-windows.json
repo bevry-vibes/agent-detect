@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi.exe",
+      "--provider",
+      "mistral",
+      "--model",
+      "mistral-large-latest",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi.exe",
+      "--version"
+    ]
+  }
+}

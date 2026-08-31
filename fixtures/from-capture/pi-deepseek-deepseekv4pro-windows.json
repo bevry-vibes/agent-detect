@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi.exe",
+      "--provider",
+      "deepseek",
+      "--model",
+      "deepseek-v4-pro",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi.exe",
+      "--version"
+    ]
+  }
+}

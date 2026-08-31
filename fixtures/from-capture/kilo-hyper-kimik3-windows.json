@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "kilo.cmd",
+      "run",
+      "--auto",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "kilo.cmd",
+      "--version"
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Meta",
+      "provider_name": "meta",
+      "provider_id": "meta",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Muse Spark 1.2",
+      "model_short_title": null,
+      "model_name": "muse-spark-1.2",
+      "model_id": "musespark12",
+      "model_reciprocity": null,
+      "agent_id": "omp-meta-musespark12",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 Muse Spark 1.2 <omp-meta-musespark12@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 Muse Spark 1.2 <omp-meta-musespark12@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 Muse Spark 1.2 <omp-meta-musespark12@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 93214,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://ai.meta.com/"
+      ],
+      "model-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "meta/muse-spark-1.2"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "meta/muse-spark-1.2"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431945,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "meta/muse-spark-1.2",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

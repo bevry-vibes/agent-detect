@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Hugging Face",
+      "provider_name": "huggingface",
+      "provider_id": "huggingface",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Ling 2.6 1T",
+      "model_short_title": null,
+      "model_name": "ling-2.6-1t",
+      "model_id": "ling261t",
+      "model_reciprocity": "open-weight",
+      "agent_id": "omp-huggingface-ling261t",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 Ling 2.6 1T <omp-huggingface-ling261t@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 Ling 2.6 1T <omp-huggingface-ling261t@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 Ling 2.6 1T <omp-huggingface-ling261t@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 95507,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://huggingface.co/docs/inference-providers"
+      ],
+      "model-urls": [
+        "https://huggingface.co/inclusionai/Ling-2.6-1T",
+        "https://huggingface.co/inclusionai/Ling-2.6-1T/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "huggingface/ling-2.6-1t"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "huggingface/ling-2.6-1t"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432104,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "huggingface/inclusionai/ling-2.6-1t",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

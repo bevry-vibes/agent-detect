@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "cerebras",
+      "--model",
+      "gemma-4-31b",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

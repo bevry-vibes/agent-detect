@@ -1,0 +1,98 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Alibaba",
+      "provider_name": "alibaba",
+      "provider_id": "alibaba",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Qwen3.8-Max",
+      "model_short_title": null,
+      "model_name": "qwen3.8-max",
+      "model_id": "qwen38max",
+      "model_reciprocity": "closed",
+      "agent_id": "opencode-alibaba-qwen38max",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: OpenCode \u00b7 Qwen3.8-Max <opencode-alibaba-qwen38max@local>"
+    },
+    "trailer co-author": "Co-authored-by: OpenCode \u00b7 Qwen3.8-Max <opencode-alibaba-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 Qwen3.8-Max <opencode-alibaba-qwen38max@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 99212,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://qwen.ai/",
+        "https://qwen.ai/legal"
+      ],
+      "model-urls": [
+        "https://qwen.ai/",
+        "https://qwen.ai/blog?id=qwen3.8-max"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OPENCODE_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "alibaba/qwen3.8-max"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "alibaba/qwen3.8-max"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432366,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "opencode",
+      "run",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "opencode",
+      "--version"
+    ]
+  }
+}

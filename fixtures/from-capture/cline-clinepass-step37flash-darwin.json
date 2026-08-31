@@ -1,0 +1,99 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Step 3.7 Flash",
+      "model_short_title": null,
+      "model_name": "step-3.7-flash",
+      "model_id": "step37flash",
+      "model_reciprocity": null,
+      "agent_id": "cline-clinepass-step37flash",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: Cline \u00b7 Step 3.7 Flash <cline-clinepass-step37flash@local>"
+    },
+    "trailer co-author": "Co-authored-by: Cline \u00b7 Step 3.7 Flash <cline-clinepass-step37flash@local>",
+    "trailer assisted-by": "Assisted-by: Cline \u00b7 Step 3.7 Flash <cline-clinepass-step37flash@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 86492,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cline.bot/privacy",
+        "https://cline.bot/tos"
+      ],
+      "model-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "CLINE_WRAPPER_PATH",
+          "value": "cline"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "lastUsedProvider",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "providers.cline-pass.settings.model",
+          "value": "cline-pass/step-3.7-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431494,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "cline",
+      "--auto-approve",
+      "--provider=cline-pass",
+      "--model=stepfun/step-3.7-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cline",
+      "--version"
+    ]
+  }
+}

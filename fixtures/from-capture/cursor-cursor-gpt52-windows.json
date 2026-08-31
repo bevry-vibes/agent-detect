@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "cursor-agent.cmd",
+      "-p",
+      "--model",
+      "gpt-5.2",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cursor-agent.cmd",
+      "--version"
+    ]
+  }
+}

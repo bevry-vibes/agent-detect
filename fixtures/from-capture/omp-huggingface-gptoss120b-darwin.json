@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Hugging Face",
+      "provider_name": "huggingface",
+      "provider_id": "huggingface",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "GPT-OSS 120B",
+      "model_short_title": null,
+      "model_name": "gpt-oss-120b",
+      "model_id": "gptoss120b",
+      "model_reciprocity": "open-weight",
+      "agent_id": "omp-huggingface-gptoss120b",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 GPT-OSS 120B <omp-huggingface-gptoss120b@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 GPT-OSS 120B <omp-huggingface-gptoss120b@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 GPT-OSS 120B <omp-huggingface-gptoss120b@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 95672,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://huggingface.co/docs/inference-providers"
+      ],
+      "model-urls": [
+        "https://huggingface.co/openai/gpt-oss-120b",
+        "https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "huggingface/gpt-oss-120b"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "huggingface/gpt-oss-120b"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432115,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "huggingface/openai/gpt-oss-120b",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

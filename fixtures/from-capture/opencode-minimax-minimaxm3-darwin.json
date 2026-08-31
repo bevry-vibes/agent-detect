@@ -1,0 +1,99 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "opencode-minimax-minimaxm3",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: OpenCode \u00b7 MiniMax M3 <opencode-minimax-minimaxm3@local>"
+    },
+    "trailer co-author": "Co-authored-by: OpenCode \u00b7 MiniMax M3 <opencode-minimax-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 MiniMax M3 <opencode-minimax-minimaxm3@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 97892,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.minimax.io/docs/guides/terms-of-service",
+        "https://platform.minimax.io/docs/guides/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+        "https://www.minimax.io/blog/minimax-m3"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OPENCODE_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "minimax/minimax-m3"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "minimax/minimax-m3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432271,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "opencode",
+      "run",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "opencode",
+      "--version"
+    ]
+  }
+}

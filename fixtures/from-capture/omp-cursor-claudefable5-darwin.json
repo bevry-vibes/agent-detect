@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Cursor",
+      "provider_name": "cursor",
+      "provider_id": "cursor",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Claude Fable 5",
+      "model_short_title": null,
+      "model_name": "claude-fable-5",
+      "model_id": "claudefable5",
+      "model_reciprocity": "closed",
+      "agent_id": "omp-cursor-claudefable5",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 Claude Fable 5 <omp-cursor-claudefable5@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 Claude Fable 5 <omp-cursor-claudefable5@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 Claude Fable 5 <omp-cursor-claudefable5@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 96061,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cursor.com/"
+      ],
+      "model-urls": [
+        "https://www.anthropic.com/claude",
+        "https://docs.anthropic.com/en/docs/about-claude/models"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "cursor/claude-fable-5"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "cursor/claude-fable-5"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432143,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "cursor/claude-fable-5",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

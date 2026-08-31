@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "GitHub Copilot",
+      "provider_name": "github-copilot",
+      "provider_id": "githubcopilot",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "GPT-5 mini",
+      "model_short_title": null,
+      "model_name": "gpt-5-mini",
+      "model_id": "gpt5mini",
+      "model_reciprocity": "closed",
+      "agent_id": "omp-githubcopilot-gpt5mini",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 GPT-5 mini <omp-githubcopilot-gpt5mini@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 GPT-5 mini <omp-githubcopilot-gpt5mini@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 GPT-5 mini <omp-githubcopilot-gpt5mini@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 96369,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://github.com/features/copilot"
+      ],
+      "model-urls": [
+        "https://openai.com/index/gpt-5/",
+        "https://platform.openai.com/docs/models"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "github-copilot/gpt-5-mini"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "github-copilot/gpt-5-mini"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432164,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "github-copilot/gpt-5-mini",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

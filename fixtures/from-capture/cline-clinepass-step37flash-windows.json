@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "cline.cmd",
+      "--auto-approve",
+      "--provider=cline-pass",
+      "--model=stepfun/step-3.7-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cline.cmd",
+      "--version"
+    ]
+  }
+}

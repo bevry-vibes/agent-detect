@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "kilo.cmd",
+      "run",
+      "--auto",
+      "--model",
+      "kilo/~moonshotai/kimi-latest",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "kilo.cmd",
+      "--version"
+    ]
+  }
+}

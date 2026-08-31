@@ -1,0 +1,99 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Vibe",
+      "harness_short_title": null,
+      "harness_name": "vibe",
+      "harness_id": "vibe",
+      "harness_license": "Apache-2.0",
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "vibe-minimax-minimaxm3",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Vibe \u00b7 MiniMax M3 <vibe-minimax-minimaxm3@local>"
+    },
+    "trailer co-author": "Co-authored-by: Vibe \u00b7 MiniMax M3 <vibe-minimax-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Vibe \u00b7 MiniMax M3 <vibe-minimax-minimaxm3@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 99438,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/mistralai/mistral-vibe",
+        "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.minimax.io/docs/guides/terms-of-service",
+        "https://platform.minimax.io/docs/guides/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+        "https://www.minimax.io/blog/minimax-m3"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "VIBE_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "VIBE_ACTIVE_PROVIDER",
+          "value": "minimax"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "VIBE_ACTIVE_MODEL",
+          "value": "minimax-m3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432382,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "vibe",
+      "--prompt",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "vibe",
+      "--version"
+    ]
+  }
+}

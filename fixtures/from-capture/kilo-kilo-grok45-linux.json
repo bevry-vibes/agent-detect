@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "kilo",
+      "run",
+      "--auto",
+      "--model",
+      "kilo/~x-ai/grok-latest",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "kilo",
+      "--version"
+    ]
+  }
+}

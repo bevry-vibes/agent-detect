@@ -1,0 +1,98 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "agent_id": "opencode-deepseek-deepseekv4flash",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: OpenCode \u00b7 DeepSeek V4 Flash <opencode-deepseek-deepseekv4flash@local>"
+    },
+    "trailer co-author": "Co-authored-by: OpenCode \u00b7 DeepSeek V4 Flash <opencode-deepseek-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 DeepSeek V4 Flash <opencode-deepseek-deepseekv4flash@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 97957,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OPENCODE_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "deepseek/deepseek-v4-flash"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "deepseek/deepseek-v4-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432276,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "opencode",
+      "run",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "opencode",
+      "--version"
+    ]
+  }
+}

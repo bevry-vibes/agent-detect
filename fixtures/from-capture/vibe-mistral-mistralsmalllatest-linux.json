@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "vibe",
+      "--prompt",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "vibe",
+      "--version"
+    ]
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "kimicode-minimax-minimaxm3",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Kimi Code \u00b7 MiniMax M3 <kimicode-minimax-minimaxm3@local>"
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 MiniMax M3 <kimicode-minimax-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 MiniMax M3 <kimicode-minimax-minimaxm3@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 86752,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/MoonshotAI/kimi-code",
+        "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.minimax.io/docs/guides/terms-of-service",
+        "https://platform.minimax.io/docs/guides/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+        "https://www.minimax.io/blog/minimax-m3"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "KIMI_CODE_HOME",
+          "value": "kimi-code"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.kimi-code/config.toml",
+          "field": "default_model",
+          "value": "minimax/minimax-m3"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.kimi-code/config.toml",
+          "field": "default_model",
+          "value": "minimax/minimax-m3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431510,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "kimi",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "kimi",
+      "--version"
+    ]
+  }
+}

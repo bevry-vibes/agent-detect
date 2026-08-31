@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "omp.exe",
+      "--model",
+      "huggingface/nvidia/nemotron-3-ultra",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp.exe",
+      "--version"
+    ]
+  }
+}

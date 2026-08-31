@@ -1,0 +1,103 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "cline-minimax-minimaxm3",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Cline \u00b7 MiniMax M3 <cline-minimax-minimaxm3@local>"
+    },
+    "trailer co-author": "Co-authored-by: Cline \u00b7 MiniMax M3 <cline-minimax-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Cline \u00b7 MiniMax M3 <cline-minimax-minimaxm3@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 86301,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.minimax.io/docs/guides/terms-of-service",
+        "https://platform.minimax.io/docs/guides/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+        "https://www.minimax.io/blog/minimax-m3"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "CLINE_WRAPPER_PATH",
+          "value": "cline"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "lastUsedProvider",
+          "value": "minimax"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "providers.minimax.settings.model",
+          "value": "minimax/minimax-m3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431483,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "cline",
+      "--auto-approve",
+      "--provider=minimax",
+      "--model=minimax/minimax-m3",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cline",
+      "--version"
+    ]
+  }
+}

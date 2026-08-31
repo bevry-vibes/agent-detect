@@ -1,0 +1,97 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "NanoGPT",
+      "provider_name": "nanogpt",
+      "provider_id": "nanogpt",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "ERNIE 4.5",
+      "model_short_title": null,
+      "model_name": "ernie-4.5",
+      "model_id": "ernie45",
+      "model_reciprocity": null,
+      "agent_id": "omp-nanogpt-ernie45",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 ERNIE 4.5 <omp-nanogpt-ernie45@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 ERNIE 4.5 <omp-nanogpt-ernie45@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 ERNIE 4.5 <omp-nanogpt-ernie45@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 94706,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://nanogpt.ai/"
+      ],
+      "model-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "nanogpt/ernie-4.5"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "nanogpt/ernie-4.5"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432049,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "nanogpt/baidu/ernie-4.5",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

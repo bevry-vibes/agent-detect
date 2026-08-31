@@ -1,0 +1,102 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Kimi K3",
+      "model_short_title": null,
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "cline-clinepass-kimik3",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Cline \u00b7 Kimi K3 <cline-clinepass-kimik3@local>"
+    },
+    "trailer co-author": "Co-authored-by: Cline \u00b7 Kimi K3 <cline-clinepass-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: Cline \u00b7 Kimi K3 <cline-clinepass-kimik3@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 86104,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cline.bot/privacy",
+        "https://cline.bot/tos"
+      ],
+      "model-urls": [
+        "https://huggingface.co/moonshotai/Kimi-K3",
+        "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "CLINE_WRAPPER_PATH",
+          "value": "cline"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "lastUsedProvider",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "providers.cline-pass.settings.model",
+          "value": "cline-pass/kimi-k3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431472,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "cline",
+      "--auto-approve",
+      "--provider=cline-pass",
+      "--model=cline-pass/kimi-k3",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cline",
+      "--version"
+    ]
+  }
+}

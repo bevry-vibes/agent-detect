@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "chutes",
+      "--model",
+      "unsloth/Mistral-Nemo-Instruct-2407-TEE",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

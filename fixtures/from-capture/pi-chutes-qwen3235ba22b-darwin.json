@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "chutes",
+      "--model",
+      "Qwen/Qwen3-235B-A22B-Thinking-2507-TEE",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

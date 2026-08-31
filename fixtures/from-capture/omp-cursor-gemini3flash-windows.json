@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "omp.exe",
+      "--model",
+      "cursor/gemini-3-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp.exe",
+      "--version"
+    ]
+  }
+}

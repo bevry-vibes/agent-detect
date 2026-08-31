@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "crush",
+      "run",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "crush",
+      "--version"
+    ]
+  }
+}

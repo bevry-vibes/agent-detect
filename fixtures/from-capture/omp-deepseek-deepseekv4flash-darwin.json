@@ -1,0 +1,101 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "agent_id": "omp-deepseek-deepseekv4flash",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: omp \u00b7 DeepSeek V4 Flash <omp-deepseek-deepseekv4flash@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 DeepSeek V4 Flash <omp-deepseek-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 DeepSeek V4 Flash <omp-deepseek-deepseekv4flash@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 91497,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "deepseek/deepseek-v4-flash"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "deepseek/deepseek-v4-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431833,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "deepseek/deepseek-v4-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

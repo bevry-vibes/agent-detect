@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "opencode",
+      "run",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "opencode",
+      "--version"
+    ]
+  }
+}

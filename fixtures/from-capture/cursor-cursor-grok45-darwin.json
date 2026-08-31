@@ -1,0 +1,99 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cursor",
+      "harness_short_title": null,
+      "harness_name": "cursor",
+      "harness_id": "cursor",
+      "harness_license": "NONE",
+      "provider_label": "Cursor",
+      "provider_name": "cursor",
+      "provider_id": "cursor",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Grok 4.5",
+      "model_short_title": null,
+      "model_name": "grok-4.5",
+      "model_id": "grok45",
+      "model_reciprocity": "closed",
+      "agent_id": "cursor-cursor-grok45",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: Cursor \u00b7 Grok 4.5 <cursor-cursor-grok45@local>"
+    },
+    "trailer co-author": "Co-authored-by: Cursor \u00b7 Grok 4.5 <cursor-cursor-grok45@local>",
+    "trailer assisted-by": "Assisted-by: Cursor \u00b7 Grok 4.5 <cursor-cursor-grok45@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 651,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://cursor.com/",
+        "https://www.cursor.com/en-US/terms-of-service"
+      ],
+      "provider-urls": [
+        "https://cursor.com/"
+      ],
+      "model-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "CURSOR_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "CURSOR_MODEL",
+          "value": "cursor/grok-4.5"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "CURSOR_MODEL",
+          "value": "cursor/grok-4.5"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432422,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "cursor-agent",
+      "-p",
+      "--model",
+      "cursor-grok-4.5-high",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cursor-agent",
+      "--version"
+    ]
+  }
+}

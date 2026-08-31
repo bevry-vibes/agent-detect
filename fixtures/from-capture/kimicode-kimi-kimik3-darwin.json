@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "Kimi",
+      "provider_name": "kimi",
+      "provider_id": "kimi",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Kimi K3",
+      "model_short_title": null,
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_reciprocity": "open-weight",
+      "agent_id": "kimicode-kimi-kimik3",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: Kimi Code \u00b7 Kimi K3 <kimicode-kimi-kimik3@local>"
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 Kimi K3 <kimicode-kimi-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 Kimi K3 <kimicode-kimi-kimik3@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 86897,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/MoonshotAI/kimi-code",
+        "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.moonshot.ai/docs/terms",
+        "https://platform.moonshot.ai/docs/privacy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/moonshotai/Kimi-K3",
+        "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "KIMI_CODE_HOME",
+          "value": "kimi-code"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.kimi-code/config.toml",
+          "field": "default_model",
+          "value": "kimi/kimi-k3"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.kimi-code/config.toml",
+          "field": "default_model",
+          "value": "kimi/kimi-k3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431521,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "kimi",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "kimi",
+      "--version"
+    ]
+  }
+}

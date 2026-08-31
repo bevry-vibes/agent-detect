@@ -1,0 +1,102 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M2.7",
+      "model_short_title": "M2.7",
+      "model_name": "minimax-m2.7",
+      "model_id": "minimaxm27",
+      "model_reciprocity": "open-weight",
+      "agent_id": "pi-minimax-minimaxm27",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Pi \u00b7 MiniMax M2.7 <pi-minimax-minimaxm27@local>"
+    },
+    "trailer co-author": "Co-authored-by: Pi \u00b7 MiniMax M2.7 <pi-minimax-minimaxm27@local>",
+    "trailer assisted-by": "Assisted-by: Pi \u00b7 MiniMax M2.7 <pi-minimax-minimaxm27@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 89096,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/earendil-works/pi",
+        "https://github.com/earendil-works/pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.minimax.io/docs/guides/terms-of-service",
+        "https://platform.minimax.io/docs/guides/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M2.7",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "PI_CODING_AGENT",
+          "value": "pi"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "PI_PROVIDER",
+          "value": "minimax"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "PI_MODEL",
+          "value": "minimax-m2.7"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431665,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "minimax",
+      "--model",
+      "MiniMax-M2.7",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

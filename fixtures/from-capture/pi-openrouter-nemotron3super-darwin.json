@@ -1,0 +1,102 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Nemotron 3 Super",
+      "model_short_title": null,
+      "model_name": "nemotron-3-super",
+      "model_id": "nemotron3super",
+      "model_reciprocity": "open-weight",
+      "agent_id": "pi-openrouter-nemotron3super",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Pi \u00b7 Nemotron 3 Super <pi-openrouter-nemotron3super@local>"
+    },
+    "trailer co-author": "Co-authored-by: Pi \u00b7 Nemotron 3 Super <pi-openrouter-nemotron3super@local>",
+    "trailer assisted-by": "Assisted-by: Pi \u00b7 Nemotron 3 Super <pi-openrouter-nemotron3super@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 88734,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/earendil-works/pi",
+        "https://github.com/earendil-works/pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B",
+        "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "PI_CODING_AGENT",
+          "value": "pi"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "PI_PROVIDER",
+          "value": "openrouter"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "PI_MODEL",
+          "value": "nemotron-3-super"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431643,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "openrouter",
+      "--model",
+      "nvidia/nemotron-3-super-120b-a12b:free",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

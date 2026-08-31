@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "ZenMux",
+      "provider_name": "zenmux",
+      "provider_id": "zenmux",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Gemini 3.5 Flash",
+      "model_short_title": null,
+      "model_name": "gemini-3.5-flash",
+      "model_id": "gemini35flash",
+      "model_reciprocity": "closed",
+      "agent_id": "omp-zenmux-gemini35flash",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 91930,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://zenmux.ai/"
+      ],
+      "model-urls": [
+        "https://deepmind.google/models/",
+        "https://ai.google.dev/gemini-api/docs/models"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "zenmux/gemini-3.5-flash"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "zenmux/gemini-3.5-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431865,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "zenmux/google/gemini-3.5-flash-free",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

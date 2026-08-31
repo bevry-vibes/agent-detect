@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "GitHub Copilot CLI",
+      "harness_short_title": null,
+      "harness_name": "copilot",
+      "harness_id": "copilot",
+      "harness_license": "NONE",
+      "provider_label": "GitHub Copilot",
+      "provider_name": "github-copilot",
+      "provider_id": "githubcopilot",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "GPT-5.2",
+      "model_short_title": null,
+      "model_name": "gpt-5.2",
+      "model_id": "gpt52",
+      "model_reciprocity": "closed",
+      "agent_id": "copilot-githubcopilot-gpt52",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: GitHub Copilot CLI \u00b7 GPT-5.2 <copilot-githubcopilot-gpt52@local>"
+    },
+    "trailer co-author": "Co-authored-by: GitHub Copilot CLI \u00b7 GPT-5.2 <copilot-githubcopilot-gpt52@local>",
+    "trailer assisted-by": "Assisted-by: GitHub Copilot CLI \u00b7 GPT-5.2 <copilot-githubcopilot-gpt52@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 828,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/features/copilot",
+        "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+      ],
+      "provider-urls": [
+        "https://github.com/features/copilot"
+      ],
+      "model-urls": [
+        "https://openai.com/index/gpt-5/",
+        "https://platform.openai.com/docs/models"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "COPILOT_ALLOW_ALL",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "COPILOT_MODEL",
+          "value": "github-copilot/gpt-5.2"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "COPILOT_MODEL",
+          "value": "github-copilot/gpt-5.2"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432429,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "copilot",
+      "-p",
+      "--allow-all",
+      "--model",
+      "gpt-5.2",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "copilot",
+      "--version"
+    ]
+  }
+}

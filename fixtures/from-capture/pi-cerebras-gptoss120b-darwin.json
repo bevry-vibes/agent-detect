@@ -1,0 +1,102 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "Cerebras",
+      "provider_name": "cerebras",
+      "provider_id": "cerebras",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "GPT-OSS 120B",
+      "model_short_title": null,
+      "model_name": "gpt-oss-120b",
+      "model_id": "gptoss120b",
+      "model_reciprocity": "open-weight",
+      "agent_id": "pi-cerebras-gptoss120b",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Pi \u00b7 GPT-OSS 120B <pi-cerebras-gptoss120b@local>"
+    },
+    "trailer co-author": "Co-authored-by: Pi \u00b7 GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
+    "trailer assisted-by": "Assisted-by: Pi \u00b7 GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 88103,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/earendil-works/pi",
+        "https://github.com/earendil-works/pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://www.cerebras.ai/privacy-policy",
+        "https://www.cerebras.ai/terms-of-service"
+      ],
+      "model-urls": [
+        "https://huggingface.co/openai/gpt-oss-120b",
+        "https://huggingface.co/openai/gpt-oss-120b/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "PI_CODING_AGENT",
+          "value": "pi"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "PI_PROVIDER",
+          "value": "cerebras"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "PI_MODEL",
+          "value": "gpt-oss-120b"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431598,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "pi",
+      "--provider",
+      "cerebras",
+      "--model",
+      "gpt-oss-120b",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi",
+      "--version"
+    ]
+  }
+}

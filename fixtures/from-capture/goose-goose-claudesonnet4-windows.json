@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "goose.exe",
+      "run",
+      "-t",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "goose.exe",
+      "--version"
+    ]
+  }
+}

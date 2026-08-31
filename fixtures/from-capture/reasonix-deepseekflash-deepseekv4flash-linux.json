@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "reasonix",
+      "run",
+      "--permission-mode",
+      "bypassPermissions",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "reasonix",
+      "--version"
+    ]
+  }
+}

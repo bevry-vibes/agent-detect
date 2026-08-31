@@ -9,7 +9,7 @@ kimicode,-,-,-,chutes,-,-,deepseek,-,-,-,-,-,-,-,-,-,-,kimi,-,-,minimax,-,-,-,-,
 mmx,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,minimax,-,-,-,-,-,-,-,-,-,-,-,-,-,-
 omp,-,-,-,-,-,cursor,deepseek,-,-,githubcopilot,gmicloud,googleantigravity,-,-,huggingface,-,-,-,kimicode,meta,-,minimaxcode,-,nanogpt,ollamacloud,-,-,-,openrouter,-,sakana,siliconflow,-,-,zenmux
 opencode,alibaba,-,cerebras,-,clinepass,-,deepseek,-,-,-,-,-,-,groq,-,hyper,-,-,-,-,minimax,-,-,-,-,-,opencode,-,-,-,-,-,-,-,-
-pi,-,anthropic,cerebras,-,-,-,deepseek,-,-,-,-,-,-,groq,-,-,-,kimi,-,-,minimax,-,mistral,-,-,-,-,-,openrouter,-,-,-,xai,-,-
+pi,-,anthropic,cerebras,chutes,-,-,deepseek,-,-,-,-,-,-,groq,-,-,-,kimi,-,-,minimax,-,mistral,-,-,-,-,opencodego,openrouter,-,-,-,xai,-,-
 qwen,-,-,-,-,-,-,deepseek,-,-,-,-,-,-,-,-,-,-,-,-,-,minimax,-,-,-,-,openai,-,-,-,qwen,-,-,xai,-,-
 reasonix,-,-,-,-,-,-,deepseek,deepseekflash,-,-,-,-,-,-,-,-,-,-,-,-,minimax,-,-,-,-,-,-,-,-,-,-,-,-,-,-
 vibe,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,minimax,-,mistral,-,-,-,-,-,-,-,-,-,-,-,-

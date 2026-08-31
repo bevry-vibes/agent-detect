@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "NanoGPT",
+      "provider_name": "nanogpt",
+      "provider_id": "nanogpt",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Gemma 3 27B",
+      "model_short_title": null,
+      "model_name": "gemma-3-27b",
+      "model_id": "gemma327b",
+      "model_reciprocity": "open-weight",
+      "agent_id": "omp-nanogpt-gemma327b",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 Gemma 3 27B <omp-nanogpt-gemma327b@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 Gemma 3 27B <omp-nanogpt-gemma327b@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 Gemma 3 27B <omp-nanogpt-gemma327b@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 94953,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://nanogpt.ai/"
+      ],
+      "model-urls": [
+        "https://huggingface.co/google/gemma-3-27b-it",
+        "https://huggingface.co/google/gemma-3-27b-it/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "nanogpt/gemma-3-27b"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "nanogpt/gemma-3-27b"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432065,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "nanogpt/gemma-3-27b",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Reasonix",
+      "harness_short_title": null,
+      "harness_name": "reasonix",
+      "harness_id": "reasonix",
+      "harness_license": "MIT",
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "agent_id": "reasonix-deepseek-deepseekv4flash",
+      "reciprocal": true,
+      "trailer": "Co-authored-by: Reasonix \u00b7 DeepSeek V4 Flash <reasonix-deepseek-deepseekv4flash@local>"
+    },
+    "trailer co-author": "Co-authored-by: Reasonix \u00b7 DeepSeek V4 Flash <reasonix-deepseek-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Reasonix \u00b7 DeepSeek V4 Flash <reasonix-deepseek-deepseekv4flash@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 96518,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/esengine/DeepSeek-Reasonix",
+        "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "REASONIX_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.reasonix/config.toml",
+          "field": "default_model",
+          "value": "deepseek"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.reasonix/config.toml",
+          "field": "providers[].models",
+          "value": "deepseek-v4-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432175,
+    "agent_detect_version": "2026.8.11-3"
+  }
+}

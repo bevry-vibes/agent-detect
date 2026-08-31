@@ -5,8 +5,8 @@ prior state: [1788107876077-handoff-chutes-opencodego-state.md](./1788107876077-
 # Plan — retire the `fixtures` map: per-channel folders, outputs/meta envelope, hashes deleted
 
 Written 2026-08-31 by the live pi session (glm-5.3-flash × opencode-go).
-Status: **all design decisions resolved by user steering — ready to
-implement.** The earlier open questions (§4 folder split, §5 argv
+Status: **implemented** (code commit + migration commit, 2026-08-31).
+All design decisions were resolved by user steering prior. The earlier open questions (§4 folder split, §5 argv
 home, provenance stamp) were closed in the steering round; see the
 companion for the verbatim directives.
 

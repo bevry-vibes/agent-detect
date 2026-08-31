@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Qwen Code",
+      "harness_short_title": null,
+      "harness_name": "qwen",
+      "harness_id": "qwen",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Qwen",
+      "provider_name": "qwen",
+      "provider_id": "qwen",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Qwen3.8-Max",
+      "model_short_title": null,
+      "model_name": "qwen3.8-max",
+      "model_id": "qwen38max",
+      "model_reciprocity": "closed",
+      "agent_id": "qwen-qwen-qwen38max",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: Qwen Code \u00b7 Qwen3.8-Max <qwen-qwen-qwen38max@local>"
+    },
+    "trailer co-author": "Co-authored-by: Qwen Code \u00b7 Qwen3.8-Max <qwen-qwen-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code \u00b7 Qwen3.8-Max <qwen-qwen-qwen38max@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 89438,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/QwenLM/qwen-code",
+        "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://qwen.ai/",
+        "https://qwen.ai/legal"
+      ],
+      "model-urls": [
+        "https://qwen.ai/",
+        "https://qwen.ai/blog?id=qwen3.8-max"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "QWEN_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.qwen/settings.json",
+          "field": "model.name",
+          "value": "qwen3.8-max"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.qwen/settings.json",
+          "field": "modelProviders.openai[].baseUrl",
+          "value": "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431686,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "qwen",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "qwen",
+      "--version"
+    ]
+  }
+}

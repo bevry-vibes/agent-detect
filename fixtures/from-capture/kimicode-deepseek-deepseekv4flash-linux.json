@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "kimi",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "kimi",
+      "--version"
+    ]
+  }
+}

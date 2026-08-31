@@ -360,21 +360,23 @@ curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
 (The authenticated calls above are canonical; an unauthenticated
 request returns the same public ranking when no key is available.)
 
-Three reference grids complement the snapshots. The two coverage
-grids are pure developer reference — committed, maintained by hand
-alongside each provider catalog enumeration (append the provider's
-row), and never sourced by the zig program:
-`fixtures/.providers_models.csv` (rows = provider alphanumeric ids,
-columns = model alphanumeric ids, cell = that provider's served
+Three reference grids complement the snapshots, all read by the zig
+program at expansion time. The two **feasibility grids** are
+load-bearing: a pair is feasible iff its cell is present and not `-`,
+and the feasible-unfixtured universe (grid cross-product minus the
+fixtured stems) is what from-identity can declare — so keep them in
+sync with the fixture universe (append the provider's row alongside
+each catalog enumeration; `fixtures status` + the migration audit flag
+drift): `fixtures/.providers_models.csv` (rows = provider alphanumeric
+ids, columns = model alphanumeric ids, cell = that provider's served
 model-id string or `-`) and `fixtures/.harnesses_providers.csv`
 (rows = harness ids, columns = provider ids, cell = the harness's
-provider-id string or `-`). The third is normative and read by the
-store code at expansion time: `fixtures/.providers_freemodels.csv` —
-the SOURCE OF TRUTH for free models (replacing the retired
-`free_provider_to_model` store table). It is SPARSE: rows only for
-providers with ≥1 free model, columns only for models that are free
-at some provider, cell = that provider's free model-id string, `-`
-otherwise.
+provider-id string or `-`). The third is the free axis:
+`fixtures/.providers_freemodels.csv` — the SOURCE OF TRUTH for free
+models (replacing the retired `free_provider_to_model` store table).
+It is SPARSE: rows only for providers with ≥1 free model, columns
+only for models that are free at some provider, cell = that
+provider's free model-id string, `-` otherwise.
 
 ### monitoring + control runbook
 

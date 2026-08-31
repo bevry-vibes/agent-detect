@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "cursor-agent",
+      "-p",
+      "--model",
+      "cursor-grok-4.5-high",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cursor-agent",
+      "--version"
+    ]
+  }
+}

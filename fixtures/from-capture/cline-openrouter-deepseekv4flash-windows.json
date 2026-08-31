@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "cline.cmd",
+      "--auto-approve",
+      "--provider=openrouter",
+      "--model=openrouter/deepseek-v4-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cline.cmd",
+      "--version"
+    ]
+  }
+}

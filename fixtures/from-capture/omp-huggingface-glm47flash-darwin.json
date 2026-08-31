@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Hugging Face",
+      "provider_name": "huggingface",
+      "provider_id": "huggingface",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Z.ai GLM 4.7 Flash",
+      "model_short_title": null,
+      "model_name": "glm-4.7-flash",
+      "model_id": "glm47flash",
+      "model_reciprocity": "open-weight",
+      "agent_id": "omp-huggingface-glm47flash",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: omp \u00b7 Z.ai GLM 4.7 Flash <omp-huggingface-glm47flash@local>"
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 Z.ai GLM 4.7 Flash <omp-huggingface-glm47flash@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 Z.ai GLM 4.7 Flash <omp-huggingface-glm47flash@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 95265,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://huggingface.co/docs/inference-providers"
+      ],
+      "model-urls": [
+        "https://huggingface.co/zai-org/GLM-4.7-Flash",
+        "https://huggingface.co/zai-org/GLM-4.7-Flash/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "huggingface/glm-4.7-flash"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "huggingface/glm-4.7-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432086,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "omp",
+      "--model",
+      "huggingface/zai-org/glm-4.7-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "omp",
+      "--version"
+    ]
+  }
+}

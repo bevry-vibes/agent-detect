@@ -1,0 +1,100 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Qwen Code",
+      "harness_short_title": null,
+      "harness_name": "qwen",
+      "harness_id": "qwen",
+      "harness_license": "Apache-2.0",
+      "provider_label": "xAI",
+      "provider_name": "xai",
+      "provider_id": "xai",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Grok 4.20",
+      "model_short_title": null,
+      "model_name": "grok-4.20",
+      "model_id": "grok420",
+      "model_reciprocity": "closed",
+      "agent_id": "qwen-xai-grok420",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: Qwen Code \u00b7 Grok 4.20 <qwen-xai-grok420@local>"
+    },
+    "trailer co-author": "Co-authored-by: Qwen Code \u00b7 Grok 4.20 <qwen-xai-grok420@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code \u00b7 Grok 4.20 <qwen-xai-grok420@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 89810,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/QwenLM/qwen-code",
+        "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "model-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "QWEN_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.qwen/settings.json",
+          "field": "model.name",
+          "value": "grok-4.20"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.qwen/settings.json",
+          "field": "modelProviders.openai[].baseUrl",
+          "value": "https://api.x.ai/v1"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786431712,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "qwen",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "qwen",
+      "--version"
+    ]
+  }
+}

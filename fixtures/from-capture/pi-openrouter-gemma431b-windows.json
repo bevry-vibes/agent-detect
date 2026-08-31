@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "pi.exe",
+      "--provider",
+      "openrouter",
+      "--model",
+      "google/gemma-4-31b-it:free",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "pi.exe",
+      "--version"
+    ]
+  }
+}

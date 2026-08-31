@@ -1,0 +1,99 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Alibaba",
+      "provider_name": "alibaba",
+      "provider_id": "alibaba",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "GLM 5.2",
+      "model_short_title": null,
+      "model_name": "glm-5.2",
+      "model_id": "glm52",
+      "model_reciprocity": "open-source",
+      "agent_id": "opencode-alibaba-glm52",
+      "reciprocal": false,
+      "trailer": "Co-authored-by: OpenCode \u00b7 GLM 5.2 <opencode-alibaba-glm52@local>"
+    },
+    "trailer co-author": "Co-authored-by: OpenCode \u00b7 GLM 5.2 <opencode-alibaba-glm52@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 GLM 5.2 <opencode-alibaba-glm52@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 99047,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://qwen.ai/",
+        "https://qwen.ai/legal"
+      ],
+      "model-urls": [
+        "https://huggingface.co/zai-org/GLM-5.2",
+        "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE",
+        "https://opensource.org/ai/open-source-ai-definition"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OPENCODE_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "alibaba/glm-5.2"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "OPENCODE_MODEL",
+          "value": "alibaba/glm-5.2"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1786432356,
+    "agent_detect_version": "2026.8.11-3",
+    "prompt_launch": [
+      "opencode",
+      "run",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "opencode",
+      "--version"
+    ]
+  }
+}

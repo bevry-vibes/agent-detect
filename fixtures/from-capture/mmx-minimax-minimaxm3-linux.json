@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "mmx",
+      "text",
+      "chat",
+      "--message",
+      "<prompt>",
+      "--non-interactive"
+    ],
+    "version_launch": [
+      "mmx",
+      "--version"
+    ]
+  }
+}

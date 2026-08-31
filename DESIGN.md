@@ -193,8 +193,9 @@ Store tables (semantics only — shapes in the schemas):
   provider's free model-id or `-`). Source of truth for free models.
 - The **reference grids** — `fixtures/.harnesses_providers.csv`
   (harness → provider cells) and `fixtures/.providers_models.csv`
-  (provider → model-id cells) — are load-bearing: a pair is feasible
-  iff its cell is present and not `-`. The feasible-unfixtured universe
+  (provider → model-id cells) — are load-bearing (a doctrine change:
+  they were hand-maintained, zig-unread): a pair is feasible iff its
+  cell is present and not `-`. The feasible-unfixtured universe
   (grid-filtered cross-product − fixtured) is the from-identity
   backlog universe, so impossible combos never become candidates and
   from-identity can never mint them.

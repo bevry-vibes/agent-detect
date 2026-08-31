@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "cline",
+      "--auto-approve",
+      "--provider=minimax",
+      "--model=minimax/minimax-m3",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cline",
+      "--version"
+    ]
+  }
+}

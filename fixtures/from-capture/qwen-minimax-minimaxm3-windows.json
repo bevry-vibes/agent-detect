@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "qwen.cmd",
+      "-p",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "qwen.cmd",
+      "--version"
+    ]
+  }
+}

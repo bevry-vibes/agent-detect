@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "prompt_launch": [
+      "cline",
+      "--auto-approve",
+      "--provider=cline-pass",
+      "--model=free/deepseek-v4-flash",
+      "<prompt>"
+    ],
+    "version_launch": [
+      "cline",
+      "--version"
+    ]
+  }
+}
