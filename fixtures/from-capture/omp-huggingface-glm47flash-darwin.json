@@ -85,7 +85,6 @@
   },
   "meta": {
     "updated_at": 1786432086,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "omp",
       "--model",
@@ -95,6 +94,7 @@
     "version_invocation": [
       "omp",
       "--version"
-    ]
+    ],
+    "harness_version": "18.0.11"
   }
 }

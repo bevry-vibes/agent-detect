@@ -86,7 +86,6 @@
   },
   "meta": {
     "updated_at": 1786431526,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "kimi",
       "-p",
@@ -95,6 +94,7 @@
     "version_invocation": [
       "kimi",
       "--version"
-    ]
+    ],
+    "harness_version": "0.39.1"
   }
 }

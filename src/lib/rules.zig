@@ -474,7 +474,7 @@ pub const rulesForProviders = [_]ProviderRule{
     // opt-in too, downgradable to never if a maintainer confirms it
     // open. opencode.ai/privacy and /terms return 404, so docs/zen
     // is the only policy doc. catalog (unauth, 33 ids, 2026-08-29)
-    // recorded in fixtures/providers-models.csv.
+    // recorded in fixtures/map-provider-model-providermodel.csv.
     .{ .name = "opencode-go", .label = "OpenCode Go", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{"https://opencode.ai/docs/zen"} },
     // groq: never/never — Groq is an inference-only LPU cloud; its
     // terms/privacy state customer data is not used for model training.
@@ -489,7 +489,7 @@ pub const rulesForProviders = [_]ProviderRule{
     // app content "is not used for model training". Catalog: 14 TEE-
     // stamped models via GET https://llm.chutes.ai/v1/models
     // (unauthenticated, 2026-08-29) — full spellings in
-    // fixtures/providers-models.csv; non-evergreen ids
+    // fixtures/map-provider-model-providermodel.csv; non-evergreen ids
     // (Qwen/Qwen3-32B-TEE, Qwen/Qwen3.6-27B-TEE) intentionally
     // unruled.
     .{ .name = "chutes", .label = "Chutes", .closed_training = "never", .open_training = "never", .sources = &.{ "https://chutes.ai/privacy", "https://chutes.ai/tos" } },

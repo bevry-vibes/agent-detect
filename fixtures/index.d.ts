@@ -21,10 +21,10 @@
  * optional as null.
  *
  * Note: the free axis is NOT a store table — membership is declared
- * by `fixtures/providers-freemodels.csv` (sparse provider×model grid
+ * by `fixtures/map-provider-model-freeprovidermodel.csv` (sparse provider×model grid
  * of free model-ids), which the zig program reads at expansion time.
- * Feasibility comes from `fixtures/harnesses-providers.csv` and
- * `fixtures/providers-models.csv` (the reference grids — a pair is
+ * Feasibility comes from `fixtures/map-harness-provider-harnessprovider.csv` and
+ * `fixtures/map-provider-model-providermodel.csv` (the reference grids — a pair is
  * feasible iff its cell is present and not `-`).
  *
  * All slug keys below are strict slugs: lowercase alphanumeric with
@@ -76,7 +76,7 @@ export interface StaleCriteria {
  * `--stale` plus an explicit `--stale-*` overwrites just that
  * component of the composite; with no staleness flag the full
  * composite is stamped. `free` membership comes from
- * `fixtures/providers-freemodels.csv`.
+ * `fixtures/map-provider-model-freeprovidermodel.csv`.
  */
 export interface QueueEntry extends StaleCriteria {
   harness?: HarnessSlug;
@@ -85,7 +85,7 @@ export interface QueueEntry extends StaleCriteria {
   /** Unset = every platform's daemon expands its own candidate. */
   platform?: Platform;
   mode: Mode;
-  /** true = members of providers-freemodels.csv; false = non-members. */
+  /** true = members of map-provider-model-freeprovidermodel.csv; false = non-members. */
   free?: boolean;
   /** pid of the enqueueing process (provenance lives here only). */
   runner: number;
@@ -154,7 +154,7 @@ export interface Invocations {
 
 /** The whole `fixtures/index.json` document. */
 export interface IndexStore {
-  store_version: 3;
+  store_version: 4;
   /** The filter-entry work queue (order = daemon scan order). */
   queue: QueueEntry[];
   /** The actionable gaps + failure memory (see Backlog). */

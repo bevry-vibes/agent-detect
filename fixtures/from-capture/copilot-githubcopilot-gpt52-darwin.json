@@ -83,7 +83,6 @@
   },
   "meta": {
     "updated_at": 1786432429,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "copilot",
       "-p",
@@ -95,6 +94,7 @@
     "version_invocation": [
       "copilot",
       "--version"
-    ]
+    ],
+    "harness_version": "1.0.82"
   }
 }

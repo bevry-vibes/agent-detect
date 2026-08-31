@@ -87,7 +87,6 @@
   },
   "meta": {
     "updated_at": 1786431483,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "cline",
       "--auto-approve",
@@ -98,6 +97,7 @@
     "version_invocation": [
       "cline",
       "--version"
-    ]
+    ],
+    "harness_version": "3.0.60"
   }
 }

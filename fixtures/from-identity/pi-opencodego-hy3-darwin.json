@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Hy3",
+      "model_short_title": null,
+      "model_name": "hy3",
+      "model_id": "hy3",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "pi-opencodego-hy3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi \u00b7 Hy3 <pi-opencodego-hy3@local>",
+    "trailer assisted-by": "Assisted-by: Pi \u00b7 Hy3 <pi-opencodego-hy3@local>"
+  },
+  "meta": {
+    "updated_at": 1788163729
+  }
+}

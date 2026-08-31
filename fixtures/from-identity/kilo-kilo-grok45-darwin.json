@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "Kilo",
+      "provider_name": "kilo",
+      "provider_id": "kilo",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Grok 4.5",
+      "model_short_title": null,
+      "model_name": "grok-4.5",
+      "model_id": "grok45",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "kilo-kilo-grok45",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 Grok 4.5 <kilo-kilo-grok45@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 Grok 4.5 <kilo-kilo-grok45@local>"
+  },
+  "meta": {
+    "updated_at": 1788163434
+  }
+}

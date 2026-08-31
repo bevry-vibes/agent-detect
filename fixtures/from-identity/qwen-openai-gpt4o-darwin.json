@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Qwen Code",
+      "harness_short_title": null,
+      "harness_name": "qwen",
+      "harness_id": "qwen",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenAI",
+      "provider_name": "openai",
+      "provider_id": "openai",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "GPT-4o",
+      "model_short_title": null,
+      "model_name": "gpt-4o",
+      "model_id": "gpt4o",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "qwen-openai-gpt4o",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Qwen Code \u00b7 GPT-4o <qwen-openai-gpt4o@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code \u00b7 GPT-4o <qwen-openai-gpt4o@local>"
+  },
+  "meta": {
+    "updated_at": 1788163767
+  }
+}

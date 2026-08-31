@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M2.7",
+      "model_short_title": "M2.7",
+      "model_name": "minimax-m2.7",
+      "model_id": "minimaxm27",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "kilo-minimax-minimaxm27",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 MiniMax M2.7 <kilo-minimax-minimaxm27@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 MiniMax M2.7 <kilo-minimax-minimaxm27@local>"
+  },
+  "meta": {
+    "updated_at": 1788163438
+  }
+}

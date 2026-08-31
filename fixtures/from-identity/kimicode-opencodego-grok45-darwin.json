@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Grok 4.5",
+      "model_short_title": null,
+      "model_name": "grok-4.5",
+      "model_id": "grok45",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "kimicode-opencodego-grok45",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 Grok 4.5 <kimicode-opencodego-grok45@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 Grok 4.5 <kimicode-opencodego-grok45@local>"
+  },
+  "meta": {
+    "updated_at": 1788163493
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3 Coder",
+      "model_short_title": null,
+      "model_name": "qwen3-coder",
+      "model_id": "qwen3coder",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "opencode-hyper-qwen3coder",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode \u00b7 Qwen3 Coder <opencode-hyper-qwen3coder@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 Qwen3 Coder <opencode-hyper-qwen3coder@local>"
+  },
+  "meta": {
+    "updated_at": 1788163672
+  }
+}

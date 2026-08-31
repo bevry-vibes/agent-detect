@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "ZenMux",
+      "provider_name": "zenmux",
+      "provider_id": "zenmux",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "omp-zenmux-deepseekv4flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 DeepSeek V4 Flash <omp-zenmux-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 DeepSeek V4 Flash <omp-zenmux-deepseekv4flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788163619
+  }
+}

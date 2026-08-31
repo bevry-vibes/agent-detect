@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Vibe",
+      "harness_short_title": null,
+      "harness_name": "vibe",
+      "harness_id": "vibe",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Mistral",
+      "provider_name": "mistral",
+      "provider_id": "mistral",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": "opt-out",
+      "model_label": "Mistral Small (latest)",
+      "model_short_title": null,
+      "model_name": "mistral-small-latest",
+      "model_id": "mistralsmalllatest",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "vibe-mistral-mistralsmalllatest",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Vibe \u00b7 Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>",
+    "trailer assisted-by": "Assisted-by: Vibe \u00b7 Mistral Small (latest) <vibe-mistral-mistralsmalllatest@local>"
+  },
+  "meta": {
+    "updated_at": 1788163787
+  }
+}

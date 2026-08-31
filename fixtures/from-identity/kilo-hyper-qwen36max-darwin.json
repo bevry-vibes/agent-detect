@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3.6-Max",
+      "model_short_title": null,
+      "model_name": "qwen3.6-max",
+      "model_id": "qwen36max",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "kilo-hyper-qwen36max",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 Qwen3.6-Max <kilo-hyper-qwen36max@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 Qwen3.6-Max <kilo-hyper-qwen36max@local>"
+  },
+  "meta": {
+    "updated_at": 1788163427
+  }
+}

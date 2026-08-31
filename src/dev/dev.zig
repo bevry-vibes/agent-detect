@@ -182,9 +182,9 @@ pub const dev = if (build_options.dev) struct {
         \\— written only on success, so a from-capture file always carries
         \\`outputs`; its meta records the invocation it ran under), each a
         \\`{ outputs, meta }` envelope — see fixtures/fixture.d.ts. The free
-        \\axis is sourced from fixtures/providers-freemodels.csv; feasibility
-        \\from fixtures/harnesses-providers.csv and
-        \\fixtures/providers-models.csv. Store writers take an exclusive lock
+        \\axis is sourced from fixtures/map-provider-model-freeprovidermodel.csv; feasibility
+        \\from fixtures/map-harness-provider-harnessprovider.csv and
+        \\fixtures/map-provider-model-providermodel.csv. Store writers take an exclusive lock
         \\on fixtures/index.json.lock and write atomically (temp + rename);
         \\each fixture file is owned exclusively by its channel's writer.
         \\
@@ -251,8 +251,8 @@ pub const dev = if (build_options.dev) struct {
         \\staleness (a queue entry carries a SET of criteria; a candidate is
         \\stale iff ANY carried criterion says stale; absent evidence ⇒ stale):
         \\  --stale                 the composite: output OR age 27 days OR
-        \\                    harness-version OR detect-version OR invocation —
-        \\                    the default when no staleness flag is given
+        \\                    harness-version OR invocation — the default when
+        \\                    no staleness flag is given
         \\  --stale-by-output      the two channel files' outputs.identify are not
         \\                    both present and deep-equal (missing = stale)
         \\  --stale-by-days=N      mode-scoped age of meta.updated_at, in days
@@ -261,8 +261,6 @@ pub const dev = if (build_options.dev) struct {
         \\                   when the file is still age-fresh
         \\  --stale-by-harness-version  meta.harness_version differs from a live
         \\                   version_invocation probe
-        \\  --stale-by-detect-version   meta.agent_detect_version is absent or
-        \\                   differs from this binary's version
         \\  --stale-by-invocation      the file's recorded invocation is missing
         \\                   or differs from the latest one in index.json
         \\  --refresh         carry NO criteria — every candidate is worked
@@ -276,7 +274,7 @@ pub const dev = if (build_options.dev) struct {
         \\                   now-actionable items against the current rule
         \\                   tables and grids; unresolvable /
         \\                   still-invocation-less items stay in the backlog
-        \\  --free / --paid   membership in providers-freemodels.csv
+        \\  --free / --paid   membership in map-provider-model-freeprovidermodel.csv
         \\
     ;
 
@@ -484,7 +482,7 @@ pub const dev = if (build_options.dev) struct {
     const INDEX_PATH = "fixtures/index.json";
     const INDEX_LOCK_PATH = "fixtures/index.json.lock";
     const INDEX_TMP_PATH = "fixtures/index.json.tmp";
-    const INDEX_STORE_VERSION: i64 = 3;
+    const INDEX_STORE_VERSION: i64 = 4;
     const INDEX_LOCK_BUDGET_MS: u64 = 5000;
     const INDEX_LOCK_RETRY_MS: u64 = 50;
 
@@ -635,7 +633,6 @@ pub const dev = if (build_options.dev) struct {
         stale_by_output: bool = false,
         stale_by_minutes: ?i64 = null,
         stale_by_harness_version: bool = false,
-        stale_by_detect_version: bool = false,
         stale_by_invocation: bool = false,
         free: ?bool = null,
         runner: i64 = 0,
@@ -650,31 +647,28 @@ pub const dev = if (build_options.dev) struct {
         output: bool = false,
         minutes: ?i64 = null,
         harness_version: bool = false,
-        detect_version: bool = false,
         invocation: bool = false,
 
         /// the `--stale` composite: output OR age 27 days OR
-        /// harness-version OR detect-version OR invocation. This is what
-        /// a queue upsert carries when no staleness flag is given — idle
-        /// re-queues only pick genuinely stale combos, and `--refresh`
-        /// is the one explicit opt back into full re-evaluation.
+        /// harness-version OR invocation. This is what a queue upsert
+        /// carries when no staleness flag is given — idle re-queues only
+        /// pick genuinely stale combos, and `--refresh` is the one
+        /// explicit opt back into full re-evaluation.
         pub const composite: StaleCriteria = .{
             .output = true,
             .minutes = 27 * 24 * 60,
             .harness_version = true,
-            .detect_version = true,
             .invocation = true,
         };
 
         pub fn isNone(self: StaleCriteria) bool {
             return !self.output and self.minutes == null and
-                !self.harness_version and !self.detect_version and !self.invocation;
+                !self.harness_version and !self.invocation;
         }
 
         pub fn eql(x: StaleCriteria, y: StaleCriteria) bool {
             return x.output == y.output and x.minutes == y.minutes and
-                x.harness_version == y.harness_version and x.detect_version == y.detect_version and
-                x.invocation == y.invocation;
+                x.harness_version == y.harness_version and x.invocation == y.invocation;
         }
     };
 
@@ -693,7 +687,6 @@ pub const dev = if (build_options.dev) struct {
         exists: bool = false,
         identify: ?std.json.Value = null,
         updated_at: ?i64 = null,
-        agent_detect_version: ?[]const u8 = null,
         harness_version: ?[]const u8 = null,
         prompt_invocation: ?[]const []const u8 = null,
         version_invocation: ?[]const []const u8 = null,
@@ -728,7 +721,6 @@ pub const dev = if (build_options.dev) struct {
             if (meta == .object) {
                 const mo = meta.object;
                 cf.updated_at = jint(mo, "updated_at");
-                cf.agent_detect_version = jstr(mo, "agent_detect_version");
                 cf.harness_version = jstr(mo, "harness_version");
                 cf.prompt_invocation = stringArrayFromValue(a, mo.get("prompt_invocation"));
                 cf.version_invocation = stringArrayFromValue(a, mo.get("version_invocation"));
@@ -785,8 +777,8 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// the feasibility grids — the reference CSVs become load-bearing:
-    /// `harnesses-providers.csv` (harness → provider cells) and
-    /// `providers-models.csv` (provider → model-id cells). A pair is
+    /// `map-harness-provider-harnessprovider.csv` (harness → provider cells) and
+    /// `map-provider-model-providermodel.csv` (provider → model-id cells). A pair is
     /// feasible iff its cell is present and not `-`; feasible-unfixtured
     /// combos are the from-identity backlog universe (impossible combos
     /// never become candidates). A missing file loads as the empty set.
@@ -827,8 +819,8 @@ pub const dev = if (build_options.dev) struct {
         /// the model-id — not read here).
         pub fn load(io: std.Io, a: std.mem.Allocator) !FeasibilityGrids {
             var self = empty(a);
-            try loadPairGrid(io, a, "fixtures/harnesses-providers.csv", &self.harness_provider);
-            try loadPairGrid(io, a, "fixtures/providers-models.csv", &self.provider_model);
+            try loadPairGrid(io, a, "fixtures/map-harness-provider-harnessprovider.csv", &self.harness_provider);
+            try loadPairGrid(io, a, "fixtures/map-provider-model-providermodel.csv", &self.provider_model);
             return self;
         }
     };
@@ -1152,21 +1144,32 @@ pub const dev = if (build_options.dev) struct {
         if (e.model) |v| try o.object.put(a, "model", .{ .string = v });
         if (e.platform) |v| try o.object.put(a, "platform", .{ .string = v });
         try o.object.put(a, "mode", .{ .string = e.mode });
-        if (e.stale_by_output) try o.object.put(a, "stale_by_output", .{ .bool = true });
-        if (e.stale_by_minutes) |v| try o.object.put(a, "stale_by_minutes", .{ .integer = v });
-        if (e.stale_by_harness_version) try o.object.put(a, "stale_by_harness_version", .{ .bool = true });
-        if (e.stale_by_detect_version) try o.object.put(a, "stale_by_detect_version", .{ .bool = true });
-        if (e.stale_by_invocation) try o.object.put(a, "stale_by_invocation", .{ .bool = true });
+        const crit = StaleCriteria{
+            .output = e.stale_by_output,
+            .minutes = e.stale_by_minutes,
+            .harness_version = e.stale_by_harness_version,
+            .invocation = e.stale_by_invocation,
+        };
+        if (crit.eql(StaleCriteria.composite)) {
+            // shorthand: the full composite stores as `stale: true`
+            try o.object.put(a, "stale", .{ .bool = true });
+        } else {
+            if (e.stale_by_output) try o.object.put(a, "stale_by_output", .{ .bool = true });
+            if (e.stale_by_minutes) |v| try o.object.put(a, "stale_by_minutes", .{ .integer = v });
+            if (e.stale_by_harness_version) try o.object.put(a, "stale_by_harness_version", .{ .bool = true });
+            if (e.stale_by_invocation) try o.object.put(a, "stale_by_invocation", .{ .bool = true });
+        }
         if (e.free) |v| try o.object.put(a, "free", .{ .bool = v });
-        try o.object.put(a, "runner", .{ .integer = e.runner });
+        // runner last — provenance trails the work-defining fields
         if (e.started_at) |v| try o.object.put(a, "started_at", .{ .integer = v });
+        try o.object.put(a, "runner", .{ .integer = e.runner });
         return o;
     }
 
     fn queueEntryFromValue(v: std.json.Value) !QueueEntry {
         if (v != .object) return error.IndexStoreError;
         const o = v.object;
-        return .{
+        var out = QueueEntry{
             .harness = jstr(o, "harness"),
             .provider = jstr(o, "provider"),
             .model = jstr(o, "model"),
@@ -1175,12 +1178,19 @@ pub const dev = if (build_options.dev) struct {
             .stale_by_output = jbool(o, "stale_by_output") orelse false,
             .stale_by_minutes = jint(o, "stale_by_minutes"),
             .stale_by_harness_version = jbool(o, "stale_by_harness_version") orelse false,
-            .stale_by_detect_version = jbool(o, "stale_by_detect_version") orelse false,
             .stale_by_invocation = jbool(o, "stale_by_invocation") orelse false,
             .free = jbool(o, "free"),
             .runner = sjint(o, "runner"),
             .started_at = jint(o, "started_at"),
         };
+        // shorthand: `stale: true` expands to the full composite
+        if (jbool(o, "stale") orelse false) {
+            out.stale_by_output = StaleCriteria.composite.output;
+            out.stale_by_minutes = StaleCriteria.composite.minutes;
+            out.stale_by_harness_version = StaleCriteria.composite.harness_version;
+            out.stale_by_invocation = StaleCriteria.composite.invocation;
+        }
+        return out;
     }
 
     /// the shared validator — single source of truth for valid queue
@@ -1207,7 +1217,6 @@ pub const dev = if (build_options.dev) struct {
             x.stale_by_output == y.stale_by_output and
             x.stale_by_minutes == y.stale_by_minutes and
             x.stale_by_harness_version == y.stale_by_harness_version and
-            x.stale_by_detect_version == y.stale_by_detect_version and
             x.stale_by_invocation == y.stale_by_invocation and
             x.free == y.free;
     }
@@ -1243,7 +1252,6 @@ pub const dev = if (build_options.dev) struct {
                 .output = true,
                 .minutes = minutes orelse StaleCriteria.composite.minutes,
                 .harness_version = true,
-                .detect_version = true,
                 .invocation = true,
             };
         }
@@ -1251,7 +1259,6 @@ pub const dev = if (build_options.dev) struct {
             .output = f.stale_by_output,
             .minutes = minutes,
             .harness_version = f.stale_by_harness_version,
-            .detect_version = f.stale_by_detect_version,
             .invocation = f.stale_by_invocation,
         };
         if (!explicit.isNone()) return explicit;
@@ -1274,7 +1281,6 @@ pub const dev = if (build_options.dev) struct {
         if ((e.stale_by_minutes == null) != (exp.minutes == null)) return false;
         if (e.stale_by_minutes != null and e.stale_by_minutes.? != exp.minutes.?) return false;
         if (e.stale_by_harness_version != exp.harness_version) return false;
-        if (e.stale_by_detect_version != exp.detect_version) return false;
         if (e.stale_by_invocation != exp.invocation) return false;
         if (f.free != null and e.free != f.free) return false;
         return true;
@@ -1496,7 +1502,7 @@ pub const dev = if (build_options.dev) struct {
     /// `version_invocation` probe).
     fn entryStale(io: std.Io, a: std.mem.Allocator, entry: QueueEntry, cf: ?ChannelFile, tinv: ?Invocation) !bool {
         const carried = entry.stale_by_output or entry.stale_by_minutes != null or
-            entry.stale_by_harness_version or entry.stale_by_detect_version or entry.stale_by_invocation;
+            entry.stale_by_harness_version or entry.stale_by_invocation;
         if (!carried) return true; // --refresh: everything is worked
         const file = cf orelse return true; // absent evidence ⇒ stale
         if (entry.stale_by_output) {
@@ -1530,10 +1536,6 @@ pub const dev = if (build_options.dev) struct {
                 }
             }
             if (!fresh) return true;
-        }
-        if (entry.stale_by_detect_version) {
-            const v = file.agent_detect_version orelse return true;
-            if (!std.mem.eql(u8, v, build_options.version)) return true;
         }
         if (entry.stale_by_invocation and std.mem.eql(u8, entry.mode, "from-capture")) {
             // stale iff the file's recorded invocation is missing or
@@ -1616,7 +1618,7 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// Free-model membership, sourced from
-    /// `fixtures/providers-freemodels.csv` — the source of truth for
+    /// `fixtures/map-provider-model-freeprovidermodel.csv` — the source of truth for
     /// free models (replacing the
     /// legacy `free_provider_to_model` store table, which is dropped at
     /// load and never re-serialized). Sparse grid: header
@@ -1643,7 +1645,7 @@ pub const dev = if (build_options.dev) struct {
 
         pub fn load(io: std.Io, a: std.mem.Allocator) !FreeGrid {
             var self = empty(a);
-            const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/providers-freemodels.csv", a, @enumFromInt(1 << 20)) catch return self;
+            const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/map-provider-model-freeprovidermodel.csv", a, @enumFromInt(1 << 20)) catch return self;
             var lines = std.mem.tokenizeScalar(u8, data, '\n');
             const header = lines.next() orelse return self;
             var cols = std.mem.tokenizeScalar(u8, header, ',');
@@ -1882,7 +1884,6 @@ pub const dev = if (build_options.dev) struct {
         stale_by_hours: ?i64 = null,
         stale_by_minutes: ?i64 = null,
         stale_by_harness_version: bool = false,
-        stale_by_detect_version: bool = false,
         stale_by_invocation: bool = false,
         refresh: bool = false,
         /// (queue only) pop the backlog and re-queue actionable items;
@@ -1932,8 +1933,7 @@ pub const dev = if (build_options.dev) struct {
             (f.stale_by_hours orelse 0) < 0 or
             (f.stale_by_minutes orelse 0) < 0) return FilterError.ConflictingFilters;
         if (f.refresh and (f.stale or f.stale_by_output or age_scopes > 0 or
-            f.stale_by_harness_version or f.stale_by_detect_version or
-            f.stale_by_invocation)) return FilterError.ConflictingFilters;
+            f.stale_by_harness_version or f.stale_by_invocation)) return FilterError.ConflictingFilters;
     }
 
     /// parse the shared filter flags from argv (expects argv0, "fixtures",
@@ -1981,8 +1981,6 @@ pub const dev = if (build_options.dev) struct {
                 f.stale_by_invocation = true;
             } else if (std.mem.eql(u8, arg, "--stale-by-harness-version")) {
                 f.stale_by_harness_version = true;
-            } else if (std.mem.eql(u8, arg, "--stale-by-detect-version")) {
-                f.stale_by_detect_version = true;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-days=")) {
                 f.stale_by_days = std.fmt.parseInt(i64, arg["--stale-by-days=".len..], 10) catch return FilterError.InvalidThreshold;
             } else if (std.mem.startsWith(u8, arg, "--stale-by-hours=")) {
@@ -2069,7 +2067,6 @@ pub const dev = if (build_options.dev) struct {
             @as(usize, @intFromBool(f.stale_by_hours != null)) +
             @as(usize, @intFromBool(f.stale_by_minutes != null)) +
             @as(usize, @intFromBool(f.stale_by_harness_version)) +
-            @as(usize, @intFromBool(f.stale_by_detect_version)) +
             @as(usize, @intFromBool(f.stale_by_invocation)) +
             @as(usize, @intFromBool(f.refresh)) +
             @as(usize, @intFromBool(f.repair));
@@ -2225,7 +2222,6 @@ pub const dev = if (build_options.dev) struct {
         // meta — the invocation of record persists; the ledger stamps fresh.
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
-        try meta.object.put(a, "agent_detect_version", .{ .string = build_options.version });
         if (hver) |v| try meta.object.put(a, "harness_version", .{ .string = v });
         if (rec_prompt) |pl| try meta.object.put(a, "prompt_invocation", stringListValue(a, pl));
         if (rec_version) |vl| try meta.object.put(a, "version_invocation", stringListValue(a, vl));
@@ -2291,7 +2287,6 @@ pub const dev = if (build_options.dev) struct {
                 .stale_by_output = crit.output,
                 .stale_by_minutes = crit.minutes,
                 .stale_by_harness_version = crit.harness_version,
-                .stale_by_detect_version = crit.detect_version,
                 .stale_by_invocation = crit.invocation,
                 .free = f.free,
                 .runner = getParentPid(),
@@ -2432,7 +2427,6 @@ pub const dev = if (build_options.dev) struct {
                     .stale_by_output = crit.output,
                     .stale_by_minutes = crit.minutes,
                     .stale_by_harness_version = crit.harness_version,
-                    .stale_by_detect_version = crit.detect_version,
                     .stale_by_invocation = crit.invocation,
                     .free = f.free,
                     .runner = getParentPid(),
@@ -2473,7 +2467,6 @@ pub const dev = if (build_options.dev) struct {
                     .stale_by_output = crit.output,
                     .stale_by_minutes = crit.minutes,
                     .stale_by_harness_version = crit.harness_version,
-                    .stale_by_detect_version = crit.detect_version,
                     .stale_by_invocation = crit.invocation,
                     .free = f.free,
                     .runner = getParentPid(),
@@ -2499,7 +2492,6 @@ pub const dev = if (build_options.dev) struct {
             .stale_by_output = crit.output,
             .stale_by_minutes = crit.minutes,
             .stale_by_harness_version = crit.harness_version,
-            .stale_by_detect_version = crit.detect_version,
             .stale_by_invocation = crit.invocation,
             .free = f.free,
             .runner = getParentPid(),
@@ -2580,7 +2572,6 @@ pub const dev = if (build_options.dev) struct {
             .stale_by_output = StaleCriteria.composite.output,
             .stale_by_minutes = StaleCriteria.composite.minutes,
             .stale_by_harness_version = StaleCriteria.composite.harness_version,
-            .stale_by_detect_version = StaleCriteria.composite.detect_version,
             .stale_by_invocation = StaleCriteria.composite.invocation,
         };
         var stale_id: usize = 0;
@@ -2651,11 +2642,13 @@ pub const dev = if (build_options.dev) struct {
     }
 
     /// post-check for a captured fixture: parse the from-capture file,
-    /// verify combo-match — `outputs.identify`'s harness/provider/model
-    /// ids equal the queued dims. Returns false on any failure (the
-    /// caller records known_but_failed; the committed file is left
-    /// intact).
-    fn postCheckComboFixture(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !bool {
+    /// verify it was written during THIS attempt (`updated_at` ≥
+    /// `attempt_started` — a pre-existing file the session never touched
+    /// is not a capture) and combo-match — `outputs.identify`'s
+    /// harness/provider/model ids equal the queued dims. Returns false on
+    /// any failure (the caller records known_but_failed; the committed
+    /// file is left intact).
+    fn postCheckComboFixture(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8, attempt_started: i64) !bool {
         const f_id = (try fixtureIdFrom(a, h, p, m, plat)) orelse return false;
         const cf = try loadChannelFile(io, a, CAPTURE_DIR, f_id);
         const identify = cf.identify orelse {
@@ -2664,6 +2657,12 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             return false;
         };
+        if (cf.updated_at == null or cf.updated_at.? < attempt_started) {
+            daemonWriteErr(io, "daemon: post-check: the session did not write a fresh capture (file predates the attempt): ");
+            daemonWriteErr(io, f_id);
+            daemonWriteErr(io, "\n");
+            return false;
+        }
         const cob = identify.object;
         const ch_id = sjstr(cob, "harness_id");
         const cp = sjstr(cob, "provider_id");
@@ -2703,7 +2702,7 @@ pub const dev = if (build_options.dev) struct {
     /// `from-identity` worker: resolve the combo via `resolveRecipe`
     /// (recipe-mode, no detection, zero tokens, no harness required),
     /// assemble the from-identity file (`outputs` = identify + both
-    /// trailer variants; `meta` = updated_at + agent_detect_version),
+    /// trailer variants; `meta` = updated_at),
     /// and write it whole (atomically). Declared, not observed.
     /// Failures land in known_but_failed and damp this daemon session;
     /// a success clears the combo's known_but_failed entry.
@@ -2743,7 +2742,6 @@ pub const dev = if (build_options.dev) struct {
         try outputs.object.put(a, "trailer assisted-by", optStringValue(a, ab));
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
-        try meta.object.put(a, "agent_detect_version", .{ .string = build_options.version });
         var root: std.json.Value = .{ .object = .empty };
         try root.object.put(a, "outputs", outputs);
         try root.object.put(a, "meta", meta);
@@ -2780,6 +2778,7 @@ pub const dev = if (build_options.dev) struct {
     /// combo's known_but_failed entry. Token-consuming — user-confirmed
     /// only.
     fn runOneComboCapture(a: std.mem.Allocator, io: std.Io, init: std.process.Init, damped: *std.StringHashMap(void), fixture_id: []const u8, timeout_seconds: u64) !bool {
+        const attempt_started = unixNow(io);
         const parts = try splitFixtureId(a, fixture_id);
         const h = parts[0];
         const p = parts[1];
@@ -2917,7 +2916,7 @@ pub const dev = if (build_options.dev) struct {
                     damped.put(fixture_id, {}) catch {};
                     return false;
                 }
-                if (!(try postCheckComboFixture(a, io, h, p, m_d, plat))) {
+                if (!(try postCheckComboFixture(a, io, h, p, m_d, plat, attempt_started))) {
                     // the worker already wrote its file; the combo mismatch
                     // is a failure of the queued dims, not the session.
                     try recordKnownButFailed(io, a, fixture_id, "post-check mismatch", init.environ_map);
@@ -2990,13 +2989,21 @@ pub const dev = if (build_options.dev) struct {
                     i += 1;
                     continue;
                 }
-                // first work: stamp started_at, then re-expand with the
-                // completion-timestamp done rule live.
-                entry.started_at = unixNow(io);
-                q.items[i] = try queueEntryValue(a, entry);
-                const exp2 = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped);
-                if (exp2.host_candidates.len > 0) {
-                    pick = .{ .queue_index = i, .candidate = exp2.host_candidates[0], .entry = entry };
+                if (entry.started_at == null) {
+                    // first work: stamp started_at (ONCE — re-stamping every
+                    // poll would defeat the done rule and loop on this
+                    // entry's first candidate forever), then re-expand with
+                    // the completion-timestamp done rule live.
+                    entry.started_at = unixNow(io);
+                    q.items[i] = try queueEntryValue(a, entry);
+                    const exp2 = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped);
+                    if (exp2.host_candidates.len > 0) {
+                        pick = .{ .queue_index = i, .candidate = exp2.host_candidates[0], .entry = entry };
+                    }
+                } else {
+                    // already started — exp already applied the done rule
+                    // against the stored started_at.
+                    pick = .{ .queue_index = i, .candidate = exp.host_candidates[0], .entry = entry };
                 }
                 dirty = true;
                 break;

@@ -83,7 +83,6 @@
   },
   "meta": {
     "updated_at": 1786432410,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "cursor-agent",
       "-p",
@@ -94,6 +93,7 @@
     "version_invocation": [
       "cursor-agent",
       "--version"
-    ]
+    ],
+    "harness_version": "2026.08.25-3e8eec8"
   }
 }

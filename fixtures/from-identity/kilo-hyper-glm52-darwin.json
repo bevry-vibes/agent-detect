@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "GLM 5.2",
+      "model_short_title": null,
+      "model_name": "glm-5.2",
+      "model_id": "glm52",
+      "model_reciprocity": "open-source",
+      "model_license": "MIT",
+      "agent_id": "kilo-hyper-glm52",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 GLM 5.2 <kilo-hyper-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 GLM 5.2 <kilo-hyper-glm52@local>"
+  },
+  "meta": {
+    "updated_at": 1788163419
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Pro",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-pro",
+      "model_id": "deepseekv4pro",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "cline-deepseek-deepseekv4pro",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline \u00b7 DeepSeek V4 Pro <cline-deepseek-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: Cline \u00b7 DeepSeek V4 Pro <cline-deepseek-deepseekv4pro@local>"
+  },
+  "meta": {
+    "updated_at": 1788163345
+  }
+}

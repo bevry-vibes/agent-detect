@@ -57,7 +57,6 @@
   },
   "meta": {
     "updated_at": 1786441340,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "kilo",
       "run",
@@ -67,6 +66,7 @@
     "version_invocation": [
       "kilo",
       "--version"
-    ]
+    ],
+    "harness_version": "7.5.6"
   }
 }

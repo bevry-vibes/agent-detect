@@ -58,7 +58,7 @@ const Universe = struct {
         const h = it.next().?;
         const p = it.next().?;
         const m = it.next().?;
-        const body = try std.fmt.bufPrint(&buf, "{{\"outputs\":{{\"identify\":{{\"harness_id\":\"{s}\",\"provider_id\":\"{s}\",\"model_id\":\"{s}\"}},\"trailer co-author\":\"Co-authored-by: x\",\"trailer assisted-by\":\"Assisted-by: x\"}},\"meta\":{{\"updated_at\":{d},\"agent_detect_version\":\"test-version\"}}}}", .{ h, p, m, updated_at });
+        const body = try std.fmt.bufPrint(&buf, "{{\"outputs\":{{\"identify\":{{\"harness_id\":\"{s}\",\"provider_id\":\"{s}\",\"model_id\":\"{s}\"}},\"trailer co-author\":\"Co-authored-by: x\",\"trailer assisted-by\":\"Assisted-by: x\"}},\"meta\":{{\"updated_at\":{d}}}}}", .{ h, p, m, updated_at });
         try write("from-identity", stem, body);
     }
 
@@ -68,7 +68,7 @@ const Universe = struct {
         var buf: [1024]u8 = undefined;
         var meta: std.ArrayList(u8) = .empty;
         if (updated_at) |t| {
-            try meta.appendSlice(testing.allocator, try std.fmt.bufPrint(&buf, "\"updated_at\":{d},\"agent_detect_version\":\"test-version\",\"harness_version\":\"1.2.3\"", .{t}));
+            try meta.appendSlice(testing.allocator, try std.fmt.bufPrint(&buf, "\"updated_at\":{d},\"harness_version\":\"1.2.3\"", .{t}));
         }
         if (with_argv) {
             if (meta.items.len > 0) try meta.append(testing.allocator, ',');
@@ -119,17 +119,16 @@ test "stampCriteria: no flags → the full --stale composite" {
     try testing.expect(crit.output);
     try testing.expectEqual(dev.StaleCriteria.composite.minutes.?, crit.minutes.?);
     try testing.expect(crit.harness_version);
-    try testing.expect(crit.detect_version);
     try testing.expect(crit.invocation);
     try testing.expectEqual(@as(i64, 27 * 24 * 60), crit.minutes.?);
 }
 
 test "stampCriteria: any explicit --stale-* forms the set alone" {
-    const crit = dev.stampCriteria(.{ .stale_by_detect_version = true });
+    const crit = dev.stampCriteria(.{ .stale_by_invocation = true });
     try testing.expect(!crit.output);
     try testing.expect(crit.minutes == null);
     try testing.expect(!crit.harness_version);
-    try testing.expect(crit.detect_version);
+    try testing.expect(crit.invocation);
 }
 
 test "stampCriteria: --stale plus an explicit flag overwrites just that component" {
@@ -137,14 +136,14 @@ test "stampCriteria: --stale plus an explicit flag overwrites just that componen
     try testing.expect(crit.output);
     try testing.expectEqual(@as(i64, 0), crit.minutes.?);
     try testing.expect(crit.harness_version);
-    try testing.expect(crit.detect_version);
+    try testing.expect(crit.invocation);
 }
 
 test "stampCriteria: --stale-by-days=999999999 effectively disables the age component" {
     const crit = dev.stampCriteria(.{ .stale = true, .stale_by_days = 999999999 });
     try testing.expect(crit.output);
     try testing.expect(crit.harness_version);
-    try testing.expect(crit.detect_version);
+    try testing.expect(crit.invocation);
 }
 
 test "stampCriteria: --refresh carries no criteria" {
@@ -155,7 +154,6 @@ test "stampCriteria: --refresh carries no criteria" {
 test "validateFilters: the conflict matrix" {
     // --refresh conflicts with --stale and every --stale-*
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale = true }));
-    try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_detect_version = true }));
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_invocation = true }));
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_output = true }));
     try testing.expectError(error.ConflictingFilters, dev.validateFilters(.{ .refresh = true, .stale_by_minutes = 30 }));
@@ -189,7 +187,7 @@ test "queueUpsertPure: re-assert replaces the tuple in place and resets started_
     try dev.queueUpsertPure(aa, &root, second);
     // a different tuple (different criteria) appends — a re-assert must
     // repeat the SAME flag set or it lands as a second entry.
-    const other: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_minutes = 7, .stale_by_detect_version = true };
+    const other: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_minutes = 7, .stale_by_invocation = true };
     try dev.queueUpsertPure(aa, &root, other);
     const queue = root.object.get("queue").?;
     try testing.expectEqual(@as(usize, 2), queue.array.items.len);
@@ -458,7 +456,7 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     try testing.expectEqual(@as(usize, 0), cap.host_candidates.len);
 }
 
-test "expandEntry: free axis filters by providers-freemodels.csv membership (FreeGrid)" {
+test "expandEntry: free axis filters by map-provider-model-freeprovidermodel.csv membership (FreeGrid)" {
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;
@@ -500,7 +498,7 @@ test "expandEntry: session damping — failed candidates are excluded" {
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
 }
 
-test "expandEntry: stale_by_harness_version + stale_by_detect_version read the capture meta" {
+test "expandEntry: stale_by_harness_version reads the capture meta + probe" {
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;
@@ -514,9 +512,6 @@ test "expandEntry: stale_by_harness_version + stale_by_detect_version read the c
 
     const hv = try expand(aa, &root, .{ .mode = "from-capture", .stale_by_harness_version = true }, "darwin");
     try testing.expectEqual(@as(usize, 1), hv.host_candidates.len);
-    // detect-version: meta says "test-version", this binary differs ⇒ stale
-    const dv = try expand(aa, &root, .{ .mode = "from-capture", .stale_by_detect_version = true }, "darwin");
-    try testing.expectEqual(@as(usize, 1), dv.host_candidates.len);
 }
 
 // ---------------------------------------------------------------------------
@@ -566,9 +561,9 @@ test "refreshBacklogPure: unknown dims union in; resolved dims removed; unknown_
 // ---------------------------------------------------------------------------
 
 test "dequeueMatches: bare filter matches the composite entry; --refresh matches criteria-less" {
-    const composite_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_output = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_detect_version = true, .stale_by_invocation = true };
+    const composite_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_output = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_invocation = true };
     const refresh_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity" };
-    const explicit_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_detect_version = true };
+    const explicit_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_invocation = true };
 
     // a bare dequeue filter stamps the composite → matches the bare upsert
     try testing.expect(dev.dequeueMatches(.{ .harness = "kilo" }, composite_entry));
@@ -577,10 +572,10 @@ test "dequeueMatches: bare filter matches the composite entry; --refresh matches
     try testing.expect(dev.dequeueMatches(.{ .harness = "kilo", .refresh = true }, refresh_entry));
     try testing.expect(!dev.dequeueMatches(.{ .harness = "kilo", .refresh = true }, composite_entry));
     // explicit flags match entries carrying exactly those criteria
-    try testing.expect(dev.dequeueMatches(.{ .harness = "kilo", .stale_by_detect_version = true }, explicit_entry));
-    try testing.expect(!dev.dequeueMatches(.{ .harness = "kilo", .stale_by_detect_version = true }, composite_entry));
+    try testing.expect(dev.dequeueMatches(.{ .harness = "kilo", .stale_by_invocation = true }, explicit_entry));
+    try testing.expect(!dev.dequeueMatches(.{ .harness = "kilo", .stale_by_invocation = true }, composite_entry));
     // dims constrain
     try testing.expect(!dev.dequeueMatches(.{ .harness = "cline" }, composite_entry));
     // free matches when set
-    try testing.expect(dev.dequeueMatches(.{ .harness = "kilo", .free = true }, .{ .harness = "kilo", .mode = "from-identity", .free = true, .stale_by_output = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_detect_version = true, .stale_by_invocation = true }));
+    try testing.expect(dev.dequeueMatches(.{ .harness = "kilo", .free = true }, .{ .harness = "kilo", .mode = "from-identity", .free = true, .stale_by_output = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_invocation = true }));
 }

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Sakana AI",
+      "provider_name": "sakana",
+      "provider_id": "sakana",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Fugu Ultra v1.1",
+      "model_short_title": null,
+      "model_name": "fugu-ultra-v1.1",
+      "model_id": "fuguultrav11",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "omp-sakana-fuguultrav11",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp \u00b7 Fugu Ultra v1.1 <omp-sakana-fuguultrav11@local>",
+    "trailer assisted-by": "Assisted-by: omp \u00b7 Fugu Ultra v1.1 <omp-sakana-fuguultrav11@local>"
+  },
+  "meta": {
+    "updated_at": 1788163614
+  }
+}

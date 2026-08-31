@@ -204,18 +204,22 @@ Store tables (semantics only — shapes in the schemas):
   re-queue after fixing the cause; clearing an entry by hand is always
   safe.
 
-- The free axis lives in **`fixtures/providers-freemodels.csv`** — a
+- The free axis lives in **`fixtures/map-provider-model-freeprovidermodel.csv`** — a
   sparse provider×model grid (rows only for providers with ≥1 free
   model, columns only for models free somewhere, cell = the
   provider's free model-id or `-`). Source of truth for free models.
-- The **reference grids** — `fixtures/harnesses-providers.csv`
-  (harness → provider cells) and `fixtures/providers-models.csv`
+- The **reference grids** — `fixtures/map-harness-provider-harnessprovider.csv`
+  (harness → provider cells) and `fixtures/map-provider-model-providermodel.csv`
   (provider → model-id cells) — are load-bearing (a doctrine change:
   they were hand-maintained, zig-unread): a pair is feasible iff its
   cell is present and not `-`. The feasible-unfixtured universe
   (grid-filtered cross-product − fixtured) is the from-identity
   backlog universe, so impossible combos never become candidates and
-  from-identity can never mint them.
+  from-identity can never mint them. Because they are load-bearing,
+  the grids are **probed and refreshed before any large daemon batch**
+  — the runbook lives in CONTRIBUTING.md "probing the grids before a
+  daemon batch" (providers per harness, then models per
+  harness-provider pair, both zero-token local probes).
 
 Store writers take an exclusive lock on `fixtures/index.json.lock` (a
 gitignored lock file; kernel locks release on exit/crash — no
@@ -479,8 +483,8 @@ names the shipped behavior and why it was chosen.
    writer version, and the invocation of record (`prompt_invocation`/
    `version_invocation`) — not Zig); the free and feasibility axes live
    in grid CSVs
-   (`providers-freemodels.csv`, `harnesses-providers.csv`,
-   `providers-models.csv`).
+   (`map-provider-model-freeprovidermodel.csv`, `map-harness-provider-harnessprovider.csv`,
+   `map-provider-model-providermodel.csv`).
 4. **Kilo live-DB fallback.** Live identity inference falls back
    env marker → `KILO_MODEL` → a direct read of the live
    `~/.local/share/kilo/kilo.db`. The *active* session is the
@@ -539,7 +543,7 @@ names the shipped behavior and why it was chosen.
      it, never merely because it fell out of the set (an added dim is
      something someone is using agent-detect for). Observed-but-unadded
      provider catalog ids are recorded in the
-     `fixtures/providers-models.csv` reference grid.
+     `fixtures/map-provider-model-providermodel.csv` reference grid.
      The tracked set is regenerated from OpenRouter alone (one
      authenticated call, see below) as part of maintenance; it is not
      maintained by hand and there is no CI task for it.

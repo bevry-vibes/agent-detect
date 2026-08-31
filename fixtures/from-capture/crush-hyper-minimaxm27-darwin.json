@@ -86,7 +86,6 @@
   },
   "meta": {
     "updated_at": 1786432244,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "crush",
       "run",
@@ -95,6 +94,7 @@
     "version_invocation": [
       "crush",
       "--version"
-    ]
+    ],
+    "harness_version": "0.91.2"
   }
 }

@@ -86,7 +86,6 @@
   },
   "meta": {
     "updated_at": 1786432170,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "reasonix",
       "run",
@@ -97,6 +96,7 @@
     "version_invocation": [
       "reasonix",
       "--version"
-    ]
+    ],
+    "harness_version": "1.34.0"
   }
 }

@@ -85,7 +85,6 @@
   },
   "meta": {
     "updated_at": 1786432271,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "opencode",
       "run",
@@ -94,6 +93,7 @@
     "version_invocation": [
       "opencode",
       "--version"
-    ]
+    ],
+    "harness_version": "1.18.25"
   }
 }

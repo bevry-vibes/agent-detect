@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Qwen3.8 Flash",
+      "model_short_title": null,
+      "model_name": "qwen3.8-flash",
+      "model_id": "qwen38flash",
+      "model_reciprocity": null,
+      "model_license": null,
+      "agent_id": "kimicode-opencodego-qwen38flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code \u00b7 Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code \u00b7 Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788163512
+  }
+}

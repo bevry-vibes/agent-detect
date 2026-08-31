@@ -20,8 +20,8 @@
       "agent_id": "pi-opencodego-glm53flash",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi · GLM 5.3 Flash <pi-opencodego-glm53flash@local>",
-    "trailer assisted-by": "Assisted-by: Pi · GLM 5.3 Flash <pi-opencodego-glm53flash@local>",
+    "trailer co-author": "Co-authored-by: Pi \u00b7 GLM 5.3 Flash <pi-opencodego-glm53flash@local>",
+    "trailer assisted-by": "Assisted-by: Pi \u00b7 GLM 5.3 Flash <pi-opencodego-glm53flash@local>",
     "raw": {
       "platform_id": "darwin",
       "harness_version": null,
@@ -87,7 +87,6 @@
     }
   },
   "meta": {
-    "updated_at": 1788159655,
-    "agent_detect_version": "2026.8.11-3"
+    "updated_at": 1788159655
   }
 }

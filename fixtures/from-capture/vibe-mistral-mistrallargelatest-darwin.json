@@ -84,7 +84,6 @@
   },
   "meta": {
     "updated_at": 1786432372,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "vibe",
       "--prompt",
@@ -93,6 +92,7 @@
     "version_invocation": [
       "vibe",
       "--version"
-    ]
+    ],
+    "harness_version": "2.24.5"
   }
 }

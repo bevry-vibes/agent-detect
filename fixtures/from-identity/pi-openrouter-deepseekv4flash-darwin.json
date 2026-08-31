@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "pi-openrouter-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi \u00b7 DeepSeek V4 Flash <pi-openrouter-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Pi \u00b7 DeepSeek V4 Flash <pi-openrouter-deepseekv4flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788163751
+  }
+}

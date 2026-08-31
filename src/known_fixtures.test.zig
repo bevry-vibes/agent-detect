@@ -184,10 +184,9 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
             if (std.mem.eql(u8, folder, identity_dir)) {
                 // from-identity outputs are exactly identify + trailers
                 try testing.expectEqual(@as(usize, 3), oo.count());
-                // meta: updated_at + agent_detect_version, nothing else
-                try testing.expectEqual(@as(usize, 2), mo.count());
+                // meta is exactly updated_at
+                try testing.expectEqual(@as(usize, 1), mo.count());
                 try testing.expect(mo.get("updated_at") != null);
-                try testing.expect(mo.get("agent_detect_version") != null);
             } else {
                 // from-capture outputs may additionally carry raw
                 for (oo.keys()) |k| {
@@ -198,11 +197,9 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                     std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
                     return error.UnexpectedOutputKey;
                 }
-                // meta: updated_at + agent_detect_version (+ optional
-                // harness_version and the invocation of record —
-                // null-as-absent)
+                // meta: updated_at (+ optional harness_version and the
+                // invocation of record — null-as-absent)
                 try testing.expect(mo.get("updated_at") != null);
-                try testing.expect(mo.get("agent_detect_version") != null);
             }
         }
     }
@@ -588,7 +585,7 @@ test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host pla
     }
 }
 
-test "index.json: store_version is 3 and the tables are exactly queue + backlog + invocations" {
+test "index.json: store_version is 4 and the tables are exactly queue + backlog + invocations" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const root = try readIndexParsed(arena.allocator());
@@ -601,7 +598,7 @@ test "index.json: store_version is 3 and the tables are exactly queue + backlog 
         return error.UnexpectedStoreKey;
     }
     const sv = root.object.get("store_version").?;
-    try testing.expectEqual(@as(i64, 3), sv.integer);
+    try testing.expectEqual(@as(i64, 4), sv.integer);
 }
 
 test "index.json: backlog sets are unique sorted slug/id string arrays" {
@@ -692,7 +689,7 @@ test "index.json: queue entries match their field invariants" {
         {
             return error.InvalidQueueMode;
         }
-        for ([_][]const u8{ "stale_by_output", "stale_by_harness_version", "stale_by_detect_version", "stale_by_invocation", "free" }) |flag| {
+        for ([_][]const u8{ "stale_by_output", "stale_by_minutes", "stale_by_harness_version", "stale_by_invocation", "stale", "free" }) |flag| {
             const v = o.get(flag) orelse continue;
             if (v != .bool) return error.InvalidQueueFlag;
         }
@@ -829,7 +826,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     }
 }
 
-test "providers_freemodels.csv: free-grid entries resolve to known rules, stay sparse, and curated capture files carry a free-signal in their launch model spec" {
+test "map-provider-model-freeprovidermodel.csv: free-grid entries resolve to known rules, stay sparse, and curated capture files carry a free-signal in their launch model spec" {
     // The grid is the free-axis source of truth: rows only for providers
     // with ≥1 free model, columns only for models free somewhere, cells
     // the provider's free model-id or `-`. Every fixtured (provider,
@@ -839,8 +836,8 @@ test "providers_freemodels.csv: free-grid entries resolve to known rules, stay s
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/providers-freemodels.csv", a, @enumFromInt(1 << 20)) catch {
-        std.debug.print("fixtures/providers-freemodels.csv is missing — it is the free-axis source of truth\n", .{});
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/map-provider-model-freeprovidermodel.csv", a, @enumFromInt(1 << 20)) catch {
+        std.debug.print("fixtures/map-provider-model-freeprovidermodel.csv is missing — it is the free-axis source of truth\n", .{});
         return error.MissingFreeGrid;
     };
     var lines = std.mem.tokenizeScalar(u8, data, '\n');

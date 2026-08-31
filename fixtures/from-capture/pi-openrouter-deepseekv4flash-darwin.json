@@ -84,7 +84,6 @@
   },
   "meta": {
     "updated_at": 1786431587,
-    "agent_detect_version": "2026.8.11-3",
     "prompt_invocation": [
       "pi",
       "--provider",
@@ -97,6 +96,7 @@
     "version_invocation": [
       "pi",
       "--version"
-    ]
+    ],
+    "harness_version": "0.84.4"
   }
 }

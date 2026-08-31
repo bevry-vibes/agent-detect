@@ -1,0 +1,105 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Goose",
+      "harness_short_title": null,
+      "harness_name": "goose",
+      "harness_id": "goose",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "goose-opencodego-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Goose \u00b7 DeepSeek V4 Flash <goose-opencodego-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Goose \u00b7 DeepSeek V4 Flash <goose-opencodego-deepseekv4flash@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "harness_version": "1.48.0",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 11083,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 11082,
+          "name": "bash"
+        },
+        {
+          "pid": 10997,
+          "name": "goose"
+        },
+        {
+          "pid": 10822,
+          "name": "agent-detect-dev"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/block/goose",
+        "https://github.com/block/goose/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://opencode.ai/docs/zen"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "goose",
+          "value": "goose"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.config/goose/config.yaml",
+          "field": "active_provider",
+          "value": "opencode_go"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.config/goose/config.yaml",
+          "field": "providers.opencode_go.model",
+          "value": "deepseek-v4-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788165366,
+    "harness_version": "1.48.0",
+    "prompt_invocation": [
+      "goose",
+      "run",
+      "-t",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "goose",
+      "--version"
+    ]
+  }
+}

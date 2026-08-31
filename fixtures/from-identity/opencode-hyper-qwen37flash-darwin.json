@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3.7-Flash",
+      "model_short_title": null,
+      "model_name": "qwen3.7-flash",
+      "model_id": "qwen37flash",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "opencode-hyper-qwen37flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode \u00b7 Qwen3.7-Flash <opencode-hyper-qwen37flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 Qwen3.7-Flash <opencode-hyper-qwen37flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788163668
+  }
+}

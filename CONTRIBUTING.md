@@ -122,10 +122,10 @@ evidence ⇒ stale:
 - `--refresh` — carry NO criteria: every candidate is worked regardless
   of freshness. Conflicts with `--stale` and every `--stale-*` (exit 3).
 - `--free` / `--paid` — membership in the free-models grid
-  `fixtures/providers-freemodels.csv` (the source of truth for free
+  `fixtures/map-provider-model-freeprovidermodel.csv` (the source of truth for free
   models; the zig store code reads this grid at expansion time, along
-  with the feasibility grids `harnesses-providers.csv` and
-  `providers-models.csv`).
+  with the feasibility grids `map-harness-provider-harnessprovider.csv` and
+  `map-provider-model-providermodel.csv`).
 
 Dequeue defaulting mirrors queue: a bare dims-only dequeue matches
 exactly the entry a bare upsert created (the composite); `--refresh`
@@ -310,7 +310,45 @@ Keep only models suitable for coding — the evergreen set's
 tool-calling constraint (`supported_parameters` contains `tools`) is
 the documented filter.
 
-### probing scope + runbook
+### probing the grids before a daemon batch (dev agent runbook)
+
+The grids define the feasible universe — everything the daemon will
+declare and capture. Stale grids send the daemon at dead combos (or
+miss new ones), so **refresh both grids before queueing a large
+batch**. Both probes are zero-token local work:
+
+1. **Providers per harness** → `map-harness-provider-harnessprovider.csv`
+   (one row per harness; a non-`-` cell means the harness can reach
+   that provider). For each harness rule's binary, enumerate its
+   provider catalog with the harness's own discovery surface — e.g.
+   `pi auth list` / `pi --list-providers`, `omp`'s per-provider
+   `models.db`, `opencode`'s config, `kimi`/`cline`/`crush` config
+   files, `goose config`, `qwen`/`copilot`/`cursor-agent` auth state.
+   Record every provider the harness can actually reach on this host
+   AND the providers documented by the harness itself (a provider the
+   harness supports but this host has no account for is still
+   feasible — the capture failure is the account signal, not a
+   feasibility signal). Remove cells for providers the harness no
+   longer supports (e.g. an extension was uninstalled).
+2. **Models per harness-provider pair** →
+   `map-provider-model-providermodel.csv` (cell = that provider's
+   served model-id string, as the harness spells it). For each
+   (harness, provider) pair from step 1, enumerate the model catalog —
+   `pi --provider <p> --list-models`, the harness's models command, or
+   its config/catalog files. The cell must be the exact string the
+   invocation's `--model`/config expects (the capture post-check pins
+   the combo, so a wrong spelling surfaces as a known_but_failed
+   mismatch).
+3. **Cross-check** the free axis (`map-provider-model-freeprovidermodel.csv`)
+   against the refreshed model catalog (free ids still free; new free
+   ids added), and the evergreen snapshots (see below).
+4. **Commit the grids, then** queue the batch (`fixtures queue`) and
+   start the daemon. `fixtures status` before and after: the
+   feasible-unfixtured total is the batch size you are about to create.
+
+Harness catalog commands drift between versions — verify each
+harness's discovery surface against `--help` before trusting a
+scripted probe, and prefer the harness's own output over web catalogs.
 
 The maintainer probes the free combos + the MiniMax subscription:
 
@@ -345,7 +383,7 @@ provider whose addition made it supported no longer offers it, never
 merely because it fell out of the evergreen set (someone is using
 agent-detect for the added dim). Observed-but-unadded ids (the
 non-evergreen remainder of a provider catalog) are recorded in
-`fixtures/providers-models.csv`. Free-vs-paid only
+`fixtures/map-provider-model-providermodel.csv`. Free-vs-paid only
 decides whether a free launch/capture is attached — query the
 harness's own model catalog first (e.g. omp's
 `~/.omp/agent/models.db` per-provider `cost`: input==0 → free);
@@ -383,12 +421,12 @@ and the feasible-unfixtured universe (grid cross-product minus the
 fixtured stems) is what from-identity can declare — so keep them in
 sync with the fixture universe (append the provider's row alongside
 each catalog enumeration; `fixtures status` + the migration audit flag
-drift): `fixtures/providers-models.csv` (rows = provider alphanumeric
+drift): `fixtures/map-provider-model-providermodel.csv` (rows = provider alphanumeric
 ids, columns = model alphanumeric ids, cell = that provider's served
-model-id string or `-`) and `fixtures/harnesses-providers.csv`
+model-id string or `-`) and `fixtures/map-harness-provider-harnessprovider.csv`
 (rows = harness ids, columns = provider ids, cell = the harness's
 provider-id string or `-`). The third is the free axis:
-`fixtures/providers-freemodels.csv` — the SOURCE OF TRUTH for free
+`fixtures/map-provider-model-freeprovidermodel.csv` — the SOURCE OF TRUTH for free
 models (replacing the retired `free_provider_to_model` store table).
 It is SPARSE: rows only for providers with ≥1 free model, columns
 only for models that are free at some provider, cell = that
@@ -524,8 +562,8 @@ After adding the rule:
 2. Declare the rule's combos — the feasible-unfixtured universe (the
    grid-filtered cross-product minus the fixtured stems) expands
    automatically once the harness/provider/model pairs are feasible per
-   the reference grids (`harnesses-providers.csv` /
-   `providers-models.csv` — add the cells if the pairs are new):
+   the reference grids (`map-harness-provider-harnessprovider.csv` /
+   `map-provider-model-providermodel.csv` — add the cells if the pairs are new):
    ```sh
    ./zig-out/bin/agent-detect-dev fixtures queue --harness=<harness_id> --from-identity
    ./zig-out/bin/agent-detect-dev fixtures daemon
@@ -621,7 +659,7 @@ open-source models that train → `open_training` becomes at least
 `opt-in`. Values already at `opt-out` or `enforced` capture training
 and need no change. `never` is reserved for providers where **no**
 served model trains. When cataloging a new provider, audit its
-`providers-models.csv` row for tier spellings (`:free`, `-free`,
+`map-provider-model-providermodel.csv` row for tier spellings (`:free`, `-free`,
 `-contributor`, free-period exceptions named in its policy docs)
 before writing any `never` — this is exactly the slip that made
 OpenRouter's contributor tiers and OpenCode's free-period models
