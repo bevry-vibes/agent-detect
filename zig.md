@@ -52,8 +52,8 @@ with `zig 0.16.0`.
 - **`std.json.Stringify.valueAlloc(a, value, .{ .whitespace =
   .indent_2 })`** — deterministic pretty serialization. std.json
   **preserves object key insertion order** on parse, so
-  re-serializing a parsed object reproduces canonical bytes — this is
-  what makes BLAKE3 generation hashes comparable across writers.
+  re-serializing a parsed object reproduces canonical bytes — which is
+  what keeps committed-store diffs stable across writers.
 - **Doc comments (`///`) must immediately precede a declaration.**
   A stray `///` where a statement is expected ("expected statement,
   found 'a document comment'") usually means the comment got orphaned
@@ -93,13 +93,11 @@ with `zig 0.16.0`.
 - `@intFromBool`, `@as(usize, ...)`, `@intCast` — the usual coercions;
   optional fields read as `row.x.?` after a `!= null` guard.
 - The index.json store: `std.json.Value` trees, loaded with
-  `std.json.parseFromSlice` (std.json **preserves object key insertion
-  order** on parse, so re-serializing a parsed object reproduces
-  canonical bytes — this is what makes the BLAKE3 `fixture_hash` /
-  `channel_hash` comparable across writers) and written with
+  `std.json.parseFromSlice` and written with
   `std.json.Stringify.valueAlloc(a, value, .{ .whitespace =
   .indent_2 })`. Hand-editing `fixtures/index.json` is fine — the
-  tests re-verify the hashes (`zig build test`).
+  shape tests re-verify it (`zig build test`); the fixture-file
+  envelope tests scan the per-channel folders.
 - Windows process control uses direct `pub extern "kernel32"` declarations
   (`GetProcessId`, `OpenProcess`, `TerminateProcess`, `CloseHandle`) at
   the top of `src/lib/core.zig` — dev aliases them via `core.*`.

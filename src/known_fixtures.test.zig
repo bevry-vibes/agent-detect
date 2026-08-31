@@ -728,7 +728,7 @@ test "index.json: queue entries match their field invariants" {
         {
             return error.InvalidQueueMode;
         }
-        for ([_][]const u8{ "stale_by_output_drift", "stale_by_harness_version", "stale_by_detect_version", "free" }) |flag| {
+        for ([_][]const u8{ "stale_by_output", "stale_by_harness_version", "stale_by_detect_version", "stale_by_invocation", "free" }) |flag| {
             const v = o.get(flag) orelse continue;
             if (v != .bool) return error.InvalidQueueFlag;
         }
@@ -871,7 +871,7 @@ test "providers_freemodels.csv: free-grid entries resolve to known rules, stay s
     // with ≥1 free model, columns only for models free somewhere, cells
     // the provider's free model-id or `-`. Every fixtured (provider,
     // model) row that is free-listed must carry a free signal (`:free`,
-    // `-free`, `free/`) in its meta.prompt_launch model spec — files
+    // `-free`, `free/`) in its meta.prompt_invocation model spec — files
     // whose launch implies the model via harness config are exempt.
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
@@ -945,7 +945,7 @@ test "providers_freemodels.csv: free-grid entries resolve to known rules, stay s
                     }
                 }
                 if (has_model_spec and !has_free_signal) {
-                    std.debug.print("fixture {s} is free-listed but its meta.prompt_launch carries no free signal\n", .{stem});
+                    std.debug.print("fixture {s} is free-listed but its meta.prompt_invocation carries no free signal\n", .{stem});
                     return error.MissingFreeSignal;
                 }
             }

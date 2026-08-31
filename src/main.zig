@@ -114,8 +114,8 @@ const devUsage = if (dev_build)
         \\                    adaptive pacing; pause/resume/stop via fixtures/daemon.ctl
         \\  fixtures capture  capture the current session into fixtures/<id>.json
         \\                    (daemon-spawned, or run by hand inside a harness session)
-        \\  fixtures queue    upsert queue rows [scope flags] [--from-identity|--from-capture]
-        \\  fixtures dequeue  DELETE matching queue rows [--from-identity|--from-capture]
+        \\  fixtures queue    upsert queue entries [staleness] [filters] [--repair]
+        \\  fixtures dequeue  DELETE matching queue entries [staleness] [filters]
         \\  fixtures status   print the derived snapshot (fixtured counts, backlog,
         \\                    feasible-unfixtured totals, stale/fresh breakdowns)
         \\  fixtures prompt   print the capture prompt (what a harness session

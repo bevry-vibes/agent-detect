@@ -37,11 +37,11 @@
       ],
       "process_lineage": [
         {
-          "pid": 27136,
+          "pid": 1196,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 27124,
+          "pid": 1194,
           "name": "bash"
         },
         {
@@ -87,7 +87,7 @@
     }
   },
   "meta": {
-    "updated_at": 1788155902,
+    "updated_at": 1788159655,
     "agent_detect_version": "2026.8.11-3"
   }
 }

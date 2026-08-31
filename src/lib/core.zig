@@ -1863,8 +1863,8 @@ pub fn computeReciprocal(d: *const Detection) bool {
 /// - `buildRaw` — the shapeless raw observations object (dev binary
 ///   only), whose top-level keys identify source evidence.
 /// The released binary's `identify` action serializes `buildCooked` at
-/// the root; the dev binary's fixture format embeds channel objects
-/// (`from-identity` / `from-capture` / `from-capture-raw`).
+/// the root; the dev binary's fixture files embed it as `outputs.identify`
+/// alongside the trailer variants and (for captures) the raw block.
 /// Extract the user's home directory once so we can redact it from
 /// every emitted string — fixtures must be portable across machines.
 /// `home` is empty when neither USERPROFILE nor HOME is set, in which

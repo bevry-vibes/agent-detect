@@ -464,9 +464,10 @@ names the shipped behavior and why it was chosen.
    `fixtures/from-*/*.json` is a real capture (or a rule-derived recipe
    report), never an assembly.
 2. **Queue entries are filters, never work items.** A `queue` entry
-   means "re-evaluate every known row matching my dims/markers/axes",
-   not "fill missing combos" — the daemon expands the entry into its
-   candidate set and works one per poll. Only the daemon expands.
+   means "re-evaluate every candidate matching my dims and staleness
+   criteria", not "fill missing combos" — the daemon expands the entry
+   into its candidate set and works one per poll. Only the daemon
+   expands.
 3. **index.json via Zig-native locks, not sqlite.** The single committed
    `fixtures/index.json` gives cross-process coordination (an exclusive
    lock on a lock file + temp/rename atomic writes) and

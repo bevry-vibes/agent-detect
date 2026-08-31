@@ -239,10 +239,10 @@ test "backlogUnionPure: idempotent union, sorted unique; backlogRemovePure remov
     try testing.expectEqualStrings("alpha", items[0]);
     try testing.expectEqualStrings("mid", items[1]);
     try testing.expectEqualStrings("zeta", items[2]);
-    dev.backlogRemovePure(&root, "unknown_harnesses", "mid");
+    dev.backlogRemovePure(aa, &root, "unknown_harnesses", "mid");
     const after = try dev.backlogItems(aa, &root, "unknown_harnesses");
     try testing.expectEqual(@as(usize, 2), after.len);
-    dev.backlogRemovePure(&root, "unknown_harnesses", "absent"); // no-op
+    dev.backlogRemovePure(aa, &root, "unknown_harnesses", "absent"); // no-op
 }
 
 test "knownButFailedPutPure: redacts home paths + key-shaped strings, truncates; clear removes" {
@@ -359,7 +359,7 @@ test "expandEntry: staleness — age-fresh skips, age-stale lists; absent eviden
     try testing.expectEqual(@as(usize, 1), stub.host_candidates.len);
 }
 
-test "expandEntry: --stale-by-output-drift — both channels present and equal ⇒ fresh; missing channel ⇒ stale" {
+test "expandEntry: --stale-by-output — both channels present and equal ⇒ fresh; missing channel ⇒ stale" {
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;

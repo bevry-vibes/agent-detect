@@ -105,7 +105,6 @@ const rulesForModels = rules.rulesForModels;
 const canonicalIdFor = rules.canonicalIdFor;
 const canonicalFilterDim = rules.canonicalFilterDim;
 const envValueAllowed = rules.envValueAllowed;
-const slugId = rules.slugId;
 
 /// optional tee target for daemon output; set by `fixtures daemon --write-log`.
 var daemon_log_file: ?std.Io.File = null;
@@ -261,7 +260,7 @@ pub const dev = if (build_options.dev) struct {
         \\  --stale-by-minutes=N   ditto, in minutes — the daemon skips only
         \\                   when the file is still age-fresh
         \\  --stale-by-harness-version  meta.harness_version differs from a live
-        \\                   version_launch probe
+        \\                   version_invocation probe
         \\  --stale-by-detect-version   meta.agent_detect_version is absent or
         \\                   differs from this binary's version
         \\  --stale-by-invocation      the file's recorded invocation is missing
@@ -275,8 +274,8 @@ pub const dev = if (build_options.dev) struct {
         \\other:
         \\  --repair          (queue only) pop the backlog and re-queue the
         \\                   now-actionable items against the current rule
-        \\                   tables and grids; unresolvable / still-uncurated
-        \\                   items stay in the backlog
+        \\                   tables and grids; unresolvable /
+        \\                   still-invocation-less items stay in the backlog
         \\  --free / --paid   membership in providers-freemodels.csv
         \\
     ;
@@ -916,13 +915,15 @@ pub const dev = if (build_options.dev) struct {
 
     /// remove one item from a backlog set (no-op when absent). Mutates
     /// through `getPtr` — a by-value copy would dangle (see zig.md).
-    pub fn backlogRemovePure(root: *std.json.Value, set: []const u8, item: []const u8) void {
+    /// `a` should be the store's arena: the replacement array lives as
+    /// long as the store tree.
+    pub fn backlogRemovePure(a: std.mem.Allocator, root: *std.json.Value, set: []const u8, item: []const u8) void {
         if (root.* != .object) return;
         const bl = root.object.getPtr("backlog") orelse return;
         if (bl.* != .object) return;
         const arr_v = bl.object.getPtr(set) orelse return;
         if (arr_v.* != .array) return;
-        var kept: std.json.Array = std.json.Array.init(std.heap.page_allocator);
+        var kept: std.json.Array = std.json.Array.init(a);
         for (arr_v.array.items) |entry| {
             if (entry == .string and std.mem.eql(u8, entry.string, item)) continue;
             kept.append(entry) catch return;
@@ -1134,7 +1135,7 @@ pub const dev = if (build_options.dev) struct {
                         break :blk cf.prompt_invocation != null or inv_table.contains(item);
                     },
                 };
-                if (resolved) backlogRemovePure(root, set, item);
+                if (resolved) backlogRemovePure(a, root, set, item);
             }
         }
     }
@@ -1577,32 +1578,6 @@ pub const dev = if (build_options.dev) struct {
         entry: QueueEntry,
     };
 
-    /// the field-set updates a fixture-row writer may apply (capture /
-    /// identity channel writes, and the missing-entry registration pass).
-    pub const FixtureUpdate = union(enum) {
-        capture: struct {
-            runner: i64,
-            agent_detect_version: ?[]const u8,
-            captured_at: i64,
-            channel_hash: []const u8,
-            harness_version: ?[]const u8,
-            fixture_hash: []const u8,
-        },
-        identity: struct {
-            runner: i64,
-            agent_detect_version: ?[]const u8,
-            declared_at: i64,
-            channel_hash: []const u8,
-            fixture_hash: []const u8,
-        },
-        registration: struct {
-            runner: i64,
-            fixture_hash: []const u8,
-            identity_channel_hash: ?[]const u8,
-            capture_channel_hash: ?[]const u8,
-        },
-    };
-
     /// bool field; missing/non-bool → null.
     fn jbool(o: std.json.ObjectMap, key: []const u8) ?bool {
         const v = o.get(key) orelse return null;
@@ -1624,11 +1599,6 @@ pub const dev = if (build_options.dev) struct {
     /// int field; missing/non-int → 0.
     fn sjint(o: std.json.ObjectMap, key: []const u8) i64 {
         return jint(o, key) orelse 0;
-    }
-
-    fn optBoolValue(v: ?bool) std.json.Value {
-        if (v) |b| return .{ .bool = b };
-        return .null;
     }
 
     fn optStrEq(x: ?[]const u8, y: ?[]const u8) bool {
@@ -1741,14 +1711,6 @@ pub const dev = if (build_options.dev) struct {
         return list.toOwnedSlice(a);
     }
 
-    /// Compose an `agent_id` (h-p-m) from the three dims.
-    /// Returns null when any dim is missing (never a fabricated partial
-    /// id). Used for fixture naming and messaging only — never stored.
-    fn agentIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !?[]u8 {
-        if (h.len == 0 or p.len == 0 or m.len == 0) return null;
-        return @as(?[]u8, try joinId(a, "-", &.{ h, p, m }));
-    }
-
     /// Compose a `fixture_id` (h-p-m-platform) from the four
     /// dims. Returns null when any dim is missing (never a fabricated
     /// partial id). Used for fixture naming and messaging only — never
@@ -1812,7 +1774,7 @@ pub const dev = if (build_options.dev) struct {
         return term == .exited and term.exited == 0;
     }
 
-    /// run the row's `version_launch` and return the first version token
+    /// run an invocation's `version_invocation` and return the first version token
     /// its stdout yields, or null when it doesn't run or no token
     /// matches. Zero-token: version calls invoke the harness binary
     /// directly, they never touch a model API.
@@ -2457,7 +2419,7 @@ pub const dev = if (build_options.dev) struct {
                     daemonWriteErr(io, "\n");
                     continue;
                 }
-                backlogRemovePure(&root, spec.set, slug);
+                backlogRemovePure(a, &root, spec.set, slug);
                 var dims: [3]?[]const u8 = .{
                     if (f.harness.len > 0) f.harness else null,
                     if (f.provider.len > 0) f.provider else null,
@@ -2504,7 +2466,7 @@ pub const dev = if (build_options.dev) struct {
                     daemonWriteErr(io, " still has no invocation — left in backlog unknown_invocations\n");
                     continue;
                 }
-                backlogRemovePure(&root, "unknown_invocations", id);
+                backlogRemovePure(a, &root, "unknown_invocations", id);
                 try queueUpsertPure(a, &root, .{
                     .harness = if (cf.valid_stem) cf.harness else null,
                     .provider = if (cf.valid_stem) cf.provider else null,
@@ -2848,13 +2810,13 @@ pub const dev = if (build_options.dev) struct {
         };
         // availability probe via the same source's version_invocation
         // (absent ⇒ the probe fails closed → unavailable).
-        const version_launch: ?[]const []const u8 = blk: {
+        const version_invocation: ?[]const []const u8 = blk: {
             if (tinv) |ti| {
                 if (ti.version) |v| break :blk v;
             }
             break :blk cf.version_invocation;
         };
-        const vl_probe = version_launch orelse {
+        const vl_probe = version_invocation orelse {
             daemonWriteErr(io, "daemon: from-capture: harness unavailable for ");
             daemonWriteErr(io, fixture_id);
             daemonWriteErr(io, " — no version_invocation\n");
@@ -2992,12 +2954,14 @@ pub const dev = if (build_options.dev) struct {
         const lock_file = try acquireIndexLock(io);
         defer lock_file.close(io);
         var root = try indexLoad(io, a);
+        const backlog_before = try std.json.Stringify.valueAlloc(a, root.object.get("backlog") orelse std.json.Value{ .object = .empty }, .{});
         try refreshBacklogPure(io, a, &root);
+        const backlog_after = try std.json.Stringify.valueAlloc(a, root.object.get("backlog") orelse std.json.Value{ .object = .empty }, .{});
         const free_grid = try FreeGrid.load(io, a);
         const grids = try FeasibilityGrids.load(io, a);
         const q = try getOrPutArray(a, &root, "queue");
         const host = platformId();
-        var dirty = false;
+        var dirty = !std.mem.eql(u8, backlog_before, backlog_after);
         var pick: ?DaemonPick = null;
         for ([_][]const u8{ "from-identity", "from-capture" }) |want_mode| {
             var i: usize = 0;
