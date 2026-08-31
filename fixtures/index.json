@@ -3089,14 +3089,6 @@
     "unknown_models": [],
     "unknown_invocations": [],
     "known_but_failed": {
-      "cline-chutes-qwen3627btee-darwin": "post-check mismatch",
-      "kimicode-chutes-qwen3627btee-darwin": "post-check mismatch",
-      "cline-chutes-qwen332btee-darwin": "post-check mismatch",
-      "kimicode-chutes-qwen332btee-darwin": "post-check mismatch",
-      "opencode-chutes-qwen332btee-darwin": "post-check mismatch",
-      "opencode-chutes-qwen3627btee-darwin": "post-check mismatch",
-      "pi-chutes-qwen332btee-darwin": "post-check mismatch",
-      "pi-chutes-qwen3627btee-darwin": "post-check mismatch",
       "cline-clinepass-kimik3-darwin": "capture failed (exit 1):  dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 1d 17h, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
       "cline-minimax-minimaxm3-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
       "cline-openrouter-deepseekv4flash-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m No cookie auth credentials found\n",
@@ -3108,7 +3100,9 @@
       "crush-hyper-deepseekv4flash-darwin": "post-check mismatch",
       "crush-hyper-deepseekv4pro-darwin": "post-check mismatch",
       "crush-hyper-glm52-darwin": "post-check mismatch",
-      "crush-hyper-kimik25-darwin": "post-check mismatch"
+      "crush-hyper-kimik25-darwin": "post-check mismatch",
+      "crush-hyper-kimik27code-darwin": "post-check mismatch",
+      "crush-hyper-kimik3-darwin": "post-check mismatch"
     }
   },
   "invocations": {

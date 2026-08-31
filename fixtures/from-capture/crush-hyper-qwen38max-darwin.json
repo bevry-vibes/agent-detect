@@ -37,11 +37,11 @@
       ],
       "process_lineage": [
         {
-          "pid": 90160,
+          "pid": 92801,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 89057,
+          "pid": 92551,
           "name": "crush"
         },
         {
@@ -87,7 +87,7 @@
     }
   },
   "meta": {
-    "updated_at": 1788171049,
+    "updated_at": 1788171246,
     "harness_version": "0.91.2",
     "prompt_invocation": [
       "crush",
