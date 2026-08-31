@@ -48,3 +48,7 @@ Prompts verbatim, in order, untruncated.
 11.
 
 > put agent_detect_version before the captured_at/declared_at
+
+12.
+
+> rename declared_at and captured_at to just be updated_at, and put it before agent_detect_version - the prior distinct names was only necessary when they were in the same file

@@ -19,8 +19,8 @@ duplicated by, the fixture files themselves*:
 
 | Row property | Duplicates / mirrors | Verdict |
 |---|---|---|
-| `identity.declared_at` | the existence of the declared channel — the channel WAS the declaration | move into the identity file's `meta` |
-| `capture.captured_at` | ditto for the captured channel | move into the capture file's `meta` |
+| `identity.declared_at` | the existence of the declared channel — the channel WAS the declaration | move into the identity file's `meta`, renamed `updated_at` (distinct names were only needed while the channels shared one file) |
+| `capture.captured_at` | ditto for the captured channel | move into the capture file's `meta`, renamed `updated_at` (same reason) |
 | `capture.harness_version` | already emitted in the raw block's `harness_version` | move into the capture file's `meta` (raw keeps its "not yet knowable" null) |
 | `agent_detect_version` | per-writer provenance; nothing else records it | move into each file's `meta` — the version that wrote THAT channel (more precise than the row's last-writer-wins single field) |
 | `runner` (writer pid) | provenance of a dead process; git history covers attribution | **dropped from fixture files**; persists only on queue entries (`QueueEntry.runner` unchanged) |
@@ -88,8 +88,8 @@ tokens; recipe-mode detection against the rule tables).
     "trailer assisted-by": "Assisted-by: Pi · GLM 5.3 Flash <…>"
   },
   "meta": {
-    "agent_detect_version": "2026.8.11-3",   // the version that declared it
-    "declared_at": 1788143986               // was identity.declared_at
+    "updated_at": 1788143986,               // was identity.declared_at
+    "agent_detect_version": "2026.8.11-3"   // the version that declared it
   }
 }
 ```
@@ -110,8 +110,8 @@ or the daemon's from-capture worker.
                 own "not yet knowable" harness_version */ }
   },
   "meta": {
+    "updated_at": 1788143986,               // was capture.captured_at
     "agent_detect_version": "2026.8.11-3",
-    "captured_at": 1788143986,              // was capture.captured_at
     "harness_version": "0.84.4",            // was capture.harness_version
     "prompt_launch": ["pi","--provider","chutes","--model","moonshotai/Kimi-K3-TEE","-p","<prompt>"],
     "version_launch": ["pi","--version"]
@@ -135,7 +135,7 @@ nothing behind: launch argv now lives with the artifact it launches.
 Writer rule for `meta` on capture: the worker reads the file it is
 about to replace, preserves any `meta.prompt_launch` /
 `meta.version_launch` it finds (they are the curation of record),
-and stamps `agent_detect_version`, then `captured_at` /
+and stamps `updated_at` / `agent_detect_version` /
 `harness_version`, fresh. A capture that runs with no curated argv
 (hand-run `fixtures capture`, as in tonight's pi-opencodego fixture)
 writes `meta` without the launch fields.
@@ -202,7 +202,7 @@ curated rows against this policy and minimizes offenders.
 | `--stale-by-missing-fixture` | **dropped** — the store no longer references files |
 | `--stale-by-fixture-hash` | **dropped** — hash gone |
 | `--stale-by-channel-hash` | **replaced** by `--stale-by-channel-drift`: stale iff the two channel files' `outputs.identify` objects are not both present and deep-equal (a missing channel file counts stale, same semantics as the old `channelHashDivergent`) |
-| `--stale-by-minutes` / `--stale-by-hours` / `--stale-by-days` | kept — mode-scoped: `from-identity/<id>.json.meta.declared_at` for from-identity, `from-capture/<id>.json.meta.captured_at` for from-capture |
+| `--stale-by-minutes` / `--stale-by-hours` / `--stale-by-days` | kept — mode-scoped: `from-identity/<id>.json.meta.updated_at` for from-identity, `from-capture/<id>.json.meta.updated_at` for from-capture |
 | `--stale-by-harness-version` | kept — `from-capture/<id>.json.meta.harness_version` vs the live `version_launch` probe |
 | `--stale-by-detect-version` | kept — the channel file's `meta.agent_detect_version` vs this binary's version |
 
@@ -250,8 +250,8 @@ else `errors.<key>.failed_at`.
   meta-only from-capture expansion tests.
 - `src/known_fixtures.test.zig`: per-folder envelope tests —
   `from-identity/`: `outputs` (identify 18 fields + trailers) +
-  `meta` (declared_at + agent_detect_version), nothing else;
-  `from-capture/`: `outputs` (+ raw) + `meta` (+ captured_at +
+  `meta` (updated_at + agent_detect_version), nothing else;
+  `from-capture/`: `outputs` (+ raw) + `meta` (+ updated_at +
   harness_version + optional launch argv); combo-match per folder
   (identify ids equal the filename's dims); meta-only stubs asserted
   output-less; the `fixture_hash` BLAKE3 test is deleted;
@@ -279,7 +279,7 @@ else `errors.<key>.failed_at`.
    daemon active:
    - split the 177 fixture files into `fixtures/from-identity/` +
      `fixtures/from-capture/` (per channel present), re-enveloped as
-     `outputs`/`meta` with `declared_at`/`captured_at`/
+     `outputs`/`meta` with `updated_at`/
      `harness_version`/`agent_detect_version` inlined from the row
      table and all hash fields dropped;
    - create meta-only from-capture files for the ~350 curated rows
