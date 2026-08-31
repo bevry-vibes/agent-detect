@@ -3102,7 +3102,14 @@
       "crush-hyper-glm52-darwin": "post-check mismatch",
       "crush-hyper-kimik25-darwin": "post-check mismatch",
       "crush-hyper-kimik27code-darwin": "post-check mismatch",
-      "crush-hyper-kimik3-darwin": "post-check mismatch"
+      "crush-hyper-kimik3-darwin": "post-check mismatch",
+      "crush-hyper-llama3370b-darwin": "post-check mismatch",
+      "crush-hyper-llama4maverick-darwin": "post-check mismatch",
+      "crush-hyper-minimaxm27-darwin": "post-check mismatch",
+      "crush-hyper-qwen36max-darwin": "post-check mismatch",
+      "crush-hyper-qwen37flash-darwin": "post-check mismatch",
+      "crush-hyper-qwen37plus-darwin": "post-check mismatch",
+      "crush-hyper-qwen3coder-darwin": "post-check mismatch"
     }
   },
   "invocations": {
