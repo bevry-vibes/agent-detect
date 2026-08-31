@@ -1,0 +1,89 @@
+{
+  "from-capture": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "GLM 5.3 Flash",
+      "model_short_title": null,
+      "model_name": "glm-5.3-flash",
+      "model_id": "glm53flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "pi-opencodego-glm53flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · GLM 5.3 Flash <pi-opencodego-glm53flash@local>",
+    "trailer assisted-by": "Assisted-by: Pi · GLM 5.3 Flash <pi-opencodego-glm53flash@local>"
+  },
+  "from-capture-raw": {
+    "platform_id": "darwin",
+    "harness_version": null,
+    "detectable": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "detected": [
+      "harness",
+      "provider",
+      "model"
+    ],
+    "process_lineage": [
+      {
+        "pid": 20341,
+        "name": "agent-detect-dev"
+      },
+      {
+        "pid": 20340,
+        "name": "bash"
+      },
+      {
+        "pid": 19254,
+        "name": "node"
+      },
+      {
+        "pid": 16906,
+        "name": "bash"
+      }
+    ],
+    "harness-urls": [
+      "https://github.com/earendil-works/pi",
+      "https://github.com/earendil-works/pi/blob/main/LICENSE"
+    ],
+    "provider-urls": [
+      "https://opencode.ai/docs/zen"
+    ],
+    "model-urls": [
+      "https://huggingface.co/zai-org/GLM-5.3-Flash",
+      "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE"
+    ],
+    "evidence": [
+      {
+        "dim": "harness",
+        "source": "env",
+        "name": "PI_CODING_AGENT",
+        "value": "pi"
+      },
+      {
+        "dim": "provider",
+        "source": "env",
+        "name": "PI_PROVIDER",
+        "value": "opencode-go"
+      },
+      {
+        "dim": "model",
+        "source": "env",
+        "name": "PI_MODEL",
+        "value": "glm-5.3-flash"
+      }
+    ]
+  }
+}

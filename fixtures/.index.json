@@ -6466,6 +6466,15 @@
         "kimi",
         "--version"
       ]
+    },
+    "pi-opencodego-glm53flash-darwin": {
+      "runner": 20340,
+      "agent_detect_version": "2026.8.11-3",
+      "capture": {
+        "captured_at": 1788143986,
+        "channel_hash": "268adf731887e4c64aac938251e005912564c8687aa3321231e17e75029effcb"
+      },
+      "fixture_hash": "77ffabef59c7f89c4158911ea7f3d2ba156103ac3c3f776620e3ad15c11c3bb3"
     }
   },
   "errors": {
