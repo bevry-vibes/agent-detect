@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Hugging Face",
+      "provider_name": "huggingface",
+      "provider_id": "huggingface",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Llama 3.1 8B",
+      "model_short_title": null,
+      "model_name": "llama-3.1-8b",
+      "model_id": "llama318b",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "omp-huggingface-llama318b",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Llama 3.1 8B <omp-huggingface-llama318b@local>",
+    "trailer assisted-by": "Assisted-by: omp · Llama 3.1 8B <omp-huggingface-llama318b@local>"
+  },
+  "meta": {
+    "updated_at": 1788197821
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "Ollama Cloud",
+      "provider_name": "ollama-cloud",
+      "provider_id": "ollamacloud",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "MiniMax M2.7",
+      "model_short_title": "M2.7",
+      "model_name": "minimax-m2.7",
+      "model_id": "minimaxm27",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "kilo-ollamacloud-minimaxm27",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code · MiniMax M2.7 <kilo-ollamacloud-minimaxm27@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · MiniMax M2.7 <kilo-ollamacloud-minimaxm27@local>"
+  },
+  "meta": {
+    "updated_at": 1788198152
+  }
+}

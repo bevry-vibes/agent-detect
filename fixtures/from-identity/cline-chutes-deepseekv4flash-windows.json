@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Chutes",
+      "provider_name": "chutes",
+      "provider_id": "chutes",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "cline-chutes-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · DeepSeek V4 Flash <cline-chutes-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Cline · DeepSeek V4 Flash <cline-chutes-deepseekv4flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788197896
+  }
+}

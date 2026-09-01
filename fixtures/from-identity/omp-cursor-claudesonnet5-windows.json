@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Cursor",
+      "provider_name": "cursor",
+      "provider_id": "cursor",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Claude Sonnet 5",
+      "model_short_title": null,
+      "model_name": "claude-sonnet-5",
+      "model_id": "claudesonnet5",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "omp-cursor-claudesonnet5",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Claude Sonnet 5 <omp-cursor-claudesonnet5@local>",
+    "trailer assisted-by": "Assisted-by: omp · Claude Sonnet 5 <omp-cursor-claudesonnet5@local>"
+  },
+  "meta": {
+    "updated_at": 1788198362
+  }
+}

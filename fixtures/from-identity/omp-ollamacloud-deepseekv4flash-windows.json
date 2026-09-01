@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Ollama Cloud",
+      "provider_name": "ollama-cloud",
+      "provider_id": "ollamacloud",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "omp-ollamacloud-deepseekv4flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · DeepSeek V4 Flash <omp-ollamacloud-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · DeepSeek V4 Flash <omp-ollamacloud-deepseekv4flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788197780
+  }
+}

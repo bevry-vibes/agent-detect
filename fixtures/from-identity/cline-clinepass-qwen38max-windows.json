@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3.8-Max",
+      "model_short_title": null,
+      "model_name": "qwen3.8-max",
+      "model_id": "qwen38max",
+      "model_reciprocity": "closed",
+      "model_license": "NONE",
+      "agent_id": "cline-clinepass-qwen38max",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Cline · Qwen3.8-Max <cline-clinepass-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Qwen3.8-Max <cline-clinepass-qwen38max@local>"
+  },
+  "meta": {
+    "updated_at": 1788197926
+  }
+}

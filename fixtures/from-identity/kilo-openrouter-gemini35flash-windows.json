@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Gemini 3.5 Flash",
+      "model_short_title": null,
+      "model_name": "gemini-3.5-flash",
+      "model_id": "gemini35flash",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "kilo-openrouter-gemini35flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code · Gemini 3.5 Flash <kilo-openrouter-gemini35flash@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Gemini 3.5 Flash <kilo-openrouter-gemini35flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788198171
+  }
+}

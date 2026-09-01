@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Gemma 4 31B",
+      "model_short_title": null,
+      "model_name": "gemma-4-31b",
+      "model_id": "gemma431b",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "cline-openrouter-gemma431b",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Gemma 4 31B <cline-openrouter-gemma431b@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Gemma 4 31B <cline-openrouter-gemma431b@local>"
+  },
+  "meta": {
+    "updated_at": 1788198009
+  }
+}

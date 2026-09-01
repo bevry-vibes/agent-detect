@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "GitHub Copilot",
+      "provider_name": "github-copilot",
+      "provider_id": "githubcopilot",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Grok 4.5",
+      "model_short_title": null,
+      "model_name": "grok-4.5",
+      "model_id": "grok45",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "omp-githubcopilot-grok45",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Grok 4.5 <omp-githubcopilot-grok45@local>",
+    "trailer assisted-by": "Assisted-by: omp · Grok 4.5 <omp-githubcopilot-grok45@local>"
+  },
+  "meta": {
+    "updated_at": 1788198373
+  }
+}

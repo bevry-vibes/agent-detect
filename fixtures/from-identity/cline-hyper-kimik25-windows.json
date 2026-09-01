@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Kimi K2.5",
+      "model_short_title": null,
+      "model_name": "kimi-k2.5",
+      "model_id": "kimik25",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "cline-hyper-kimik25",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Kimi K2.5 <cline-hyper-kimik25@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Kimi K2.5 <cline-hyper-kimik25@local>"
+  },
+  "meta": {
+    "updated_at": 1788197937
+  }
+}

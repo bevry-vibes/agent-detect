@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "DeepSeek V4 Pro",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-pro",
+      "model_id": "deepseekv4pro",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "kimicode-opencodego-deepseekv4pro",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · DeepSeek V4 Pro <kimicode-opencodego-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · DeepSeek V4 Pro <kimicode-opencodego-deepseekv4pro@local>"
+  },
+  "meta": {
+    "updated_at": 1788198257
+  }
+}

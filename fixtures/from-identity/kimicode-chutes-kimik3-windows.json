@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "Chutes",
+      "provider_name": "chutes",
+      "provider_id": "chutes",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Kimi K3",
+      "model_short_title": null,
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_reciprocity": "open-weight",
+      "model_license": "NOASSERTION",
+      "agent_id": "kimicode-chutes-kimik3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · Kimi K3 <kimicode-chutes-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Kimi K3 <kimicode-chutes-kimik3@local>"
+  },
+  "meta": {
+    "updated_at": 1788198240
+  }
+}

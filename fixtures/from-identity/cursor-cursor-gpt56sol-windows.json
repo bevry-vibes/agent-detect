@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cursor",
+      "harness_short_title": null,
+      "harness_name": "cursor",
+      "harness_id": "cursor",
+      "harness_license": "NONE",
+      "provider_label": "Cursor",
+      "provider_name": "cursor",
+      "provider_id": "cursor",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "GPT-5.6 Sol",
+      "model_short_title": null,
+      "model_name": "gpt-5.6-sol",
+      "model_id": "gpt56sol",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "cursor-cursor-gpt56sol",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Cursor · GPT-5.6 Sol <cursor-cursor-gpt56sol@local>",
+    "trailer assisted-by": "Assisted-by: Cursor · GPT-5.6 Sol <cursor-cursor-gpt56sol@local>"
+  },
+  "meta": {
+    "updated_at": 1788197882
+  }
+}

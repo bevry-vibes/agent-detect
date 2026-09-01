@@ -1,3097 +1,15 @@
 {
-  "store_version": 4,
-  "queue": [
-    {
-      "harness": "cline",
-      "provider": "clinepass",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 87760
-    },
-    {
-      "harness": "cline",
-      "provider": "clinepass",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "clinepass",
-      "model": "step37flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "clinepass",
-      "model": "step37flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "clinepass",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cline",
-      "provider": "clinepass",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "goose",
-      "provider": "goose",
-      "model": "claudesonnet4",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "kimi",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "kimi",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "gemma431b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "gemma431b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "nemotron3super",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "nemotron3super",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "nemotron3nano",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "openrouter",
-      "model": "nemotron3nano",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kimicode",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "mmx",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "mmx",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "mmx",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "mmx",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "groq",
-      "model": "llama4",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "cerebras",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "cerebras",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "cerebras",
-      "model": "gemma431b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "cerebras",
-      "model": "gemma431b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "mistral",
-      "model": "mistrallargelatest",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "mistral",
-      "model": "mistrallargelatest",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "xai",
-      "model": "grok4",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "kimi",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "gemma431b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "gemma431b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "nemotron3super",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "nemotron3super",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "nemotron3nano",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "openrouter",
-      "model": "nemotron3nano",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "groq",
-      "model": "llama3370b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "groq",
-      "model": "llama318b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "pi",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "qwen",
-      "model": "qwen38max",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "qwen",
-      "model": "qwen38max",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "minimax",
-      "model": "minimaxm25",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "minimax",
-      "model": "minimaxm25",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "xai",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "xai",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "xai",
-      "model": "grok420",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "xai",
-      "model": "grok420",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "openai",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "openai",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "qwen",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "qwen",
-      "provider": "qwen",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "anthropic",
-      "model": "claudesonnet4",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "anthropic",
-      "model": "claudesonnet4",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "zai",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "zai",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "kilo",
-      "model": "gemini35flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "kilo",
-      "model": "gemini35flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "kilo",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "kilo",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "kilo",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "kilo",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "clinepass",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "clinepass",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "clinepass",
-      "model": "kimik27code",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "clinepass",
-      "model": "kimik27code",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "hyper",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "hyper",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "hyper",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "hyper",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "ollamacloud",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "ollamacloud",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "ollamacloud",
-      "model": "kimik25",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "ollamacloud",
-      "model": "kimik25",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "fireworksai",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "kilo",
-      "provider": "fireworksai",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "minimaxcode",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "minimaxcode",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "openrouter",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "step37flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "step37flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "gemini35flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "gemini35flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "glm47flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "zenmux",
-      "model": "glm47flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "siliconflow",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "siliconflow",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "siliconflow",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "siliconflow",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "siliconflow",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "siliconflow",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "sakana",
-      "model": "fuguultrav11",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "sakana",
-      "model": "fuguultrav11",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "deepseekv32",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "deepseekv32",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "kimicode",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "kimicode",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "meta",
-      "model": "musespark12",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "meta",
-      "model": "musespark12",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "googleantigravity",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "googleantigravity",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "kimik2",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "kimik2",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "glm47",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "glm47",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "deepseekr1",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "deepseekr1",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "gemini3flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "gemini3flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "claudefable5",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "gmicloud",
-      "model": "claudefable5",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "deepseekr1",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "deepseekr1",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "grok3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "grok3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "kimik2",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "kimik2",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "phi4mini",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "phi4mini",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "olmo332bthink",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "olmo332bthink",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "ling30flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "ling30flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "doubaoseed21",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "doubaoseed21",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "ernie45",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "ernie45",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "hunyuant1",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "hunyuant1",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "gemma327b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "gemma327b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "mistralsmall3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "mistralsmall3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "qwen36",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "nanogpt",
-      "model": "qwen36",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "phi4",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "phi4",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "glm47flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "glm47flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "llama318b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "llama318b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "ling261t",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "ling261t",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "cogito21",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "cogito21",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "commanda",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "commanda",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "gpt5mini",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "gpt5mini",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "gemini3flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "gemini3flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "claudefable5",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "claudefable5",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "kimik25",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "cursor",
-      "model": "kimik25",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "githubcopilot",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "githubcopilot",
-      "model": "gpt4o",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "githubcopilot",
-      "model": "gemini3pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "githubcopilot",
-      "model": "gemini3pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "githubcopilot",
-      "model": "gpt5mini",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "provider": "githubcopilot",
-      "model": "gpt5mini",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "reasonix",
-      "provider": "deepseekflash",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "reasonix",
-      "provider": "deepseekflash",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "reasonix",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "reasonix",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen37plus",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen37plus",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "kimik25",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "kimik25",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "kimik27code",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "kimik27code",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "kimik3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "llama3370b",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "llama3370b",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "llama4maverick",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "llama4maverick",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen36max",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen36max",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen37flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen37flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen38max",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen38max",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "crush",
-      "provider": "hyper",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "deepseek",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "hyper",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "hyper",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "groq",
-      "model": "llama4",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "groq",
-      "model": "llama4",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "cerebras",
-      "model": "qwen3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "cerebras",
-      "model": "qwen3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "opencode",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "opencode",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "minimax",
-      "model": "minimaxm25",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "minimax",
-      "model": "minimaxm25",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "minimax",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "kimik27code",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "kimik27code",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "deepseek",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "alibaba",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "alibaba",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "alibaba",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "alibaba",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "alibaba",
-      "model": "qwen38max",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "opencode",
-      "provider": "alibaba",
-      "model": "qwen38max",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "vibe",
-      "provider": "mistral",
-      "model": "mistrallargelatest",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "vibe",
-      "provider": "mistral",
-      "model": "mistrallargelatest",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "vibe",
-      "provider": "mistral",
-      "model": "mistralsmalllatest",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "vibe",
-      "provider": "mistral",
-      "model": "mistralsmalllatest",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "vibe",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "vibe",
-      "provider": "minimax",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "claudefable5",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "claudefable5",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "claudesonnet5",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "claudesonnet5",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "claudeopus5",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "claudeopus5",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "gpt56sol",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "gpt56sol",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "gpt56luna",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "gpt56luna",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "gpt52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "gpt52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "cursor",
-      "provider": "cursor",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "gpt52",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "gpt52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "gemini25pro",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "gemini25pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "grok45",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "claudesonnet5",
-      "platform": "windows",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "copilot",
-      "provider": "githubcopilot",
-      "model": "claudesonnet5",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 12812
-    },
-    {
-      "harness": "goose",
-      "provider": "goose",
-      "model": "claudesonnet4",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 15112
-    },
-    {
-      "mode": "from-identity",
-      "stale": true,
-      "started_at": 1788168230,
-      "runner": 43116
-    },
-    {
-      "mode": "from-capture",
-      "stale": true,
-      "started_at": 1788169216,
-      "runner": 43116
-    }
-  ],
   "backlog": {
-    "unknown_harnesses": [],
-    "unknown_providers": [],
-    "unknown_models": [],
-    "unknown_invocations": [],
     "known_but_failed": {
+      "cline-clinepass-deepseekv4flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
       "cline-clinepass-kimik3-darwin": "capture failed (exit 1):  dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 1d 17h, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
+      "cline-clinepass-kimik3-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-clinepass-step37flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-deepseek-deepseekv4flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Authentication Fails, Your api key: ****fEuO is invalid\n",
       "cline-minimax-minimaxm3-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
+      "cline-minimax-minimaxm3-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
       "cline-openrouter-deepseekv4flash-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m No cookie auth credentials found\n",
+      "cline-openrouter-deepseekv4flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m openrouter/deepseek-v4-flash is not a valid model ID\n",
       "copilot-githubcopilot-claudesonnet5-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gemini25pro-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gpt52-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
@@ -3109,8 +27,80 @@
       "crush-hyper-qwen36max-darwin": "post-check mismatch",
       "crush-hyper-qwen37flash-darwin": "post-check mismatch",
       "crush-hyper-qwen37plus-darwin": "post-check mismatch",
-      "crush-hyper-qwen3coder-darwin": "post-check mismatch"
-    }
+      "crush-hyper-qwen3coder-darwin": "post-check mismatch",
+      "kilo-anthropic-claudesonnet4-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-clinepass-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-clinepass-kimik27code-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-deepseek-deepseekv4flash-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-deepseek-deepseekv4pro-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-fireworksai-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-hyper-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-hyper-kimik3-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-kilo-gemini35flash-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · ~google/gemini-flash-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
+      "kilo-kilo-grok45-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · ~x-ai/grok-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
+      "kilo-kilo-kimik3-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · ~moonshotai/kimi-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
+      "kilo-minimax-minimaxm27-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-minimax-minimaxm3-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-ollamacloud-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-ollamacloud-kimik25-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-openrouter-deepseekv4flash-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-zai-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kimicode-deepseek-deepseekv4flash-windows": "post-check mismatch",
+      "kimicode-deepseek-deepseekv4pro-windows": "post-check mismatch",
+      "kimicode-kimi-kimik3-windows": "post-check mismatch",
+      "kimicode-minimax-minimaxm27-windows": "post-check mismatch",
+      "kimicode-minimax-minimaxm3-windows": "post-check mismatch",
+      "kimicode-openrouter-gemma431b-windows": "post-check mismatch",
+      "kimicode-openrouter-nemotron3nano-windows": "post-check mismatch",
+      "kimicode-openrouter-nemotron3super-windows": "post-check mismatch",
+      "kimicode-openrouter-nemotron3ultra-windows": "post-check mismatch",
+      "mmx-minimax-minimaxm27-windows": "capture failed (exit 4): {\n  \"error\": {\n    \"code\": 4,\n    \"message\": \"Rate limit or quota exceeded. Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\",\n    \"hint\": \"Check usage: mmx quota show\"\n  }\n}\n",
+      "mmx-minimax-minimaxm3-windows": "capture failed (exit 4): {\n  \"error\": {\n    \"code\": 4,\n    \"message\": \"Rate limit or quota exceeded. Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\",\n    \"hint\": \"Check usage: mmx quota show\"\n  }\n}\n",
+      "omp-deepseek-deepseekv4flash-windows": "capture failed (exit 1)",
+      "omp-minimaxcode-minimaxm3-windows": "capture failed (exit 1)",
+      "omp-ollamacloud-deepseekv32-windows": "capture failed (exit 1)",
+      "omp-ollamacloud-deepseekv4flash-windows": "capture failed (exit 1)",
+      "omp-ollamacloud-glm52-windows": "capture failed (exit 1)",
+      "omp-ollamacloud-kimik3-windows": "capture failed (exit 1)",
+      "omp-ollamacloud-minimaxm3-windows": "capture failed (exit 1)",
+      "omp-openrouter-deepseekv4flash-windows": "capture failed (exit 1)",
+      "omp-sakana-fuguultrav11-windows": "capture failed (exit 1)",
+      "omp-siliconflow-deepseekv4flash-windows": "capture failed (exit 1)",
+      "omp-siliconflow-kimik3-windows": "capture failed (exit 1)",
+      "omp-siliconflow-minimaxm3-windows": "capture failed (exit 1)",
+      "omp-zenmux-deepseekv4flash-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for zenmux/deepseek/deepseek-v4-flash-free\n",
+      "omp-zenmux-gemini35flash-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for zenmux/google/gemini-3.5-flash-free\n",
+      "omp-zenmux-glm47flash-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for zenmux/z-ai/glm-4.7-flash-free\n",
+      "omp-zenmux-grok45-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for zenmux/x-ai/grok-4.5-free\n",
+      "omp-zenmux-kimik3-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for zenmux/moonshotai/kimi-k3-free\n",
+      "omp-zenmux-step37flash-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for zenmux/stepfun/step-3.7-flash-free\n",
+      "pi-cerebras-gemma431b-windows": "post-check mismatch",
+      "pi-cerebras-gptoss120b-windows": "capture failed (exit 1): 429 status code (no body)\n",
+      "pi-deepseek-deepseekv4flash-windows": "capture failed (exit 1): No API key found for deepseek.\n\nUse /login to log into a provider via OAuth or API key. See:\n  C:\\Users\\balup\\scoop\\apps\\pi-coding-agent\\0.84.4\\docs\\providers.md\n  C:\\Users\\balup\\scoop\\apps\\pi-coding-agent\\0.84.4\\docs\\models.md\n",
+      "pi-deepseek-deepseekv4pro-windows": "capture failed (exit 1): No API key found for deepseek.\n\nUse /login to log into a provider via OAuth or API key. See:\n  C:\\Users\\balup\\scoop\\apps\\pi-coding-agent\\0.84.4\\docs\\providers.md\n  C:\\Users\\balup\\scoop\\apps\\pi-coding-agent\\0.84.4\\docs\\models.md\n",
+      "pi-minimax-minimaxm27-windows": "capture failed (exit 1): 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\"},\"request_id\":\"06e4f87185d55b15ecb2eb06ee07802a\"}\n",
+      "pi-minimax-minimaxm3-windows": "capture failed (exit 1): 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\"},\"request_id\":\"06e4f6859554b79be4a82191140e00bf\"}\n",
+      "pi-mistral-mistrallargelatest-windows": "capture failed (exit 1): Mistral API error (403): {\"object\":\"error\",\"message\":\"This model is not available in your subscription tier\",\"type\":\"tier_not_allowed\",\"param\":null,\"code\":\"1910\",\"raw_status_code\":403}\n",
+      "pi-openrouter-deepseekv4flash-windows": "capture failed (exit 1):  max_tokens. You requested up to 384000 tokens, but can only afford 99101. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account\"},{\"code\":402,\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 384000 tokens, but can only afford 79280. To increase, visit https://openrouter.ai/settings/credits and upgrad…",
+      "pi-openrouter-gemma431b-windows": "capture failed (exit 1): 404: {\"message\":\"No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy\",\"code\":404}\n",
+      "pi-openrouter-nemotron3nano-windows": "capture failed (exit 1): Warning: Model \"nvidia/nemotron-3-nano-30b-a3b:free\" not found for provider \"openrouter\". Using custom model id.\n404: {\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: nvidia/nemotron-3-nano-30b-a3b\",\"code\":404}\n",
+      "pi-openrouter-nemotron3super-windows": "capture failed (exit 1): 404: {\"message\":\"No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy\",\"code\":404}\n",
+      "pi-openrouter-nemotron3ultra-windows": "capture failed (exit 1): 404: {\"message\":\"No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy\",\"code\":404}\n",
+      "qwen-deepseek-deepseekv4flash-windows": "post-check mismatch",
+      "qwen-deepseek-deepseekv4pro-windows": "post-check mismatch",
+      "qwen-minimax-minimaxm25-windows": "post-check mismatch",
+      "qwen-minimax-minimaxm27-windows": "post-check mismatch",
+      "qwen-minimax-minimaxm3-windows": "post-check mismatch",
+      "qwen-openai-gpt4o-windows": "post-check mismatch",
+      "qwen-qwen-deepseekv4flash-windows": "post-check mismatch",
+      "qwen-qwen-qwen38max-windows": "post-check mismatch",
+      "qwen-xai-grok420-windows": "post-check mismatch",
+      "qwen-xai-grok45-windows": "post-check mismatch"
+    },
+    "unknown_harnesses": [],
+    "unknown_invocations": [],
+    "unknown_models": [],
+    "unknown_providers": []
   },
   "invocations": {
     "cline-clinepass-deepseekv4flash-linux": {
@@ -3119,7 +109,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=free/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline",
@@ -3132,7 +122,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=free/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -3145,7 +135,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=cline-pass/kimi-k3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline",
@@ -3158,7 +148,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=cline-pass/kimi-k3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -3171,7 +161,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=stepfun/step-3.7-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline",
@@ -3184,7 +174,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=stepfun/step-3.7-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -3197,7 +187,7 @@
         "--auto-approve",
         "--provider=deepseek",
         "--model=deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline",
@@ -3210,7 +200,7 @@
         "--auto-approve",
         "--provider=deepseek",
         "--model=deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -3223,7 +213,7 @@
         "--auto-approve",
         "--provider=minimax",
         "--model=minimax/minimax-m3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline",
@@ -3236,7 +226,7 @@
         "--auto-approve",
         "--provider=minimax",
         "--model=minimax/minimax-m3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -3249,7 +239,7 @@
         "--auto-approve",
         "--provider=openrouter",
         "--model=openrouter/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline",
@@ -3262,7 +252,7 @@
         "--auto-approve",
         "--provider=openrouter",
         "--model=openrouter/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -3273,7 +263,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "claude-sonnet-5"
@@ -3287,7 +277,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "claude-sonnet-5"
@@ -3301,7 +291,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "gemini-2.5-pro"
@@ -3315,7 +305,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "gemini-2.5-pro"
@@ -3329,7 +319,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "gpt-5.2"
@@ -3343,7 +333,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "gpt-5.2"
@@ -3357,7 +347,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "grok-4.5"
@@ -3371,7 +361,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--allow-all",
         "--model",
         "grok-4.5"
@@ -3381,11 +371,26 @@
         "--version"
       ]
     },
+    "crush-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "deepseek/deepseek-v4-flash",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
+        "--version"
+      ]
+    },
     "crush-deepseek-deepseekv4flash-linux": {
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "deepseek/deepseek-v4-flash",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3396,10 +401,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "deepseek/deepseek-v4-flash",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/deepseek-v4-flash",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3407,7 +427,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/deepseek-v4-flash",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3418,10 +440,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/deepseek-v4-flash",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/deepseek-v4-pro",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3429,7 +466,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/deepseek-v4-pro",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3440,10 +479,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/deepseek-v4-pro",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-glm52-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/glm-5.2",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3451,7 +505,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/glm-5.2",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3462,10 +518,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/glm-5.2",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-kimik25-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/kimi-k2.5",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3473,7 +544,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/kimi-k2.5",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3484,10 +557,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/kimi-k2.5",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-kimik27code-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/kimi-k2.7-code",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3495,7 +583,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/kimi-k2.7-code",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3506,10 +596,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/kimi-k2.7-code",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-kimik3-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/kimi-k3",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3517,7 +622,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/kimi-k3",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3528,10 +635,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/kimi-k3",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-llama3370b-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/llama-3.3-70b-instruct",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3539,7 +661,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/llama-3.3-70b-instruct",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3550,10 +674,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/llama-3.3-70b-instruct",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-llama4maverick-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/llama-4-maverick-17b-128e-instruct-fp8",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3561,7 +700,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/llama-4-maverick-17b-128e-instruct-fp8",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3572,10 +713,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/llama-4-maverick-17b-128e-instruct-fp8",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/minimax-m2.7",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3583,7 +739,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/minimax-m2.7",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3594,10 +752,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/minimax-m2.7",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-qwen36max-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/qwen3.6-max",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3605,7 +778,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.6-max",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3616,10 +791,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.6-max",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-qwen37flash-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/qwen3.7-flash",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3627,7 +817,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.7-flash",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3638,10 +830,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.7-flash",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-qwen37plus-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/qwen3.7-plus",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3649,7 +856,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.7-plus",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3660,10 +869,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.7-plus",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-qwen38max-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/qwen3.8-max",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3671,7 +895,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.8-max",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3682,10 +908,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3.8-max",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-hyper-qwen3coder-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "hyper/qwen3-coder-480b-a35b-instruct-int4-mixed-ar",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3693,7 +934,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3-coder-480b-a35b-instruct-int4-mixed-ar",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3704,10 +947,25 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "hyper/qwen3-coder-480b-a35b-instruct-int4-mixed-ar",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
+        "--version"
+      ]
+    },
+    "crush-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "crush",
+        "run",
+        "-m",
+        "minimax/minimax-m3",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "crush",
         "--version"
       ]
     },
@@ -3715,7 +973,9 @@
       "prompt_invocation": [
         "crush",
         "run",
-        "<prompt>"
+        "-m",
+        "minimax/minimax-m3",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush",
@@ -3726,7 +986,9 @@
       "prompt_invocation": [
         "crush.exe",
         "run",
-        "<prompt>"
+        "-m",
+        "minimax/minimax-m3",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "crush.exe",
@@ -3739,7 +1001,7 @@
         "-p",
         "--model",
         "claude-fable-5-thinking-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -3752,7 +1014,7 @@
         "-p",
         "--model",
         "claude-fable-5-thinking-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -3765,7 +1027,7 @@
         "-p",
         "--model",
         "claude-opus-5-thinking-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -3778,7 +1040,7 @@
         "-p",
         "--model",
         "claude-opus-5-thinking-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -3791,7 +1053,7 @@
         "-p",
         "--model",
         "claude-sonnet-5-thinking-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -3804,7 +1066,7 @@
         "-p",
         "--model",
         "claude-sonnet-5-thinking-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -3817,7 +1079,7 @@
         "-p",
         "--model",
         "gpt-5.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -3830,7 +1092,7 @@
         "-p",
         "--model",
         "gpt-5.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -3843,7 +1105,7 @@
         "-p",
         "--model",
         "gpt-5.6-luna-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -3856,7 +1118,7 @@
         "-p",
         "--model",
         "gpt-5.6-luna-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -3869,7 +1131,7 @@
         "-p",
         "--model",
         "gpt-5.6-sol-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -3882,7 +1144,7 @@
         "-p",
         "--model",
         "gpt-5.6-sol-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -3895,7 +1157,7 @@
         "-p",
         "--model",
         "cursor-grok-4.5-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -3908,7 +1170,7 @@
         "-p",
         "--model",
         "cursor-grok-4.5-high",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -3920,7 +1182,7 @@
         "goose",
         "run",
         "-t",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "goose",
@@ -3932,10 +1194,22 @@
         "goose.exe",
         "run",
         "-t",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "goose.exe",
+        "--version"
+      ]
+    },
+    "goose-opencodego-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "goose",
+        "run",
+        "-t",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "goose",
         "--version"
       ]
     },
@@ -3944,7 +1218,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -3956,7 +1230,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -3968,7 +1242,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -3980,7 +1254,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -3992,7 +1266,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4004,7 +1278,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4016,7 +1290,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4028,7 +1302,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4040,7 +1314,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4052,7 +1326,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4064,7 +1338,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4076,7 +1350,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4088,7 +1362,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4100,7 +1374,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4112,7 +1386,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4124,7 +1398,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4138,7 +1412,7 @@
         "--auto",
         "--model",
         "kilo/~google/gemini-flash-latest",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4152,7 +1426,7 @@
         "--auto",
         "--model",
         "kilo/~google/gemini-flash-latest",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4166,7 +1440,7 @@
         "--auto",
         "--model",
         "kilo/~x-ai/grok-latest",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4180,7 +1454,7 @@
         "--auto",
         "--model",
         "kilo/~x-ai/grok-latest",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4194,7 +1468,7 @@
         "--auto",
         "--model",
         "kilo/~moonshotai/kimi-latest",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4208,7 +1482,7 @@
         "--auto",
         "--model",
         "kilo/~moonshotai/kimi-latest",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4220,7 +1494,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4232,7 +1506,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4244,7 +1518,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4256,7 +1530,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4268,7 +1542,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4280,7 +1554,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4292,7 +1566,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4304,7 +1578,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4316,7 +1590,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4328,7 +1602,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4340,7 +1614,7 @@
         "kilo",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo",
@@ -4352,7 +1626,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -4363,7 +1637,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4374,7 +1648,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4385,7 +1659,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4396,7 +1670,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4407,7 +1681,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4418,7 +1692,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4429,7 +1703,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4440,7 +1714,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4451,7 +1725,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4462,7 +1736,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4473,7 +1747,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4484,7 +1758,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4495,7 +1769,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4506,7 +1780,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4517,7 +1791,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4528,7 +1802,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4539,7 +1813,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi",
@@ -4550,7 +1824,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -4563,7 +1837,7 @@
         "text",
         "chat",
         "--message",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -4577,7 +1851,7 @@
         "text",
         "chat",
         "--message",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -4591,7 +1865,7 @@
         "text",
         "chat",
         "--message",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -4605,7 +1879,7 @@
         "text",
         "chat",
         "--message",
-        "<prompt>",
+        "\u003cprompt\u003e",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -4618,7 +1892,7 @@
         "omp",
         "--model",
         "cursor/claude-fable-5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4630,7 +1904,7 @@
         "omp.exe",
         "--model",
         "cursor/claude-fable-5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4642,7 +1916,7 @@
         "omp",
         "--model",
         "cursor/gemini-3-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4654,7 +1928,7 @@
         "omp.exe",
         "--model",
         "cursor/gemini-3-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4666,7 +1940,7 @@
         "omp",
         "--model",
         "cursor/glm-5.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4678,7 +1952,7 @@
         "omp.exe",
         "--model",
         "cursor/glm-5.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4690,7 +1964,7 @@
         "omp",
         "--model",
         "cursor/gpt-5-mini",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4702,7 +1976,7 @@
         "omp.exe",
         "--model",
         "cursor/gpt-5-mini",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4714,7 +1988,7 @@
         "omp",
         "--model",
         "cursor/kimi-k2.5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4726,7 +2000,7 @@
         "omp.exe",
         "--model",
         "cursor/kimi-k2.5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4738,7 +2012,7 @@
         "omp",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4750,7 +2024,7 @@
         "omp.exe",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4762,7 +2036,7 @@
         "omp",
         "--model",
         "github-copilot/gemini-3-pro",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4774,7 +2048,7 @@
         "omp.exe",
         "--model",
         "github-copilot/gemini-3-pro",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4786,7 +2060,7 @@
         "omp",
         "--model",
         "github-copilot/gpt-4o",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4798,7 +2072,7 @@
         "omp.exe",
         "--model",
         "github-copilot/gpt-4o",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4810,7 +2084,7 @@
         "omp",
         "--model",
         "github-copilot/gpt-5-mini",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4822,7 +2096,7 @@
         "omp.exe",
         "--model",
         "github-copilot/gpt-5-mini",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4834,7 +2108,7 @@
         "omp",
         "--model",
         "gmi-cloud/anthropic/claude-fable-5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4846,7 +2120,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/anthropic/claude-fable-5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4858,7 +2132,7 @@
         "omp",
         "--model",
         "gmi-cloud/deepseek-ai/deepseek-r1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4870,7 +2144,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/deepseek-ai/deepseek-r1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4882,7 +2156,7 @@
         "omp",
         "--model",
         "gmi-cloud/google/gemini-3-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4894,7 +2168,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/google/gemini-3-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4906,7 +2180,7 @@
         "omp",
         "--model",
         "gmi-cloud/zai-org/glm-4.7",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4918,7 +2192,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/zai-org/glm-4.7",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4930,7 +2204,7 @@
         "omp",
         "--model",
         "gmi-cloud/openai/gpt-4o",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4942,7 +2216,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/openai/gpt-4o",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4954,7 +2228,7 @@
         "omp",
         "--model",
         "gmi-cloud/x-ai/grok-4.5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4966,7 +2240,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/x-ai/grok-4.5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -4978,7 +2252,7 @@
         "omp",
         "--model",
         "gmi-cloud/moonshotai/kimi-k2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -4990,7 +2264,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/moonshotai/kimi-k2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5002,7 +2276,7 @@
         "omp",
         "--model",
         "gmi-cloud/nvidia/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5014,7 +2288,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/nvidia/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5026,7 +2300,7 @@
         "omp",
         "--model",
         "google-antigravity/gpt-oss-120b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5038,7 +2312,7 @@
         "omp.exe",
         "--model",
         "google-antigravity/gpt-oss-120b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5050,7 +2324,7 @@
         "omp",
         "--model",
         "huggingface/deepcogito/cogito-2.1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5062,7 +2336,7 @@
         "omp.exe",
         "--model",
         "huggingface/deepcogito/cogito-2.1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5074,7 +2348,7 @@
         "omp",
         "--model",
         "huggingface/cohere/command-a",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5086,7 +2360,7 @@
         "omp.exe",
         "--model",
         "huggingface/cohere/command-a",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5098,7 +2372,7 @@
         "omp",
         "--model",
         "huggingface/zai-org/glm-4.7-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5110,7 +2384,7 @@
         "omp.exe",
         "--model",
         "huggingface/zai-org/glm-4.7-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5122,7 +2396,7 @@
         "omp",
         "--model",
         "huggingface/openai/gpt-oss-120b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5134,7 +2408,7 @@
         "omp.exe",
         "--model",
         "huggingface/openai/gpt-oss-120b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5146,7 +2420,7 @@
         "omp",
         "--model",
         "huggingface/inclusionai/ling-2.6-1t",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5158,7 +2432,7 @@
         "omp.exe",
         "--model",
         "huggingface/inclusionai/ling-2.6-1t",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5170,7 +2444,7 @@
         "omp",
         "--model",
         "huggingface/meta-llama/llama-3.1-8b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5182,7 +2456,7 @@
         "omp.exe",
         "--model",
         "huggingface/meta-llama/llama-3.1-8b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5194,7 +2468,7 @@
         "omp",
         "--model",
         "huggingface/nvidia/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5206,7 +2480,7 @@
         "omp.exe",
         "--model",
         "huggingface/nvidia/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5218,7 +2492,7 @@
         "omp",
         "--model",
         "huggingface/microsoft/phi-4",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5230,7 +2504,7 @@
         "omp.exe",
         "--model",
         "huggingface/microsoft/phi-4",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5242,7 +2516,7 @@
         "omp",
         "--model",
         "kimi-code/k3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5254,7 +2528,7 @@
         "omp.exe",
         "--model",
         "kimi-code/k3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5266,7 +2540,7 @@
         "omp",
         "--model",
         "meta/muse-spark-1.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5278,7 +2552,7 @@
         "omp.exe",
         "--model",
         "meta/muse-spark-1.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5290,7 +2564,7 @@
         "omp",
         "--model",
         "minimax-code/MiniMax-M3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5302,7 +2576,7 @@
         "omp.exe",
         "--model",
         "minimax-code/MiniMax-M3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5314,7 +2588,7 @@
         "omp",
         "--model",
         "nanogpt/deepseek-ai/deepseek-r1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5326,7 +2600,7 @@
         "omp.exe",
         "--model",
         "nanogpt/deepseek-ai/deepseek-r1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5338,7 +2612,7 @@
         "omp",
         "--model",
         "nanogpt/bytedance/doubao-seed-2.1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5350,7 +2624,7 @@
         "omp.exe",
         "--model",
         "nanogpt/bytedance/doubao-seed-2.1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5362,7 +2636,7 @@
         "omp",
         "--model",
         "nanogpt/baidu/ernie-4.5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5374,7 +2648,7 @@
         "omp.exe",
         "--model",
         "nanogpt/baidu/ernie-4.5",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5386,7 +2660,7 @@
         "omp",
         "--model",
         "nanogpt/gemma-3-27b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5398,7 +2672,7 @@
         "omp.exe",
         "--model",
         "nanogpt/gemma-3-27b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5410,7 +2684,7 @@
         "omp",
         "--model",
         "nanogpt/openai/chatgpt-4o",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5422,7 +2696,7 @@
         "omp.exe",
         "--model",
         "nanogpt/openai/chatgpt-4o",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5434,7 +2708,7 @@
         "omp",
         "--model",
         "nanogpt/TEE/gpt-oss-120b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5446,7 +2720,7 @@
         "omp.exe",
         "--model",
         "nanogpt/TEE/gpt-oss-120b",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5458,7 +2732,7 @@
         "omp",
         "--model",
         "nanogpt/grok-3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5470,7 +2744,7 @@
         "omp.exe",
         "--model",
         "nanogpt/grok-3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5482,7 +2756,7 @@
         "omp",
         "--model",
         "nanogpt/hunyuan-t1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5494,7 +2768,7 @@
         "omp.exe",
         "--model",
         "nanogpt/hunyuan-t1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5506,7 +2780,7 @@
         "omp",
         "--model",
         "nanogpt/baseten/kimi-k2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5518,7 +2792,7 @@
         "omp.exe",
         "--model",
         "nanogpt/baseten/kimi-k2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5530,7 +2804,7 @@
         "omp",
         "--model",
         "nanogpt/inclusionai/ling-3.0-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5542,7 +2816,7 @@
         "omp.exe",
         "--model",
         "nanogpt/inclusionai/ling-3.0-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5554,7 +2828,7 @@
         "omp",
         "--model",
         "nanogpt/mistral-small-3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5566,7 +2840,7 @@
         "omp.exe",
         "--model",
         "nanogpt/mistral-small-3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5578,7 +2852,7 @@
         "omp",
         "--model",
         "nanogpt/nvidia/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5590,7 +2864,7 @@
         "omp.exe",
         "--model",
         "nanogpt/nvidia/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5602,7 +2876,7 @@
         "omp",
         "--model",
         "nanogpt/allenai/olmo-3-32b-think",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5614,7 +2888,7 @@
         "omp.exe",
         "--model",
         "nanogpt/allenai/olmo-3-32b-think",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5626,7 +2900,7 @@
         "omp",
         "--model",
         "nanogpt/phi-4-mini",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5638,7 +2912,7 @@
         "omp.exe",
         "--model",
         "nanogpt/phi-4-mini",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5650,7 +2924,7 @@
         "omp",
         "--model",
         "nanogpt/alibaba/qwen3.6",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5662,7 +2936,7 @@
         "omp.exe",
         "--model",
         "nanogpt/alibaba/qwen3.6",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5674,7 +2948,7 @@
         "omp",
         "--model",
         "ollama-cloud/deepseek-v3.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5686,7 +2960,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/deepseek-v3.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5698,7 +2972,7 @@
         "omp",
         "--model",
         "ollama-cloud/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5710,7 +2984,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5722,7 +2996,7 @@
         "omp",
         "--model",
         "ollama-cloud/glm-5.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5734,7 +3008,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/glm-5.2",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5746,7 +3020,7 @@
         "omp",
         "--model",
         "ollama-cloud/kimi-k3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5758,7 +3032,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/kimi-k3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5770,7 +3044,7 @@
         "omp",
         "--model",
         "ollama-cloud/minimax-m2.7",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5782,7 +3056,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/minimax-m2.7",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5794,7 +3068,7 @@
         "omp",
         "--model",
         "ollama-cloud/minimax-m3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5806,7 +3080,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/minimax-m3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5818,7 +3092,7 @@
         "omp",
         "--model",
         "ollama-cloud/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5830,7 +3104,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/nemotron-3-ultra",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5842,7 +3116,7 @@
         "omp",
         "--model",
         "ollama-cloud/qwen3-coder",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5854,7 +3128,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/qwen3-coder",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5866,7 +3140,7 @@
         "omp",
         "--model",
         "openrouter/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5878,7 +3152,7 @@
         "omp.exe",
         "--model",
         "openrouter/deepseek-v4-flash",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5890,7 +3164,7 @@
         "omp",
         "--model",
         "sakana/fugu-ultra-v1.1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5902,7 +3176,7 @@
         "omp.exe",
         "--model",
         "sakana/fugu-ultra-v1.1",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5914,7 +3188,7 @@
         "omp",
         "--model",
         "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5926,7 +3200,7 @@
         "omp.exe",
         "--model",
         "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5938,7 +3212,7 @@
         "omp",
         "--model",
         "siliconflow/moonshotai/Kimi-K3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5950,7 +3224,7 @@
         "omp.exe",
         "--model",
         "siliconflow/moonshotai/Kimi-K3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5962,7 +3236,7 @@
         "omp",
         "--model",
         "siliconflow/MiniMaxAI/MiniMax-M3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5974,7 +3248,7 @@
         "omp.exe",
         "--model",
         "siliconflow/MiniMaxAI/MiniMax-M3",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -5986,7 +3260,7 @@
         "omp",
         "--model",
         "zenmux/deepseek/deepseek-v4-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -5998,7 +3272,7 @@
         "omp.exe",
         "--model",
         "zenmux/deepseek/deepseek-v4-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -6010,7 +3284,7 @@
         "omp",
         "--model",
         "zenmux/google/gemini-3.5-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -6022,7 +3296,7 @@
         "omp.exe",
         "--model",
         "zenmux/google/gemini-3.5-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -6034,7 +3308,7 @@
         "omp",
         "--model",
         "zenmux/z-ai/glm-4.7-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -6046,7 +3320,7 @@
         "omp.exe",
         "--model",
         "zenmux/z-ai/glm-4.7-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -6058,7 +3332,7 @@
         "omp",
         "--model",
         "zenmux/x-ai/grok-4.5-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -6070,7 +3344,7 @@
         "omp.exe",
         "--model",
         "zenmux/x-ai/grok-4.5-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -6082,7 +3356,7 @@
         "omp",
         "--model",
         "zenmux/moonshotai/kimi-k3-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -6094,7 +3368,7 @@
         "omp.exe",
         "--model",
         "zenmux/moonshotai/kimi-k3-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -6106,7 +3380,7 @@
         "omp",
         "--model",
         "zenmux/stepfun/step-3.7-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp",
@@ -6118,7 +3392,7 @@
         "omp.exe",
         "--model",
         "zenmux/stepfun/step-3.7-flash-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "omp.exe",
@@ -6129,7 +3403,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6140,7 +3414,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6151,7 +3425,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6162,7 +3436,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6173,7 +3447,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6184,7 +3458,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6195,7 +3469,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6206,7 +3480,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6217,7 +3491,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6228,7 +3502,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6239,7 +3513,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6250,7 +3524,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6261,7 +3535,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6272,7 +3546,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6283,7 +3557,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6294,7 +3568,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6305,7 +3579,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6316,7 +3590,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6327,7 +3601,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6338,7 +3612,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6349,7 +3623,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6360,7 +3634,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6371,7 +3645,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6382,7 +3656,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6393,7 +3667,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6404,7 +3678,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6415,7 +3689,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6426,7 +3700,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6437,7 +3711,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6448,7 +3722,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -6461,7 +3735,7 @@
         "run",
         "--model",
         "opencode/nemotron-3-ultra-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode",
@@ -6474,10 +3748,25 @@
         "run",
         "--model",
         "opencode/nemotron-3-ultra-free",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "pi-anthropic-claudesonnet4-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "anthropic",
+        "--model",
+        "claude-sonnet-4",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
         "--version"
       ]
     },
@@ -6489,7 +3778,7 @@
         "--model",
         "gemma-4-31b",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
@@ -6504,7 +3793,7 @@
         "--model",
         "gemma-4-31b",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi.exe",
@@ -6519,7 +3808,7 @@
         "--model",
         "gpt-oss-120b",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
@@ -6534,7 +3823,7 @@
         "--model",
         "gpt-oss-120b",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi.exe",
@@ -6549,7 +3838,7 @@
         "--model",
         "deepseek-v4-flash",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
@@ -6564,7 +3853,7 @@
         "--model",
         "deepseek-v4-flash",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi.exe",
@@ -6579,7 +3868,7 @@
         "--model",
         "deepseek-v4-pro",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
@@ -6594,577 +3883,10 @@
         "--model",
         "deepseek-v4-pro",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-minimax-minimaxm27-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "minimax",
-        "--model",
-        "MiniMax-M2.7",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-minimax-minimaxm27-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "minimax",
-        "--model",
-        "MiniMax-M2.7",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-minimax-minimaxm3-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "minimax",
-        "--model",
-        "MiniMax-M3",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-minimax-minimaxm3-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "minimax",
-        "--model",
-        "MiniMax-M3",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-mistral-mistrallargelatest-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "mistral",
-        "--model",
-        "mistral-large-latest",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-mistral-mistrallargelatest-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "mistral",
-        "--model",
-        "mistral-large-latest",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-openrouter-deepseekv4flash-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "openrouter",
-        "--model",
-        "deepseek/deepseek-v4-flash",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-openrouter-deepseekv4flash-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "openrouter",
-        "--model",
-        "deepseek/deepseek-v4-flash",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-openrouter-gemma431b-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "openrouter",
-        "--model",
-        "google/gemma-4-31b-it:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-openrouter-gemma431b-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "openrouter",
-        "--model",
-        "google/gemma-4-31b-it:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-openrouter-nemotron3nano-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "openrouter",
-        "--model",
-        "nvidia/nemotron-3-nano-30b-a3b:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-openrouter-nemotron3nano-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "openrouter",
-        "--model",
-        "nvidia/nemotron-3-nano-30b-a3b:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-openrouter-nemotron3super-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "openrouter",
-        "--model",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-openrouter-nemotron3super-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "openrouter",
-        "--model",
-        "nvidia/nemotron-3-super-120b-a12b:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "pi-openrouter-nemotron3ultra-linux": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "openrouter",
-        "--model",
-        "nvidia/nemotron-3-ultra-550b-a55b:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
-        "--version"
-      ]
-    },
-    "pi-openrouter-nemotron3ultra-windows": {
-      "prompt_invocation": [
-        "pi.exe",
-        "--provider",
-        "openrouter",
-        "--model",
-        "nvidia/nemotron-3-ultra-550b-a55b:free",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi.exe",
-        "--version"
-      ]
-    },
-    "qwen-deepseek-deepseekv4flash-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-deepseek-deepseekv4flash-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-deepseek-deepseekv4pro-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-deepseek-deepseekv4pro-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-minimax-minimaxm25-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-minimax-minimaxm25-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-minimax-minimaxm27-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-minimax-minimaxm27-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-minimax-minimaxm3-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-minimax-minimaxm3-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-openai-gpt4o-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-openai-gpt4o-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-qwen-deepseekv4flash-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-qwen-deepseekv4flash-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-qwen-qwen38max-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-qwen-qwen38max-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-xai-grok420-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-xai-grok420-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "qwen-xai-grok45-linux": {
-      "prompt_invocation": [
-        "qwen",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen",
-        "--version"
-      ]
-    },
-    "qwen-xai-grok45-windows": {
-      "prompt_invocation": [
-        "qwen.cmd",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "qwen.cmd",
-        "--version"
-      ]
-    },
-    "reasonix-deepseekflash-deepseekv4flash-linux": {
-      "prompt_invocation": [
-        "reasonix",
-        "run",
-        "--permission-mode",
-        "bypassPermissions",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "reasonix",
-        "--version"
-      ]
-    },
-    "reasonix-deepseekflash-deepseekv4flash-windows": {
-      "prompt_invocation": [
-        "reasonix.exe",
-        "run",
-        "--permission-mode",
-        "bypassPermissions",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "reasonix.exe",
-        "--version"
-      ]
-    },
-    "vibe-minimax-minimaxm3-linux": {
-      "prompt_invocation": [
-        "vibe",
-        "--prompt",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "vibe",
-        "--version"
-      ]
-    },
-    "vibe-minimax-minimaxm3-windows": {
-      "prompt_invocation": [
-        "vibe.exe",
-        "--prompt",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "vibe.exe",
-        "--version"
-      ]
-    },
-    "vibe-mistral-mistrallargelatest-linux": {
-      "prompt_invocation": [
-        "vibe",
-        "--prompt",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "vibe",
-        "--version"
-      ]
-    },
-    "vibe-mistral-mistrallargelatest-windows": {
-      "prompt_invocation": [
-        "vibe.exe",
-        "--prompt",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "vibe.exe",
-        "--version"
-      ]
-    },
-    "vibe-mistral-mistralsmalllatest-linux": {
-      "prompt_invocation": [
-        "vibe",
-        "--prompt",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "vibe",
-        "--version"
-      ]
-    },
-    "vibe-mistral-mistralsmalllatest-windows": {
-      "prompt_invocation": [
-        "vibe.exe",
-        "--prompt",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "vibe.exe",
-        "--version"
-      ]
-    },
-    "pi-anthropic-claudesonnet4-darwin": {
-      "prompt_invocation": [
-        "pi",
-        "--provider",
-        "anthropic",
-        "--model",
-        "claude-sonnet-4",
-        "-p",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "pi",
         "--version"
       ]
     },
@@ -7176,7 +3898,7 @@
         "--model",
         "llama-3.1-8b",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
@@ -7191,7 +3913,7 @@
         "--model",
         "llama-3.3-70b",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
@@ -7206,7 +3928,7 @@
         "--model",
         "llama-4",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
@@ -7221,10 +3943,100 @@
         "--model",
         "kimi-k3",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
+        "--version"
+      ]
+    },
+    "pi-minimax-minimaxm27-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "minimax",
+        "--model",
+        "MiniMax-M2.7",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-minimax-minimaxm27-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "minimax",
+        "--model",
+        "MiniMax-M2.7",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-minimax-minimaxm3-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "minimax",
+        "--model",
+        "MiniMax-M3",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-minimax-minimaxm3-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "minimax",
+        "--model",
+        "MiniMax-M3",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-mistral-mistrallargelatest-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "mistral",
+        "--model",
+        "mistral-large-latest",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-mistral-mistrallargelatest-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "mistral",
+        "--model",
+        "mistral-large-latest",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
         "--version"
       ]
     },
@@ -7236,10 +4048,160 @@
         "--model",
         "glm-5.3-flash",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
+        "--version"
+      ]
+    },
+    "pi-openrouter-deepseekv4flash-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-openrouter-deepseekv4flash-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-gemma431b-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "google/gemma-4-31b-it:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-openrouter-gemma431b-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "google/gemma-4-31b-it:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron3nano-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-nano-30b-a3b:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron3nano-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-nano-30b-a3b:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron3super-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron3super-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron3ultra-linux": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron3ultra-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "pi.exe",
         "--version"
       ]
     },
@@ -7251,10 +4213,230 @@
         "--model",
         "grok-4",
         "-p",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "pi",
+        "--version"
+      ]
+    },
+    "qwen-deepseek-deepseekv4flash-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-deepseek-deepseekv4flash-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-deepseek-deepseekv4pro-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-deepseek-deepseekv4pro-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-minimax-minimaxm25-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-minimax-minimaxm25-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-minimax-minimaxm27-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-minimax-minimaxm27-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-minimax-minimaxm3-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-minimax-minimaxm3-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-openai-gpt4o-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-openai-gpt4o-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-qwen-deepseekv4flash-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-qwen-deepseekv4flash-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-qwen-qwen38max-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-qwen-qwen38max-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-xai-grok420-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-xai-grok420-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-xai-grok45-linux": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
+    "qwen-xai-grok45-windows": {
+      "prompt_invocation": [
+        "qwen.cmd",
+        "-p",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "qwen.cmd",
         "--version"
       ]
     },
@@ -7264,10 +4446,36 @@
         "run",
         "--permission-mode",
         "bypassPermissions",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "reasonix",
+        "--version"
+      ]
+    },
+    "reasonix-deepseekflash-deepseekv4flash-linux": {
+      "prompt_invocation": [
+        "reasonix",
+        "run",
+        "--permission-mode",
+        "bypassPermissions",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "reasonix",
+        "--version"
+      ]
+    },
+    "reasonix-deepseekflash-deepseekv4flash-windows": {
+      "prompt_invocation": [
+        "reasonix.exe",
+        "run",
+        "--permission-mode",
+        "bypassPermissions",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "reasonix.exe",
         "--version"
       ]
     },
@@ -7277,24 +4485,931 @@
         "run",
         "--permission-mode",
         "bypassPermissions",
-        "<prompt>"
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
         "reasonix",
         "--version"
       ]
     },
-    "goose-opencodego-deepseekv4flash-darwin": {
+    "vibe-minimax-minimaxm3-linux": {
       "prompt_invocation": [
-        "goose",
-        "run",
-        "-t",
-        "<prompt>"
+        "vibe",
+        "--prompt",
+        "\u003cprompt\u003e"
       ],
       "version_invocation": [
-        "goose",
+        "vibe",
+        "--version"
+      ]
+    },
+    "vibe-minimax-minimaxm3-windows": {
+      "prompt_invocation": [
+        "vibe.exe",
+        "--prompt",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "vibe.exe",
+        "--version"
+      ]
+    },
+    "vibe-mistral-mistrallargelatest-linux": {
+      "prompt_invocation": [
+        "vibe",
+        "--prompt",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "vibe",
+        "--version"
+      ]
+    },
+    "vibe-mistral-mistrallargelatest-windows": {
+      "prompt_invocation": [
+        "vibe.exe",
+        "--prompt",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "vibe.exe",
+        "--version"
+      ]
+    },
+    "vibe-mistral-mistralsmalllatest-linux": {
+      "prompt_invocation": [
+        "vibe",
+        "--prompt",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "vibe",
+        "--version"
+      ]
+    },
+    "vibe-mistral-mistralsmalllatest-windows": {
+      "prompt_invocation": [
+        "vibe.exe",
+        "--prompt",
+        "\u003cprompt\u003e"
+      ],
+      "version_invocation": [
+        "vibe.exe",
         "--version"
       ]
     }
-  }
+  },
+  "queue": [
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "minimaxm27",
+      "platform": "windows",
+      "provider": "ollamacloud",
+      "runner": 12812,
+      "stale": true,
+      "started_at": 1788221925
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "qwen3coder",
+      "platform": "windows",
+      "provider": "ollamacloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "nemotron3ultra",
+      "platform": "windows",
+      "provider": "ollamacloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "kimik3",
+      "platform": "windows",
+      "provider": "kimicode",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "musespark12",
+      "platform": "windows",
+      "provider": "meta",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gptoss120b",
+      "platform": "windows",
+      "provider": "googleantigravity",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gpt4o",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "grok45",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "kimik2",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "nemotron3ultra",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "glm47",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "deepseekr1",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gemini3flash",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "claudefable5",
+      "platform": "windows",
+      "provider": "gmicloud",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "deepseekr1",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gpt4o",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "grok3",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "kimik2",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "nemotron3ultra",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "phi4mini",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "olmo332bthink",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "ling30flash",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "doubaoseed21",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "ernie45",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "hunyuant1",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gptoss120b",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gemma327b",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "mistralsmall3",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "qwen36",
+      "platform": "windows",
+      "provider": "nanogpt",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "phi4",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "glm47flash",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "nemotron3ultra",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "llama318b",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "ling261t",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "cogito21",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gptoss120b",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "commanda",
+      "platform": "windows",
+      "provider": "huggingface",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gpt5mini",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gemini3flash",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "glm52",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "claudefable5",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "kimik25",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gpt4o",
+      "platform": "windows",
+      "provider": "githubcopilot",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gemini3pro",
+      "platform": "windows",
+      "provider": "githubcopilot",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "omp",
+      "mode": "from-capture",
+      "model": "gpt5mini",
+      "platform": "windows",
+      "provider": "githubcopilot",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "reasonix",
+      "mode": "from-capture",
+      "model": "deepseekv4flash",
+      "platform": "windows",
+      "provider": "deepseekflash",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "qwen37plus",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "deepseekv4flash",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "minimaxm3",
+      "platform": "windows",
+      "provider": "minimax",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "deepseekv4flash",
+      "platform": "windows",
+      "provider": "deepseek",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "deepseekv4pro",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "glm52",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "kimik25",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "kimik27code",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "kimik3",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "llama3370b",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "llama4maverick",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "minimaxm27",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "qwen36max",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "qwen37flash",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "qwen38max",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "crush",
+      "mode": "from-capture",
+      "model": "qwen3coder",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "minimaxm3",
+      "platform": "windows",
+      "provider": "minimax",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "deepseekv4flash",
+      "platform": "windows",
+      "provider": "deepseek",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "deepseekv4flash",
+      "platform": "windows",
+      "provider": "hyper",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "llama4",
+      "platform": "windows",
+      "provider": "groq",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "qwen3",
+      "platform": "windows",
+      "provider": "cerebras",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "nemotron3ultra",
+      "platform": "windows",
+      "provider": "opencode",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "minimaxm25",
+      "platform": "windows",
+      "provider": "minimax",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "minimaxm27",
+      "platform": "windows",
+      "provider": "minimax",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "glm52",
+      "platform": "windows",
+      "provider": "clinepass",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "kimik27code",
+      "platform": "windows",
+      "provider": "clinepass",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "minimaxm3",
+      "platform": "windows",
+      "provider": "clinepass",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "deepseekv4pro",
+      "platform": "windows",
+      "provider": "clinepass",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "deepseekv4pro",
+      "platform": "windows",
+      "provider": "deepseek",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "glm52",
+      "platform": "windows",
+      "provider": "alibaba",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "qwen3coder",
+      "platform": "windows",
+      "provider": "alibaba",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "opencode",
+      "mode": "from-capture",
+      "model": "qwen38max",
+      "platform": "windows",
+      "provider": "alibaba",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "vibe",
+      "mode": "from-capture",
+      "model": "mistrallargelatest",
+      "platform": "windows",
+      "provider": "mistral",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "vibe",
+      "mode": "from-capture",
+      "model": "mistralsmalllatest",
+      "platform": "windows",
+      "provider": "mistral",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "vibe",
+      "mode": "from-capture",
+      "model": "minimaxm3",
+      "platform": "windows",
+      "provider": "minimax",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "cursor",
+      "mode": "from-capture",
+      "model": "claudefable5",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "cursor",
+      "mode": "from-capture",
+      "model": "claudesonnet5",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "cursor",
+      "mode": "from-capture",
+      "model": "claudeopus5",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "cursor",
+      "mode": "from-capture",
+      "model": "gpt56sol",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "cursor",
+      "mode": "from-capture",
+      "model": "gpt56luna",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "cursor",
+      "mode": "from-capture",
+      "model": "gpt52",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "cursor",
+      "mode": "from-capture",
+      "model": "grok45",
+      "platform": "windows",
+      "provider": "cursor",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "copilot",
+      "mode": "from-capture",
+      "model": "gpt52",
+      "platform": "windows",
+      "provider": "githubcopilot",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "copilot",
+      "mode": "from-capture",
+      "model": "gemini25pro",
+      "platform": "windows",
+      "provider": "githubcopilot",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "copilot",
+      "mode": "from-capture",
+      "model": "grok45",
+      "platform": "windows",
+      "provider": "githubcopilot",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "copilot",
+      "mode": "from-capture",
+      "model": "claudesonnet5",
+      "platform": "windows",
+      "provider": "githubcopilot",
+      "runner": 12812,
+      "stale": true
+    },
+    {
+      "harness": "goose",
+      "mode": "from-capture",
+      "model": "claudesonnet4",
+      "platform": "windows",
+      "provider": "goose",
+      "runner": 15112,
+      "stale": true
+    },
+    {
+      "mode": "from-identity",
+      "runner": 43116,
+      "stale": true,
+      "started_at": 1788168230
+    },
+    {
+      "mode": "from-capture",
+      "runner": 43116,
+      "stale": true,
+      "started_at": 1788169216
+    }
+  ],
+  "store_version": 4
 }

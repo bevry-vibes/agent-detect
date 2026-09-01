@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "SiliconFlow",
+      "provider_name": "siliconflow",
+      "provider_id": "siliconflow",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "omp-siliconflow-minimaxm3",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · MiniMax M3 <omp-siliconflow-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: omp · MiniMax M3 <omp-siliconflow-minimaxm3@local>"
+  },
+  "meta": {
+    "updated_at": 1788197775
+  }
+}

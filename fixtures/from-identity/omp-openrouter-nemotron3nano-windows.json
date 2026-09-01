@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Nemotron 3 Nano",
+      "model_short_title": null,
+      "model_name": "nemotron-3-nano",
+      "model_id": "nemotron3nano",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "omp-openrouter-nemotron3nano",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: omp · Nemotron 3 Nano <omp-openrouter-nemotron3nano@local>",
+    "trailer assisted-by": "Assisted-by: omp · Nemotron 3 Nano <omp-openrouter-nemotron3nano@local>"
+  },
+  "meta": {
+    "updated_at": 1788198447
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Crush",
+      "harness_short_title": null,
+      "harness_name": "crush",
+      "harness_id": "crush",
+      "harness_license": "FSL-1.1-MIT",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3.8-Max",
+      "model_short_title": null,
+      "model_name": "qwen3.8-max",
+      "model_id": "qwen38max",
+      "model_reciprocity": "closed",
+      "model_license": "NONE",
+      "agent_id": "crush-hyper-qwen38max",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Crush · Qwen3.8-Max <crush-hyper-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: Crush · Qwen3.8-Max <crush-hyper-qwen38max@local>"
+  },
+  "meta": {
+    "updated_at": 1788197855
+  }
+}

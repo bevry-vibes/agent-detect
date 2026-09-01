@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "Chutes",
+      "provider_name": "chutes",
+      "provider_id": "chutes",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3 32B",
+      "model_short_title": null,
+      "model_name": "qwen3-32b",
+      "model_id": "qwen332b",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "pi-chutes-qwen332b",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · Qwen3 32B <pi-chutes-qwen332b@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Qwen3 32B <pi-chutes-qwen332b@local>"
+  },
+  "meta": {
+    "updated_at": 1788198615
+  }
+}

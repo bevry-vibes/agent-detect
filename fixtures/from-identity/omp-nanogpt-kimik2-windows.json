@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "NanoGPT",
+      "provider_name": "nanogpt",
+      "provider_id": "nanogpt",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Kimi K2",
+      "model_short_title": null,
+      "model_name": "kimi-k2",
+      "model_id": "kimik2",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "omp-nanogpt-kimik2",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Kimi K2 <omp-nanogpt-kimik2@local>",
+    "trailer assisted-by": "Assisted-by: omp · Kimi K2 <omp-nanogpt-kimik2@local>"
+  },
+  "meta": {
+    "updated_at": 1788197804
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiMo V2.5",
+      "model_short_title": null,
+      "model_name": "mimo-v2.5",
+      "model_id": "mimov25",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "opencode-opencodego-mimov25",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · MiMo V2.5 <opencode-opencodego-mimov25@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · MiMo V2.5 <opencode-opencodego-mimov25@local>"
+  },
+  "meta": {
+    "updated_at": 1788198586
+  }
+}

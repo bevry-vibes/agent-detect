@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Qwen3 Coder",
+      "model_short_title": null,
+      "model_name": "qwen3-coder",
+      "model_id": "qwen3coder",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "kilo-openrouter-qwen3coder",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code · Qwen3 Coder <kilo-openrouter-qwen3coder@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Qwen3 Coder <kilo-openrouter-qwen3coder@local>"
+  },
+  "meta": {
+    "updated_at": 1788198229
+  }
+}

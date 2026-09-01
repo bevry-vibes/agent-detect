@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "Cursor",
+      "provider_name": "cursor",
+      "provider_id": "cursor",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Gemini 3 Flash",
+      "model_short_title": null,
+      "model_name": "gemini-3-flash",
+      "model_id": "gemini3flash",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "omp-cursor-gemini3flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Gemini 3 Flash <omp-cursor-gemini3flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Gemini 3 Flash <omp-cursor-gemini3flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788197828
+  }
+}

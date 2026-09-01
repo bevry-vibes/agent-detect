@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Qwen3.8-Max",
+      "model_short_title": null,
+      "model_name": "qwen3.8-max",
+      "model_id": "qwen38max",
+      "model_reciprocity": "closed",
+      "model_license": "NONE",
+      "agent_id": "omp-openrouter-qwen38max",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Qwen3.8-Max <omp-openrouter-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: omp · Qwen3.8-Max <omp-openrouter-qwen38max@local>"
+  },
+  "meta": {
+    "updated_at": 1788198459
+  }
+}

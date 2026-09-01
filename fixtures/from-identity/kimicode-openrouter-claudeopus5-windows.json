@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Claude Opus 5",
+      "model_short_title": null,
+      "model_name": "claude-opus-5",
+      "model_id": "claudeopus5",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "kimicode-openrouter-claudeopus5",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · Claude Opus 5 <kimicode-openrouter-claudeopus5@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Claude Opus 5 <kimicode-openrouter-claudeopus5@local>"
+  },
+  "meta": {
+    "updated_at": 1788198293
+  }
+}

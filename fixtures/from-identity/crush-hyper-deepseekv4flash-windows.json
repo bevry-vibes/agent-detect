@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Crush",
+      "harness_short_title": null,
+      "harness_name": "crush",
+      "harness_id": "crush",
+      "harness_license": "FSL-1.1-MIT",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "crush-hyper-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Crush · DeepSeek V4 Flash <crush-hyper-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Crush · DeepSeek V4 Flash <crush-hyper-deepseekv4flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788197840
+  }
+}

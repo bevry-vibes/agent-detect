@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Grok 4.5",
+      "model_short_title": null,
+      "model_name": "grok-4.5",
+      "model_id": "grok45",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "cline-openrouter-grok45",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Cline · Grok 4.5 <cline-openrouter-grok45@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Grok 4.5 <cline-openrouter-grok45@local>"
+  },
+  "meta": {
+    "updated_at": 1788198032
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Qwen Code",
+      "harness_short_title": null,
+      "harness_name": "qwen",
+      "harness_id": "qwen",
+      "harness_license": "Apache-2.0",
+      "provider_label": "xAI",
+      "provider_name": "xai",
+      "provider_id": "xai",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Grok 4",
+      "model_short_title": null,
+      "model_name": "grok-4",
+      "model_id": "grok4",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "qwen-xai-grok4",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Qwen Code · Grok 4 <qwen-xai-grok4@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code · Grok 4 <qwen-xai-grok4@local>"
+  },
+  "meta": {
+    "updated_at": 1788198896
+  }
+}

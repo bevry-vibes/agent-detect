@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Vibe",
+      "harness_short_title": null,
+      "harness_name": "vibe",
+      "harness_id": "vibe",
+      "harness_license": "Apache-2.0",
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "vibe-minimax-minimaxm3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Vibe · MiniMax M3 <vibe-minimax-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Vibe · MiniMax M3 <vibe-minimax-minimaxm3@local>"
+  },
+  "meta": {
+    "updated_at": 1788197877
+  }
+}

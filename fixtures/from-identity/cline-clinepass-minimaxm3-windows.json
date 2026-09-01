@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "cline-clinepass-minimaxm3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · MiniMax M3 <cline-clinepass-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Cline · MiniMax M3 <cline-clinepass-minimaxm3@local>"
+  },
+  "meta": {
+    "updated_at": 1788197923
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "ZenMux",
+      "provider_name": "zenmux",
+      "provider_id": "zenmux",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Gemini 3.5 Flash",
+      "model_short_title": null,
+      "model_name": "gemini-3.5-flash",
+      "model_id": "gemini35flash",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "omp-zenmux-gemini35flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788197773
+  }
+}

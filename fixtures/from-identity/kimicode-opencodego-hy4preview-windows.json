@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "model_label": "Hy4 Preview",
+      "model_short_title": null,
+      "model_name": "hy4-preview",
+      "model_id": "hy4preview",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "kimicode-opencodego-hy4preview",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · Hy4 Preview <kimicode-opencodego-hy4preview@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Hy4 Preview <kimicode-opencodego-hy4preview@local>"
+  },
+  "meta": {
+    "updated_at": 1788198272
+  }
+}

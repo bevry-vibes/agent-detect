@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Alibaba",
+      "provider_name": "alibaba",
+      "provider_id": "alibaba",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "Qwen3.8 Flash",
+      "model_short_title": null,
+      "model_name": "qwen3.8-flash",
+      "model_id": "qwen38flash",
+      "model_reciprocity": null,
+      "model_license": null,
+      "agent_id": "opencode-alibaba-qwen38flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Qwen3.8 Flash <opencode-alibaba-qwen38flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3.8 Flash <opencode-alibaba-qwen38flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788198466
+  }
+}

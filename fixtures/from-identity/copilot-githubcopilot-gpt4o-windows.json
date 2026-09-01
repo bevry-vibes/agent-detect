@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "GitHub Copilot CLI",
+      "harness_short_title": null,
+      "harness_name": "copilot",
+      "harness_id": "copilot",
+      "harness_license": "NONE",
+      "provider_label": "GitHub Copilot",
+      "provider_name": "github-copilot",
+      "provider_id": "githubcopilot",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "GPT-4o",
+      "model_short_title": null,
+      "model_name": "gpt-4o",
+      "model_id": "gpt4o",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "copilot-githubcopilot-gpt4o",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: GitHub Copilot CLI · GPT-4o <copilot-githubcopilot-gpt4o@local>",
+    "trailer assisted-by": "Assisted-by: GitHub Copilot CLI · GPT-4o <copilot-githubcopilot-gpt4o@local>"
+  },
+  "meta": {
+    "updated_at": 1788198072
+  }
+}

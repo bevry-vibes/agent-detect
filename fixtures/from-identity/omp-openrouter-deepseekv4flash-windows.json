@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "omp-openrouter-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: omp · DeepSeek V4 Flash <omp-openrouter-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · DeepSeek V4 Flash <omp-openrouter-deepseekv4flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788197767
+  }
+}

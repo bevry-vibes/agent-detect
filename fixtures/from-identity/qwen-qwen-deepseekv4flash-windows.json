@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Qwen Code",
+      "harness_short_title": null,
+      "harness_name": "qwen",
+      "harness_id": "qwen",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Qwen",
+      "provider_name": "qwen",
+      "provider_id": "qwen",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "qwen-qwen-deepseekv4flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Qwen Code · DeepSeek V4 Flash <qwen-qwen-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code · DeepSeek V4 Flash <qwen-qwen-deepseekv4flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788197745
+  }
+}

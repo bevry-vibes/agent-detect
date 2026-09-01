@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Claude Opus 4",
+      "model_short_title": null,
+      "model_name": "claude-opus-4",
+      "model_id": "claudeopus4",
+      "model_reciprocity": "closed",
+      "model_license": null,
+      "agent_id": "cline-openrouter-claudeopus4",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Cline · Claude Opus 4 <cline-openrouter-claudeopus4@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Claude Opus 4 <cline-openrouter-claudeopus4@local>"
+  },
+  "meta": {
+    "updated_at": 1788197997
+  }
+}
