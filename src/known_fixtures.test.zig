@@ -197,12 +197,54 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                     std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
                     return error.UnexpectedOutputKey;
                 }
-                // meta: updated_at (+ optional harness_version and the
-                // invocation of record — null-as-absent)
+                // meta: updated_at + the required full invocation of
+                // record (harness_version, prompt_invocation,
+                // version_invocation — from-capture only gets fully
+                // programmatically-invokable captures; the writer
+                // fails instead of a partial meta). The legacy stems
+                // below predate the rule and lack the fields; each is
+                // rewritten by its next re-capture (drop the stem as it
+                // lands).
+                const legacy = isLegacyRequiredMeta(stem);
                 try testing.expect(mo.get("updated_at") != null);
+                if (!legacy) {
+                    if (mo.get("harness_version") == null) {
+                        std.debug.print("fixture {s}/{s}.json meta is missing required harness_version\n", .{ folder, stem });
+                        return error.MissingRequiredMeta;
+                    }
+                    if (mo.get("prompt_invocation") == null) {
+                        std.debug.print("fixture {s}/{s}.json meta is missing required prompt_invocation\n", .{ folder, stem });
+                        return error.MissingRequiredMeta;
+                    }
+                    if (mo.get("version_invocation") == null) {
+                        std.debug.print("fixture {s}/{s}.json meta is missing required version_invocation\n", .{ folder, stem });
+                        return error.MissingRequiredMeta;
+                    }
+                }
             }
         }
     }
+}
+
+/// from-capture stems written before the required-meta rule (their
+/// meta carries only `updated_at`). Each is rewritten by its next
+/// re-capture — drop the stem as it lands.
+fn isLegacyRequiredMeta(stem: []const u8) bool {
+    const legacy = [_][]const u8{
+        "pi-anthropic-claudesonnet4-darwin",
+        "pi-groq-llama318b-darwin",
+        "pi-groq-llama3370b-darwin",
+        "pi-groq-llama4-darwin",
+        "pi-kimi-kimik3-darwin",
+        "pi-opencodego-glm53flash-darwin",
+        "pi-xai-grok4-darwin",
+        "reasonix-deepseek-deepseekv4flash-darwin",
+        "reasonix-minimax-minimaxm3-darwin",
+    };
+    for (legacy) |id| {
+        if (std.mem.eql(u8, id, stem)) return true;
+    }
+    return false;
 }
 
 test "fixtures: identify has all 18 grouped keys in emission order, no trailer key" {

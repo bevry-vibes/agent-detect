@@ -116,8 +116,12 @@ export interface CaptureFile {
   meta: {
     /** was capture.captured_at. */
     updated_at: number;
-    /** was capture.harness_version — the live version snapshot. */
-    harness_version?: string;
+    /**
+     * was capture.harness_version — the live version snapshot from the
+     * `version_invocation` probe. REQUIRED: a capture that cannot
+     * record it fails and writes no file.
+     */
+    harness_version: string;
     /**
      * The invocation of record — the launch argv that ran `fixtures
      * capture` inside this live session. argv[0] is the concrete
@@ -125,12 +129,14 @@ export interface CaptureFile {
      * placeholder `<prompt>` (see `fixtures prompt`). Minimal
      * invocation: only the arguments necessary to pin harness +
      * provider + model and run the capture prompt (see
-     * CONTRIBUTING.md "minimal invocation"). Absent for hand-run
-     * captures with no authored invocation (the combo then sits in
-     * backlog unknown_invocations).
+     * CONTRIBUTING.md "minimal invocation"). REQUIRED — from-capture
+     * only gets fully programmatically-invokable captures: a capture
+     * with no invocation of record (store table or replaced file)
+     * fails and writes no file, so a committed from-capture file
+     * always carries the complete invocation.
      */
-    prompt_invocation?: string[];
-    /** e.g. ["kimi", "--version"] — availability probe + version source. */
-    version_invocation?: string[];
+    prompt_invocation: string[];
+    /** e.g. ["kimi", "--version"] — availability probe + version source. REQUIRED (see `prompt_invocation`). */
+    version_invocation: string[];
   };
 }

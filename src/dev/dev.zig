@@ -1120,8 +1120,14 @@ pub const dev = if (build_options.dev) struct {
                     1 => canonicalIdFor(a, ProviderRule, &rulesForProviders, item) != null,
                     2 => canonicalIdFor(a, ModelRule, &rulesForModels, item) != null,
                     else => blk: {
+                        // resolved when an invocation of record exists
+                        // (table or file meta), or the capture file is
+                        // gone (no file → nothing to act on for the
+                        // gap); a load error keeps the item (a broken
+                        // file is still a signal).
+                        if (inv_table.contains(item)) break :blk true;
                         const cf = loadChannelFile(io, a, CAPTURE_DIR, item) catch break :blk false;
-                        break :blk cf.prompt_invocation != null or inv_table.contains(item);
+                        break :blk !cf.exists or cf.prompt_invocation != null;
                     },
                 };
                 if (resolved) backlogRemovePure(a, root, set, item);
@@ -2140,14 +2146,16 @@ pub const dev = if (build_options.dev) struct {
     /// per-platform config paths from churning each other across CI
     /// runs; see DESIGN.md "per-platform fixtures" for the rationale.
     ///
-    /// **Writer rule for `meta`** — the invocation of record persists:
-    /// the store's `invocations` table entry first, else any
-    /// `meta.prompt_invocation` / `meta.version_invocation` in the file
-    /// being replaced — recorded into the written file's `meta` — while
-    /// `updated_at` / `harness_version` are stamped fresh. A capture
-    /// with no invocation anywhere writes `meta`
-    /// without the invocation fields (the combo then sits in backlog
-    /// unknown_invocations).
+    /// **Writer rule for `meta`** — the meta is **complete**: the
+    /// invocation of record (the store's `invocations` table entry
+    /// first, else the `meta.prompt_invocation` /
+    /// `meta.version_invocation` in the file being replaced) is always
+    /// recorded, and `updated_at` / `harness_version` are stamped fresh
+    /// (the version from a live `version_invocation` probe). A capture
+    /// that cannot record all of `harness_version` /
+    /// `prompt_invocation` / `version_invocation` fails (exit 9) and
+    /// writes no file: a partial meta is bad data, and from-capture
+    /// only gets fully programmatically-invokable captures.
     pub fn runFixturesCapture(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -2190,7 +2198,10 @@ pub const dev = if (build_options.dev) struct {
         const ab = if (self_path) |sp| try spawnTrailerLine(a, io, sp, "assisted-by", "", "", "") else null;
 
         // invocation of record: the store's `invocations` table first
-        // (the latest), else whatever the replaced file recorded.
+        // (the latest), else whatever the replaced file recorded. The
+        // from-capture meta is complete: a capture that cannot record
+        // all of prompt_invocation / version_invocation /
+        // harness_version fails (exit 9) and writes no file.
         const existing = try loadChannelFile(io, a, CAPTURE_DIR, fixture_id);
         var store_root = try indexLoad(io, a);
         const tinv = try invocationFromTable(a, &store_root, fixture_id);
@@ -2206,10 +2217,25 @@ pub const dev = if (build_options.dev) struct {
             }
             break :blk existing.version_invocation;
         };
+        if (rec_prompt == null or rec_version == null) {
+            writeErr(io, "fixtures capture: no invocation of record for ");
+            writeErr(io, fixture_id);
+            writeErr(io, " (nothing in the invocations table or the existing file) — no fixture written\n");
+            return EXIT_AGENT_DATA_INCOMPLETE;
+        }
         // live harness version snapshot via the recorded
-        // `version_invocation` (absent ⇒ "not yet knowable" — the raw
-        // block carries the null too).
-        const hver: ?[]const u8 = if (rec_version) |vl| launchVersion(io, a, vl) else null;
+        // `version_invocation` — required, so a probe that yields no
+        // version token fails the capture.
+        const hver = blk: {
+            const v = launchVersion(io, a, rec_version.?);
+            if (v == null) {
+                writeErr(io, "fixtures capture: version probe yielded no version for ");
+                writeErr(io, fixture_id);
+                writeErr(io, " — no fixture written\n");
+                return EXIT_AGENT_DATA_INCOMPLETE;
+            }
+            break :blk v.?;
+        };
 
         const raw = try buildRaw(a, &d, init.environ_map, hver, true);
 
@@ -2219,12 +2245,14 @@ pub const dev = if (build_options.dev) struct {
         try outputs.object.put(a, "trailer assisted-by", optStringValue(a, ab));
         try outputs.object.put(a, "raw", raw);
 
-        // meta — the invocation of record persists; the ledger stamps fresh.
+        // meta — complete by construction (all fields required, see
+        // fixtures/fixture.d.ts): the invocation of record persists,
+        // the ledger stamps fresh.
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
-        if (hver) |v| try meta.object.put(a, "harness_version", .{ .string = v });
-        if (rec_prompt) |pl| try meta.object.put(a, "prompt_invocation", stringListValue(a, pl));
-        if (rec_version) |vl| try meta.object.put(a, "version_invocation", stringListValue(a, vl));
+        try meta.object.put(a, "harness_version", .{ .string = hver });
+        try meta.object.put(a, "prompt_invocation", stringListValue(a, rec_prompt.?));
+        try meta.object.put(a, "version_invocation", stringListValue(a, rec_version.?));
 
         var root: std.json.Value = .{ .object = .empty };
         try root.object.put(a, "outputs", outputs);

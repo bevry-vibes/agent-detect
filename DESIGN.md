@@ -146,11 +146,15 @@ it (temp + rename); there is no merge-write, no store row, and no
 writer contention (declaration and capture never touch the same bytes).
 Git semantics: identity churn and capture churn isolate per file; PR
 review sees exactly which channel changed; a torn write damages only
-one channel. The writer of a from-capture file records the **invocation
-of record** into its `meta` (`prompt_invocation` / `version_invocation`
-— the store's `invocations` table entry first, else whatever the
-replaced file recorded) and stamps `updated_at` / `harness_version`
-fresh. There are **no
+one channel. The writer of a from-capture file records the **complete
+`meta`**: the **invocation of record** (`prompt_invocation` /
+`version_invocation` — the store's `invocations` table entry first,
+else whatever the replaced file recorded) plus a live `harness_version`
+(from the `version_invocation` probe), with `updated_at` stamped fresh.
+A capture that cannot record the full set fails and writes no file —
+from-capture only gets fully programmatically-invokable captures
+(legacy files that predate the rule are grandfathered in
+`known_fixtures.test.zig` until their next re-capture). There are **no
 meta-only stub files**: an authored invocation for a not-yet-captured
 combo lives in the store's `invocations` table, and the capture file
 appears only when a capture succeeds. Curation is a signal to the dev
