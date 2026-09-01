@@ -195,8 +195,9 @@ pub const rulesForModels = [_]ModelRule{
     // + LICENSE.
     .{ .name = "nemotron-3-ultra", .label = "Nemotron 3 Ultra", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B", "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE" } },
     // qwen3-coder: open-weight — Alibaba Qwen3 Coder; HF card +
-    // LICENSE.
-    .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" } },
+    // LICENSE. variations: hyper's serving id spelling (observed: the
+    // hyper catalog's `qwen3-coder-480b-a35b-instruct-int4-mixed-ar`).
+    .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" }, .variations = &.{ "qwen3-coder-480b-a35b-instruct-int4-mixed-ar" } },
     // qwen3-32b: open-weight — the 32B dense size of the Qwen3 family;
     // HF card + Apache-2.0 LICENSE. variations: Chutes stamps secure-
     // enclave serving ids with "-TEE" (same model, TEE mode); the
@@ -265,11 +266,13 @@ pub const rulesForModels = [_]ModelRule{
     // LICENSE.
     .{ .name = "nemotron-3-nano", .label = "Nemotron 3 Nano", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B", "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE" } },
     // llama-3.3-70b: open-weight — Meta Llama 3.3 70B; HF card +
-    // LICENSE.
-    .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct", "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE" } },
+    // LICENSE. variations: hyper's serving id spelling (observed: the
+    // hyper catalog's `llama-3.3-70b-instruct`).
+    .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct", "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE" }, .variations = &.{ "llama-3.3-70b-instruct" } },
     // llama-4-maverick: open-weight — Meta Llama 4 Maverick; HF card +
-    // LICENSE.
-    .{ .name = "llama-4-maverick", .label = "Llama 4 Maverick", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct", "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE" } },
+    // LICENSE. variations: hyper's serving id spelling (observed: the
+    // hyper catalog's `llama-4-maverick-17b-128e-instruct-fp8`).
+    .{ .name = "llama-4-maverick", .label = "Llama 4 Maverick", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct", "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE" }, .variations = &.{ "llama-4-maverick-17b-128e-instruct-fp8" } },
     // kimi-k2.7-code: open-weight — Moonshot Kimi K2.7 Code; HF card +
     // LICENSE.
     .{ .name = "kimi-k2.7-code", .label = "Kimi K2.7 Code", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.7-Code", "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE" } },

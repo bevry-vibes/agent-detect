@@ -1269,53 +1269,120 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
 }
 
 fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    _ = env;
     if (home.len == 0) return;
-    // crush's `default_large_model_id` is the "current" model — the
-    // launcher wrote it into hyper.json from the user's `crush
-    // update-providers` run. Format: "<provider>/<model>". The path
-    // follows HOME, so it must NOT be hardcoded.
-    const cwd_dir = std.Io.Dir.cwd();
-    const path = try std.fs.path.join(a, &.{ home, ".local/share/crush/hyper.json" });
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
-    defer a.free(data);
-    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
-    defer parsed.deinit();
-    const dm = (parsed.value.object.get("default_large_model_id") orelse return).string;
-    if (dm.len == 0) return;
+    // The data directory follows the platform, not HOME: POSIX puts it
+    // at ~/.local/share/crush, Windows at %LOCALAPPDATA%\Crush (a stray
+    // ~/.local/share/crush may exist on Windows but is empty).
+    var base = try std.fs.path.join(a, &.{ home, ".local/share/crush" });
+    if (builtin.os.tag == .windows) {
+        if (env.get("LOCALAPPDATA")) |lad| {
+            const win = try std.fs.path.join(a, &.{ lad, "Crush" });
+            a.free(base);
+            base = win;
+        }
+    }
+    defer a.free(base);
+    // decision #11: the model actually in use is the live session store
+    // `<cwd>/.crush/crush.db` — the newest assistant message's
+    // model/provider (a `crush run -m <p>/<m>` override is only in
+    // memory, so the DB is the only place the launched run's real model
+    // is visible). Fall back to crush.json's `models.large`
+    // = {provider, model} — the picker's last selection, i.e. what an
+    // unpinned `crush run` uses (e.g. chutes' "Qwen/Qwen3.8-27B-TEE").
+    // hyper.json's `default_large_model_id` is NOT the active model
+    // (it is the hyper-provider catalog's default) and is never read
+    // as a model source: a partial chain ends undetected, not guessed.
+    if (try detectCrushFromDb(a, io, env, d)) return;
+    _ = try detectCrushFromCrushJson(a, io, base, d);
+}
 
-    const slash = std.mem.findScalar(u8, dm, '/');
-    if (slash) |i| {
-        var prov = dm[0..i];
-        const model_only = dm[i + 1 ..];
-        // crush's hyper.json routes the user's Charm Hyper subscription;
-        // a provider key that is no known provider but IS a known model
-        // id (e.g. "qwen3.7-plus/…") is hyper's internal routing alias —
-        // the provider the user engages is `hyper`.
-        if (providerMetaForName(prov) == null and canonicalIdFor(a, ModelRule, &rulesForModels, prov) != null) prov = "hyper";
-        d.provider_name = prov;
-        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
-        try applyProviderMeta(a, d, prov);
-        try applyModel(a, d, model_only, dm);
+/// Read the model + provider from crush's project-local session store
+/// `<cwd>/.crush/crush.db` (same per-project layout as the kilo/
+/// opencode stores). The `messages` table carries `model`/`provider`
+/// per assistant message (chutes ids arrive namespaced, e.g.
+/// "Qwen/Qwen3.8-27B-TEE"; provider ids are bare, e.g. "hyper"). The
+/// newest assistant message is the model the session is currently
+/// serving. Partial/absent → false (the caller falls back to the
+/// config files).
+fn detectCrushFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, d: *Detection) !bool {
+    const dir = currentDir(a, io, env) orelse return false;
+    const db = try std.fs.path.join(a, &.{ dir, ".crush/crush.db" });
+    if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return false;
+
+    const sql =
+        \\SELECT model, provider FROM messages
+        \\WHERE role = 'assistant' AND model IS NOT NULL AND model != '' AND provider IS NOT NULL AND provider != ''
+        \\ORDER BY created_at DESC LIMIT 1
+    ;
+    const out = kiloSqliteJson(a, io, db, sql) catch return false;
+    if (out.len == 0) return false;
+    const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return false;
+    defer outer.deinit();
+    if (outer.value != .array or outer.value.array.items.len == 0) return false;
+    const row = outer.value.array.items[0];
+    if (row != .object) return false;
+    const model = jstr(row.object, "model") orelse return false;
+    const prov = jstr(row.object, "provider") orelse return false;
+    if (model.len == 0 or prov.len == 0) return false;
+
+    try setProvider(a, d, prov);
+    try applyModel(a, d, model, model);
+    var fields = std.ArrayList(FieldObservation).empty;
+    defer fields.deinit(a);
+    try fields.append(a, .{ .dotted_path = "messages.model", .value = model });
+    try fields.append(a, .{ .dotted_path = "messages.provider", .value = prov });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
+    d.raw.session_files = obs;
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "messages.provider", .value = prov });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "messages.model", .value = model });
+    return true;
+}
+
+fn detectCrushFromCrushJson(a: std.mem.Allocator, io: std.Io, base: []const u8, d: *Detection) !bool {
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = try std.fs.path.join(a, &.{ base, "crush.json" });
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return false;
+    defer a.free(data);
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return false;
+    defer parsed.deinit();
+    const models = parsed.value.object.get("models") orelse return false;
+    const large = (models.object.get("large") orelse return false).object;
+    const model = (large.get("model") orelse return false).string;
+    if (model.len == 0) return false;
+    var prov: ?[]const u8 = null;
+    if (large.get("provider")) |pv| {
+        if (pv.string.len > 0) prov = pv.string;
+    }
+    // a provider field (or a "provider/model" spelling) names the
+    // provider the user engages with; without one, neither dim can be
+    // read without guessing — detection ends undetected.
+    if (prov) |p| {
+        try setProvider(a, d, p);
+        try applyModel(a, d, model, model);
+    } else if (std.mem.findScalar(u8, model, '/')) |i| {
+        try setProvider(a, d, model[0..i]);
+        try applyModel(a, d, model[i + 1 ..], model);
     } else {
-        var prov = dm;
-        if (providerMetaForName(dm) == null and canonicalIdFor(a, ModelRule, &rulesForModels, dm) != null) prov = "hyper";
-        d.provider_name = prov;
-        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
-        try applyProviderMeta(a, d, prov);
-        try applyModel(a, d, dm, dm);
+        return false;
     }
 
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
-    try fields.append(a, .{ .dotted_path = "default_large_model_id", .value = dm });
+    try fields.append(a, .{ .dotted_path = "models.large.model", .value = model });
+    if (prov) |p| {
+        try fields.append(a, .{ .dotted_path = "models.large.provider", .value = p });
+    }
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
-    // decision #11: both dims read from hyper.json's
-    // `default_large_model_id` = "<provider>/<model>".
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "default_large_model_id", .value = dm });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "default_large_model_id", .value = dm });
+    if (prov) |p| {
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "models.large.provider", .value = p });
+    } else {
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "models.large.model", .value = model });
+    }
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "models.large.model", .value = model });
+    return true;
 }
 
 /// Resolve the current working directory for session-store lookups.
