@@ -2874,11 +2874,43 @@ pub const dev = if (build_options.dev) struct {
             // interpolates the real launch prompt at spawn time.
             argv_buf[idx] = if (std.mem.eql(u8, arg, "<prompt>")) capture_prompt else arg;
         }
+        // the worker's stderr goes to a per-capture worker log (the user
+        // can tail it mid-run; the daemon reads its tail into the failure
+        // record), while its stdout is piped back and teed live into the
+        // daemon log as it is produced. A file-backed stderr also removes
+        // the hang class where a grandchild holds a second pipe open past
+        // the watchdog's kill of the direct child.
+        const worker_log_rel = try std.fmt.allocPrint(a, "fixtures/tmp/{s}.worker.log", .{fixture_id});
+        defer a.free(worker_log_rel);
+        std.Io.Dir.cwd().createDirPath(io, "fixtures/tmp") catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => {
+                daemonWriteErr(io, "daemon: from-capture: cannot create fixtures/tmp: ");
+                daemonWriteErr(io, @errorName(err));
+                daemonWriteErr(io, "\n");
+                try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot create worker log dir", init.environ_map);
+                damped.put(fixture_id, {}) catch {};
+                return false;
+            },
+        };
+        const log_file = std.Io.Dir.cwd().createFile(io, worker_log_rel, .{ .read = true, .truncate = true }) catch |err| {
+            daemonWriteErr(io, "daemon: from-capture: cannot open worker log: ");
+            daemonWriteErr(io, @errorName(err));
+            daemonWriteErr(io, "\n");
+            try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot open worker log", init.environ_map);
+            damped.put(fixture_id, {}) catch {};
+            return false;
+        };
+        {
+            var lbuf: [160]u8 = undefined;
+            const m = std.fmt.bufPrint(lbuf[0..], "  worker log: {s}\n", .{worker_log_rel}) catch "";
+            daemonWrite(io, m);
+        }
         const child = std.process.spawn(io, .{
             .argv = argv_buf[0..launch.len],
             .environ_map = init.environ_map,
-            .stdout = .ignore,
-            .stderr = .pipe,
+            .stdout = .pipe,
+            .stderr = .{ .file = log_file },
         }) catch |err| {
             daemonWriteErr(io, "daemon: from-capture: spawn failed");
             daemonWriteErr(io, ": ");
@@ -2888,6 +2920,8 @@ pub const dev = if (build_options.dev) struct {
             damped.put(fixture_id, {}) catch {};
             return false;
         };
+        // the child inherited its own handle; the parent's copy is done.
+        log_file.close(io);
 
         // timeout watchdog — `agent-detect-dev fixtures __timeout <sec> <pid>`.
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
@@ -2907,26 +2941,23 @@ pub const dev = if (build_options.dev) struct {
         var wargv = [_][]const u8{ argv0, "fixtures", "__timeout", sec_str, pid_str };
         _ = std.process.spawn(io, .{ .argv = &wargv, .stdout = .ignore, .stderr = .ignore }) catch {};
 
-        // stream the worker's stderr into the daemon log as it is
+        // stream the worker's stdout into the daemon log as it is
         // produced (a tee), so a capture can be followed live; the
-        // buffer keeps the output for the failure record below.
-        // stdout stays ignored: Zig 0.16 std has no cross-platform
-        // pipe polling, and a worker blocked on a full unread stdout
-        // pipe would deadlock this single reader.
-        var stderr_capture: std.ArrayList(u8) = .empty;
-        defer stderr_capture.deinit(a);
+        // buffer keeps the tail for the failure record below.
+        var out_capture: std.ArrayList(u8) = .empty;
+        defer out_capture.deinit(a);
         {
             var rbuf: [8192]u8 = undefined;
-            var reader = child.stderr.?.reader(io, &rbuf);
-            while (stderr_capture.items.len < (1 << 16)) {
+            var reader = child.stdout.?.reader(io, &rbuf);
+            while (out_capture.items.len < (1 << 16)) {
                 var chunk: [8192]u8 = undefined;
                 const n = reader.interface.readSliceShort(&chunk) catch break;
                 if (n == 0) break;
-                const piece = chunk[0..@min(n, (1 << 16) - stderr_capture.items.len)];
+                const piece = chunk[0..@min(n, (1 << 16) - out_capture.items.len)];
                 daemonWriteErr(io, "  worker: ");
                 daemonWriteErr(io, piece);
                 if (piece[piece.len - 1] != '\n') daemonWriteErr(io, "\n");
-                try stderr_capture.appendSlice(a, piece);
+                try out_capture.appendSlice(a, piece);
             }
         }
         var child_mut = child;
@@ -2946,10 +2977,17 @@ pub const dev = if (build_options.dev) struct {
                     daemonWriteErr(io, " (exit code ");
                     daemonWriteErrCount(io, code);
                     daemonWriteErr(io, ")\n");
-                    if (stderr_capture.items.len > 0) {
-                        daemonWriteErr(io, "  worker stderr: ");
-                        daemonWriteErr(io, stderr_capture.items);
-                        if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
+                    if (out_capture.items.len > 0) {
+                        daemonWriteErr(io, "  worker stdout: ");
+                        daemonWriteErr(io, out_capture.items);
+                        if (out_capture.items[out_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
+                    }
+                    const err_tail = readWorkerLogTail(a, io, worker_log_rel) catch "";
+                    defer if (err_tail.len > 0) a.free(err_tail);
+                    if (err_tail.len > 0) {
+                        daemonWriteErr(io, "  worker stderr tail: ");
+                        daemonWriteErr(io, err_tail);
+                        if (err_tail[err_tail.len - 1] != '\n') daemonWriteErr(io, "\n");
                     }
                     // detection-partial (exit 8) lands here too — valid ids,
                     // failed attempt → damped this session, retried next.
@@ -2960,10 +2998,14 @@ pub const dev = if (build_options.dev) struct {
                         const cs = std.fmt.bufPrint(&nbuf, " (exit {d})", .{code}) catch "";
                         try msg.appendSlice(a, cs);
                     }
-                    if (stderr_capture.items.len > 0) {
-                        try msg.appendSlice(a, ": ");
-                        const tail_start = if (stderr_capture.items.len > 400) stderr_capture.items.len - 400 else 0;
-                        try msg.appendSlice(a, stderr_capture.items[tail_start..]);
+                    if (out_capture.items.len > 0) {
+                        try msg.appendSlice(a, ": stdout ");
+                        const tail_start = if (out_capture.items.len > 200) out_capture.items.len - 200 else 0;
+                        try msg.appendSlice(a, out_capture.items[tail_start..]);
+                    }
+                    if (err_tail.len > 0) {
+                        try msg.appendSlice(a, "; stderr ");
+                        try msg.appendSlice(a, err_tail);
                     }
                     try recordKnownButFailed(io, a, fixture_id, msg.items, init.environ_map);
                     damped.put(fixture_id, {}) catch {};
@@ -2988,6 +3030,20 @@ pub const dev = if (build_options.dev) struct {
                 return false;
             },
         }
+    }
+
+    /// last ≤400 bytes of a worker log (NUL-stripped) for the failure
+    /// record; "" when the file is absent or empty.
+    fn readWorkerLogTail(a: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, std.Io.Limit.limited(1 << 20)) catch return "";
+        defer a.free(data);
+        const start = if (data.len > 400) data.len - 400 else 0;
+        var s: std.ArrayList(u8) = .empty;
+        defer s.deinit(a);
+        for (data[start..]) |b| {
+            if (b != 0) try s.append(a, b);
+        }
+        return s.toOwnedSlice(a);
     }
 
     /// the daemon's per-poll pick: refresh the backlog table, then scan

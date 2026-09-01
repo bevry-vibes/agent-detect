@@ -437,11 +437,13 @@ Run the daemon with `fixtures daemon --write-log` (log:
 status heartbeat every ~1s, faster than the iteration delays. The
 startup banner prints the daemon's own `process id` (how you kill it or
 tell two instances' log streams apart), each `from-capture` announces
-its `worker pid`, and the worker's stderr is teed to the log live
-(`worker: ` prefix) so a capture can be followed while it runs.
-Worker stdout stays discarded: a worker blocked on a full unread
-stdout pipe would deadlock the single reader, and Zig 0.16 std has no
-cross-platform pipe polling.
+its `worker pid` and a `worker log` path, and the worker's stdout is
+teed to the log live (`worker: ` prefix) so a capture can be followed
+while it runs. The worker's stderr goes to
+`fixtures/tmp/<fixture-id>.worker.log` (tail it while the capture
+runs); on failure the daemon reads the stdout tail and the worker-log
+tail into the `known_but_failed` record, so a failure line always says
+what the worker actually saw.
 
 **One daemon per host.** Always close the previous instance (task /
 launch agent / terminal run) before starting a new one — a second

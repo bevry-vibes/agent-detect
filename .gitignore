@@ -67,6 +67,9 @@ fixtures/daemon.log
 # dev daemon control file (pause/resume/stop; written by the user, cleared
 # by the daemon after acting — never committed)
 fixtures/daemon.ctl
+# per-capture worker logs (the worker's stderr; teed reference is the
+# daemon.log, the logs are a scratch record — never committed)
+fixtures/tmp/
 
 # index.json store runtime files — the lock file and the atomic-write
 # temp file are never committed; `fixtures/index.json` itself IS

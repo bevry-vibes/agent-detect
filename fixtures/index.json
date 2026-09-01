@@ -96,7 +96,36 @@
       "qwen-qwen-qwen38max-windows": "post-check mismatch",
       "qwen-xai-grok420-windows": "post-check mismatch",
       "qwen-xai-grok45-windows": "post-check mismatch",
-      "omp-ollamacloud-minimaxm27-windows": "capture failed (exit 1)"
+      "omp-ollamacloud-minimaxm27-windows": "capture failed (exit 1)",
+      "omp-ollamacloud-qwen3coder-windows": "capture failed (exit 1)",
+      "omp-ollamacloud-nemotron3ultra-windows": "capture failed (exit 1)",
+      "omp-kimicode-kimik3-windows": "capture failed (exit 1)",
+      "omp-meta-musespark12-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for meta/muse-spark-1.2\n",
+      "omp-googleantigravity-gptoss120b-windows": "capture failed (exit 1)",
+      "omp-gmicloud-gpt4o-windows": "capture failed (exit 1)",
+      "omp-gmicloud-grok45-windows": "capture failed (exit 1)",
+      "omp-gmicloud-kimik2-windows": "capture failed (exit 1)",
+      "omp-gmicloud-nemotron3ultra-windows": "capture failed (exit 1)",
+      "omp-gmicloud-glm47-windows": "capture failed (exit 1)",
+      "omp-gmicloud-deepseekr1-windows": "capture failed (exit 1)",
+      "omp-gmicloud-gemini3flash-windows": "capture failed (exit 1)",
+      "omp-gmicloud-claudefable5-windows": "capture failed (exit 1)",
+      "omp-nanogpt-deepseekr1-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/deepseek-ai/DeepSeek-R1-0528\n",
+      "omp-nanogpt-gpt4o-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/openai/chatgpt-4o-latest\n",
+      "omp-nanogpt-grok3-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/grok-3-beta\n",
+      "omp-nanogpt-kimik2-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/baseten/Kimi-K2-Instruct-FP4\n",
+      "omp-nanogpt-nemotron3ultra-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/nvidia/nemotron-3-ultra-550b-a55b\n",
+      "omp-nanogpt-phi4mini-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/phi-4-mini-instruct\n",
+      "omp-nanogpt-olmo332bthink-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/allenai/olmo-3-32b-think\n",
+      "omp-nanogpt-ling30flash-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/inclusionai/ling-3.0-flash\n",
+      "omp-nanogpt-doubaoseed21-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/bytedance/doubao-seed-2.1-pro\n",
+      "omp-nanogpt-ernie45-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/baidu/ernie-4.5-300b-a47b\n",
+      "omp-nanogpt-hunyuant1-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/hunyuan-t1-latest\n",
+      "omp-nanogpt-gptoss120b-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/TEE/gpt-oss-120b\n",
+      "omp-nanogpt-gemma327b-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/Gemma-3-27B-ArliAI-RPMax-v3\n",
+      "omp-nanogpt-mistralsmall3-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/chutesai/Mistral-Small-3.2-24B-Instruct-2506\n",
+      "omp-nanogpt-qwen36-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/alibaba/qwen3.6-27b\n",
+      "omp-huggingface-phi4-windows": "capture failed (exit 1)"
     },
     "unknown_harnesses": [],
     "unknown_invocations": [],
@@ -4635,274 +4664,13 @@
   "queue": [
     {
       "harness": "omp",
-      "provider": "ollamacloud",
-      "model": "qwen3coder",
+      "provider": "huggingface",
+      "model": "glm47flash",
       "platform": "windows",
       "mode": "from-capture",
       "stale": true,
-      "started_at": 1788261647,
+      "started_at": 1788283519,
       "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "provider": "ollamacloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "kimik3",
-      "platform": "windows",
-      "provider": "kimicode",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "musespark12",
-      "platform": "windows",
-      "provider": "meta",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "provider": "googleantigravity",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gpt4o",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "grok45",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "kimik2",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "glm47",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "deepseekr1",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gemini3flash",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "claudefable5",
-      "platform": "windows",
-      "provider": "gmicloud",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "deepseekr1",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gpt4o",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "grok3",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "kimik2",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "phi4mini",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "olmo332bthink",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "ling30flash",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "doubaoseed21",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "ernie45",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "hunyuant1",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gemma327b",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "mistralsmall3",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "qwen36",
-      "platform": "windows",
-      "provider": "nanogpt",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "phi4",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "glm47flash",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
     },
     {
       "harness": "omp",
