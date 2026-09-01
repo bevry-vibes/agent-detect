@@ -28,23 +28,23 @@
       "crush-hyper-qwen37flash-darwin": "post-check mismatch",
       "crush-hyper-qwen37plus-darwin": "post-check mismatch",
       "crush-hyper-qwen3coder-darwin": "post-check mismatch",
-      "kilo-anthropic-claudesonnet4-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-clinepass-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-clinepass-kimik27code-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-deepseek-deepseekv4flash-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-deepseek-deepseekv4pro-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-fireworksai-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-hyper-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-hyper-kimik3-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-kilo-gemini35flash-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · ~google/gemini-flash-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
-      "kilo-kilo-grok45-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · ~x-ai/grok-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
-      "kilo-kilo-kimik3-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · ~moonshotai/kimi-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
-      "kilo-minimax-minimaxm27-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-minimax-minimaxm3-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-ollamacloud-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-ollamacloud-kimik25-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-openrouter-deepseekv4flash-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
-      "kilo-zai-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n\u003e code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-anthropic-claudesonnet4-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-clinepass-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-clinepass-kimik27code-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-deepseek-deepseekv4flash-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-deepseek-deepseekv4pro-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-fireworksai-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-hyper-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-hyper-kimik3-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-kilo-gemini35flash-windows": "capture failed (exit 1): \u001b[0m\r\n> code · ~google/gemini-flash-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
+      "kilo-kilo-grok45-windows": "capture failed (exit 1): \u001b[0m\r\n> code · ~x-ai/grok-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
+      "kilo-kilo-kimik3-windows": "capture failed (exit 1): \u001b[0m\r\n> code · ~moonshotai/kimi-latest\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou need to sign in to use this model.\r\n",
+      "kilo-minimax-minimaxm27-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-minimax-minimaxm3-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-ollamacloud-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-ollamacloud-kimik25-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-openrouter-deepseekv4flash-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-zai-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
       "kimicode-deepseek-deepseekv4flash-windows": "post-check mismatch",
       "kimicode-deepseek-deepseekv4pro-windows": "post-check mismatch",
       "kimicode-kimi-kimik3-windows": "post-check mismatch",
@@ -95,7 +95,8 @@
       "qwen-qwen-deepseekv4flash-windows": "post-check mismatch",
       "qwen-qwen-qwen38max-windows": "post-check mismatch",
       "qwen-xai-grok420-windows": "post-check mismatch",
-      "qwen-xai-grok45-windows": "post-check mismatch"
+      "qwen-xai-grok45-windows": "post-check mismatch",
+      "omp-ollamacloud-minimaxm27-windows": "capture failed (exit 1)"
     },
     "unknown_harnesses": [],
     "unknown_invocations": [],
@@ -109,7 +110,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=free/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline",
@@ -122,7 +123,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=free/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -135,7 +136,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=cline-pass/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline",
@@ -148,7 +149,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=cline-pass/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -161,7 +162,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=stepfun/step-3.7-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline",
@@ -174,7 +175,7 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=stepfun/step-3.7-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -187,7 +188,7 @@
         "--auto-approve",
         "--provider=deepseek",
         "--model=deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline",
@@ -200,7 +201,7 @@
         "--auto-approve",
         "--provider=deepseek",
         "--model=deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -213,7 +214,7 @@
         "--auto-approve",
         "--provider=minimax",
         "--model=minimax/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline",
@@ -226,7 +227,7 @@
         "--auto-approve",
         "--provider=minimax",
         "--model=minimax/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -239,7 +240,7 @@
         "--auto-approve",
         "--provider=openrouter",
         "--model=openrouter/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline",
@@ -252,7 +253,7 @@
         "--auto-approve",
         "--provider=openrouter",
         "--model=openrouter/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cline.cmd",
@@ -263,7 +264,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "claude-sonnet-5"
@@ -277,7 +278,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "claude-sonnet-5"
@@ -291,7 +292,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "gemini-2.5-pro"
@@ -305,7 +306,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "gemini-2.5-pro"
@@ -319,7 +320,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "gpt-5.2"
@@ -333,7 +334,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "gpt-5.2"
@@ -347,7 +348,7 @@
       "prompt_invocation": [
         "copilot",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "grok-4.5"
@@ -361,7 +362,7 @@
       "prompt_invocation": [
         "copilot.exe",
         "-p",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--allow-all",
         "--model",
         "grok-4.5"
@@ -377,7 +378,7 @@
         "run",
         "-m",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -390,7 +391,7 @@
         "run",
         "-m",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -403,7 +404,7 @@
         "run",
         "-m",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -416,7 +417,7 @@
         "run",
         "-m",
         "hyper/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -429,7 +430,7 @@
         "run",
         "-m",
         "hyper/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -442,7 +443,7 @@
         "run",
         "-m",
         "hyper/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -455,7 +456,7 @@
         "run",
         "-m",
         "hyper/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -468,7 +469,7 @@
         "run",
         "-m",
         "hyper/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -481,7 +482,7 @@
         "run",
         "-m",
         "hyper/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -494,7 +495,7 @@
         "run",
         "-m",
         "hyper/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -507,7 +508,7 @@
         "run",
         "-m",
         "hyper/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -520,7 +521,7 @@
         "run",
         "-m",
         "hyper/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -533,7 +534,7 @@
         "run",
         "-m",
         "hyper/kimi-k2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -546,7 +547,7 @@
         "run",
         "-m",
         "hyper/kimi-k2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -559,7 +560,7 @@
         "run",
         "-m",
         "hyper/kimi-k2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -572,7 +573,7 @@
         "run",
         "-m",
         "hyper/kimi-k2.7-code",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -585,7 +586,7 @@
         "run",
         "-m",
         "hyper/kimi-k2.7-code",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -598,7 +599,7 @@
         "run",
         "-m",
         "hyper/kimi-k2.7-code",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -611,7 +612,7 @@
         "run",
         "-m",
         "hyper/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -624,7 +625,7 @@
         "run",
         "-m",
         "hyper/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -637,7 +638,7 @@
         "run",
         "-m",
         "hyper/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -650,7 +651,7 @@
         "run",
         "-m",
         "hyper/llama-3.3-70b-instruct",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -663,7 +664,7 @@
         "run",
         "-m",
         "hyper/llama-3.3-70b-instruct",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -676,7 +677,7 @@
         "run",
         "-m",
         "hyper/llama-3.3-70b-instruct",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -689,7 +690,7 @@
         "run",
         "-m",
         "hyper/llama-4-maverick-17b-128e-instruct-fp8",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -702,7 +703,7 @@
         "run",
         "-m",
         "hyper/llama-4-maverick-17b-128e-instruct-fp8",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -715,7 +716,7 @@
         "run",
         "-m",
         "hyper/llama-4-maverick-17b-128e-instruct-fp8",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -728,7 +729,7 @@
         "run",
         "-m",
         "hyper/minimax-m2.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -741,7 +742,7 @@
         "run",
         "-m",
         "hyper/minimax-m2.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -754,7 +755,7 @@
         "run",
         "-m",
         "hyper/minimax-m2.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -767,7 +768,7 @@
         "run",
         "-m",
         "hyper/qwen3.6-max",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -780,7 +781,7 @@
         "run",
         "-m",
         "hyper/qwen3.6-max",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -793,7 +794,7 @@
         "run",
         "-m",
         "hyper/qwen3.6-max",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -806,7 +807,7 @@
         "run",
         "-m",
         "hyper/qwen3.7-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -819,7 +820,7 @@
         "run",
         "-m",
         "hyper/qwen3.7-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -832,7 +833,7 @@
         "run",
         "-m",
         "hyper/qwen3.7-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -845,7 +846,7 @@
         "run",
         "-m",
         "hyper/qwen3.7-plus",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -858,7 +859,7 @@
         "run",
         "-m",
         "hyper/qwen3.7-plus",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -871,7 +872,7 @@
         "run",
         "-m",
         "hyper/qwen3.7-plus",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -884,7 +885,7 @@
         "run",
         "-m",
         "hyper/qwen3.8-max",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -897,7 +898,7 @@
         "run",
         "-m",
         "hyper/qwen3.8-max",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -910,7 +911,7 @@
         "run",
         "-m",
         "hyper/qwen3.8-max",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -923,7 +924,7 @@
         "run",
         "-m",
         "hyper/qwen3-coder-480b-a35b-instruct-int4-mixed-ar",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -936,7 +937,7 @@
         "run",
         "-m",
         "hyper/qwen3-coder-480b-a35b-instruct-int4-mixed-ar",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -949,7 +950,7 @@
         "run",
         "-m",
         "hyper/qwen3-coder-480b-a35b-instruct-int4-mixed-ar",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -962,7 +963,7 @@
         "run",
         "-m",
         "minimax/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -975,7 +976,7 @@
         "run",
         "-m",
         "minimax/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush",
@@ -988,7 +989,7 @@
         "run",
         "-m",
         "minimax/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "crush.exe",
@@ -1001,7 +1002,7 @@
         "-p",
         "--model",
         "claude-fable-5-thinking-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -1014,7 +1015,7 @@
         "-p",
         "--model",
         "claude-fable-5-thinking-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -1027,7 +1028,7 @@
         "-p",
         "--model",
         "claude-opus-5-thinking-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -1040,7 +1041,7 @@
         "-p",
         "--model",
         "claude-opus-5-thinking-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -1053,7 +1054,7 @@
         "-p",
         "--model",
         "claude-sonnet-5-thinking-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -1066,7 +1067,7 @@
         "-p",
         "--model",
         "claude-sonnet-5-thinking-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -1079,7 +1080,7 @@
         "-p",
         "--model",
         "gpt-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -1092,7 +1093,7 @@
         "-p",
         "--model",
         "gpt-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -1105,7 +1106,7 @@
         "-p",
         "--model",
         "gpt-5.6-luna-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -1118,7 +1119,7 @@
         "-p",
         "--model",
         "gpt-5.6-luna-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -1131,7 +1132,7 @@
         "-p",
         "--model",
         "gpt-5.6-sol-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -1144,7 +1145,7 @@
         "-p",
         "--model",
         "gpt-5.6-sol-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -1157,7 +1158,7 @@
         "-p",
         "--model",
         "cursor-grok-4.5-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent",
@@ -1170,7 +1171,7 @@
         "-p",
         "--model",
         "cursor-grok-4.5-high",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "cursor-agent.cmd",
@@ -1182,7 +1183,7 @@
         "goose",
         "run",
         "-t",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "goose",
@@ -1194,7 +1195,7 @@
         "goose.exe",
         "run",
         "-t",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "goose.exe",
@@ -1206,7 +1207,7 @@
         "goose",
         "run",
         "-t",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "goose",
@@ -1218,7 +1219,7 @@
         "kilo",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1230,7 +1231,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1244,7 +1245,7 @@
         "--auto",
         "--model",
         "cline-pass/cline-pass/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1258,7 +1259,7 @@
         "--auto",
         "--model",
         "cline-pass/cline-pass/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1272,7 +1273,7 @@
         "--auto",
         "--model",
         "cline-pass/cline-pass/kimi-k2.7-code",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1286,7 +1287,7 @@
         "--auto",
         "--model",
         "cline-pass/cline-pass/kimi-k2.7-code",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1300,7 +1301,7 @@
         "--auto",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1314,7 +1315,7 @@
         "--auto",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1328,7 +1329,7 @@
         "--auto",
         "--model",
         "deepseek/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1342,7 +1343,7 @@
         "--auto",
         "--model",
         "deepseek/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1354,7 +1355,7 @@
         "kilo",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1366,7 +1367,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1380,7 +1381,7 @@
         "--auto",
         "--model",
         "hyper/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1394,7 +1395,7 @@
         "--auto",
         "--model",
         "hyper/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1408,7 +1409,7 @@
         "--auto",
         "--model",
         "hyper/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1422,7 +1423,7 @@
         "--auto",
         "--model",
         "hyper/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1436,7 +1437,7 @@
         "--auto",
         "--model",
         "kilo/~google/gemini-flash-latest",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1450,7 +1451,7 @@
         "--auto",
         "--model",
         "kilo/~google/gemini-flash-latest",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1464,7 +1465,7 @@
         "--auto",
         "--model",
         "kilo/~x-ai/grok-latest",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1478,7 +1479,7 @@
         "--auto",
         "--model",
         "kilo/~x-ai/grok-latest",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1492,7 +1493,7 @@
         "--auto",
         "--model",
         "kilo/~moonshotai/kimi-latest",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1506,7 +1507,7 @@
         "--auto",
         "--model",
         "kilo/~moonshotai/kimi-latest",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1518,7 +1519,7 @@
         "kilo",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1530,7 +1531,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1542,7 +1543,7 @@
         "kilo",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1554,7 +1555,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1568,7 +1569,7 @@
         "--auto",
         "--model",
         "ollama-cloud/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1582,7 +1583,7 @@
         "--auto",
         "--model",
         "ollama-cloud/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1596,7 +1597,7 @@
         "--auto",
         "--model",
         "ollama-cloud/kimi-k2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1610,7 +1611,7 @@
         "--auto",
         "--model",
         "ollama-cloud/kimi-k2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1622,7 +1623,7 @@
         "kilo",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1634,7 +1635,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1646,7 +1647,7 @@
         "kilo",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo",
@@ -1658,7 +1659,7 @@
         "kilo.cmd",
         "run",
         "--auto",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kilo.cmd",
@@ -1669,7 +1670,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1680,7 +1681,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1691,7 +1692,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1702,7 +1703,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1713,7 +1714,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1724,7 +1725,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1735,7 +1736,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1746,7 +1747,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1757,7 +1758,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1768,7 +1769,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1779,7 +1780,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1790,7 +1791,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1801,7 +1802,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1812,7 +1813,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1823,7 +1824,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1834,7 +1835,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1845,7 +1846,7 @@
       "prompt_invocation": [
         "kimi",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi",
@@ -1856,7 +1857,7 @@
       "prompt_invocation": [
         "kimi.exe",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "kimi.exe",
@@ -1869,7 +1870,7 @@
         "text",
         "chat",
         "--message",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -1883,7 +1884,7 @@
         "text",
         "chat",
         "--message",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -1897,7 +1898,7 @@
         "text",
         "chat",
         "--message",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -1911,7 +1912,7 @@
         "text",
         "chat",
         "--message",
-        "\u003cprompt\u003e",
+        "<prompt>",
         "--non-interactive"
       ],
       "version_invocation": [
@@ -1924,7 +1925,7 @@
         "omp",
         "--model",
         "cursor/claude-fable-5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -1936,7 +1937,7 @@
         "omp.exe",
         "--model",
         "cursor/claude-fable-5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -1948,7 +1949,7 @@
         "omp",
         "--model",
         "cursor/gemini-3-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -1960,7 +1961,7 @@
         "omp.exe",
         "--model",
         "cursor/gemini-3-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -1972,7 +1973,7 @@
         "omp",
         "--model",
         "cursor/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -1984,7 +1985,7 @@
         "omp.exe",
         "--model",
         "cursor/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -1996,7 +1997,7 @@
         "omp",
         "--model",
         "cursor/gpt-5-mini",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2008,7 +2009,7 @@
         "omp.exe",
         "--model",
         "cursor/gpt-5-mini",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2020,7 +2021,7 @@
         "omp",
         "--model",
         "cursor/kimi-k2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2032,7 +2033,7 @@
         "omp.exe",
         "--model",
         "cursor/kimi-k2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2044,7 +2045,7 @@
         "omp",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2056,7 +2057,7 @@
         "omp.exe",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2068,7 +2069,7 @@
         "omp",
         "--model",
         "github-copilot/gemini-3-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2080,7 +2081,7 @@
         "omp.exe",
         "--model",
         "github-copilot/gemini-3-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2092,7 +2093,7 @@
         "omp",
         "--model",
         "github-copilot/gpt-4o",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2104,7 +2105,7 @@
         "omp.exe",
         "--model",
         "github-copilot/gpt-4o",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2116,7 +2117,7 @@
         "omp",
         "--model",
         "github-copilot/gpt-5-mini",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2128,7 +2129,7 @@
         "omp.exe",
         "--model",
         "github-copilot/gpt-5-mini",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2140,7 +2141,7 @@
         "omp",
         "--model",
         "gmi-cloud/anthropic/claude-fable-5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2152,7 +2153,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/anthropic/claude-fable-5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2164,7 +2165,7 @@
         "omp",
         "--model",
         "gmi-cloud/deepseek-ai/deepseek-r1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2176,7 +2177,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/deepseek-ai/deepseek-r1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2188,7 +2189,7 @@
         "omp",
         "--model",
         "gmi-cloud/google/gemini-3-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2200,7 +2201,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/google/gemini-3-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2212,7 +2213,7 @@
         "omp",
         "--model",
         "gmi-cloud/zai-org/glm-4.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2224,7 +2225,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/zai-org/glm-4.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2236,7 +2237,7 @@
         "omp",
         "--model",
         "gmi-cloud/openai/gpt-4o",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2248,7 +2249,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/openai/gpt-4o",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2260,7 +2261,7 @@
         "omp",
         "--model",
         "gmi-cloud/x-ai/grok-4.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2272,7 +2273,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/x-ai/grok-4.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2284,7 +2285,7 @@
         "omp",
         "--model",
         "gmi-cloud/moonshotai/kimi-k2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2296,7 +2297,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/moonshotai/kimi-k2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2308,7 +2309,7 @@
         "omp",
         "--model",
         "gmi-cloud/nvidia/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2320,7 +2321,7 @@
         "omp.exe",
         "--model",
         "gmi-cloud/nvidia/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2332,7 +2333,7 @@
         "omp",
         "--model",
         "google-antigravity/gpt-oss-120b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2344,7 +2345,7 @@
         "omp.exe",
         "--model",
         "google-antigravity/gpt-oss-120b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2356,7 +2357,7 @@
         "omp",
         "--model",
         "huggingface/deepcogito/cogito-2.1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2368,7 +2369,7 @@
         "omp.exe",
         "--model",
         "huggingface/deepcogito/cogito-2.1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2380,7 +2381,7 @@
         "omp",
         "--model",
         "huggingface/cohere/command-a",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2392,7 +2393,7 @@
         "omp.exe",
         "--model",
         "huggingface/cohere/command-a",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2404,7 +2405,7 @@
         "omp",
         "--model",
         "huggingface/zai-org/glm-4.7-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2416,7 +2417,7 @@
         "omp.exe",
         "--model",
         "huggingface/zai-org/glm-4.7-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2428,7 +2429,7 @@
         "omp",
         "--model",
         "huggingface/openai/gpt-oss-120b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2440,7 +2441,7 @@
         "omp.exe",
         "--model",
         "huggingface/openai/gpt-oss-120b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2452,7 +2453,7 @@
         "omp",
         "--model",
         "huggingface/inclusionai/ling-2.6-1t",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2464,7 +2465,7 @@
         "omp.exe",
         "--model",
         "huggingface/inclusionai/ling-2.6-1t",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2476,7 +2477,7 @@
         "omp",
         "--model",
         "huggingface/meta-llama/llama-3.1-8b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2488,7 +2489,7 @@
         "omp.exe",
         "--model",
         "huggingface/meta-llama/llama-3.1-8b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2500,7 +2501,7 @@
         "omp",
         "--model",
         "huggingface/nvidia/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2512,7 +2513,7 @@
         "omp.exe",
         "--model",
         "huggingface/nvidia/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2524,7 +2525,7 @@
         "omp",
         "--model",
         "huggingface/microsoft/phi-4",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2536,7 +2537,7 @@
         "omp.exe",
         "--model",
         "huggingface/microsoft/phi-4",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2548,7 +2549,7 @@
         "omp",
         "--model",
         "kimi-code/k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2560,7 +2561,7 @@
         "omp.exe",
         "--model",
         "kimi-code/k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2572,7 +2573,7 @@
         "omp",
         "--model",
         "meta/muse-spark-1.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2584,7 +2585,7 @@
         "omp.exe",
         "--model",
         "meta/muse-spark-1.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2596,7 +2597,7 @@
         "omp",
         "--model",
         "minimax-code/MiniMax-M3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2608,7 +2609,7 @@
         "omp.exe",
         "--model",
         "minimax-code/MiniMax-M3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2620,7 +2621,7 @@
         "omp",
         "--model",
         "nanogpt/deepseek-ai/deepseek-r1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2632,7 +2633,7 @@
         "omp.exe",
         "--model",
         "nanogpt/deepseek-ai/deepseek-r1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2644,7 +2645,7 @@
         "omp",
         "--model",
         "nanogpt/bytedance/doubao-seed-2.1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2656,7 +2657,7 @@
         "omp.exe",
         "--model",
         "nanogpt/bytedance/doubao-seed-2.1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2668,7 +2669,7 @@
         "omp",
         "--model",
         "nanogpt/baidu/ernie-4.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2680,7 +2681,7 @@
         "omp.exe",
         "--model",
         "nanogpt/baidu/ernie-4.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2692,7 +2693,7 @@
         "omp",
         "--model",
         "nanogpt/gemma-3-27b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2704,7 +2705,7 @@
         "omp.exe",
         "--model",
         "nanogpt/gemma-3-27b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2716,7 +2717,7 @@
         "omp",
         "--model",
         "nanogpt/openai/chatgpt-4o",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2728,7 +2729,7 @@
         "omp.exe",
         "--model",
         "nanogpt/openai/chatgpt-4o",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2740,7 +2741,7 @@
         "omp",
         "--model",
         "nanogpt/TEE/gpt-oss-120b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2752,7 +2753,7 @@
         "omp.exe",
         "--model",
         "nanogpt/TEE/gpt-oss-120b",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2764,7 +2765,7 @@
         "omp",
         "--model",
         "nanogpt/grok-3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2776,7 +2777,7 @@
         "omp.exe",
         "--model",
         "nanogpt/grok-3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2788,7 +2789,7 @@
         "omp",
         "--model",
         "nanogpt/hunyuan-t1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2800,7 +2801,7 @@
         "omp.exe",
         "--model",
         "nanogpt/hunyuan-t1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2812,7 +2813,7 @@
         "omp",
         "--model",
         "nanogpt/baseten/kimi-k2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2824,7 +2825,7 @@
         "omp.exe",
         "--model",
         "nanogpt/baseten/kimi-k2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2836,7 +2837,7 @@
         "omp",
         "--model",
         "nanogpt/inclusionai/ling-3.0-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2848,7 +2849,7 @@
         "omp.exe",
         "--model",
         "nanogpt/inclusionai/ling-3.0-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2860,7 +2861,7 @@
         "omp",
         "--model",
         "nanogpt/mistral-small-3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2872,7 +2873,7 @@
         "omp.exe",
         "--model",
         "nanogpt/mistral-small-3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2884,7 +2885,7 @@
         "omp",
         "--model",
         "nanogpt/nvidia/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2896,7 +2897,7 @@
         "omp.exe",
         "--model",
         "nanogpt/nvidia/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2908,7 +2909,7 @@
         "omp",
         "--model",
         "nanogpt/allenai/olmo-3-32b-think",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2920,7 +2921,7 @@
         "omp.exe",
         "--model",
         "nanogpt/allenai/olmo-3-32b-think",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2932,7 +2933,7 @@
         "omp",
         "--model",
         "nanogpt/phi-4-mini",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2944,7 +2945,7 @@
         "omp.exe",
         "--model",
         "nanogpt/phi-4-mini",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2956,7 +2957,7 @@
         "omp",
         "--model",
         "nanogpt/alibaba/qwen3.6",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2968,7 +2969,7 @@
         "omp.exe",
         "--model",
         "nanogpt/alibaba/qwen3.6",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -2980,7 +2981,7 @@
         "omp",
         "--model",
         "ollama-cloud/deepseek-v3.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -2992,7 +2993,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/deepseek-v3.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3004,7 +3005,7 @@
         "omp",
         "--model",
         "ollama-cloud/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3016,7 +3017,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3028,7 +3029,7 @@
         "omp",
         "--model",
         "ollama-cloud/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3040,7 +3041,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3052,7 +3053,7 @@
         "omp",
         "--model",
         "ollama-cloud/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3064,7 +3065,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/kimi-k3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3076,7 +3077,7 @@
         "omp",
         "--model",
         "ollama-cloud/minimax-m2.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3088,7 +3089,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/minimax-m2.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3100,7 +3101,7 @@
         "omp",
         "--model",
         "ollama-cloud/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3112,7 +3113,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3124,7 +3125,7 @@
         "omp",
         "--model",
         "ollama-cloud/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3136,7 +3137,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/nemotron-3-ultra",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3148,7 +3149,7 @@
         "omp",
         "--model",
         "ollama-cloud/qwen3-coder",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3160,7 +3161,7 @@
         "omp.exe",
         "--model",
         "ollama-cloud/qwen3-coder",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3172,7 +3173,7 @@
         "omp",
         "--model",
         "openrouter/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3184,7 +3185,7 @@
         "omp.exe",
         "--model",
         "openrouter/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3196,7 +3197,7 @@
         "omp",
         "--model",
         "sakana/fugu-ultra-v1.1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3208,7 +3209,7 @@
         "omp.exe",
         "--model",
         "sakana/fugu-ultra-v1.1",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3220,7 +3221,7 @@
         "omp",
         "--model",
         "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3232,7 +3233,7 @@
         "omp.exe",
         "--model",
         "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3244,7 +3245,7 @@
         "omp",
         "--model",
         "siliconflow/moonshotai/Kimi-K3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3256,7 +3257,7 @@
         "omp.exe",
         "--model",
         "siliconflow/moonshotai/Kimi-K3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3268,7 +3269,7 @@
         "omp",
         "--model",
         "siliconflow/MiniMaxAI/MiniMax-M3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3280,7 +3281,7 @@
         "omp.exe",
         "--model",
         "siliconflow/MiniMaxAI/MiniMax-M3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3292,7 +3293,7 @@
         "omp",
         "--model",
         "zenmux/deepseek/deepseek-v4-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3304,7 +3305,7 @@
         "omp.exe",
         "--model",
         "zenmux/deepseek/deepseek-v4-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3316,7 +3317,7 @@
         "omp",
         "--model",
         "zenmux/google/gemini-3.5-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3328,7 +3329,7 @@
         "omp.exe",
         "--model",
         "zenmux/google/gemini-3.5-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3340,7 +3341,7 @@
         "omp",
         "--model",
         "zenmux/z-ai/glm-4.7-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3352,7 +3353,7 @@
         "omp.exe",
         "--model",
         "zenmux/z-ai/glm-4.7-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3364,7 +3365,7 @@
         "omp",
         "--model",
         "zenmux/x-ai/grok-4.5-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3376,7 +3377,7 @@
         "omp.exe",
         "--model",
         "zenmux/x-ai/grok-4.5-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3388,7 +3389,7 @@
         "omp",
         "--model",
         "zenmux/moonshotai/kimi-k3-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3400,7 +3401,7 @@
         "omp.exe",
         "--model",
         "zenmux/moonshotai/kimi-k3-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3412,7 +3413,7 @@
         "omp",
         "--model",
         "zenmux/stepfun/step-3.7-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp",
@@ -3424,7 +3425,7 @@
         "omp.exe",
         "--model",
         "zenmux/stepfun/step-3.7-flash-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "omp.exe",
@@ -3435,7 +3436,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3446,7 +3447,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3457,7 +3458,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3468,7 +3469,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3479,7 +3480,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3490,7 +3491,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3501,7 +3502,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3512,7 +3513,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3525,7 +3526,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3538,7 +3539,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3551,7 +3552,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3564,7 +3565,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/glm-5.2",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3577,7 +3578,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/kimi-k2.7-code",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3590,7 +3591,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/kimi-k2.7-code",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3603,7 +3604,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3616,7 +3617,7 @@
         "run",
         "--model",
         "cline-pass/cline-pass/minimax-m3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3629,7 +3630,7 @@
         "run",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3642,7 +3643,7 @@
         "run",
         "--model",
         "deepseek/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3655,7 +3656,7 @@
         "run",
         "--model",
         "deepseek/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3668,7 +3669,7 @@
         "run",
         "--model",
         "deepseek/deepseek-v4-pro",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3679,7 +3680,7 @@
       "prompt_invocation": [
         "opencode",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3690,7 +3691,7 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3703,7 +3704,7 @@
         "run",
         "--model",
         "hyper/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3716,7 +3717,7 @@
         "run",
         "--model",
         "hyper/deepseek-v4-flash",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3729,7 +3730,7 @@
         "run",
         "--model",
         "minimax/MiniMax-M2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3742,7 +3743,7 @@
         "run",
         "--model",
         "minimax/MiniMax-M2.5",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3755,7 +3756,7 @@
         "run",
         "--model",
         "minimax/MiniMax-M2.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3768,7 +3769,7 @@
         "run",
         "--model",
         "minimax/MiniMax-M2.7",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3781,7 +3782,7 @@
         "run",
         "--model",
         "minimax/MiniMax-M3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3794,7 +3795,7 @@
         "run",
         "--model",
         "minimax/MiniMax-M3",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3807,7 +3808,7 @@
         "run",
         "--model",
         "opencode/nemotron-3-ultra-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode",
@@ -3820,7 +3821,7 @@
         "run",
         "--model",
         "opencode/nemotron-3-ultra-free",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "opencode.exe",
@@ -3835,7 +3836,7 @@
         "--model",
         "claude-sonnet-4",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -3850,7 +3851,7 @@
         "--model",
         "gemma-4-31b",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -3865,7 +3866,7 @@
         "--model",
         "gemma-4-31b",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -3880,7 +3881,7 @@
         "--model",
         "gpt-oss-120b",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -3895,7 +3896,7 @@
         "--model",
         "gpt-oss-120b",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -3910,7 +3911,7 @@
         "--model",
         "deepseek-v4-flash",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -3925,7 +3926,7 @@
         "--model",
         "deepseek-v4-flash",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -3940,7 +3941,7 @@
         "--model",
         "deepseek-v4-pro",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -3955,7 +3956,7 @@
         "--model",
         "deepseek-v4-pro",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -3970,7 +3971,7 @@
         "--model",
         "llama-3.1-8b",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -3985,7 +3986,7 @@
         "--model",
         "llama-3.3-70b",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4000,7 +4001,7 @@
         "--model",
         "llama-4",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4015,7 +4016,7 @@
         "--model",
         "kimi-k3",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4030,7 +4031,7 @@
         "--model",
         "MiniMax-M2.7",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4045,7 +4046,7 @@
         "--model",
         "MiniMax-M2.7",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4060,7 +4061,7 @@
         "--model",
         "MiniMax-M3",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4075,7 +4076,7 @@
         "--model",
         "MiniMax-M3",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4090,7 +4091,7 @@
         "--model",
         "mistral-large-latest",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4105,7 +4106,7 @@
         "--model",
         "mistral-large-latest",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4120,7 +4121,7 @@
         "--model",
         "glm-5.3-flash",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4135,7 +4136,7 @@
         "--model",
         "deepseek/deepseek-v4-flash",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4150,7 +4151,7 @@
         "--model",
         "deepseek/deepseek-v4-flash",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4165,7 +4166,7 @@
         "--model",
         "google/gemma-4-31b-it:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4180,7 +4181,7 @@
         "--model",
         "google/gemma-4-31b-it:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4195,7 +4196,7 @@
         "--model",
         "nvidia/nemotron-3-nano-30b-a3b:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4210,7 +4211,7 @@
         "--model",
         "nvidia/nemotron-3-nano-30b-a3b:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4225,7 +4226,7 @@
         "--model",
         "nvidia/nemotron-3-super-120b-a12b:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4240,7 +4241,7 @@
         "--model",
         "nvidia/nemotron-3-super-120b-a12b:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4255,7 +4256,7 @@
         "--model",
         "nvidia/nemotron-3-ultra-550b-a55b:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4270,7 +4271,7 @@
         "--model",
         "nvidia/nemotron-3-ultra-550b-a55b:free",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi.exe",
@@ -4285,7 +4286,7 @@
         "--model",
         "grok-4",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "pi",
@@ -4296,7 +4297,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4307,7 +4308,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4318,7 +4319,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4329,7 +4330,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4340,7 +4341,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4351,7 +4352,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4362,7 +4363,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4373,7 +4374,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4384,7 +4385,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4395,7 +4396,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4406,7 +4407,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4417,7 +4418,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4428,7 +4429,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4439,7 +4440,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4450,7 +4451,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4461,7 +4462,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4472,7 +4473,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4483,7 +4484,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4494,7 +4495,7 @@
       "prompt_invocation": [
         "qwen",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen",
@@ -4505,7 +4506,7 @@
       "prompt_invocation": [
         "qwen.cmd",
         "-p",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "qwen.cmd",
@@ -4518,7 +4519,7 @@
         "run",
         "--permission-mode",
         "bypassPermissions",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "reasonix",
@@ -4531,7 +4532,7 @@
         "run",
         "--permission-mode",
         "bypassPermissions",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "reasonix",
@@ -4544,7 +4545,7 @@
         "run",
         "--permission-mode",
         "bypassPermissions",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "reasonix.exe",
@@ -4557,7 +4558,7 @@
         "run",
         "--permission-mode",
         "bypassPermissions",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "reasonix",
@@ -4568,7 +4569,7 @@
       "prompt_invocation": [
         "vibe",
         "--prompt",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "vibe",
@@ -4579,7 +4580,7 @@
       "prompt_invocation": [
         "vibe.exe",
         "--prompt",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "vibe.exe",
@@ -4590,7 +4591,7 @@
       "prompt_invocation": [
         "vibe",
         "--prompt",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "vibe",
@@ -4601,7 +4602,7 @@
       "prompt_invocation": [
         "vibe.exe",
         "--prompt",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "vibe.exe",
@@ -4612,7 +4613,7 @@
       "prompt_invocation": [
         "vibe",
         "--prompt",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "vibe",
@@ -4623,7 +4624,7 @@
       "prompt_invocation": [
         "vibe.exe",
         "--prompt",
-        "\u003cprompt\u003e"
+        "<prompt>"
       ],
       "version_invocation": [
         "vibe.exe",
@@ -4634,22 +4635,13 @@
   "queue": [
     {
       "harness": "omp",
-      "mode": "from-capture",
-      "model": "minimaxm27",
-      "platform": "windows",
       "provider": "ollamacloud",
-      "runner": 12812,
-      "stale": true,
-      "started_at": 1788221925
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
       "model": "qwen3coder",
       "platform": "windows",
-      "provider": "ollamacloud",
-      "runner": 12812,
-      "stale": true
+      "mode": "from-capture",
+      "stale": true,
+      "started_at": 1788261647,
+      "runner": 12812
     },
     {
       "harness": "omp",

@@ -434,7 +434,23 @@ provider's free model-id string, `-` otherwise.
 
 Run the daemon with `fixtures daemon --write-log` (log:
 `fixtures/daemon.log`) and poll that log at ~1s — the daemon writes a
-status heartbeat every ~1s, faster than the iteration delays.
+status heartbeat every ~1s, faster than the iteration delays. The
+startup banner prints the daemon's own `process id` (how you kill it or
+tell two instances' log streams apart), each `from-capture` announces
+its `worker pid`, and the worker's stderr is teed to the log live
+(`worker: ` prefix) so a capture can be followed while it runs.
+Worker stdout stays discarded: a worker blocked on a full unread
+stdout pipe would deadlock the single reader, and Zig 0.16 std has no
+cross-platform pipe polling.
+
+**One daemon per host.** Always close the previous instance (task /
+launch agent / terminal run) before starting a new one — a second
+daemon double-drains the queue and interleaves the same `daemon.log`.
+A hung daemon (e.g. blocked reading a worker whose grandchild holds
+the stderr pipe) does not answer `daemon.ctl`; kill it by the pid from
+the banner, and kill any orphaned capture workers left behind
+(`Get-CimInstance Win32_Process | Where-Object CommandLine -match
+"fixtures capture"`).
 Pacing: `from-identity` jobs process at ~5s intervals
 (`--poll-seconds=N`); each `from-capture` is announced ~15s ahead
 (`--capture-review-seconds=N`, cancellable) and followed by a ~15s
@@ -510,6 +526,10 @@ block. PowerShell 7.6+, run once:
 
 ```powershell
 #Requires -Version 7.6
+# close any previous instance first (one daemon per host — see
+# "monitoring + control runbook"):
+Stop-ScheduledTask -TaskName "agent-detect-drain-windows" -ErrorAction SilentlyContinue
+Get-Process -Name "agent-detect-dev" -ErrorAction SilentlyContinue | Stop-Process -Force
 $repo = "C:\abs\path\to\agent-detect"
 $exe = Join-Path $repo "zig-out\bin\agent-detect-dev.exe"
 $action = New-ScheduledTaskAction -Execute $exe -Argument "fixtures daemon --write-log --poll-seconds=1" -WorkingDirectory $repo

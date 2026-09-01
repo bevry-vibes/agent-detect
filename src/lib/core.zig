@@ -437,6 +437,16 @@ pub extern "kernel32" fn SetConsoleCP(wCodePage: u32) callconv(.winapi) c_int;
 
 pub const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
 
+/// Our own process id. Windows has no libc `getpid`; macOS goes through
+/// the `unistd.h` cImport above (native builds only — a cross-built
+/// binary never prints its pid from a foreign libc).
+pub fn selfPid() u32 {
+    if (builtin.os.tag == .windows) return std.os.windows.GetCurrentProcessId();
+    if (builtin.os.tag == .linux) return @intCast(std.os.linux.getpid());
+    if (builtin.os.tag == .macos) return @intCast(os.getpid());
+    return 0;
+}
+
 pub fn ancestorInfo(a: std.mem.Allocator, io: std.Io) Ancestry {
     if (builtin.os.tag == .windows) return ancestorsWindows(a) catch .{};
     if (builtin.os.tag == .linux) return ancestorsLinux(a, io) catch .{};

@@ -2897,13 +2897,38 @@ pub const dev = if (build_options.dev) struct {
         else
             @intCast(child.id orelse return false);
         const pid_str = try std.fmt.allocPrint(a, "{d}", .{pid_num});
+        {
+            var wpbuf: [64]u8 = undefined;
+            const m = std.fmt.bufPrint(wpbuf[0..], "  worker pid: {d}\n", .{pid_num}) catch "";
+            daemonWrite(io, m);
+        }
         var tbuf: [64]u8 = undefined;
         const sec_str = std.fmt.bufPrint(&tbuf, "{d}", .{timeout_seconds}) catch "";
         var wargv = [_][]const u8{ argv0, "fixtures", "__timeout", sec_str, pid_str };
         _ = std.process.spawn(io, .{ .argv = &wargv, .stdout = .ignore, .stderr = .ignore }) catch {};
 
-        const stderr_capture = readChildOutput(a, io, child, true) catch "";
-        defer if (stderr_capture.len > 0) a.free(stderr_capture);
+        // stream the worker's stderr into the daemon log as it is
+        // produced (a tee), so a capture can be followed live; the
+        // buffer keeps the output for the failure record below.
+        // stdout stays ignored: Zig 0.16 std has no cross-platform
+        // pipe polling, and a worker blocked on a full unread stdout
+        // pipe would deadlock this single reader.
+        var stderr_capture: std.ArrayList(u8) = .empty;
+        defer stderr_capture.deinit(a);
+        {
+            var rbuf: [8192]u8 = undefined;
+            var reader = child.stderr.?.reader(io, &rbuf);
+            while (stderr_capture.items.len < (1 << 16)) {
+                var chunk: [8192]u8 = undefined;
+                const n = reader.interface.readSliceShort(&chunk) catch break;
+                if (n == 0) break;
+                const piece = chunk[0..@min(n, (1 << 16) - stderr_capture.items.len)];
+                daemonWriteErr(io, "  worker: ");
+                daemonWriteErr(io, piece);
+                if (piece[piece.len - 1] != '\n') daemonWriteErr(io, "\n");
+                try stderr_capture.appendSlice(a, piece);
+            }
+        }
         var child_mut = child;
         const term = child_mut.wait(io) catch |err| {
             daemonWriteErr(io, "daemon: from-capture: child wait failed: ");
@@ -2921,10 +2946,10 @@ pub const dev = if (build_options.dev) struct {
                     daemonWriteErr(io, " (exit code ");
                     daemonWriteErrCount(io, code);
                     daemonWriteErr(io, ")\n");
-                    if (stderr_capture.len > 0) {
+                    if (stderr_capture.items.len > 0) {
                         daemonWriteErr(io, "  worker stderr: ");
-                        daemonWriteErr(io, stderr_capture);
-                        if (stderr_capture[stderr_capture.len - 1] != '\n') daemonWriteErr(io, "\n");
+                        daemonWriteErr(io, stderr_capture.items);
+                        if (stderr_capture.items[stderr_capture.items.len - 1] != '\n') daemonWriteErr(io, "\n");
                     }
                     // detection-partial (exit 8) lands here too — valid ids,
                     // failed attempt → damped this session, retried next.
@@ -2935,10 +2960,10 @@ pub const dev = if (build_options.dev) struct {
                         const cs = std.fmt.bufPrint(&nbuf, " (exit {d})", .{code}) catch "";
                         try msg.appendSlice(a, cs);
                     }
-                    if (stderr_capture.len > 0) {
+                    if (stderr_capture.items.len > 0) {
                         try msg.appendSlice(a, ": ");
-                        const tail_start = if (stderr_capture.len > 400) stderr_capture.len - 400 else 0;
-                        try msg.appendSlice(a, stderr_capture[tail_start..]);
+                        const tail_start = if (stderr_capture.items.len > 400) stderr_capture.items.len - 400 else 0;
+                        try msg.appendSlice(a, stderr_capture.items[tail_start..]);
                     }
                     try recordKnownButFailed(io, a, fixture_id, msg.items, init.environ_map);
                     damped.put(fixture_id, {}) catch {};
@@ -3136,6 +3161,13 @@ pub const dev = if (build_options.dev) struct {
         daemonWrite(io, "  index file: fixtures/index.json\n");
         daemonWrite(io, "  control file: fixtures/daemon.ctl (write pause/resume/stop)\n");
         if (write_log) daemonWrite(io, "  log file: fixtures/daemon.log\n");
+        {
+            // the pid is how this instance is referenced (kill it, tell
+            // two interleaved log streams apart) — print it up front.
+            var pbuf: [32]u8 = undefined;
+            const m = std.fmt.bufPrint(pbuf[0..], "  process id: {d}\n", .{core.selfPid()}) catch "  process id: ?\n";
+            daemonWrite(io, m);
+        }
         daemonWrite(io, "  press Ctrl+C to stop\n");
 
         // decision #12 — one cross-platform control mechanism: the
