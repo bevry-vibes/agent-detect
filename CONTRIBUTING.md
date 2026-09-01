@@ -499,6 +499,37 @@ Headless `ssh` sessions can't `bootstrap` (not attached to the GUI
 session — use `tmux`/`screen` there). The sudo-free equivalents are
 `systemd --user` on Linux and Task Scheduler / NSSM on Windows.
 
+### daemon launch: Windows scheduled task (no admin)
+
+A per-user scheduled task is the Windows equivalent of the LaunchAgent
+bootstrap: no admin, survives the terminal closing, and — unlike
+launchd — an **interactive** scheduled task inherits the user's full
+session environment (shell PATH, harness env), so `from-capture` jobs
+find the harness binaries without an explicit `EnvironmentVariables`
+block. PowerShell 7.6+, run once:
+
+```powershell
+#Requires -Version 7.6
+$repo = "C:\abs\path\to\agent-detect"
+$exe = Join-Path $repo "zig-out\bin\agent-detect-dev.exe"
+$action = New-ScheduledTaskAction -Execute $exe -Argument "fixtures daemon --write-log --poll-seconds=1" -WorkingDirectory $repo
+$principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME"
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero)
+Register-ScheduledTask -TaskName "agent-detect-drain-windows" -Action $action -Principal $principal -Settings $settings -Force | Out-Null
+Start-ScheduledTask -TaskName "agent-detect-drain-windows"
+```
+
+- Use `Register-ScheduledTask`, not `New-ScheduledTask` (the latter
+  builds the object without registering or starting it).
+- `-ExecutionTimeLimit ([TimeSpan]::Zero)` lifts the task time limit;
+  without it Task Scheduler kills the daemon after 72h.
+- Stop: `Stop-ScheduledTask -TaskName agent-detect-drain-windows`, or
+  the graceful path (finishes the in-flight capture): `printf 'stop\n' > fixtures/daemon.ctl`.
+- When the drain is done: `Unregister-ScheduledTask -TaskName agent-detect-drain-windows -Confirm:$false`.
+- While the daemon holds `agent-detect-dev.exe` open, `zig build`
+  (whose default step installs the dev binary) fails with
+  AccessDenied — stop the daemon before rebuilding.
+
 ### global-settings rule
 
 Never change a global harness/provider/model setting to make a fixture

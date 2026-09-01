@@ -1242,6 +1242,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "cline-pass/cline-pass/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1254,6 +1256,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "cline-pass/cline-pass/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1266,6 +1270,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "cline-pass/cline-pass/kimi-k2.7-code",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1278,6 +1284,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "cline-pass/cline-pass/kimi-k2.7-code",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1290,6 +1298,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "deepseek/deepseek-v4-flash",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1302,6 +1312,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "deepseek/deepseek-v4-flash",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1314,6 +1326,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "deepseek/deepseek-v4-pro",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1326,6 +1340,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "deepseek/deepseek-v4-pro",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1362,6 +1378,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "hyper/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1374,6 +1392,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "hyper/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1386,6 +1406,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "hyper/kimi-k3",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1398,6 +1420,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "hyper/kimi-k3",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1542,6 +1566,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "ollama-cloud/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1554,6 +1580,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "ollama-cloud/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1566,6 +1594,8 @@
         "kilo",
         "run",
         "--auto",
+        "--model",
+        "ollama-cloud/kimi-k2.5",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -1578,6 +1608,8 @@
         "kilo.cmd",
         "run",
         "--auto",
+        "--model",
+        "ollama-cloud/kimi-k2.5",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3491,6 +3523,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "cline-pass/cline-pass/deepseek-v4-pro",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3502,6 +3536,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "cline-pass/cline-pass/deepseek-v4-pro",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3513,6 +3549,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "cline-pass/cline-pass/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3524,6 +3562,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "cline-pass/cline-pass/glm-5.2",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3535,6 +3575,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "cline-pass/cline-pass/kimi-k2.7-code",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3546,6 +3588,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "cline-pass/cline-pass/kimi-k2.7-code",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3557,6 +3601,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "cline-pass/cline-pass/minimax-m3",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3568,6 +3614,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "cline-pass/cline-pass/minimax-m3",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3579,6 +3627,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "deepseek/deepseek-v4-flash",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3590,6 +3640,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "deepseek/deepseek-v4-flash",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3601,6 +3653,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "deepseek/deepseek-v4-pro",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3612,6 +3666,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "deepseek/deepseek-v4-pro",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3645,6 +3701,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "hyper/deepseek-v4-flash",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3656,6 +3714,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "hyper/deepseek-v4-flash",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3667,6 +3727,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "minimax/MiniMax-M2.5",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3678,6 +3740,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "minimax/MiniMax-M2.5",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3689,6 +3753,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "minimax/MiniMax-M2.7",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3700,6 +3766,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "minimax/MiniMax-M2.7",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3711,6 +3779,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "minimax/MiniMax-M3",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [
@@ -3722,6 +3792,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "minimax/MiniMax-M3",
         "\u003cprompt\u003e"
       ],
       "version_invocation": [

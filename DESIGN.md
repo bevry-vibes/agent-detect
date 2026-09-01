@@ -182,6 +182,27 @@ Store tables (semantics only — shapes in the schemas):
   targeted from-capture entry). A successful capture records the
   invocation it ran under into the fixture file's own `meta`; the
   table entry persists as the re-capture source.
+
+  **Model pinning**: an invocation that does not pin the model via the
+  harness's own flag (`crush -m`, `kilo --model`, `opencode --model`,
+  `cline --provider/--model`, …) runs whatever the host's default is —
+  "safe but unreliable": the writer rule keeps strays out, but the
+  post-check fails (session ran the default, not the combo) and the
+  worker's stderr banner shows the *default* model, which reads like a
+  mystery until the unpinned launch is noticed. Pin wherever a flag
+  exists, using ids from the host's own model catalog (`kilo models`,
+  `opencode models`, `crush`'s `providers.json`, …) so the session
+  really runs the combo. Two classes stay unpinned on purpose:
+  harnesses whose detection reads a **config file** (qwen's
+  `settings.json`, kimi-code's `config.toml`, mmx's `config.json`,
+  goose's `config.yaml`, reasonix's `config.toml`, vibe's `VIBE_*`
+  env) — the CLI flag is session-only and does not reach the config
+  the detector reads, so an argv pin would make the session and the
+  detection disagree (the capture can only pass by changing the host
+  config, which is the user's call per the global-settings rule); and
+  combos whose provider is not configured/authenticated on the host
+  (no catalog entry, or the provider needs a sign-in the host lacks).
+  Those are environment gaps, triaged per host, not invocation bugs.
 - `backlog` — the actionable gaps + the failure memory:
   `unknown_harnesses` / `unknown_providers` / `unknown_models` (unique
   dim slugs from unresolvable stems — folder stems and
@@ -341,8 +362,10 @@ it in. The agent never runs the daemon. The exact guard and what it
 checks is documented on `runFixturesDaemon` in `src/dev/dev.zig`.
 A user run from a terminal is the baseline; on macOS the same clean
 user context can be achieved without a terminal via the per-user
-LaunchAgent bootstrap (no sudo, launchd-parented), which is documented
-in CONTRIBUTING.md "daemon launch: macOS LaunchAgent bootstrap".
+LaunchAgent bootstrap (no sudo, launchd-parented), and on Windows via
+a per-user scheduled task (no admin, inherits the user session env) —
+both documented in CONTRIBUTING.md ("daemon launch: macOS LaunchAgent
+bootstrap" / "daemon launch: Windows scheduled task (no admin)").
 
 ### recipe-mode identify/trailer (hard-to-detect agents)
 
