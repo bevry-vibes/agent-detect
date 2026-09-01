@@ -139,6 +139,13 @@ fn isKnownAction(word: []const u8) bool {
 }
 
 pub fn main(init: std.process.Init) u8 {
+    if (@import("builtin").os.tag == .windows) {
+        // CP_UTF8 (65001): the default OEM console code page
+        // (cp437/850/1252) mangles the UTF-8 output (em dash, middle
+        // dot). Failure ignored: daemonized runs have no console.
+        _ = core.SetConsoleOutputCP(65001);
+        _ = core.SetConsoleCP(65001);
+    }
     return mainInner(init) catch |err| switch (err) {
         error.OutOfMemory => EXIT_OUT_OF_MEMORY,
         else => blk: {

@@ -429,6 +429,11 @@ pub extern "kernel32" fn OpenProcess(dwDesiredAccess: u32, bInheritHandle: c_int
 pub extern "kernel32" fn TerminateProcess(hProcess: std.os.windows.HANDLE, uExitCode: u32) callconv(.winapi) c_int;
 pub extern "kernel32" fn CloseHandle(hObject: std.os.windows.HANDLE) callconv(.winapi) c_int;
 pub extern "kernel32" fn GetProcessId(hProcess: std.os.windows.HANDLE) callconv(.winapi) u32;
+// Windows console code page — the default OEM page (cp437/850/1252)
+// mangles UTF-8 output (em dash, middle dot); the binary sets both
+// directions to CP_UTF8 at startup so terminals render it as-is.
+pub extern "kernel32" fn SetConsoleOutputCP(wCodePage: u32) callconv(.winapi) c_int;
+pub extern "kernel32" fn SetConsoleCP(wCodePage: u32) callconv(.winapi) c_int;
 
 pub const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
 
