@@ -3521,20 +3521,26 @@ pub const dev = if (build_options.dev) struct {
         while (remaining > 0) : (remaining -= 1) {
             std.Io.sleep(io, .{ .nanoseconds = std.time.ns_per_s }, .boot) catch return EXIT_OK;
         }
-        killPid(pid);
+        killPid(io, pid);
         return EXIT_OK;
     }
 
-    /// send a terminate signal to a pid (the capture child). SIGTERM on
-    /// POSIX; TerminateProcess on Windows — the single portable control
-    /// surface the from-capture timeout relies on.
-    fn killPid(pid: u32) void {
+    /// terminate a pid (the capture child). SIGTERM on POSIX; a
+    /// process-tree kill via `taskkill /F /T` on Windows — a plain
+    /// TerminateProcess leaves the child's descendants (a cmd shim's
+    /// node/kilo tree) alive, and an orphan grandchild holding the
+    /// worker's stdout pipe blocks the daemon's read loop past the
+    /// timeout, so the kill must reach the whole tree.
+    fn killPid(io: std.Io, pid: u32) void {
         if (builtin.os.tag == .windows) {
-            const handle = OpenProcess(0x0001, 0, pid); // PROCESS_TERMINATE
-            if (handle != null) {
-                _ = TerminateProcess(handle.?, 1);
-                _ = CloseHandle(handle.?);
-            }
+            const pid_str = std.fmt.allocPrint(
+                std.heap.page_allocator,
+                "{d}",
+                .{pid},
+            ) catch return;
+            defer std.heap.page_allocator.free(pid_str);
+            const tk_argv = [_][]const u8{ "taskkill.exe", "/F", "/T", "/PID", pid_str };
+            _ = std.process.spawn(io, .{ .argv = &tk_argv, .stdout = .ignore, .stderr = .ignore }) catch {};
             return;
         }
         std.posix.kill(@intCast(pid), .TERM) catch {};
