@@ -1,15 +1,15 @@
 {
   "backlog": {
     "known_but_failed": {
-      "cline-clinepass-deepseekv4flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-clinepass-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
       "cline-clinepass-kimik3-darwin": "capture failed (exit 1):  dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 1d 17h, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
-      "cline-clinepass-kimik3-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
-      "cline-clinepass-step37flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
-      "cline-deepseek-deepseekv4flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Authentication Fails, Your api key: ****fEuO is invalid\n",
+      "cline-clinepass-kimik3-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-clinepass-step37flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-deepseek-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Authentication Fails, Your api key: ****fEuO is invalid\n",
       "cline-minimax-minimaxm3-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
-      "cline-minimax-minimaxm3-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
+      "cline-minimax-minimaxm3-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
       "cline-openrouter-deepseekv4flash-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m No cookie auth credentials found\n",
-      "cline-openrouter-deepseekv4flash-windows": "capture failed (exit 1): \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m openrouter/deepseek-v4-flash is not a valid model ID\n",
+      "cline-openrouter-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m openrouter/deepseek-v4-flash is not a valid model ID\n",
       "copilot-githubcopilot-claudesonnet5-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gemini25pro-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gpt52-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
@@ -28,7 +28,7 @@
       "crush-hyper-qwen37flash-darwin": "post-check mismatch",
       "crush-hyper-qwen37plus-darwin": "post-check mismatch",
       "crush-hyper-qwen3coder-darwin": "post-check mismatch",
-      "kilo-anthropic-claudesonnet4-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "kilo-anthropic-claudesonnet4-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
       "kilo-clinepass-glm52-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
       "kilo-clinepass-kimik27code-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
       "kilo-deepseek-deepseekv4flash-windows": "capture failed (exit 1): \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
@@ -125,7 +125,67 @@
       "omp-nanogpt-gemma327b-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/Gemma-3-27B-ArliAI-RPMax-v3\n",
       "omp-nanogpt-mistralsmall3-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/chutesai/Mistral-Small-3.2-24B-Instruct-2506\n",
       "omp-nanogpt-qwen36-windows": "capture failed (exit 1): Warning: prewalk disabled — no API key for nanogpt/alibaba/qwen3.6-27b\n",
-      "omp-huggingface-phi4-windows": "capture failed (exit 1)"
+      "omp-huggingface-phi4-windows": "capture failed (exit 1)",
+      "omp-huggingface-glm47flash-windows": "capture failed (exit 1); stderr Warning: prewalk disabled — no API key for huggingface/zai-org/GLM-4.7-Flash\n",
+      "omp-huggingface-nemotron3ultra-windows": "capture failed (exit 1)",
+      "omp-huggingface-llama318b-windows": "capture failed (exit 1): stdout \u0007",
+      "omp-huggingface-ling261t-windows": "capture failed (exit 1); stderr Model \"huggingface/inclusionai/ling-2.6-1t\" not found\n\nSet an API key environment variable:\n  ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, etc.\n\nOr create C:\\Users\\balup\\.omp\\agent\\models.yml\n",
+      "omp-huggingface-cogito21-windows": "capture failed (exit 1); stderr Model \"huggingface/deepcogito/cogito-2.1\" not found\n\nSet an API key environment variable:\n  ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, etc.\n\nOr create C:\\Users\\balup\\.omp\\agent\\models.yml\n",
+      "omp-huggingface-gptoss120b-windows": "post-check mismatch",
+      "omp-huggingface-commanda-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n402 You have depleted your monthly included credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get 20x more included usage.\n",
+      "omp-cursor-gpt5mini-windows": "capture failed (exit 1); stderr rver.v1.ErrorDetails: {\"error\":\"ERROR_RATE_LIMITED_CHANGEABLE\",\"details\":{\"title\":\"Named models unavailable\",\"detail\":\"Free plans can only use Auto. Switch to Auto or upgrade plans to continue.\",\"isRetryable\":false,\"showRequestId\":false,\"additionalInfo\":{\"hideIcon\":\"true\",\"hideKeybindings\":\"true\"},\"buttons\":[{\"label\":\"Upgrade to Pro\",\"upgrade\":{\"membershipToUpgradeT…",
+      "omp-cursor-gemini3flash-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n",
+      "omp-cursor-glm52-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n",
+      "omp-cursor-claudefable5-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n",
+      "omp-cursor-kimik25-windows": "capture failed (exit 1); stderr tOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\nConnect error invalid_argument: Error [details: aiserver.v1.ErrorDetails: {\"error\":\"ERROR_MODEL_NO_LONGER_SUPPORTED\",\"details\":{\"title\":\"Model is deprecated\",\"detail\":\"Kimi K2.5 is no longer available.\",\"isRetryable\":false,\"showReques…",
+      "omp-githubcopilot-gpt4o-windows": "post-check mismatch",
+      "omp-githubcopilot-gemini3pro-windows": "capture failed (exit 1); stderr rtup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\nGitHub Copilot rejected this model (HTTP 400) after retries: only part of its fleet currently serves this model id, even though /models advertises it. Try again in a few seconds or switch to a model Copilot serves fleet-wide (claude-opus-4.…",
+      "omp-githubcopilot-gpt5mini-windows": "capture failed (exit 1); stderr rtup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\nGitHub Copilot rejected this model (HTTP 400) after retries: only part of its fleet currently serves this model id, even though /models advertises it. Try again in a few seconds or switch to a model Copilot serves fleet-wide (claude-opus-4.…",
+      "reasonix-deepseekflash-deepseekv4flash-windows": "post-check mismatch",
+      "crush-hyper-qwen37plus-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-deepseekv4flash-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-minimax-minimaxm3-windows": "capture failed (exit 1): stdout \n; stderr or: too many requests: POST              \n  \"https://api.minimax.io/anthropic/v1/messages\": 429 Too Many Requests                                               \n  {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"Token Plan usage limit reached: Upgrade your Token    \n  Plan or purchase Credits for more usage. (2056)\"},\"request_id\":\"06e6b22884e3…",
+      "crush-hyper-deepseekv4pro-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-glm52-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-kimik25-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-kimik27code-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-kimik3-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-llama3370b-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-llama4maverick-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-minimaxm27-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-qwen36max-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-qwen37flash-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-qwen38max-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "crush-hyper-qwen3coder-windows": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
+      "opencode-minimax-minimaxm3-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · MiniMax-M3\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mToken Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\r\n",
+      "opencode-hyper-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · deepseek-v4-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "opencode-groq-llama4-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "opencode-cerebras-qwen3-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "opencode-opencode-nemotron3ultra-windows": "post-check mismatch",
+      "opencode-minimax-minimaxm25-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · MiniMax-M2.5\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mToken Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\r\n",
+      "opencode-minimax-minimaxm27-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · MiniMax-M2.7\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mToken Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\r\n",
+      "opencode-clinepass-glm52-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/glm-5.2\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mError 429: You have reached your monthly Clinepass limit. The limit resets in 7h 57m, please try again later.\r\n",
+      "opencode-clinepass-kimik27code-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/kimi-k2.7-code\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mError 429: You have reached your monthly Clinepass limit. The limit resets in 7h 55m, please try again later.\r\n",
+      "opencode-clinepass-minimaxm3-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/minimax-m3\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mError 429: You have reached your monthly Clinepass limit. The limit resets in 7h 53m, please try again later.\r\n",
+      "opencode-clinepass-deepseekv4pro-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/deepseek-v4-pro\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mError 429: You have reached your monthly Clinepass limit. The limit resets in 7h 52m, please try again later.\r\n",
+      "opencode-alibaba-glm52-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "opencode-alibaba-qwen3coder-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "opencode-alibaba-qwen38max-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
+      "vibe-mistral-mistrallargelatest-windows": "post-check mismatch",
+      "vibe-mistral-mistralsmalllatest-windows": "post-check mismatch",
+      "vibe-minimax-minimaxm3-windows": "post-check mismatch",
+      "cursor-cursor-claudefable5-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-4RmfHHZjZZBHLOmL\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-claudesonnet5-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-SlLYZkpJ5bi1to5T\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-claudeopus5-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-tRMHU6TY3NpIK7uI\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-gpt56sol-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-O6CHYt8yvDtVyNrG\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-gpt56luna-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect--0Bk2DLCA159tAIu\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-gpt52-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-Vg4ccQ_I7fVc1PUP\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-grok45-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-S3KLWkaRwIeiECKR\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "copilot-githubcopilot-gpt52-windows": "capture failed (exit 1); stderr Error: Model \"gpt-5.2\" from --model flag is not available.\n",
+      "copilot-githubcopilot-gemini25pro-windows": "capture failed (exit 1); stderr Error: Model \"gemini-2.5-pro\" from --model flag is not available.\n",
+      "copilot-githubcopilot-grok45-windows": "capture failed (exit 1); stderr Error: Model \"grok-4.5\" from --model flag is not available.\n",
+      "copilot-githubcopilot-claudesonnet5-windows": "capture failed (exit 1); stderr Error: Model \"claude-sonnet-5\" from --model flag is not available.\n",
+      "goose-goose-claudesonnet4-windows": "post-check mismatch"
     },
     "unknown_harnesses": [],
     "unknown_invocations": [],
@@ -1952,6 +2012,7 @@
     "omp-cursor-claudefable5-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "cursor/claude-fable-5",
         "<prompt>"
@@ -1964,6 +2025,7 @@
     "omp-cursor-claudefable5-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "cursor/claude-fable-5",
         "<prompt>"
@@ -1976,6 +2038,7 @@
     "omp-cursor-gemini3flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "cursor/gemini-3-flash",
         "<prompt>"
@@ -1988,6 +2051,7 @@
     "omp-cursor-gemini3flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "cursor/gemini-3-flash",
         "<prompt>"
@@ -2000,6 +2064,7 @@
     "omp-cursor-glm52-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "cursor/glm-5.2",
         "<prompt>"
@@ -2012,6 +2077,7 @@
     "omp-cursor-glm52-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "cursor/glm-5.2",
         "<prompt>"
@@ -2024,6 +2090,7 @@
     "omp-cursor-gpt5mini-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "cursor/gpt-5-mini",
         "<prompt>"
@@ -2036,6 +2103,7 @@
     "omp-cursor-gpt5mini-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "cursor/gpt-5-mini",
         "<prompt>"
@@ -2048,6 +2116,7 @@
     "omp-cursor-kimik25-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "cursor/kimi-k2.5",
         "<prompt>"
@@ -2060,6 +2129,7 @@
     "omp-cursor-kimik25-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "cursor/kimi-k2.5",
         "<prompt>"
@@ -2072,6 +2142,7 @@
     "omp-deepseek-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "deepseek/deepseek-v4-flash",
         "<prompt>"
@@ -2084,6 +2155,7 @@
     "omp-deepseek-deepseekv4flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "deepseek/deepseek-v4-flash",
         "<prompt>"
@@ -2096,6 +2168,7 @@
     "omp-githubcopilot-gemini3pro-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "github-copilot/gemini-3-pro",
         "<prompt>"
@@ -2108,6 +2181,7 @@
     "omp-githubcopilot-gemini3pro-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "github-copilot/gemini-3-pro",
         "<prompt>"
@@ -2120,6 +2194,7 @@
     "omp-githubcopilot-gpt4o-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "github-copilot/gpt-4o",
         "<prompt>"
@@ -2132,6 +2207,7 @@
     "omp-githubcopilot-gpt4o-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "github-copilot/gpt-4o",
         "<prompt>"
@@ -2144,6 +2220,7 @@
     "omp-githubcopilot-gpt5mini-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "github-copilot/gpt-5-mini",
         "<prompt>"
@@ -2156,6 +2233,7 @@
     "omp-githubcopilot-gpt5mini-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "github-copilot/gpt-5-mini",
         "<prompt>"
@@ -2168,6 +2246,7 @@
     "omp-gmicloud-claudefable5-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/anthropic/claude-fable-5",
         "<prompt>"
@@ -2180,6 +2259,7 @@
     "omp-gmicloud-claudefable5-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/anthropic/claude-fable-5",
         "<prompt>"
@@ -2192,6 +2272,7 @@
     "omp-gmicloud-deepseekr1-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/deepseek-ai/deepseek-r1",
         "<prompt>"
@@ -2204,6 +2285,7 @@
     "omp-gmicloud-deepseekr1-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/deepseek-ai/deepseek-r1",
         "<prompt>"
@@ -2216,6 +2298,7 @@
     "omp-gmicloud-gemini3flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/google/gemini-3-flash",
         "<prompt>"
@@ -2228,6 +2311,7 @@
     "omp-gmicloud-gemini3flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/google/gemini-3-flash",
         "<prompt>"
@@ -2240,6 +2324,7 @@
     "omp-gmicloud-glm47-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/zai-org/glm-4.7",
         "<prompt>"
@@ -2252,6 +2337,7 @@
     "omp-gmicloud-glm47-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/zai-org/glm-4.7",
         "<prompt>"
@@ -2264,6 +2350,7 @@
     "omp-gmicloud-gpt4o-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/openai/gpt-4o",
         "<prompt>"
@@ -2276,6 +2363,7 @@
     "omp-gmicloud-gpt4o-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/openai/gpt-4o",
         "<prompt>"
@@ -2288,6 +2376,7 @@
     "omp-gmicloud-grok45-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/x-ai/grok-4.5",
         "<prompt>"
@@ -2300,6 +2389,7 @@
     "omp-gmicloud-grok45-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/x-ai/grok-4.5",
         "<prompt>"
@@ -2312,6 +2402,7 @@
     "omp-gmicloud-kimik2-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/moonshotai/kimi-k2",
         "<prompt>"
@@ -2324,6 +2415,7 @@
     "omp-gmicloud-kimik2-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/moonshotai/kimi-k2",
         "<prompt>"
@@ -2336,6 +2428,7 @@
     "omp-gmicloud-nemotron3ultra-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "gmi-cloud/nvidia/nemotron-3-ultra",
         "<prompt>"
@@ -2348,6 +2441,7 @@
     "omp-gmicloud-nemotron3ultra-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "gmi-cloud/nvidia/nemotron-3-ultra",
         "<prompt>"
@@ -2360,6 +2454,7 @@
     "omp-googleantigravity-gptoss120b-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "google-antigravity/gpt-oss-120b",
         "<prompt>"
@@ -2372,6 +2467,7 @@
     "omp-googleantigravity-gptoss120b-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "google-antigravity/gpt-oss-120b",
         "<prompt>"
@@ -2384,6 +2480,7 @@
     "omp-huggingface-cogito21-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/deepcogito/cogito-2.1",
         "<prompt>"
@@ -2396,6 +2493,7 @@
     "omp-huggingface-cogito21-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/deepcogito/cogito-2.1",
         "<prompt>"
@@ -2408,6 +2506,7 @@
     "omp-huggingface-commanda-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/cohere/command-a",
         "<prompt>"
@@ -2420,6 +2519,7 @@
     "omp-huggingface-commanda-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/cohere/command-a",
         "<prompt>"
@@ -2432,6 +2532,7 @@
     "omp-huggingface-glm47flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/zai-org/glm-4.7-flash",
         "<prompt>"
@@ -2444,6 +2545,7 @@
     "omp-huggingface-glm47flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/zai-org/glm-4.7-flash",
         "<prompt>"
@@ -2456,6 +2558,7 @@
     "omp-huggingface-gptoss120b-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/openai/gpt-oss-120b",
         "<prompt>"
@@ -2468,6 +2571,7 @@
     "omp-huggingface-gptoss120b-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/openai/gpt-oss-120b",
         "<prompt>"
@@ -2480,6 +2584,7 @@
     "omp-huggingface-ling261t-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/inclusionai/ling-2.6-1t",
         "<prompt>"
@@ -2492,6 +2597,7 @@
     "omp-huggingface-ling261t-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/inclusionai/ling-2.6-1t",
         "<prompt>"
@@ -2504,6 +2610,7 @@
     "omp-huggingface-llama318b-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/meta-llama/llama-3.1-8b",
         "<prompt>"
@@ -2516,6 +2623,7 @@
     "omp-huggingface-llama318b-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/meta-llama/llama-3.1-8b",
         "<prompt>"
@@ -2528,6 +2636,7 @@
     "omp-huggingface-nemotron3ultra-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/nvidia/nemotron-3-ultra",
         "<prompt>"
@@ -2540,6 +2649,7 @@
     "omp-huggingface-nemotron3ultra-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/nvidia/nemotron-3-ultra",
         "<prompt>"
@@ -2552,6 +2662,7 @@
     "omp-huggingface-phi4-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "huggingface/microsoft/phi-4",
         "<prompt>"
@@ -2564,6 +2675,7 @@
     "omp-huggingface-phi4-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "huggingface/microsoft/phi-4",
         "<prompt>"
@@ -2576,6 +2688,7 @@
     "omp-kimicode-kimik3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "kimi-code/k3",
         "<prompt>"
@@ -2588,6 +2701,7 @@
     "omp-kimicode-kimik3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "kimi-code/k3",
         "<prompt>"
@@ -2600,6 +2714,7 @@
     "omp-meta-musespark12-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "meta/muse-spark-1.2",
         "<prompt>"
@@ -2612,6 +2727,7 @@
     "omp-meta-musespark12-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "meta/muse-spark-1.2",
         "<prompt>"
@@ -2624,6 +2740,7 @@
     "omp-minimaxcode-minimaxm3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "minimax-code/MiniMax-M3",
         "<prompt>"
@@ -2636,6 +2753,7 @@
     "omp-minimaxcode-minimaxm3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "minimax-code/MiniMax-M3",
         "<prompt>"
@@ -2648,6 +2766,7 @@
     "omp-nanogpt-deepseekr1-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/deepseek-ai/deepseek-r1",
         "<prompt>"
@@ -2660,6 +2779,7 @@
     "omp-nanogpt-deepseekr1-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/deepseek-ai/deepseek-r1",
         "<prompt>"
@@ -2672,6 +2792,7 @@
     "omp-nanogpt-doubaoseed21-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/bytedance/doubao-seed-2.1",
         "<prompt>"
@@ -2684,6 +2805,7 @@
     "omp-nanogpt-doubaoseed21-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/bytedance/doubao-seed-2.1",
         "<prompt>"
@@ -2696,6 +2818,7 @@
     "omp-nanogpt-ernie45-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/baidu/ernie-4.5",
         "<prompt>"
@@ -2708,6 +2831,7 @@
     "omp-nanogpt-ernie45-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/baidu/ernie-4.5",
         "<prompt>"
@@ -2720,6 +2844,7 @@
     "omp-nanogpt-gemma327b-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/gemma-3-27b",
         "<prompt>"
@@ -2732,6 +2857,7 @@
     "omp-nanogpt-gemma327b-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/gemma-3-27b",
         "<prompt>"
@@ -2744,6 +2870,7 @@
     "omp-nanogpt-gpt4o-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/openai/chatgpt-4o",
         "<prompt>"
@@ -2756,6 +2883,7 @@
     "omp-nanogpt-gpt4o-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/openai/chatgpt-4o",
         "<prompt>"
@@ -2768,6 +2896,7 @@
     "omp-nanogpt-gptoss120b-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/TEE/gpt-oss-120b",
         "<prompt>"
@@ -2780,6 +2909,7 @@
     "omp-nanogpt-gptoss120b-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/TEE/gpt-oss-120b",
         "<prompt>"
@@ -2792,6 +2922,7 @@
     "omp-nanogpt-grok3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/grok-3",
         "<prompt>"
@@ -2804,6 +2935,7 @@
     "omp-nanogpt-grok3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/grok-3",
         "<prompt>"
@@ -2816,6 +2948,7 @@
     "omp-nanogpt-hunyuant1-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/hunyuan-t1",
         "<prompt>"
@@ -2828,6 +2961,7 @@
     "omp-nanogpt-hunyuant1-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/hunyuan-t1",
         "<prompt>"
@@ -2840,6 +2974,7 @@
     "omp-nanogpt-kimik2-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/baseten/kimi-k2",
         "<prompt>"
@@ -2852,6 +2987,7 @@
     "omp-nanogpt-kimik2-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/baseten/kimi-k2",
         "<prompt>"
@@ -2864,6 +3000,7 @@
     "omp-nanogpt-ling30flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/inclusionai/ling-3.0-flash",
         "<prompt>"
@@ -2876,6 +3013,7 @@
     "omp-nanogpt-ling30flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/inclusionai/ling-3.0-flash",
         "<prompt>"
@@ -2888,6 +3026,7 @@
     "omp-nanogpt-mistralsmall3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/mistral-small-3",
         "<prompt>"
@@ -2900,6 +3039,7 @@
     "omp-nanogpt-mistralsmall3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/mistral-small-3",
         "<prompt>"
@@ -2912,6 +3052,7 @@
     "omp-nanogpt-nemotron3ultra-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/nvidia/nemotron-3-ultra",
         "<prompt>"
@@ -2924,6 +3065,7 @@
     "omp-nanogpt-nemotron3ultra-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/nvidia/nemotron-3-ultra",
         "<prompt>"
@@ -2936,6 +3078,7 @@
     "omp-nanogpt-olmo332bthink-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/allenai/olmo-3-32b-think",
         "<prompt>"
@@ -2948,6 +3091,7 @@
     "omp-nanogpt-olmo332bthink-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/allenai/olmo-3-32b-think",
         "<prompt>"
@@ -2960,6 +3104,7 @@
     "omp-nanogpt-phi4mini-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/phi-4-mini",
         "<prompt>"
@@ -2972,6 +3117,7 @@
     "omp-nanogpt-phi4mini-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/phi-4-mini",
         "<prompt>"
@@ -2984,6 +3130,7 @@
     "omp-nanogpt-qwen36-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "nanogpt/alibaba/qwen3.6",
         "<prompt>"
@@ -2996,6 +3143,7 @@
     "omp-nanogpt-qwen36-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "nanogpt/alibaba/qwen3.6",
         "<prompt>"
@@ -3008,6 +3156,7 @@
     "omp-ollamacloud-deepseekv32-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/deepseek-v3.2",
         "<prompt>"
@@ -3020,6 +3169,7 @@
     "omp-ollamacloud-deepseekv32-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/deepseek-v3.2",
         "<prompt>"
@@ -3032,6 +3182,7 @@
     "omp-ollamacloud-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/deepseek-v4-flash",
         "<prompt>"
@@ -3044,6 +3195,7 @@
     "omp-ollamacloud-deepseekv4flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/deepseek-v4-flash",
         "<prompt>"
@@ -3056,6 +3208,7 @@
     "omp-ollamacloud-glm52-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/glm-5.2",
         "<prompt>"
@@ -3068,6 +3221,7 @@
     "omp-ollamacloud-glm52-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/glm-5.2",
         "<prompt>"
@@ -3080,6 +3234,7 @@
     "omp-ollamacloud-kimik3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/kimi-k3",
         "<prompt>"
@@ -3092,6 +3247,7 @@
     "omp-ollamacloud-kimik3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/kimi-k3",
         "<prompt>"
@@ -3104,6 +3260,7 @@
     "omp-ollamacloud-minimaxm27-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/minimax-m2.7",
         "<prompt>"
@@ -3116,6 +3273,7 @@
     "omp-ollamacloud-minimaxm27-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/minimax-m2.7",
         "<prompt>"
@@ -3128,6 +3286,7 @@
     "omp-ollamacloud-minimaxm3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/minimax-m3",
         "<prompt>"
@@ -3140,6 +3299,7 @@
     "omp-ollamacloud-minimaxm3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/minimax-m3",
         "<prompt>"
@@ -3152,6 +3312,7 @@
     "omp-ollamacloud-nemotron3ultra-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/nemotron-3-ultra",
         "<prompt>"
@@ -3164,6 +3325,7 @@
     "omp-ollamacloud-nemotron3ultra-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/nemotron-3-ultra",
         "<prompt>"
@@ -3176,6 +3338,7 @@
     "omp-ollamacloud-qwen3coder-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "ollama-cloud/qwen3-coder",
         "<prompt>"
@@ -3188,6 +3351,7 @@
     "omp-ollamacloud-qwen3coder-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "ollama-cloud/qwen3-coder",
         "<prompt>"
@@ -3200,6 +3364,7 @@
     "omp-openrouter-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "openrouter/deepseek-v4-flash",
         "<prompt>"
@@ -3212,6 +3377,7 @@
     "omp-openrouter-deepseekv4flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "openrouter/deepseek-v4-flash",
         "<prompt>"
@@ -3224,6 +3390,7 @@
     "omp-sakana-fuguultrav11-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "sakana/fugu-ultra-v1.1",
         "<prompt>"
@@ -3236,6 +3403,7 @@
     "omp-sakana-fuguultrav11-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "sakana/fugu-ultra-v1.1",
         "<prompt>"
@@ -3248,6 +3416,7 @@
     "omp-siliconflow-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731",
         "<prompt>"
@@ -3260,6 +3429,7 @@
     "omp-siliconflow-deepseekv4flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731",
         "<prompt>"
@@ -3272,6 +3442,7 @@
     "omp-siliconflow-kimik3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "siliconflow/moonshotai/Kimi-K3",
         "<prompt>"
@@ -3284,6 +3455,7 @@
     "omp-siliconflow-kimik3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "siliconflow/moonshotai/Kimi-K3",
         "<prompt>"
@@ -3296,6 +3468,7 @@
     "omp-siliconflow-minimaxm3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "siliconflow/MiniMaxAI/MiniMax-M3",
         "<prompt>"
@@ -3308,6 +3481,7 @@
     "omp-siliconflow-minimaxm3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "siliconflow/MiniMaxAI/MiniMax-M3",
         "<prompt>"
@@ -3320,6 +3494,7 @@
     "omp-zenmux-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "zenmux/deepseek/deepseek-v4-flash-free",
         "<prompt>"
@@ -3332,6 +3507,7 @@
     "omp-zenmux-deepseekv4flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "zenmux/deepseek/deepseek-v4-flash-free",
         "<prompt>"
@@ -3344,6 +3520,7 @@
     "omp-zenmux-gemini35flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "zenmux/google/gemini-3.5-flash-free",
         "<prompt>"
@@ -3356,6 +3533,7 @@
     "omp-zenmux-gemini35flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "zenmux/google/gemini-3.5-flash-free",
         "<prompt>"
@@ -3368,6 +3546,7 @@
     "omp-zenmux-glm47flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "zenmux/z-ai/glm-4.7-flash-free",
         "<prompt>"
@@ -3380,6 +3559,7 @@
     "omp-zenmux-glm47flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "zenmux/z-ai/glm-4.7-flash-free",
         "<prompt>"
@@ -3392,6 +3572,7 @@
     "omp-zenmux-grok45-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "zenmux/x-ai/grok-4.5-free",
         "<prompt>"
@@ -3404,6 +3585,7 @@
     "omp-zenmux-grok45-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "zenmux/x-ai/grok-4.5-free",
         "<prompt>"
@@ -3416,6 +3598,7 @@
     "omp-zenmux-kimik3-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "zenmux/moonshotai/kimi-k3-free",
         "<prompt>"
@@ -3428,6 +3611,7 @@
     "omp-zenmux-kimik3-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "zenmux/moonshotai/kimi-k3-free",
         "<prompt>"
@@ -3440,6 +3624,7 @@
     "omp-zenmux-step37flash-linux": {
       "prompt_invocation": [
         "omp",
+        "-p",
         "--model",
         "zenmux/stepfun/step-3.7-flash-free",
         "<prompt>"
@@ -3452,6 +3637,7 @@
     "omp-zenmux-step37flash-windows": {
       "prompt_invocation": [
         "omp.exe",
+        "-p",
         "--model",
         "zenmux/stepfun/step-3.7-flash-free",
         "<prompt>"
@@ -3465,6 +3651,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "alibaba/glm-5.2",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3476,6 +3664,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "alibaba/glm-5.2",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3487,6 +3677,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "alibaba/qwen3.8-max",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3498,6 +3690,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "alibaba/qwen3.8-max",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3509,6 +3703,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "alibaba/qwen3-coder-480b-a35b-instruct",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3520,6 +3716,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "alibaba/qwen3-coder-480b-a35b-instruct",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3531,6 +3729,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "cerebras/qwen3",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3542,6 +3742,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "cerebras/qwen3",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3709,6 +3911,8 @@
       "prompt_invocation": [
         "opencode",
         "run",
+        "--model",
+        "groq/llama-4",
         "<prompt>"
       ],
       "version_invocation": [
@@ -3720,6 +3924,8 @@
       "prompt_invocation": [
         "opencode.exe",
         "run",
+        "--model",
+        "groq/llama-4",
         "<prompt>"
       ],
       "version_invocation": [
@@ -4662,574 +4868,6 @@
     }
   },
   "queue": [
-    {
-      "harness": "omp",
-      "provider": "huggingface",
-      "model": "glm47flash",
-      "platform": "windows",
-      "mode": "from-capture",
-      "stale": true,
-      "started_at": 1788283519,
-      "runner": 12812
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "llama318b",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "ling261t",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "cogito21",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gptoss120b",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "commanda",
-      "platform": "windows",
-      "provider": "huggingface",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gpt5mini",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gemini3flash",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "glm52",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "claudefable5",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "kimik25",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gpt4o",
-      "platform": "windows",
-      "provider": "githubcopilot",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gemini3pro",
-      "platform": "windows",
-      "provider": "githubcopilot",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "omp",
-      "mode": "from-capture",
-      "model": "gpt5mini",
-      "platform": "windows",
-      "provider": "githubcopilot",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "reasonix",
-      "mode": "from-capture",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "provider": "deepseekflash",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "qwen37plus",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "provider": "minimax",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "provider": "deepseek",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "glm52",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "kimik25",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "kimik27code",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "kimik3",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "llama3370b",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "llama4maverick",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "qwen36max",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "qwen37flash",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "qwen38max",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "crush",
-      "mode": "from-capture",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "provider": "minimax",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "provider": "deepseek",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "deepseekv4flash",
-      "platform": "windows",
-      "provider": "hyper",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "llama4",
-      "platform": "windows",
-      "provider": "groq",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "qwen3",
-      "platform": "windows",
-      "provider": "cerebras",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "nemotron3ultra",
-      "platform": "windows",
-      "provider": "opencode",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "minimaxm25",
-      "platform": "windows",
-      "provider": "minimax",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "minimaxm27",
-      "platform": "windows",
-      "provider": "minimax",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "glm52",
-      "platform": "windows",
-      "provider": "clinepass",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "kimik27code",
-      "platform": "windows",
-      "provider": "clinepass",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "provider": "clinepass",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "provider": "clinepass",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "provider": "deepseek",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "glm52",
-      "platform": "windows",
-      "provider": "alibaba",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "qwen3coder",
-      "platform": "windows",
-      "provider": "alibaba",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-capture",
-      "model": "qwen38max",
-      "platform": "windows",
-      "provider": "alibaba",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "vibe",
-      "mode": "from-capture",
-      "model": "mistrallargelatest",
-      "platform": "windows",
-      "provider": "mistral",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "vibe",
-      "mode": "from-capture",
-      "model": "mistralsmalllatest",
-      "platform": "windows",
-      "provider": "mistral",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "vibe",
-      "mode": "from-capture",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "provider": "minimax",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "cursor",
-      "mode": "from-capture",
-      "model": "claudefable5",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "cursor",
-      "mode": "from-capture",
-      "model": "claudesonnet5",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "cursor",
-      "mode": "from-capture",
-      "model": "claudeopus5",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "cursor",
-      "mode": "from-capture",
-      "model": "gpt56sol",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "cursor",
-      "mode": "from-capture",
-      "model": "gpt56luna",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "cursor",
-      "mode": "from-capture",
-      "model": "gpt52",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "cursor",
-      "mode": "from-capture",
-      "model": "grok45",
-      "platform": "windows",
-      "provider": "cursor",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "copilot",
-      "mode": "from-capture",
-      "model": "gpt52",
-      "platform": "windows",
-      "provider": "githubcopilot",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "copilot",
-      "mode": "from-capture",
-      "model": "gemini25pro",
-      "platform": "windows",
-      "provider": "githubcopilot",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "copilot",
-      "mode": "from-capture",
-      "model": "grok45",
-      "platform": "windows",
-      "provider": "githubcopilot",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "copilot",
-      "mode": "from-capture",
-      "model": "claudesonnet5",
-      "platform": "windows",
-      "provider": "githubcopilot",
-      "runner": 12812,
-      "stale": true
-    },
-    {
-      "harness": "goose",
-      "mode": "from-capture",
-      "model": "claudesonnet4",
-      "platform": "windows",
-      "provider": "goose",
-      "runner": 15112,
-      "stale": true
-    },
     {
       "mode": "from-identity",
       "runner": 43116,
