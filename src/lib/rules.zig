@@ -196,8 +196,9 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "nemotron-3-ultra", .label = "Nemotron 3 Ultra", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B", "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE" } },
     // qwen3-coder: open-weight — Alibaba Qwen3 Coder; HF card +
     // LICENSE. variations: hyper's serving id spelling (observed: the
-    // hyper catalog's `qwen3-coder-480b-a35b-instruct-int4-mixed-ar`).
-    .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" }, .variations = &.{ "qwen3-coder-480b-a35b-instruct-int4-mixed-ar" } },
+    // hyper catalog's `qwen3-coder-480b-a35b-instruct-int4-mixed-ar`),
+    // and the opencode `alibaba/` catalog's 480b serving id.
+    .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" }, .variations = &.{ "qwen3-coder-480b-a35b-instruct-int4-mixed-ar", "qwen3-coder-480b-a35b-instruct" } },
     // qwen3-32b: open-weight — the 32B dense size of the Qwen3 family;
     // HF card + Apache-2.0 LICENSE. variations: Chutes stamps secure-
     // enclave serving ids with "-TEE" (same model, TEE mode); the

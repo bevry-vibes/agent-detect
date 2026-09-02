@@ -2052,13 +2052,56 @@ pub fn optStringValue(a: std.mem.Allocator, opt: ?[]const u8) std.json.Value {
     return .null;
 }
 
+/// substitute a literal path prefix with a replacement token. A
+/// match is only honored when the prefix is followed by a path
+/// separator (`/` or `\`) or end-of-string, so a project at
+/// `/Users/foo/proj` never matches `/Users/foo/proj2`. A backslash
+/// boundary is consumed and re-emitted as `/` so the token joins the
+/// remainder with a forward slash. The input string is returned
+/// untouched when nothing matches; otherwise a fresh allocation is
+/// returned.
+fn redactPathPrefix(a: std.mem.Allocator, s: []const u8, prefix: []const u8, replacement: []const u8) ![]const u8 {
+    if (s.len == 0 or prefix.len == 0) return s;
+    var out: std.ArrayList(u8) = .empty;
+    errdefer out.deinit(a);
+    var i: usize = 0;
+    var found = false;
+    while (i < s.len) {
+        if (i + prefix.len <= s.len and
+            std.mem.eql(u8, s[i..][0..prefix.len], prefix))
+        {
+            const after = i + prefix.len;
+            const boundary = after == s.len or s[after] == '/' or s[after] == '\\';
+            if (boundary) {
+                try out.appendSlice(a, replacement);
+                if (after < s.len and s[after] == '\\') {
+                    try out.append(a, '/');
+                    i = after + 1;
+                } else {
+                    i = after;
+                }
+                found = true;
+                continue;
+            }
+        }
+        try out.append(a, s[i]);
+        i += 1;
+    }
+    if (!found) {
+        out.deinit(a);
+        return s;
+    }
+    return out.toOwnedSlice(a);
+}
+
 /// replace the user's home directory and shell interpolations with
 /// `<home>` in a string so fixture output is portable across
 /// machines. Handles:
 ///   - `$HOME` and `${HOME}` (must be followed by non-identifier char)
 ///   - `~/` and `~` (only at start of string)
-///   - the literal home path (`/Users/foo` etc., only when followed
-///     by `/` or end-of-string to avoid matching `/Users/fooella`)
+///   - the literal home path (`/Users/foo`, `C:\Users\foo` etc., only
+///     when followed by a path separator (`/` or `\`) or end-of-string
+///     to avoid matching `/Users/fooella`)
 /// The input string is left untouched when it contains no home
 /// references; otherwise a fresh allocation is returned.
 pub fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]const u8 {
@@ -2098,15 +2141,21 @@ pub fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]cons
             i += 1;
             continue;
         }
-        // literal home path — followed by `/` or end of string
+        // literal home path — followed by `/`, `\`, or end of string
+        // (a backslash boundary is consumed and re-emitted as `/`)
         if (home.len > 0 and i + home.len <= s.len and
             std.mem.eql(u8, s[i..][0..home.len], home))
         {
             const after = i + home.len;
-            const boundary = after == s.len or s[after] == '/';
+            const boundary = after == s.len or s[after] == '/' or s[after] == '\\';
             if (boundary) {
                 try out.appendSlice(a, "<home>");
-                i = after;
+                if (after < s.len and s[after] == '\\') {
+                    try out.append(a, '/');
+                    i = after + 1;
+                } else {
+                    i = after;
+                }
                 continue;
             }
         }
@@ -2114,6 +2163,42 @@ pub fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]cons
         i += 1;
     }
     return out.toOwnedSlice(a);
+}
+
+/// re-emit a string with every `\` as `/` (Windows path separators in
+/// fixture evidence read consistently as forward slashes). Takes
+/// ownership of `s` (a heap allocation): it is released when a new
+/// string is built, and ownership of `s` itself is returned when it
+/// holds no backslashes.
+fn slashifyOwned(a: std.mem.Allocator, s: []const u8) ![]const u8 {
+    if (s.len == 0 or std.mem.indexOfScalar(u8, s, '\\') == null) return s;
+    var out: std.ArrayList(u8) = .empty;
+    errdefer out.deinit(a);
+    for (s) |c| try out.append(a, if (c == '\\') '/' else c);
+    a.free(s);
+    return out.toOwnedSlice(a);
+}
+
+/// redact the agent's project directory (its cwd/pwd) with
+/// `<project>`, then apply the `redactHome` home rules, so fixture
+/// evidence is portable across machines. The project path is
+/// substituted first — project paths usually sit under the home dir,
+/// so a home pass first would leave `<home>/Projects/...` behind.
+/// Remaining Windows separators are normalized to `/`. An empty
+/// `project` skips the project pass.
+pub fn redactPaths(a: std.mem.Allocator, s: []const u8, project: []const u8, home: []const u8) ![]const u8 {
+    var p: []const u8 = s;
+    if (project.len > 0) {
+        const pp = try redactPathPrefix(a, s, project, "<project>");
+        if (pp.ptr != s.ptr) {
+            p = pp;
+            const h = try redactHome(a, pp, home);
+            a.free(pp);
+            return slashifyOwned(a, h);
+        }
+    }
+    const h = try redactHome(a, p, home);
+    return slashifyOwned(a, h);
 }
 
 // ============================================================================

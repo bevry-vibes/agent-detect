@@ -1,0 +1,123 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Crush",
+      "harness_short_title": null,
+      "harness_name": "crush",
+      "harness_id": "crush",
+      "harness_license": "FSL-1.1-MIT",
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "crush-deepseek-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Crush · DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Crush · DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
+    "raw": {
+      "platform_id": "windows",
+      "harness_version": "0.91.2",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 17740,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 21032,
+          "name": "crush.exe"
+        },
+        {
+          "pid": 20832,
+          "name": "crush.exe"
+        },
+        {
+          "pid": 2312,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 2176,
+          "name": "svchost.exe"
+        },
+        {
+          "pid": 928,
+          "name": "services.exe"
+        },
+        {
+          "pid": 856,
+          "name": "wininit.exe"
+        },
+        {
+          "pid": 644,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/charmbracelet/crush",
+        "https://github.com/charmbracelet/crush/blob/main/LICENSE.md"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "crush.exe",
+          "value": "crush"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "C:\\Users\\balup\\Projects\\vibes\\agent-detect\\.crush/crush.db",
+          "field": "messages.provider",
+          "value": "deepseek"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "C:\\Users\\balup\\Projects\\vibes\\agent-detect\\.crush/crush.db",
+          "field": "messages.model",
+          "value": "deepseek-v4-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788289923,
+    "harness_version": "0.91.2",
+    "prompt_invocation": [
+      "crush.exe",
+      "run",
+      "-m",
+      "deepseek/deepseek-v4-flash",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "crush.exe",
+      "--version"
+    ]
+  }
+}

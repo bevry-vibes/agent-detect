@@ -57,7 +57,7 @@ const ancestorInfo = core.ancestorInfo;
 const reporterHome = core.reporterHome;
 const stringListValue = core.stringListValue;
 const optStringValue = core.optStringValue;
-const redactHome = core.redactHome;
+const redactPaths = core.redactPaths;
 const jstr = core.jstr;
 const jint = core.jint;
 const reciprocityOf = core.reciprocityOf;
@@ -364,9 +364,13 @@ pub const dev = if (build_options.dev) struct {
     /// `detected` dimension arrays adjacent to it, then the shapeless
     /// runtime observations. Returns a heap-allocated `std.json.Value`;
     /// the caller owns it.
-    fn buildRaw(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, hver: ?[]const u8, comptime emit_hver_always: bool) !std.json.Value {
+    fn buildRaw(a: std.mem.Allocator, io: std.Io, d: *const Detection, env: *const std.process.Environ.Map, hver: ?[]const u8, comptime emit_hver_always: bool) !std.json.Value {
         const V = std.json.Value;
         const home = reporterHome(env);
+        // the agent's project dir — its cwd/pwd. Evidence paths rooted
+        // there (project-local session stores, per-project config) are
+        // redacted to `<project>` so fixtures stay portable.
+        const project = std.process.currentPathAlloc(io, a) catch "";
         var raw: V = .{ .object = .empty };
         // platform id (compile-time constant) is emitted as a top-level
         // raw key so a maintainer reading a fixture knows which
@@ -430,7 +434,7 @@ pub const dev = if (build_options.dev) struct {
                 var c_obj: V = .{ .object = .empty };
                 try c_obj.object.put(a, "dim", .{ .string = claim.dim });
                 try c_obj.object.put(a, "source", .{ .string = claim.source });
-                try c_obj.object.put(a, "name", .{ .string = try redactHome(a, claim.name, home) });
+                try c_obj.object.put(a, "name", .{ .string = try redactPaths(a, claim.name, project, home) });
                 if (claim.field) |fld| {
                     try c_obj.object.put(a, "field", .{ .string = fld });
                 }
@@ -438,7 +442,7 @@ pub const dev = if (build_options.dev) struct {
                     const emitted = if (std.mem.eql(u8, claim.source, "env") and !envValueAllowed(claim.name))
                         "<redacted>"
                     else
-                        try redactHome(a, val, home);
+                        try redactPaths(a, val, project, home);
                     try c_obj.object.put(a, "value", .{ .string = emitted });
                 }
                 try ev_arr.array.append(c_obj);
@@ -459,7 +463,7 @@ pub const dev = if (build_options.dev) struct {
         const io = init.io;
         var d = Detection{};
         const ok = try detect(init, &d);
-        const raw_v = try buildRaw(a, &d, init.environ_map, d.harness_version, false);
+        const raw_v = try buildRaw(a, io, &d, init.environ_map, d.harness_version, false);
         const json_bytes = try std.json.Stringify.valueAlloc(a, raw_v, .{ .whitespace = .indent_2 });
         defer a.free(json_bytes);
         if (!ok) {
@@ -479,9 +483,6 @@ pub const dev = if (build_options.dev) struct {
     // index.json state store (queue + backlog + known_but_failed)
     // ------------------------------------------------------------------
 
-    const INDEX_PATH = "fixtures/index.json";
-    const INDEX_LOCK_PATH = "fixtures/index.json.lock";
-    const INDEX_TMP_PATH = "fixtures/index.json.tmp";
     const INDEX_STORE_VERSION: i64 = 4;
     const INDEX_LOCK_BUDGET_MS: u64 = 5000;
     const INDEX_LOCK_RETRY_MS: u64 = 50;
@@ -495,6 +496,19 @@ pub const dev = if (build_options.dev) struct {
     /// (a directory containing `from-identity/` / `from-capture/`).
     pub fn setFixturesRootForTests(path: []const u8) void {
         fixtures_root = path;
+    }
+
+    /// re-root the fixtures dir when `AGENT_DETECT_FIXTURES_DIR` is set
+    /// (the daemon's from-capture workers run in a throwaway cwd and
+    /// point it at the repo's `fixtures/` so the store + channel files
+    /// still land in the repo). Unset → the default relative root.
+    pub fn applyFixturesRootEnv(env: *const std.process.Environ.Map) void {
+        if (env.get("AGENT_DETECT_FIXTURES_DIR")) |dir| fixtures_root = dir;
+    }
+
+    /// `{fixtures_root}/<name>` in a stack buffer (index + lock paths).
+    fn fixturesJoin(name: []const u8, buf: *[std.fs.max_path_bytes]u8) ?[]const u8 {
+        return std.fmt.bufPrint(buf[0..], "{s}/{s}", .{ fixtures_root, name }) catch null;
     }
 
     /// the two per-channel folder names. The directory IS the channel —
@@ -534,7 +548,7 @@ pub const dev = if (build_options.dev) struct {
         return root;
     }
 
-    /// acquire the exclusive lock on `fixtures/index.json.lock` (creating
+    /// acquire the exclusive lock on `<root>/index.json.lock` (creating
     /// it when missing). Retries with `tryLock` on a ~5s budget, sleeping
     /// 50ms between attempts. Kernel-managed locks release on exit/crash —
     /// no stale-lock heuristics. Caller owns the returned file; closing it
@@ -544,7 +558,9 @@ pub const dev = if (build_options.dev) struct {
             error.PathAlreadyExists => {},
             else => return error.FilesystemIoError,
         };
-        const lock_file = std.Io.Dir.cwd().createFile(io, INDEX_LOCK_PATH, .{}) catch return error.FilesystemIoError;
+        var lock_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const lock_path = fixturesJoin("index.json.lock", &lock_buf) orelse return error.FilesystemIoError;
+        const lock_file = std.Io.Dir.cwd().createFile(io, lock_path, .{}) catch return error.FilesystemIoError;
         errdefer lock_file.close(io);
         const deadline = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, INDEX_LOCK_BUDGET_MS) * std.time.ns_per_ms }, .clock = .boot });
         while (true) {
@@ -565,7 +581,9 @@ pub const dev = if (build_options.dev) struct {
     /// table) are dropped on load and never re-serialized: back-compat by
     /// drop, not dual-read.
     fn indexLoad(io: std.Io, a: std.mem.Allocator) !std.json.Value {
-        const data = std.Io.Dir.cwd().readFileAlloc(io, INDEX_PATH, a, @enumFromInt(1 << 26)) catch |err| switch (err) {
+        var idx_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const index_path = fixturesJoin("index.json", &idx_buf) orelse return error.IndexStoreError;
+        const data = std.Io.Dir.cwd().readFileAlloc(io, index_path, a, @enumFromInt(1 << 26)) catch |err| switch (err) {
             error.FileNotFound => return emptyRoot(a),
             else => return error.IndexStoreError,
         };
@@ -587,8 +605,12 @@ pub const dev = if (build_options.dev) struct {
     /// (temp + rename). Called while holding the exclusive lock.
     fn indexSave(io: std.Io, a: std.mem.Allocator, root: std.json.Value) !void {
         const json_bytes = std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 }) catch return error.IndexStoreError;
-        std.Io.Dir.cwd().writeFile(io, .{ .sub_path = INDEX_TMP_PATH, .data = json_bytes }) catch return error.FilesystemIoError;
-        std.Io.Dir.rename(std.Io.Dir.cwd(), INDEX_TMP_PATH, std.Io.Dir.cwd(), INDEX_PATH, io) catch return error.FilesystemIoError;
+        var tmp_buf: [std.fs.max_path_bytes]u8 = undefined;
+        var idx_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const tmp_path = fixturesJoin("index.json.tmp", &tmp_buf) orelse return error.FilesystemIoError;
+        const index_path = fixturesJoin("index.json", &idx_buf) orelse return error.FilesystemIoError;
+        std.Io.Dir.cwd().writeFile(io, .{ .sub_path = tmp_path, .data = json_bytes }) catch return error.FilesystemIoError;
+        std.Io.Dir.rename(std.Io.Dir.cwd(), tmp_path, std.Io.Dir.cwd(), index_path, io) catch return error.FilesystemIoError;
     }
 
     /// get-or-create the object under `root[key]`.
@@ -819,8 +841,12 @@ pub const dev = if (build_options.dev) struct {
         /// the model-id — not read here).
         pub fn load(io: std.Io, a: std.mem.Allocator) !FeasibilityGrids {
             var self = empty(a);
-            try loadPairGrid(io, a, "fixtures/map-harness-provider-harnessprovider.csv", &self.harness_provider);
-            try loadPairGrid(io, a, "fixtures/map-provider-model-providermodel.csv", &self.provider_model);
+            const hp_path = try std.fmt.allocPrint(a, "{s}/map-harness-provider-harnessprovider.csv", .{fixtures_root});
+            defer a.free(hp_path);
+            const pm_path = try std.fmt.allocPrint(a, "{s}/map-provider-model-providermodel.csv", .{fixtures_root});
+            defer a.free(pm_path);
+            try loadPairGrid(io, a, hp_path, &self.harness_provider);
+            try loadPairGrid(io, a, pm_path, &self.provider_model);
             return self;
         }
     };
@@ -927,15 +953,16 @@ pub const dev = if (build_options.dev) struct {
     const KNOWN_BUT_FAILED_MAX = 400;
 
     /// put (or overwrite — last failure wins) a `known_but_failed`
-    /// message for a fixture id. The message is home-path redacted,
-    /// key-shaped strings elided, and truncated before it touches the
-    /// committed store. Informational only — pops never gate on it.
-    pub fn knownButFailedPutPure(a: std.mem.Allocator, root: *std.json.Value, fixture_id: []const u8, message: []const u8, home: []const u8) !void {
+    /// message for a fixture id. The message is project-path and
+    /// home-path redacted, key-shaped strings elided, and truncated
+    /// before it touches the committed store. Informational only —
+    /// pops never gate on it.
+    pub fn knownButFailedPutPure(a: std.mem.Allocator, root: *std.json.Value, fixture_id: []const u8, message: []const u8, home: []const u8, project: []const u8) !void {
         const bl = try getOrPutObject(a, root, "backlog");
         const gop = try bl.getOrPut(a, "known_but_failed");
         if (!gop.found_existing) gop.value_ptr.* = .{ .object = .empty };
         if (gop.value_ptr.* != .object) return error.IndexStoreError;
-        try gop.value_ptr.object.put(a, fixture_id, .{ .string = try redactMessage(a, message, home) });
+        try gop.value_ptr.object.put(a, fixture_id, .{ .string = try redactMessage(a, message, home, project) });
     }
 
     /// remove a `known_but_failed` entry (any channel of the combo
@@ -967,10 +994,10 @@ pub const dev = if (build_options.dev) struct {
         return std.ascii.isAlphanumeric(c) or c == '-' or c == '_' or c == '.';
     }
 
-    /// redact home paths + key-shaped strings and truncate to
+    /// redact project/home paths + key-shaped strings and truncate to
     /// `KNOWN_BUT_FAILED_MAX` chars.
-    fn redactMessage(a: std.mem.Allocator, message: []const u8, home: []const u8) ![]u8 {
-        const red = try redactHome(a, message, home);
+    fn redactMessage(a: std.mem.Allocator, message: []const u8, home: []const u8, project: []const u8) ![]u8 {
+        const red = try redactPaths(a, message, project, home);
         var out: std.ArrayList(u8) = .empty;
         var i: usize = 0;
         while (i < red.len) {
@@ -1330,7 +1357,8 @@ pub const dev = if (build_options.dev) struct {
         const lock_file = try acquireIndexLock(io);
         defer lock_file.close(io);
         var root = try indexLoad(io, a);
-        try knownButFailedPutPure(a, &root, fixture_id, message, reporterHome(env));
+        const project = std.process.currentPathAlloc(io, a) catch "";
+        try knownButFailedPutPure(a, &root, fixture_id, message, reporterHome(env), project);
         try indexSave(io, a, root);
     }
 
@@ -1651,7 +1679,9 @@ pub const dev = if (build_options.dev) struct {
 
         pub fn load(io: std.Io, a: std.mem.Allocator) !FreeGrid {
             var self = empty(a);
-            const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/map-provider-model-freeprovidermodel.csv", a, @enumFromInt(1 << 20)) catch return self;
+            const fp_path = try std.fmt.allocPrint(a, "{s}/map-provider-model-freeprovidermodel.csv", .{fixtures_root});
+            defer a.free(fp_path);
+            const data = std.Io.Dir.cwd().readFileAlloc(io, fp_path, a, @enumFromInt(1 << 20)) catch return self;
             var lines = std.mem.tokenizeScalar(u8, data, '\n');
             const header = lines.next() orelse return self;
             var cols = std.mem.tokenizeScalar(u8, header, ',');
@@ -2237,7 +2267,7 @@ pub const dev = if (build_options.dev) struct {
             break :blk v.?;
         };
 
-        const raw = try buildRaw(a, &d, init.environ_map, hver, true);
+        const raw = try buildRaw(a, io, &d, init.environ_map, hver, true);
 
         var outputs: std.json.Value = .{ .object = .empty };
         try outputs.object.put(a, "identify", cooked);
@@ -2869,10 +2899,97 @@ pub const dev = if (build_options.dev) struct {
             damped.put(fixture_id, {}) catch {};
             return false;
         }
+        // the worker runs in a fresh, empty OS temp dir as its cwd:
+        // the harness's project-local stores (`.crush/`, `.kilo/`,
+        // omp's `threads.cwd` rows) isolate per capture and never see
+        // the repo, so the agent can't prowl agent-detect's own files
+        // or this live session. The temp dir is the fixture's
+        // `<project>` (evidence paths rooted there redact to
+        // `<project>`, see redactPaths). Left for the OS to clean; the
+        // daemon also removes it best-effort after the wait (a busy
+        // file keeps it until reboot or user cleanup, harmless).
+        var rnd: [12]u8 = undefined;
+        io.random(&rnd);
+        var name_b64: [std.base64.url_safe.Encoder.calcSize(12)]u8 = undefined;
+        _ = std.base64.url_safe.Encoder.encode(&name_b64, &rnd);
+        const tmp_root = init.environ_map.get("TEMP") orelse
+            init.environ_map.get("TMP") orelse
+            init.environ_map.get("TMPDIR") orelse "/tmp";
+        var wd_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const workdir = std.fmt.bufPrint(&wd_buf, "{s}/agent-detect-{s}", .{ tmp_root, &name_b64 }) catch null;
+        if (workdir == null) {
+            daemonWriteErr(io, "daemon: from-capture: cannot build workdir path for ");
+            daemonWriteErr(io, fixture_id);
+            daemonWriteErr(io, "\n");
+            try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot build workdir path", init.environ_map);
+            damped.put(fixture_id, {}) catch {};
+            return false;
+        }
+        std.Io.Dir.cwd().createDirPath(io, workdir.?) catch |err| switch (err) {
+            error.PathAlreadyExists => {},
+            else => {
+                daemonWriteErr(io, "daemon: from-capture: cannot create workdir for ");
+                daemonWriteErr(io, fixture_id);
+                daemonWriteErr(io, ": ");
+                daemonWriteErr(io, @errorName(err));
+                daemonWriteErr(io, "\n");
+                try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot create workdir", init.environ_map);
+                damped.put(fixture_id, {}) catch {};
+                return false;
+            },
+        };
+        var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const self_path = selfPath(io, &self_path_buf);
+        const launch_prompt = if (self_path) |sp|
+            std.fmt.allocPrint(a, "run `{s} fixtures capture` in the current working directory and report the result", .{sp}) catch null
+        else
+            null;
+        if (launch_prompt == null) {
+            daemonWriteErr(io, "daemon: from-capture: cannot resolve own path for ");
+            daemonWriteErr(io, fixture_id);
+            daemonWriteErr(io, "\n");
+            try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot resolve own path", init.environ_map);
+            damped.put(fixture_id, {}) catch {};
+            return false;
+        }
+        defer a.free(launch_prompt.?);
+        // the worker's store target: the repo's fixtures dir, absolute
+        // (the worker's cwd is the throwaway workdir). Inherited down to
+        // the harness shell that runs the capture command.
+        var child_env = init.environ_map.clone(a) catch {
+            daemonWriteErr(io, "daemon: from-capture: cannot clone env for ");
+            daemonWriteErr(io, fixture_id);
+            daemonWriteErr(io, "\n");
+            try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot clone env", init.environ_map);
+            damped.put(fixture_id, {}) catch {};
+            return false;
+        };
+        defer child_env.deinit();
+        const repo_dir = std.process.currentPathAlloc(io, a) catch "";
+        const abs_fixtures = std.fmt.allocPrint(a, "{s}/fixtures", .{repo_dir}) catch null;
+        if (abs_fixtures) |af| {
+            child_env.put("AGENT_DETECT_FIXTURES_DIR", af) catch {};
+            a.free(af);
+        }
         for (launch, 0..) |arg, idx| {
             // the file saves the `"<prompt>"` placeholder; the daemon
             // interpolates the real launch prompt at spawn time.
-            argv_buf[idx] = if (std.mem.eql(u8, arg, "<prompt>")) capture_prompt else arg;
+            argv_buf[idx] = if (std.mem.eql(u8, arg, "<prompt>")) launch_prompt.? else arg;
+        }
+        // the exact spawn command (quoted argv) in the daemon log,
+        // the only place the interpolated prompt is visible.
+        {
+            var cmd: std.ArrayList(u8) = .empty;
+            defer cmd.deinit(a);
+            try cmd.appendSlice(a, "  command: ");
+            for (argv_buf[0..launch.len], 0..) |arg, i| {
+                if (i > 0) try cmd.append(a, ' ');
+                try cmd.append(a, '"');
+                try cmd.appendSlice(a, arg);
+                try cmd.append(a, '"');
+            }
+            try cmd.append(a, '\n');
+            daemonWrite(io, cmd.items);
         }
         // the worker's stderr goes to a per-capture worker log (the user
         // can tail it mid-run; the daemon reads its tail into the failure
@@ -2908,7 +3025,8 @@ pub const dev = if (build_options.dev) struct {
         }
         const child = std.process.spawn(io, .{
             .argv = argv_buf[0..launch.len],
-            .environ_map = init.environ_map,
+            .cwd = .{ .path = workdir.? },
+            .environ_map = &child_env,
             .stdout = .pipe,
             .stderr = .{ .file = log_file },
         }) catch |err| {
@@ -2920,11 +3038,13 @@ pub const dev = if (build_options.dev) struct {
             damped.put(fixture_id, {}) catch {};
             return false;
         };
+        // best-effort removal after the wait (every return path below
+        // hits this); the OS temp-dir cleanup is the backstop.
+        defer std.Io.Dir.cwd().deleteTree(io, workdir.?) catch {};
         // the child inherited its own handle; the parent's copy is done.
         log_file.close(io);
 
         // timeout watchdog — `agent-detect-dev fixtures __timeout <sec> <pid>`.
-        var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const argv0 = selfPath(io, &self_path_buf) orelse return false;
         const pid_num: u32 = if (builtin.os.tag == .windows)
             GetProcessId(child.id orelse return false)

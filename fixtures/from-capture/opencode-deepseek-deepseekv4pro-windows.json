@@ -1,0 +1,127 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Pro",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-pro",
+      "model_id": "deepseekv4pro",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "opencode-deepseek-deepseekv4pro",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · DeepSeek V4 Pro <opencode-deepseek-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · DeepSeek V4 Pro <opencode-deepseek-deepseekv4pro@local>",
+    "raw": {
+      "platform_id": "windows",
+      "harness_version": "1.18.25",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 20808,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 20124,
+          "name": "powershell.exe"
+        },
+        {
+          "pid": 19448,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 22348,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 2312,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 2176,
+          "name": "svchost.exe"
+        },
+        {
+          "pid": 928,
+          "name": "services.exe"
+        },
+        {
+          "pid": 856,
+          "name": "wininit.exe"
+        },
+        {
+          "pid": 644,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "opencode.exe",
+          "value": "opencode"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "C:\\Users\\balup\\.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "deepseek"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "C:\\Users\\balup\\.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "deepseek-v4-pro"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788291712,
+    "harness_version": "1.18.25",
+    "prompt_invocation": [
+      "opencode.exe",
+      "run",
+      "--model",
+      "deepseek/deepseek-v4-pro",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "opencode.exe",
+      "--version"
+    ]
+  }
+}

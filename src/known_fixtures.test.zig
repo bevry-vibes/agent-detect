@@ -978,6 +978,40 @@ test "map-provider-model-freeprovidermodel.csv: free-grid entries resolve to kno
     }
 }
 
+test "redactPaths: project before home, backslash + slash + EOL boundaries, home backslash-aware" {
+    const core = @import("lib/core.zig");
+    const a = testing.allocator;
+
+    // the reported bug: a Windows project-local db path redacts to
+    // <project>, not the raw drive path (project passed first, so the
+    // home prefix inside it is consumed whole).
+    const win = try core.redactPaths(a, "C:\\Users\\balup\\Projects\\vibes\\agent-detect\\.crush/crush.db", "C:\\Users\\balup\\Projects\\vibes\\agent-detect", "C:\\Users\\balup");
+    try testing.expectEqualStrings("<project>/.crush/crush.db", win);
+    a.free(win);
+
+    // home-only reference, Windows spelling: the full path normalizes
+    // to forward slashes after the `<home>` token.
+    const home_win = try core.redactPaths(a, "C:\\Users\\balup\\.omp\\agent\\config.yml", "", "C:\\Users\\balup");
+    try testing.expectEqualStrings("<home>/.omp/agent/config.yml", home_win);
+    a.free(home_win);
+
+    // POSIX project + a sibling prefix must NOT match (proj != proj2):
+    // the home pass still fires, but the project token never appears.
+    const posix = try core.redactPaths(a, "/Users/balup/proj/.kilo/db", "/Users/balup/proj2", "/Users/balup");
+    try testing.expectEqualStrings("<home>/proj/.kilo/db", posix);
+    a.free(posix);
+
+    // project at end-of-string redacts too.
+    const eol = try core.redactPaths(a, "/Users/balup/proj", "/Users/balup/proj", "/Users/balup");
+    try testing.expectEqualStrings("<project>", eol);
+    a.free(eol);
+
+    // no references at all: untouched.
+    const none = try core.redactPaths(a, "plain text", "/Users/balup/proj", "/Users/balup");
+    try testing.expect(std.mem.eql(u8, none, "plain text"));
+    a.free(none);
+}
+
 test "fixtures: every harness rule's binary_names is non-empty, lowercase, and Windows-complete" {
     // binary_names is the single hand-maintained name list (probe,
     // launch, ancestry, daemon guard). Contract: non-empty; only
