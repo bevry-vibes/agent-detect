@@ -85,6 +85,19 @@
     }
   },
   "meta": {
-    "updated_at": 1788242183
+    "updated_at": 1788242183,
+    "harness_version": "7.5.6",
+    "prompt_invocation": [
+      "kilo",
+      "run",
+      "--auto",
+      "--model",
+      "ollama-cloud/deepseek-v4-flash:0731",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "kilo",
+      "--version"
+    ]
   }
 }
