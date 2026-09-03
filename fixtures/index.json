@@ -231,6 +231,19 @@
     }
   },
   "invocations": {
+    "cline-clinepass-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "cline",
+        "--auto-approve",
+        "--provider=cline-pass",
+        "--model=free/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline",
+        "--version"
+      ]
+    },
     "cline-clinepass-deepseekv4flash-linux": {
       "prompt_invocation": [
         "cline",
@@ -254,6 +267,19 @@
       ],
       "version_invocation": [
         "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-clinepass-kimik3-darwin": {
+      "prompt_invocation": [
+        "cline",
+        "--auto-approve",
+        "--provider=cline-pass",
+        "--model=cline-pass/kimi-k3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline",
         "--version"
       ]
     },
@@ -283,6 +309,19 @@
         "--version"
       ]
     },
+    "cline-clinepass-step37flash-darwin": {
+      "prompt_invocation": [
+        "cline",
+        "--auto-approve",
+        "--provider=cline-pass",
+        "--model=stepfun/step-3.7-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline",
+        "--version"
+      ]
+    },
     "cline-clinepass-step37flash-linux": {
       "prompt_invocation": [
         "cline",
@@ -306,6 +345,19 @@
       ],
       "version_invocation": [
         "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "cline",
+        "--auto-approve",
+        "--provider=deepseek",
+        "--model=deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline",
         "--version"
       ]
     },
@@ -335,6 +387,19 @@
         "--version"
       ]
     },
+    "cline-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "cline",
+        "--auto-approve",
+        "--provider=minimax",
+        "--model=minimax/minimax-m3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline",
+        "--version"
+      ]
+    },
     "cline-minimax-minimaxm3-linux": {
       "prompt_invocation": [
         "cline",
@@ -361,6 +426,19 @@
         "--version"
       ]
     },
+    "cline-openrouter-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "cline",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=openrouter/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline",
+        "--version"
+      ]
+    },
     "cline-openrouter-deepseekv4flash-linux": {
       "prompt_invocation": [
         "cline",
@@ -384,6 +462,20 @@
       ],
       "version_invocation": [
         "cline.cmd",
+        "--version"
+      ]
+    },
+    "copilot-githubcopilot-claudesonnet5-darwin": {
+      "prompt_invocation": [
+        "copilot",
+        "-p",
+        "<prompt>",
+        "--allow-all",
+        "--model",
+        "claude-sonnet-5"
+      ],
+      "version_invocation": [
+        "copilot",
         "--version"
       ]
     },
@@ -415,6 +507,20 @@
         "--version"
       ]
     },
+    "copilot-githubcopilot-gemini25pro-darwin": {
+      "prompt_invocation": [
+        "copilot",
+        "-p",
+        "<prompt>",
+        "--allow-all",
+        "--model",
+        "gemini-2.5-pro"
+      ],
+      "version_invocation": [
+        "copilot",
+        "--version"
+      ]
+    },
     "copilot-githubcopilot-gemini25pro-linux": {
       "prompt_invocation": [
         "copilot",
@@ -443,6 +549,20 @@
         "--version"
       ]
     },
+    "copilot-githubcopilot-gpt52-darwin": {
+      "prompt_invocation": [
+        "copilot",
+        "-p",
+        "<prompt>",
+        "--allow-all",
+        "--model",
+        "gpt-5.2"
+      ],
+      "version_invocation": [
+        "copilot",
+        "--version"
+      ]
+    },
     "copilot-githubcopilot-gpt52-linux": {
       "prompt_invocation": [
         "copilot",
@@ -468,6 +588,20 @@
       ],
       "version_invocation": [
         "copilot.exe",
+        "--version"
+      ]
+    },
+    "copilot-githubcopilot-grok45-darwin": {
+      "prompt_invocation": [
+        "copilot",
+        "-p",
+        "<prompt>",
+        "--allow-all",
+        "--model",
+        "grok-4.5"
+      ],
+      "version_invocation": [
+        "copilot",
         "--version"
       ]
     },
@@ -1123,6 +1257,19 @@
         "--version"
       ]
     },
+    "cursor-cursor-claudefable5-darwin": {
+      "prompt_invocation": [
+        "cursor-agent",
+        "-p",
+        "--model",
+        "claude-fable-5-thinking-high",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cursor-agent",
+        "--version"
+      ]
+    },
     "cursor-cursor-claudefable5-linux": {
       "prompt_invocation": [
         "cursor-agent",
@@ -1146,6 +1293,19 @@
       ],
       "version_invocation": [
         "cursor-agent.cmd",
+        "--version"
+      ]
+    },
+    "cursor-cursor-claudeopus5-darwin": {
+      "prompt_invocation": [
+        "cursor-agent",
+        "-p",
+        "--model",
+        "claude-opus-5-thinking-high",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cursor-agent",
         "--version"
       ]
     },
@@ -1175,6 +1335,19 @@
         "--version"
       ]
     },
+    "cursor-cursor-claudesonnet5-darwin": {
+      "prompt_invocation": [
+        "cursor-agent",
+        "-p",
+        "--model",
+        "claude-sonnet-5-thinking-high",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cursor-agent",
+        "--version"
+      ]
+    },
     "cursor-cursor-claudesonnet5-linux": {
       "prompt_invocation": [
         "cursor-agent",
@@ -1198,6 +1371,19 @@
       ],
       "version_invocation": [
         "cursor-agent.cmd",
+        "--version"
+      ]
+    },
+    "cursor-cursor-gpt52-darwin": {
+      "prompt_invocation": [
+        "cursor-agent",
+        "-p",
+        "--model",
+        "gpt-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cursor-agent",
         "--version"
       ]
     },
@@ -1227,6 +1413,19 @@
         "--version"
       ]
     },
+    "cursor-cursor-gpt56luna-darwin": {
+      "prompt_invocation": [
+        "cursor-agent",
+        "-p",
+        "--model",
+        "gpt-5.6-luna-high",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cursor-agent",
+        "--version"
+      ]
+    },
     "cursor-cursor-gpt56luna-linux": {
       "prompt_invocation": [
         "cursor-agent",
@@ -1250,6 +1449,19 @@
       ],
       "version_invocation": [
         "cursor-agent.cmd",
+        "--version"
+      ]
+    },
+    "cursor-cursor-gpt56sol-darwin": {
+      "prompt_invocation": [
+        "cursor-agent",
+        "-p",
+        "--model",
+        "gpt-5.6-sol-high",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cursor-agent",
         "--version"
       ]
     },
@@ -1279,6 +1491,19 @@
         "--version"
       ]
     },
+    "cursor-cursor-grok45-darwin": {
+      "prompt_invocation": [
+        "cursor-agent",
+        "-p",
+        "--model",
+        "cursor-grok-4.5-high",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cursor-agent",
+        "--version"
+      ]
+    },
     "cursor-cursor-grok45-linux": {
       "prompt_invocation": [
         "cursor-agent",
@@ -1302,6 +1527,18 @@
       ],
       "version_invocation": [
         "cursor-agent.cmd",
+        "--version"
+      ]
+    },
+    "goose-goose-claudesonnet4-darwin": {
+      "prompt_invocation": [
+        "goose",
+        "run",
+        "-t",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "goose",
         "--version"
       ]
     },
@@ -1341,6 +1578,18 @@
         "--version"
       ]
     },
+    "kilo-anthropic-claudesonnet4-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-anthropic-claudesonnet4-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1362,6 +1611,20 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-clinepass-glm52-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "cline-pass/cline-pass/glm-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1393,6 +1656,20 @@
         "--version"
       ]
     },
+    "kilo-clinepass-kimik27code-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "cline-pass/cline-pass/kimi-k2.7-code",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-clinepass-kimik27code-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1418,6 +1695,20 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1449,6 +1740,20 @@
         "--version"
       ]
     },
+    "kilo-deepseek-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "deepseek/deepseek-v4-pro",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-deepseek-deepseekv4pro-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1477,6 +1782,18 @@
         "--version"
       ]
     },
+    "kilo-fireworksai-glm52-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-fireworksai-glm52-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1498,6 +1815,20 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-hyper-glm52-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "hyper/glm-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1529,6 +1860,20 @@
         "--version"
       ]
     },
+    "kilo-hyper-kimik3-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "hyper/kimi-k3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-hyper-kimik3-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1554,6 +1899,20 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-kilo-gemini35flash-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "kilo/~google/gemini-flash-latest",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1585,6 +1944,20 @@
         "--version"
       ]
     },
+    "kilo-kilo-grok45-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "kilo/~x-ai/grok-latest",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-kilo-grok45-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1610,6 +1983,20 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-kilo-kimik3-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "kilo/~moonshotai/kimi-latest",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1641,6 +2028,18 @@
         "--version"
       ]
     },
+    "kilo-minimax-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-minimax-minimaxm27-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1662,6 +2061,18 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1703,6 +2114,20 @@
         "--version"
       ]
     },
+    "kilo-ollamacloud-glm52-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "ollama-cloud/glm-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-ollamacloud-glm52-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1728,6 +2153,20 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-ollamacloud-kimik25-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "--model",
+        "ollama-cloud/kimi-k2.5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1759,6 +2198,18 @@
         "--version"
       ]
     },
+    "kilo-openrouter-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
+        "--version"
+      ]
+    },
     "kilo-openrouter-deepseekv4flash-linux": {
       "prompt_invocation": [
         "kilo",
@@ -1780,6 +2231,18 @@
       ],
       "version_invocation": [
         "kilo.cmd",
+        "--version"
+      ]
+    },
+    "kilo-zai-glm52-darwin": {
+      "prompt_invocation": [
+        "kilo",
+        "run",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kilo",
         "--version"
       ]
     },
@@ -1807,6 +2270,17 @@
         "--version"
       ]
     },
+    "kimicode-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
+        "--version"
+      ]
+    },
     "kimicode-deepseek-deepseekv4flash-linux": {
       "prompt_invocation": [
         "kimi",
@@ -1826,6 +2300,17 @@
       ],
       "version_invocation": [
         "kimi.exe",
+        "--version"
+      ]
+    },
+    "kimicode-deepseek-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
         "--version"
       ]
     },
@@ -1851,6 +2336,17 @@
         "--version"
       ]
     },
+    "kimicode-kimi-kimik3-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
+        "--version"
+      ]
+    },
     "kimicode-kimi-kimik3-linux": {
       "prompt_invocation": [
         "kimi",
@@ -1870,6 +2366,17 @@
       ],
       "version_invocation": [
         "kimi.exe",
+        "--version"
+      ]
+    },
+    "kimicode-minimax-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
         "--version"
       ]
     },
@@ -1895,6 +2402,17 @@
         "--version"
       ]
     },
+    "kimicode-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
+        "--version"
+      ]
+    },
     "kimicode-minimax-minimaxm3-linux": {
       "prompt_invocation": [
         "kimi",
@@ -1914,6 +2432,17 @@
       ],
       "version_invocation": [
         "kimi.exe",
+        "--version"
+      ]
+    },
+    "kimicode-openrouter-gemma431b-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
         "--version"
       ]
     },
@@ -1939,6 +2468,17 @@
         "--version"
       ]
     },
+    "kimicode-openrouter-nemotron3nano-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
+        "--version"
+      ]
+    },
     "kimicode-openrouter-nemotron3nano-linux": {
       "prompt_invocation": [
         "kimi",
@@ -1958,6 +2498,17 @@
       ],
       "version_invocation": [
         "kimi.exe",
+        "--version"
+      ]
+    },
+    "kimicode-openrouter-nemotron3super-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
         "--version"
       ]
     },
@@ -1983,6 +2534,17 @@
         "--version"
       ]
     },
+    "kimicode-openrouter-nemotron3ultra-darwin": {
+      "prompt_invocation": [
+        "kimi",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi",
+        "--version"
+      ]
+    },
     "kimicode-openrouter-nemotron3ultra-linux": {
       "prompt_invocation": [
         "kimi",
@@ -2002,6 +2564,20 @@
       ],
       "version_invocation": [
         "kimi.exe",
+        "--version"
+      ]
+    },
+    "mmx-minimax-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "mmx",
+        "text",
+        "chat",
+        "--message",
+        "<prompt>",
+        "--non-interactive"
+      ],
+      "version_invocation": [
+        "mmx",
         "--version"
       ]
     },
@@ -2033,6 +2609,20 @@
         "--version"
       ]
     },
+    "mmx-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "mmx",
+        "text",
+        "chat",
+        "--message",
+        "<prompt>",
+        "--non-interactive"
+      ],
+      "version_invocation": [
+        "mmx",
+        "--version"
+      ]
+    },
     "mmx-minimax-minimaxm3-linux": {
       "prompt_invocation": [
         "mmx",
@@ -2058,6 +2648,19 @@
       ],
       "version_invocation": [
         "mmx.cmd",
+        "--version"
+      ]
+    },
+    "omp-cursor-claudefable5-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "cursor/claude-fable-5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2087,6 +2690,19 @@
         "--version"
       ]
     },
+    "omp-cursor-gemini3flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "cursor/gemini-3-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-cursor-gemini3flash-linux": {
       "prompt_invocation": [
         "omp",
@@ -2110,6 +2726,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-cursor-glm52-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "cursor/glm-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2139,6 +2768,19 @@
         "--version"
       ]
     },
+    "omp-cursor-gpt5mini-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "cursor/gpt-5-mini",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-cursor-gpt5mini-linux": {
       "prompt_invocation": [
         "omp",
@@ -2162,6 +2804,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-cursor-kimik25-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "cursor/kimi-k2.5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2191,6 +2846,19 @@
         "--version"
       ]
     },
+    "omp-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-deepseek-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
@@ -2214,6 +2882,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-githubcopilot-gemini3pro-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "github-copilot/gemini-3-pro",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2243,6 +2924,19 @@
         "--version"
       ]
     },
+    "omp-githubcopilot-gpt4o-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "github-copilot/gpt-4o",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-githubcopilot-gpt4o-linux": {
       "prompt_invocation": [
         "omp",
@@ -2266,6 +2960,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-githubcopilot-gpt5mini-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "github-copilot/gpt-5-mini",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2295,6 +3002,19 @@
         "--version"
       ]
     },
+    "omp-gmicloud-claudefable5-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/anthropic/claude-fable-5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-gmicloud-claudefable5-linux": {
       "prompt_invocation": [
         "omp",
@@ -2318,6 +3038,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-gmicloud-deepseekr1-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/deepseek-ai/deepseek-r1",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2347,6 +3080,19 @@
         "--version"
       ]
     },
+    "omp-gmicloud-gemini3flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/google/gemini-3-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-gmicloud-gemini3flash-linux": {
       "prompt_invocation": [
         "omp",
@@ -2370,6 +3116,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-gmicloud-glm47-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/zai-org/glm-4.7",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2399,6 +3158,19 @@
         "--version"
       ]
     },
+    "omp-gmicloud-gpt4o-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/openai/gpt-4o",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-gmicloud-gpt4o-linux": {
       "prompt_invocation": [
         "omp",
@@ -2422,6 +3194,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-gmicloud-grok45-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/x-ai/grok-4.5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2451,6 +3236,19 @@
         "--version"
       ]
     },
+    "omp-gmicloud-kimik2-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/moonshotai/kimi-k2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-gmicloud-kimik2-linux": {
       "prompt_invocation": [
         "omp",
@@ -2474,6 +3272,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-gmicloud-nemotron3ultra-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "gmi-cloud/nvidia/nemotron-3-ultra",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2503,6 +3314,19 @@
         "--version"
       ]
     },
+    "omp-googleantigravity-gptoss120b-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "google-antigravity/gpt-oss-120b",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-googleantigravity-gptoss120b-linux": {
       "prompt_invocation": [
         "omp",
@@ -2526,6 +3350,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-huggingface-cogito21-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/deepcogito/cogito-2.1",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2555,6 +3392,19 @@
         "--version"
       ]
     },
+    "omp-huggingface-commanda-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/cohere/command-a",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-huggingface-commanda-linux": {
       "prompt_invocation": [
         "omp",
@@ -2578,6 +3428,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-huggingface-glm47flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/zai-org/glm-4.7-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2607,6 +3470,19 @@
         "--version"
       ]
     },
+    "omp-huggingface-gptoss120b-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/openai/gpt-oss-120b",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-huggingface-gptoss120b-linux": {
       "prompt_invocation": [
         "omp",
@@ -2630,6 +3506,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-huggingface-ling261t-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/inclusionai/ling-2.6-1t",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2659,6 +3548,19 @@
         "--version"
       ]
     },
+    "omp-huggingface-llama318b-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/meta-llama/llama-3.1-8b",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-huggingface-llama318b-linux": {
       "prompt_invocation": [
         "omp",
@@ -2682,6 +3584,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-huggingface-nemotron3ultra-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/nvidia/nemotron-3-ultra",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2711,6 +3626,19 @@
         "--version"
       ]
     },
+    "omp-huggingface-phi4-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "huggingface/microsoft/phi-4",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-huggingface-phi4-linux": {
       "prompt_invocation": [
         "omp",
@@ -2734,6 +3662,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-kimicode-kimik3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "kimi-code/k3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2763,6 +3704,19 @@
         "--version"
       ]
     },
+    "omp-meta-musespark12-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "meta/muse-spark-1.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-meta-musespark12-linux": {
       "prompt_invocation": [
         "omp",
@@ -2786,6 +3740,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-minimaxcode-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "minimax-code/MiniMax-M3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2815,6 +3782,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-deepseekr1-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/deepseek-ai/deepseek-r1",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-deepseekr1-linux": {
       "prompt_invocation": [
         "omp",
@@ -2838,6 +3818,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-nanogpt-doubaoseed21-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/bytedance/doubao-seed-2.1",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2867,6 +3860,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-ernie45-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/baidu/ernie-4.5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-ernie45-linux": {
       "prompt_invocation": [
         "omp",
@@ -2890,6 +3896,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-nanogpt-gemma327b-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/gemma-3-27b",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2919,6 +3938,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-gpt4o-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/openai/chatgpt-4o",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-gpt4o-linux": {
       "prompt_invocation": [
         "omp",
@@ -2942,6 +3974,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-nanogpt-gptoss120b-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/TEE/gpt-oss-120b",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -2971,6 +4016,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-grok3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/grok-3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-grok3-linux": {
       "prompt_invocation": [
         "omp",
@@ -2994,6 +4052,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-nanogpt-hunyuant1-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/hunyuan-t1",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3023,6 +4094,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-kimik2-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/baseten/kimi-k2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-kimik2-linux": {
       "prompt_invocation": [
         "omp",
@@ -3046,6 +4130,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-nanogpt-ling30flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/inclusionai/ling-3.0-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3075,6 +4172,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-mistralsmall3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/mistral-small-3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-mistralsmall3-linux": {
       "prompt_invocation": [
         "omp",
@@ -3098,6 +4208,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-nanogpt-nemotron3ultra-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/nvidia/nemotron-3-ultra",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3127,6 +4250,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-olmo332bthink-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/allenai/olmo-3-32b-think",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-olmo332bthink-linux": {
       "prompt_invocation": [
         "omp",
@@ -3150,6 +4286,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-nanogpt-phi4mini-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/phi-4-mini",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3179,6 +4328,19 @@
         "--version"
       ]
     },
+    "omp-nanogpt-qwen36-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "nanogpt/alibaba/qwen3.6",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-nanogpt-qwen36-linux": {
       "prompt_invocation": [
         "omp",
@@ -3202,6 +4364,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-ollamacloud-deepseekv32-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/deepseek-v3.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3231,6 +4406,19 @@
         "--version"
       ]
     },
+    "omp-ollamacloud-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-ollamacloud-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
@@ -3254,6 +4442,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-ollamacloud-glm52-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/glm-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3283,6 +4484,19 @@
         "--version"
       ]
     },
+    "omp-ollamacloud-kimik3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/kimi-k3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-ollamacloud-kimik3-linux": {
       "prompt_invocation": [
         "omp",
@@ -3306,6 +4520,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-ollamacloud-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/minimax-m2.7",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3335,6 +4562,19 @@
         "--version"
       ]
     },
+    "omp-ollamacloud-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/minimax-m3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-ollamacloud-minimaxm3-linux": {
       "prompt_invocation": [
         "omp",
@@ -3358,6 +4598,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-ollamacloud-nemotron3ultra-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/nemotron-3-ultra",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3387,6 +4640,19 @@
         "--version"
       ]
     },
+    "omp-ollamacloud-qwen3coder-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "ollama-cloud/qwen3-coder",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-ollamacloud-qwen3coder-linux": {
       "prompt_invocation": [
         "omp",
@@ -3410,6 +4676,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-openrouter-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "openrouter/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3439,6 +4718,19 @@
         "--version"
       ]
     },
+    "omp-sakana-fuguultrav11-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "sakana/fugu-ultra-v1.1",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-sakana-fuguultrav11-linux": {
       "prompt_invocation": [
         "omp",
@@ -3462,6 +4754,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-siliconflow-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3491,6 +4796,19 @@
         "--version"
       ]
     },
+    "omp-siliconflow-kimik3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "siliconflow/moonshotai/Kimi-K3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-siliconflow-kimik3-linux": {
       "prompt_invocation": [
         "omp",
@@ -3514,6 +4832,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-siliconflow-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "siliconflow/MiniMaxAI/MiniMax-M3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3543,6 +4874,19 @@
         "--version"
       ]
     },
+    "omp-zenmux-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "zenmux/deepseek/deepseek-v4-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-zenmux-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
@@ -3566,6 +4910,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-zenmux-gemini35flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "zenmux/google/gemini-3.5-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3595,6 +4952,19 @@
         "--version"
       ]
     },
+    "omp-zenmux-glm47flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "zenmux/z-ai/glm-4.7-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-zenmux-glm47flash-linux": {
       "prompt_invocation": [
         "omp",
@@ -3618,6 +4988,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-zenmux-grok45-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "zenmux/x-ai/grok-4.5-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3647,6 +5030,19 @@
         "--version"
       ]
     },
+    "omp-zenmux-kimik3-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "zenmux/moonshotai/kimi-k3-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
+        "--version"
+      ]
+    },
     "omp-zenmux-kimik3-linux": {
       "prompt_invocation": [
         "omp",
@@ -3670,6 +5066,19 @@
       ],
       "version_invocation": [
         "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-zenmux-step37flash-darwin": {
+      "prompt_invocation": [
+        "omp",
+        "-p",
+        "--model",
+        "zenmux/stepfun/step-3.7-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp",
         "--version"
       ]
     },
@@ -3699,6 +5108,19 @@
         "--version"
       ]
     },
+    "opencode-alibaba-glm52-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "alibaba/glm-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-alibaba-glm52-linux": {
       "prompt_invocation": [
         "opencode",
@@ -3722,6 +5144,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-alibaba-qwen38max-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "alibaba/qwen3.8-max",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -3751,6 +5186,19 @@
         "--version"
       ]
     },
+    "opencode-alibaba-qwen3coder-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "alibaba/qwen3-coder-480b-a35b-instruct",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-alibaba-qwen3coder-linux": {
       "prompt_invocation": [
         "opencode",
@@ -3774,6 +5222,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-cerebras-qwen3-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "cerebras/qwen3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -3803,6 +5264,19 @@
         "--version"
       ]
     },
+    "opencode-clinepass-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "cline-pass/cline-pass/deepseek-v4-pro",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-clinepass-deepseekv4pro-linux": {
       "prompt_invocation": [
         "opencode",
@@ -3826,6 +5300,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-clinepass-glm52-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "cline-pass/cline-pass/glm-5.2",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -3855,6 +5342,19 @@
         "--version"
       ]
     },
+    "opencode-clinepass-kimik27code-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "cline-pass/cline-pass/kimi-k2.7-code",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-clinepass-kimik27code-linux": {
       "prompt_invocation": [
         "opencode",
@@ -3878,6 +5378,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-clinepass-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "cline-pass/cline-pass/minimax-m3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -3907,6 +5420,19 @@
         "--version"
       ]
     },
+    "opencode-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-deepseek-deepseekv4flash-linux": {
       "prompt_invocation": [
         "opencode",
@@ -3930,6 +5456,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-deepseek-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "deepseek/deepseek-v4-pro",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -3959,6 +5498,19 @@
         "--version"
       ]
     },
+    "opencode-groq-llama4-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "groq/llama-4",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-groq-llama4-linux": {
       "prompt_invocation": [
         "opencode",
@@ -3982,6 +5534,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-hyper-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "hyper/deepseek-v4-flash",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -4011,6 +5576,19 @@
         "--version"
       ]
     },
+    "opencode-minimax-minimaxm25-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "minimax/MiniMax-M2.5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-minimax-minimaxm25-linux": {
       "prompt_invocation": [
         "opencode",
@@ -4034,6 +5612,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-minimax-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "minimax/MiniMax-M2.7",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -4063,6 +5654,19 @@
         "--version"
       ]
     },
+    "opencode-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "minimax/MiniMax-M3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
     "opencode-minimax-minimaxm3-linux": {
       "prompt_invocation": [
         "opencode",
@@ -4086,6 +5690,19 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-nemotron3ultra-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/nemotron-3-ultra-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
         "--version"
       ]
     },
@@ -4130,6 +5747,21 @@
         "--version"
       ]
     },
+    "pi-cerebras-gemma431b-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "cerebras",
+        "--model",
+        "gemma-4-31b",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
     "pi-cerebras-gemma431b-linux": {
       "prompt_invocation": [
         "pi",
@@ -4157,6 +5789,21 @@
       ],
       "version_invocation": [
         "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-cerebras-gptoss120b-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "cerebras",
+        "--model",
+        "gpt-oss-120b",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
         "--version"
       ]
     },
@@ -4190,6 +5837,21 @@
         "--version"
       ]
     },
+    "pi-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "deepseek",
+        "--model",
+        "deepseek-v4-flash",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
     "pi-deepseek-deepseekv4flash-linux": {
       "prompt_invocation": [
         "pi",
@@ -4217,6 +5879,21 @@
       ],
       "version_invocation": [
         "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-deepseek-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "deepseek",
+        "--model",
+        "deepseek-v4-pro",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
         "--version"
       ]
     },
@@ -4310,6 +5987,21 @@
         "--version"
       ]
     },
+    "pi-minimax-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "minimax",
+        "--model",
+        "MiniMax-M2.7",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
     "pi-minimax-minimaxm27-linux": {
       "prompt_invocation": [
         "pi",
@@ -4340,6 +6032,21 @@
         "--version"
       ]
     },
+    "pi-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "minimax",
+        "--model",
+        "MiniMax-M3",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
     "pi-minimax-minimaxm3-linux": {
       "prompt_invocation": [
         "pi",
@@ -4367,6 +6074,21 @@
       ],
       "version_invocation": [
         "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-mistral-mistrallargelatest-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "mistral",
+        "--model",
+        "mistral-large-latest",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
         "--version"
       ]
     },
@@ -4415,6 +6137,21 @@
         "--version"
       ]
     },
+    "pi-openrouter-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "deepseek/deepseek-v4-flash",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
     "pi-openrouter-deepseekv4flash-linux": {
       "prompt_invocation": [
         "pi",
@@ -4442,6 +6179,21 @@
       ],
       "version_invocation": [
         "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-gemma431b-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "google/gemma-4-31b-it:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
         "--version"
       ]
     },
@@ -4475,6 +6227,21 @@
         "--version"
       ]
     },
+    "pi-openrouter-nemotron3nano-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-nano-30b-a3b:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
     "pi-openrouter-nemotron3nano-linux": {
       "prompt_invocation": [
         "pi",
@@ -4505,6 +6272,21 @@
         "--version"
       ]
     },
+    "pi-openrouter-nemotron3super-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
+        "--version"
+      ]
+    },
     "pi-openrouter-nemotron3super-linux": {
       "prompt_invocation": [
         "pi",
@@ -4532,6 +6314,21 @@
       ],
       "version_invocation": [
         "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron3ultra-darwin": {
+      "prompt_invocation": [
+        "pi",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi",
         "--version"
       ]
     },
@@ -4580,6 +6377,17 @@
         "--version"
       ]
     },
+    "qwen-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
     "qwen-deepseek-deepseekv4flash-linux": {
       "prompt_invocation": [
         "qwen",
@@ -4599,6 +6407,17 @@
       ],
       "version_invocation": [
         "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-deepseek-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
         "--version"
       ]
     },
@@ -4624,6 +6443,17 @@
         "--version"
       ]
     },
+    "qwen-minimax-minimaxm25-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
     "qwen-minimax-minimaxm25-linux": {
       "prompt_invocation": [
         "qwen",
@@ -4643,6 +6473,17 @@
       ],
       "version_invocation": [
         "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-minimax-minimaxm27-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
         "--version"
       ]
     },
@@ -4668,6 +6509,17 @@
         "--version"
       ]
     },
+    "qwen-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
     "qwen-minimax-minimaxm3-linux": {
       "prompt_invocation": [
         "qwen",
@@ -4687,6 +6539,17 @@
       ],
       "version_invocation": [
         "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-openai-gpt4o-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
         "--version"
       ]
     },
@@ -4712,6 +6575,17 @@
         "--version"
       ]
     },
+    "qwen-qwen-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
     "qwen-qwen-deepseekv4flash-linux": {
       "prompt_invocation": [
         "qwen",
@@ -4731,6 +6605,17 @@
       ],
       "version_invocation": [
         "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-qwen-qwen38max-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
         "--version"
       ]
     },
@@ -4756,6 +6641,17 @@
         "--version"
       ]
     },
+    "qwen-xai-grok420-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
+        "--version"
+      ]
+    },
     "qwen-xai-grok420-linux": {
       "prompt_invocation": [
         "qwen",
@@ -4775,6 +6671,17 @@
       ],
       "version_invocation": [
         "qwen.cmd",
+        "--version"
+      ]
+    },
+    "qwen-xai-grok45-darwin": {
+      "prompt_invocation": [
+        "qwen",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "qwen",
         "--version"
       ]
     },
@@ -4801,6 +6708,19 @@
       ]
     },
     "reasonix-deepseek-deepseekv4flash-darwin": {
+      "prompt_invocation": [
+        "reasonix",
+        "run",
+        "--permission-mode",
+        "bypassPermissions",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "reasonix",
+        "--version"
+      ]
+    },
+    "reasonix-deepseekflash-deepseekv4flash-darwin": {
       "prompt_invocation": [
         "reasonix",
         "run",
@@ -4852,6 +6772,17 @@
         "--version"
       ]
     },
+    "vibe-minimax-minimaxm3-darwin": {
+      "prompt_invocation": [
+        "vibe",
+        "--prompt",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "vibe",
+        "--version"
+      ]
+    },
     "vibe-minimax-minimaxm3-linux": {
       "prompt_invocation": [
         "vibe",
@@ -4874,6 +6805,17 @@
         "--version"
       ]
     },
+    "vibe-mistral-mistrallargelatest-darwin": {
+      "prompt_invocation": [
+        "vibe",
+        "--prompt",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "vibe",
+        "--version"
+      ]
+    },
     "vibe-mistral-mistrallargelatest-linux": {
       "prompt_invocation": [
         "vibe",
@@ -4893,6 +6835,17 @@
       ],
       "version_invocation": [
         "vibe.exe",
+        "--version"
+      ]
+    },
+    "vibe-mistral-mistralsmalllatest-darwin": {
+      "prompt_invocation": [
+        "vibe",
+        "--prompt",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "vibe",
         "--version"
       ]
     },
