@@ -1,0 +1,128 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "opencode-clinepass-minimaxm3",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · MiniMax M3 <opencode-clinepass-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · MiniMax M3 <opencode-clinepass-minimaxm3@local>",
+    "raw": {
+      "platform_id": "windows",
+      "harness_version": "1.18.25",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 20312,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 2288,
+          "name": "powershell.exe"
+        },
+        {
+          "pid": 20032,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 23264,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 13092,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 2176,
+          "name": "svchost.exe"
+        },
+        {
+          "pid": 928,
+          "name": "services.exe"
+        },
+        {
+          "pid": 856,
+          "name": "wininit.exe"
+        },
+        {
+          "pid": 644,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cline.bot/privacy",
+        "https://cline.bot/tos"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+        "https://www.minimax.io/blog/minimax-m3"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "opencode.exe",
+          "value": "opencode"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "cline-pass/minimax-m3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788327084,
+    "harness_version": "1.18.25",
+    "prompt_invocation": [
+      "opencode.exe",
+      "run",
+      "--model",
+      "cline-pass/cline-pass/minimax-m3",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "opencode.exe",
+      "--version"
+    ]
+  }
+}

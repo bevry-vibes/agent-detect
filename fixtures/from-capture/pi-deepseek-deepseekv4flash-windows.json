@@ -1,0 +1,131 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "pi-deepseek-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · DeepSeek V4 Flash <pi-deepseek-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Pi · DeepSeek V4 Flash <pi-deepseek-deepseekv4flash@local>",
+    "raw": {
+      "platform_id": "windows",
+      "harness_version": "0.84.4",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 24264,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 4816,
+          "name": "wsl.exe"
+        },
+        {
+          "pid": 7428,
+          "name": "bash.exe"
+        },
+        {
+          "pid": 24104,
+          "name": "pi.exe"
+        },
+        {
+          "pid": 12452,
+          "name": "pi.exe"
+        },
+        {
+          "pid": 13092,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 2176,
+          "name": "svchost.exe"
+        },
+        {
+          "pid": 928,
+          "name": "services.exe"
+        },
+        {
+          "pid": 856,
+          "name": "wininit.exe"
+        },
+        {
+          "pid": 644,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/earendil-works/pi",
+        "https://github.com/earendil-works/pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "PI_CODING_AGENT",
+          "value": "pi"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "PI_PROVIDER",
+          "value": "deepseek"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "PI_MODEL",
+          "value": "deepseek-v4-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788328039,
+    "harness_version": "0.84.4",
+    "prompt_invocation": [
+      "pi.exe",
+      "--provider",
+      "deepseek",
+      "--model",
+      "deepseek-v4-flash",
+      "-p",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "pi.exe",
+      "--version"
+    ]
+  }
+}

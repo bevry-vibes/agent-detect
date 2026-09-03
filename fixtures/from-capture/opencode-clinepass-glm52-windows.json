@@ -1,0 +1,128 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "GLM 5.2",
+      "model_short_title": null,
+      "model_name": "glm-5.2",
+      "model_id": "glm52",
+      "model_reciprocity": "open-source",
+      "model_license": "MIT",
+      "agent_id": "opencode-clinepass-glm52",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · GLM 5.2 <opencode-clinepass-glm52@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GLM 5.2 <opencode-clinepass-glm52@local>",
+    "raw": {
+      "platform_id": "windows",
+      "harness_version": "1.18.25",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 20032,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 16360,
+          "name": "powershell.exe"
+        },
+        {
+          "pid": 3132,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 11380,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 13092,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 2176,
+          "name": "svchost.exe"
+        },
+        {
+          "pid": 928,
+          "name": "services.exe"
+        },
+        {
+          "pid": 856,
+          "name": "wininit.exe"
+        },
+        {
+          "pid": 644,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cline.bot/privacy",
+        "https://cline.bot/tos"
+      ],
+      "model-urls": [
+        "https://huggingface.co/zai-org/GLM-5.2",
+        "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE",
+        "https://opensource.org/ai/open-source-ai-definition"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "opencode.exe",
+          "value": "opencode"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "cline-pass/glm-5.2"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788326969,
+    "harness_version": "1.18.25",
+    "prompt_invocation": [
+      "opencode.exe",
+      "run",
+      "--model",
+      "cline-pass/cline-pass/glm-5.2",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "opencode.exe",
+      "--version"
+    ]
+  }
+}

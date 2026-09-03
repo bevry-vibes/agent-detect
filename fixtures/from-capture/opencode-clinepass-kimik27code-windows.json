@@ -1,0 +1,127 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Kimi K2.7 Code",
+      "model_short_title": null,
+      "model_name": "kimi-k2.7-code",
+      "model_id": "kimik27code",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "opencode-clinepass-kimik27code",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Kimi K2.7 Code <opencode-clinepass-kimik27code@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Kimi K2.7 Code <opencode-clinepass-kimik27code@local>",
+    "raw": {
+      "platform_id": "windows",
+      "harness_version": "1.18.25",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 20388,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 23164,
+          "name": "powershell.exe"
+        },
+        {
+          "pid": 22748,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 15040,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 13092,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 2176,
+          "name": "svchost.exe"
+        },
+        {
+          "pid": 928,
+          "name": "services.exe"
+        },
+        {
+          "pid": 856,
+          "name": "wininit.exe"
+        },
+        {
+          "pid": 644,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cline.bot/privacy",
+        "https://cline.bot/tos"
+      ],
+      "model-urls": [
+        "https://huggingface.co/moonshotai/Kimi-K2.7-Code",
+        "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "opencode.exe",
+          "value": "opencode"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "cline-pass/kimi-k2.7-code"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788327031,
+    "harness_version": "1.18.25",
+    "prompt_invocation": [
+      "opencode.exe",
+      "run",
+      "--model",
+      "cline-pass/cline-pass/kimi-k2.7-code",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "opencode.exe",
+      "--version"
+    ]
+  }
+}
