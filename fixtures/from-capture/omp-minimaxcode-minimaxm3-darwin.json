@@ -16,14 +16,15 @@
       "model_name": "minimax-m3",
       "model_id": "minimaxm3",
       "model_reciprocity": "open-weight",
+      "model_license": null,
       "agent_id": "omp-minimaxcode-minimaxm3",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: omp \u00b7 MiniMax M3 <omp-minimaxcode-minimaxm3@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: omp \u00b7 MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
-    "trailer assisted-by": "Assisted-by: omp \u00b7 MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
+    "trailer co-author": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "18.0.11",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 91415,
+          "pid": 54454,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 53496,
+          "name": "omp"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 21443,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -64,31 +65,33 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "OMP_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "omp",
+          "value": "omp"
         },
         {
           "dim": "provider",
           "source": "config",
           "name": "<home>/.omp/agent/config.yml",
           "field": "modelRoles.default",
-          "value": "minimax-code/minimax-m3"
+          "value": "minimax-code/MiniMax-M3"
         },
         {
           "dim": "model",
           "source": "config",
           "name": "<home>/.omp/agent/config.yml",
           "field": "modelRoles.default",
-          "value": "minimax-code/minimax-m3"
+          "value": "minimax-code/MiniMax-M3"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786431827,
+    "updated_at": 1788466148,
+    "harness_version": "18.0.11",
     "prompt_invocation": [
       "omp",
+      "-p",
       "--model",
       "minimax-code/MiniMax-M3",
       "<prompt>"
@@ -96,7 +99,6 @@
     "version_invocation": [
       "omp",
       "--version"
-    ],
-    "harness_version": "18.0.11"
+    ]
   }
 }

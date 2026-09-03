@@ -16,14 +16,15 @@
       "model_name": "kimi-k2.7-code",
       "model_id": "kimik27code",
       "model_reciprocity": "open-weight",
+      "model_license": null,
       "agent_id": "kilo-clinepass-kimik27code",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: Kilo Code \u00b7 Kimi K2.7 Code <kilo-clinepass-kimik27code@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 Kimi K2.7 Code <kilo-clinepass-kimik27code@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 Kimi K2.7 Code <kilo-clinepass-kimik27code@local>",
+    "trailer co-author": "Co-authored-by: Kilo Code · Kimi K2.7 Code <kilo-clinepass-kimik27code@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Kimi K2.7 Code <kilo-clinepass-kimik27code@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "7.5.6",
       "detectable": [
         "harness",
         "provider",
@@ -36,7 +37,15 @@
       ],
       "process_lineage": [
         {
-          "pid": 50447,
+          "pid": 26480,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 26453,
+          "name": "kilo"
+        },
+        {
+          "pid": 21443,
           "name": "agent-detect-dev"
         }
       ],
@@ -52,21 +61,44 @@
         "https://huggingface.co/moonshotai/Kimi-K2.7-Code",
         "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE"
       ],
-      "evidence": []
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "KILO",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/kilo/kilo.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/kilo/kilo.db",
+          "field": "session.model.id",
+          "value": "cline-pass/kimi-k2.7-code"
+        }
+      ]
     }
   },
   "meta": {
-    "updated_at": 1786441340,
+    "updated_at": 1788458112,
+    "harness_version": "7.5.6",
     "prompt_invocation": [
       "kilo",
       "run",
       "--auto",
+      "--model",
+      "cline-pass/cline-pass/kimi-k2.7-code",
       "<prompt>"
     ],
     "version_invocation": [
       "kilo",
       "--version"
-    ],
-    "harness_version": "7.5.6"
+    ]
   }
 }

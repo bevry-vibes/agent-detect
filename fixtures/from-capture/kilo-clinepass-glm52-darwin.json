@@ -16,14 +16,15 @@
       "model_name": "glm-5.2",
       "model_id": "glm52",
       "model_reciprocity": "open-source",
+      "model_license": "MIT",
       "agent_id": "kilo-clinepass-glm52",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: Kilo Code \u00b7 GLM 5.2 <kilo-clinepass-glm52@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 GLM 5.2 <kilo-clinepass-glm52@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 GLM 5.2 <kilo-clinepass-glm52@local>",
+    "trailer co-author": "Co-authored-by: Kilo Code · GLM 5.2 <kilo-clinepass-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · GLM 5.2 <kilo-clinepass-glm52@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "7.5.6",
       "detectable": [
         "harness",
         "provider",
@@ -36,7 +37,15 @@
       ],
       "process_lineage": [
         {
-          "pid": 50447,
+          "pid": 26251,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 26227,
+          "name": "kilo"
+        },
+        {
+          "pid": 21443,
           "name": "agent-detect-dev"
         }
       ],
@@ -53,21 +62,44 @@
         "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE",
         "https://opensource.org/ai/open-source-ai-definition"
       ],
-      "evidence": []
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "KILO",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/kilo/kilo.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/kilo/kilo.db",
+          "field": "session.model.id",
+          "value": "cline-pass/glm-5.2"
+        }
+      ]
     }
   },
   "meta": {
-    "updated_at": 1786441291,
+    "updated_at": 1788458062,
+    "harness_version": "7.5.6",
     "prompt_invocation": [
       "kilo",
       "run",
       "--auto",
+      "--model",
+      "cline-pass/cline-pass/glm-5.2",
       "<prompt>"
     ],
     "version_invocation": [
       "kilo",
       "--version"
-    ],
-    "harness_version": "7.5.6"
+    ]
   }
 }

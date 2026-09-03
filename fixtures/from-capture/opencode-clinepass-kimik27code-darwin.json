@@ -16,14 +16,15 @@
       "model_name": "kimi-k2.7-code",
       "model_id": "kimik27code",
       "model_reciprocity": "open-weight",
+      "model_license": null,
       "agent_id": "opencode-clinepass-kimik27code",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: OpenCode \u00b7 Kimi K2.7 Code <opencode-clinepass-kimik27code@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 Kimi K2.7 Code <opencode-clinepass-kimik27code@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 Kimi K2.7 Code <opencode-clinepass-kimik27code@local>",
+    "trailer co-author": "Co-authored-by: OpenCode · Kimi K2.7 Code <opencode-clinepass-kimik27code@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Kimi K2.7 Code <opencode-clinepass-kimik27code@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "1.18.25",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 98725,
+          "pid": 56185,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 56166,
+          "name": "opencode"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 21443,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -63,36 +64,40 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "OPENCODE_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "opencode",
+          "value": "opencode"
         },
         {
           "dim": "provider",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
-          "value": "cline-pass/kimi-k2.7-code"
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
         },
         {
           "dim": "model",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
           "value": "cline-pass/kimi-k2.7-code"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786432332,
+    "updated_at": 1788466666,
+    "harness_version": "1.18.25",
     "prompt_invocation": [
       "opencode",
       "run",
+      "--model",
+      "cline-pass/cline-pass/kimi-k2.7-code",
       "<prompt>"
     ],
     "version_invocation": [
       "opencode",
       "--version"
-    ],
-    "harness_version": "1.18.25"
+    ]
   }
 }

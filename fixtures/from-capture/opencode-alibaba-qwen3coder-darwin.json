@@ -16,14 +16,15 @@
       "model_name": "qwen3-coder",
       "model_id": "qwen3coder",
       "model_reciprocity": "open-weight",
+      "model_license": null,
       "agent_id": "opencode-alibaba-qwen3coder",
-      "reciprocal": false,
-      "trailer": "Co-authored-by: OpenCode \u00b7 Qwen3 Coder <opencode-alibaba-qwen3coder@local>"
+      "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 Qwen3 Coder <opencode-alibaba-qwen3coder@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 Qwen3 Coder <opencode-alibaba-qwen3coder@local>",
+    "trailer co-author": "Co-authored-by: OpenCode · Qwen3 Coder <opencode-alibaba-qwen3coder@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3 Coder <opencode-alibaba-qwen3coder@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "1.18.25",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 99135,
+          "pid": 55503,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 55482,
+          "name": "opencode"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 21443,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -63,36 +64,40 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "OPENCODE_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "opencode",
+          "value": "opencode"
         },
         {
           "dim": "provider",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
-          "value": "alibaba/qwen3-coder"
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "alibaba"
         },
         {
           "dim": "model",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
-          "value": "alibaba/qwen3-coder"
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "qwen3-coder-480b-a35b-instruct"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786432361,
+    "updated_at": 1788466468,
+    "harness_version": "1.18.25",
     "prompt_invocation": [
       "opencode",
       "run",
+      "--model",
+      "alibaba/qwen3-coder-480b-a35b-instruct",
       "<prompt>"
     ],
     "version_invocation": [
       "opencode",
       "--version"
-    ],
-    "harness_version": "1.18.25"
+    ]
   }
 }

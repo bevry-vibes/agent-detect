@@ -16,14 +16,15 @@
       "model_name": "deepseek-v4-flash",
       "model_id": "deepseekv4flash",
       "model_reciprocity": "open-weight",
+      "model_license": "MIT",
       "agent_id": "crush-deepseek-deepseekv4flash",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: Crush \u00b7 DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Crush \u00b7 DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
-    "trailer assisted-by": "Assisted-by: Crush \u00b7 DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
+    "trailer co-author": "Co-authored-by: Crush · DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Crush · DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "0.91.2",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 96882,
+          "pid": 93314,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 93267,
+          "name": "crush"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 82473,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -63,38 +64,40 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "CRUSH_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "crush",
+          "value": "crush"
         },
         {
           "dim": "provider",
-          "source": "config",
-          "name": "<home>/.local/share/crush/hyper.json",
-          "field": "default_large_model_id",
-          "value": "deepseek/deepseek-v4-flash"
+          "source": "session",
+          "name": "<project>/.crush/crush.db",
+          "field": "messages.provider",
+          "value": "deepseek"
         },
         {
           "dim": "model",
-          "source": "config",
-          "name": "<home>/.local/share/crush/hyper.json",
-          "field": "default_large_model_id",
-          "value": "deepseek/deepseek-v4-flash"
+          "source": "session",
+          "name": "<project>/.crush/crush.db",
+          "field": "messages.model",
+          "value": "deepseek-v4-flash"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786432202,
+    "updated_at": 1788440400,
+    "harness_version": "0.91.2",
     "prompt_invocation": [
       "crush",
       "run",
+      "-m",
+      "deepseek/deepseek-v4-flash",
       "<prompt>"
     ],
     "version_invocation": [
       "crush",
       "--version"
-    ],
-    "harness_version": "0.91.2"
+    ]
   }
 }

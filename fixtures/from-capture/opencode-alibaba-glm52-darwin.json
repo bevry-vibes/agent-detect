@@ -16,14 +16,15 @@
       "model_name": "glm-5.2",
       "model_id": "glm52",
       "model_reciprocity": "open-source",
+      "model_license": "MIT",
       "agent_id": "opencode-alibaba-glm52",
-      "reciprocal": false,
-      "trailer": "Co-authored-by: OpenCode \u00b7 GLM 5.2 <opencode-alibaba-glm52@local>"
+      "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 GLM 5.2 <opencode-alibaba-glm52@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 GLM 5.2 <opencode-alibaba-glm52@local>",
+    "trailer co-author": "Co-authored-by: OpenCode · GLM 5.2 <opencode-alibaba-glm52@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GLM 5.2 <opencode-alibaba-glm52@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "1.18.25",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 99047,
+          "pid": 55179,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 55155,
+          "name": "opencode"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 21443,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -64,36 +65,40 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "OPENCODE_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "opencode",
+          "value": "opencode"
         },
         {
           "dim": "provider",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
-          "value": "alibaba/glm-5.2"
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "alibaba"
         },
         {
           "dim": "model",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
-          "value": "alibaba/glm-5.2"
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "glm-5.2"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786432356,
+    "updated_at": 1788466370,
+    "harness_version": "1.18.25",
     "prompt_invocation": [
       "opencode",
       "run",
+      "--model",
+      "alibaba/glm-5.2",
       "<prompt>"
     ],
     "version_invocation": [
       "opencode",
       "--version"
-    ],
-    "harness_version": "1.18.25"
+    ]
   }
 }

@@ -16,14 +16,15 @@
       "model_name": "glm-5.2",
       "model_id": "glm52",
       "model_reciprocity": "open-source",
+      "model_license": "MIT",
       "agent_id": "opencode-clinepass-glm52",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: OpenCode \u00b7 GLM 5.2 <opencode-clinepass-glm52@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 GLM 5.2 <opencode-clinepass-glm52@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 GLM 5.2 <opencode-clinepass-glm52@local>",
+    "trailer co-author": "Co-authored-by: OpenCode · GLM 5.2 <opencode-clinepass-glm52@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GLM 5.2 <opencode-clinepass-glm52@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "1.18.25",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 98638,
+          "pid": 56004,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 55967,
+          "name": "opencode"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 21443,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -64,36 +65,40 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "OPENCODE_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "opencode",
+          "value": "opencode"
         },
         {
           "dim": "provider",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
-          "value": "cline-pass/glm-5.2"
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
         },
         {
           "dim": "model",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
           "value": "cline-pass/glm-5.2"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786432326,
+    "updated_at": 1788466616,
+    "harness_version": "1.18.25",
     "prompt_invocation": [
       "opencode",
       "run",
+      "--model",
+      "cline-pass/cline-pass/glm-5.2",
       "<prompt>"
     ],
     "version_invocation": [
       "opencode",
       "--version"
-    ],
-    "harness_version": "1.18.25"
+    ]
   }
 }

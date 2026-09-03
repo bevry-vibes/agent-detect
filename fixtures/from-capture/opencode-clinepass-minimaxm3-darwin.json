@@ -16,14 +16,15 @@
       "model_name": "minimax-m3",
       "model_id": "minimaxm3",
       "model_reciprocity": "open-weight",
+      "model_license": null,
       "agent_id": "opencode-clinepass-minimaxm3",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: OpenCode \u00b7 MiniMax M3 <opencode-clinepass-minimaxm3@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 MiniMax M3 <opencode-clinepass-minimaxm3@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 MiniMax M3 <opencode-clinepass-minimaxm3@local>",
+    "trailer co-author": "Co-authored-by: OpenCode · MiniMax M3 <opencode-clinepass-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · MiniMax M3 <opencode-clinepass-minimaxm3@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "1.18.25",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 98796,
+          "pid": 56365,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 56345,
+          "name": "opencode"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 21443,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -64,36 +65,40 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "env",
-          "name": "OPENCODE_API_KEY",
-          "value": "<redacted>"
+          "source": "lineage",
+          "name": "opencode",
+          "value": "opencode"
         },
         {
           "dim": "provider",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
-          "value": "cline-pass/minimax-m3"
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "cline-pass"
         },
         {
           "dim": "model",
-          "source": "env",
-          "name": "OPENCODE_MODEL",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
           "value": "cline-pass/minimax-m3"
         }
       ]
     }
   },
   "meta": {
-    "updated_at": 1786432337,
+    "updated_at": 1788466717,
+    "harness_version": "1.18.25",
     "prompt_invocation": [
       "opencode",
       "run",
+      "--model",
+      "cline-pass/cline-pass/minimax-m3",
       "<prompt>"
     ],
     "version_invocation": [
       "opencode",
       "--version"
-    ],
-    "harness_version": "1.18.25"
+    ]
   }
 }

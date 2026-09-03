@@ -16,14 +16,15 @@
       "model_name": "gemma-4-31b",
       "model_id": "gemma431b",
       "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
       "agent_id": "pi-cerebras-gemma431b",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: Pi \u00b7 Gemma 4 31B <pi-cerebras-gemma431b@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi \u00b7 Gemma 4 31B <pi-cerebras-gemma431b@local>",
-    "trailer assisted-by": "Assisted-by: Pi \u00b7 Gemma 4 31B <pi-cerebras-gemma431b@local>",
+    "trailer co-author": "Co-authored-by: Pi · Gemma 4 31B <pi-cerebras-gemma431b@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Gemma 4 31B <pi-cerebras-gemma431b@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "0.84.4",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 88186,
+          "pid": 58599,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
+          "pid": 58597,
+          "name": "node"
         },
         {
-          "pid": 7115,
-          "name": "bash"
+          "pid": 21443,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -83,7 +84,8 @@
     }
   },
   "meta": {
-    "updated_at": 1786431604,
+    "updated_at": 1788467349,
+    "harness_version": "0.84.4",
     "prompt_invocation": [
       "pi",
       "--provider",
@@ -96,7 +98,6 @@
     "version_invocation": [
       "pi",
       "--version"
-    ],
-    "harness_version": "0.84.4"
+    ]
   }
 }

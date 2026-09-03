@@ -24,7 +24,7 @@
     "trailer assisted-by": "Assisted-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>",
     "raw": {
       "platform_id": "darwin",
-      "harness_version": "3.0.60",
+      "harness_version": "3.0.61",
       "detectable": [
         "harness",
         "provider",
@@ -37,24 +37,16 @@
       ],
       "process_lineage": [
         {
-          "pid": 2769,
+          "pid": 70502,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 2767,
+          "pid": 70500,
           "name": "bash"
         },
         {
-          "pid": 2667,
-          "name": "cline"
-        },
-        {
-          "pid": 2664,
-          "name": "node"
-        },
-        {
-          "pid": 908,
-          "name": "agent-detect-dev"
+          "pid": 54899,
+          "name": ".cline"
         }
       ],
       "harness-urls": [
@@ -94,8 +86,8 @@
     }
   },
   "meta": {
-    "updated_at": 1788424249,
-    "harness_version": "3.0.60",
+    "updated_at": 1788439173,
+    "harness_version": "3.0.61",
     "prompt_invocation": [
       "cline",
       "--auto-approve",
