@@ -69,9 +69,9 @@ are title-generation side effects).
   by `created_at`. The body is the concatenation of the `text` parts
   of the `parts` JSON array (skip `reasoning`/`finish` parts).
 - User-prompt log: `role = 'user'` messages with at least one
-  `text` part. Tool results come back as user-role messages with
-  `function_call_response` parts and no text, so this isolates the
-  real prompts.
+  `text` part, scoped per summary window (step 3). Tool results
+  come back as user-role messages with `function_call_response`
+  parts and no text, so this isolates the real prompts.
 
 **How (the pipeline that worked).**
 
@@ -85,8 +85,14 @@ are title-generation side effects).
    `./zig-out/bin/agent-detect trailer assisted-by`, companion
    link), body verbatim.
 3. Companion `<plan>.prompts.md`: session metadata (id, harness
-   combo, first/last prompt times) plus the prompt log, each prompt
+   combo, window bounds) plus the prompt log scoped to that
+   summary's window: the user prompts after the prior summary (or
+   session start, for the first one) through this summary, each
    headed by its observed timestamp (`## <UTC+8 ts> (epoch <s>)`).
+   Every companion additionally carries a "Post-steering" section:
+   the prompts issued after this summary through the next one (for
+   the latest, through the present). When the next summary lands,
+   that set becomes its window.
 4. Write files with `[System.IO.File]::WriteAllText`, joining lines
    on "`n" (LF; never `Set-Content` for this).
 
