@@ -498,12 +498,46 @@ pub const dev = if (build_options.dev) struct {
         fixtures_root = path;
     }
 
-    /// re-root the fixtures dir when `AGENT_DETECT_FIXTURES_DIR` is set
-    /// (the daemon's from-capture workers run in a throwaway cwd and
-    /// point it at the repo's `fixtures/` so the store + channel files
-    /// still land in the repo). Unset → the default relative root.
-    pub fn applyFixturesRootEnv(env: *const std.process.Environ.Map) void {
-        if (env.get("AGENT_DETECT_FIXTURES_DIR")) |dir| fixtures_root = dir;
+    /// backing store for a derived `fixtures_root` — the root is a
+    /// `[]const u8` global read by every scanner/writer, so a derived
+    /// path has to outlive this call.
+    var fixtures_root_buf: [std.fs.max_path_bytes]u8 = undefined;
+
+    /// re-root the fixtures dir so a from-capture worker always finds
+    /// the repo's store, in precedence order:
+    ///   1. `AGENT_DETECT_FIXTURES_DIR` (what the daemon sets for the
+    ///      workers it spawns), else
+    ///   2. the default relative `fixtures/`, when it resolves in this
+    ///      cwd (the interactive/daemon case), else
+    ///   3. `<repo>/fixtures` derived from the dev binary's own path.
+    /// Step 3 exists because step 1 cannot be relied on: a harness that
+    /// executes commands through a long-lived daemon of its own (cline
+    /// routes them through its hub, started before the capture and with
+    /// its own env and cwd) never forwards the variable, and step 2 then
+    /// resolves against that daemon's cwd — leaving the worker with an
+    /// empty store and a `no invocation of record` failure after a
+    /// whole model session was spent. The dev binary always lives at
+    /// `<repo>/zig-out/bin/`, so the repo is derivable without any
+    /// inherited state.
+    pub fn applyFixturesRootEnv(io: std.Io, env: *const std.process.Environ.Map) void {
+        if (env.get("AGENT_DETECT_FIXTURES_DIR")) |dir| {
+            fixtures_root = dir;
+            return;
+        }
+        if (std.Io.Dir.cwd().statFile(io, "fixtures/index.json", .{})) |_| return else |_| {}
+        var buf: [std.fs.max_path_bytes]u8 = undefined;
+        const exe = selfPath(io, &buf) orelse return;
+        const bin_dir = std.fs.path.dirname(exe) orelse return; // <repo>/zig-out/bin
+        const zig_out = std.fs.path.dirname(bin_dir) orelse return; // <repo>/zig-out
+        const repo = std.fs.path.dirname(zig_out) orelse return; // <repo>
+        const derived = std.fmt.bufPrint(&fixtures_root_buf, "{s}/fixtures", .{repo}) catch return;
+        // only trust it if the store really is there — a copied-out dev
+        // binary must not silently adopt an unrelated directory.
+        var probe: [std.fs.max_path_bytes]u8 = undefined;
+        const check = std.fmt.bufPrint(&probe, "{s}/index.json", .{derived}) catch return;
+        if (std.Io.Dir.cwd().statFile(io, check, .{})) |_| {
+            fixtures_root = derived;
+        } else |_| {}
     }
 
     /// `{fixtures_root}/<name>` in a stack buffer (index + lock paths).

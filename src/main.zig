@@ -221,9 +221,11 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             return EXIT_OK;
         }
         if (std.mem.eql(u8, cmd, "fixtures")) {
-            // the daemon's from-capture workers run in a throwaway cwd;
-            // the env var re-points the store at the repo's fixtures/.
-            dev.applyFixturesRootEnv(init.environ_map);
+            // the daemon's from-capture workers run in a throwaway cwd
+            // and may be re-parented by the harness, so the store root
+            // is re-pointed from the env var, the cwd, or the binary's
+            // own location — in that order.
+            dev.applyFixturesRootEnv(io, init.environ_map);
             if (sub.len == 0 or
                 std.mem.eql(u8, sub, "--help") or
                 std.mem.eql(u8, sub, "-h") or
