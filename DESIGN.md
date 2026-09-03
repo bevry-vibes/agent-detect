@@ -53,6 +53,16 @@ basename-only contract is what makes the fixture safe to commit; the
 exact mechanics and the Ancestor struct definition live in the
 `RawObservation.process_lineage` doc comment in `src/lib/core.zig`.
 
+The same leak class applies to the paths that *are* committed: the
+evidence claims. `redactPaths` (in `src/lib/core.zig`) rewrites every
+evidence value with the session's own paths substituted out (the
+worker's cwd becomes `<project>`, the user's home becomes `<home>`),
+and normalizes every surviving `\` to `/`, so a fixture
+reads the same on any host and carries no host-identifying data. A
+literal prefix only counts at a `/`, `\`, or end-of-string boundary
+(so `proj` never eats `proj2`), and the project pass runs before the
+home pass (project paths sit under home).
+
 ### per-platform fixtures (no churn across platforms)
 
 Harness config locations differ per platform (macOS uses
@@ -367,6 +377,42 @@ a per-user scheduled task (no admin, inherits the user session env) —
 both documented in CONTRIBUTING.md ("daemon launch: macOS LaunchAgent
 bootstrap" / "daemon launch: Windows scheduled task (no admin)").
 
+### capture workers: isolated cwd, streamed output, whole-tree kill
+
+A daemon-spawned `from-capture` worker is a real harness session and
+therefore an agent that can see its surroundings, so the spawn is
+defensive on three axes (all in `src/dev/dev.zig`; the spawn block
+carries the mechanics):
+
+- **Isolated cwd.** The worker runs in a fresh, empty OS temp dir
+  (`$TEMP/agent-detect-<random>`), never the repo: the harness's
+  project-local stores (`.crush/`, `.kilo/`, omp's `threads.cwd`
+  rows) isolate per capture, the agent can't prowl agent-detect's own
+  files or the maintainer's live session, and the OS temp-dir cleanup
+  is the backstop if the daemon forgets (the daemon also removes the
+  dir best-effort after the wait). The temp dir IS the fixture's
+  `<project>` (see the redaction above), the launch prompt names the
+  daemon's absolute self path so the worker runs the right binary
+  from the empty directory, and the store target rides
+  `AGENT_DETECT_FIXTURES_DIR` (the daemon sets it to the repo's
+  fixtures dir). The exact spawn command (quoted argv) is logged per
+  capture.
+- **Streamed output.** The worker's stdout is piped back and teed
+  into `daemon.log` as it is produced (a discarded stdout once hid
+  TUI harnesses like omp), while its stderr goes to a per-capture
+  file-backed `fixtures/tmp/<fixture-id>.worker.log`. On failure the
+  daemon appends the stdout tail and the worker-log tail to the
+  `known_but_failed` record, so an opaque nonzero exit says what the
+  worker actually saw.
+- **Whole-tree kill.** The timeout watchdog kills the worker's whole
+  process tree (Windows `taskkill /F /T`, POSIX `kill -TERM`), not
+  just the direct child: a cmd shim's descendants (kilo's
+  cmd → node → kilo.exe) survive a direct-child kill, and an
+  orphaned grandchild holding the stdout pipe blocks the daemon's
+  streaming read loop past the timeout, with nothing else able to
+  unstick it. A job object with `KILL_ON_JOB_CLOSE` would be the
+  stronger Windows fix (it also catches a detached escape); deferred.
+
 ### recipe-mode identify/trailer (hard-to-detect agents)
 
 Some harnesses are hard or impossible to detect live (they don't run
@@ -389,6 +435,11 @@ reflects the recipe (up to all three dims).
   no shared libraries, no runtime. The maintainer `fixtures` workflow
   reads and writes the local `fixtures/index.json` with Zig-native
   file locks — no external tools are required.
+- **Windows console is CP_UTF8.** The binary switches the console
+  code page to CP_UTF8 at `main()` entry so the em dash and middle
+  dot the CLI prints survive the OEM code page (cp437/850/1252);
+  failures are ignored so console-less runs (the fixtures daemon) are
+  unaffected.
 - **Never guess.** When detection can't fully resolve harness +
   provider + model, the binary exits 8 (unable to detect) with a
   single-line error
@@ -517,8 +568,18 @@ names the shipped behavior and why it was chosen.
    which background syncs/compaction bump — and not the lazily-written
    `session.model` column). Opencode uses the same schema/query via
    `~/.local/share/opencode/opencode.db`; copilot prefers its running
-   non-archived session. Production stays SQLite-free except for these
-   read-only session-store reads.
+   non-archived session. Crush reads its project-local store the same
+   way: the newest assistant message's `model`/`provider` in
+   `<cwd>/.crush/crush.db` (a `crush run -m <p>/<m>` override lives
+   only in memory, so the DB is the only place the launched run's
+   real model is visible), with `crush.json`'s `models.large` (the
+   picker's last selection, what an unpinned run uses) as the
+   fallback; the data dir follows the platform (`%LOCALAPPDATA%\Crush`
+   on Windows, `~/.local/share/crush` on POSIX). `hyper.json`'s
+   `default_large_model_id` is the hyper catalog's default, never a
+   model source: a partial chain ends undetected, not guessed.
+   Production stays SQLite-free except for these read-only
+   session-store reads.
 5. **No `--no-*` flags.** Fixture ids always carry all four dims;
    an unconstrained dim is an absent filter field on a queue entry
    only. There is no "explicit null" CLI spelling.

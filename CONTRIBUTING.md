@@ -49,8 +49,10 @@ separation:
   work), and evaluates ONE candidate (`from-identity`: declared
   generation, zero tokens; `from-capture`: probe the invocation's
   `version_invocation` then launch the real harness session via its
-  `prompt_invocation`). It never writes fixture files outside pop
-  processing and never inserts queue entries. Crash-resume derives
+  `prompt_invocation`; the worker runs in a fresh, empty OS temp dir
+  as its cwd, with the store target pointed at the repo's fixtures
+  dir via `AGENT_DETECT_FIXTURES_DIR`). It never writes fixture
+  files outside pop processing and never inserts queue entries. Crash-resume derives
   from the fixture files — a capture that died with the daemon simply
   re-runs. Failed candidates damp for the daemon run (one attempt per
   candidate per run) and persist their redacted message in
@@ -242,7 +244,10 @@ approval flags (`--auto-approve`, `--auto`, `--allow-all`,
 `--permission-mode bypassPermissions`, `--non-interactive`) are
 necessary — a headless session cannot answer interactive prompts.
 Prompt-passing flags (`-p`, `--prompt`, `--message`, `run`/`text`
-subcommands) are the invocation's spine. When you author an
+subcommands) are the invocation's spine; for a TUI harness that
+blocks headless, the non-interactive prompt form is necessary
+(omp's `omp -p --model <provider>/<model> <prompt>` is exactly
+this). When you author an
 invocation, audit it against this policy; `fixtures status` +
 `git diff fixtures/` keeps the drift visible.
 
@@ -439,7 +444,10 @@ startup banner prints the daemon's own `process id` (how you kill it or
 tell two instances' log streams apart), each `from-capture` announces
 its `worker pid` and a `worker log` path, and the worker's stdout is
 teed to the log live (`worker: ` prefix) so a capture can be followed
-while it runs. The worker's stderr goes to
+while it runs. The daemon also logs the exact spawn command (quoted
+argv) under a fresh, empty OS temp-dir cwd per capture (the
+worker's `<project>`; see DESIGN.md "capture workers"). The worker's
+stderr goes to
 `fixtures/tmp/<fixture-id>.worker.log` (tail it while the capture
 runs); on failure the daemon reads the stdout tail and the worker-log
 tail into the `known_but_failed` record, so a failure line always says
@@ -448,11 +456,13 @@ what the worker actually saw.
 **One daemon per host.** Always close the previous instance (task /
 launch agent / terminal run) before starting a new one — a second
 daemon double-drains the queue and interleaves the same `daemon.log`.
-A hung daemon (e.g. blocked reading a worker whose grandchild holds
-the stderr pipe) does not answer `daemon.ctl`; kill it by the pid from
+A hung daemon does not answer `daemon.ctl`; kill it by the pid from
 the banner, and kill any orphaned capture workers left behind
 (`Get-CimInstance Win32_Process | Where-Object CommandLine -match
-"fixtures capture"`).
+"fixtures capture"`). The common hang class is closed by design: the
+timeout watchdog kills the worker's whole process tree (Windows
+`taskkill /F /T`), so an orphaned grandchild holding the stdout pipe
+can no longer survive the kill (DESIGN.md "capture workers").
 Pacing: `from-identity` jobs process at ~5s intervals
 (`--poll-seconds=N`); each `from-capture` is announced ~15s ahead
 (`--capture-review-seconds=N`, cancellable) and followed by a ~15s
@@ -547,6 +557,10 @@ Start-ScheduledTask -TaskName "agent-detect-drain-windows"
   without it Task Scheduler kills the daemon after 72h.
 - Stop: `Stop-ScheduledTask -TaskName agent-detect-drain-windows`, or
   the graceful path (finishes the in-flight capture): `printf 'stop\n' > fixtures/daemon.ctl`.
+- The control file is a **sticky flag**: after a graceful stop, clear
+  it (`Set-Content fixtures/daemon.ctl "" -NoNewline`) before the
+  next `Start-ScheduledTask`, or the fresh daemon reads the stale
+  `stop` and exits immediately.
 - When the drain is done: `Unregister-ScheduledTask -TaskName agent-detect-drain-windows -Confirm:$false`.
 - While the daemon holds `agent-detect-dev.exe` open, `zig build`
   (whose default step installs the dev binary) fails with
