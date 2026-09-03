@@ -97,11 +97,11 @@ fn emptyStoreRoot(a: std.mem.Allocator) !std.json.Value {
 }
 
 /// expand helper with a host parameter (empty free grid + grids, no
-/// damping).
+/// damping, nothing blocklisted).
 fn expand(a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, host: []const u8) !dev.ExpandResult {
     var fg = dev.FreeGrid.empty(a);
     var grids = dev.FeasibilityGrids.empty(a);
-    return dev.expandEntry(testing.io, a, root, &fg, &grids, entry, host, null);
+    return dev.expandEntry(testing.io, a, root, &fg, &grids, entry, host, null, &.{});
 }
 
 /// add an invocation-table entry (dev-authored argv).
@@ -447,15 +447,15 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     // (and done under this started_at — a no-criteria entry works
     // everything, so the done rule must retire the fixtured one)
     const entry: QueueEntry = .{ .mode = "from-identity", .started_at = 200 };
-    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, entry, "darwin", null);
+    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, entry, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("kilo-deepseek-deepseekv4flash-darwin", result.host_candidates[0].fixture_id);
     // dims filter applies
-    const filtered = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null);
+    const filtered = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 0), filtered.host_candidates.len);
     // from-capture never expands the feasible-unfixtured universe —
     // authoring the invocation is what adds a capture candidate
-    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null);
+    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 0), cap.host_candidates.len);
 }
 
@@ -473,10 +473,10 @@ test "expandEntry: free axis filters by map-provider-model-freeprovidermodel.csv
     var fg = dev.FreeGrid.empty(aa);
     try fg.put(aa, "openrouter", "nemotron3ultra");
     var grids = dev.FeasibilityGrids.empty(aa);
-    const free_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = true }, "darwin", null);
+    const free_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = true }, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 1), free_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-nemotron3ultra-darwin", free_result.host_candidates[0].fixture_id);
-    const paid_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = false }, "darwin", null);
+    const paid_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = false }, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 1), paid_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", paid_result.host_candidates[0].fixture_id);
 }
@@ -496,9 +496,64 @@ test "expandEntry: session damping — failed candidates are excluded" {
 
     var fg = dev.FreeGrid.empty(aa);
     var grids = dev.FeasibilityGrids.empty(aa);
-    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", &damped);
+    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", &damped, &.{});
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
+}
+
+test "expandEntry: blocklisted providers are excluded from both modes" {
+    try Universe.setup();
+    defer Universe.teardown() catch {};
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    try Universe.writeIdentity("pi-deepseek-deepseekv4flash-darwin", 100);
+    try Universe.writeIdentity("pi-openrouter-deepseekv4flash-darwin", 100);
+    var root = try emptyStoreRoot(aa);
+    try putInvocation(aa, &root, "pi-deepseek-deepseekv4flash-darwin");
+    try putInvocation(aa, &root, "pi-openrouter-deepseekv4flash-darwin");
+    try Universe.writeCapture("pi-deepseek-deepseekv4flash-darwin", 100, true);
+    try Universe.writeCapture("pi-openrouter-deepseekv4flash-darwin", 100, true);
+
+    const blocked = [_][]const u8{"deepseek"};
+    var fg = dev.FreeGrid.empty(aa);
+    var grids = dev.FeasibilityGrids.empty(aa);
+    // from-capture: the invocation universe minus the blocked provider
+    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &blocked);
+    try testing.expectEqual(@as(usize, 1), cap.host_candidates.len);
+    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", cap.host_candidates[0].fixture_id);
+    // from-identity: the fixtured universe minus the blocked provider
+    const ident = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", null, &blocked);
+    try testing.expectEqual(@as(usize, 1), ident.host_candidates.len);
+    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", ident.host_candidates[0].fixture_id);
+}
+
+test "blocklistProvidersFor: resolves the user's providers; unknown user → empty" {
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    var user: std.json.Value = .{ .object = .empty };
+    var providers: std.json.Value = .{ .array = std.json.Array.init(aa) };
+    try providers.array.append(.{ .string = "chutes" });
+    try providers.array.append(.{ .string = "opencodego" });
+    try user.object.put(aa, "providers", providers);
+    var root: std.json.Value = .{ .object = .empty };
+    var bl: std.json.Value = .{ .object = .empty };
+    try bl.object.put(aa, "balupton", user);
+    try root.object.put(aa, "blocklist", bl);
+
+    const mine = try dev.blocklistProvidersFor(aa, &root, "balupton");
+    try testing.expectEqual(@as(usize, 2), mine.len);
+    try testing.expect(dev.providerBlocked(mine, "chutes"));
+    try testing.expect(dev.providerBlocked(mine, "opencodego"));
+    try testing.expect(!dev.providerBlocked(mine, "deepseek"));
+
+    const other = try dev.blocklistProvidersFor(aa, &root, "someone-else");
+    try testing.expectEqual(@as(usize, 0), other.len);
+    const anon = try dev.blocklistProvidersFor(aa, &root, "");
+    try testing.expectEqual(@as(usize, 0), anon.len);
 }
 
 test "expandEntry: stale_by_harness_version reads the capture meta + probe" {

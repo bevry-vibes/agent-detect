@@ -627,7 +627,7 @@ test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host pla
     }
 }
 
-test "index.json: store_version is 4 and the tables are exactly queue + backlog + invocations" {
+test "index.json: store_version is 5 and the tables are exactly queue + backlog + invocations + blocklist" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const root = try readIndexParsed(arena.allocator());
@@ -635,12 +635,35 @@ test "index.json: store_version is 4 and the tables are exactly queue + backlog 
         if (std.mem.eql(u8, key, "store_version") or
             std.mem.eql(u8, key, "queue") or
             std.mem.eql(u8, key, "backlog") or
-            std.mem.eql(u8, key, "invocations")) continue;
+            std.mem.eql(u8, key, "invocations") or
+            std.mem.eql(u8, key, "blocklist")) continue;
         std.debug.print("index.json has unexpected top-level key '{s}' — the fixture state lives in the fixture files now\n", .{key});
         return error.UnexpectedStoreKey;
     }
     const sv = root.object.get("store_version").?;
-    try testing.expectEqual(@as(i64, 4), sv.integer);
+    try testing.expectEqual(@as(i64, 5), sv.integer);
+}
+
+test "index.json: blocklist maps usernames → { providers: strict-slug string arrays }" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const root = try readIndexParsed(arena.allocator());
+    const bl = root.object.get("blocklist") orelse return;
+    if (bl != .object) return error.InvalidBlocklist;
+    var it = bl.object.iterator();
+    while (it.next()) |kv| {
+        if (kv.key_ptr.*.len == 0) return error.InvalidBlocklistKey;
+        if (kv.value_ptr.* != .object) return error.InvalidBlocklistEntry;
+        const providers = kv.value_ptr.object.get("providers") orelse continue; // {} entry = nothing blocked
+        if (providers != .array) return error.InvalidBlocklistProviders;
+        for (providers.array.items) |item| {
+            if (item != .string or item.string.len == 0) return error.InvalidBlocklistProvider;
+            // strict provider slugs — alphanumeric only, the fixture-dim form
+            for (item.string) |c| {
+                if (!std.ascii.isAlphanumeric(c)) return error.InvalidBlocklistProvider;
+            }
+        }
+    }
 }
 
 test "index.json: backlog sets are unique sorted slug/id string arrays" {

@@ -188,6 +188,14 @@ pub const dev = if (build_options.dev) struct {
         \\on fixtures/index.json.lock and write atomically (temp + rename);
         \\each fixture file is owned exclusively by its channel's writer.
         \\
+        \\blocklist: `blocklist` maps `git config --global github.username`
+        \\→ { providers: [provider-slug, ...] } — providers the hosts
+        \\running as that user must never test (credits exhausted, ...).
+        \\Blocked providers never become daemon candidates (either mode)
+        \\and `fixtures capture` refuses them (exit 10); entries use the
+        \\strict provider slugs the fixture dims use (`opencode-go` →
+        \\`opencodego`).
+        \\
         \\daemon flags:
         \\  --write-log                 tee daemon output to fixtures/daemon.log
         \\  --poll-seconds=N            base poll interval (default 5)
@@ -483,7 +491,10 @@ pub const dev = if (build_options.dev) struct {
     // index.json state store (queue + backlog + known_but_failed)
     // ------------------------------------------------------------------
 
-    const INDEX_STORE_VERSION: i64 = 4;
+    // store v5 adds the `blocklist` table: per-user provider ids the
+    // hosts running as that user must never test (credits exhausted,
+    // rate-limited, ...), keyed by `git config --global github.username`.
+    const INDEX_STORE_VERSION: i64 = 5;
     const INDEX_LOCK_BUDGET_MS: u64 = 5000;
     const INDEX_LOCK_RETRY_MS: u64 = 50;
 
@@ -579,6 +590,7 @@ pub const dev = if (build_options.dev) struct {
         try backlog.object.put(a, "known_but_failed", .{ .object = .empty });
         try root.object.put(a, "backlog", backlog);
         try root.object.put(a, "invocations", .{ .object = .empty });
+        try root.object.put(a, "blocklist", .{ .object = .empty });
         return root;
     }
 
@@ -632,6 +644,11 @@ pub const dev = if (build_options.dev) struct {
         // invocation table is `invocations` (a `curation` key never shipped).
         _ = parsed.value.object.orderedRemove("known_but_failed");
         _ = parsed.value.object.orderedRemove("curation");
+        // v4 → v5: the blocklist table is new; default it in so readers
+        // never branch on a missing key.
+        if (parsed.value.object.get("blocklist") == null) {
+            try parsed.value.object.put(a, "blocklist", .{ .object = .empty });
+        }
         return parsed.value;
     }
 
@@ -1022,6 +1039,62 @@ pub const dev = if (build_options.dev) struct {
             .string => |s| s,
             else => null,
         };
+    }
+
+    /// the providers the given user must never test, from the store's
+    /// `blocklist` map (`<github-username> → { providers: [...] }`).
+    /// Unknown user / malformed entries → empty. The entries are strict
+    /// provider slugs — the same alphanumeric ids the fixture dims use
+    /// (`opencode-go` → `opencodego`).
+    pub fn blocklistProvidersFor(a: std.mem.Allocator, root: *const std.json.Value, username: []const u8) ![]const []const u8 {
+        if (username.len == 0) return &.{};
+        if (root.* != .object) return &.{};
+        const bl = root.object.get("blocklist") orelse return &.{};
+        if (bl != .object) return &.{};
+        const entry = bl.object.get(username) orelse return &.{};
+        if (entry != .object) return &.{};
+        const providers = entry.object.get("providers") orelse return &.{};
+        if (providers != .array) return &.{};
+        var list: std.ArrayList([]const u8) = .empty;
+        for (providers.array.items) |item| {
+            if (item != .string) continue;
+            if (item.string.len == 0) continue;
+            try list.append(a, item.string);
+        }
+        return list.toOwnedSlice(a);
+    }
+
+    /// is `provider_slug` on the blocklist? Exact, case-sensitive match
+    /// (slugs are machine-written rule ids, not user input).
+    pub fn providerBlocked(blocked: []const []const u8, provider_slug: []const u8) bool {
+        for (blocked) |p| {
+            if (std.mem.eql(u8, p, provider_slug)) return true;
+        }
+        return false;
+    }
+
+    /// the git identity the blocklist keys on:
+    /// `git config get --global github.username` (the modern subcommand),
+    /// falling back to the portable `git config --global --get` form for
+    /// older gits. null when unset — nothing is blocklisted then.
+    fn gitConfigUsername(a: std.mem.Allocator, io: std.Io) ?[]const u8 {
+        const argv_get = [_][]const u8{ "git", "config", "get", "--global", "github.username" };
+        const argv_fallback = [_][]const u8{ "git", "config", "--global", "--get", "github.username" };
+        const forms = [_][]const []const u8{ &argv_get, &argv_fallback };
+        for (forms) |argv| {
+            var child = std.process.spawn(io, .{
+                .argv = argv,
+                .stdout = .pipe,
+                .stderr = .ignore,
+            }) catch return null;
+            const out = readChildOutput(a, io, child, false) catch return null;
+            const term = child.wait(io) catch return null;
+            if (term != .exited or term.exited != 0) continue;
+            const trimmed = std.mem.trim(u8, out, " \t\r\n");
+            if (trimmed.len == 0) continue;
+            return a.dupe(u8, trimmed) catch null;
+        }
+        return null;
     }
 
     fn isTokenChar(c: u8) bool {
@@ -1426,12 +1499,12 @@ pub const dev = if (build_options.dev) struct {
     /// no done candidates); candidates this daemon session already failed
     /// are damped out. Absent evidence ⇒ every carried criterion says
     /// stale.
-    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void)) !ExpandResult {
+    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void), blocked: []const []const u8) !ExpandResult {
         const platforms: []const []const u8 = if (entry.platform) |p| &.{p} else &platforms_all;
         var host_list: std.ArrayListUnmanaged(Candidate) = .empty;
         var remaining: usize = 0;
         for (platforms) |plat| {
-            const list = try expandForPlatform(io, a, root, free, grids, entry, plat, damped);
+            const list = try expandForPlatform(io, a, root, free, grids, entry, plat, damped, blocked);
             remaining += list.len;
             if (std.mem.eql(u8, plat, host)) {
                 for (list) |c| try host_list.append(a, c);
@@ -1441,7 +1514,7 @@ pub const dev = if (build_options.dev) struct {
         return .{ .host_candidates = try host_list.toOwnedSlice(a), .remaining_anywhere = remaining };
     }
 
-    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, plat: []const u8, damped: ?*const std.StringHashMap(void)) ![]Candidate {
+    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, plat: []const u8, damped: ?*const std.StringHashMap(void), blocked: []const []const u8) ![]Candidate {
         const folder = modeFolder(entry.mode) orelse return &.{};
         var out: std.ArrayListUnmanaged(Candidate) = .empty;
         var fixtured: std.StringHashMap(void) = .init(a);
@@ -1488,6 +1561,10 @@ pub const dev = if (build_options.dev) struct {
                 if (!std.mem.eql(u8, parts[2], v)) continue;
             }
             if (!dimsResolvable(a, parts)) continue;
+            // blocklist gate — the invoking user's never-test providers
+            // never become candidates in either mode, so the daemon never
+            // launches (and `capture` never validates) those sessions.
+            if (providerBlocked(blocked, parts[1])) continue;
             if (entry.free) |fr| {
                 if (fr != free.has(parts[1], parts[2])) continue;
             }
@@ -1538,6 +1615,7 @@ pub const dev = if (build_options.dev) struct {
                     if (fixtured.contains(stem)) continue;
                     if (seen.contains(stem)) continue; // table-only invocations already queued above
                     if (!dimsResolvable(a, .{ h, p, m, plat })) continue;
+                    if (providerBlocked(blocked, p)) continue;
                     if (entry.free) |fr| {
                         if (fr != free.has(p, m)) continue;
                     }
@@ -2252,6 +2330,26 @@ pub const dev = if (build_options.dev) struct {
 
         const fixture_id = try fixtureId(a, agent_aid);
 
+        // blocklist gate (defense in depth — the daemon's expansion
+        // already skips blocked providers, so this only fires on direct
+        // invocations): the invoking git user's never-test providers are
+        // never captured on this host.
+        {
+            const username = gitConfigUsername(a, io);
+            if (username) |u| {
+                var blocked_root = try indexLoad(io, a);
+                const blocked = try blocklistProvidersFor(a, &blocked_root, u);
+                if (d.provider_id) |pid| {
+                    if (providerBlocked(blocked, pid)) {
+                        var mbuf: [256]u8 = undefined;
+                        const m = std.fmt.bufPrint(mbuf[0..], "fixtures capture: {s} is blocklisted for git user {s} (provider \"{s}\") — not tested, no fixture written\n", .{ fixture_id, u, pid }) catch "fixtures capture: combo is blocklisted for this user — no fixture written\n";
+                        writeErr(io, m);
+                        return EXIT_REQUIREMENT_FAILED;
+                    }
+                }
+            }
+        }
+
         // from-capture outputs: identify from the live detection, both
         // trailer variants from spawning the current binary's `trailer`
         // action in the session env (bare — session-env detection).
@@ -2629,6 +2727,13 @@ pub const dev = if (build_options.dev) struct {
         const id_stems = try scanFolderStems(io, a, IDENTITY_DIR);
         const cap_stems = try scanFolderStems(io, a, CAPTURE_DIR);
         const grids = try FeasibilityGrids.load(io, a);
+        // the never-test providers for this host's git user — excluded
+        // from the feasible-unfixtured counts below (they can never be
+        // worked) and surfaced as their own line.
+        const blocked: []const []const u8 = blk: {
+            const u = gitConfigUsername(a, io) orelse break :blk &.{};
+            break :blk blocklistProvidersFor(a, &root, u) catch &.{};
+        };
 
         // feasible-unfixtured (from-identity): the grid-filtered
         // cross-product minus the fixtured identity stems, over all
@@ -2652,6 +2757,7 @@ pub const dev = if (build_options.dev) struct {
                     const stem = (try fixtureIdFrom(a, h, p, pm[bar2 + 1 ..], plat)) orelse continue;
                     if (fixtured_ids.contains(stem)) continue;
                     if (!dimsResolvable(a, .{ h, p, pm[bar2 + 1 ..], plat })) continue;
+                    if (providerBlocked(blocked, p)) continue;
                     feasible_unfixtured += 1;
                     if (std.mem.eql(u8, plat, platformId())) feasible_unfixtured_host += 1;
                 }
@@ -2688,6 +2794,20 @@ pub const dev = if (build_options.dev) struct {
         writeOut(io, ", from-capture ");
         writeCount(io, cap_stems.len);
         writeOut(io, "\n");
+        if (gitConfigUsername(a, io)) |u| {
+            writeOut(io, "  blocklist for ");
+            writeOut(io, u);
+            writeOut(io, ": ");
+            if (blocked.len == 0) {
+                writeOut(io, "(none)");
+            } else {
+                for (blocked, 0..) |p, i| {
+                    if (i > 0) writeOut(io, ", ");
+                    writeOut(io, p);
+                }
+            }
+            writeOut(io, "\n");
+        }
         writeOut(io, "  backlog:\n");
         for (backlog_sets) |set| {
             const items = try backlogItems(a, &root, set);
@@ -3209,7 +3329,7 @@ pub const dev = if (build_options.dev) struct {
     /// re-expand it, and return ONE candidate. All under one store lock
     /// cycle so the refresh + stamp + expansion + save are atomic against
     /// other writers.
-    fn daemonPick(io: std.Io, a: std.mem.Allocator, damped: *std.StringHashMap(void)) !?DaemonPick {
+    fn daemonPick(io: std.Io, a: std.mem.Allocator, damped: *std.StringHashMap(void), blocked: []const []const u8) !?DaemonPick {
         const lock_file = try acquireIndexLock(io);
         defer lock_file.close(io);
         var root = try indexLoad(io, a);
@@ -3241,7 +3361,7 @@ pub const dev = if (build_options.dev) struct {
                     i += 1;
                     continue;
                 }
-                const exp = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped);
+                const exp = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped, blocked);
                 if (exp.remaining_anywhere == 0) {
                     _ = q.orderedRemove(i);
                     dirty = true;
@@ -3259,7 +3379,7 @@ pub const dev = if (build_options.dev) struct {
                     // the completion-timestamp done rule live.
                     entry.started_at = unixNow(io);
                     q.items[i] = try queueEntryValue(a, entry);
-                    const exp2 = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped);
+                    const exp2 = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped, blocked);
                     if (exp2.host_candidates.len > 0) {
                         pick = .{ .queue_index = i, .candidate = exp2.host_candidates[0], .entry = entry };
                     }
@@ -3361,6 +3481,32 @@ pub const dev = if (build_options.dev) struct {
         // daemon run (in-memory; the fixture files + known_but_failed are
         // the durable memory).
         var damped = std.StringHashMap(void).init(a);
+
+        // the blocklist resolves once per daemon session: the providers
+        // the invoking git user must never test (index.json `blocklist`
+        // keyed by `git config --global github.username`). An unset git
+        // identity blocks nothing.
+        const blocked: []const []const u8 = blk: {
+            const username = gitConfigUsername(a, io) orelse break :blk &.{};
+            const lock_file = acquireIndexLock(io) catch break :blk &.{};
+            defer lock_file.close(io);
+            const root = indexLoad(io, a) catch break :blk &.{};
+            const list = blocklistProvidersFor(a, &root, username) catch break :blk &.{};
+            if (list.len > 0) {
+                var fbs = std.ArrayList(u8).empty;
+                defer fbs.deinit(a);
+                fbs.appendSlice(a, "  blocklist for ") catch break :blk list;
+                fbs.appendSlice(a, username) catch break :blk list;
+                fbs.appendSlice(a, ": ") catch break :blk list;
+                for (list, 0..) |p, i| {
+                    if (i > 0) fbs.appendSlice(a, ", ") catch break :blk list;
+                    fbs.appendSlice(a, p) catch break :blk list;
+                }
+                fbs.appendSlice(a, "\n") catch break :blk list;
+                daemonWrite(io, fbs.items);
+            }
+            break :blk list;
+        };
 
         daemonWrite(io, "agent-detect-dev fixtures daemon: running\n");
         {
@@ -3480,7 +3626,7 @@ pub const dev = if (build_options.dev) struct {
                         // the next poll `poll_seconds` out on EVERY path
                         // below.
                         next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
-                        const pick = daemonPick(io, a, &damped) catch |err| blk: {
+                        const pick = daemonPick(io, a, &damped, blocked) catch |err| blk: {
                             daemonWriteErr(io, "daemon: pick error: ");
                             daemonWriteErr(io, @errorName(err));
                             daemonWriteErr(io, "\n");
