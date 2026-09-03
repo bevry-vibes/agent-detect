@@ -231,6 +231,12 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
 /// re-capture — drop the stem as it lands.
 fn isLegacyRequiredMeta(stem: []const u8) bool {
     const legacy = [_][]const u8{
+        // captured 2026-09-01 13:56 +0800, ~1h40m before the
+        // required-meta rule landed (1ab8622, 15:37 +0800) — its meta
+        // carries only `updated_at` because the binary that wrote it
+        // predates the rule. Its next re-capture fills the meta in and
+        // drops the stem from this list.
+        "kilo-ollamacloud-deepseekv4flash-darwin",
         "pi-anthropic-claudesonnet4-darwin",
         "pi-groq-llama318b-darwin",
         "pi-groq-llama3370b-darwin",

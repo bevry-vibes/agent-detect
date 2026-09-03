@@ -62,12 +62,12 @@ pub const rulesForModels = [_]ModelRule{
     // (MIT-style with a large-scale commercial carve-out), not OSI
     // → NOASSERTION. variations: Chutes stamps secure-enclave served
     // ids with "-TEE" (observed: chutes/moonshotai/Kimi-K3-TEE).
-    .{ .name = "kimi-k3", .label = "Kimi K3", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K3", "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE" }, .variations = &.{ "Kimi-K3-TEE", "moonshotai/Kimi-K3-TEE" } },
+    .{ .name = "kimi-k3", .label = "Kimi K3", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K3", "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE" }, .variations = &.{ "Kimi-K3-TEE" } },
     // glm-5.2: open-source — zai-org's card tags it "Pure Open: MIT";
     // MIT is OSI-approved, and the OSAID 1.0 definition is linked as
     // concurrence for the open-source tier. variations: Chutes TEE
     // spelling (observed: chutes/zai-org/GLM-5.2-TEE).
-    .{ .name = "glm-5.2", .label = "GLM 5.2", .reciprocity = "open-source", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.2", "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE", "https://opensource.org/ai/open-source-ai-definition" }, .variations = &.{ "GLM-5.2-TEE", "zai-org/GLM-5.2-TEE" } },
+    .{ .name = "glm-5.2", .label = "GLM 5.2", .reciprocity = "open-source", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.2", "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE", "https://opensource.org/ai/open-source-ai-definition" }, .variations = &.{ "GLM-5.2-TEE" } },
     // minimax-m3: open-weight — shipped under the "MINIMAX COMMUNITY
     // LICENSE" (non-commercial grant; commercial use past $20M/yr
     // revenue needs authorization), not OSI; the MiniMax blog post
@@ -97,12 +97,13 @@ pub const rulesForModels = [_]ModelRule{
     // (`qwen38-flash-next`) = separate family.
     // variations: Chutes stamps secure-enclave serving ids with
     // "-TEE" (same model, TEE mode); the observed id
-    // `chutes/Qwen/Qwen3.8-27B-TEE` canonicalizes to `qwen3.8-27b-tee`
-    // after applyModel's first-segment provider-prefix strip
-    // (kimi-code's `default_model`), or to the namespaced form when a
-    // 3-segment id reaches applyModel unstripped, so both forms are
-    // recorded.
-    .{ .name = "qwen3.8-27b", .label = "Qwen3.8 27B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.8-27B", "https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.8-27B-TEE", "Qwen/Qwen3.8-27B-TEE" } },
+    // `chutes/Qwen/Qwen3.8-27B-TEE` (kimi-code's `default_model`)
+    // canonicalizes to `qwen3.8-27b-tee` — the `chutes/Qwen/`
+    // namespace is catalog prefix, shed by
+    // `modelIdAfterNamespace`, so only the bare stamped form needs
+    // recording here (2026-09-04: the paired `Qwen/Qwen3.8-27B-TEE`
+    // entry this rule used to carry is redundant and was dropped).
+    .{ .name = "qwen3.8-27b", .label = "Qwen3.8 27B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.8-27B", "https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.8-27B-TEE" } },
     // deepseek-v4-flash: open-weight — HF card + MIT LICENSE; the
     // weights are downloadable (MIT is OSI, but open-weight is the
     // conservative tier for the hosted API alias). variations: opencode's
@@ -111,7 +112,17 @@ pub const rulesForModels = [_]ModelRule{
     // DESIGN #13); Chutes serves the 0731 release stamp with its TEE
     // suffix (observed: chutes/deepseek-ai/DeepSeek-V4-Flash-0731-TEE) —
     // stamp/endpoint spellings coalesce into this model per DESIGN #13.
-    .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V4-Flash-0731-TEE", "deepseek-ai/DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash-vision-exp", "deepseek-v4-flash-free" } },
+    // The 0731 stamp is DeepSeek's release date appended to the model
+    // name (MMDD), separated by `:` on ollama-cloud (observed:
+    // `deepseek-v4-flash:0731`) and by `-` in the kilo/opencode session
+    // stores (observed: `deepseek-v4-flash-0731`); the strict slug
+    // (non-alphanumerics stripped) makes the two spellings one alias,
+    // so a single entry covers both, and the bare `deepseekv4flash0731`
+    // fixture/backlog dim with it. Every catalog namespace in front of
+    // the stamp — `deepseek-ai/…`,
+    // `siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731` — is shed by
+    // `modelIdAfterNamespace`, so the bare stamped form is enough.
+    .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash:0731", "deepseek-v4-flash-vision-exp", "deepseek-v4-flash-free" } },
     // mistral-large-latest: open-weight — Mistral's models overview
     // lists the current "Mistral Large 3" (v25.12) as Apache-2.0
     // open-weight, and the mistral-large-latest alias resolves to it;
@@ -121,8 +132,12 @@ pub const rulesForModels = [_]ModelRule{
     // qwen.ai linkage as qwen3.8-max above.
     .{ .name = "qwen3.7-plus", .label = "Qwen3.7-Plus", .reciprocity = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.7-plus" } },
     // deepseek-v4-pro: open-weight — the larger sibling of
-    // deepseek-v4-flash; HF card + MIT LICENSE.
-    .{ .name = "deepseek-v4-pro", .label = "DeepSeek V4 Pro", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE" } },
+    // deepseek-v4-flash; HF card + MIT LICENSE. variations: the same
+    // MMDD release-date stamp as the flash sibling, here 0813
+    // (catalogued: `deepseek/deepseek-v4-pro-0813`, HF
+    // `deepseek-ai/DeepSeek-V4-Pro-0813`) — folded per DESIGN #13 so the
+    // dated id can never land as its own rule.
+    .{ .name = "deepseek-v4-pro", .label = "DeepSeek V4 Pro", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE" }, .variations = &.{ "deepseek-v4-pro-0813" } },
     // llama-4: open-weight — Llama 4 community license (weights
     // downloadable, custom license, not OSI); Scout is the smallest of
     // the family.
@@ -166,7 +181,7 @@ pub const rulesForModels = [_]ModelRule{
     // chutes/google/gemma-4-31B-turbo-TEE); no `turbo` repo exists
     // on HF — the official 31B is `gemma-4-31B-it`, so the spelling
     // is a serving variant, folded per DESIGN #13.
-    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/google/gemma-4-31b-it", "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE" }, .variations = &.{ "gemma-4-31B-turbo-TEE", "google/gemma-4-31B-turbo-TEE" } },
+    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/google/gemma-4-31b-it", "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE" }, .variations = &.{ "gemma-4-31B-turbo-TEE" } },
     // gemini-3.5-flash: closed — Google Gemini 3.5 Flash; API-only, no
     // weights.
     .{ .name = "gemini-3.5-flash", .label = "Gemini 3.5 Flash", .reciprocity = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
@@ -181,7 +196,7 @@ pub const rulesForModels = [_]ModelRule{
     // deepseek-v3.2: open-weight — DeepSeek V3.2; HF card + MIT
     // LICENSE. variations: Chutes TEE spelling (observed:
     // chutes/deepseek-ai/DeepSeek-V3.2-TEE).
-    .{ .name = "deepseek-v3.2", .label = "DeepSeek V3.2", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V3.2", "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V3.2-TEE", "deepseek-ai/DeepSeek-V3.2-TEE" } },
+    .{ .name = "deepseek-v3.2", .label = "DeepSeek V3.2", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V3.2", "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V3.2-TEE" } },
     // glm-4.6: open-weight — Z.ai GLM 4.6; HF card + LICENSE.
     .{ .name = "glm-4.6", .label = "Z.ai GLM 4.6", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.6", "https://huggingface.co/zai-org/GLM-4.6/blob/main/LICENSE" } },
     // kimi-k2.5: open-weight — Moonshot Kimi K2.5; HF card + LICENSE.
@@ -204,7 +219,7 @@ pub const rulesForModels = [_]ModelRule{
     // enclave serving ids with "-TEE" (same model, TEE mode); the
     // observed id `chutes/Qwen/Qwen3-32B-TEE` canonicalizes to
     // `qwen3-32b-tee` / the namespaced form (see qwen3.8-27b).
-    .{ .name = "qwen3-32b", .label = "Qwen3 32B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-32B", "https://huggingface.co/Qwen/Qwen3-32B/blob/main/LICENSE" }, .variations = &.{ "Qwen3-32B-TEE", "Qwen/Qwen3-32B-TEE" } },
+    .{ .name = "qwen3-32b", .label = "Qwen3 32B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-32B", "https://huggingface.co/Qwen/Qwen3-32B/blob/main/LICENSE" }, .variations = &.{ "Qwen3-32B-TEE" } },
     // cogito-2.1: open-weight — DeepCogito Cogito 2.1 671B; HF card.
     .{ .name = "cogito-2.1", .label = "Cogito 2.1", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepcogito/cogito-2.1-671b", "https://huggingface.co/deepcogito/cogito-2.1-671b/blob/main/LICENSE" } },
     // muse-spark-1.2: Meta Muse Spark 1.2; reciprocity unverified.
@@ -257,7 +272,7 @@ pub const rulesForModels = [_]ModelRule{
     // family (same size-bearing-rule doctrine as qwen3.8-27b); HF card
     // + Apache-2.0 LICENSE. variations: Chutes TEE serving ids (see
     // qwen3.8-27b).
-    .{ .name = "qwen3.6-27b", .label = "Qwen3.6 27B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6-27B", "https://huggingface.co/Qwen/Qwen3.6-27B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.6-27B-TEE", "Qwen/Qwen3.6-27B-TEE" } },
+    .{ .name = "qwen3.6-27b", .label = "Qwen3.6 27B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6-27B", "https://huggingface.co/Qwen/Qwen3.6-27B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.6-27B-TEE" } },
     // llama-3.1-8b: open-weight — Meta Llama 3.1 8B; HF card + LICENSE.
     .{ .name = "llama-3.1-8b", .label = "Llama 3.1 8B", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.1-8B", "https://huggingface.co/meta-llama/Llama-3.1-8B/blob/main/LICENSE" } },
     // nemotron-3-super: open-weight — NVIDIA Nemotron 3 Super; HF card
@@ -308,25 +323,31 @@ pub const rulesForModels = [_]ModelRule{
     // held by the `qwen3.5` hosted-alias rule — so this release is its
     // own size-bearing rule. variations: Chutes TEE spelling (observed:
     // chutes/Qwen/Qwen3.5-397B-A17B-TEE).
-    .{ .name = "qwen3.5-397b-a17b", .label = "Qwen3.5 397B A17B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", "https://huggingface.co/Qwen/Qwen3.5-397B-A17B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.5-397B-A17B-TEE", "Qwen/Qwen3.5-397B-A17B-TEE" } },
+    .{ .name = "qwen3.5-397b-a17b", .label = "Qwen3.5 397B A17B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", "https://huggingface.co/Qwen/Qwen3.5-397B-A17B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.5-397B-A17B-TEE" } },
     // qwen3-235b-a22b: open-weight — the MoE flagship size of the
+    // Qwen3 family; the canonical name bears no release stamp, but the
+    // catalogues do: `qwen/qwen3-235b-a22b-2507` (OpenRouter/tracked
+    // set) and the HF repo `Qwen/Qwen3-235B-A22B-Instruct-2507`, both
+    // the 2507 MMDD stamp on these same 235B-A22B weights (the
+    // `Thinking-2507` repo the rule cites is the same stamp) — folded as
+    // variations per DESIGN #13, never as a separate dated rule.
     // base Qwen3 line (Apache-2.0; the 2507 refresh ships Instruct
     // and Thinking template variants of the same weights, stamp/
     // template spellings coalesced per DESIGN #13). variations:
     // Chutes TEE spelling (observed: chutes/Qwen/
     // Qwen3-235B-A22B-Thinking-2507-TEE).
-    .{ .name = "qwen3-235b-a22b", .label = "Qwen3 235B A22B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507", "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507/blob/main/LICENSE" }, .variations = &.{ "Qwen3-235B-A22B-Thinking-2507-TEE", "Qwen/Qwen3-235B-A22B-Thinking-2507-TEE" } },
+    .{ .name = "qwen3-235b-a22b", .label = "Qwen3 235B A22B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507", "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507/blob/main/LICENSE" }, .variations = &.{ "Qwen3-235B-A22B-Thinking-2507-TEE", "Qwen3-235B-A22B-Instruct-2507", "qwen3-235b-a22b-2507" } },
     // kimi-k2.6: open-weight — Moonshot Kimi K2.6; LICENSE is a
     // custom "Modified MIT License" (© 2026 Moonshot; not plain MIT,
     // not SPDX → NOASSERTION). variations: Chutes TEE spelling
     // (observed: chutes/moonshotai/Kimi-K2.6-TEE).
-    .{ .name = "kimi-k2.6", .label = "Kimi K2.6", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.6", "https://huggingface.co/moonshotai/Kimi-K2.6/blob/main/LICENSE" }, .variations = &.{ "Kimi-K2.6-TEE", "moonshotai/Kimi-K2.6-TEE" } },
+    .{ .name = "kimi-k2.6", .label = "Kimi K2.6", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.6", "https://huggingface.co/moonshotai/Kimi-K2.6/blob/main/LICENSE" }, .variations = &.{ "Kimi-K2.6-TEE" } },
     // glm-5.1: open-weight — Z.ai GLM 5.1; LICENSE is plain MIT
     // (© 2026 Zhipu AI) but the card carries no "Pure Open"/OSAID
     // claim (unlike GLM-5.2), so it keeps the conservative
     // open-weight tier. variations: Chutes TEE spelling (observed:
     // chutes/zai-org/GLM-5.1-TEE).
-    .{ .name = "glm-5.1", .label = "GLM 5.1", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.1", "https://huggingface.co/zai-org/GLM-5.1/blob/main/LICENSE" }, .variations = &.{ "GLM-5.1-TEE", "zai-org/GLM-5.1-TEE" } },
+    .{ .name = "glm-5.1", .label = "GLM 5.1", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.1", "https://huggingface.co/zai-org/GLM-5.1/blob/main/LICENSE" }, .variations = &.{ "GLM-5.1-TEE" } },
     // mistral-nemo-instruct-2407: open-weight — Mistral Nemo
     // (Apache-2.0 per the HF license tag; the repo ships no LICENSE
     // file, so the license text URL is the second source). Single
@@ -334,7 +355,7 @@ pub const rulesForModels = [_]ModelRule{
     // variations: Chutes TEE spelling (observed: chutes/unsloth/
     // Mistral-Nemo-Instruct-2407-TEE — unsloth namespace, official
     // weights).
-    .{ .name = "mistral-nemo-instruct-2407", .label = "Mistral Nemo Instruct 2407", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407", "https://www.apache.org/licenses/LICENSE-2.0" }, .variations = &.{ "Mistral-Nemo-Instruct-2407-TEE", "unsloth/Mistral-Nemo-Instruct-2407-TEE" } },
+    .{ .name = "mistral-nemo-instruct-2407", .label = "Mistral Nemo Instruct 2407", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407", "https://www.apache.org/licenses/LICENSE-2.0" }, .variations = &.{ "Mistral-Nemo-Instruct-2407-TEE" } },
     // nemotron-3-nano-omni: open-weight — NVIDIA Nemotron 3 Nano
     // Omni (multimodal line of the nano tier; official HF repos are
     // the A3B-Reasoning quantizations, single size so the id omits
@@ -935,8 +956,25 @@ pub fn slugEquals(display: []const u8, slug: []const u8) bool {
     return i == slug.len;
 }
 
+/// the model identity of a catalog-served id: everything up to and
+/// including the LAST `/` is provider/org namespace, not model data.
+/// `siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731` and
+/// `deepseek-ai/DeepSeek-V4-Flash-0731` are the same model as
+/// `DeepSeek-V4-Flash-0731` — only the final segment names the model,
+/// however many namespace segments a catalog stacks in front of it.
+/// Stripping it here is what keeps a catalog prefix from needing its
+/// own variation alias on every rule (the pre-2026-09-04 code stripped
+/// only the first segment, which is why the tables carried paired
+/// `org/Model` + `Model` variations).
+pub fn modelIdAfterNamespace(input: []const u8) []const u8 {
+    const slash = std.mem.lastIndexOfScalar(u8, input, '/') orelse return input;
+    return input[slash + 1 ..];
+}
+
 /// resolve a CLI-provided harness / provider / model id to its
-/// canonical rule `name`. Exact canonical-name equality takes
+/// canonical rule `name`. Model ids first shed their catalog namespace
+/// (`modelIdAfterNamespace`) so a prefixed spelling resolves on the
+/// same aliases as the bare one. Exact canonical-name equality takes
 /// precedence (so `cline` resolves to `cline`, never aliasing into
 /// `cline-pass`); otherwise `input` is normalized via `slugId`
 /// (lowercase + strip non-alphanumeric, whole-string) and the first
@@ -950,10 +988,13 @@ pub fn slugEquals(display: []const u8, slug: []const u8) bool {
 /// matches. Non-ASCII characters strip out via `std.ascii` (lossy — an
 /// input whose remaining ASCII slug matches a rule still resolves).
 pub fn canonicalIdFor(a: std.mem.Allocator, comptime Rules: type, rules: []const Rules, input: []const u8) ?[]const u8 {
+    // the namespace strip is a model-id concern; harness and provider
+    // names carry no `/` and are matched whole.
+    const lookup = if (Rules == ModelRule) modelIdAfterNamespace(input) else input;
     for (rules) |r| {
-        if (std.mem.eql(u8, r.name, input)) return r.name;
+        if (std.mem.eql(u8, r.name, lookup)) return r.name;
     }
-    const slug = slugId(a, input) catch return null;
+    const slug = slugId(a, lookup) catch return null;
     defer a.free(slug);
     if (slug.len == 0) return null;
     for (rules) |r| {

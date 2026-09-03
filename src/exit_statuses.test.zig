@@ -355,6 +355,24 @@ test "canonicalIdFor: catalog spellings fold to their canonical rules" {
         .{ "GLM-5.1-TEE", "glm-5.1" },
         .{ "deepseek-ai/DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash" },
         .{ "deepseek-v4-flash-vision-exp", "deepseek-v4-flash" },
+        // release-date stamps (MMDD, appended by DeepSeek and Qwen) are
+        // variations of the undated model, never their own rule:
+        // `:`-separated on ollama-cloud, `-` in the kilo/opencode
+        // session stores, and org-namespaced in the catalogs. The
+        // strict slug makes the `:` and `-` spellings one alias.
+        .{ "deepseek-v4-flash:0731", "deepseek-v4-flash" },
+        .{ "deepseek-v4-flash-0731", "deepseek-v4-flash" },
+        .{ "deepseekv4flash0731", "deepseek-v4-flash" },
+        .{ "deepseek-ai/DeepSeek-V4-Flash-0731", "deepseek-v4-flash" },
+        .{ "siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731", "deepseek-v4-flash" },
+        .{ "deepseek/deepseek-v4-pro-0813", "deepseek-v4-pro" },
+        .{ "deepseek-v4-pro:0813", "deepseek-v4-pro" },
+        .{ "deepseek-ai/DeepSeek-V4-Pro-0813", "deepseek-v4-pro" },
+        // 2407 is part of Mistral Nemo's official HF name, not a stamp
+        // on an undated sibling — it stays in the canonical id.
+        .{ "unsloth/Mistral-Nemo-Instruct-2407", "mistral-nemo-instruct-2407" },
+        .{ "qwen/qwen3-235b-a22b-2507", "qwen3-235b-a22b" },
+        .{ "Qwen/Qwen3-235B-A22B-Instruct-2507", "qwen3-235b-a22b" },
         .{ "Qwen/Qwen3-235B-A22B-Thinking-2507-TEE", "qwen3-235b-a22b" },
         .{ "Qwen/Qwen3.5-397B-A17B-TEE", "qwen3.5-397b-a17b" },
         .{ "google/gemma-4-31B-turbo-TEE", "gemma-4-31b" },

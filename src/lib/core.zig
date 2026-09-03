@@ -284,7 +284,10 @@ fn addEvidenceClaim(a: std.mem.Allocator, d: *Detection, claim: EvidenceClaim) !
 /// identity.
 pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_input: []const u8) !void {
     const lower = try std.ascii.allocLowerString(a, name);
-    const canonical_name = if (std.mem.findScalar(u8, lower, '/')) |i| lower[i + 1 ..] else lower;
+    // everything before the LAST `/` is catalog namespace (provider or
+    // org), not model data — shed all of it, not just the first
+    // segment, so `provider/org/Model` and `Model` resolve alike.
+    const canonical_name = rules.modelIdAfterNamespace(lower);
     defer a.free(lower);
     // fold provider-served id spellings (e.g. chutes' TEE-stamped
     // "Qwen3.8-27B-TEE") through the rule's variation aliases before

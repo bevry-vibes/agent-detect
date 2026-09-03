@@ -11,17 +11,17 @@
       "provider_id": "ollamacloud",
       "provider_closed_training": null,
       "provider_open_training": null,
-      "model_label": "Deepseek V4 Flash:0731",
+      "model_label": "DeepSeek V4 Flash",
       "model_short_title": null,
-      "model_name": "deepseek-v4-flash:0731",
-      "model_id": "deepseekv4flash0731",
-      "model_reciprocity": null,
-      "model_license": null,
-      "agent_id": "kilo-ollamacloud-deepseekv4flash0731",
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_reciprocity": "open-weight",
+      "model_license": "MIT",
+      "agent_id": "kilo-ollamacloud-deepseekv4flash",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Kilo Code · Deepseek V4 Flash:0731 <kilo-ollamacloud-deepseekv4flash0731@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code · Deepseek V4 Flash:0731 <kilo-ollamacloud-deepseekv4flash0731@local>",
+    "trailer co-author": "Co-authored-by: Kilo Code · DeepSeek V4 Flash <kilo-ollamacloud-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · DeepSeek V4 Flash <kilo-ollamacloud-deepseekv4flash@local>",
     "raw": {
       "platform_id": "darwin",
       "harness_version": null,
@@ -56,7 +56,10 @@
       "provider-urls": [
         "https://ollama.com/"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
       "evidence": [
         {
           "dim": "harness",

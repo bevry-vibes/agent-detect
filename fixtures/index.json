@@ -17,11 +17,9 @@
   "backlog": {
     "unknown_harnesses": [],
     "unknown_providers": [],
-    "unknown_models": [
-      "deepseekv4flash0731"
-    ],
+    "unknown_models": [],
     "unknown_invocations": [
-      "kilo-ollamacloud-deepseekv4flash0731-darwin"
+      "kilo-ollamacloud-deepseekv4flash-darwin"
     ],
     "known_but_failed": {
       "cline-clinepass-kimik3-darwin": "capture failed (exit 1): dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 22h 37m, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
