@@ -376,7 +376,7 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "glm-5.3", .label = "GLM 5.3", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3", "https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE" } },
     // glm-5.3-flash: open-weight — Z.ai GLM 5.3 Flash; HF card + MIT
     // LICENSE. Observed on opencode-go (bare id).
-    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" } },
+    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" }, .variations = &.{"glm-5.3-flash:cloud"} },
     // mimo-v2.5: open-weight — Xiaomi MiMo V2.5; HF card + MIT
     // LICENSE. Single-size version, stamp not a param size. Observed
     // on opencode-go (bare id).
@@ -532,6 +532,19 @@ pub const rulesForProviders = [_]ProviderRule{
     // zai: null/null — Z.ai (Zhipu AI) trains models itself (the GLM
     // family); API training-policy wording unverified, stays null.
     .{ .name = "zai", .label = "Z.ai", .closed_training = null, .open_training = null, .sources = &.{ "https://www.z.ai/terms-of-service", "https://www.z.ai/privacy-policy" } },
+    // cloudflare-workers-ai: null/null — Cloudflare's Workers AI
+    // serverless inference platform (the `@cf/<org>/<model>` catalog pi
+    // sessions route through); Cloudflare trains on nothing per its
+    // commercial terms, but the platform's model-training wording is
+    // unverified here, so both stay null pending a maintainer audit.
+    .{ .name = "cloudflare-workers-ai", .label = "Cloudflare Workers AI", .closed_training = null, .open_training = null, .sources = &.{"https://developers.cloudflare.com/workers-ai/"} },
+    // zcode: mirrors `zai` — the ZCode desktop app's bundled coding-plan
+    // provider (its session stores record providerId
+    // `builtin:zai-start-plan`, and the ZAI_* env the app exports points
+    // at api.z.ai). Same upstream as `zai`, same unverified policy
+    // status. variation: the app's internal provider key, so session
+    // evidence resolves through the standard alias fold.
+    .{ .name = "zcode", .label = "ZCode", .closed_training = null, .open_training = null, .sources = &.{ "https://www.z.ai/terms-of-service", "https://www.z.ai/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
     // xai: null/null — xAI trains the Grok family itself; API
     // training-policy wording unverified, stays null (same source set
     // as the grok model rules).
@@ -560,6 +573,13 @@ pub const rulesForProviders = [_]ProviderRule{
     // many open-weight models (`deepseek-v3.2`, `glm-5.2`, ...);
     // policy unverified, stays null.
     .{ .name = "ollama-cloud", .label = "Ollama Cloud", .closed_training = null, .open_training = null, .sources = &.{"https://ollama.com/"} },
+    // ollama: null/null — the Ollama runtime surface (a user-configured
+    // ollama server, e.g. localhost:11434, as harnesses' custom
+    // provider; observed: ZCode's custom provider `name: "ollama"`
+    // serving the `:cloud`-tagged models). Mirrors `ollama-cloud`'s
+    // unverified policy status; the model tag (`:cloud`) marks the
+    // cloud-served spellings on the model rule, not here.
+    .{ .name = "ollama", .label = "Ollama", .closed_training = null, .open_training = null, .sources = &.{"https://ollama.com/"} },
     // meta: null/null — Meta's hosted tier for its open-weight families
     // (Llama, Muse); policy unverified, stays null.
     .{ .name = "meta", .label = "Meta", .closed_training = null, .open_training = null, .sources = &.{"https://ai.meta.com/"} },
@@ -658,6 +678,7 @@ const goose_env = [_][]const u8{ "GOOSE_WORKING_DIR", "GOOSE_PROVIDER", "GOOSE_M
 const kimi_env = [_][]const u8{ "KIMI_CODE_HOME", "KIMI_API_KEY", "KIMI_BASE_URL" };
 const mmx_env = [_][]const u8{ "MMX_CONFIG_DIR", "MINIMAX_API_KEY" };
 const pi_env = [_][]const u8{ "PI_CODING_AGENT", "PI_PROVIDER", "PI_MODEL" };
+const zcode_env = [_][]const u8{ "ZCODE_APP_VERSION", "ZCODE_BASE_URL", "ZCODE_ENV", "ZCODE_PROCESS_LABEL", "ZCODE_RUNTIME_ENV", "ZAI_BUSINESS_BASE_URL", "ZAI_OAUTH_ORIGIN" };
 
 // harnesses listed in the user's machine but not yet fully integrated;
 // each gets a single, plausibly-shaped env marker that the daemon's
@@ -775,6 +796,18 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "copilot", "copilot.exe" }
     else
         &[_][]const u8{"copilot"} },
+    // zcode: NONE — Z.ai's ZCode desktop app (bundle `dev.zcode.app`)
+    // ships compiled installers only (no source repo, no license
+    // offer); verified from the product page and Z.ai's Terms of
+    // Service, so `license` is `"NONE"`. Declared last so its env
+    // markers (which leak into every child session of the app, like
+    // any desktop harness's shell env) are checked only after every
+    // other harness's markers — a cline or goose session spawned from
+    // inside ZCode still matches its own rule first.
+    .{ .name = "zcode", .label = "ZCode", .license = "NONE", .license_sources = &.{ "https://zcode.z.ai/", "https://www.z.ai/terms-of-service" }, .env_markers = &zcode_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1", "zcode.exe", "zcode-cli.exe", "zcode-host-local-1.exe" }
+    else
+        &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1" } },
 };
 
 /// env-var names whose values are safe to emit in raw.env_vars. Names NOT
@@ -794,6 +827,11 @@ const env_value_allowlist = [_][]const u8{
     "COPILOT_MODEL",           "GOOSE_WORKING_DIR",          "GOOSE_TERMINAL",
     "GOOSE_MODE",              "USERPROFILE",                "HOME",
     "APPDATA",
+    // ZCode desktop-app markers — app version/env/label and service
+    // URLs only; the values are non-secret operational facts.
+             "ZCODE_APP_VERSION",         "ZCODE_BASE_URL",
+    "ZCODE_ENV",               "ZCODE_PROCESS_LABEL",        "ZCODE_RUNTIME_ENV",
+    "ZAI_BUSINESS_BASE_URL",   "ZAI_OAUTH_ORIGIN",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {

@@ -1799,6 +1799,202 @@ fn piProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
     return provider;
 }
 
+/// map ZCode's provider keys onto agent-detect's canonical provider
+/// ids. The app's bundled coding plan records providerId
+/// `builtin:zai-start-plan` (agent-detect calls that surface `zcode`,
+/// mirroring `zai`). Custom providers (source: "custom") carry opaque
+/// per-install keys — their human name lives in
+/// `~/.zcode/v2/config.json` under `provider.<key>.name`, read by the
+/// caller. Unknown keys pass through (never-guess).
+fn zcodeProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
+    if (std.mem.indexOf(u8, provider, "zai-start-plan") != null) return a.dupe(u8, "zcode");
+    return provider;
+}
+
+/// the human name ZCode's config records for a provider key, or null.
+/// `~/.zcode/v2/config.json` → `provider.<key>.name` (e.g. the custom
+/// ollama provider's `name: "ollama"`). The caller records the config
+/// observation; this returns just the display name.
+fn zcodeProviderNameFromConfig(a: std.mem.Allocator, io: std.Io, home: []const u8, key: []const u8) ?[]const u8 {
+    if (key.len == 0) return null;
+    const cwd_dir = std.Io.Dir.cwd();
+    const path = std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home}) catch return null;
+    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 22)) catch return null;
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
+    defer parsed.deinit();
+    if (parsed.value != .object) return null;
+    const providers = parsed.value.object.get("provider") orelse return null;
+    if (providers != .object) return null;
+    const entry = providers.object.get(key) orelse return null;
+    if (entry != .object) return null;
+    const name = jstr(entry.object, "name") orelse return null;
+    if (name.len == 0) return null;
+    return a.dupe(u8, name) catch null;
+}
+
+fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    // ZCode desktop app: the app version rides the ZCODE_APP_VERSION
+    // marker into every child session's env. The active provider/model
+    // pair comes from the session stores under ~/.zcode — the
+    // per-session model-io rollout files (whose newest `main`-role
+    // record carries the exact providerId/modelId the session is
+    // running), cross-referenced by the v2 settings' selected provider
+    // family when no rollout has been written yet.
+    if (env.get("ZCODE_APP_VERSION")) |v| {
+        if (v.len > 0) d.harness_version = try a.dupe(u8, v);
+    }
+    if (home.len == 0) return;
+    const cwd_dir = std.Io.Dir.cwd();
+
+    // session side: ~/.zcode/cli/rollout/model-io-sess_*.jsonl — one
+    // append-only JSONL per session; records carry completedAt (ISO-8601,
+    // lexicographic order = chronological) and model {providerId,
+    // modelId, role}. The global winner is the main-role record with the
+    // newest completedAt across files. Reads are capped per file and in
+    // total so a machine stacked with old sessions still detects fast;
+    // values are duped before each buffer is freed (never free a slice
+    // the result aliases).
+    const rollout_dir_path = try std.fmt.allocPrint(a, "{s}/.zcode/cli/rollout", .{home});
+    const best: ?struct { completed_at: []const u8, provider: []const u8, model: []const u8, path: []const u8 } = blk: {
+        var dir = cwd_dir.openDir(io, rollout_dir_path, .{ .iterate = true }) catch break :blk null;
+        defer dir.close(io);
+        var it = dir.iterate();
+        var total_read: usize = 0;
+        var best_completed: []const u8 = "";
+        var best_provider: []const u8 = "";
+        var best_model: []const u8 = "";
+        var best_path: []const u8 = "";
+        while (it.next(io) catch null) |ent| {
+            if (ent.kind != .file) continue;
+            if (!std.mem.startsWith(u8, ent.name, "model-io-sess_")) continue;
+            if (!std.mem.endsWith(u8, ent.name, ".jsonl")) continue;
+            if (total_read > (1 << 27)) break; // 128 MiB session-store budget
+            const path = std.fmt.allocPrint(a, "{s}/{s}", .{ rollout_dir_path, ent.name }) catch continue;
+            const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 26)) catch continue; // 64 MiB per file
+            total_read += data.len;
+            var lines = std.mem.splitBackwardsScalar(u8, data, '\n');
+            var scanned: usize = 0;
+            while (lines.next()) |line| {
+                if (scanned >= 200) break; // the newest main record sits at the tail
+                scanned += 1;
+                const trimmed = std.mem.trim(u8, line, " \t\r");
+                if (trimmed.len == 0) continue;
+                const parsed = std.json.parseFromSlice(std.json.Value, a, trimmed, .{}) catch continue;
+                defer parsed.deinit();
+                if (parsed.value != .object) continue;
+                const mv = parsed.value.object.get("model") orelse continue;
+                if (mv != .object) continue;
+                const mo = mv.object;
+                const role = jstr(mo, "role") orelse continue;
+                if (!std.mem.eql(u8, role, "main")) continue;
+                const model_id = jstr(mo, "modelId") orelse continue;
+                const provider_id = jstr(mo, "providerId") orelse "";
+                const completed = jstr(parsed.value.object, "completedAt") orelse "";
+                if (best_path.len == 0 or (completed.len > 0 and std.mem.order(u8, completed, best_completed) == .gt)) {
+                    best_completed = a.dupe(u8, completed) catch continue;
+                    best_provider = a.dupe(u8, provider_id) catch continue;
+                    best_model = a.dupe(u8, model_id) catch continue;
+                    best_path = a.dupe(u8, path) catch continue;
+                }
+                break; // first (newest) main record of this file is enough
+            }
+            a.free(data);
+        }
+        if (best_path.len == 0) break :blk null;
+        break :blk .{ .completed_at = best_completed, .provider = best_provider, .model = best_model, .path = best_path };
+    };
+
+    if (best) |b| {
+        if (b.model.len > 0) {
+            if (b.provider.len > 0) {
+                // bundled-plan keys map to `zcode` directly; custom keys
+                // are opaque per-install ids — their human name lives in
+                // config.json `provider.<key>.name`, read here so the
+                // canonical provider follows the user's actual provider
+                // surface (observed: custom ollama → "ollama").
+                var canon = try zcodeProviderCanonical(a, b.provider);
+                var config_obs: ?FileObservation = null;
+                if (std.mem.eql(u8, canon, b.provider)) {
+                    if (zcodeProviderNameFromConfig(a, io, home, b.provider)) |pname| {
+                        var fields = std.ArrayList(FieldObservation).empty;
+                        defer fields.deinit(a);
+                        const dotted = try std.fmt.allocPrint(a, "provider.{s}.name", .{b.provider});
+                        try fields.append(a, .{ .dotted_path = dotted, .value = pname });
+                        const cpath = try std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home});
+                        config_obs = .{ .path = cpath, .fields = try fields.toOwnedSlice(a) };
+                        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cpath, .field = dotted, .value = pname });
+                        canon = pname;
+                    }
+                }
+                try setProvider(a, d, canon);
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = b.path, .field = "model.providerId", .value = b.provider });
+                if (config_obs) |obs| {
+                    // merge the rollout + config observations
+                    var obs_list = std.ArrayList(FileObservation).empty;
+                    try obs_list.append(a, obs);
+                    try obs_list.appendSlice(a, d.raw.config_files);
+                    d.raw.config_files = try obs_list.toOwnedSlice(a);
+                }
+            }
+            try applyModel(a, d, b.model, b.model);
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = b.path, .field = "model.modelId", .value = b.model });
+            var fields = std.ArrayList(FieldObservation).empty;
+            defer fields.deinit(a);
+            try fields.append(a, .{ .dotted_path = "model.providerId", .value = b.provider });
+            try fields.append(a, .{ .dotted_path = "model.modelId", .value = b.model });
+            if (b.completed_at.len > 0) {
+                try fields.append(a, .{ .dotted_path = "completedAt", .value = b.completed_at });
+            }
+            const obs = try a.alloc(FileObservation, 1);
+            obs[0] = .{ .path = b.path, .fields = try fields.toOwnedSlice(a) };
+            d.raw.session_files = obs;
+        }
+    }
+
+    // config side: ~/.zcode/v2/setting.json — the selected provider
+    // family. Fallback for the provider dim when no rollout record
+    // resolved one; recorded as an observation either way.
+    const settings_path = try std.fmt.allocPrint(a, "{s}/.zcode/v2/setting.json", .{home});
+    var config_fields = std.ArrayList(FieldObservation).empty;
+    defer config_fields.deinit(a);
+    if (cwd_dir.readFileAlloc(io, settings_path, a, @enumFromInt(1 << 20)) catch null) |sdata| {
+        if (std.json.parseFromSlice(std.json.Value, a, sdata, .{}) catch null) |parsed| {
+            defer parsed.deinit();
+            if (parsed.value == .object) {
+                if (parsed.value.object.get("modelProviderFamilySelectedKeys")) |fam| {
+                    if (fam == .object) {
+                        var fit = fam.object.iterator();
+                        while (fit.next()) |kv| {
+                            if (kv.value_ptr.* != .string) continue;
+                            const selected = kv.value_ptr.string;
+                            const dotted = try std.fmt.allocPrint(a, "modelProviderFamilySelectedKeys.{s}", .{kv.key_ptr.*});
+                            try config_fields.append(a, .{ .dotted_path = dotted, .value = selected });
+                            if (d.provider_name == null) {
+                                const canon = try zcodeProviderCanonical(a, selected);
+                                if (canon.len > 0) {
+                                    try setProvider(a, d, canon);
+                                    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = settings_path, .field = dotted, .value = selected });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (config_fields.items.len > 0) {
+            const fields_slice = try config_fields.toOwnedSlice(a);
+            const obs_slice = try a.alloc(FileObservation, 1);
+            obs_slice[0] = .{ .path = settings_path, .fields = fields_slice };
+            // append after any session-branch observations (rollout +
+            // provider-config), never overwrite them.
+            var obs_list = std.ArrayList(FileObservation).empty;
+            try obs_list.appendSlice(a, d.raw.config_files);
+            try obs_list.append(a, obs_slice[0]);
+            d.raw.config_files = try obs_list.toOwnedSlice(a);
+        }
+    }
+}
+
 fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = io;
     _ = home;
@@ -2434,6 +2630,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectMmx(a, io, home, d);
         } else if (std.mem.eql(u8, r.name, "pi")) {
             try detectPi(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "zcode")) {
+            try detectZcode(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "qwen")) {
             try detectQwen(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "kilo")) {
