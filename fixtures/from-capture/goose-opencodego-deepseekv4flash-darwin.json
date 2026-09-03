@@ -20,8 +20,8 @@
       "agent_id": "goose-opencodego-deepseekv4flash",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Goose \u00b7 DeepSeek V4 Flash <goose-opencodego-deepseekv4flash@local>",
-    "trailer assisted-by": "Assisted-by: Goose \u00b7 DeepSeek V4 Flash <goose-opencodego-deepseekv4flash@local>",
+    "trailer co-author": "Co-authored-by: Goose · DeepSeek V4 Flash <goose-opencodego-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Goose · DeepSeek V4 Flash <goose-opencodego-deepseekv4flash@local>",
     "raw": {
       "platform_id": "darwin",
       "harness_version": "1.48.0",
@@ -37,19 +37,15 @@
       ],
       "process_lineage": [
         {
-          "pid": 11083,
+          "pid": 90386,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 11082,
-          "name": "bash"
-        },
-        {
-          "pid": 10997,
+          "pid": 90306,
           "name": "goose"
         },
         {
-          "pid": 10822,
+          "pid": 53061,
           "name": "agent-detect-dev"
         }
       ],
@@ -89,7 +85,7 @@
     }
   },
   "meta": {
-    "updated_at": 1788165366,
+    "updated_at": 1788241368,
     "harness_version": "1.48.0",
     "prompt_invocation": [
       "goose",

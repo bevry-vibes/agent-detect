@@ -1,15 +1,32 @@
 {
+  "store_version": 4,
+  "queue": [
+    {
+      "mode": "from-identity",
+      "runner": 43116,
+      "stale": true,
+      "started_at": 1788168230
+    },
+    {
+      "mode": "from-capture",
+      "runner": 43116,
+      "stale": true,
+      "started_at": 1788169216
+    }
+  ],
   "backlog": {
+    "unknown_harnesses": [],
+    "unknown_providers": [],
+    "unknown_models": [
+      "deepseekv4flash0731"
+    ],
+    "unknown_invocations": [
+      "kilo-ollamacloud-deepseekv4flash0731-darwin"
+    ],
     "known_but_failed": {
-      "cline-clinepass-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
-      "cline-clinepass-kimik3-darwin": "capture failed (exit 1):  dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 1d 17h, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
-      "cline-clinepass-kimik3-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
-      "cline-clinepass-step37flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
-      "cline-deepseek-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Authentication Fails, Your api key: ****fEuO is invalid\n",
+      "cline-clinepass-kimik3-darwin": "capture failed (exit 1): dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 22h 37m, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
       "cline-minimax-minimaxm3-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
-      "cline-minimax-minimaxm3-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
       "cline-openrouter-deepseekv4flash-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m No cookie auth credentials found\n",
-      "cline-openrouter-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m openrouter/deepseek-v4-flash is not a valid model ID\n",
       "copilot-githubcopilot-claudesonnet5-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gemini25pro-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gpt52-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
@@ -27,7 +44,47 @@
       "crush-hyper-qwen36max-darwin": "post-check mismatch",
       "crush-hyper-qwen37flash-darwin": "post-check mismatch",
       "crush-hyper-qwen37plus-darwin": "post-check mismatch",
-      "crush-hyper-qwen3coder-darwin": "post-check mismatch",
+      "crush-hyper-qwen3coder-darwin": "capture failed — child terminated abnormally",
+      "crush-minimax-minimaxm3-darwin": "post-check mismatch",
+      "cursor-cursor-claudefable5-darwin": "capture failed (exit 1): \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/Projects/vibes/agent-detect\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-claudeopus5-darwin": "capture failed (exit 1): \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/Projects/vibes/agent-detect\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-claudesonnet5-darwin": "capture failed (exit 1): \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/Projects/vibes/agent-detect\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-gpt52-darwin": "capture failed (exit 1): \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/Projects/vibes/agent-detect\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-gpt56luna-darwin": "capture failed (exit 1): \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/Projects/vibes/agent-detect\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-gpt56sol-darwin": "capture failed (exit 1): \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/Projects/vibes/agent-detect\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "cursor-cursor-grok45-darwin": "capture failed (exit 1): \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/Projects/vibes/agent-detect\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
+      "goose-goose-claudesonnet4-darwin": "post-check mismatch",
+      "kilo-anthropic-claudesonnet4-darwin": "post-check mismatch",
+      "kilo-clinepass-glm52-darwin": "post-check mismatch",
+      "kilo-clinepass-kimik27code-darwin": "post-check mismatch",
+      "kilo-deepseek-deepseekv4flash-darwin": "post-check mismatch",
+      "kilo-deepseek-deepseekv4pro-darwin": "post-check mismatch",
+      "kilo-fireworksai-glm52-darwin": "post-check mismatch",
+      "kilo-hyper-glm52-darwin": "post-check mismatch",
+      "kilo-hyper-kimik3-darwin": "post-check mismatch",
+      "kilo-kilo-gemini35flash-darwin": "capture failed (exit 1): \u001b[0m\n> code · ~google/gemini-flash-latest\n\u001b[0m\n\u001b[91m\u001b[1mError: \u001b[0mAdd credits to continue, or switch to a free model\n",
+      "kilo-kilo-grok45-darwin": "capture failed (exit 1): \u001b[0m\n> code · ~x-ai/grok-latest\n\u001b[0m\n\u001b[91m\u001b[1mError: \u001b[0mAdd credits to continue, or switch to a free model\n",
+      "kilo-kilo-kimik3-darwin": "capture failed (exit 1): \u001b[0m\n> code · ~moonshotai/kimi-latest\n\u001b[0m\n\u001b[91m\u001b[1mError: \u001b[0mAdd credits to continue, or switch to a free model\n",
+      "kilo-minimax-minimaxm27-darwin": "post-check mismatch",
+      "kilo-minimax-minimaxm3-darwin": "post-check mismatch",
+      "kilo-ollamacloud-glm52-darwin": "post-check mismatch",
+      "kilo-ollamacloud-kimik25-darwin": "post-check mismatch",
+      "kilo-openrouter-deepseekv4flash-darwin": "post-check mismatch",
+      "kilo-zai-glm52-darwin": "post-check mismatch",
+      "kimicode-deepseek-deepseekv4flash-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-deepseek-deepseekv4pro-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-kimi-kimik3-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-minimax-minimaxm27-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-minimax-minimaxm3-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-opencodego-qwen38flash-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-openrouter-gemma431b-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-openrouter-nemotron3nano-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.rate_limit: 429 Error 429: You have reached your monthly Clinepass limit. The limit resets in 1d 16h, please try again later.\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "cline-clinepass-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-clinepass-kimik3-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-clinepass-step37flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
+      "cline-deepseek-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Authentication Fails, Your api key: ****fEuO is invalid\n",
+      "cline-minimax-minimaxm3-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
+      "cline-openrouter-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m openrouter/deepseek-v4-flash is not a valid model ID\n",
       "kilo-anthropic-claudesonnet4-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> code · glm-5.3-flash\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mYou're out of credits. Add more at https://hyper.charm.land\r\n",
       "kilo-clinepass-glm52-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> code · cline-pass/glm-5.2\r\n\u001b[0m\r\n",
       "kilo-clinepass-kimik27code-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> code · cline-pass/kimi-k2.7-code\r\n\u001b[0m\r\n",
@@ -178,11 +235,7 @@
       "cursor-cursor-claudesonnet5-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-dbDIZiu-OWVKTXHQ\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
       "cursor-cursor-claudeopus5-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-MIJ3Xog1TD6XS4bx\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
       "cursor-cursor-gpt56sol-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-0-yAnyyAZksTncrI\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n"
-    },
-    "unknown_harnesses": [],
-    "unknown_invocations": [],
-    "unknown_models": [],
-    "unknown_providers": []
+    }
   },
   "invocations": {
     "cline-clinepass-deepseekv4flash-linux": {
@@ -4858,20 +4911,5 @@
         "--version"
       ]
     }
-  },
-  "queue": [
-    {
-      "mode": "from-identity",
-      "runner": 43116,
-      "stale": true,
-      "started_at": 1788168230
-    },
-    {
-      "mode": "from-capture",
-      "runner": 43116,
-      "stale": true,
-      "started_at": 1788169216
-    }
-  ],
-  "store_version": 4
+  }
 }
