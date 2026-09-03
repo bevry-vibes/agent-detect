@@ -22,14 +22,13 @@
       "kilo-ollamacloud-deepseekv4flash-darwin"
     ],
     "known_but_failed": {
-      "cline-clinepass-kimik3-darwin": "capture failed (exit 1): dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m ClinePass limit reached\nYou have reached your monthly Clinepass limit. The limit resets in 22h 37m, please try again later.\nSwitch to Cline usage-based billing and retry with the Cline provider.\nInteractive CLI: open the model selector with /model, choose Cline, then retry.\nHeadless CLI: reru…",
-      "cline-minimax-minimaxm3-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
-      "cline-openrouter-deepseekv4flash-darwin": "capture failed (exit 1): /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m No cookie auth credentials found\n",
+      "cline-minimax-minimaxm3-darwin": "harness unavailable — version probe failed",
+      "cline-openrouter-deepseekv4flash-darwin": "harness unavailable — version probe failed",
       "copilot-githubcopilot-claudesonnet5-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gemini25pro-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-gpt52-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
       "copilot-githubcopilot-grok45-darwin": "capture failed (exit 1): error: Invalid command format.\n\nIt looks like your prompt was not quoted, so the extra words were treated as separate arguments.\nWrap the prompt in quotes, for example: copilot -p \"your prompt here\"\n\nTry 'copilot --help' for more information.\n",
-      "crush-deepseek-deepseekv4flash-darwin": "post-check mismatch",
+      "crush-deepseek-deepseekv4flash-darwin": "capture failed — child terminated abnormally",
       "crush-hyper-deepseekv4flash-darwin": "post-check mismatch",
       "crush-hyper-deepseekv4pro-darwin": "post-check mismatch",
       "crush-hyper-glm52-darwin": "post-check mismatch",

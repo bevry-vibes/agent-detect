@@ -16,14 +16,15 @@
       "model_name": "kimi-k3",
       "model_id": "kimik3",
       "model_reciprocity": "open-weight",
+      "model_license": "NOASSERTION",
       "agent_id": "cline-clinepass-kimik3",
-      "reciprocal": true,
-      "trailer": "Co-authored-by: Cline \u00b7 Kimi K3 <cline-clinepass-kimik3@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Cline \u00b7 Kimi K3 <cline-clinepass-kimik3@local>",
-    "trailer assisted-by": "Assisted-by: Cline \u00b7 Kimi K3 <cline-clinepass-kimik3@local>",
+    "trailer co-author": "Co-authored-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Kimi K3 <cline-clinepass-kimik3@local>",
     "raw": {
       "platform_id": "darwin",
+      "harness_version": "3.0.60",
       "detectable": [
         "harness",
         "provider",
@@ -36,16 +37,24 @@
       ],
       "process_lineage": [
         {
-          "pid": 86104,
+          "pid": 2769,
           "name": "agent-detect-dev"
         },
         {
-          "pid": 86093,
-          "name": "agent-detect-dev"
-        },
-        {
-          "pid": 7115,
+          "pid": 2767,
           "name": "bash"
+        },
+        {
+          "pid": 2667,
+          "name": "cline"
+        },
+        {
+          "pid": 2664,
+          "name": "node"
+        },
+        {
+          "pid": 908,
+          "name": "agent-detect-dev"
         }
       ],
       "harness-urls": [
@@ -85,7 +94,8 @@
     }
   },
   "meta": {
-    "updated_at": 1786431472,
+    "updated_at": 1788424249,
+    "harness_version": "3.0.60",
     "prompt_invocation": [
       "cline",
       "--auto-approve",
@@ -96,7 +106,6 @@
     "version_invocation": [
       "cline",
       "--version"
-    ],
-    "harness_version": "3.0.60"
+    ]
   }
 }
