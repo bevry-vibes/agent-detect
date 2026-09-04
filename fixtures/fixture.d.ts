@@ -32,11 +32,15 @@ export type Platform = "darwin" | "linux" | "windows";
 export type FixtureId = string;
 
 /**
- * The 18-field identify contract — the canonical identification
+ * The 19-field identify contract — the canonical identification
  * object (`buildCooked` output, frozen by DESIGN.md). Grouped by
  * entity: harness, provider, model, then the composed agent fields.
- * The four policy fields (harness_license, model_reciprocity,
- * provider_closed_training, provider_open_training) may be `null`.
+ * The policy fields (harness_license, harness_training,
+ * model_reciprocity, provider_closed_training,
+ * provider_open_training) may be `null`. `harness_training` is
+ * optional only during the keyset-growth transition — pre-growth
+ * fixtures regenerate via the stale-by-output sweeps; new files
+ * always carry it.
  */
 export interface Identify {
   harness_label: string;
@@ -44,6 +48,7 @@ export interface Identify {
   harness_name: string;
   harness_id: string;
   harness_license: string | null;
+  harness_training?: "training" | "not-training" | "inconclusive" | null;
   provider_label: string;
   provider_name: string;
   provider_id: string;

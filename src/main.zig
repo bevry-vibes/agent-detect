@@ -84,6 +84,10 @@ pub fn reciprocityOf(d: *const Detection) Reciprocity {
     return core.reciprocityOf(d);
 }
 
+pub fn applyHarnessTraining(d: *Detection, rule: HarnessRule) void {
+    return core.applyHarnessTraining(d, rule);
+}
+
 pub fn buildTrailerLine(a: std.mem.Allocator, d: *const Detection, keyword: []const u8) !?[]u8 {
     return core.buildTrailerLine(a, d, keyword);
 }

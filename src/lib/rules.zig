@@ -635,7 +635,7 @@ pub const rulesForProviders = [_]ProviderRule{
 // observation story is carried by `raw.env_vars` (matched env-var
 // observations) and `raw.process_lineage` (process tree at detection
 // time). The raw block intentionally does NOT duplicate that static
-// data (see DESIGN.md "18-field canonical fixture contract").
+// data (see DESIGN.md "19-field canonical fixture contract").
 
 pub const HarnessRule = struct {
     name: []const u8,
@@ -665,6 +665,28 @@ pub const HarnessRule = struct {
     /// under `raw["harness-urls"]` so a maintainer can audit the
     /// deduction from multiple angles.
     license_sources: []const []const u8,
+    /// Static, docs-derived training posture — whether the harness
+    /// trains on user conversations. Vocabulary mirrors
+    /// `ProviderRule.closed_training` plus the license NOASSERTION
+    /// keyword:
+    ///   - `null` — no data available (instance state stays `null`;
+    ///     a closed harness resolves `.unknown`)
+    ///   - `"NOASSERTION"` — researched, inconclusive (resolves to
+    ///     `"inconclusive"`; a closed harness resolves `.not_reciprocal`)
+    ///   - `"enforced"` — trains, no opt-out (resolves to `"training"`)
+    ///   - `"opt-out"` — trains by default, user can opt out
+    ///   - `"opt-in"` — off by default, user can enable
+    ///   - `"never"` — verified never trains (resolves to
+    ///     `"not-training"`)
+    /// Never-guess: values are derived from public docs, not guessed.
+    /// `"opt-in"`/`"opt-out"` alone never prove the user's instance
+    /// state — a per-harness instance read (a settings file the harness
+    /// writes) resolves that at detection time.
+    training: ?[]const u8 = null,
+    /// Array of URLs that informed the `training` value, mirroring
+    /// `license_sources`. The rule table itself is the audit surface —
+    /// these are not emitted into the raw block.
+    training_sources: []const []const u8 = &.{},
     env_markers: []const []const u8,
     binary_names: []const []const u8, // executable names for ancestry matching, probing, launching, and the daemon guard (bare stems first, then platform extensions)
     /// extra alias display-strings not covered by `name`/`label`/
@@ -799,7 +821,11 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // zcode: NONE — Z.ai's ZCode desktop app (bundle `dev.zcode.app`)
     // ships compiled installers only (no source repo, no license
     // offer); verified from the product page and Z.ai's Terms of
-    // Service, so `license` is `"NONE"`. Declared last so its env
+    // Service, so `license` is `"NONE"`. `training` stays `null` until
+    // a public doc sources the "Improve experience" posture — the
+    // instance read in `detectZcode` (`optimizeAgentExperienceEnabled`
+    // in `~/.zcode/v2/setting.json`) resolves the per-user state at
+    // detection time regardless. Declared last so its env
     // markers (which leak into every child session of the app, like
     // any desktop harness's shell env) are checked only after every
     // other harness's markers — a cline or goose session spawned from
@@ -844,8 +870,10 @@ pub fn envValueAllowed(name: []const u8) bool {
 /// SPDX license keywords with special reciprocity semantics (see the
 /// license table in CONTRIBUTING.md "add a new harness rule"):
 ///   - `"NONE"` — concluded: no license present (verified
-///     proprietary/closed). Forces `.not_reciprocal` even when the
-///     model/provider dims are null.
+///     proprietary/closed). The harness-training conjunct decides the
+///     harness dim: verified `"not-training"` falls through to the
+///     model/provider conjuncts; `"training"`/`"inconclusive"` is
+///     `.not_reciprocal`; `null` is `.unknown`.
 ///   - `"NOASSERTION"` — attempted, inconclusive. Treated like `null`
 ///     (`.unknown`).
 pub const license_none = "NONE";

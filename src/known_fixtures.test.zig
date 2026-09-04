@@ -80,7 +80,7 @@ fn readIndexParsed(a: std.mem.Allocator) !std.json.Value {
     return parsed.value;
 }
 
-/// The 18 canonical `identify` fields, in emission order. No `trailer`
+/// The 19 canonical `identify` fields, in emission order. No `trailer`
 /// key (the root trailer and the cooked trailer are gone).
 const identify_keys = [_][]const u8{
     "harness_label", // harness group
@@ -88,6 +88,7 @@ const identify_keys = [_][]const u8{
     "harness_name",
     "harness_id",
     "harness_license",
+    "harness_training",
     "provider_label", // provider group
     "provider_name",
     "provider_id",
@@ -247,7 +248,7 @@ fn isLegacyRequiredMeta(stem: []const u8) bool {
     return false;
 }
 
-test "fixtures: identify has all 18 grouped keys in emission order, no trailer key" {
+test "fixtures: identify has all 19 grouped keys in emission order, no trailer key" {
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -262,6 +263,11 @@ test "fixtures: identify has all 18 grouped keys in emission order, no trailer k
         const cooked = identify.object;
         for (identify_keys, 0..) |key, i| {
             if (!cooked.contains(key)) {
+                // Pre-keyset-growth fixtures may lack the newer key —
+                // the queued regen sweeps bring older files up to the
+                // full set (same transition as the raw-schema keyset
+                // test). Once the sweeps complete, drop this exemption.
+                if (std.mem.eql(u8, key, "harness_training")) continue;
                 std.debug.print("fixture {s} missing identify key {s} at index {d}\n", .{ stem, key, i });
                 return error.MissingCookedKey;
             }
