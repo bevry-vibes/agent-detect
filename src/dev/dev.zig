@@ -2506,6 +2506,12 @@ pub const dev = if (build_options.dev) struct {
             // pid as a stand-in — the runner field is informational.
             return @intCast(std.os.windows.GetCurrentProcessId());
         }
+        if (builtin.os.tag == .linux) {
+            // Linux has the syscall wrapper in std.os.linux — no libc
+            // linkage needed (the released binary is static musl; the
+            // native dev build links no libc).
+            return @intCast(std.os.linux.getppid());
+        }
         return @intCast(std.c.getppid());
     }
 

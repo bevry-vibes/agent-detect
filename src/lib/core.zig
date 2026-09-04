@@ -517,11 +517,15 @@ fn ancestorsLinux(a: std.mem.Allocator, io: std.Io) !Ancestry {
     var pid: u32 = @intCast(std.os.linux.getpid());
     while (pid > 1) {
         try pids.append(a, pid);
+        // `/proc` pseudo-files report st_size = 0, so a size-hinted read
+        // (`Dir.readFileAlloc` — a bare reader) hits immediate EOF and
+        // returns nothing on Linux. Use readProcFile (explicitly
+        // buffered reader) instead.
         const comm_path = try std.fmt.allocPrint(a, "/proc/{d}/comm", .{pid});
-        const comm = cwd_dir.readFileAlloc(io, comm_path, a, @enumFromInt(4096)) catch "";
+        const comm = readProcFile(a, io, cwd_dir, comm_path) catch "";
         try names.append(a, try std.ascii.allocLowerString(a, std.mem.trim(u8, comm, " \r\n")));
-        const path = try std.fmt.allocPrint(a, "/proc/{d}/stat", .{pid});
-        const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch break;
+        const stat_path = try std.fmt.allocPrint(a, "/proc/{d}/stat", .{pid});
+        const data = readProcFile(a, io, cwd_dir, stat_path) catch break;
         const close = std.mem.findScalarLast(u8, data, ')') orelse break;
         var tok = std.mem.tokenizeScalar(u8, data[close + 2 ..], ' ');
         _ = tok.next(); // state
@@ -529,6 +533,20 @@ fn ancestorsLinux(a: std.mem.Allocator, io: std.Io) !Ancestry {
         pid = std.fmt.parseInt(u32, ppid, 10) catch break;
     }
     return .{ .pids = try pids.toOwnedSlice(a), .names = try names.toOwnedSlice(a) };
+}
+
+/// Read a `/proc` pseudo-file fully. These files report `st_size = 0`,
+/// so `Dir.readFileAlloc` (a bare reader trusting the size hint) sees
+/// immediate EOF and returns empty on Linux — open the file and read
+/// through an explicitly-buffered reader instead.
+fn readProcFile(a: std.mem.Allocator, io: std.Io, dir: std.Io.Dir, path: []const u8) ![]const u8 {
+    var file = try dir.openFile(io, path, .{});
+    defer file.close(io);
+    var buffer: [4096]u8 = undefined;
+    var reader = file.reader(io, &buffer);
+    const out = try a.alloc(u8, buffer.len);
+    const n = reader.interface.readSliceShort(out) catch return error.FilesystemIoError;
+    return out[0..n];
 }
 
 /// Walk process ancestors on macOS. For each pid, reads the executable

@@ -121,6 +121,13 @@ with `zig 0.16.0`.
 - Tests run in `ReleaseSmall` (see `build.zig`) — a test that only
   passes in Debug modes will bite you; keep asserts structural
   (expect/print), not timing-based.
+- **`readFileAlloc` returns empty for `/proc` pseudo-files on Linux.**
+  `/proc/<pid>/comm` / `stat` report `st_size = 0`, and
+  `Dir.readFileAlloc`'s bare reader trusts the size hint — immediate
+  EOF, zero bytes (silently). Open the file and read through an
+  explicitly-buffered reader instead (`file.reader(io, &buf)` then
+  `readSliceShort`) — see `readProcFile` in `src/lib/core.zig`.
+- **Never free an arena slice that a returned value aliases.** The
 - **Never free an arena slice that a returned value aliases.** The
   arena free-list only recycles the most-recent allocation; freeing a
   slice that a returned `std.json.Value` (or a `?[]const u8` view into
