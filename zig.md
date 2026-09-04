@@ -1,88 +1,25 @@
 # zig.md
 
-Zig 0.16 working notes for this repo (installed via scoop); AGENTS.md
-points here. Everything here is verified against the stdlib shipped
-with `zig 0.16.0`.
+Local application of the bevry-vibes skills [zig.md](https://github.com/bevry-vibes/skills/blob/main/zig.md) —
+see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
 
-## Build / test loop
+## this project's tweaks
 
-- `zig build` — released binary (`zig-out/bin/agent-detect.exe`,
+### Build / test loop
+
+- `zig build` — released binary (`zig-out/bin/agent-detect`,
   `dev=false`).
-- `zig build dev` — maintainer binary (`zig-out/bin/agent-detect-dev.exe`,
+- `zig build dev` — maintainer binary (`zig-out/bin/agent-detect-dev`,
   `dev=true`, `fixtures` namespace + `raw` action).
 - `zig build test` — runs every `src/*_test.zig` / `src/*test*.zig`
   file listed in `build.zig`.
-- `zig env` → dumps the environment; `std_dir` gives the stdlib path to
-  grep for APIs (e.g. `Get-Content ...\lib\std\Io\Dir.zig | findstr /n
-  "fn rename"`).
+- The released binary still shells out to `sqlite3 -json -batch` for
+  its read-only session-store reads (`core.kiloSqliteJson`,
+  kilo/opencode/copilot session DBs only); the CLI behavior patterns
+  live in the upstream powershell skill. The dev fixtures store is the
+  local `fixtures/index.json` — no sqlite.
 
-## APIs that differ from older Zig — verified in 0.16
-
-- **No `std.fmt.fmtSliceHexLower`.** Use
-  `std.fmt.bytesToHex(bytes, .lower)` (returns `[len*2]u8`; `.upper`
-  also exists).
-- **No `std.fs.path.absolute`.** `std.fs.path.resolve` and friends exist;
-  for a replace-existing rename use `std.Io.Dir.rename` with relative
-  sub-paths (no absolute paths needed):
-  ```zig
-  std.Io.Dir.rename(std.Io.Dir.cwd(), tmp_sub, std.Io.Dir.cwd(), final_sub, io) catch return error.FilesystemIoError;
-  ```
-  `Dir.renameAbsolute` requires absolute paths on both sides. The docs
-  guarantee rename **replaces an existing target** — that's the atomic
-  temp-write + rename pattern for fixture files.
-- **`std.Io.Dir.cwd().readFileAlloc(io, sub, a, @enumFromInt(1 << 24))`**
-  — the max-bytes argument is an `enum` in 0.16 (`@enumFromInt(...)`),
-  not an integer.
-- **`std.process.executablePath(io, &buf)`** — takes a
-  `std.fs.max_path_bytes` buffer and returns the length (0 on failure),
-  not the slice.
-- **`std.process.spawn(io, .{ .argv = ..., .environ_map = ...,
-  .stdout = .pipe, .stderr = .pipe })`** — child's stdout/stderr are
-  `?Io.File`; wire a reader with `file.reader(io, &buf)`. Spawn's argv
-  wants a slice of `[]const u8`, not a sentinel-terminated pointer.
-- **`std.Io.sleep(io, .{ .nanoseconds = ... }, .boot)`** — sleep takes a
-  clock (use `.boot` for elapsed-time semantics).
-- **Timestamps:** `std.Io.Clock.Timestamp.now(io, .boot)` /
-  `.real`; `ts.raw.nanoseconds` (i96) or `ts.raw.toSeconds()`.
-  `Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = ... }, .clock =
-  .boot })` builds future deadlines. `std.time.ns_per_s` is the handy
-  scalar.
-- **`std.crypto.hash.Blake3.hash(bytes, &digest, .{})`** — `digest` is
-  `[32]u8`; no packages needed.
-- **`std.json.Stringify.valueAlloc(a, value, .{ .whitespace =
-  .indent_2 })`** — deterministic pretty serialization. std.json
-  **preserves object key insertion order** on parse, so
-  re-serializing a parsed object reproduces canonical bytes — which is
-  what keeps committed-store diffs stable across writers.
-- **Doc comments (`///`) must immediately precede a declaration.**
-  A stray `///` where a statement is expected ("expected statement,
-  found 'a document comment'") usually means the comment got orphaned
-  after a splice/insert.
-- **`inline for` cannot contain runtime `continue`.** "comptime control
-  flow inside runtime block" — if you need `orelse continue` inside an
-  `inline for`, switch to a plain `for`.
-- **`Dir.iterate()` iterates that dir's immediate children only.** To
-  walk a subdirectory you must open it first:
-  `std.Io.Dir.cwd().openDir(io, "fixtures", .{ .iterate = true })` and
-  iterate *that*; `cwd().iterate()` will never yield
-  `fixtures/*.json` entries.
-- **Shelling out to `sqlite3 -json -batch <db> <sql>`** — still used by
-  the *released* binary's read-only session-store reads
-  (`core.kiloSqliteJson`, kilo/opencode/copilot session DBs only).
-  Every result row returns as a JSON array line (even a scalar `PRAGMA`
-  setter emits `[{"timeout":N}]`, discardable). The dev fixtures store
-  no longer uses sqlite at all — it is the local `fixtures/index.json`.
-- **`std.Io.File.lock` / `tryLock`** — `file.lock(io, .exclusive)` /
-  `file.tryLock(io, .exclusive)` (returns `bool`; `LockError`).
-  Kernel-managed: the lock releases when the process exits/crashes —
-  no stale-lock heuristics. The dev store locks
-  `fixtures/index.json.lock` (lock the lock file, never the data file),
-  retries `tryLock` every 50ms on a ~5s budget, then mutates the
-  parsed tree and writes atomically (serialize → `index.json.tmp` →
-  `rename` over `index.json` — rename replaces an existing target).
-  Readers take no lock: temp+rename makes visibility atomic.
-
-## Patterns this repo uses
+### Patterns this repo uses
 
 - `optStringValue(a, opt)` — render optional strings as a JSON string or
   `null`.
@@ -113,30 +50,18 @@ with `zig 0.16.0`.
   child-stdout/stderr drain loop (stderr bounded at 64 KiB); callers
   still own `child.wait`.
 
-## Gotchas
+### Gotchas
 
 - Building the dev binary needs its own `build_options` module with
   `dev=true` hardcoded (`build.zig`), separate from the CLI `-Ddev`
   flag plumbing.
-- Tests run in `ReleaseSmall` (see `build.zig`) — a test that only
-  passes in Debug modes will bite you; keep asserts structural
-  (expect/print), not timing-based.
-- **`readFileAlloc` returns empty for `/proc` pseudo-files on Linux.**
-  `/proc/<pid>/comm` / `stat` report `st_size = 0`, and
-  `Dir.readFileAlloc`'s bare reader trusts the size hint — immediate
-  EOF, zero bytes (silently). Open the file and read through an
-  explicitly-buffered reader instead (`file.reader(io, &buf)` then
-  `readSliceShort`) — see `readProcFile` in `src/lib/core.zig`.
-- **Never free an arena slice that a returned value aliases.** The
-- **Never free an arena slice that a returned value aliases.** The
-  arena free-list only recycles the most-recent allocation; freeing a
-  slice that a returned `std.json.Value` (or a `?[]const u8` view into
-  the parsed tree) aliases lets the caller's next allocations reclaim
-  and clobber the bytes mid-use. `readChannelObject` / `indexLoad`
-  callers must not free the parsed buffer while derived values live.
-- **Mutate `std.json` maps through pointers, not copies.** `ObjectMap`
-  stores its internal header pointer by value — `map.get(key)` returns
-  a *copy*. Mutating that copy (e.g. `swapRemove`) updates the copy's
-  pointer field while the stored map still points at the freed header
-  (dangling read on the next `get`). Use `getPtr(key)` for mutations
-  (see `errorsClearPure` in `src/dev/dev.zig`).
+- Tests run in `ReleaseSmall` (see `build.zig`) — keep asserts
+  structural (expect/print), not timing-based.
+- The `/proc` pseudo-file read rule lives upstream; this repo's
+  implementation is `readProcFile` in `src/lib/core.zig` (buffered
+  reader, `readSliceShort`).
+- The arena-aliasing free rule lives upstream; here it bites
+  `readChannelObject` / `indexLoad` callers — do not free the parsed
+  buffer while derived values live.
+- The json-map `getPtr` mutation rule lives upstream; see
+  `errorsClearPure` in `src/dev/dev.zig` for this repo's use.
