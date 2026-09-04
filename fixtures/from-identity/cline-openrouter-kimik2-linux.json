@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Kimi K2",
+      "model_short_title": null,
+      "model_name": "kimi-k2",
+      "model_id": "kimik2",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "cline-openrouter-kimik2",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Kimi K2 <cline-openrouter-kimik2@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Kimi K2 <cline-openrouter-kimik2@local>"
+  },
+  "meta": {
+    "updated_at": 1788524678
+  }
+}

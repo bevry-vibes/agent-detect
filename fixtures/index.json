@@ -333,7 +333,14 @@
       "reasonix-minimax-minimaxm3-darwin": "post-check mismatch",
       "vibe-minimax-minimaxm3-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
       "vibe-mistral-mistrallargelatest-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
-      "vibe-mistral-mistralsmalllatest-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n"
+      "vibe-mistral-mistralsmalllatest-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
+      "cline-clinepass-deepseekv4flash-linux": "harness unavailable — version probe failed",
+      "cline-clinepass-glm53flash-linux": "harness unavailable — version probe failed",
+      "cline-clinepass-kimik3-linux": "harness unavailable — version probe failed",
+      "cline-clinepass-step37flash-linux": "harness unavailable — version probe failed",
+      "cline-deepseek-deepseekv4flash-linux": "harness unavailable — version probe failed",
+      "cline-minimax-minimaxm3-linux": "harness unavailable — version probe failed",
+      "cline-openrouter-deepseekv4flash-linux": "harness unavailable — version probe failed"
     }
   },
   "invocations": {
@@ -395,6 +402,19 @@
         "--auto-approve",
         "--provider=cline-pass",
         "--model=cline-pass/kimi-k3",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline",
+        "--version"
+      ]
+    },
+    "cline-clinepass-glm53flash-linux": {
+      "prompt_invocation": [
+        "cline",
+        "--auto-approve",
+        "--provider=cline-pass",
+        "--model=cline-pass/glm-5.3-flash",
         "<prompt>"
       ],
       "version_invocation": [

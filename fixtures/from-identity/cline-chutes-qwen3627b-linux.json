@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Chutes",
+      "provider_name": "chutes",
+      "provider_id": "chutes",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3.6 27B",
+      "model_short_title": null,
+      "model_name": "qwen3.6-27b",
+      "model_id": "qwen3627b",
+      "model_reciprocity": "open-weight",
+      "model_license": "Apache-2.0",
+      "agent_id": "cline-chutes-qwen3627b",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Qwen3.6 27B <cline-chutes-qwen3627b@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Qwen3.6 27B <cline-chutes-qwen3627b@local>"
+  },
+  "meta": {
+    "updated_at": 1788524160
+  }
+}

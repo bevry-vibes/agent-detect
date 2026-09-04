@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "Charm Hyper",
+      "provider_name": "hyper",
+      "provider_id": "hyper",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "GLM 5.2",
+      "model_short_title": null,
+      "model_name": "glm-5.2",
+      "model_id": "glm52",
+      "model_reciprocity": "open-source",
+      "model_license": "MIT",
+      "agent_id": "cline-hyper-glm52",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · GLM 5.2 <cline-hyper-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Cline · GLM 5.2 <cline-hyper-glm52@local>"
+  },
+  "meta": {
+    "updated_at": 1788524272
+  }
+}

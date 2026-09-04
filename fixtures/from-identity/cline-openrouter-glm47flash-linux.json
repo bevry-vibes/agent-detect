@@ -1,0 +1,29 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "opt-in",
+      "model_label": "Z.ai GLM 4.7 Flash",
+      "model_short_title": null,
+      "model_name": "glm-4.7-flash",
+      "model_id": "glm47flash",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "cline-openrouter-glm47flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Z.ai GLM 4.7 Flash <cline-openrouter-glm47flash@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Z.ai GLM 4.7 Flash <cline-openrouter-glm47flash@local>"
+  },
+  "meta": {
+    "updated_at": 1788524585
+  }
+}

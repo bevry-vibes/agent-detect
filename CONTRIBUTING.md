@@ -526,6 +526,68 @@ launchctl list | rg com.agent-detect.fixtures                             # stat
 Headless `ssh` sessions can't `bootstrap` (not attached to the GUI
 session — use `tmux`/`screen` there). The sudo-free equivalents are
 `systemd --user` on Linux and Task Scheduler / NSSM on Windows.
+### daemon launch: Linux systemd user unit (no sudo)
+
+The `systemd --user` equivalent of the LaunchAgent bootstrap: no root,
+survives the terminal closing, respawns on crash. Write the unit to
+`~/.config/systemd/user/agent-detect-drain.service` (substitute your
+repo path and harness bin dirs):
+
+```ini
+[Unit]
+Description=agent-detect fixtures drain daemon
+
+[Service]
+WorkingDirectory=/abs/path/to/agent-detect
+ExecStart=/abs/path/to/zig-out/bin/agent-detect-dev fixtures daemon --write-log
+Environment=PATH=/home/YOU/.npm-global/bin:/usr/local/bin:/usr/bin
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
+`Environment=PATH` is **required** for `from-capture` jobs: a user unit
+does not inherit your shell PATH, and the daemon spawns harness binaries
+by bare name (e.g. `cline`) — without it every real capture fails with
+`spawn failed: FileNotFound`. Include the directories holding your
+harness binaries (npm-global `bin/`, cargo `bin/`, etc.). The unit runs
+with a clean ancestry (the parent is systemd), which satisfies the
+user-only daemon guard.
+
+```sh
+systemctl --user daemon-reload                        # after writing/editing the unit
+systemctl --user start agent-detect-drain.service     # start
+systemctl --user stop agent-detect-drain.service      # stop
+systemctl --user status agent-detect-drain.service    # status
+journalctl --user -u agent-detect-drain.service -f    # follow output
+```
+
+- **One daemon per host** still applies — stop any terminal/scheduled
+  instance before starting the unit.
+- **npm-global harnesses and PATH.** npm-installed harnesses (e.g.
+  `cline`) often live outside the shell config's PATH — the npm prefix
+  dir (commonly `~/.npm-global/bin`) is not added by npm itself. A
+  terminal-run daemon inherits your interactive PATH, but if the
+  harness only resolves in the session that installed it, prefix it
+  explicitly when starting the daemon:
+  `PATH="$HOME/.npm-global/bin:$PATH" ./zig-out/bin/agent-detect-dev fixtures daemon --write-log`
+  Symptom when missing: every `from-capture` candidate fails within
+  milliseconds with `harness unavailable — version probe failed` (the
+  spawn can't resolve the binary), while `from-identity` work is
+  unaffected. Fix the PATH first, then re-assert the entry
+  (`fixtures queue --harness=<h> --platform=linux`) and rerun the
+  daemon — the next success clears the `known_but_failed` record.
+- The `--write-log` heartbeat lands in `fixtures/daemon.log` as on the
+  other platforms; `journalctl` carries the same lines.
+- On headless (ssh-only) hosts, `loginctl enable-linger "$USER"` keeps
+  the user manager (and the daemon) alive after logout; otherwise the
+  unit stops at end-of-session.
+- While the unit holds `agent-detect-dev` open, `zig build` (whose
+  default step installs the dev binary) fails with `AccessDenied` /
+  `ETXTBSY` — stop the daemon before rebuilding.
+
+### daemon launch: Windows scheduled task (no admin)
 
 ### daemon launch: Windows scheduled task (no admin)
 
