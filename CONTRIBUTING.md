@@ -13,7 +13,7 @@ self-contained `{ outputs, meta }` envelope (normative schema:
 `fixtures/fixture.d.ts`). The **directory IS the channel**: the
 filename stem is the `<harness>-<provider>-<model>-<platform>` fixture
 id (e.g. `cline-clinepass-kimik3-darwin`), and `outputs` carries
-`identify` (the 18-field canonical object) plus `"trailer co-author"`
+`identify` (the 20-field canonical object) plus `"trailer co-author"`
 and `"trailer assisted-by"` — for from-capture also `raw`. `meta`
 carries the ledger (`updated_at`, and for captures `harness_version`)
 and the invocation of record
@@ -665,6 +665,9 @@ Add a `HarnessRule` entry to the `rulesForHarnesses` array in
 | `label`           | the human-readable brand form (e.g. `Kimi Code`); used to derive `harness_id`                              |
 | `license`         | SPDX keyword per the table below                                                                           |
 | `license_sources` | two URLs: the project page + the LICENSE file linked from it. `null`/`NOASSERTION` license keeps this empty |
+| `open_training`   | optional, closed-source harnesses only: the docs-derived open-model training posture per the tables below  |
+| `closed_training` | optional, closed-source harnesses only: the docs-derived closed-model training posture per the tables below |
+| `training_sources`| URLs that informed the training postures, mirroring `license_sources` (one array covers both fields). Empty when both postures are `null` |
 | `env_markers`     | env-var names unique to this harness (one or more). Run the harness' `--help` and inspect its config to discover |
 | `binary_names`    | the executable names for ancestry matching, probing, launching, and the daemon guard — written inline as a platform ternary: bare stems first, then platform extensions (`.cmd`/`.ps1` only for npm-shimmed harnesses; `.exe`-only otherwise) |
 | `variations`      | optional extra alias display-strings not covered by `name`/`label`/`short_title` (e.g. `"Kilo Code CLI"`). Keep minimal — see the alias conventions below |
@@ -682,6 +685,49 @@ each value (exit 9/10) are DESIGN.md's exit-status registry:
 Example: `cursor` and `copilot` are closed-source harnesses verified as
 no-license, so their rules carry `license = "NONE"` with their
 project/terms URLs as `license_sources`.
+
+`open_training` / `closed_training` semantics — the provider pair
+mirrored onto the harness: whether the harness uses user
+conversations to train open / closed models. Never-guess: values are
+derived from public docs, not guessed; `null` until sourced. The
+reciprocity conjunct consumes only the *instance-resolved*
+`harness_closed_training` (`harness_open_training` is informational,
+exactly as `provider_open_training` is), resolved per field at
+detection time in this order:
+
+1. an instance read wins — the per-harness detector reads a settings
+   file the harness itself writes (first signal: zcode's
+   `optimizeAgentExperienceEnabled` in `~/.zcode/v2/setting.json` —
+   `false` → both fields `"never"` (conversations verified unused);
+   `true` → open `"enforced"` (training actively happens on the GLM
+   line) + closed `"NOASSERTION"` (whether any closed model is
+   involved is undeterminable — Z.ai serves one closed model, the
+   API-only GLM-ASR-2512 — the fail-safe); key absent → both
+   `"NOASSERTION"`; file missing → untouched, `null`);
+2. the static fallback copies the rule's posture verbatim per field
+   (the vocabulary is shared, so no remapping).
+
+| value            | meaning                                                    |
+| ---------------- | ---------------------------------------------------------- |
+| `null`           | no data available                                          |
+| `"NOASSERTION"`  | researched, inconclusive (instance: looked, no clear answer) |
+| `"enforced"`     | trains, no opt-out exists (instance: training actively on)  |
+| `"opt-out"`      | trains by default, the user can opt out                     |
+| `"opt-in"`       | off by default, the user can enable                         |
+| `"never"`        | verified never trains (instance: verified not training)     |
+
+A closed harness (`license = "NONE"`) passes the harness conjunct on
+`never`/`opt-in`/`opt-out` — capability-based, exactly as
+`provider_closed_training` is treated; `enforced`/`"NOASSERTION"`
+fail it (exit 10); `null` is data-incomplete (exit 9 — the nudge to
+correct the data). Open-source harnesses are unaffected — the
+conjunct is gated to `"NONE"` licenses.
+
+Post-plan follow-up (user-noted): evaluate `open_training_config` /
+`closed_training_config` fields to isolate training *policy* (the
+docs-derived posture) from *active training config* (the
+instance-determined state); today's design merges both into one field
+per dim. Revisit once live captures exercise the merged fields.
 
 After adding the rule:
 

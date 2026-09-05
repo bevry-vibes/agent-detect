@@ -76,7 +76,7 @@ files, each a whole self-contained `{ outputs, meta }` envelope
 
 - `fixtures/from-identity/<id>.json` — the declared identification
   channel, written by the from-identity worker (zero tokens):
-  `outputs` = `identify` (the 18-field canonical object:
+  `outputs` = `identify` (the 20-field canonical object:
   `harness_id`, `provider_id`, `model_id`, `agent_id`, policy fields)
   plus `"trailer co-author"` and `"trailer assisted-by"`; `meta` =
   `updated_at`.
@@ -445,7 +445,7 @@ reflects the recipe (up to all three dims).
   single-line error
   and writes no fixture. A partial detection is bad data, not a
   placeholder. The test suite (`src/known_fixtures.test.zig`)
-  enforces the 18-field identify contract (and that every committed
+  enforces the 20-field identify contract (and that every committed
   fixture carries a `from-identity` channel), so a "backfill to make
   tests pass" approach can't slip in.
 
@@ -506,15 +506,22 @@ Examples per group:
   resolved strict-slug id or `null`.
 - **9** — `check-reciprocal` with identity resolved but
   `harness_license`/`model_reciprocity`/`provider_closed_training`
-  null (e.g. crush/hyper/qwen3.7-plus), or `harness_license` is
-  `"NOASSERTION"` (attempted, inconclusive) → `agent (harness,
-  provider, model) data incomplete to make a determination`.
+  null (e.g. crush/hyper/qwen3.7-plus), `harness_license` is
+  `"NOASSERTION"` (attempted, inconclusive), or a closed harness
+  (`"NONE"`) whose `harness_closed_training` is undetermined (null) →
+  `agent (harness, provider, model) data incomplete to make a
+  determination`. Like the null provider/model dims, the
+  data-incomplete nudge encourages correcting the data (make the
+  instance state readable — e.g. zcode's "Improve experience" toggle —
+  or get the posture sourced) rather than failing silently.
 - **10** — `check-reciprocal` for kilo/anthropic/claude-sonnet-4 (closed
-  model), or any harness whose `harness_license` is `"NONE"` (verified
-  proprietary/closed, e.g. cursor/copilot) → stderr `agent (harness,
+  model), or a closed harness (`harness_license` `"NONE"`) whose
+  `harness_closed_training` is `"enforced"` (verified training) or
+  `"NOASSERTION"` (looked, no clear answer) → stderr `agent (harness,
   provider, model) data complete and requirement failed`, stdout
-  `not reciprocal`. `NONE` forces `.not_reciprocal` even when the
-  model/provider dims are unverified.
+  `not reciprocal`. A `"NONE"` harness with a passing
+  closed-training value (`never`/`opt-in`/`opt-out`) falls through to
+  the model/provider conjuncts like any licensed harness.
 - **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.)
   → `error.OutOfMemory`.
 - **12** — dev `fixtures *` where `fixtures/index.json` is corrupt or
@@ -596,7 +603,7 @@ names the shipped behavior and why it was chosen.
    (comptime-gated) in `src/dev/dev.zig` drops that code at
     compile time. Released actions: `identify`, `trailer co-author`,
     `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
-9. **The 18-field canonical identify contract.** Test-enforced
+9. **The 20-field canonical identify contract.** Test-enforced
    (see `src/known_fixtures.test.zig`); the raw block is shapeless
    (source-grouped keys, embedded as the from-capture file's `outputs.raw`),
    and harness rule *static* data
@@ -723,6 +730,27 @@ re-litigating scope.
   paid MiniMax subscription; anything beyond that is contributor scope
   via CONTRIBUTING.md. New free providers: OpenRouter, Groq, Cerebras,
   Z.ai, Kimi/Moonshot (training policies null until verified).
+- **Harness-training policy:** a closed-source harness (`license`
+  `"NONE"`) is gated by `harness_closed_training` — the provider
+  conjunct mirrored onto the harness dim. The two fields
+  (`harness_open_training` / `harness_closed_training`) share the
+  provider vocabulary (`enforced | opt-in | opt-out | never |
+  NOASSERTION | null`), resolved per field at detection time: an
+  instance read wins (first signal: zcode's
+  `optimizeAgentExperienceEnabled` in `~/.zcode/v2/setting.json` —
+  toggle off → `never`/`never`; toggle on → open `enforced` + closed
+  `NOASSERTION` fail-safe, since whether any closed model is involved
+  is undeterminable — Z.ai serves one closed model, the API-only
+  GLM-ASR-2512; key absent → `NOASSERTION`/`NOASSERTION`; file
+  missing → untouched), else the rule's docs-derived posture copies
+  verbatim (never-guess). The conjunct is capability-based exactly as
+  providers are treated: `never`/`opt-in`/`opt-out` passes,
+  `enforced`/`NOASSERTION` fails (exit 10), null is data-incomplete
+  (exit 9 — the nudge to correct the data). `harness_open_training`
+  is informational only — open-model training never blocks
+  reciprocity, exactly as `provider_open_training` is. Open-source
+  harnesses are unaffected — the conjunct is gated to `"NONE"`
+  licenses.
 - **Paid default:** MiniMax subscription. Subscriptions are preferred
   over pay-as-you-go (DeepSeek paid API is secondary; DeepSeek free
   combos use the free tier).

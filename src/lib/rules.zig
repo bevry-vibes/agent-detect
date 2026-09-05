@@ -635,7 +635,7 @@ pub const rulesForProviders = [_]ProviderRule{
 // observation story is carried by `raw.env_vars` (matched env-var
 // observations) and `raw.process_lineage` (process tree at detection
 // time). The raw block intentionally does NOT duplicate that static
-// data (see DESIGN.md "19-field canonical fixture contract").
+// data (see DESIGN.md "20-field canonical fixture contract").
 
 pub const HarnessRule = struct {
     name: []const u8,
@@ -665,27 +665,30 @@ pub const HarnessRule = struct {
     /// under `raw["harness-urls"]` so a maintainer can audit the
     /// deduction from multiple angles.
     license_sources: []const []const u8,
-    /// Static, docs-derived training posture — whether the harness
-    /// trains on user conversations. Vocabulary mirrors
-    /// `ProviderRule.closed_training` plus the license NOASSERTION
-    /// keyword:
+    /// Static, docs-derived training postures — whether the harness
+    /// uses user conversations to train open / closed models,
+    /// mirroring `ProviderRule.closed_training`/`open_training` plus
+    /// the license NOASSERTION keyword:
     ///   - `null` — no data available (instance state stays `null`;
     ///     a closed harness resolves `.unknown`)
-    ///   - `"NOASSERTION"` — researched, inconclusive (resolves to
-    ///     `"inconclusive"`; a closed harness resolves `.not_reciprocal`)
-    ///   - `"enforced"` — trains, no opt-out (resolves to `"training"`)
-    ///   - `"opt-out"` — trains by default, user can opt out
-    ///   - `"opt-in"` — off by default, user can enable
-    ///   - `"never"` — verified never trains (resolves to
-    ///     `"not-training"`)
+    ///   - `"NOASSERTION"` — researched, inconclusive (a closed harness
+    ///     resolves `.not_reciprocal`)
+    ///   - `"enforced"` — trains, no opt-out exists
+    ///   - `"opt-out"` — trains by default, the user can opt out
+    ///   - `"opt-in"` — off by default, the user can enable
+    ///   - `"never"` — verified never trains
     /// Never-guess: values are derived from public docs, not guessed.
-    /// `"opt-in"`/`"opt-out"` alone never prove the user's instance
-    /// state — a per-harness instance read (a settings file the harness
-    /// writes) resolves that at detection time.
-    training: ?[]const u8 = null,
-    /// Array of URLs that informed the `training` value, mirroring
-    /// `license_sources`. The rule table itself is the audit surface —
-    /// these are not emitted into the raw block.
+    /// The reciprocity conjunct consumes only `closed_training`
+    /// (open-model training never blocks reciprocity, exactly as the
+    /// provider conjunct treats `provider_closed_training`); an
+    /// instance read (a settings file the harness writes) resolves the
+    /// per-user state at detection time and wins over the posture.
+    open_training: ?[]const u8 = null,
+    closed_training: ?[]const u8 = null,
+    /// Array of URLs that informed the training postures, mirroring
+    /// `license_sources` (one array covers both fields, the
+    /// ProviderRule `sources` precedent). The rule table itself is
+    /// the audit surface — these are not emitted into the raw block.
     training_sources: []const []const u8 = &.{},
     env_markers: []const []const u8,
     binary_names: []const []const u8, // executable names for ancestry matching, probing, launching, and the daemon guard (bare stems first, then platform extensions)
@@ -806,26 +809,50 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // cursor: NONE — the Cursor Agent CLI (cursor-agent, brew
     // `cursor-cli`) is closed-source; verified from the project page
     // and its Terms of Service (no open license), so `license` is
-    // `"NONE"` (concluded no-license), not null.
-    .{ .name = "cursor", .label = "Cursor", .license = "NONE", .license_sources = &.{ "https://cursor.com/", "https://www.cursor.com/en-US/terms-of-service" }, .env_markers = &cursor_env, .binary_names = if (builtin.os.tag == .windows)
+    // `"NONE"` (concluded no-license), not null. Training postures:
+    // opt-in/opt-in — the privacy policy states "We do not use Inputs
+    // or Suggestions to train our models, or permit third parties to
+    // use them for training, unless … you've explicitly agreed to
+    // their use for such training purposes"; Privacy Mode (on by
+    // default only for Teams/Enterprise, a toggle for individuals)
+    // extends the no-training guarantee to model providers. The CLI's
+    // `~/.cursor/cli-config.json` carries a `privacyCache.privacyMode`
+    // value — a candidate instance signal left unwired until the enum
+    // mapping is publicly documented (never-guess).
+    .{ .name = "cursor", .label = "Cursor", .license = "NONE", .license_sources = &.{ "https://cursor.com/", "https://www.cursor.com/en-US/terms-of-service" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://cursor.com/privacy", "https://cursor.com/help/security-and-privacy/privacy" }, .env_markers = &cursor_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }
     else
         &[_][]const u8{"cursor-agent"} },
     // copilot: NONE — the GitHub Copilot CLI (brew `copilot-cli`) is
     // closed-source; verified from the feature page and the GitHub
     // Terms of Service (no open license), so `license` is `"NONE"`.
-    .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .env_markers = &copilot_env, .binary_names = if (builtin.os.tag == .windows)
+    // Training posture: closed opt-out — ToS Section J.3 (individual
+    // licenses) grants GitHub "a license to collect and use your
+    // Inputs and Outputs to develop, train and improve artificial
+    // intelligence and machine learning models … unless (a) you opt
+    // out through your account settings"; Customer-Agreement users
+    // are governed by the Copilot Product Specific Terms instead.
+    // The opt-out is an account setting on github.com — no local
+    // artifact exists, so the instance state stays null. Open-model
+    // training is unverified (GitHub's trained models are closed),
+    // so `open_training` stays null.
+    .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .closed_training = "opt-out", .training_sources = &.{ "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service", "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features" }, .env_markers = &copilot_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "copilot", "copilot.exe" }
     else
         &[_][]const u8{"copilot"} },
     // zcode: NONE — Z.ai's ZCode desktop app (bundle `dev.zcode.app`)
     // ships compiled installers only (no source repo, no license
     // offer); verified from the product page and Z.ai's Terms of
-    // Service, so `license` is `"NONE"`. `training` stays `null` until
-    // a public doc sources the "Improve experience" posture — the
-    // instance read in `detectZcode` (`optimizeAgentExperienceEnabled`
-    // in `~/.zcode/v2/setting.json`) resolves the per-user state at
-    // detection time regardless. Declared last so its env
+    // Service, so `license` is `"NONE"`. Training postures stay
+    // null/null: no public doc describes the "Improve experience"
+    // program's training target. Catalog research (2026-09-05): every
+    // Z.ai model the docs.z.ai API serves is open-weight on HF
+    // (zai-org) — GLM-5.3, GLM-5.3-Flash, GLM-5.2, GLM-OCR,
+    // GLM-Image, CogVideoX — EXCEPT GLM-ASR-2512, which is API-only
+    // (no public weights; only the Nano variant is released), so the
+    // blanket closed_training="never" is structurally unsafe and the
+    // toggle-ON instance read carries the fail-safe instead (see
+    // `detectZcode`). Declared last so its env
     // markers (which leak into every child session of the app, like
     // any desktop harness's shell env) are checked only after every
     // other harness's markers — a cline or goose session spawned from
@@ -870,10 +897,10 @@ pub fn envValueAllowed(name: []const u8) bool {
 /// SPDX license keywords with special reciprocity semantics (see the
 /// license table in CONTRIBUTING.md "add a new harness rule"):
 ///   - `"NONE"` — concluded: no license present (verified
-///     proprietary/closed). The harness-training conjunct decides the
-///     harness dim: verified `"not-training"` falls through to the
-///     model/provider conjuncts; `"training"`/`"inconclusive"` is
-///     `.not_reciprocal`; `null` is `.unknown`.
+///     proprietary/closed). The harness-closed-training conjunct
+///     decides the harness dim: `never`/`opt-in`/`opt-out` falls
+///     through to the model/provider conjuncts; `enforced`/
+///     `NOASSERTION` is `.not_reciprocal`; `null` is `.unknown`.
 ///   - `"NOASSERTION"` — attempted, inconclusive. Treated like `null`
 ///     (`.unknown`).
 pub const license_none = "NONE";

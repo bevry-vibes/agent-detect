@@ -18,7 +18,7 @@ test "reciprocityOf: NOASSERTION → unknown" {
     try testing.expect(main.reciprocityOf(&d) == .unknown);
 }
 
-test "reciprocityOf: NONE + null training → unknown" {
+test "reciprocityOf: NONE + null closed-training → unknown" {
     // The closed-harness training conjunct: no data → data-incomplete
     // (the exit-9 nudge to correct the data), like null provider/model
     // dims — never-guess, an unverified state is not assumed.
@@ -26,72 +26,104 @@ test "reciprocityOf: NONE + null training → unknown" {
     try testing.expect(main.reciprocityOf(&d) == .unknown);
 }
 
-test "reciprocityOf: NONE + training → not_reciprocal even with null dims" {
-    // A verified closed harness that trains on conversations is never
-    // reciprocal, regardless of the model/provider dims.
-    var d = main.Detection{ .harness_license = "NONE", .harness_training = "training" };
+test "reciprocityOf: NONE + enforced closed-training → not_reciprocal even with null dims" {
+    // A verified closed harness that actively trains closed models on
+    // conversations is never reciprocal, regardless of the
+    // model/provider dims.
+    var d = main.Detection{ .harness_license = "NONE", .harness_closed_training = "enforced" };
     try testing.expect(main.reciprocityOf(&d) == .not_reciprocal);
 }
 
-test "reciprocityOf: NONE + inconclusive → not_reciprocal" {
+test "reciprocityOf: NONE + NOASSERTION closed-training → not_reciprocal" {
     // We looked at the harness's settings store and it carried no
     // clear answer — fails safe, distinct from the never-attempted
-    // null (unknown), mirroring the license NOASSERTION semantics.
-    var d = main.Detection{ .harness_license = "NONE", .harness_training = "inconclusive" };
+    // null (unknown).
+    var d = main.Detection{ .harness_license = "NONE", .harness_closed_training = "NOASSERTION" };
     try testing.expect(main.reciprocityOf(&d) == .not_reciprocal);
 }
 
-test "reciprocityOf: NONE + not-training + open dims → reciprocal" {
-    // A closed harness verified not training on conversations is
-    // permitted; the model/provider conjuncts decide as usual.
+test "reciprocityOf: NONE + never closed-training + open dims → reciprocal" {
+    // A closed harness verified not training is permitted; the
+    // model/provider conjuncts decide as usual.
     var d = main.Detection{
         .harness_license = "NONE",
-        .harness_training = "not-training",
+        .harness_closed_training = "never",
         .model_reciprocity = "open-weight",
         .provider_closed_training = "never",
     };
     try testing.expect(main.reciprocityOf(&d) == .reciprocal);
 }
 
-test "reciprocityOf: NONE + not-training + closed model → not_reciprocal" {
+test "reciprocityOf: NONE + posture closed-training passes like providers" {
+    // Capability-based, mirroring provider_closed_training: a
+    // docs-sourced opt-out/opt-in posture passes the harness conjunct
+    // and hinges on the model/provider conjuncts.
+    for ([_][]const u8{ "opt-out", "opt-in" }) |hct| {
+        var d = main.Detection{
+            .harness_license = "NONE",
+            .harness_closed_training = hct,
+            .model_reciprocity = "open-weight",
+            .provider_closed_training = "never",
+        };
+        try testing.expect(main.reciprocityOf(&d) == .reciprocal);
+    }
+}
+
+test "reciprocityOf: NONE + passing closed-training + closed model → not_reciprocal" {
     var d = main.Detection{
         .harness_license = "NONE",
-        .harness_training = "not-training",
+        .harness_closed_training = "never",
         .model_reciprocity = "closed",
         .provider_closed_training = "never",
     };
     try testing.expect(main.reciprocityOf(&d) == .not_reciprocal);
 }
 
-test "reciprocityOf: NONE + not-training + null dims → unknown" {
-    var d = main.Detection{ .harness_license = "NONE", .harness_training = "not-training" };
+test "reciprocityOf: NONE + passing closed-training + null dims → unknown" {
+    var d = main.Detection{ .harness_license = "NONE", .harness_closed_training = "never" };
     try testing.expect(main.reciprocityOf(&d) == .unknown);
 }
 
-test "applyHarnessTraining: docs-decisive postures resolve, capabilities stay null" {
-    // never → verified not training
+test "reciprocityOf: open-model training never blocks reciprocity" {
+    // The conjunct consumes only the closed dim — harness_open_training
+    // is informational, exactly as provider_open_training is.
+    var d = main.Detection{
+        .harness_license = "NONE",
+        .harness_open_training = "enforced",
+        .harness_closed_training = "never",
+        .model_reciprocity = "open-weight",
+        .provider_closed_training = "never",
+    };
+    try testing.expect(main.reciprocityOf(&d) == .reciprocal);
+}
+
+test "applyHarnessTraining: static postures copy per field, instance wins" {
+    const rule = main.HarnessRule{
+        .name = "x",
+        .label = "X",
+        .license = "NONE",
+        .license_sources = &.{},
+        .env_markers = &.{},
+        .binary_names = &.{},
+        .open_training = "opt-in",
+        .closed_training = "opt-out",
+    };
+    // both fields fill from the rule when unset
     var d1 = main.Detection{};
-    main.applyHarnessTraining(&d1, .{ .name = "x", .label = "X", .license = "NONE", .license_sources = &.{}, .env_markers = &.{}, .binary_names = &.{}, .training = "never" });
-    try testing.expectEqualStrings("not-training", d1.harness_training.?);
-    // enforced → verified training
-    var d2 = main.Detection{};
-    main.applyHarnessTraining(&d2, .{ .name = "x", .label = "X", .license = "NONE", .license_sources = &.{}, .env_markers = &.{}, .binary_names = &.{}, .training = "enforced" });
-    try testing.expectEqualStrings("training", d2.harness_training.?);
-    // NOASSERTION → researched, inconclusive
+    main.applyHarnessTraining(&d1, rule);
+    try testing.expectEqualStrings("opt-in", d1.harness_open_training.?);
+    try testing.expectEqualStrings("opt-out", d1.harness_closed_training.?);
+    // an instance read wins per field, the other still sources from
+    // the rule
+    var d2 = main.Detection{ .harness_closed_training = "never" };
+    main.applyHarnessTraining(&d2, rule);
+    try testing.expectEqualStrings("opt-in", d2.harness_open_training.?);
+    try testing.expectEqualStrings("never", d2.harness_closed_training.?);
+    // null rule postures leave the dims null
     var d3 = main.Detection{};
-    main.applyHarnessTraining(&d3, .{ .name = "x", .label = "X", .license = "NONE", .license_sources = &.{}, .env_markers = &.{}, .binary_names = &.{}, .training = "NOASSERTION" });
-    try testing.expectEqualStrings("inconclusive", d3.harness_training.?);
-    // opt-out / opt-in / null prove a capability, never the user's
-    // state — the dim stays null (the exit-9 nudge).
-    for ([_]?[]const u8{ "opt-out", "opt-in", null }) |t| {
-        var d4 = main.Detection{};
-        main.applyHarnessTraining(&d4, .{ .name = "x", .label = "X", .license = "NONE", .license_sources = &.{}, .env_markers = &.{}, .binary_names = &.{}, .training = t });
-        try testing.expect(d4.harness_training == null);
-    }
-    // an instance read always wins over the static posture
-    var d5 = main.Detection{ .harness_training = "not-training" };
-    main.applyHarnessTraining(&d5, .{ .name = "x", .label = "X", .license = "NONE", .license_sources = &.{}, .env_markers = &.{}, .binary_names = &.{}, .training = "enforced" });
-    try testing.expectEqualStrings("not-training", d5.harness_training.?);
+    main.applyHarnessTraining(&d3, .{ .name = "x", .label = "X", .license = "NONE", .license_sources = &.{}, .env_markers = &.{}, .binary_names = &.{} });
+    try testing.expect(d3.harness_open_training == null);
+    try testing.expect(d3.harness_closed_training == null);
 }
 
 test "reciprocityOf: SPDX + open-weight + opt-in → reciprocal" {

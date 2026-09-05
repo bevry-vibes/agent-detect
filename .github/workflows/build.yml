@@ -44,8 +44,18 @@ jobs:
           test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
           # alias / case-variation resolution must equal the canonical form
           test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
+          # closed harness: the opt-in training posture passes the
+          # harness conjunct, but the cursor provider dim is null →
+          # data incomplete (empty stdout, exit 9)
           set +e
           OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          RC=$?
+          set -e
+          test "$OUT" = ""
+          test "$RC" -eq 9
+          # closed model, complete dims → requirement failed (exit 10)
+          set +e
+          OUT="$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=gpt-5.2 2>/dev/null)"
           RC=$?
           set -e
           test "$OUT" = "not reciprocal"
@@ -83,8 +93,18 @@ jobs:
           test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
           # alias / case-variation resolution must equal the canonical form
           test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
+          # closed harness: the opt-in training posture passes the
+          # harness conjunct, but the cursor provider dim is null →
+          # data incomplete (empty stdout, exit 9)
           set +e
           OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          RC=$?
+          set -e
+          test "$OUT" = ""
+          test "$RC" -eq 9
+          # closed model, complete dims → requirement failed (exit 10)
+          set +e
+          OUT="$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=gpt-5.2 2>/dev/null)"
           RC=$?
           set -e
           test "$OUT" = "not reciprocal"
@@ -134,8 +154,18 @@ jobs:
           test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
           # alias / case-variation resolution must equal the canonical form
           test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
+          # closed harness: the opt-in training posture passes the
+          # harness conjunct, but the cursor provider dim is null →
+          # data incomplete (empty stdout, exit 9)
           set +e
           OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          RC=$?
+          set -e
+          test "$OUT" = ""
+          test "$RC" -eq 9
+          # closed model, complete dims → requirement failed (exit 10)
+          set +e
+          OUT="$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=gpt-5.2 2>/dev/null)"
           RC=$?
           set -e
           test "$OUT" = "not reciprocal"

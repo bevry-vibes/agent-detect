@@ -59,8 +59,17 @@ Check your agent (harness, model, provider)'s reciprocity compliance via:
 
 ```powershell
 # powershell (windows)
-.\agent-detect.exe check-reciprocal   # machine-readable JSON report
+.\agent-detect.exe check-reciprocal   # prints "is reciprocal" (0) or "not reciprocal" (10)
 ```
+
+A closed-source harness's `harness_open_training` /
+`harness_closed_training` identify fields mirror the provider pair:
+the closed-training conjunct passes on a `never`/`opt-in`/`opt-out`
+value (capability-based, exactly as providers are treated) and fails
+on `enforced` (verified training) or `NOASSERTION` (a settings read
+with no clear answer); an undeterminable state is policy data
+incomplete so you can correct the data (for zcode: the "Improve
+experience" toggle) rather than failing silently.
 
 Exit codes — 0 = reciprocal, 10 = not reciprocal, 9 = policy data
 incomplete, 8 = undetectable, 7 = unknown combo — follow the registry
