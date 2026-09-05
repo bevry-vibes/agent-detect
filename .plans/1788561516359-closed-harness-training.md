@@ -72,6 +72,42 @@ Research performed during planning (2026-09-05):
 `harness_training` is a string tri-state-plus-null (house style, like
 `model_reciprocity`; a bool cannot express the inconclusive state).
 
+## revision: provider-mirrored two-field schema (2026-09-05, same session)
+
+Supersedes the single `harness_training` dimension (committed 928fb7e)
+after user review: the dimension mirrors the provider two-field model
+exactly.
+
+- `HarnessRule` gains `open_training` + `closed_training` (vocabulary
+  `enforced | opt-in | opt-out | never | NOASSERTION | null`,
+  docs-derived, never-guess) + one `training_sources` array.
+- `Detection`/`buildCooked` gain `harness_open_training` +
+  `harness_closed_training` (19 → 20 identify fields);
+  `harness_open_training` is informational (like
+  `provider_open_training`).
+- Resolution per field: instance read wins (zcode toggle:
+  `false` → `never`/`never`; `true` → open `enforced` + closed
+  `NOASSERTION` fail-safe; key absent → `NOASSERTION`/`NOASSERTION`;
+  file missing → untouched); static fallback copies the rule verbatim.
+- Conjunct (gated to license NONE, consumes only
+  `harness_closed_training`): `enforced`/`NOASSERTION` →
+  `.not_reciprocal` (10); `null` → `.unknown` (9);
+  `never`/`opt-in`/`opt-out` → fall through to model/provider —
+  capability-based, mirroring `provider_closed_training`.
+- Sourced values: cursor `opt-in`/`opt-in` (privacy policy: no
+  training without explicit agreement); copilot closed `opt-out`
+  (ToS J.3: trains unless account-settings opt-out), open `null`.
+- Z.ai catalog research (this session): the served lineup is open-weight
+  EXCEPT GLM-ASR-2512 — API-only (HF 401 under zai-org and THUDM; only
+  the Nano variant has public weights) — so Z.ai does have a closed
+  model and the blanket `closed_training = "never"` is structurally
+  unsafe: zcode stays `null`/`null` with the toggle-ON fail-safe.
+- Post-plan follow-up (user, noted): evaluate `open_training_config` /
+  `closed_training_config` fields to isolate training policy
+  (docs-derived posture) from active training config
+  (instance-determined state); revisit once live captures exercise the
+  merged fields.
+
 ## work items
 
 1. `src/lib/rules.zig` — `HarnessRule` gains `training: ?[]const u8 =

@@ -50,3 +50,19 @@ the unkown. But change we looked and we couldn't determine a clear answer
 to not_reciprocal. This should coincide wiht our provider handling right?
 As we want to encourage people running closed harnesses to correct the
 data.
+
+## 7. two-field revision request
+
+Actually, harness_training should be two fields, like provider, so
+harness_open_training, and harness_closed_training - for instance, zcode
+seems to (please confirm) only do harnesss_open_training - and their
+values should also be the opt-in, opt-out, etc when not able to be
+directly determined by the harness instance config
+
+## 8. follow-up additions
+
+Note a post-plan follow-up on whether to add open_training_config and
+closed_training_config fields for isolating training policy from active
+training config. Also, for zcode, whose creator is zai, do they have any
+closed models? or are they only open-weight+ models? This should be
+factored into their closed_training score.
