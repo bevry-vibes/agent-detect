@@ -1,0 +1,31 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "provider_label": "Moonshot AI",
+      "provider_name": "moonshotai",
+      "provider_id": "moonshotai",
+      "provider_closed_training": "NOASSERTION",
+      "provider_open_training": "NOASSERTION",
+      "model_label": "Kimi K2.5",
+      "model_short_title": null,
+      "model_name": "kimi-k2.5",
+      "model_id": "kimik25",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "pi-moonshotai-kimik25",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Pi · Kimi K2.5 <pi-moonshotai-kimik25@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Kimi K2.5 <pi-moonshotai-kimik25@local>"
+  },
+  "meta": {
+    "updated_at": 1788723598
+  }
+}

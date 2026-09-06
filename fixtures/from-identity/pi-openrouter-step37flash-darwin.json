@@ -6,6 +6,8 @@
       "harness_name": "pi",
       "harness_id": "pi",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "OpenRouter",
       "provider_name": "openrouter",
       "provider_id": "openrouter",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Pi · Step 3.7 Flash <pi-openrouter-step37flash@local>"
   },
   "meta": {
-    "updated_at": 1788169180
+    "updated_at": 1788723717
   }
 }

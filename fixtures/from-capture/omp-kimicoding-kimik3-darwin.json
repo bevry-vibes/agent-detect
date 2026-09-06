@@ -1,0 +1,103 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "provider_label": "Kimi for Coding",
+      "provider_name": "kimi-coding",
+      "provider_id": "kimicoding",
+      "provider_closed_training": "NOASSERTION",
+      "provider_open_training": "NOASSERTION",
+      "model_label": "Kimi K3",
+      "model_short_title": null,
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_reciprocity": "open-weight",
+      "model_license": "NOASSERTION",
+      "agent_id": "omp-kimicoding-kimik3",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Kimi K3 <omp-kimicoding-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: omp · Kimi K3 <omp-kimicoding-kimik3@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 93105,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.moonshot.ai/docs/terms",
+        "https://platform.moonshot.ai/docs/privacy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/moonshotai/Kimi-K3",
+        "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "kimi-code/kimi-k3"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "kimi-code/kimi-k3"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788723598,
+    "prompt_invocation": [
+      "omp",
+      "--model",
+      "kimi-code/k3",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "omp",
+      "--version"
+    ],
+    "harness_version": "18.0.11"
+  }
+}

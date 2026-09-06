@@ -840,6 +840,26 @@ before writing any `never` — this is exactly the slip that made
 OpenRouter's contributor tiers and OpenCode's free-period models
 first land as `never`.
 
+**Axis semantics (convention).** How a policy maps onto the two
+training axes when the wording does not state (or states ambiguously)
+which model types it covers:
+
+- A policy that does not distinguish which model types it trains
+  applies its value to BOTH axes — mirrored values are the default,
+  not an accident.
+- An exclusively closed-model company (serves no open-weight models)
+  keeps the open axis `null` (not applicable). Precedent:
+  `anthropic`, `github-copilot`, `xai`, `openai-codex`.
+- An exclusively open-model company (serves no closed models) cannot
+  use `null` on the closed axis — `provider_closed_training` is
+  load-bearing for exit 9 and would break `check-reciprocal` for
+  open-model sessions — so the closed axis is `never` with a comment
+  noting the vacuous case (no closed models are served to train).
+  Precedent: `xiaomi`, `phala`.
+- Tiered policies (free tier trains / paid doesn't; unpaid instances
+  train / paid don't) resolve to the strictest REACHABLE surface —
+  the opt-in-by-model rule above, restated.
+
 ### model rule identity & family folding
 
 Rule identity is model version × param size × license, with naming by
@@ -1049,55 +1069,55 @@ non-evergreen remainder (`longcat-2.0`, `qwen3.7-max`,
 pending a backing audit (no `Qwen/Qwen3.8-Flash` HF repo; the 3.8
 flash open line is the separate `qwen38-flash-next` collection).
 
-**hermes** (2026-09-06, authored by the maintainer's Hermes session):
-the harness rule landed with a live from-capture on
-`hermes-ollamacloud-glm53flash-darwin` (detection ladder: the
-`HERMES_AGENT=true` env marker, then `session_model_usage` in
-`~/.hermes/state.db` for the live provider/model — `billing_provider` +
-`model` per API call — then `config.yaml`'s `model.default`/`provider`
-as fallback; the daemon pins combos via `HERMES_MODEL`/`HERMES_PROVIDER`,
-which `hermes chat --provider P -m M` sets per session without touching
-the user's config). Provider/model discovery source: the harness's own
-`plugins/model-providers/` catalog (39 profiles, `name` + `aliases` +
-`env_vars` + `base_url` per profile) cross-checked against its
-models.dev mirror (`~/.hermes/models_dev_cache.json` — models.dev is a
-fifth index alongside OpenRouter/provider-API/harness-surface for this
-harness: 35+ of its provider profiles resolve to models.dev provider
-keys). The hermes row was added to
-`map-harness-provider-harnessprovider.csv` and 17 new provider rows +
-3 new model columns (`gpt-oss-20b`, `laguna-s-2.1`, `laguna-xs-2.1`)
-to `map-provider-model-providermodel.csv` (openrouter kept its
-evergreen-subset policy; kimi-coding/alibaba-coding-plan/nvidia/etc
-recorded only ruled ids, the non-evergreen remainder unruled). The
-free axis gained `nvidia` + `vercel` rows (0/0 pricing cells) and a
-`laguna-s-2.1-free` cell on `opencode`. Training-policy research
-refreshed 20+ provider rules from primary docs (ollama/ollama-cloud
-never/never, Nous opt-out via Privacy Mode, GitHub Copilot closed
-opt-out for individual subscribers, Bedrock/Vertex/Azure-Foundry/
-DeepInfra/Novita/Upstage/Xiaomi-API/HF-Inference never, Gemini-API
-opt-in via the free tier, qwen.ai opt-in by standing ToS authorization
-while Alibaba Model Studio commits never, Nebius opt-in for its
-speculative-decoding draft training, Moonshot NOASSERTION on
-conflicting docs, xAI API opt-out enterprise-only, Arcee opt-out,
-StepFun program-gated opt-in, Vercel AI Gateway ZDR never,
-OpenAI-Codex consumer opt-out). KNOWN FOLD FLAW (follow-up): sessions
-reporting provider `ollama` with `:cloud`-suffixed models are really
-`ollama-cloud` traffic — the fold currently lands them on `ollama`;
-the two surfaces have different policy semantics (local = nothing
-leaves the machine, cloud = transient third-party processing) and
-should be individuated, possibly via a shared `local` provider rule
-for local runtimes (ollama, lmstudio, llama.cpp servers) serving
-non-cloud models — noting that a local surface still carries its own
-vendor policy.
+**hermes** (2026-09-06, authored by the maintainer's Hermes session;
+revised 2026-09-07 by the fold review — `.plans/1788716755355`): the
+harness rule landed with a live from-capture on
+`hermes-ollama-glm53flash-darwin` (the ollama-cloud fold renamed it;
+detection ladder: the `HERMES_AGENT=true` env marker, then
+`session_model_usage` in `~/.hermes/state.db` for the live
+provider/model — `billing_provider` + `model` per API call — then
+`config.yaml`'s `model.default`/`provider` as fallback; the daemon
+pins combos via `HERMES_MODEL`/`HERMES_PROVIDER`, which
+`hermes chat --provider P -m M` sets per session without touching the
+user's config). Provider/model discovery source: the harness's own
+`plugins/model-providers/` catalog (`name` + `aliases` + `env_vars` +
+`base_url` per profile) cross-checked against its models.dev mirror
+(`~/.hermes/models_dev_cache.json` — models.dev is a fifth index
+alongside OpenRouter/provider-API/harness-surface for this harness:
+most of its provider profiles resolve to models.dev provider keys).
+The maintainer has since uninstalled hermes — the rule, the fixture,
+and the invocations stand for whoever picks the harness up
+(contributor scope); the staged queue entries were dropped. The
+review's folds re-shaped the provider surfaces it had ruled:
+`ollama-cloud` folded into `ollama` (DESIGN decision #15 — the
+`:cloud`/baseUrl individuation is the recorded follow-up); the
+Moonshot/Kimi family folded to two rules — `moonshotai` (the
+api.moonshot.ai surface; pi's and the kimi-code CLI's keys) and
+`kimi-coding` (the api.kimi.com/coding subscription; hermes's
+`kimi-coding`/`kimi-coding-cn` profiles and the CLI's `kimi-code`
+key) — matching models.dev's `moonshotai`/`kimi-for-coding`
+individuation; `opencode-free`/`opencode-zen` folded into `opencode`
+("OpenCode Zen" — hermes's keyless and subscribed profiles are two
+tiers of the one zen relay); hermes's `kilocode` profile folded onto
+the `kilo` rule (models.dev `kilo`, "Kilo Gateway") and
+`nebius-token-factory` onto `nebius` via its label. Training-policy
+research refreshed the provider rules from primary docs and was
+re-verified by the review (see the corrections on `zai`, `qwen`,
+`nvidia`, `nebius`, `xiaomi` in `.plans/1788716755355` D8); `nous`
+and `openai-codex` keep harnessprovider cells but await a ruled-model
+catalog (hermes's caches never enumerated them — no providermodel
+row, so the cells are inert until a contributor lands one).
 
 **autoclaw** (2026-09-06, authored by the maintainer's AutoClaw
-auto-coder session): the harness rule landed with the provider surface
-individuated as `autoclaw` (the bundled Z.ai channel —
+auto-coder session; revised 2026-09-07 by the fold review): the
+harness rule landed with the provider surface individuated as
+`autoclaw` (the bundled Z.ai channel —
 autoglm-api.autoglm.ai/autoclaw-proxy, X-Product: autoclaw,
-X-Channel: zai — mirroring the `zai` policy; a user-configured direct
-api.z.ai baseUrl resolves to `zai`). Lands under the individual-need
-exemption despite the Claw/machine-control exclusion — the maintainer's
-coding agent runs inside it. Catalog from the runtime config:
+X-Channel: zai — mirroring the `zai` policy, re-verified opt-in/opt-in
+by the review; a user-configured direct api.z.ai baseUrl resolves to
+`zai`). The maintainer has since uninstalled autoclaw — the rule and
+grids stand for whoever picks it up (contributor scope); the staged
+queue entry was dropped. Catalog from the runtime config:
 zaicoding_glm-5.3 (glm-5.3 variation), zai_glm-5.3-flash
 (glm-5.3-flash variation), zai_glm-5-turbo (glm-5-turbo's channel
 spelling — a distinct official Z.ai model per docs.z.ai +
@@ -1118,7 +1138,23 @@ AUTOCLAW_* env markers (or AutoClaw ancestry) → session store
 record's message.provider/message.model) → openclaw.runtime.json
 config fallback, with the provider surface folded via
 models.providers[key].baseUrl. Not free-axis: the bundled channel is
-subscription-metered (credits depleted 2026-09-06). from-capture
-invocations pending — the desktop app has no mapped headless launcher;
-harness_version source identified (Info.plist
-CFBundleShortVersionString, observed 1.17.8; no env var).
+subscription-metered. from-capture invocations pending — the desktop
+app has no mapped headless launcher; harness_version source identified
+(Info.plist CFBundleShortVersionString, observed 1.17.8; no env var).
+
+**phala** (2026-09-07, authored by the maintainer's ZCode session on
+its own provider): the `phala` provider rule — Phala's TEE inference
+gateway at https://inference.phala.com/v1 (an OpenRouter endpoint
+provider, no models.dev key), serving exclusively open-weight models
+in hardware enclaves; never/never on the technical-inaccessibility
+basis (end-to-end TEE encryption; "The platform retains the encrypted
+data for the user but technically doesn't have access to the raw
+data"), closed axis the commented vacuous case. Discovery:
+unauthenticated `GET /v1/models` (the provider's own API — the first
+of the three sources); catalog grid-recorded (deepseek-v4-flash is
+served there without tool calling, so no cell). Detection: ZCode
+custom providers resolve via `~/.zcode/v2/config.json` — the endpoint
+host (`provider.<key>.options.baseURL`, folded through
+`providerHostFold`: inference.phala.com → `phala`, ollama.com →
+`ollama`) is the stronger signal, the display name
+(`provider.<key>.name`) the fallback. Non-zero pricing → not free.

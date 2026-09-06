@@ -6,6 +6,8 @@
       "harness_name": "reasonix",
       "harness_id": "reasonix",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "MiniMax",
       "provider_name": "minimax",
       "provider_id": "minimax",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Reasonix · MiniMax M3 <reasonix-minimax-minimaxm3@local>"
   },
   "meta": {
-    "updated_at": 1788169207
+    "updated_at": 1788723717
   }
 }

@@ -6,6 +6,8 @@
       "harness_name": "qwen",
       "harness_id": "qwen",
       "harness_license": "Apache-2.0",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "MiniMax",
       "provider_name": "minimax",
       "provider_id": "minimax",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Qwen Code · MiniMax M2.7 <qwen-minimax-minimaxm27@local>"
   },
   "meta": {
-    "updated_at": 1788169189
+    "updated_at": 1788723717
   }
 }

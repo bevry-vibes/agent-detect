@@ -237,7 +237,7 @@ fn isLegacyRequiredMeta(stem: []const u8) bool {
         "pi-groq-llama318b-darwin",
         "pi-groq-llama3370b-darwin",
         "pi-groq-llama4-darwin",
-        "pi-kimi-kimik3-darwin",
+        "pi-moonshotai-kimik3-darwin",
         "pi-opencodego-glm53flash-darwin",
         "pi-xai-grok4-darwin",
         "reasonix-deepseek-deepseekv4flash-darwin",
@@ -844,6 +844,15 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
 
     for (main.rulesForHarnesses) |rr| {
         const slug = try main.slugId(aa, rr.name);
+        // rule-only harnesses (2026-09-07): autoclaw — the maintainer
+        // uninstalled the app after its rule landed; its fixture sweep
+        // is contributor scope (the staged entry was dropped).
+        const rule_only_harnesses = [_][]const u8{"autoclaw"};
+        var h_exempt = false;
+        for (rule_only_harnesses) |name| {
+            if (std.mem.eql(u8, rr.name, name)) h_exempt = true;
+        }
+        if (h_exempt) continue;
         if (!harnesses_seen.contains(slug)) {
             std.debug.print("harness rule {s} has no fixture stems\n", .{rr.name});
             return error.HarnessWithoutStems;
@@ -855,20 +864,24 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     // that lands without stems; these are the pre-existing exemptions.
     // chutes: the pi-chutes invocations live in the store's invocations
     // table (their captures are pending), so no fixture stem covers it yet.
-    // hermes-facing provider surfaces (2026-09-06): kimi-coding(+cn),
-    // alibaba-coding-plan, opencode-free/-zen, openai-codex, google-vertex,
-    // amazon-bedrock, azure-foundry, novita-ai, deepinfra, nebius, nvidia,
-    // upstage, xiaomi, stepfun, arcee, vercel, nous — ruled for detection
-    // coverage; their hermes combos queue via the daemon.
+    // hermes-facing provider surfaces (2026-09-06): alibaba-coding-plan,
+    // openai-codex, google-vertex, amazon-bedrock, azure-foundry,
+    // novita-ai, deepinfra, nebius, nvidia, upstage, xiaomi, stepfun,
+    // arcee, vercel, nous — ruled for detection coverage; the maintainer
+    // uninstalled hermes, so their fixture sweeps are contributor scope.
+    // autoclaw: the app is uninstalled (contributor scope, same as the
+    // harness exemption above). phala: the zcode-phala-glm53 from-identity
+    // entry is staged — resolves when the user-run daemon drains it.
+    // (The 2026-09-07 folds — moonshotai, kimi-coding, opencode — carry
+    // stems from the renamed fixtures, so they need no exemptions.)
     const rule_only_providers = [_][]const u8{
         "cline",            "chutes",           "google",
-        "moonshot",         "kimi-coding",      "kimi-coding-cn",
-        "alibaba-coding-plan", "opencode-free", "opencode-zen",
-        "openai-codex",     "google-vertex",    "amazon-bedrock",
-        "azure-foundry",    "novita-ai",        "deepinfra",
-        "nebius",           "nvidia",           "upstage",
-        "xiaomi",           "stepfun",          "arcee",
-        "vercel",           "nous",
+        "alibaba-coding-plan", "openai-codex",  "google-vertex",
+        "amazon-bedrock",   "azure-foundry",    "novita-ai",
+        "deepinfra",        "nebius",           "nvidia",
+        "upstage",          "xiaomi",           "stepfun",
+        "arcee",            "vercel",           "nous",
+        "autoclaw",         "phala",
     };
     const rule_only_models = [_][]const u8{
         "claude-haiku-4",           "claude-opus-4",       "devstral-2",
@@ -880,7 +893,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "nemotron-3-nano-omni",     "qwen3-235b-a22b",     "qwen3-32b",
         "qwen3.5",                  "qwen3.5-397b-a17b",   "qwen3.6-27b",
         "qwen3.8-27b",              "gpt-oss-20b",         "laguna-s-2.1",
-        "laguna-xs-2.1",
+        "laguna-xs-2.1",            "glm-5-turbo",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

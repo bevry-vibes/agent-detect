@@ -6,6 +6,8 @@
       "harness_name": "cursor",
       "harness_id": "cursor",
       "harness_license": "NONE",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
       "provider_label": "Cursor",
       "provider_name": "cursor",
       "provider_id": "cursor",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Cursor · Claude Opus 5 <cursor-cursor-claudeopus5@local>"
   },
   "meta": {
-    "updated_at": 1788168437
+    "updated_at": 1788723717
   }
 }

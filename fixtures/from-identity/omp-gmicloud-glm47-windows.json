@@ -6,6 +6,8 @@
       "harness_name": "omp",
       "harness_id": "omp",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "GMI Cloud",
       "provider_name": "gmi-cloud",
       "provider_id": "gmicloud",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: omp · GLM 4.7 <omp-gmicloud-glm47@local>"
   },
   "meta": {
-    "updated_at": 1788197796
+    "updated_at": 1788723717
   }
 }

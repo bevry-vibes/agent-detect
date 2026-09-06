@@ -6,6 +6,8 @@
       "harness_name": "kimi-code",
       "harness_id": "kimicode",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "OpenRouter",
       "provider_name": "openrouter",
       "provider_id": "openrouter",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Kimi Code · GLM 5.1 <kimicode-openrouter-glm51@local>"
   },
   "meta": {
-    "updated_at": 1788198310
+    "updated_at": 1788723717
   }
 }

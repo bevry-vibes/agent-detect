@@ -6,6 +6,8 @@
       "harness_name": "reasonix",
       "harness_id": "reasonix",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "DeepSeek",
       "provider_name": "deepseek",
       "provider_id": "deepseek",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Reasonix · DeepSeek V4 Flash <reasonix-deepseek-deepseekv4flash@local>"
   },
   "meta": {
-    "updated_at": 1788197837
+    "updated_at": 1788723717
   }
 }

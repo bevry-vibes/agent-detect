@@ -6,7 +6,9 @@
       "harness_name": "opencode",
       "harness_id": "opencode",
       "harness_license": "MIT",
-      "provider_label": "OpenCode",
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "provider_label": "OpenCode Zen",
       "provider_name": "opencode",
       "provider_id": "opencode",
       "provider_closed_training": null,
@@ -16,12 +18,12 @@
       "model_name": "nemotron-3-ultra",
       "model_id": "nemotron3ultra",
       "model_reciprocity": "open-weight",
+      "model_license": null,
       "agent_id": "opencode-opencode-nemotron3ultra",
-      "reciprocal": false,
-      "trailer": "Co-authored-by: OpenCode \u00b7 Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>"
+      "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: OpenCode \u00b7 Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode \u00b7 Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>",
+    "trailer co-author": "Co-authored-by: OpenCode · Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>",
     "raw": {
       "platform_id": "darwin",
       "detectable": [
@@ -82,7 +84,7 @@
     }
   },
   "meta": {
-    "updated_at": 1786432307,
+    "updated_at": 1788723717,
     "prompt_invocation": [
       "opencode",
       "run",

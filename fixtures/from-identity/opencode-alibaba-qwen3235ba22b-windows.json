@@ -6,11 +6,13 @@
       "harness_name": "opencode",
       "harness_id": "opencode",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Alibaba",
       "provider_name": "alibaba",
       "provider_id": "alibaba",
-      "provider_closed_training": null,
-      "provider_open_training": null,
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
       "model_label": "Qwen3 235B A22B",
       "model_short_title": null,
       "model_name": "qwen3-235b-a22b",
@@ -18,12 +20,12 @@
       "model_reciprocity": "open-weight",
       "model_license": "Apache-2.0",
       "agent_id": "opencode-alibaba-qwen3235ba22b",
-      "reciprocal": false
+      "reciprocal": true
     },
     "trailer co-author": "Co-authored-by: OpenCode · Qwen3 235B A22B <opencode-alibaba-qwen3235ba22b@local>",
     "trailer assisted-by": "Assisted-by: OpenCode · Qwen3 235B A22B <opencode-alibaba-qwen3235ba22b@local>"
   },
   "meta": {
-    "updated_at": 1788198462
+    "updated_at": 1788723717
   }
 }

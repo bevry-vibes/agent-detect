@@ -6,6 +6,8 @@
       "harness_name": "cline",
       "harness_id": "cline",
       "harness_license": "Apache-2.0",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Cerebras",
       "provider_name": "cerebras",
       "provider_id": "cerebras",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Cline · Qwen3 <cline-cerebras-qwen3@local>"
   },
   "meta": {
-    "updated_at": 1788168233
+    "updated_at": 1788723681
   }
 }

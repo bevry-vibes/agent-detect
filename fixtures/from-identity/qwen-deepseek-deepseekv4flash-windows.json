@@ -6,6 +6,8 @@
       "harness_name": "qwen",
       "harness_id": "qwen",
       "harness_license": "Apache-2.0",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "DeepSeek",
       "provider_name": "deepseek",
       "provider_id": "deepseek",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Qwen Code · DeepSeek V4 Flash <qwen-deepseek-deepseekv4flash@local>"
   },
   "meta": {
-    "updated_at": 1788197736
+    "updated_at": 1788723717
   }
 }

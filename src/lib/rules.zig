@@ -62,7 +62,7 @@ pub const rulesForModels = [_]ModelRule{
     // (MIT-style with a large-scale commercial carve-out), not OSI
     // → NOASSERTION. variations: Chutes stamps secure-enclave served
     // ids with "-TEE" (observed: chutes/moonshotai/Kimi-K3-TEE).
-    .{ .name = "kimi-k3", .label = "Kimi K3", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K3", "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE" }, .variations = &.{ "Kimi-K3-TEE" } },
+    .{ .name = "kimi-k3", .label = "Kimi K3", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K3", "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE" }, .variations = &.{ "Kimi-K3-TEE", "k3" } },
     // glm-5.2: open-source — zai-org's card tags it "Pure Open: MIT";
     // MIT is OSI-approved, and the OSAID 1.0 definition is linked as
     // concurrence for the open-source tier. variations: Chutes TEE
@@ -186,7 +186,7 @@ pub const rulesForModels = [_]ModelRule{
     // chutes/google/gemma-4-31B-turbo-TEE); no `turbo` repo exists
     // on HF — the official 31B is `gemma-4-31B-it`, so the spelling
     // is a serving variant, folded per DESIGN #13.
-    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/google/gemma-4-31b-it", "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE" }, .variations = &.{ "gemma-4-31B-turbo-TEE" } },
+    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/google/gemma-4-31b-it", "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE" }, .variations = &.{ "gemma-4-31B-turbo-TEE", "gemma-4-31b-it" } },
     // gemini-3.5-flash: closed — Google Gemini 3.5 Flash; API-only, no
     // weights.
     .{ .name = "gemini-3.5-flash", .label = "Gemini 3.5 Flash", .reciprocity = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
@@ -530,11 +530,8 @@ pub const rulesForProviders = [_]ProviderRule{
     // observed are open-weight labs' models; closed_training stays
     // `never` absent a documented closed trainer.
     .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "opt-in", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
-    // opencode: null/null — opencode's first-party router (its built-in
-    // free tier: `opencode/deepseek-v4-flash-free` etc.). As an
-    // inference router it doesn't train on traffic, but the first-party
-    // upstreams are varied; training-policy wording unverified, null.
-    .{ .name = "opencode", .label = "OpenCode", .closed_training = null, .open_training = null, .sources = &.{"https://github.com/anomalyco/opencode"} },
+    // opencode: null/null — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13. As an inference router it doesn't train on traffic, but the first-party upstreams are varied; training-policy wording unverified, null (opencode.ai/privacy and /terms return 404, so docs/zen is the only policy doc). variations fold the retired `opencode-free`/`opencode-zen` rules (hermes's two profile keys for the two tiers; the zen spelling also resolves natively through the label). Folded 2026-09-07 per .plans/1788716755355 (D4). The Go subscription is individuated as `opencode-go`.
+    .{ .name = "opencode", .label = "OpenCode Zen", .closed_training = null, .open_training = null, .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"opencode-free"} },
     // opencode-go: opt-in/opt-in — OpenCode Zen's "Go" subscription
     // tier (base https://opencode.ai/zen/go/v1). Zen docs: "Our
     // providers follow a zero-retention policy and do not use your
@@ -566,84 +563,24 @@ pub const rulesForProviders = [_]ProviderRule{
     // (Qwen/Qwen3-32B-TEE, Qwen/Qwen3.6-27B-TEE) intentionally
     // unruled.
     .{ .name = "chutes", .label = "Chutes", .closed_training = "never", .open_training = "never", .sources = &.{ "https://chutes.ai/privacy", "https://chutes.ai/tos" } },
-    // zai: closed opt-out / open null — Z.AI's API terms: "For
-    // enterprises and developers using API Services, we will not use
-    // your User Content for developing or improving Services unless you
-    // explicitly agree" (an agreement-level opt-out); the consumer docs
-    // reserve training over non-personal User Content, but the API
-    // surface the harnesses reach is the DPA-governed one. No
-    // open-weight training policy is published, so open stays null.
-    .{ .name = "zai", .label = "Z.ai", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
+    // zai: opt-in (closed+open) — Z.AI's API terms: "We will not use End User Content to develop or improve Services, unless you explicitly agree to such use" — training is off by default, enabled only by explicit agreement (docs.z.ai is the authoritative source; www.z.ai legal pages render no text without JS). The terms do not distinguish model types and Z.AI serves both open (HF zai-org) and closed models, so the value mirrors across both axes (the axis-ambiguity convention, CONTRIBUTING "add a new model or provider rule").
+    .{ .name = "zai", .label = "Z.ai", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
     // cloudflare-workers-ai: null/null — Cloudflare's Workers AI
     // serverless inference platform (the `@cf/<org>/<model>` catalog pi
     // sessions route through); Cloudflare trains on nothing per its
     // commercial terms, but the platform's model-training wording is
     // unverified here, so both stay null pending a maintainer audit.
     .{ .name = "cloudflare-workers-ai", .label = "Cloudflare Workers AI", .closed_training = null, .open_training = null, .sources = &.{"https://developers.cloudflare.com/workers-ai/"} },
-    // zcode: mirrors `zai` — the ZCode desktop app's bundled coding-plan
-    // provider (its session stores record providerId
-    // `builtin:zai-start-plan`, and the ZAI_* env the app exports points
-    // at api.z.ai). Same upstream as `zai`, same unverified policy
-    // status. variation: the app's internal provider key, so session
-    // evidence resolves through the standard alias fold.
-    .{ .name = "zcode", .label = "ZCode", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
-    // autoclaw: mirrors `zai` — AutoClaw's bundled Z.ai channel (the
-    // desktop app's subscription surface; the runtime config keys it "zai"
-    // with baseUrl https://autoglm-api.autoglm.ai/autoclaw-proxy/proxy/autoclaw
-    // and X-Product: autoclaw / X-Channel: zai headers, observed
-    // 2026-09-06). Same upstream and policy surface as `zai`;
-    // individuated from it (the zcode precedent) because the served catalog
-    // spellings are AutoClaw-specific (zaicoding_glm-5.3, zai_glm-5.3-flash,
-    // tdpsk_deepseek-v4-*-2026MM) and folding them into the `zai` row would
-    // mark direct-api.z.ai combos feasible for other harnesses (kilo's zai
-    // row is the direct API). A user-configured DIRECT z.ai baseUrl
-    // (api.z.ai) resolves to `zai` — detectAutoClaw reads
-    // models.providers[key].baseUrl to decide the surface. Catalog
-    // (2026-09-06, runtime config): five ruled spellings recorded in
-    // map-provider-model-providermodel.csv plus zai_glm-5-turbo
-    // (glm-5-turbo's channel spelling — a distinct official Z.ai model:
-    // docs.z.ai/guides/llm/glm-5-turbo, OpenRouter z-ai/glm-5-turbo, no
-    // HF weights → closed, ruled 2026-09-06). models.dev individuates
-    // the surfaces the same way — a `zai` provider (direct api.z.ai)
-    // beside `zai-coding-plan`/`zhipuai-coding-plan` subscription
-    // surfaces. And zai_auto / zai_auto-fast (the "Auto"/"Auto-Fast"
-    // router aliases — maintainer directive: NEVER model rules; the
-    // gateway records the configured mode, not the routing decision, so
-    // an Auto session's underlying model is not locally observable — the
-    // accepted limitation). Subscription-metered, not free — no
-    // freeprovidermodel row (the maintainer's channel credits depleted
-    // 2026-09-06).
-    .{ .name = "autoclaw", .label = "AutoClaw", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
-    // xai: null/closed opt-out — xAI's Enterprise/API terms: "SpaceXAI
-    // will not use any User Content to train any foundation models …
-    // subject to disclosures to Customer and Customer-controlled user
-    // settings" (the consumer Grok product trains by default — the API
-    // surface Hermes reaches is the enterprise one). Open-weight xAI
-    // training policy unverified, open stays null.
+    // zcode: mirrors `zai` (both training axes; the policy evidence lives on the zai rule) — the ZCode desktop app's bundled coding-plan provider (its session stores record providerId `builtin:zai-start-plan`, and the ZAI_* env the app exports points at api.z.ai). variation: the app's internal provider key, so session evidence resolves through the standard alias fold.
+    .{ .name = "zcode", .label = "ZCode", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
+    // autoclaw: mirrors `zai` (both training axes; the policy evidence lives on the zai rule) — AutoClaw's bundled Z.ai channel (the desktop app's subscription surface; the runtime config keys it "zai" with baseUrl https://autoglm-api.autoglm.ai/autoclaw-proxy/proxy/autoclaw and X-Product: autoclaw / X-Channel: zai headers, observed 2026-09-06). Individuated from `zai` (the zcode precedent) because the served catalog spellings are AutoClaw-specific (zaicoding_glm-5.3, zai_glm-5.3-flash, tdpsk_deepseek-v4-*-2026MM, zai_glm-5-turbo) and folding them into the `zai` row would mark direct-api.z.ai combos feasible for other harnesses (kilo's zai row is the direct API). A user-configured DIRECT z.ai baseUrl (api.z.ai) resolves to `zai` — detectAutoClaw reads models.providers[key].baseUrl to decide the surface. models.dev individuates the surfaces the same way — a `zai` provider (direct api.z.ai) beside `zai-coding-plan`/`zhipuai-coding-plan` subscription surfaces. And zai_auto / zai_auto-fast (the "Auto"/"Auto-Fast" router aliases — maintainer directive: NEVER model rules; the gateway records the configured mode, not the routing decision, so an Auto session's underlying model is not locally observable — the accepted limitation). The identity evidence for the channel spellings lives on their model rules (glm-5-turbo's rule carries the docs.z.ai + OpenRouter sourcing). Subscription-metered, not free — no freeprovidermodel row (the maintainer's channel credits depleted 2026-09-06).
+    .{ .name = "autoclaw", .label = "AutoClaw", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
+    // xai: closed opt-out / open null — the Enterprise/API terms: "SpaceXAI will not use any User Content to train any foundation models … subject to disclosures to Customer and Customer-controlled user settings" (default off on the API surface); the consumer Grok product trains by default with a settings toggle (opt-out), and logged-out free usage grants "full rights to use any data … for product development and model training purposes" (enforced, but unreachable via API key). xAI released grok-1/grok-2 open weights historically but serves no open-weight models on its API, so the open axis is null (the exclusively-closed convention, CONTRIBUTING "add a new model or provider rule").
     .{ .name = "xai", .label = "xAI", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://x.ai/legal/terms-of-service-enterprise", "https://x.ai/legal/privacy-policy" } },
-    // moonshot: NOASSERTION/NOASSERTION — Moonshot's docs conflict: the
-    // OpenPlatform ToS says Customer Content "may be used for the
-    // foregoing purposes" (providing, maintaining, developing,
-    // improving — training named only via the enterprise-arrangement
-    // carve-out), the Kimi help center says API data is "not used to
-    // train or improve Kimi's models", and the platform privacy policy
-    // describes training to refine models. Attempted, inconclusive.
-    .{ .name = "moonshot", .label = "Moonshot", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
-    // kimi: mirrors `moonshot` — the provider key kimi-code configs
-    // use (`default_model = "kimi/kimi-k3"`); same underlying Moonshot
-    // AI upstream, same unverified policy status.
-    .{ .name = "kimi", .label = "Kimi", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
-    // qwen: opt-in (closed+open) — qwen.ai's ToS: "You hereby expressly
-    // authorise and consent to us: (i) using and storing User Content
-    // that is not personal data to develop and improve our
-    // machine-learning and artificial-intelligence technologies" — an
-    // express, standing authorization with no opt-out control on the
-    // platform tier. The privacy policy adds de-identified User Content
-    // to its training table. Alibaba Cloud Model Studio (the
-    // dashscope/alibaba-coding-plan surface) separately commits "never
-    // use your data for model training" — so `alibaba` folds to never,
-    // while the qwen.ai-hosted tier stays opt-in.
-    .{ .name = "qwen", .label = "Qwen", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://qwen.ai/termsservice", "https://qwen.ai/privacypolicy" }, .variations = &.{"qwen-oauth"} },
+    // moonshotai: NOASSERTION/NOASSERTION — the Moonshot AI API (api.moonshot.ai/v1; models.dev key `moonshotai`, OpenRouter slug, HF org — the id every index uses). Moonshot's docs conflict, all three live: the platform terms say Customer Content "may be used for the foregoing purposes" (providing/maintaining/developing/improving — training named only via the enterprise-arrangement carve-out), the Kimi help center says API data "is not used to train or improve Kimi's models", and the platform privacy policy describes processing that "includes training and refining our underlying technology". Attempted, inconclusive; the strictest documented posture would be opt-out (the terms). Moonshot releases open-weight Kimi models (HF moonshotai) beside API-served ones, so one inconclusive value mirrors across both axes (the axis-ambiguity convention). variations fold the retired `moonshot` and `kimi` rules — pi's models.dev key and the kimi-code CLI's API provider key (`default_model = "kimi/kimi-k3"`) both name this surface (full-id dialect: kimi-k2.6, kimi-k2.7-code, kimi-k3); the subscription surface is individuated as `kimi-coding`. Folded 2026-09-07 per .plans/1788716755355 (D1).
+    .{ .name = "moonshotai", .label = "Moonshot AI", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" }, .variations = &.{ "moonshot", "kimi" } },
+    // qwen: enforced (closed+open) — qwen.ai's ToS: "You hereby expressly authorise and consent to us: (i) using and storing User Content that is not personal data to develop and improve our machine-learning and artificial-intelligence technologies" — a mandatory standing grant; no training opt-out exists anywhere in the terms or privacy policy (only a generic personal-data objection right). Alibaba Cloud Model Studio (the dashscope/alibaba-coding-plan surface) separately commits "never use your data for model training" — so `alibaba` is never while the qwen.ai-hosted tier is enforced. Re-verified 2026-09-07 (.plans/1788716755355 D8; if an undocumented UI toggle ever surfaces, opt-out is the conservative fallback).
+    .{ .name = "qwen", .label = "Qwen", .closed_training = "enforced", .open_training = "enforced", .sources = &.{ "https://qwen.ai/termsservice", "https://qwen.ai/privacypolicy" }, .variations = &.{"qwen-oauth"} },
     // zenmux: null/null — an aggregator/API gateway exposing many
     // upstreams (`provider/id` models, several `-free`); training-policy
     // wording unverified, stays null.
@@ -654,28 +591,8 @@ pub const rulesForProviders = [_]ProviderRule{
     // sakana: null/null — Sakana AI trains the Fugu/Namazu families
     // (Japanese LLMs); API policy unverified, stays null.
     .{ .name = "sakana", .label = "Sakana AI", .closed_training = null, .open_training = null, .sources = &.{"https://sakana.ai/"} },
-    // ollama-cloud: never/never — Ollama's privacy policy: "When using
-    // cloud-hosted models, we process your prompts and responses
-    // transiently to provide the service and never train on it"; terms:
-    // "We do not use your inputs or outputs to train AI models".
-    .{ .name = "ollama-cloud", .label = "Ollama Cloud", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" } },
-    // ollama: never/never — the Ollama runtime surface (a user-configured
-    // ollama server, e.g. localhost:11434, as harnesses' custom
-    // provider; observed: ZCode's custom provider `name: "ollama"`
-    // serving the `:cloud`-tagged models). Same policy docs as
-    // `ollama-cloud` ("We do not use your inputs or outputs to train AI
-    // models"). KNOWN FOLD FLAW (follow-up discernment): a session
-    // reporting provider `ollama` with a `:cloud`-suffixed model is
-    // REALLY ollama-cloud traffic — the two have different policy
-    // surfaces (local = nothing leaves the machine; cloud = transient
-    // third-party processing) and should be individuated, but the fold
-    // currently lands cloud-served ids on `ollama`. Longer term, all
-    // local runtimes (ollama, lmstudio, llama.cpp servers) serving
-    // non-cloud models may want a shared `local` provider rule — with
-    // the caveat that a local surface still has its own vendor policy.
-    // The model tag (`:cloud`) marks the cloud-served spellings on the
-    // model rule, not here.
-    .{ .name = "ollama", .label = "Ollama", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" } },
+    // ollama: never/never — Ollama, one rule for both the local runtime and the cloud service (ollama.com/v1; individuated as `ollama`/`ollama-cloud` 2026-09-06, folded 2026-09-07 per .plans/1788716755355 D3 — same vendor, same policy values, and the local/cloud boundary is not yet reliably observable). Policy (ollama.com/privacy + terms): "When using cloud-hosted models, we process your prompts and responses transiently to provide the service and never train on it"; "We do not use your inputs or outputs to train AI models"; local models: nothing leaves the machine. variation folds the retired `ollama-cloud` rule (hermes's profile key; kilo/omp/opencode catalog spellings `ollama-cloud/...`). KNOWN FOLD FLAW: cloud traffic reported under a local-looking key (ZCode's custom provider `name: "ollama"` serving `:cloud`-tagged models) lands here too — the `:cloud` model-id suffix and the provider baseUrl are the individuation discriminators; the follow-up design is DESIGN.md decision #15. Every fixture observed so far is ollama-cloud traffic (the maintainer's host runs no local models). The `:cloud` spellings fold on the model rules, not here.
+    .{ .name = "ollama", .label = "Ollama", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" }, .variations = &.{"ollama-cloud"} },
     // Hermes-facing alias folds — the harness's provider ids are the
     // model-provider plugin names + models.dev keys, several of which
     // name a surface this table already ruled under another id. Each
@@ -690,11 +607,9 @@ pub const rulesForProviders = [_]ProviderRule{
     //   upstream, unverified).
     // — opencode-free / opencode-zen / openai-codex: first-party
     //   router/subscription surfaces, policy unverified (null).
-    .{ .name = "kimi-coding", .label = "Kimi Coding", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
-    .{ .name = "kimi-coding-cn", .label = "Kimi Coding CN", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
+    // kimi-coding: NOASSERTION/NOASSERTION (mirrors `moonshotai`'s inconclusive evidence — the conflicting-docs story lives on that rule) — the Kimi for Coding subscription (api.kimi.com/coding/v1; models.dev key `kimi-for-coding`), the product Moonshot ships the kimi-code CLI's subscription key and hermes's `kimi-coding` profile against. Individuated from the Moonshot API surface by every index (different endpoint, different auth, short-alias model dialect: `k3`, `kimi-for-coding(-highspeed)`), and by the coding-plan precedent (cline-pass, minimax-code, alibaba-coding-plan). variations fold the retired `kimi-code` rule (the CLI's subscription key, serving `k3`) and hermes's `kimi-coding-cn` CN mirror; the models.dev key `kimi-for-coding` resolves natively through the label. Folded 2026-09-07 per .plans/1788716755355 (D2).
+    .{ .name = "kimi-coding", .label = "Kimi for Coding", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" }, .variations = &.{ "kimi-code", "kimi-coding-cn" } },
     .{ .name = "alibaba-coding-plan", .label = "Alibaba Coding Plan", .closed_training = "never", .open_training = "never", .sources = &.{ "https://help.aliyun.com/en/model-studio/privacy-notice", "https://www.alibabacloud.com/help/en/model-studio/faq-about-alibaba-cloud-model-studio" } },
-    .{ .name = "opencode-free", .label = "OpenCode Free", .closed_training = null, .open_training = null, .sources = &.{"https://opencode.ai/docs/zen"} },
-    .{ .name = "opencode-zen", .label = "OpenCode Zen", .closed_training = null, .open_training = null, .sources = &.{"https://opencode.ai/docs/zen"} },
     .{ .name = "openai-codex", .label = "OpenAI Codex", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://openai.com/policies/service-terms", "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance" } },
     // meta: null/null — Meta's hosted tier for its open-weight families
     // (Llama, Muse); policy unverified, stays null.
@@ -702,9 +617,6 @@ pub const rulesForProviders = [_]ProviderRule{
     // google-antigravity: null/null — Google Antigravity's hosted tier;
     // policy unverified, stays null.
     .{ .name = "google-antigravity", .label = "Google Antigravity", .closed_training = null, .open_training = null, .sources = &.{"https://antigravity.google/"} },
-    // kimi-code: mirrors `kimi`/`moonshot` — the kimi-code CLI's own
-    // provider key (`k3` models); same Moonshot upstream, unverified.
-    .{ .name = "kimi-code", .label = "Kimi Code", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
     // gmi-cloud: null/null — GMI Cloud's privacy policy discusses usage
     // logs to "refine our models and infrastructure" but no explicit
     // prompt-content training statement; inconclusive, stays null.
@@ -758,10 +670,7 @@ pub const rulesForProviders = [_]ProviderRule{
     // or fine-tune any AI/ML models without Customer's prior permission
     // or instruction".
     .{ .name = "google-vertex", .label = "Google Vertex", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cloud.google.com/terms/service-terms", "https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" }, .variations = &.{"vertex"} },
-    // amazon-bedrock: never/never — Bedrock data protection: "Amazon
-    // Bedrock doesn't store or log your prompts and completions …
-    // doesn't use your prompts and completions to train any AWS models
-    // and doesn't distribute them to third parties."
+    // amazon-bedrock: never/never — the live statement (aws.amazon.com/bedrock/security-privacy-responsible-ai, 2026-09-07): "Amazon Bedrock never shares your data with model providers or uses it to train foundation models." The Claude Fable 5/5.1 carve-out retains prompts up to 30 days for provider-required human review — retention, not training.
     .{ .name = "amazon-bedrock", .label = "Amazon Bedrock", .closed_training = "never", .open_training = "never", .sources = &.{ "https://docs.aws.amazon.com/bedrock/latest/userguide/data-protection.html", "https://aws.amazon.com/bedrock/security-privacy-responsible-ai" }, .variations = &.{ "bedrock", "aws" } },
     // azure-foundry: never/never — Microsoft Foundry data privacy:
     // "prompts and completions are not used to train, retrain, or
@@ -770,34 +679,10 @@ pub const rulesForProviders = [_]ProviderRule{
     // Microsoft models, the model provider's models, or any third
     // party's models".
     .{ .name = "azure-foundry", .label = "Azure Foundry", .closed_training = "never", .open_training = "never", .sources = &.{ "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy", "https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/concept-data-privacy" }, .variations = &.{"azure"} },
-    // kilo: null/null — the Kilo Code CLI's first-party router provider
-    // (its `kilo/~*-latest` alias tier); an inference router, but the
-    // first-party upstreams are varied, so policy stays unverified.
-    .{ .name = "kilo", .label = "Kilo", .closed_training = null, .open_training = null, .sources = &.{"https://github.com/Kilo-Org/kilocode"} },
-    // nous: opt-out/opt-out — Nous Research's inference tier (Portal /
-    // Hermes inference API). Privacy Policy: "When Privacy Mode is
-    // enabled, we will not store your inference payloads and will not
-    // use such inference payloads for training…" — an account-level
-    // opt-out toggle; Privacy Mode defaults off, so opt-out. Terms §12.3
-    // concurs (Service Data "may be used by Nous Research").
+    // kilo: null/null — Kilo Code's first-party gateway (api.kilo.ai/api/gateway; models.dev key `kilo` "Kilo Gateway", the name every index uses). An inference router over varied first-party upstreams, so policy stays unverified. variations cover the harness key spellings: the CLI's own alias tier (`kilo/~*-latest`) and hermes's profile name `kilocode` with its `kilo-code` alias; the `kilo-gateway` spelling resolves natively through the label.
+    .{ .name = "kilo", .label = "Kilo Gateway", .closed_training = null, .open_training = null, .sources = &.{"https://github.com/Kilo-Org/kilocode"}, .variations = &.{"kilo-code"} },
+    // nous: opt-out/opt-out — Nous Research's inference tier (Portal / Hermes inference API). Privacy Policy: "When Privacy Mode is enabled, we will not store your inference payloads and will not use such inference payloads for training…" — an account-level opt-out toggle; Privacy Mode defaults off, so opt-out. Terms §12.3 concurs (Service Data "may be used by Nous Research").
     .{ .name = "nous", .label = "Nous", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://portal.nousresearch.com/privacy", "https://portal.nousresearch.com/terms" } },
-    // google-vertex: never/never — Vertex AI's Service Specific Terms
-    // Training Restriction: "Google will not use Customer Data to train
-    // or fine-tune any AI/ML models without Customer's prior permission
-    // or instruction".
-    .{ .name = "google-vertex", .label = "Google Vertex", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cloud.google.com/terms/service-terms", "https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" }, .variations = &.{"vertex"} },
-    // amazon-bedrock: never/never — Bedrock data protection: "Amazon
-    // Bedrock doesn't store or log your prompts and completions …
-    // doesn't use your prompts and completions to train any AWS models
-    // and doesn't distribute them to third parties."
-    .{ .name = "amazon-bedrock", .label = "Amazon Bedrock", .closed_training = "never", .open_training = "never", .sources = &.{ "https://docs.aws.amazon.com/bedrock/latest/userguide/data-protection.html", "https://aws.amazon.com/bedrock/security-privacy-responsible-ai" }, .variations = &.{ "bedrock", "aws" } },
-    // azure-foundry: never/never — Microsoft Foundry data privacy:
-    // "prompts and completions are not used to train, retrain, or
-    // improve the base models"; serverless deployments add "Microsoft
-    // doesn't use these prompts and outputs to train or improve
-    // Microsoft models, the model provider's models, or any third
-    // party's models".
-    .{ .name = "azure-foundry", .label = "Azure Foundry", .closed_training = "never", .open_training = "never", .sources = &.{ "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy", "https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/concept-data-privacy" }, .variations = &.{"azure"} },
     // novita-ai: never/never — Novita ToS §10.2 "By Default, Novita AI
     // will not use your Content to train our own models or to improve
     // the Services" + Zero Data Retention; the trust-center FAQ repeats
@@ -811,49 +696,30 @@ pub const rulesForProviders = [_]ProviderRule{
     // data" (Google/Anthropic-hosted exceptions inherit those upstream
     // policies).
     .{ .name = "deepinfra", .label = "DeepInfra", .closed_training = "never", .open_training = "never", .sources = &.{ "https://deepinfra.com/terms", "https://docs.deepinfra.com/account/data-privacy" } },
-    // nebius: opt-in (closed+open) — Nebius Token Factory ToS §7: "the
-    // Company collects and processes both Input and Output data for the
-    // purpose of training smaller Models used exclusively for
-    // Speculative Decoding" — standing training use; no customer-facing
-    // opt-out control is documented. All-axes opt-in.
-    .{ .name = "nebius", .label = "Nebius", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.tokenfactory.nebius.com/legal/terms-of-service", "https://nebius.com/services/token-factory" } },
-    // nvidia: never/never — NVIDIA's API Trial terms (§2.2/2.3): User
-    // Content and Generated Content are processed "solely to provide the
-    // API Service" during the session and "will not [be] store[d] or
-    // use[d]" after it — no training use of API content.
-    .{ .name = "nvidia", .label = "NVIDIA NIM", .closed_training = "never", .open_training = "never", .sources = &.{ "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/", "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/" } },
+    // nebius: opt-out (closed+open) — Nebius Token Factory ToS §7: "the Company collects and processes both Input and Output data for the purpose of training smaller Models used exclusively for Speculative Decoding … If you prefer that we … do not collect and process them …, You may opt out at any time" — training is on by default with a documented opt-out (onboarding form / support email), and only the speculative-decoding draft models are trained, never the served target models. The label is the product name every index uses (models.dev key `nebius`, "Nebius Token Factory"; hermes's profile key `nebius-token-factory` resolves through it).
+    .{ .name = "nebius", .label = "Nebius Token Factory", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://docs.tokenfactory.nebius.com/legal/terms-of-service", "https://nebius.com/services/token-factory" } },
+    // nvidia: enforced (closed+open) — the API Trial Terms (assets.ngc.nvidia.com/products/api-catalog/legal/, the live doc behind build.nvidia.com) §3.3: "NVIDIA will collect the following data … to operate and improve the API Services and other products and services: … (iv) User Content and Generated Content to improve NVIDIA products and services, including AI models" — default-on collection on the reachable free trial tier, with no opt-out anywhere in the live terms (§2.2/2.3's session-scoped processing clauses do not exempt §3.3). NVIDIA releases open-weight Nemotron models served on the same catalog, so the value mirrors across both axes. Re-verified 2026-09-07 (.plans/1788716755355 D8 — the prior never/never read §2.2/2.3 and missed §3.3). Free-axis membership is unaffected (free ≠ reciprocal).
+    .{ .name = "nvidia", .label = "NVIDIA NIM", .closed_training = "enforced", .open_training = "enforced", .sources = &.{ "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/", "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/" } },
     // upstage: never/never — Upstage ToS data-handling summary: "API
     // input and output data are not stored and are not used for the
     // development of services or AI model training" (Console Playground
     // data may be used for improvement — a different surface from the
     // API Hermes reaches).
     .{ .name = "upstage", .label = "Upstage", .closed_training = "never", .open_training = "never", .sources = &.{ "https://www.upstage.ai/terms-of-service/update-december-19-2024", "https://upstage.ai/privacy-policy/updated-mar-07-2025" } },
-    // xiaomi: opt-in (closed+open) — Xiaomi MiMo privacy policy: "We may
-    // use your Inputs and Outputs to train and improve our models and
-    // services. If you do not wish … you can opt out through the
-    // [Experience Optimization Plan]" (desktop app surface). The API
-    // open-platform policy states "Xiaomi will not use the content you
-    // provide for model training" — the stricter API tier keeps the
-    // overall rule at opt-in because the reachable desktop surface
-    // trains by default.
-    .{ .name = "xiaomi", .label = "Xiaomi", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://mimo.xiaomi.com/legal/privacy", "https://mimo.mi.com/docs/terms/privacy-policy" } },
+    // xiaomi: never/never — the MiMo open platform an API consumer reaches (privacy.mi.com, the MiMo platform policy): "Xiaomi will not use the content you provide for model training or any other purposes". The desktop app is a separate, looser surface ("We may use your Inputs and Outputs to train and improve our models … you can opt out through the [Experience Optimization Plan]" — opt-out there); this rule covers the API surface per the harness-reachability doctrine. Xiaomi is an open-weight producer (HF XiaomiMiMo: MiMo-V2.5 etc.) serving no closed models, so the closed axis is the commented vacuous case — no closed models exist there to train (the exclusively-open convention, CONTRIBUTING "add a new model or provider rule"). Re-verified 2026-09-07 (.plans/1788716755355 D8).
+    .{ .name = "xiaomi", .label = "Xiaomi", .closed_training = "never", .open_training = "never", .sources = &.{ "https://privacy.mi.com/XiaomiMiMoPlatformos/en_GB/", "https://www.mi.com/about/privacy/" } },
     // stepfun: opt-in (closed+open) — StepFun ToS §4.4: "StepFun may use
     // Usage Data, including personal data contained in Prompts and
     // Outputs, to train, fine-tune, and improve its artificial
     // intelligence models" in certain programs ("you should not
     // participate in that program" = program-gated opt-in).
     .{ .name = "stepfun", .label = "StepFun", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.stepfun.ai/docs/en/agreement/userservice", "https://platform.stepfun.ai/docs/en/agreement/userprivacy" } },
-    // arcee: opt-out (closed+open) — Arcee privacy policy: unpaid
-    // instances' Inputs/Outputs "may [be] use[d] to train and improve
-    // our Services, unless you opt out … by contacting us"; paid
-    // instances not used for training by default.
+    // arcee: opt-out (closed+open) — Arcee privacy policy: unpaid instances' Inputs/Outputs "may [be] use[d] to train and improve our Services, unless you opt out … by contacting us"; paid instances are not used for training by default. Arcee is an open-weight producer (HF arcee-ai); whether its catalog is exclusively open (which would make the closed axis the vacuous never case per the exclusively-open convention) is unclassified pending a catalog audit.
     .{ .name = "arcee", .label = "Arcee", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://www.arcee.ai/privacy-policy", "https://www.arcee.ai/terms-and-conditions" } },
-    // vercel: never/never — Vercel AI Gateway ZDR docs: "AI Gateway has
-    // a ZDR policy and does not retain prompts, outputs, or sensitive
-    // data … does not use your prompts or responses for training
-    // purposes" (the per-provider routing caveat is upstream policy, not
-    // the gateway's own use).
+    // vercel: never/never — Vercel AI Gateway ZDR docs: "AI Gateway has a ZDR policy and does not retain prompts, outputs, or sensitive data … does not use your prompts or responses for training purposes". Caveat: "By default, AI Gateway does not route based on the data retention policy of providers" — downstream providers may train unless `disallowPromptTraining` is enabled (free) or ZDR routing is on (Pro/Enterprise); that is upstream policy, not the gateway's own use.
     .{ .name = "vercel", .label = "Vercel AI Gateway", .closed_training = "never", .open_training = "never", .sources = &.{ "https://vercel.com/docs/ai-gateway/security-and-compliance/zdr", "https://vercel.com/docs/ai-gateway/security-and-compliance/disallow-prompt-training" }, .variations = &.{"ai-gateway"} },
+    // phala: never/never — Phala's TEE inference gateway (inference.phala.com/v1; an OpenRouter endpoint provider, no models.dev key), serving exclusively open-weight models inside hardware enclaves. The no-training basis is technical inaccessibility rather than an explicit sentence: inputs and outputs are end-to-end encrypted in the TEE, "The platform may retain encrypted inputs and outputs and metadata for the purpose of improving its operation and security", and "The platform retains the encrypted data for the user but technically doesn't have access to the raw data" — the platform cannot read, therefore cannot train on, user content. The closed axis is the commented vacuous case: the catalog (unauth GET /v1/models, 2026-09-07 — deepseek/llama/qwen/glm/kimi/gpt-oss/gemma plus Phala's own uncensored finetunes, all TEE-stamped) serves no closed models to train (the exclusively-open convention). Non-zero pricing → not free, no freeprovidermodel row; deepseek-v4-flash is served there without tool calling, so it has no grid cell.
+    .{ .name = "phala", .label = "Phala", .closed_training = "never", .open_training = "never", .sources = &.{ "https://phala.com/privacy", "https://phala.com/terms" } },
 };
 
 /// static metadata the rule declared to the matcher. Useful for auditing

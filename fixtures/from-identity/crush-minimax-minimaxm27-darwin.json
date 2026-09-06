@@ -6,6 +6,8 @@
       "harness_name": "crush",
       "harness_id": "crush",
       "harness_license": "FSL-1.1-MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "MiniMax",
       "provider_name": "minimax",
       "provider_id": "minimax",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Crush · MiniMax M2.7 <crush-minimax-minimaxm27@local>"
   },
   "meta": {
-    "updated_at": 1788168434
+    "updated_at": 1788723717
   }
 }

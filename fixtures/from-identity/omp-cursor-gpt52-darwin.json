@@ -6,6 +6,8 @@
       "harness_name": "omp",
       "harness_id": "omp",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Cursor",
       "provider_name": "cursor",
       "provider_id": "cursor",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: omp · GPT-5.2 <omp-cursor-gpt52@local>"
   },
   "meta": {
-    "updated_at": 1788168732
+    "updated_at": 1788723717
   }
 }

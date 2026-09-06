@@ -6,7 +6,9 @@
       "harness_name": "opencode",
       "harness_id": "opencode",
       "harness_license": "MIT",
-      "provider_label": "OpenCode",
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "provider_label": "OpenCode Zen",
       "provider_name": "opencode",
       "provider_id": "opencode",
       "provider_closed_training": null,
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: OpenCode · Nemotron 3 Ultra <opencode-opencode-nemotron3ultra@local>"
   },
   "meta": {
-    "updated_at": 1788169005
+    "updated_at": 1788723717
   }
 }

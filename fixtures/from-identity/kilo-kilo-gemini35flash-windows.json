@@ -6,7 +6,9 @@
       "harness_name": "kilo",
       "harness_id": "kilo",
       "harness_license": "MIT",
-      "provider_label": "Kilo",
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "provider_label": "Kilo Gateway",
       "provider_name": "kilo",
       "provider_id": "kilo",
       "provider_closed_training": null,
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Kilo Code · Gemini 3.5 Flash <kilo-kilo-gemini35flash@local>"
   },
   "meta": {
-    "updated_at": 1788197751
+    "updated_at": 1788723717
   }
 }

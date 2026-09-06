@@ -6,10 +6,12 @@
       "harness_name": "copilot",
       "harness_id": "copilot",
       "harness_license": "NONE",
+      "harness_open_training": null,
+      "harness_closed_training": "opt-out",
       "provider_label": "GitHub Copilot",
       "provider_name": "github-copilot",
       "provider_id": "githubcopilot",
-      "provider_closed_training": null,
+      "provider_closed_training": "opt-out",
       "provider_open_training": null,
       "model_label": "Gemini 3 Pro",
       "model_short_title": null,
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: GitHub Copilot CLI · Gemini 3 Pro <copilot-githubcopilot-gemini3pro@local>"
   },
   "meta": {
-    "updated_at": 1788198071
+    "updated_at": 1788723717
   }
 }

@@ -6,6 +6,8 @@
       "harness_name": "opencode",
       "harness_id": "opencode",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Groq",
       "provider_name": "groq",
       "provider_id": "groq",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: OpenCode · Llama 3.3 70B <opencode-groq-llama3370b@local>"
   },
   "meta": {
-    "updated_at": 1788168948
+    "updated_at": 1788723717
   }
 }

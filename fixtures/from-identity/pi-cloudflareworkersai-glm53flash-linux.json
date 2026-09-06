@@ -6,6 +6,8 @@
       "harness_name": "pi",
       "harness_id": "pi",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Cloudflare Workers AI",
       "provider_name": "cloudflare-workers-ai",
       "provider_id": "cloudflareworkersai",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Pi · GLM 5.3 Flash <pi-cloudflareworkersai-glm53flash@local>"
   },
   "meta": {
-    "updated_at": 1788524079
+    "updated_at": 1788723717
   }
 }

@@ -6,6 +6,8 @@
       "harness_name": "kimi-code",
       "harness_id": "kimicode",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Chutes",
       "provider_name": "chutes",
       "provider_id": "chutes",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Kimi Code · Kimi K3 <kimicode-chutes-kimik3@local>"
   },
   "meta": {
-    "updated_at": 1788198240
+    "updated_at": 1788723717
   }
 }

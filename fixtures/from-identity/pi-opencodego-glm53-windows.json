@@ -6,6 +6,8 @@
       "harness_name": "pi",
       "harness_id": "pi",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "OpenCode Go",
       "provider_name": "opencode-go",
       "provider_id": "opencodego",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Pi · GLM 5.3 <pi-opencodego-glm53@local>"
   },
   "meta": {
-    "updated_at": 1788198636
+    "updated_at": 1788723717
   }
 }

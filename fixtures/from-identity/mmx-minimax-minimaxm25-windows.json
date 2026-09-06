@@ -6,6 +6,8 @@
       "harness_name": "mmx",
       "harness_id": "mmx",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "MiniMax",
       "provider_name": "minimax",
       "provider_id": "minimax",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: MiniMax CLI · MiniMax M2.5 <mmx-minimax-minimaxm25@local>"
   },
   "meta": {
-    "updated_at": 1788198359
+    "updated_at": 1788723717
   }
 }

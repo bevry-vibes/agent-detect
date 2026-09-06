@@ -1,0 +1,102 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "provider_label": "Ollama",
+      "provider_name": "ollama",
+      "provider_id": "ollama",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "model_label": "Qwen3 Coder",
+      "model_short_title": null,
+      "model_name": "qwen3-coder",
+      "model_id": "qwen3coder",
+      "model_reciprocity": "open-weight",
+      "model_license": null,
+      "agent_id": "omp-ollama-qwen3coder",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: omp · Qwen3 Coder <omp-ollama-qwen3coder@local>",
+    "trailer assisted-by": "Assisted-by: omp · Qwen3 Coder <omp-ollama-qwen3coder@local>",
+    "raw": {
+      "platform_id": "darwin",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 92930,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 86093,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 7115,
+          "name": "bash"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://ollama.com/"
+      ],
+      "model-urls": [
+        "https://huggingface.co/Qwen/Qwen3-Coder",
+        "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "OMP_API_KEY",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "ollama-cloud/qwen3-coder"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.omp/agent/config.yml",
+          "field": "modelRoles.default",
+          "value": "ollama-cloud/qwen3-coder"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1788723598,
+    "prompt_invocation": [
+      "omp",
+      "--model",
+      "ollama-cloud/qwen3-coder",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "omp",
+      "--version"
+    ],
+    "harness_version": "18.0.11"
+  }
+}

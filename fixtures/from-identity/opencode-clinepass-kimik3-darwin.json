@@ -6,6 +6,8 @@
       "harness_name": "opencode",
       "harness_id": "opencode",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Cline Pass",
       "provider_name": "cline-pass",
       "provider_id": "clinepass",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: OpenCode · Kimi K3 <opencode-clinepass-kimik3@local>"
   },
   "meta": {
-    "updated_at": 1788168934
+    "updated_at": 1788723717
   }
 }

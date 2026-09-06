@@ -6,22 +6,24 @@
       "harness_name": "kilo",
       "harness_id": "kilo",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Z.ai",
       "provider_name": "zai",
       "provider_id": "zai",
-      "provider_closed_training": null,
-      "provider_open_training": null,
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
       "model_label": "GLM 5.2",
       "model_short_title": null,
       "model_name": "glm-5.2",
       "model_id": "glm52",
       "model_reciprocity": "open-source",
+      "model_license": "MIT",
       "agent_id": "kilo-zai-glm52",
-      "reciprocal": false,
-      "trailer": "Co-authored-by: Kilo Code \u00b7 GLM 5.2 <kilo-zai-glm52@local>"
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 GLM 5.2 <kilo-zai-glm52@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 GLM 5.2 <kilo-zai-glm52@local>",
+    "trailer co-author": "Co-authored-by: Kilo Code · GLM 5.2 <kilo-zai-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · GLM 5.2 <kilo-zai-glm52@local>",
     "raw": {
       "platform_id": "darwin",
       "detectable": [
@@ -57,7 +59,7 @@
     }
   },
   "meta": {
-    "updated_at": 1786441275,
+    "updated_at": 1788723717,
     "prompt_invocation": [
       "kilo",
       "run",

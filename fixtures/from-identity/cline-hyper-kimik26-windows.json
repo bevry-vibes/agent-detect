@@ -6,6 +6,8 @@
       "harness_name": "cline",
       "harness_id": "cline",
       "harness_license": "Apache-2.0",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Charm Hyper",
       "provider_name": "hyper",
       "provider_id": "hyper",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Cline · Kimi K2.6 <cline-hyper-kimik26@local>"
   },
   "meta": {
-    "updated_at": 1788197938
+    "updated_at": 1788723717
   }
 }

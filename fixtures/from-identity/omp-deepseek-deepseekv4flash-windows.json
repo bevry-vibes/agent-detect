@@ -6,6 +6,8 @@
       "harness_name": "omp",
       "harness_id": "omp",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "DeepSeek",
       "provider_name": "deepseek",
       "provider_id": "deepseek",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: omp · DeepSeek V4 Flash <omp-deepseek-deepseekv4flash@local>"
   },
   "meta": {
-    "updated_at": 1788197766
+    "updated_at": 1788723717
   }
 }

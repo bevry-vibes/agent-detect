@@ -6,6 +6,8 @@
       "harness_name": "crush",
       "harness_id": "crush",
       "harness_license": "FSL-1.1-MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Charm Hyper",
       "provider_name": "hyper",
       "provider_id": "hyper",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Crush · Kimi K2.6 <crush-hyper-kimik26@local>"
   },
   "meta": {
-    "updated_at": 1788198080
+    "updated_at": 1788723717
   }
 }

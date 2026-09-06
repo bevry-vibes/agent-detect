@@ -6,7 +6,9 @@
       "harness_name": "kilo",
       "harness_id": "kilo",
       "harness_license": "MIT",
-      "provider_label": "Kilo",
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "provider_label": "Kilo Gateway",
       "provider_name": "kilo",
       "provider_id": "kilo",
       "provider_closed_training": null,
@@ -16,12 +18,12 @@
       "model_name": "grok-4.5",
       "model_id": "grok45",
       "model_reciprocity": "closed",
+      "model_license": null,
       "agent_id": "kilo-kilo-grok45",
-      "reciprocal": false,
-      "trailer": "Co-authored-by: Kilo Code \u00b7 Grok 4.5 <kilo-kilo-grok45@local>"
+      "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Kilo Code \u00b7 Grok 4.5 <kilo-kilo-grok45@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code \u00b7 Grok 4.5 <kilo-kilo-grok45@local>",
+    "trailer co-author": "Co-authored-by: Kilo Code · Grok 4.5 <kilo-kilo-grok45@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Grok 4.5 <kilo-kilo-grok45@local>",
     "raw": {
       "platform_id": "darwin",
       "detectable": [
@@ -55,7 +57,7 @@
     }
   },
   "meta": {
-    "updated_at": 1786441329,
+    "updated_at": 1788723717,
     "prompt_invocation": [
       "kilo",
       "run",

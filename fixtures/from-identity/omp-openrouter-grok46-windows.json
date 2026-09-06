@@ -6,6 +6,8 @@
       "harness_name": "omp",
       "harness_id": "omp",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "OpenRouter",
       "provider_name": "openrouter",
       "provider_id": "openrouter",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: omp · Grok 4.6 <omp-openrouter-grok46@local>"
   },
   "meta": {
-    "updated_at": 1788198426
+    "updated_at": 1788723717
   }
 }

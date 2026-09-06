@@ -6,6 +6,8 @@
       "harness_name": "goose",
       "harness_id": "goose",
       "harness_license": "Apache-2.0",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Goose",
       "provider_name": "goose",
       "provider_id": "goose",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Goose · Claude Sonnet 4 <goose-goose-claudesonnet4@local>"
   },
   "meta": {
-    "updated_at": 1788168450
+    "updated_at": 1788723717
   }
 }

@@ -6,6 +6,8 @@
       "harness_name": "opencode",
       "harness_id": "opencode",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Mistral",
       "provider_name": "mistral",
       "provider_id": "mistral",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: OpenCode · Mistral Large (latest) <opencode-mistral-mistrallargelatest@local>"
   },
   "meta": {
-    "updated_at": 1788198534
+    "updated_at": 1788723717
   }
 }

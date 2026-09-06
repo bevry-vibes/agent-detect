@@ -6,11 +6,13 @@
       "harness_name": "omp",
       "harness_id": "omp",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Hugging Face",
       "provider_name": "huggingface",
       "provider_id": "huggingface",
-      "provider_closed_training": null,
-      "provider_open_training": null,
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
       "model_label": "Phi-4",
       "model_short_title": null,
       "model_name": "phi-4",
@@ -18,12 +20,12 @@
       "model_reciprocity": "open-weight",
       "model_license": null,
       "agent_id": "omp-huggingface-phi4",
-      "reciprocal": false
+      "reciprocal": true
     },
     "trailer co-author": "Co-authored-by: omp · Phi-4 <omp-huggingface-phi4@local>",
     "trailer assisted-by": "Assisted-by: omp · Phi-4 <omp-huggingface-phi4@local>"
   },
   "meta": {
-    "updated_at": 1788197818
+    "updated_at": 1788723717
   }
 }

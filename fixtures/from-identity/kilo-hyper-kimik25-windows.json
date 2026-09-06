@@ -6,6 +6,8 @@
       "harness_name": "kilo",
       "harness_id": "kilo",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Charm Hyper",
       "provider_name": "hyper",
       "provider_id": "hyper",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Kilo Code · Kimi K2.5 <kilo-hyper-kimik25@local>"
   },
   "meta": {
-    "updated_at": 1788198116
+    "updated_at": 1788723717
   }
 }

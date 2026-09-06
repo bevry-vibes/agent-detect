@@ -6,6 +6,8 @@
       "harness_name": "opencode",
       "harness_id": "opencode",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Chutes",
       "provider_name": "chutes",
       "provider_id": "chutes",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: OpenCode · Qwen3.8 27B <opencode-chutes-qwen3827b@local>"
   },
   "meta": {
-    "updated_at": 1788198488
+    "updated_at": 1788723717
   }
 }

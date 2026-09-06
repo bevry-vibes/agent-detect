@@ -6,6 +6,8 @@
       "harness_name": "omp",
       "harness_id": "omp",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "NanoGPT",
       "provider_name": "nanogpt",
       "provider_id": "nanogpt",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: omp · Qwen3.6 <omp-nanogpt-qwen36@local>"
   },
   "meta": {
-    "updated_at": 1788197817
+    "updated_at": 1788723717
   }
 }

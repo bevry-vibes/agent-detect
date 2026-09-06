@@ -6,6 +6,8 @@
       "harness_name": "qwen",
       "harness_id": "qwen",
       "harness_license": "Apache-2.0",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "OpenAI",
       "provider_name": "openai",
       "provider_id": "openai",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>"
   },
   "meta": {
-    "updated_at": 1788169192
+    "updated_at": 1788723717
   }
 }

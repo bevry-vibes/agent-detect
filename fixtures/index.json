@@ -22,22 +22,22 @@
       "runner": 75853
     },
     {
-      "harness": "hermes",
+      "harness": "zcode",
+      "provider": "phala",
+      "model": "glm53",
+      "platform": "darwin",
       "mode": "from-identity",
       "stale": true,
-      "runner": 42342
+      "runner": 22365
     },
     {
-      "harness": "hermes",
-      "mode": "from-capture",
-      "stale": true,
-      "runner": 42342
-    },
-    {
-      "harness": "autoclaw",
+      "harness": "zcode",
+      "provider": "phala",
+      "model": "glm53flash",
+      "platform": "darwin",
       "mode": "from-identity",
       "stale": true,
-      "runner": 38403
+      "runner": 23039
     }
   ],
   "backlog": {
@@ -2244,7 +2244,7 @@
         "--version"
       ]
     },
-    "kilo-ollamacloud-deepseekv4flash-darwin": {
+    "kilo-ollama-deepseekv4flash-darwin": {
       "prompt_invocation": [
         "kilo",
         "run",
@@ -2258,7 +2258,7 @@
         "--version"
       ]
     },
-    "kilo-ollamacloud-glm52-darwin": {
+    "kilo-ollama-glm52-darwin": {
       "prompt_invocation": [
         "kilo",
         "run",
@@ -2272,7 +2272,7 @@
         "--version"
       ]
     },
-    "kilo-ollamacloud-glm52-linux": {
+    "kilo-ollama-glm52-linux": {
       "prompt_invocation": [
         "kilo",
         "run",
@@ -2286,7 +2286,7 @@
         "--version"
       ]
     },
-    "kilo-ollamacloud-glm52-windows": {
+    "kilo-ollama-glm52-windows": {
       "prompt_invocation": [
         "kilo.cmd",
         "run",
@@ -2300,7 +2300,7 @@
         "--version"
       ]
     },
-    "kilo-ollamacloud-kimik25-darwin": {
+    "kilo-ollama-kimik25-darwin": {
       "prompt_invocation": [
         "kilo",
         "run",
@@ -2314,7 +2314,7 @@
         "--version"
       ]
     },
-    "kilo-ollamacloud-kimik25-linux": {
+    "kilo-ollama-kimik25-linux": {
       "prompt_invocation": [
         "kilo",
         "run",
@@ -2328,7 +2328,7 @@
         "--version"
       ]
     },
-    "kilo-ollamacloud-kimik25-windows": {
+    "kilo-ollama-kimik25-windows": {
       "prompt_invocation": [
         "kilo.cmd",
         "run",
@@ -2480,7 +2480,7 @@
         "--version"
       ]
     },
-    "kimicode-kimi-kimik3-darwin": {
+    "kimicode-moonshotai-kimik3-darwin": {
       "prompt_invocation": [
         "kimi",
         "-p",
@@ -2491,7 +2491,7 @@
         "--version"
       ]
     },
-    "kimicode-kimi-kimik3-linux": {
+    "kimicode-moonshotai-kimik3-linux": {
       "prompt_invocation": [
         "kimi",
         "-p",
@@ -2502,7 +2502,7 @@
         "--version"
       ]
     },
-    "kimicode-kimi-kimik3-windows": {
+    "kimicode-moonshotai-kimik3-windows": {
       "prompt_invocation": [
         "kimi.exe",
         "-p",
@@ -3809,7 +3809,7 @@
         "--version"
       ]
     },
-    "omp-kimicode-kimik3-darwin": {
+    "omp-kimicoding-kimik3-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -3822,7 +3822,7 @@
         "--version"
       ]
     },
-    "omp-kimicode-kimik3-linux": {
+    "omp-kimicoding-kimik3-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -3835,7 +3835,7 @@
         "--version"
       ]
     },
-    "omp-kimicode-kimik3-windows": {
+    "omp-kimicoding-kimik3-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4511,7 +4511,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-deepseekv32-darwin": {
+    "omp-ollama-deepseekv32-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4524,7 +4524,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-deepseekv32-linux": {
+    "omp-ollama-deepseekv32-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4537,7 +4537,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-deepseekv32-windows": {
+    "omp-ollama-deepseekv32-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4550,7 +4550,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-deepseekv4flash-darwin": {
+    "omp-ollama-deepseekv4flash-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4563,7 +4563,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-deepseekv4flash-linux": {
+    "omp-ollama-deepseekv4flash-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4576,7 +4576,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-deepseekv4flash-windows": {
+    "omp-ollama-deepseekv4flash-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4589,7 +4589,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-glm52-darwin": {
+    "omp-ollama-glm52-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4602,7 +4602,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-glm52-linux": {
+    "omp-ollama-glm52-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4615,7 +4615,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-glm52-windows": {
+    "omp-ollama-glm52-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4628,7 +4628,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-kimik3-darwin": {
+    "omp-ollama-kimik3-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4641,7 +4641,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-kimik3-linux": {
+    "omp-ollama-kimik3-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4654,7 +4654,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-kimik3-windows": {
+    "omp-ollama-kimik3-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4667,7 +4667,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-minimaxm27-darwin": {
+    "omp-ollama-minimaxm27-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4680,7 +4680,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-minimaxm27-linux": {
+    "omp-ollama-minimaxm27-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4693,7 +4693,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-minimaxm27-windows": {
+    "omp-ollama-minimaxm27-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4706,7 +4706,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-minimaxm3-darwin": {
+    "omp-ollama-minimaxm3-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4719,7 +4719,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-minimaxm3-linux": {
+    "omp-ollama-minimaxm3-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4732,7 +4732,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-minimaxm3-windows": {
+    "omp-ollama-minimaxm3-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4745,7 +4745,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-nemotron3ultra-darwin": {
+    "omp-ollama-nemotron3ultra-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4758,7 +4758,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-nemotron3ultra-linux": {
+    "omp-ollama-nemotron3ultra-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4771,7 +4771,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-nemotron3ultra-windows": {
+    "omp-ollama-nemotron3ultra-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -4784,7 +4784,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-qwen3coder-darwin": {
+    "omp-ollama-qwen3coder-darwin": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4797,7 +4797,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-qwen3coder-linux": {
+    "omp-ollama-qwen3coder-linux": {
       "prompt_invocation": [
         "omp",
         "-p",
@@ -4810,7 +4810,7 @@
         "--version"
       ]
     },
-    "omp-ollamacloud-qwen3coder-windows": {
+    "omp-ollama-qwen3coder-windows": {
       "prompt_invocation": [
         "omp.exe",
         "-p",
@@ -6116,7 +6116,7 @@
         "--version"
       ]
     },
-    "pi-kimi-kimik3-darwin": {
+    "pi-moonshotai-kimik3-darwin": {
       "prompt_invocation": [
         "pi",
         "--provider",
@@ -7015,7 +7015,7 @@
         "--version"
       ]
     },
-    "hermes-ollamacloud-glm53flash-darwin": {
+    "hermes-ollama-glm53flash-darwin": {
       "prompt_invocation": [
         "hermes",
         "chat",

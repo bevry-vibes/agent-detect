@@ -6,6 +6,8 @@
       "harness_name": "pi",
       "harness_id": "pi",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Groq",
       "provider_name": "groq",
       "provider_id": "groq",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: Pi · GPT-OSS 120B <pi-groq-gptoss120b@local>"
   },
   "meta": {
-    "updated_at": 1788198620
+    "updated_at": 1788723717
   }
 }

@@ -6,6 +6,8 @@
       "harness_name": "omp",
       "harness_id": "omp",
       "harness_license": "MIT",
+      "harness_open_training": null,
+      "harness_closed_training": null,
       "provider_label": "Meta",
       "provider_name": "meta",
       "provider_id": "meta",
@@ -24,6 +26,6 @@
     "trailer assisted-by": "Assisted-by: omp · Muse Spark 1.2 <omp-meta-musespark12@local>"
   },
   "meta": {
-    "updated_at": 1788197790
+    "updated_at": 1788723717
   }
 }
