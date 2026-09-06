@@ -122,7 +122,10 @@ pub const rulesForModels = [_]ModelRule{
     // the stamp — `deepseek-ai/…`,
     // `siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731` — is shed by
     // `modelIdAfterNamespace`, so the bare stamped form is enough.
-    .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash:0731", "deepseek-v4-flash-vision-exp", "deepseek-v4-flash-free" } },
+    // The tdpsk_ spelling is AutoClaw's channel prefix + the 202605
+    // YYYYMM release stamp (observed in the runtime config catalog,
+    // 2026-09-06) — same stamp/prefix folding per DESIGN #13.
+    .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash:0731", "deepseek-v4-flash-vision-exp", "deepseek-v4-flash-free", "tdpsk_deepseek-v4-flash-202605" } },
     // mistral-large-latest: open-weight — Mistral's models overview
     // lists the current "Mistral Large 3" (v25.12) as Apache-2.0
     // open-weight, and the mistral-large-latest alias resolves to it;
@@ -136,8 +139,10 @@ pub const rulesForModels = [_]ModelRule{
     // MMDD release-date stamp as the flash sibling, here 0813
     // (catalogued: `deepseek/deepseek-v4-pro-0813`, HF
     // `deepseek-ai/DeepSeek-V4-Pro-0813`) — folded per DESIGN #13 so the
-    // dated id can never land as its own rule.
-    .{ .name = "deepseek-v4-pro", .label = "DeepSeek V4 Pro", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE" }, .variations = &.{ "deepseek-v4-pro-0813" } },
+    // dated id can never land as its own rule; the tdpsk_ spelling is
+    // AutoClaw's channel prefix + the 202606 YYYYMM stamp (observed in
+    // the runtime config catalog, 2026-09-06) — same folding.
+    .{ .name = "deepseek-v4-pro", .label = "DeepSeek V4 Pro", .reciprocity = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE" }, .variations = &.{ "deepseek-v4-pro-0813", "tdpsk_deepseek-v4-pro-202606" } },
     // llama-4: open-weight — Llama 4 community license (weights
     // downloadable, custom license, not OSI); Scout is the smallest of
     // the family.
@@ -373,10 +378,22 @@ pub const rulesForModels = [_]ModelRule{
     // glm-5.3: open-weight — Z.ai GLM 5.3; LICENSE is a custom
     // "GLM-5.3 License" (© 2026 Z.AI; not plain MIT, not SPDX →
     // NOASSERTION). Observed on opencode-go (bare id).
-    .{ .name = "glm-5.3", .label = "GLM 5.3", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3", "https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE" } },
+    // variations: AutoClaw's bundled-channel spelling (observed in the
+    // runtime config catalog and session records, 2026-09-06).
+    .{ .name = "glm-5.3", .label = "GLM 5.3", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3", "https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE" }, .variations = &.{"zaicoding_glm-5.3"} },
     // glm-5.3-flash: open-weight — Z.ai GLM 5.3 Flash; HF card + MIT
     // LICENSE. Observed on opencode-go (bare id).
-    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" }, .variations = &.{"glm-5.3-flash:cloud"} },
+    // variations: AutoClaw's channel spelling (also the app's configured
+    // imageModel; observed 2026-09-06).
+    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .reciprocity = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" }, .variations = &.{ "glm-5.3-flash:cloud", "zai_glm-5.3-flash" } },
+    // glm-5-turbo: closed — Z.ai's "Faster GLM-5 lane" (released
+    // 2026-03-16); a distinct official API id (docs.z.ai model page,
+    // OpenRouter z-ai/glm-5-turbo) with no public weights (HF
+    // zai-org/GLM-5-Turbo does not exist; models.dev records
+    // open_weights: false) → closed, license NONE. variations: AutoClaw's
+    // channel spelling (observed in the runtime config catalog,
+    // 2026-09-06).
+    .{ .name = "glm-5-turbo", .label = "GLM-5-Turbo", .reciprocity = "closed", .license = "NONE", .sources = &.{ "https://docs.z.ai/guides/llm/glm-5-turbo", "https://openrouter.ai/z-ai/glm-5-turbo" }, .variations = &.{"zai_glm-5-turbo"} },
     // mimo-v2.5: open-weight — Xiaomi MiMo V2.5; HF card + MIT
     // LICENSE. Single-size version, stamp not a param size. Observed
     // on opencode-go (bare id).
@@ -570,6 +587,33 @@ pub const rulesForProviders = [_]ProviderRule{
     // status. variation: the app's internal provider key, so session
     // evidence resolves through the standard alias fold.
     .{ .name = "zcode", .label = "ZCode", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
+    // autoclaw: mirrors `zai` — AutoClaw's bundled Z.ai channel (the
+    // desktop app's subscription surface; the runtime config keys it "zai"
+    // with baseUrl https://autoglm-api.autoglm.ai/autoclaw-proxy/proxy/autoclaw
+    // and X-Product: autoclaw / X-Channel: zai headers, observed
+    // 2026-09-06). Same upstream and policy surface as `zai`;
+    // individuated from it (the zcode precedent) because the served catalog
+    // spellings are AutoClaw-specific (zaicoding_glm-5.3, zai_glm-5.3-flash,
+    // tdpsk_deepseek-v4-*-2026MM) and folding them into the `zai` row would
+    // mark direct-api.z.ai combos feasible for other harnesses (kilo's zai
+    // row is the direct API). A user-configured DIRECT z.ai baseUrl
+    // (api.z.ai) resolves to `zai` — detectAutoClaw reads
+    // models.providers[key].baseUrl to decide the surface. Catalog
+    // (2026-09-06, runtime config): five ruled spellings recorded in
+    // map-provider-model-providermodel.csv plus zai_glm-5-turbo
+    // (glm-5-turbo's channel spelling — a distinct official Z.ai model:
+    // docs.z.ai/guides/llm/glm-5-turbo, OpenRouter z-ai/glm-5-turbo, no
+    // HF weights → closed, ruled 2026-09-06). models.dev individuates
+    // the surfaces the same way — a `zai` provider (direct api.z.ai)
+    // beside `zai-coding-plan`/`zhipuai-coding-plan` subscription
+    // surfaces. And zai_auto / zai_auto-fast (the "Auto"/"Auto-Fast"
+    // router aliases — maintainer directive: NEVER model rules; the
+    // gateway records the configured mode, not the routing decision, so
+    // an Auto session's underlying model is not locally observable — the
+    // accepted limitation). Subscription-metered, not free — no
+    // freeprovidermodel row (the maintainer's channel credits depleted
+    // 2026-09-06).
+    .{ .name = "autoclaw", .label = "AutoClaw", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
     // xai: null/closed opt-out — xAI's Enterprise/API terms: "SpaceXAI
     // will not use any User Content to train any foundation models …
     // subject to disclosures to Customer and Customer-controlled user
@@ -911,6 +955,12 @@ const copilot_env = [_][]const u8{ "COPILOT_ALLOW_ALL", "COPILOT_MODEL" };
 // value is the profile name, not a secret. AI_AGENT is intentionally NOT
 // a marker (pi and other agents set it — it can't identify this harness).
 const hermes_env = [_][]const u8{ "HERMES_AGENT", "HERMES_PROFILE" };
+// AutoClaw desktop app — the AUTOCLAW_* product markers are exported by
+// the app's gateway into every child session (env observed 2026-09-06).
+// The embedded gateway's OPENCLAW_* variables are deliberately NOT here:
+// a standalone OpenClaw install sets them too (see the openclaw
+// pending-harness bullet in CONTRIBUTING.md).
+const autoclaw_env = [_][]const u8{ "AUTOCLAW_MODEL_BROKER_OPENAI_BASE_URL", "AUTOCLAW_MODEL_TRACE_ENDPOINT", "AUTOCLAW_SAFETY_DEFAULT_DECISION", "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED", "AUTOCLAW_THINKING_STREAM", "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER", "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS", "AUTOCLAW_ZCODE_PLUGIN_EVENTS" };
 
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an
@@ -1063,6 +1113,29 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "hermes", "hermes.exe" }
     else
         &[_][]const u8{"hermes"} },
+    // autoclaw: NONE — Zhipu AI's AutoClaw desktop app (bundle
+    // com.zhipuai.autoclaw; the one-click packaged distribution of the
+    // open-source OpenClaw gateway) ships compiled installers only (no
+    // source repo, no license offer); verified from the product page and
+    // the AutoClaw Terms of Service, so `license` is `"NONE"`. Training
+    // postures
+    // stay null/null: no public doc describes a training program for the
+    // app (the bundled Z.ai channel's API terms live on the `autoclaw`
+    // provider rule). Declared last for the same reason as zcode/hermes:
+    // the AUTOCLAW_* markers leak into every child session of the app, so
+    // a cline or goose session spawned from inside AutoClaw still matches
+    // its own rule first. The embedded gateway's OPENCLAW_* variables are
+    // deliberately NOT markers — a standalone OpenClaw install sets them
+    // too; AutoClaw individuates via its product markers (CONTRIBUTING.md
+    // "pending harnesses", openclaw bullet). binary_names stay lowercase
+    // per the fixtures test contract; the macOS app binary is capitalized
+    // ("AutoClaw"), so the AUTOCLAW_* env markers are the primary live
+    // signal and the daemon guard catches gateway sessions via the
+    // "openclaw" pending name.
+    .{ .name = "autoclaw", .label = "AutoClaw", .license = "NONE", .license_sources = &.{ "https://autoclaw.z.ai/", "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_agreement&favicon=autoglm" }, .env_markers = &autoclaw_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "autoclaw", "autoclaw.exe" }
+    else
+        &[_][]const u8{"autoclaw"} },
 };
 
 /// env-var names whose values are safe to emit in raw.env_vars. Names NOT
@@ -1089,6 +1162,13 @@ const env_value_allowlist = [_][]const u8{
     "ZAI_BUSINESS_BASE_URL",   "ZAI_OAUTH_ORIGIN",
     // Hermes markers — the values are "true"/profile names, non-secret.
     "HERMES_AGENT",            "HERMES_PROFILE",
+    // AutoClaw markers — fixed non-secret operational facts (enum-ish
+    // decision knobs / feature flags); the URL/endpoint markers
+    // (AUTOCLAW_MODEL_BROKER_*_BASE_URL, AUTOCLAW_MODEL_TRACE_ENDPOINT)
+    // stay off this list.
+    "AUTOCLAW_SAFETY_DEFAULT_DECISION",     "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED",
+    "AUTOCLAW_THINKING_STREAM",             "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER",
+    "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS", "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {

@@ -32,6 +32,12 @@
       "mode": "from-capture",
       "stale": true,
       "runner": 42342
+    },
+    {
+      "harness": "autoclaw",
+      "mode": "from-identity",
+      "stale": true,
+      "runner": 38403
     }
   ],
   "backlog": {

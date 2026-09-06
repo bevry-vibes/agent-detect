@@ -144,9 +144,9 @@ fn daemonWriteErr(io: std.Io, bytes: []const u8) void {
 /// daemon guard also refuses to run inside their sessions. Same inline
 /// platform-ternary style as the rule values (`+ .exe` on Windows).
 const pending_binary_names = if (builtin.os.tag == .windows)
-    [_][]const u8{ "claude", "claude.exe", "codex", "codex.exe", "grok", "grok.exe", "gemini", "gemini.exe" }
+    [_][]const u8{ "claude", "claude.exe", "codex", "codex.exe", "grok", "grok.exe", "gemini", "gemini.exe", "openclaw", "openclaw.exe" }
 else
-    [_][]const u8{ "claude", "codex", "grok", "gemini" };
+    [_][]const u8{ "claude", "codex", "grok", "gemini", "openclaw" };
 
 /// the capture prompt — interpolated into an invocation's `"<prompt>"`
 /// placeholder at spawn time, and printed verbatim by `fixtures prompt`

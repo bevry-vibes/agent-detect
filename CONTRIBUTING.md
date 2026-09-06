@@ -286,6 +286,7 @@ over web scripts.
 | copilot   | `brew install copilot-cli`                        | — (binaries: `copilot`)                                         | `scoop install copilot-cli` → `~\scoop\shims\copilot.exe`                                                     |
 | hermes    | — (git install)                                   | `curl -fsSL https://hermes-agent.nousresearch.com/install.sh \| bash` → `~/.local/bin/hermes` | install.sh (per-user, no admin); the desktop app binary is `Hermes` inside the .app bundle  |
 | goose     | —                                                  | — (contributor-scope example)                               | `scoop install goose-cli` → `~\scoop\shims\goose.exe` (contributor-scope example)                             |
+| autoclaw | — (desktop app from autoclaw.z.ai) | — | installer from autoclaw.z.ai |
 
 ### provider model discovery (three sources)
 
@@ -1009,6 +1010,18 @@ maintains them.
 - [ ] **aider-desk / antigravity / kiro / zed** — additional evergreen
   harness set entries (AiderDesk, Google Antigravity, Kiro CLI, Zed);
   rules + recipes when a contributor picks them up.
+- [ ] **openclaw** — the open-source gateway framework AutoClaw embeds
+  (MIT, https://github.com/openclaw/openclaw; standalone installs run
+  `openclaw` with OPENCLAW_* env — OPENCLAW_STATE_DIR (default
+  ~/.openclaw), OPENCLAW_CONFIG_PATH, OPENCLAW_GATEWAY_PORT — and
+  user-configured providers via openclaw.json `models.providers`; the
+  per-agent session store (agents/<agentId>/sessions/sessions.json →
+  .jsonl transcripts whose assistant records carry
+  message.provider/message.model) is the same surface the autoclaw
+  detector reads). When it lands it goes AFTER autoclaw in
+  rulesForHarnesses: the env scan is first-match and AutoClaw sessions
+  carry both marker families, so the more specific product rule must
+  scan first. Rules + from-identity when a contributor picks it up.
 
 ### catalog-inference verdicts (recorded so they aren't re-litigated)
 
@@ -1076,3 +1089,36 @@ should be individuated, possibly via a shared `local` provider rule
 for local runtimes (ollama, lmstudio, llama.cpp servers) serving
 non-cloud models — noting that a local surface still carries its own
 vendor policy.
+
+**autoclaw** (2026-09-06, authored by the maintainer's AutoClaw
+auto-coder session): the harness rule landed with the provider surface
+individuated as `autoclaw` (the bundled Z.ai channel —
+autoglm-api.autoglm.ai/autoclaw-proxy, X-Product: autoclaw,
+X-Channel: zai — mirroring the `zai` policy; a user-configured direct
+api.z.ai baseUrl resolves to `zai`). Lands under the individual-need
+exemption despite the Claw/machine-control exclusion — the maintainer's
+coding agent runs inside it. Catalog from the runtime config:
+zaicoding_glm-5.3 (glm-5.3 variation), zai_glm-5.3-flash
+(glm-5.3-flash variation), zai_glm-5-turbo (glm-5-turbo's channel
+spelling — a distinct official Z.ai model per docs.z.ai +
+OpenRouter, no public weights → closed), tdpsk_deepseek-v4-flash-202605
++ tdpsk_deepseek-v4-pro-202606 (deepseek-v4-flash/pro variations —
+YYYYMM stamps + tdpsk_ channel prefix fold per DESIGN #13), and
+zai_auto / zai_auto-fast (the Auto router aliases — maintainer
+directive: NEVER model rules; the session store records the configured
+mode, not the routing decision, so an Auto session's underlying model
+is not locally observable — the accepted limitation; live detection
+passes the alias through unruled and the maintainer attributes interim
+Auto-mode work via recipe mode, e.g. `--harness=autoclaw
+--provider=autoclaw --model=glm-5.3`). models.dev individuates the
+surfaces the same way (`zai` direct API beside
+`zai-coding-plan`/`zhipuai-coding-plan`). Detection ladder:
+AUTOCLAW_* env markers (or AutoClaw ancestry) → session store
+(OPENCLAW_AGENT_SESSION_KEY → sessions.json → the newest assistant
+record's message.provider/message.model) → openclaw.runtime.json
+config fallback, with the provider surface folded via
+models.providers[key].baseUrl. Not free-axis: the bundled channel is
+subscription-metered (credits depleted 2026-09-06). from-capture
+invocations pending — the desktop app has no mapped headless launcher;
+harness_version source identified (Info.plist
+CFBundleShortVersionString, observed 1.17.8; no env var).

@@ -2227,6 +2227,260 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     }
 }
 
+/// AutoClaw detection — the OpenClaw gateway packaged as Zhipu's desktop
+/// app. Ladder (the why lives in the rule comments): state dir
+/// (OPENCLAW_STATE_DIR, else ~/.openclaw-autoclaw) → session store
+/// (OPENCLAW_AGENT_SESSION_KEY → sessions.json → the newest assistant
+/// record's message.provider/message.model) → runtime-config fallback
+/// (.agents pinned/primary model), with the provider surface folded via
+/// models.providers[key].baseUrl (the bundled autoclaw-proxy channel vs
+/// a user-configured direct upstream). Partial detection is honest: a
+/// dim that doesn't resolve stays unset.
+fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    const cwd_dir = std.Io.Dir.cwd();
+    // 1. state dir: the gateway's OPENCLAW_STATE_DIR, else the AutoClaw
+    // app's default store.
+    var state: []const u8 = if (env.get("OPENCLAW_STATE_DIR")) |v| v else "";
+    if (state.len == 0) {
+        if (home.len == 0) return;
+        state = try std.fmt.allocPrint(a, "{s}/.openclaw-autoclaw", .{home});
+    }
+
+    // 2. session store (primary): OPENCLAW_AGENT_SESSION_KEY spells
+    // "agent:<agentId>:<sessionId>"; sessions.json keys the ORIGINAL full key to
+    // the sessionFile transcript, whose newest assistant record carries
+    // message.provider/message.model. Values are duped before each
+    // buffer/parse is freed (never free a slice the result aliases).
+    var agent_id: []const u8 = "";
+    var session_file: ?[]const u8 = null;
+    var session_provider: ?[]const u8 = null;
+    var session_model: ?[]const u8 = null;
+    if (env.get("OPENCLAW_AGENT_SESSION_KEY")) |raw_key| {
+        const full_key = std.mem.trim(u8, raw_key, " \t\r\n");
+        var rest = full_key;
+        if (std.mem.startsWith(u8, rest, "agent:")) rest = rest["agent:".len..];
+        // "agent:<agentId>:<sessionId>" — the agent id is the MIDDLE
+        // segment (observed: "agent:auto-coder:67a129d6", store at
+        // agents/auto-coder/sessions/); the trailing segment is the
+        // session id.
+        agent_id = if (std.mem.findScalar(u8, rest, ':')) |i| rest[0..i] else rest;
+        if (full_key.len > 0 and agent_id.len > 0) {
+            const store_path = try std.fmt.allocPrint(a, "{s}/agents/{s}/sessions/sessions.json", .{ state, agent_id });
+            if (cwd_dir.readFileAlloc(io, store_path, a, @enumFromInt(1 << 20)) catch null) |sdata| {
+                defer a.free(sdata);
+                if (std.json.parseFromSlice(std.json.Value, a, sdata, .{}) catch null) |parsed| {
+                    defer parsed.deinit();
+                    if (parsed.value == .object) {
+                        if (parsed.value.object.get(full_key)) |entry| {
+                            if (entry == .object) {
+                                if (jstr(entry.object, "sessionFile")) |sf| {
+                                    if (sf.len > 0) session_file = a.dupe(u8, sf) catch null;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (session_file) |sf| {
+        if (cwd_dir.readFileAlloc(io, sf, a, @enumFromInt(1 << 25)) catch null) |data| {
+            defer a.free(data);
+            // scan BACKWARDS — the newest assistant record sits at the
+            // tail of the append-only transcript (the detectZcode idiom).
+            var lines = std.mem.splitBackwardsScalar(u8, data, '\n');
+            while (lines.next()) |line| {
+                const trimmed = std.mem.trim(u8, line, " \t\r");
+                if (trimmed.len == 0) continue;
+                const parsed = std.json.parseFromSlice(std.json.Value, a, trimmed, .{}) catch continue;
+                defer parsed.deinit();
+                if (parsed.value != .object) continue;
+                const mv = parsed.value.object.get("message") orelse continue;
+                if (mv != .object) continue;
+                const mo = mv.object;
+                const role = jstr(mo, "role") orelse continue;
+                if (!std.mem.eql(u8, role, "assistant")) continue;
+                const model_id = jstr(mo, "model") orelse continue;
+                if (model_id.len == 0) continue;
+                session_model = a.dupe(u8, model_id) catch continue;
+                if (jstr(mo, "provider")) |pv| {
+                    if (pv.len > 0) session_provider = a.dupe(u8, pv) catch null;
+                }
+                break; // the first assistant record scanning backwards wins
+            }
+        }
+    }
+    if (session_model) |sm| {
+        if (session_file) |sf| {
+            var fields = std.ArrayList(FieldObservation).empty;
+            defer fields.deinit(a);
+            if (session_provider) |pv| {
+                try fields.append(a, .{ .dotted_path = "message.provider", .value = pv });
+            }
+            try fields.append(a, .{ .dotted_path = "message.model", .value = sm });
+            const obs = try a.alloc(FileObservation, 1);
+            obs[0] = .{ .path = sf, .fields = try fields.toOwnedSlice(a) };
+            d.raw.session_files = obs;
+            if (session_provider) |pv| {
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = sf, .field = "message.provider", .value = pv });
+            }
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = sf, .field = "message.model", .value = sm });
+        }
+    }
+
+    // 3./4. runtime config — the model fallback (.agents.list pin, else
+    // the defaults' primary, spelled "<providerKey>/<modelId>") and the
+    // provider-surface fold (models.providers[<key>].baseUrl).
+    const cfg_path = blk: {
+        if (env.get("OPENCLAW_CONFIG_PATH")) |p| {
+            if (p.len > 0) break :blk p;
+        }
+        break :blk try std.fmt.allocPrint(a, "{s}/openclaw.runtime.json", .{state});
+    };
+    var config_model_str: ?[]const u8 = null; // raw "<providerKey>/<modelId>"
+    var config_model_field: ?[]const u8 = null; // dotted path it was read from
+    var config_provider_seg: []const u8 = "";
+    var config_model_id: []const u8 = "";
+    var surface_key: []const u8 = if (session_provider) |pv| pv else "";
+    var base_url: ?[]const u8 = null;
+    var base_url_field: ?[]const u8 = null;
+    var config_fields = std.ArrayList(FieldObservation).empty;
+    defer config_fields.deinit(a);
+    if (cwd_dir.readFileAlloc(io, cfg_path, a, @enumFromInt(1 << 20)) catch null) |cdata| {
+        defer a.free(cdata);
+        if (std.json.parseFromSlice(std.json.Value, a, cdata, .{}) catch null) |parsed| {
+            defer parsed.deinit();
+            if (parsed.value == .object) {
+                const root = parsed.value.object;
+                // model fallback: the agent's pinned model, else the
+                // defaults' primary (both "<providerKey>/<modelId>").
+                if (session_model == null) {
+                    if (root.get("agents")) |ag| {
+                        if (ag == .object) {
+                            if (ag.object.get("list")) |lst| {
+                                if (lst == .array) {
+                                    for (lst.array.items) |item| {
+                                        if (item != .object) continue;
+                                        const id = jstr(item.object, "id") orelse continue;
+                                        if (!std.mem.eql(u8, id, agent_id)) continue;
+                                        if (jstr(item.object, "model")) |m| {
+                                            if (m.len > 0) {
+                                                config_model_str = try a.dupe(u8, m);
+                                                config_model_field = try std.fmt.allocPrint(a, "agents.list[{s}].model", .{agent_id});
+                                            }
+                                        }
+                                        break; // the matching list entry decided
+                                    }
+                                }
+                            }
+                            if (config_model_str == null) {
+                                if (ag.object.get("defaults")) |defs| {
+                                    if (defs == .object) {
+                                        if (defs.object.get("model")) |mo| {
+                                            if (mo == .object) {
+                                                if (jstr(mo.object, "primary")) |p| {
+                                                    if (p.len > 0) {
+                                                        config_model_str = a.dupe(u8, p) catch null;
+                                                        config_model_field = "agents.defaults.model.primary";
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // split "<providerKey>/<modelId>" at the LAST '/' — no
+                // '/' means a bare model id with the provider segment
+                // unset.
+                if (config_model_str) |ms| {
+                    if (std.mem.findScalarLast(u8, ms, '/')) |i| {
+                        config_provider_seg = ms[0..i];
+                        config_model_id = ms[i + 1 ..];
+                    } else {
+                        config_model_id = ms;
+                    }
+                    if (surface_key.len == 0) surface_key = config_provider_seg;
+                    try config_fields.append(a, .{ .dotted_path = config_model_field.?, .value = ms });
+                }
+                // provider surface: models.providers[<key>].baseUrl —
+                // recorded whenever read; the fold decision happens
+                // below.
+                if (surface_key.len > 0) {
+                    if (root.get("models")) |mos| {
+                        if (mos == .object) {
+                            if (mos.object.get("providers")) |ps| {
+                                if (ps == .object) {
+                                    if (ps.object.get(surface_key)) |pv| {
+                                        if (pv == .object) {
+                                            if (jstr(pv.object, "baseUrl")) |bu| {
+                                                if (bu.len > 0) {
+                                                    if (a.dupe(u8, bu) catch null) |duped| {
+                                                        base_url = duped;
+                                                        base_url_field = try std.fmt.allocPrint(a, "models.providers.{s}.baseUrl", .{surface_key});
+                                                        try config_fields.append(a, .{ .dotted_path = base_url_field.?, .value = duped });
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // 4. provider surface resolution: the bundled channel's
+    // autoclaw-proxy/autoglm.ai baseUrl folds to `autoclaw`; anything
+    // else passes the raw key through (canonicalIdFor folds known keys;
+    // unknown ids stay raw — never-guess). No key → the dim stays unset
+    // (partial detection is honest).
+    if (surface_key.len > 0) {
+        var folded = false;
+        if (base_url) |bu| {
+            if (std.mem.indexOf(u8, bu, "autoglm.ai") != null or std.mem.indexOf(u8, bu, "autoclaw-proxy") != null) {
+                try setProvider(a, d, "autoclaw");
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cfg_path, .field = base_url_field.?, .value = bu });
+                folded = true;
+            }
+        }
+        if (!folded) {
+            try setProvider(a, d, surface_key);
+            // the config model string is the provider evidence when the
+            // session store didn't carry one.
+            if (session_provider == null and config_model_str != null) {
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cfg_path, .field = config_model_field.?, .value = config_model_str.? });
+            }
+        }
+    }
+    // 5. model — pinned ids fold through the rule's variations; the Auto
+    // router aliases (zai_auto / zai_auto-fast) pass through unruled via
+    // applyModel's unknown-id passthrough (the accepted limitation —
+    // never special-cased).
+    if (session_model) |sm| {
+        try applyModel(a, d, sm, sm);
+    } else if (config_model_id.len > 0) {
+        try applyModel(a, d, config_model_id, config_model_str.?);
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = cfg_path, .field = config_model_field.?, .value = config_model_str.? });
+    }
+    // config_files observation — assembled from the fields the config
+    // actually yielded (model fallback + provider baseUrl), appended
+    // after any session-branch observation, never overwriting it.
+    if (config_fields.items.len > 0) {
+        const fields_slice = try config_fields.toOwnedSlice(a);
+        const obs_slice = try a.alloc(FileObservation, 1);
+        obs_slice[0] = .{ .path = cfg_path, .fields = fields_slice };
+        var obs_list = std.ArrayList(FileObservation).empty;
+        try obs_list.appendSlice(a, d.raw.config_files);
+        try obs_list.append(a, obs_slice[0]);
+        d.raw.config_files = try obs_list.toOwnedSlice(a);
+    }
+}
+
 fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = io;
     _ = home;
@@ -2921,6 +3175,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectCopilot(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "hermes")) {
             try detectHermes(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "autoclaw")) {
+            try detectAutoClaw(a, io, env, home, d);
         }
         // the rule's static training postures fill each dim only when
         // the per-harness instance read above didn't; the instance
