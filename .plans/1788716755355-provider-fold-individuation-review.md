@@ -493,6 +493,19 @@ widths are diff churn, a sentence stays greppable only while it is one
 line). Landed as bevry-vibes/skills `a219384` (the file itself
 unwrapped to practice the rule).
 
+**D10 — individuation-granularity doctrine (maintainer clarification,
+2026-09-07, recorded in CONTRIBUTING "Individuation granularity").**
+The indexes are inputs for identity resolution, never authorities on
+granularity: models.dev individuates regional mirrors, tier surfaces
+(zen free/paid/go), and endpoint variants because its job is
+configuration — a user must select the exact one. agent-detect's
+provider rules serve identification and reciprocation, so same-vendor
+same-policy surfaces fold regardless of how many index keys exist,
+providers absent from every index get ruled (`phala`), and a future
+configuration surface (`agent-detect provider-config` style) would
+attach the index ids to our rules as selectable sub-providers —
+selection needs their granularity, identification does not.
+
 **D9 — cascade to this repo (decision needed).** agent-detect's
 markdown (AGENTS.md, CONTRIBUTING.md, DESIGN.md, commits.md, plans.md,
 zig.md, powershell.md, the .plans corpus) is hard-wrapped at ~76
