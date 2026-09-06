@@ -405,6 +405,26 @@ pub const rulesForModels = [_]ModelRule{
     // is the Flash-Next serving form is unverified, so reciprocity
     // and license stay null (never-guess) pending a maintainer audit.
     .{ .name = "qwen3.8-flash", .label = "Qwen3.8 Flash", .reciprocity = null, .sources = &.{} },
+    // gpt-oss-20b: open-weight — OpenAI's GPT-OSS small size (sibling of
+    // gpt-oss-120b; same Apache-2.0 weights on HF). Observed on
+    // ollama-cloud (`gpt-oss:20b` — the `:size` tag folds here per the
+    // strict-slug alias rule, same as gpt-oss-120b's `gpt-oss:120b` on
+    // the same catalog) and on nvidia/deepinfra (namespaced bare ids).
+    .{ .name = "gpt-oss-20b", .label = "GPT-OSS 20B", .reciprocity = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/openai/gpt-oss-20b", "https://huggingface.co/openai/gpt-oss-20b/blob/main/LICENSE" } },
+    // laguna-s-2.1: open-weight — Poolside's 118B-A8B MoE; HF weights
+    // under OpenMDW-1.1 (not yet on the SPDX list — the FAQ says use
+    // LicenseRef form — so NOASSERTION per the license table's
+    // custom/non-SPDX rule). variations: the `-free` tier spellings
+    // (observed: opencode-free `laguna-s-2.1-free`, vercel
+    // `poolside/laguna-s-2.1-free`, openrouter `poolside/laguna-s-2.1:free`
+    // — namespaces shed by modelIdAfterNamespace, tier suffixes fold).
+    .{ .name = "laguna-s-2.1", .label = "Laguna S 2.1", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-S-2.1", "https://huggingface.co/poolside/Laguna-S-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{ "laguna-s-2.1-free" } },
+    // laguna-xs-2.1: open-weight — Poolside Laguna XS 2.1 (33B-A3B);
+    // same OpenMDW-1.1 weights family as laguna-s-2.1 (NOASSERTION).
+    // Evergreen per the top-100 weekly set (`poolside/laguna-xs-2.1:free`).
+    // variations: the `-free` tier spelling (observed: openrouter
+    // `poolside/laguna-xs-2.1:free`).
+    .{ .name = "laguna-xs-2.1", .label = "Laguna XS 2.1", .reciprocity = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-XS-2.1", "https://huggingface.co/poolside/Laguna-XS-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{ "laguna-xs-2.1-free" } },
 };
 
 /// one provider. `closed_training` and `open_training` reflect whether the
@@ -529,9 +549,14 @@ pub const rulesForProviders = [_]ProviderRule{
     // (Qwen/Qwen3-32B-TEE, Qwen/Qwen3.6-27B-TEE) intentionally
     // unruled.
     .{ .name = "chutes", .label = "Chutes", .closed_training = "never", .open_training = "never", .sources = &.{ "https://chutes.ai/privacy", "https://chutes.ai/tos" } },
-    // zai: null/null — Z.ai (Zhipu AI) trains models itself (the GLM
-    // family); API training-policy wording unverified, stays null.
-    .{ .name = "zai", .label = "Z.ai", .closed_training = null, .open_training = null, .sources = &.{ "https://www.z.ai/terms-of-service", "https://www.z.ai/privacy-policy" } },
+    // zai: closed opt-out / open null — Z.AI's API terms: "For
+    // enterprises and developers using API Services, we will not use
+    // your User Content for developing or improving Services unless you
+    // explicitly agree" (an agreement-level opt-out); the consumer docs
+    // reserve training over non-personal User Content, but the API
+    // surface the harnesses reach is the DPA-governed one. No
+    // open-weight training policy is published, so open stays null.
+    .{ .name = "zai", .label = "Z.ai", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
     // cloudflare-workers-ai: null/null — Cloudflare's Workers AI
     // serverless inference platform (the `@cf/<org>/<model>` catalog pi
     // sessions route through); Cloudflare trains on nothing per its
@@ -544,21 +569,37 @@ pub const rulesForProviders = [_]ProviderRule{
     // at api.z.ai). Same upstream as `zai`, same unverified policy
     // status. variation: the app's internal provider key, so session
     // evidence resolves through the standard alias fold.
-    .{ .name = "zcode", .label = "ZCode", .closed_training = null, .open_training = null, .sources = &.{ "https://www.z.ai/terms-of-service", "https://www.z.ai/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
-    // xai: null/null — xAI trains the Grok family itself; API
-    // training-policy wording unverified, stays null (same source set
-    // as the grok model rules).
-    .{ .name = "xai", .label = "xAI", .closed_training = null, .open_training = null, .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
-    // moonshot: null/null — Moonshot AI trains models (the Kimi
-    // family); API training-policy wording unverified, stays null.
-    .{ .name = "moonshot", .label = "Moonshot", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
+    .{ .name = "zcode", .label = "ZCode", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
+    // xai: null/closed opt-out — xAI's Enterprise/API terms: "SpaceXAI
+    // will not use any User Content to train any foundation models …
+    // subject to disclosures to Customer and Customer-controlled user
+    // settings" (the consumer Grok product trains by default — the API
+    // surface Hermes reaches is the enterprise one). Open-weight xAI
+    // training policy unverified, open stays null.
+    .{ .name = "xai", .label = "xAI", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://x.ai/legal/terms-of-service-enterprise", "https://x.ai/legal/privacy-policy" } },
+    // moonshot: NOASSERTION/NOASSERTION — Moonshot's docs conflict: the
+    // OpenPlatform ToS says Customer Content "may be used for the
+    // foregoing purposes" (providing, maintaining, developing,
+    // improving — training named only via the enterprise-arrangement
+    // carve-out), the Kimi help center says API data is "not used to
+    // train or improve Kimi's models", and the platform privacy policy
+    // describes training to refine models. Attempted, inconclusive.
+    .{ .name = "moonshot", .label = "Moonshot", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
     // kimi: mirrors `moonshot` — the provider key kimi-code configs
     // use (`default_model = "kimi/kimi-k3"`); same underlying Moonshot
     // AI upstream, same unverified policy status.
-    .{ .name = "kimi", .label = "Kimi", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
-    // qwen: null/null — Alibaba Qwen's hosted tier (qwen.ai /
-    // DashScope); Qwen trains models itself, API policy unverified.
-    .{ .name = "qwen", .label = "Qwen", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/legal" } },
+    .{ .name = "kimi", .label = "Kimi", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
+    // qwen: opt-in (closed+open) — qwen.ai's ToS: "You hereby expressly
+    // authorise and consent to us: (i) using and storing User Content
+    // that is not personal data to develop and improve our
+    // machine-learning and artificial-intelligence technologies" — an
+    // express, standing authorization with no opt-out control on the
+    // platform tier. The privacy policy adds de-identified User Content
+    // to its training table. Alibaba Cloud Model Studio (the
+    // dashscope/alibaba-coding-plan surface) separately commits "never
+    // use your data for model training" — so `alibaba` folds to never,
+    // while the qwen.ai-hosted tier stays opt-in.
+    .{ .name = "qwen", .label = "Qwen", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://qwen.ai/termsservice", "https://qwen.ai/privacypolicy" }, .variations = &.{"qwen-oauth"} },
     // zenmux: null/null — an aggregator/API gateway exposing many
     // upstreams (`provider/id` models, several `-free`); training-policy
     // wording unverified, stays null.
@@ -569,45 +610,86 @@ pub const rulesForProviders = [_]ProviderRule{
     // sakana: null/null — Sakana AI trains the Fugu/Namazu families
     // (Japanese LLMs); API policy unverified, stays null.
     .{ .name = "sakana", .label = "Sakana AI", .closed_training = null, .open_training = null, .sources = &.{"https://sakana.ai/"} },
-    // ollama-cloud: null/null — Ollama's cloud inference tier serving
-    // many open-weight models (`deepseek-v3.2`, `glm-5.2`, ...);
-    // policy unverified, stays null.
-    .{ .name = "ollama-cloud", .label = "Ollama Cloud", .closed_training = null, .open_training = null, .sources = &.{"https://ollama.com/"} },
-    // ollama: null/null — the Ollama runtime surface (a user-configured
+    // ollama-cloud: never/never — Ollama's privacy policy: "When using
+    // cloud-hosted models, we process your prompts and responses
+    // transiently to provide the service and never train on it"; terms:
+    // "We do not use your inputs or outputs to train AI models".
+    .{ .name = "ollama-cloud", .label = "Ollama Cloud", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" } },
+    // ollama: never/never — the Ollama runtime surface (a user-configured
     // ollama server, e.g. localhost:11434, as harnesses' custom
     // provider; observed: ZCode's custom provider `name: "ollama"`
-    // serving the `:cloud`-tagged models). Mirrors `ollama-cloud`'s
-    // unverified policy status; the model tag (`:cloud`) marks the
-    // cloud-served spellings on the model rule, not here.
-    .{ .name = "ollama", .label = "Ollama", .closed_training = null, .open_training = null, .sources = &.{"https://ollama.com/"} },
+    // serving the `:cloud`-tagged models). Same policy docs as
+    // `ollama-cloud` ("We do not use your inputs or outputs to train AI
+    // models"). KNOWN FOLD FLAW (follow-up discernment): a session
+    // reporting provider `ollama` with a `:cloud`-suffixed model is
+    // REALLY ollama-cloud traffic — the two have different policy
+    // surfaces (local = nothing leaves the machine; cloud = transient
+    // third-party processing) and should be individuated, but the fold
+    // currently lands cloud-served ids on `ollama`. Longer term, all
+    // local runtimes (ollama, lmstudio, llama.cpp servers) serving
+    // non-cloud models may want a shared `local` provider rule — with
+    // the caveat that a local surface still has its own vendor policy.
+    // The model tag (`:cloud`) marks the cloud-served spellings on the
+    // model rule, not here.
+    .{ .name = "ollama", .label = "Ollama", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" } },
+    // Hermes-facing alias folds — the harness's provider ids are the
+    // model-provider plugin names + models.dev keys, several of which
+    // name a surface this table already ruled under another id. Each
+    // entry mirrors its canonical rule (same policy + URLs) so a Hermes
+    // session's provider dim canonicalizes (applyProviderMeta's alias
+    // fold), exactly as `kimi`/`minimax-code` do for other harnesses.
+    // — kimi-coding (hermes profile alias `kimi`; models.dev
+    //   `kimi-for-coding`) mirrors `moonshot`/`kimi`.
+    // — kimi-coding-cn / minimax-cn: the -cn surfaces mirror the same
+    //   upstream policies (unverified, null).
+    // — alibaba-coding-plan mirrors `alibaba`/`qwen` (same DashScope
+    //   upstream, unverified).
+    // — opencode-free / opencode-zen / openai-codex: first-party
+    //   router/subscription surfaces, policy unverified (null).
+    .{ .name = "kimi-coding", .label = "Kimi Coding", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
+    .{ .name = "kimi-coding-cn", .label = "Kimi Coding CN", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
+    .{ .name = "alibaba-coding-plan", .label = "Alibaba Coding Plan", .closed_training = "never", .open_training = "never", .sources = &.{ "https://help.aliyun.com/en/model-studio/privacy-notice", "https://www.alibabacloud.com/help/en/model-studio/faq-about-alibaba-cloud-model-studio" } },
+    .{ .name = "opencode-free", .label = "OpenCode Free", .closed_training = null, .open_training = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    .{ .name = "opencode-zen", .label = "OpenCode Zen", .closed_training = null, .open_training = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    .{ .name = "openai-codex", .label = "OpenAI Codex", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://openai.com/policies/service-terms", "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance" } },
     // meta: null/null — Meta's hosted tier for its open-weight families
     // (Llama, Muse); policy unverified, stays null.
-    .{ .name = "meta", .label = "Meta", .closed_training = null, .open_training = null, .sources = &.{"https://ai.meta.com/"} },
+    .{ .name = "meta", .label = "Meta", .closed_training = null, .open_training = null, .sources = &.{"https://ai.meta.com/"}, .variations = &.{"meta-ai"} },
     // google-antigravity: null/null — Google Antigravity's hosted tier;
     // policy unverified, stays null.
     .{ .name = "google-antigravity", .label = "Google Antigravity", .closed_training = null, .open_training = null, .sources = &.{"https://antigravity.google/"} },
     // kimi-code: mirrors `kimi`/`moonshot` — the kimi-code CLI's own
     // provider key (`k3` models); same Moonshot upstream, unverified.
-    .{ .name = "kimi-code", .label = "Kimi Code", .closed_training = null, .open_training = null, .sources = &.{ "https://platform.moonshot.ai/docs/terms", "https://platform.moonshot.ai/docs/privacy" } },
-    // gmi-cloud: null/null — a multimodal gateway exposing many
-    // upstreams at zero tracked cost; policy unverified, stays null.
-    .{ .name = "gmi-cloud", .label = "GMI Cloud", .closed_training = null, .open_training = null, .sources = &.{"https://gmi.cloud/"} },
+    .{ .name = "kimi-code", .label = "Kimi Code", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" } },
+    // gmi-cloud: null/null — GMI Cloud's privacy policy discusses usage
+    // logs to "refine our models and infrastructure" but no explicit
+    // prompt-content training statement; inconclusive, stays null.
+    .{ .name = "gmi-cloud", .label = "GMI Cloud", .closed_training = null, .open_training = null, .sources = &.{ "https://gmicloud.ai/en/legal/privacy", "https://www.gmicloud.ai/en/legal/console-terms-of-service" }, .variations = &.{"gmi"} },
     // nanogpt: null/null — an aggregator exposing many open models
     // (zero tracked cost in omp's catalog); policy unverified.
     .{ .name = "nanogpt", .label = "NanoGPT", .closed_training = null, .open_training = null, .sources = &.{"https://nanogpt.ai/"} },
-    // huggingface: null/null — HF Serverless Inference for open-weight
-    // models (free tier); each model's weights are the real license.
-    .{ .name = "huggingface", .label = "Hugging Face", .closed_training = null, .open_training = null, .sources = &.{"https://huggingface.co/docs/inference-providers"} },
+    // huggingface: never/never — HF Inference Providers security docs:
+    // "Hugging Face does not store any user data for training purposes.
+    // We do not store the request body or response when routing requests
+    // through Hugging Face" (30-day debug logs, no content).
+    .{ .name = "huggingface", .label = "Hugging Face", .closed_training = "never", .open_training = "never", .sources = &.{ "https://huggingface.co/docs/inference-providers/en/security", "https://huggingface.co/privacy" } },
     // cursor: null/null — Cursor's first-party model routing (flat
     // subscription, no per-call price tracked); policy unverified.
     .{ .name = "cursor", .label = "Cursor", .closed_training = null, .open_training = null, .sources = &.{"https://cursor.com/"} },
-    // github-copilot: null/null — GitHub Copilot's model routing
-    // (subscription-included, no per-call price tracked); unverified.
-    .{ .name = "github-copilot", .label = "GitHub Copilot", .closed_training = null, .open_training = null, .sources = &.{"https://github.com/features/copilot"} },
-    // alibaba: null/null — Alibaba's hosted Qwen/DashScope tier (the
-    // `alibaba/...` provider key opencode/kilo catalogs use for the
-    // qwen models; same upstream as `qwen`); policy unverified.
-    .{ .name = "alibaba", .label = "Alibaba", .closed_training = null, .open_training = null, .sources = &.{ "https://qwen.ai/", "https://qwen.ai/legal" } },
+    // github-copilot: closed opt-out — the Copilot Trust Center:
+    // "GitHub may use Copilot interaction data—including prompts
+    // (inputs), suggestions (outputs) … to train and improve AI models"
+    // for Individual subscribers, who "can opt out … through your
+    // settings"; "GitHub does not use Copilot Business or Enterprise
+    // customer data to train AI models". Open-model training unverified
+    // (GitHub's trained models are closed) → null.
+    .{ .name = "github-copilot", .label = "GitHub Copilot", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://copilot.github.trust.page/faq", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .variations = &.{ "copilot", "copilot-acp" } },
+    // alibaba: never/never — Alibaba Cloud Model Studio (the
+    // dashscope/alibaba-coding-plan surface): "Alibaba Cloud strictly
+    // protects your data privacy and will never use your data for model
+    // training" (Model Studio privacy notice + FAQ). Distinct from
+    // qwen.ai's consumer tier, which is opt-in (see the qwen rule).
+    .{ .name = "alibaba", .label = "Alibaba", .closed_training = "never", .open_training = "never", .sources = &.{ "https://help.aliyun.com/en/model-studio/privacy-notice", "https://www.alibabacloud.com/help/en/model-studio/faq-about-alibaba-cloud-model-studio" }, .variations = &.{"dashscope"} },
     // openai: opt-in/opt-in — OpenAI's platform tier (also the provider
     // id for requesty-routed openai-compatible combos, e.g. qwen's
     // `router.requesty.ai` upstream). API inputs/outputs are not used
@@ -618,14 +700,116 @@ pub const rulesForProviders = [_]ProviderRule{
     // `fireworks-ai/...` provider key kilo catalogs). Fireworks is an
     // inference-only cloud; its terms/privacy state customer prompts are
     // not used to train models.
-    .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = "never", .open_training = "never", .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" } },
-    // google: null/null — Google's Gemini platform tier (the `google`
-    // provider key for Gemini CLI / gemini-api combos); policy unverified.
-    .{ .name = "google", .label = "Google", .closed_training = null, .open_training = null, .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs" } },
+    .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = "never", .open_training = "never", .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" }, .variations = &.{"fireworks"} },
+    // google: tiered — the Gemini API terms: Paid Services data "is not
+    // used to improve … machine-learning technologies" (never), but
+    // Unpaid Services (AI Studio / free-tier quota) ARE used to
+    // "provide, improve, and develop Google products … and machine
+    // learning technologies" — reachable only by choosing the free tier,
+    // so opt-in (the opt-in-by-model rule). Cloud/Vertex commits never
+    // via the Service Specific Terms Training Restriction.
+    .{ .name = "google", .label = "Google", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs/pricing" }, .variations = &.{"gemini"} },
+    // google-vertex: never/never — Vertex AI's Service Specific Terms
+    // Training Restriction: "Google will not use Customer Data to train
+    // or fine-tune any AI/ML models without Customer's prior permission
+    // or instruction".
+    .{ .name = "google-vertex", .label = "Google Vertex", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cloud.google.com/terms/service-terms", "https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" }, .variations = &.{"vertex"} },
+    // amazon-bedrock: never/never — Bedrock data protection: "Amazon
+    // Bedrock doesn't store or log your prompts and completions …
+    // doesn't use your prompts and completions to train any AWS models
+    // and doesn't distribute them to third parties."
+    .{ .name = "amazon-bedrock", .label = "Amazon Bedrock", .closed_training = "never", .open_training = "never", .sources = &.{ "https://docs.aws.amazon.com/bedrock/latest/userguide/data-protection.html", "https://aws.amazon.com/bedrock/security-privacy-responsible-ai" }, .variations = &.{ "bedrock", "aws" } },
+    // azure-foundry: never/never — Microsoft Foundry data privacy:
+    // "prompts and completions are not used to train, retrain, or
+    // improve the base models"; serverless deployments add "Microsoft
+    // doesn't use these prompts and outputs to train or improve
+    // Microsoft models, the model provider's models, or any third
+    // party's models".
+    .{ .name = "azure-foundry", .label = "Azure Foundry", .closed_training = "never", .open_training = "never", .sources = &.{ "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy", "https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/concept-data-privacy" }, .variations = &.{"azure"} },
     // kilo: null/null — the Kilo Code CLI's first-party router provider
     // (its `kilo/~*-latest` alias tier); an inference router, but the
     // first-party upstreams are varied, so policy stays unverified.
     .{ .name = "kilo", .label = "Kilo", .closed_training = null, .open_training = null, .sources = &.{"https://github.com/Kilo-Org/kilocode"} },
+    // nous: opt-out/opt-out — Nous Research's inference tier (Portal /
+    // Hermes inference API). Privacy Policy: "When Privacy Mode is
+    // enabled, we will not store your inference payloads and will not
+    // use such inference payloads for training…" — an account-level
+    // opt-out toggle; Privacy Mode defaults off, so opt-out. Terms §12.3
+    // concurs (Service Data "may be used by Nous Research").
+    .{ .name = "nous", .label = "Nous", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://portal.nousresearch.com/privacy", "https://portal.nousresearch.com/terms" } },
+    // google-vertex: never/never — Vertex AI's Service Specific Terms
+    // Training Restriction: "Google will not use Customer Data to train
+    // or fine-tune any AI/ML models without Customer's prior permission
+    // or instruction".
+    .{ .name = "google-vertex", .label = "Google Vertex", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cloud.google.com/terms/service-terms", "https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" }, .variations = &.{"vertex"} },
+    // amazon-bedrock: never/never — Bedrock data protection: "Amazon
+    // Bedrock doesn't store or log your prompts and completions …
+    // doesn't use your prompts and completions to train any AWS models
+    // and doesn't distribute them to third parties."
+    .{ .name = "amazon-bedrock", .label = "Amazon Bedrock", .closed_training = "never", .open_training = "never", .sources = &.{ "https://docs.aws.amazon.com/bedrock/latest/userguide/data-protection.html", "https://aws.amazon.com/bedrock/security-privacy-responsible-ai" }, .variations = &.{ "bedrock", "aws" } },
+    // azure-foundry: never/never — Microsoft Foundry data privacy:
+    // "prompts and completions are not used to train, retrain, or
+    // improve the base models"; serverless deployments add "Microsoft
+    // doesn't use these prompts and outputs to train or improve
+    // Microsoft models, the model provider's models, or any third
+    // party's models".
+    .{ .name = "azure-foundry", .label = "Azure Foundry", .closed_training = "never", .open_training = "never", .sources = &.{ "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/openai/data-privacy", "https://learn.microsoft.com/en-us/azure/foundry-classic/how-to/concept-data-privacy" }, .variations = &.{"azure"} },
+    // novita-ai: never/never — Novita ToS §10.2 "By Default, Novita AI
+    // will not use your Content to train our own models or to improve
+    // the Services" + Zero Data Retention; the trust-center FAQ repeats
+    // it contractually ("do not use any data submitted through our API
+    // … to train or improve our models").
+    .{ .name = "novita-ai", .label = "NovitaAI", .closed_training = "never", .open_training = "never", .sources = &.{ "https://novita.ai/legal/terms-of-service", "https://trust.novita.ai/faq" }, .variations = &.{"novita"} },
+    // deepinfra: never/never — DeepInfra terms §7(b) Zero Data
+    // Retention: "will not use Customer Data to train, fine-tune, or
+    // otherwise improve any model, except as necessary to provide the
+    // Services"; the data-privacy docs repeat "We do not train on your
+    // data" (Google/Anthropic-hosted exceptions inherit those upstream
+    // policies).
+    .{ .name = "deepinfra", .label = "DeepInfra", .closed_training = "never", .open_training = "never", .sources = &.{ "https://deepinfra.com/terms", "https://docs.deepinfra.com/account/data-privacy" } },
+    // nebius: opt-in (closed+open) — Nebius Token Factory ToS §7: "the
+    // Company collects and processes both Input and Output data for the
+    // purpose of training smaller Models used exclusively for
+    // Speculative Decoding" — standing training use; no customer-facing
+    // opt-out control is documented. All-axes opt-in.
+    .{ .name = "nebius", .label = "Nebius", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.tokenfactory.nebius.com/legal/terms-of-service", "https://nebius.com/services/token-factory" } },
+    // nvidia: never/never — NVIDIA's API Trial terms (§2.2/2.3): User
+    // Content and Generated Content are processed "solely to provide the
+    // API Service" during the session and "will not [be] store[d] or
+    // use[d]" after it — no training use of API content.
+    .{ .name = "nvidia", .label = "NVIDIA NIM", .closed_training = "never", .open_training = "never", .sources = &.{ "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/", "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/" } },
+    // upstage: never/never — Upstage ToS data-handling summary: "API
+    // input and output data are not stored and are not used for the
+    // development of services or AI model training" (Console Playground
+    // data may be used for improvement — a different surface from the
+    // API Hermes reaches).
+    .{ .name = "upstage", .label = "Upstage", .closed_training = "never", .open_training = "never", .sources = &.{ "https://www.upstage.ai/terms-of-service/update-december-19-2024", "https://upstage.ai/privacy-policy/updated-mar-07-2025" } },
+    // xiaomi: opt-in (closed+open) — Xiaomi MiMo privacy policy: "We may
+    // use your Inputs and Outputs to train and improve our models and
+    // services. If you do not wish … you can opt out through the
+    // [Experience Optimization Plan]" (desktop app surface). The API
+    // open-platform policy states "Xiaomi will not use the content you
+    // provide for model training" — the stricter API tier keeps the
+    // overall rule at opt-in because the reachable desktop surface
+    // trains by default.
+    .{ .name = "xiaomi", .label = "Xiaomi", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://mimo.xiaomi.com/legal/privacy", "https://mimo.mi.com/docs/terms/privacy-policy" } },
+    // stepfun: opt-in (closed+open) — StepFun ToS §4.4: "StepFun may use
+    // Usage Data, including personal data contained in Prompts and
+    // Outputs, to train, fine-tune, and improve its artificial
+    // intelligence models" in certain programs ("you should not
+    // participate in that program" = program-gated opt-in).
+    .{ .name = "stepfun", .label = "StepFun", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.stepfun.ai/docs/en/agreement/userservice", "https://platform.stepfun.ai/docs/en/agreement/userprivacy" } },
+    // arcee: opt-out (closed+open) — Arcee privacy policy: unpaid
+    // instances' Inputs/Outputs "may [be] use[d] to train and improve
+    // our Services, unless you opt out … by contacting us"; paid
+    // instances not used for training by default.
+    .{ .name = "arcee", .label = "Arcee", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://www.arcee.ai/privacy-policy", "https://www.arcee.ai/terms-and-conditions" } },
+    // vercel: never/never — Vercel AI Gateway ZDR docs: "AI Gateway has
+    // a ZDR policy and does not retain prompts, outputs, or sensitive
+    // data … does not use your prompts or responses for training
+    // purposes" (the per-provider routing caveat is upstream policy, not
+    // the gateway's own use).
+    .{ .name = "vercel", .label = "Vercel AI Gateway", .closed_training = "never", .open_training = "never", .sources = &.{ "https://vercel.com/docs/ai-gateway/security-and-compliance/zdr", "https://vercel.com/docs/ai-gateway/security-and-compliance/disallow-prompt-training" }, .variations = &.{"ai-gateway"} },
 };
 
 /// static metadata the rule declared to the matcher. Useful for auditing
@@ -721,6 +905,12 @@ const opencode_env = [_][]const u8{ "OPENCODE_API_KEY", "OPENCODE_MODEL" };
 const vibe_env = [_][]const u8{ "VIBE_API_KEY", "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER" };
 const cursor_env = [_][]const u8{ "CURSOR_API_KEY", "CURSOR_API_ENDPOINT", "CURSOR_MODEL" };
 const copilot_env = [_][]const u8{ "COPILOT_ALLOW_ALL", "COPILOT_MODEL" };
+// Hermes Agent — exported by every hermes CLI/desktop session
+// (`_advertise_agent_env`, hermes_cli/main.py). HERMES_PROFILE names the
+// active profile (present only when a non-default profile runs); its
+// value is the profile name, not a secret. AI_AGENT is intentionally NOT
+// a marker (pi and other agents set it — it can't identify this harness).
+const hermes_env = [_][]const u8{ "HERMES_AGENT", "HERMES_PROFILE" };
 
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an
@@ -861,6 +1051,18 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1", "zcode.exe", "zcode-cli.exe", "zcode-host-local-1.exe" }
     else
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1" } },
+    // hermes: MIT — https://github.com/NousResearch/hermes-agent ships a
+    // MIT LICENSE (Copyright Nous Research). The `hermes` CLI shim exports
+    // HERMES_AGENT=true into every child process (`_advertise_agent_env`
+    // in hermes_cli/main.py — AI_AGENT is deliberately NOT a marker here:
+    // pi and other agents set it too, so it can't identify this harness).
+    // Declared last for the same reason as zcode: the markers leak into
+    // every child session of the app, so a cline or goose session spawned
+    // from inside Hermes still matches its own rule first.
+    .{ .name = "hermes", .label = "Hermes Agent", .short_title = "Hermes", .license = "MIT", .license_sources = &.{ "https://github.com/NousResearch/hermes-agent", "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE" }, .env_markers = &hermes_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "hermes", "hermes.exe" }
+    else
+        &[_][]const u8{"hermes"} },
 };
 
 /// env-var names whose values are safe to emit in raw.env_vars. Names NOT
@@ -885,6 +1087,8 @@ const env_value_allowlist = [_][]const u8{
              "ZCODE_APP_VERSION",         "ZCODE_BASE_URL",
     "ZCODE_ENV",               "ZCODE_PROCESS_LABEL",        "ZCODE_RUNTIME_ENV",
     "ZAI_BUSINESS_BASE_URL",   "ZAI_OAUTH_ORIGIN",
+    // Hermes markers — the values are "true"/profile names, non-secret.
+    "HERMES_AGENT",            "HERMES_PROFILE",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {

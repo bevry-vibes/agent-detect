@@ -284,6 +284,7 @@ over web scripts.
 | vibe      | —                                                 | `uv tool install mistral-vibe`                                   | `uv tool install mistral-vibe` → `~\scoop\persist\uv\tools\shims\vibe.exe`                                    |
 | cursor    | `brew install cursor-cli`                         | — (binaries: `cursor-agent`)                                    | `irm 'https://cursor.com/install?win32=true' \| iex` → `%LOCALAPPDATA%\cursor-agent\cursor-agent{,.cmd,.ps1}` |
 | copilot   | `brew install copilot-cli`                        | — (binaries: `copilot`)                                         | `scoop install copilot-cli` → `~\scoop\shims\copilot.exe`                                                     |
+| hermes    | — (git install)                                   | `curl -fsSL https://hermes-agent.nousresearch.com/install.sh \| bash` → `~/.local/bin/hermes` | install.sh (per-user, no admin); the desktop app binary is `Hermes` inside the .app bundle  |
 | goose     | —                                                  | — (contributor-scope example)                               | `scoop install goose-cli` → `~\scoop\shims\goose.exe` (contributor-scope example)                             |
 
 ### provider model discovery (three sources)
@@ -1034,3 +1035,44 @@ non-evergreen remainder (`longcat-2.0`, `qwen3.7-max`,
 `qwen3.8-flash` has its own rule with reciprocity/license `null`
 pending a backing audit (no `Qwen/Qwen3.8-Flash` HF repo; the 3.8
 flash open line is the separate `qwen38-flash-next` collection).
+
+**hermes** (2026-09-06, authored by the maintainer's Hermes session):
+the harness rule landed with a live from-capture on
+`hermes-ollamacloud-glm53flash-darwin` (detection ladder: the
+`HERMES_AGENT=true` env marker, then `session_model_usage` in
+`~/.hermes/state.db` for the live provider/model — `billing_provider` +
+`model` per API call — then `config.yaml`'s `model.default`/`provider`
+as fallback; the daemon pins combos via `HERMES_MODEL`/`HERMES_PROVIDER`,
+which `hermes chat --provider P -m M` sets per session without touching
+the user's config). Provider/model discovery source: the harness's own
+`plugins/model-providers/` catalog (39 profiles, `name` + `aliases` +
+`env_vars` + `base_url` per profile) cross-checked against its
+models.dev mirror (`~/.hermes/models_dev_cache.json` — models.dev is a
+fifth index alongside OpenRouter/provider-API/harness-surface for this
+harness: 35+ of its provider profiles resolve to models.dev provider
+keys). The hermes row was added to
+`map-harness-provider-harnessprovider.csv` and 17 new provider rows +
+3 new model columns (`gpt-oss-20b`, `laguna-s-2.1`, `laguna-xs-2.1`)
+to `map-provider-model-providermodel.csv` (openrouter kept its
+evergreen-subset policy; kimi-coding/alibaba-coding-plan/nvidia/etc
+recorded only ruled ids, the non-evergreen remainder unruled). The
+free axis gained `nvidia` + `vercel` rows (0/0 pricing cells) and a
+`laguna-s-2.1-free` cell on `opencode`. Training-policy research
+refreshed 20+ provider rules from primary docs (ollama/ollama-cloud
+never/never, Nous opt-out via Privacy Mode, GitHub Copilot closed
+opt-out for individual subscribers, Bedrock/Vertex/Azure-Foundry/
+DeepInfra/Novita/Upstage/Xiaomi-API/HF-Inference never, Gemini-API
+opt-in via the free tier, qwen.ai opt-in by standing ToS authorization
+while Alibaba Model Studio commits never, Nebius opt-in for its
+speculative-decoding draft training, Moonshot NOASSERTION on
+conflicting docs, xAI API opt-out enterprise-only, Arcee opt-out,
+StepFun program-gated opt-in, Vercel AI Gateway ZDR never,
+OpenAI-Codex consumer opt-out). KNOWN FOLD FLAW (follow-up): sessions
+reporting provider `ollama` with `:cloud`-suffixed models are really
+`ollama-cloud` traffic — the fold currently lands them on `ollama`;
+the two surfaces have different policy semantics (local = nothing
+leaves the machine, cloud = transient third-party processing) and
+should be individuated, possibly via a shared `local` provider rule
+for local runtimes (ollama, lmstudio, llama.cpp servers) serving
+non-cloud models — noting that a local surface still carries its own
+vendor policy.

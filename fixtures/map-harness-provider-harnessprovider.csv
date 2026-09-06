@@ -1,4 +1,4 @@
-harness,alibaba,anthropic,cerebras,chutes,clinepass,cursor,deepseek,deepseekflash,fireworksai,githubcopilot,gmicloud,googleantigravity,goose,groq,huggingface,hyper,kilo,kimi,kimicode,meta,minimax,minimaxcode,mistral,nanogpt,ollamacloud,openai,opencode,opencodego,openrouter,qwen,sakana,siliconflow,xai,zai,zenmux,cline,zcode,cloudflareworkersai,ollama
+harness,alibaba,anthropic,cerebras,chutes,clinepass,cursor,deepseek,deepseekflash,fireworksai,githubcopilot,gmicloud,googleantigravity,goose,groq,huggingface,hyper,kilo,kimi,kimicode,meta,minimax,minimaxcode,mistral,nanogpt,ollamacloud,openai,opencode,opencodego,openrouter,qwen,sakana,siliconflow,xai,zai,zenmux,cline,zcode,cloudflareworkersai,ollama,alibabacodingplan,amazonbedrock,arcee,azurefoundry,deepinfra,google,googlevertex,kimicoding,metaai,nebius,nous,novitaai,nvidia,openaicodex,opencodezen,stepfun,upstage,vercel,xiaomi,kilocode,opencodefree
 cline,-,-,cerebras,chutes,clinepass,-,deepseek,-,-,-,-,-,-,-,-,hyper,-,-,-,-,minimax,-,mistral,-,-,-,-,opencodego,openrouter,-,-,-,-,-,-,cline,-,-,-
 copilot,-,-,-,-,-,-,-,-,-,githubcopilot,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-
 crush,-,-,-,-,-,-,deepseek,-,-,-,-,-,-,-,-,hyper,-,-,-,-,minimax,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-
@@ -14,3 +14,4 @@ qwen,-,-,-,-,-,-,deepseek,-,-,-,-,-,-,-,-,-,-,-,-,-,minimax,-,-,-,-,openai,-,-,-
 reasonix,-,-,-,-,-,-,deepseek,deepseekflash,-,-,-,-,-,-,-,-,-,-,-,-,minimax,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-
 vibe,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,minimax,-,mistral,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-
 zcode,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,-,zcode,-,ollama
+hermes,alibaba,anthropic,-,-,-,-,deepseek,-,fireworks,copilot,gmi,-,-,-,huggingface,-,-,-,-,-,minimax,-,-,-,ollama-cloud,-,opencode-free,opencode-go,openrouter,qwen-oauth,-,-,xai,zai,-,-,-,-,-,alibaba-coding-plan,bedrock,arcee,azure-foundry,deepinfra,gemini,vertex,kimi-coding,meta-ai,nebius-token-factory,nous,novita,nvidia,openai-codex,opencode-zen,stepfun,upstage,ai-gateway,xiaomi,kilocode,opencode-free

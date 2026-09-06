@@ -1722,6 +1722,181 @@ fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = mm.model_full });
 }
 
+/// quote a path into a SQL string literal (single-quote doubling;
+/// backslashes normalized to forward slashes on Windows, mirroring
+/// detectActiveSessionModel). Caller frees.
+fn sqlStringLit(a: std.mem.Allocator, dir: []const u8) ![]u8 {
+    var lit: std.ArrayList(u8) = .empty;
+    try lit.append(a, '\'');
+    for (dir) |c| {
+        if (c == '\'') try lit.append(a, '\'');
+        if (builtin.os.tag == .windows and c == '\\') {
+            try lit.append(a, '/');
+        } else {
+            try lit.append(a, c);
+        }
+    }
+    try lit.append(a, '\'');
+    return lit.toOwnedSlice(a);
+}
+
+fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    // Hermes's own launcher override — HERMES_MODEL carries the model
+    // (bare id or "provider/model"); HERMES_PROVIDER pins the provider
+    // when the model id is bare. The daemon uses these to capture a
+    // chosen combo (`hermes chat --provider P -m M`) without touching
+    // the user's config (the global-settings rule).
+    if (env.get("HERMES_MODEL")) |model_full| {
+        if (model_full.len > 0) {
+            const slash = std.mem.findScalar(u8, model_full, '/');
+            if (slash) |i| {
+                try setProvider(a, d, model_full[0..i]);
+                try applyModel(a, d, model_full[i + 1 ..], model_full);
+            } else blk: {
+                const prov = env.get("HERMES_PROVIDER") orelse "";
+                if (prov.len == 0) return;
+                try setProvider(a, d, prov);
+                try applyModel(a, d, model_full, model_full);
+                break :blk;
+            }
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "HERMES_MODEL", .value = model_full });
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "HERMES_MODEL", .value = model_full });
+            return;
+        }
+    }
+
+    // Session-store resolution. A real session's truth is the sqlite
+    // store (`$HERMES_HOME`/state.db): `session_model_usage` carries the
+    // (model, billing_provider) per API call — written per call, so it
+    // reflects `-m`/`--provider` overrides that config.yaml never sees.
+    // The active session is the non-archived session for the cwd with
+    // the newest usage row (cwd-matched first — desktop/gateway sessions
+    // record no cwd and fall through to the newest row overall);
+    // `task=''` rows (the main agent loop) are preferred over background
+    // tasks (title_generation / compression / vision / approval), newest
+    // `last_seen` within each class.
+    if (home.len > 0) {
+        const hermes_home = env.get("HERMES_HOME") orelse try std.fmt.allocPrint(a, "{s}/.hermes", .{home});
+        var db: []const u8 = try std.fmt.allocPrint(a, "{s}/state.db", .{hermes_home});
+        // profile-aware: HERMES_PROFILE (non-default) moves the store
+        // under `<hermes_home>/profiles/<profile>/` (hermes_constants).
+        if (env.get("HERMES_PROFILE")) |prof| {
+            if (prof.len > 0 and !std.mem.eql(u8, prof, "default")) {
+                const prof_db = try std.fmt.allocPrint(a, "{s}/profiles/{s}/state.db", .{ hermes_home, prof });
+                if (std.Io.Dir.cwd().statFile(io, prof_db, .{})) |_| {
+                    db = prof_db;
+                } else |_| {}
+            }
+        }
+        if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| {
+            db = "";
+        }
+        if (db.len > 0) {
+            const dir = currentDir(a, io, env) orelse "";
+            const dir_lit = try sqlStringLit(a, dir);
+            const sql_cwd = try std.fmt.allocPrint(a,
+                \\SELECT u.model, u.billing_provider FROM session_model_usage u
+                \\JOIN sessions s ON s.id = u.session_id
+                \\WHERE s.archived=0 AND s.cwd={s}
+                \\ORDER BY (u.task='') DESC, u.last_seen DESC LIMIT 1
+            , .{dir_lit});
+            const sql_any = try std.fmt.allocPrint(a,
+                \\SELECT u.model, u.billing_provider FROM session_model_usage u
+                \\JOIN sessions s ON s.id = u.session_id
+                \\WHERE s.archived=0
+                \\ORDER BY (u.task='') DESC, u.last_seen DESC LIMIT 1
+            , .{});
+            var out = hermesSqliteJson(a, io, db, sql_cwd) catch "";
+            if (out.len == 0) out = hermesSqliteJson(a, io, db, sql_any) catch "";
+            if (out.len > 0) {
+                if (std.json.parseFromSlice(std.json.Value, a, out, .{}) catch null) |parsed| {
+                    if (parsed.value == .array and parsed.value.array.items.len > 0) {
+                        const row = parsed.value.array.items[0];
+                        if (row == .object) {
+                            if (jstr(row.object, "model")) |model_full| {
+                                if (model_full.len > 0) {
+                                    const prov = jstr(row.object, "billing_provider") orelse "";
+                                    if (prov.len > 0) try setProvider(a, d, prov);
+                                    try applyModel(a, d, model_full, model_full);
+                                    var fields = std.ArrayList(FieldObservation).empty;
+                                    try fields.append(a, .{ .dotted_path = "session_model_usage.model", .value = model_full });
+                                    if (prov.len > 0) try fields.append(a, .{ .dotted_path = "session_model_usage.billing_provider", .value = prov });
+                                    const obs = try a.alloc(FileObservation, 1);
+                                    obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
+                                    d.raw.session_files = obs;
+                                    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session_model_usage.model", .value = model_full });
+                                    if (prov.len > 0) {
+                                        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session_model_usage.billing_provider", .value = prov });
+                                    }
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Config fallback — the committed default (config.yaml `model:` block:
+    // `default:` + `provider:`). Only reached when neither the launcher
+    // env nor the session store resolved the combo.
+    if (home.len == 0) return;
+    const cfg_home = env.get("HERMES_HOME") orelse try std.fmt.allocPrint(a, "{s}/.hermes", .{home});
+    const path = try std.fmt.allocPrint(a, "{s}/config.yaml", .{cfg_home});
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    var in_model_block = false;
+    var model_default: ?[]const u8 = null;
+    var model_provider: ?[]const u8 = null;
+    var lines = std.mem.splitScalar(u8, data, '\n');
+    while (lines.next()) |raw| {
+        const t = std.mem.trim(u8, raw, " \t\r");
+        if (t.len == 0 or std.mem.startsWith(u8, t, "#")) continue;
+        // top-level key line (column 0, non-comment) switches blocks
+        if (!std.mem.startsWith(u8, raw, " ") and !std.mem.startsWith(u8, raw, "\t")) {
+            in_model_block = std.mem.startsWith(u8, t, "model:");
+            continue;
+        }
+        if (!in_model_block) continue;
+        if (std.mem.startsWith(u8, t, "default:")) {
+            model_default = yamlScalar(a, t["default:".len..]);
+        } else if (std.mem.startsWith(u8, t, "provider:")) {
+            model_provider = yamlScalar(a, t["provider:".len..]);
+        }
+    }
+    if (model_default == null) return;
+    const model = model_default.?;
+    if (model.len == 0) return;
+    const prov = model_provider orelse "";
+    if (prov.len > 0) try setProvider(a, d, prov);
+    try applyModel(a, d, model, model);
+    var fields = std.ArrayList(FieldObservation).empty;
+    try fields.append(a, .{ .dotted_path = "model.default", .value = model });
+    if (prov.len > 0) try fields.append(a, .{ .dotted_path = "model.provider", .value = prov });
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    d.raw.config_files = obs;
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "model.default", .value = model });
+    if (prov.len > 0) {
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "model.provider", .value = prov });
+    }
+}
+
+/// strip quotes/whitespace from a YAML scalar value ("x" / 'x' / x).
+fn yamlScalar(a: std.mem.Allocator, v: []const u8) ?[]const u8 {
+    const t = std.mem.trim(u8, v, " \t\r");
+    if (t.len == 0) return null;
+    if (t.len >= 2 and ((t[0] == '"' and t[t.len - 1] == '"') or (t[0] == '\'' and t[t.len - 1] == '\'')))
+        return a.dupe(u8, t[1 .. t.len - 1]) catch null;
+    return a.dupe(u8, t) catch null;
+}
+
+/// spawn `sqlite3 -json <db> <sql>` for the Hermes session store — a
+/// thin alias over kiloSqliteJson (the spawned-sqlite3 reader is shared).
+fn hermesSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
+    return kiloSqliteJson(a, io, db, sql);
+}
+
 fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = io;
     // vibe's documented override: VIBE_ACTIVE_MODEL=<name> sets the
@@ -2744,6 +2919,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectCursor(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "copilot")) {
             try detectCopilot(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "hermes")) {
+            try detectHermes(a, io, env, home, d);
         }
         // the rule's static training postures fill each dim only when
         // the per-harness instance read above didn't; the instance

@@ -855,7 +855,21 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     // that lands without stems; these are the pre-existing exemptions.
     // chutes: the pi-chutes invocations live in the store's invocations
     // table (their captures are pending), so no fixture stem covers it yet.
-    const rule_only_providers = [_][]const u8{ "cline", "chutes", "google", "moonshot" };
+    // hermes-facing provider surfaces (2026-09-06): kimi-coding(+cn),
+    // alibaba-coding-plan, opencode-free/-zen, openai-codex, google-vertex,
+    // amazon-bedrock, azure-foundry, novita-ai, deepinfra, nebius, nvidia,
+    // upstage, xiaomi, stepfun, arcee, vercel, nous — ruled for detection
+    // coverage; their hermes combos queue via the daemon.
+    const rule_only_providers = [_][]const u8{
+        "cline",            "chutes",           "google",
+        "moonshot",         "kimi-coding",      "kimi-coding-cn",
+        "alibaba-coding-plan", "opencode-free", "opencode-zen",
+        "openai-codex",     "google-vertex",    "amazon-bedrock",
+        "azure-foundry",    "novita-ai",        "deepinfra",
+        "nebius",           "nvidia",           "upstage",
+        "xiaomi",           "stepfun",          "arcee",
+        "vercel",           "nous",
+    };
     const rule_only_models = [_][]const u8{
         "claude-haiku-4",           "claude-opus-4",       "devstral-2",
         "gemini-3.1-pro",           "glm-4.6",             "glm-5",
@@ -865,7 +879,8 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "mimo-v2.5-pro",            "mistral-nemo-instruct-2407",
         "nemotron-3-nano-omni",     "qwen3-235b-a22b",     "qwen3-32b",
         "qwen3.5",                  "qwen3.5-397b-a17b",   "qwen3.6-27b",
-        "qwen3.8-27b",
+        "qwen3.8-27b",              "gpt-oss-20b",         "laguna-s-2.1",
+        "laguna-xs-2.1",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

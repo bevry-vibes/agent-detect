@@ -20,6 +20,18 @@
       "mode": "from-identity",
       "started_at": 1788472026,
       "runner": 75853
+    },
+    {
+      "harness": "hermes",
+      "mode": "from-identity",
+      "stale": true,
+      "runner": 42342
+    },
+    {
+      "harness": "hermes",
+      "mode": "from-capture",
+      "stale": true,
+      "runner": 42342
     }
   ],
   "backlog": {
@@ -6994,6 +7006,24 @@
       ],
       "version_invocation": [
         "vibe.exe",
+        "--version"
+      ]
+    },
+    "hermes-ollamacloud-glm53flash-darwin": {
+      "prompt_invocation": [
+        "hermes",
+        "chat",
+        "-Q",
+        "--oneshot",
+        "--provider",
+        "ollama-cloud",
+        "-m",
+        "glm-5.3-flash",
+        "-q",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "hermes",
         "--version"
       ]
     }
