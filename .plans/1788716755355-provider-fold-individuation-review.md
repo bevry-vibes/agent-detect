@@ -545,18 +545,19 @@ configuration surface (`agent-detect provider-config` style) would
 attach the index ids to our rules as selectable sub-providers —
 selection needs their granularity, identification does not.
 
-**D9 — cascade to this repo (decision needed).** agent-detect's
-markdown (AGENTS.md, CONTRIBUTING.md, DESIGN.md, commits.md, plans.md,
-zig.md, powershell.md, the .plans corpus) is hard-wrapped at ~76
-columns throughout, which the new upstream rule makes non-conformant.
-Options: (a) a mechanical unwrap pass over prose (large diffs, git
-blame churn — mitigate with `git log -L`/annotation patience or do it
-file-by-file as each is next touched); (b) grandfather existing files
-and write all NEW content unwrapped (zero churn, a permanent split);
-recommendation: (b) now, promoting files to unwrapped opportunistically
-when they receive substantive edits — the same non-retroactivity
-posture the model-rule folding policy takes. Code blocks, tables, and
-the grids keep their structure either way.
+**D9 — cascade of the upstream no-hard-wraps rule to this repo
+(decision, 2026-09-07, corrected same day).** The upstream
+conventions.md rule forbids *width-driven* wrapping — breaks chosen
+by a column counter — never line breaks for legibility; breaking at
+clause or sentence boundaries is ordinary prose formatting (the
+maintainer corrected the first draft's "one paragraph = one line"
+overreach, bevry-vibes/skills `6194d64`). Cascade: existing
+hard-wrapped files are grandfathered (re-flowing them all would be
+exactly the churn the rule forbids); all new content follows the
+corrected rule — lines as long as content needs, breaks where they
+aid the reader, never aimed at a column. The content authored during
+this review's one-line phase was re-flowed the same day (DESIGN #15,
+the touched rule comments, the granularity doctrine).
 
 ## Decisions for maintainer review
 

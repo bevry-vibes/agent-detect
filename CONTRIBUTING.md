@@ -900,7 +900,12 @@ Rule identity is model version × param size × license, with naming by
   harness's config nests models under a router, the router is the
   provider.
 
-**Individuation granularity (doctrine).** The external indexes (models.dev, OpenRouter) are inputs for identity resolution — never authorities on how finely we individuate. Their granularity serves configuration: models.dev lists regional mirrors (`-cn`), tier surfaces (zen free vs paid vs go), and endpoint variants because a configuring user must select the exact one. Ours serves identification and reciprocation: one rule per policy surface. Spellings that share a vendor, a policy, and a served catalog fold together as variations no matter how many keys an index gives them (`ollama-cloud` → `ollama`, `kimi-coding-cn` → `kimi-coding`); individuation is reserved for surfaces whose policy or served catalog actually differs (qwen.ai's enforced tier vs Alibaba Model Studio's never; the Gemini API's tiered opt-in vs Vertex's never; opencode zen vs go). We will never match another index one to one — different concerns — and we rule providers no index carries yet (`phala`). A future configuration surface (`agent-detect provider-config` style) would attach the index ids to our provider rules as selectable sub-providers: selection needs their granularity, identification does not.
+**Individuation granularity (doctrine).** The external indexes (models.dev, OpenRouter) are inputs for identity resolution — never authorities on how finely we individuate.
+Their granularity serves configuration: models.dev lists regional mirrors (`-cn`), tier surfaces (zen free vs paid vs go), and endpoint variants because a configuring user must select the exact one.
+Ours serves identification and reciprocation: one rule per policy surface.
+Spellings that share a vendor, a policy, and a served catalog fold together as variations no matter how many keys an index gives them (`ollama-cloud` → `ollama`, `kimi-coding-cn` → `kimi-coding`); individuation is reserved for surfaces whose policy or served catalog actually differs (qwen.ai's enforced tier vs Alibaba Model Studio's never; the Gemini API's tiered opt-in vs Vertex's never; opencode zen vs go).
+We will never match another index one to one — different concerns — and we rule providers no index carries yet (`phala`).
+A future configuration surface (`agent-detect provider-config` style) would attach the index ids to our provider rules as selectable sub-providers: selection needs their granularity, identification does not.
 - Grandfathered splits retired 2026-08-29: `deepseek-v4-flash-free`
   and `zai-glm-4.7` folded into their parents as tier/prefix
   spellings (option B of
