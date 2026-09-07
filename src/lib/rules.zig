@@ -86,8 +86,12 @@ pub const rulesForModels = [_]ModelRule{
     // Qwen3.8-2.4T-A95B card + qwencloud.com, Max is the official
     // version based on Qwen3.8-2.4T-A95B (the open MoE size of the
     // same generation) — a closed derivative, so it keeps its own
-    // rule; no weights, no license granted → NONE.
-    .{ .name = "qwen3.8-max", .label = "Qwen3.8-Max", .reciprocity = "closed", .license = "NONE", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.8-max", "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B" } },
+    // rule; no weights, no license granted → NONE. variations:
+    // OpenRouter's `0902` release stamp (the id rotated to
+    // `qwen/qwen3.8-max-0902` in the 2026-09-07 evergreen snapshot —
+    // the same model per the name "Qwen3.8 Max (0902)"; folds per
+    // DESIGN #13, same as the `-0731` stamps).
+    .{ .name = "qwen3.8-max", .label = "Qwen3.8-Max", .reciprocity = "closed", .license = "NONE", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.8-max", "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B" }, .variations = &.{"qwen3.8-max-0902"} },
     // qwen3.8-27b: open-weight — the 27B dense size of the Qwen3.8
     // open-model family; HF card + LICENSE (Apache-2.0). The official
     // spellings carry the size (27B vs 2.4T-A95B) and bare "Qwen3.8"
@@ -565,8 +569,8 @@ pub const rulesForProviders = [_]ProviderRule{
     .{ .name = "chutes", .label = "Chutes", .closed_training = "never", .open_training = "never", .sources = &.{ "https://chutes.ai/privacy", "https://chutes.ai/tos" } },
     // zai: opt-in (closed+open) — Z.AI's API terms: "We will not use End User Content to develop or improve Services, unless you explicitly agree to such use" — training is off by default, enabled only by explicit agreement (docs.z.ai is the authoritative source; www.z.ai legal pages render no text without JS). The terms do not distinguish model types and Z.AI serves both open (HF zai-org) and closed models, so the value mirrors across both axes (the axis-ambiguity convention, CONTRIBUTING "add a new model or provider rule").
     .{ .name = "zai", .label = "Z.ai", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
-    // cloudflare-workers-ai: null/null — Cloudflare's Workers AI serverless inference platform (the `@cf/<org>/<model>` catalog pi sessions route through). The DPA is silent on AI training and the developers.cloudflare.com pages render no text without JS (audit attempted 2026-09-07); the "Cloudflare trains on nothing" reputation needs the Service Specific Terms wording verified before any value lands, so both stay null pending a maintainer audit. models.dev individuates `cloudflare-ai-gateway` beside this surface — known-unruled, add when a harness is observed reaching it.
-    .{ .name = "cloudflare-workers-ai", .label = "Cloudflare Workers AI", .closed_training = null, .open_training = null, .sources = &.{"https://developers.cloudflare.com/workers-ai/"} },
+    // cloudflare-workers-ai: opt-in (closed+open) — Cloudflare's Workers AI serverless inference platform (the `@cf/<org>/<model>` catalog pi sessions route through). The Developer Platform Service-Specific Terms (the "Cloudflare Workers AI; AI Gateway" clause — one clause covering both sibling surfaces, matching models.dev's individuation): "Unless otherwise agreed, Cloudflare does not use any Customer Content to train generative AI tools" — training is off by default, enabled only by explicit agreement, which is opt-in in the project vocabulary (the same logical form as the zai rule's "unless you explicitly agree"); "generative AI tools" does not distinguish model types, so the value mirrors across both axes. Third-party caveat (the clause's tail): the served models "constitute Third-Party Products … and your use thereof may be subject to additional terms between you and the model licensor" — upstream model policies apply on top. `cloudflare-ai-gateway` (models.dev's sibling key) is known-unruled — the same clause governs it whenever a harness is observed reaching it.
+    .{ .name = "cloudflare-workers-ai", .label = "Cloudflare Workers AI", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://www.cloudflare.com/service-specific-terms-developer-platform/", "https://developers.cloudflare.com/workers-ai/" } },
     // zcode: mirrors `zai` (both training axes; the policy evidence lives on the zai rule) — the ZCode desktop app's bundled coding-plan provider (its session stores record providerId `builtin:zai-start-plan`, and the ZAI_* env the app exports points at api.z.ai). variation: the app's internal provider key, so session evidence resolves through the standard alias fold.
     .{ .name = "zcode", .label = "ZCode", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
     // autoclaw: mirrors `zai` (both training axes; the policy evidence lives on the zai rule) — AutoClaw's bundled Z.ai channel (the desktop app's subscription surface; the runtime config keys it "zai" with baseUrl https://autoglm-api.autoglm.ai/autoclaw-proxy/proxy/autoclaw and X-Product: autoclaw / X-Channel: zai headers, observed 2026-09-06). Individuated from `zai` (the zcode precedent) because the served catalog spellings are AutoClaw-specific (zaicoding_glm-5.3, zai_glm-5.3-flash, tdpsk_deepseek-v4-*-2026MM, zai_glm-5-turbo) and folding them into the `zai` row would mark direct-api.z.ai combos feasible for other harnesses (kilo's zai row is the direct API). A user-configured DIRECT z.ai baseUrl (api.z.ai) resolves to `zai` — detectAutoClaw reads models.providers[key].baseUrl to decide the surface. models.dev individuates the surfaces the same way — a `zai` provider (direct api.z.ai) beside `zai-coding-plan`/`zhipuai-coding-plan` subscription surfaces. And zai_auto / zai_auto-fast (the "Auto"/"Auto-Fast" router aliases — maintainer directive: NEVER model rules; the gateway records the configured mode, not the routing decision, so an Auto session's underlying model is not locally observable — the accepted limitation). The identity evidence for the channel spellings lives on their model rules (glm-5-turbo's rule carries the docs.z.ai + OpenRouter sourcing). Subscription-metered, not free — no freeprovidermodel row (the maintainer's channel credits depleted 2026-09-06).
@@ -945,23 +949,29 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // zcode: NONE — Z.ai's ZCode desktop app (bundle `dev.zcode.app`)
     // ships compiled installers only (no source repo, no license
     // offer); verified from the product page and Z.ai's Terms of
-    // Service, so `license` is `"NONE"`. Training postures stay
-    // null/null: no public doc describes the "Improve experience"
-    // program's training target (zcode.z.ai/privacy and /terms render
-    // no text without JS — audit attempted 2026-09-07, same as
-    // www.z.ai; docs.z.ai covers only the API surface). Catalog research (2026-09-05): every
-    // Z.ai model the docs.z.ai API serves is open-weight on HF
-    // (zai-org) — GLM-5.3, GLM-5.3-Flash, GLM-5.2, GLM-OCR,
-    // GLM-Image, CogVideoX — EXCEPT GLM-ASR-2512, which is API-only
-    // (no public weights; only the Nano variant is released), so the
-    // blanket closed_training="never" is structurally unsafe and the
-    // toggle-ON instance read carries the fail-safe instead (see
-    // `detectZcode`). Declared last so its env
-    // markers (which leak into every child session of the app, like
-    // any desktop harness's shell env) are checked only after every
-    // other harness's markers — a cline or goose session spawned from
-    // inside ZCode still matches its own rule first.
-    .{ .name = "zcode", .label = "ZCode", .license = "NONE", .license_sources = &.{ "https://zcode.z.ai/", "https://www.z.ai/terms-of-service" }, .env_markers = &zcode_env, .binary_names = if (builtin.os.tag == .windows)
+    // Service, so `license` is `"NONE"`. Training postures opt-in/opt-in
+    // (sourced 2026-09-07 via a reader render of zcode.z.ai/privacy —
+    // the pages carry no text for plain crawlers): the "Improve
+    // experience" program is the Optimization Program, and "our
+    // Optimization Program is not enabled by default, and we will
+    // only use such User Content for this purpose after you have
+    // actively opted in" — off by default with an active opt-in, and
+    // the statement covers "product or model training and optimization"
+    // without distinguishing model types, so the value mirrors across
+    // both axes (the axis-ambiguity convention). Catalog research
+    // (2026-09-05): every Z.ai model the docs.z.ai API serves is
+    // open-weight on HF (zai-org) — GLM-5.3, GLM-5.3-Flash, GLM-5.2,
+    // GLM-OCR, GLM-Image, CogVideoX — EXCEPT GLM-ASR-2512, which is
+    // API-only (no public weights; only the Nano variant is released),
+    // so the blanket closed_training="never" is structurally unsafe and
+    // the toggle-ON instance read still carries the fail-safe instead
+    // (see `detectZcode` — the instance read wins over this static
+    // posture whenever the settings file is present). Declared last so
+    // its env markers (which leak into every child session of the app,
+    // like any desktop harness's shell env) are checked only after
+    // every other harness's markers — a cline or goose session spawned
+    // from inside ZCode still matches its own rule first.
+    .{ .name = "zcode", .label = "ZCode", .license = "NONE", .license_sources = &.{ "https://zcode.z.ai/", "https://www.z.ai/terms-of-service" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://zcode.z.ai/privacy", "https://zcode.z.ai/terms" }, .env_markers = &zcode_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1", "zcode.exe", "zcode-cli.exe", "zcode-host-local-1.exe" }
     else
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1" } },

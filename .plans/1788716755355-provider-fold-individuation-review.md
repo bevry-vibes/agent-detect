@@ -31,6 +31,29 @@ static postures (instance read covers live sessions), the ollama
 individuation before any new ollama sweep, and the contributor-scope
 hermes/autoclaw fixture sweeps.
 
+Third pass (2026-09-07, the "inconclusive" audits resolved via a
+reader render of the JS-dead pages): Cloudflare's Developer Platform
+Service-Specific Terms carry the statement in the "Cloudflare Workers
+AI; AI Gateway" clause — "Unless otherwise agreed, Cloudflare does
+not use any Customer Content to train generative AI tools" — the same
+agreement-gated logical form as zai's clause, so cloudflare-workers-ai
+lands opt-in/opt-in (never was never on the table; the clause covers
+both sibling surfaces). zcode's privacy policy names the program —
+"our Optimization Program is not enabled by default, and we will only
+use such User Content for this purpose after you have actively opted
+in" — so the zcode harness static postures land opt-in/opt-in, and
+every zcode recipe combo flips from exit-9 data-incomplete to
+definitive (reciprocal: true across the zcode-zcode and zcode-ollama
+fixtures). Evergreen snapshots regenerated (unauthenticated public
+ranking): OpenRouter rotated `qwen/qwen3.8-max` to the `0902`
+release-stamp id — folded as a qwen3.8-max variation per DESIGN #13
+with the grid cell updated; the new evergreen entrants lacking rules
+(gemini-3.8-flash, mercury-2.5-preview, ling-3.0-flash-sante,
+muse-spark-1.3, gpt-4.1-nano, gpt-6-astra) are recorded here as the
+next maintenance sweep's candidate list, not added speculatively.
+Remaining open: the ollama `:cloud` individuation before any new
+ollama sweep, and the contributor-scope hermes/autoclaw sweeps.
+
 Scope: a holistic review of the harness/model/provider rules those two
 commits added or refreshed, their grids, fixtures, detectors, and docs —
 folding vs individuation decided against the external indexes rather
