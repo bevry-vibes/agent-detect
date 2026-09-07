@@ -15,6 +15,22 @@ single-sourcing applied across the touched rules). D9 (the wrap
 cascade) remains grandfather-and-write-new-unwrapped. The upstream
 conventions change landed separately as bevry-vibes/skills a219384.
 
+Second pass (2026-09-07, commit 62034fc): the recorded follow-ups
+worked — autoclaw's harness postures sourced (opt-out/opt-out from
+the AutoClaw privacy policy's legitimate-interests training + objection
+right — the exit-9 treadmill resolved); opencode zen sourced
+(opt-in/opt-in from the same docs/zen statement the go rule cites —
+null was never honest, the page carried the answer); arcee's closed
+axis resolved to the documented vacuous never (exclusively open); zcode
++ cloudflare audits attempted and honestly inconclusive (JS-dead /
+DPA-silent — comments record the attempts); the known_but_failed table
+re-keyed to the folded ids (missed by the rename pass); the two zcode
+config readers merged into one read. Still open: the cloudflare
+service-specific-terms wording (needs a JS-capable read), zcode's
+static postures (instance read covers live sessions), the ollama
+individuation before any new ollama sweep, and the contributor-scope
+hermes/autoclaw fixture sweeps.
+
 Scope: a holistic review of the harness/model/provider rules those two
 commits added or refreshed, their grids, fixtures, detectors, and docs —
 folding vs individuation decided against the external indexes rather

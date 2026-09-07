@@ -1999,7 +1999,13 @@ fn zcodeProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u
 /// `~/.zcode/v2/config.json` → `provider.<key>.name` (e.g. the custom
 /// ollama provider's `name: "ollama"`). The caller records the config
 /// observation; this returns just the display name.
-fn zcodeProviderNameFromConfig(a: std.mem.Allocator, io: std.Io, home: []const u8, key: []const u8) ?[]const u8 {
+/// a custom provider key's configured identity from
+/// `~/.zcode/v2/config.json` — the display name
+/// (`provider.<key>.name`) and the endpoint
+/// (`provider.<key>.options.baseURL`), one file read for both. Empty
+/// fields mean the entry (or the whole file) is absent.
+const ZcodeCustomProvider = struct { name: []const u8 = "", base_url: []const u8 = "" };
+fn zcodeCustomProviderFromConfig(a: std.mem.Allocator, io: std.Io, home: []const u8, key: []const u8) ?ZcodeCustomProvider {
     if (key.len == 0) return null;
     const cwd_dir = std.Io.Dir.cwd();
     const path = std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home}) catch return null;
@@ -2011,30 +2017,18 @@ fn zcodeProviderNameFromConfig(a: std.mem.Allocator, io: std.Io, home: []const u
     if (providers != .object) return null;
     const entry = providers.object.get(key) orelse return null;
     if (entry != .object) return null;
-    const name = jstr(entry.object, "name") orelse return null;
-    if (name.len == 0) return null;
-    return a.dupe(u8, name) catch null;
-}
-
-/// the configured endpoint of a custom provider key, or null —
-/// `~/.zcode/v2/config.json` → `provider.<key>.options.baseURL`.
-fn zcodeProviderBaseUrlFromConfig(a: std.mem.Allocator, io: std.Io, home: []const u8, key: []const u8) ?[]const u8 {
-    if (key.len == 0) return null;
-    const cwd_dir = std.Io.Dir.cwd();
-    const path = std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home}) catch return null;
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 22)) catch return null;
-    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
-    defer parsed.deinit();
-    if (parsed.value != .object) return null;
-    const providers = parsed.value.object.get("provider") orelse return null;
-    if (providers != .object) return null;
-    const entry = providers.object.get(key) orelse return null;
-    if (entry != .object) return null;
-    const options = entry.object.get("options") orelse return null;
-    if (options != .object) return null;
-    const base_url = jstr(options.object, "baseURL") orelse return null;
-    if (base_url.len == 0) return null;
-    return a.dupe(u8, base_url) catch null;
+    var out = ZcodeCustomProvider{};
+    if (jstr(entry.object, "name")) |name| {
+        if (name.len > 0) out.name = a.dupe(u8, name) catch "";
+    }
+    if (entry.object.get("options")) |options| {
+        if (options == .object) {
+            if (jstr(options.object, "baseURL")) |base_url| {
+                if (base_url.len > 0) out.base_url = a.dupe(u8, base_url) catch "";
+            }
+        }
+    }
+    return out;
 }
 
 /// fold a custom provider's endpoint host onto the canonical provider
@@ -2128,40 +2122,41 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
             if (b.provider.len > 0) {
                 // bundled-plan keys map to `zcode` directly; custom keys
                 // are opaque per-install ids — their identity comes from
-                // `~/.zcode/v2/config.json`: the endpoint host
-                // (`provider.<key>.options.baseURL`, the stronger signal —
-                // folded via providerHostFold, e.g. inference.phala.com →
-                // `phala`) and, failing that, the display name
-                // (`provider.<key>.name`, e.g. the custom "ollama" local
-                // runtime on localhost:11434 — observed 2026-09-06, and
-                // the phala custom provider observed 2026-09-07).
+                // `~/.zcode/v2/config.json` (one read for both fields):
+                // the endpoint host (`provider.<key>.options.baseURL`,
+                // the stronger signal — folded via providerHostFold,
+                // e.g. inference.phala.com → `phala`) and, failing that,
+                // the display name (`provider.<key>.name`, e.g. the
+                // custom "ollama" local runtime on localhost:11434 —
+                // observed 2026-09-06, and the phala custom provider
+                // observed 2026-09-07).
                 var canon = try zcodeProviderCanonical(a, b.provider);
                 var config_obs: ?FileObservation = null;
                 if (std.mem.eql(u8, canon, b.provider)) {
-                    var folded = false;
-                    if (zcodeProviderBaseUrlFromConfig(a, io, home, b.provider)) |base_url| {
-                        if (providerHostFold(base_url)) |host_canon| {
-                            var fields = std.ArrayList(FieldObservation).empty;
-                            defer fields.deinit(a);
-                            const dotted = try std.fmt.allocPrint(a, "provider.{s}.options.baseURL", .{b.provider});
-                            try fields.append(a, .{ .dotted_path = dotted, .value = base_url });
-                            const cpath = try std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home});
-                            config_obs = .{ .path = cpath, .fields = try fields.toOwnedSlice(a) };
-                            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cpath, .field = dotted, .value = base_url });
-                            canon = host_canon;
-                            folded = true;
+                    if (zcodeCustomProviderFromConfig(a, io, home, b.provider)) |custom| {
+                        var folded = false;
+                        if (custom.base_url.len > 0) {
+                            if (providerHostFold(custom.base_url)) |host_canon| {
+                                var fields = std.ArrayList(FieldObservation).empty;
+                                defer fields.deinit(a);
+                                const dotted = try std.fmt.allocPrint(a, "provider.{s}.options.baseURL", .{b.provider});
+                                try fields.append(a, .{ .dotted_path = dotted, .value = custom.base_url });
+                                const cpath = try std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home});
+                                config_obs = .{ .path = cpath, .fields = try fields.toOwnedSlice(a) };
+                                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cpath, .field = dotted, .value = custom.base_url });
+                                canon = host_canon;
+                                folded = true;
+                            }
                         }
-                    }
-                    if (!folded) {
-                        if (zcodeProviderNameFromConfig(a, io, home, b.provider)) |pname| {
+                        if (!folded and custom.name.len > 0) {
                             var fields = std.ArrayList(FieldObservation).empty;
                             defer fields.deinit(a);
                             const dotted = try std.fmt.allocPrint(a, "provider.{s}.name", .{b.provider});
-                            try fields.append(a, .{ .dotted_path = dotted, .value = pname });
+                            try fields.append(a, .{ .dotted_path = dotted, .value = custom.name });
                             const cpath = try std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home});
                             config_obs = .{ .path = cpath, .fields = try fields.toOwnedSlice(a) };
-                            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cpath, .field = dotted, .value = pname });
-                            canon = pname;
+                            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cpath, .field = dotted, .value = custom.name });
+                            canon = custom.name;
                         }
                     }
                 }
@@ -2249,13 +2244,15 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
                                 var canon = try zcodeProviderCanonical(a, selected);
                                 if (std.mem.eql(u8, canon, selected)) blk: {
                                     // custom keys resolve through the config — endpoint host first, display name second — the same layering as the rollout path
-                                    if (zcodeProviderBaseUrlFromConfig(a, io, home, selected)) |base_url| {
-                                        if (providerHostFold(base_url)) |host_canon| {
-                                            canon = host_canon;
-                                            break :blk;
+                                    if (zcodeCustomProviderFromConfig(a, io, home, selected)) |custom| {
+                                        if (custom.base_url.len > 0) {
+                                            if (providerHostFold(custom.base_url)) |host_canon| {
+                                                canon = host_canon;
+                                                break :blk;
+                                            }
                                         }
+                                        if (custom.name.len > 0) canon = custom.name;
                                     }
-                                    if (zcodeProviderNameFromConfig(a, io, home, selected)) |pname| canon = pname;
                                 }
                                 if (canon.len > 0) {
                                     try setProvider(a, d, canon);

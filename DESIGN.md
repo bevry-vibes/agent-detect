@@ -20,8 +20,9 @@ We'd rather detect from a single env var than spawn a subprocess to
 read a harness's config file. The detection ladder therefore reads in
 this order: env markers → ancestor process names → per-harness config
 files → the running session → the last model in the session log. The
-implementation and the ladder's exact steps live in the doc block
-above `pub fn detect` in `src/lib/core.zig`.
+implementation lives in `pub fn detect` in `src/lib/core.zig`, with
+each step documented inline in its per-harness detector's doc comment
+(`detectZcode`, `detectHermes`, `detectAutoClaw`, …).
 
 ### two-binary split (released + dev-only)
 

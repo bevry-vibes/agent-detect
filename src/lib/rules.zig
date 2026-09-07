@@ -530,8 +530,8 @@ pub const rulesForProviders = [_]ProviderRule{
     // observed are open-weight labs' models; closed_training stays
     // `never` absent a documented closed trainer.
     .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "opt-in", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
-    // opencode: null/null — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13. As an inference router it doesn't train on traffic, but the first-party upstreams are varied; training-policy wording unverified, null (opencode.ai/privacy and /terms return 404, so docs/zen is the only policy doc). variations fold the retired `opencode-free`/`opencode-zen` rules (hermes's two profile keys for the two tiers; the zen spelling also resolves natively through the label). Folded 2026-09-07 per .plans/1788716755355 (D4). The Go subscription is individuated as `opencode-go`.
-    .{ .name = "opencode", .label = "OpenCode Zen", .closed_training = null, .open_training = null, .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"opencode-free"} },
+    // opencode: opt-in (closed+open) — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13. The zen docs carry the same data statement the Go subscription cites: "Our providers follow a zero-retention policy and do not use your data for model training", with named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free) — per the opt-in-by-model rule those reachable tiers make both axes at least opt-in. variation folds the retired `opencode-free` rule (hermes's keyless-tier profile key; the zen spelling also resolves natively through the label). Folded 2026-09-07 per .plans/1788716755355 (D4); values sourced 2026-09-07 (previously null/null — the same docs/zen page already carried the statement). The Go subscription is individuated as `opencode-go`.
+    .{ .name = "opencode", .label = "OpenCode Zen", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"opencode-free"} },
     // opencode-go: opt-in/opt-in — OpenCode Zen's "Go" subscription
     // tier (base https://opencode.ai/zen/go/v1). Zen docs: "Our
     // providers follow a zero-retention policy and do not use your
@@ -565,11 +565,7 @@ pub const rulesForProviders = [_]ProviderRule{
     .{ .name = "chutes", .label = "Chutes", .closed_training = "never", .open_training = "never", .sources = &.{ "https://chutes.ai/privacy", "https://chutes.ai/tos" } },
     // zai: opt-in (closed+open) — Z.AI's API terms: "We will not use End User Content to develop or improve Services, unless you explicitly agree to such use" — training is off by default, enabled only by explicit agreement (docs.z.ai is the authoritative source; www.z.ai legal pages render no text without JS). The terms do not distinguish model types and Z.AI serves both open (HF zai-org) and closed models, so the value mirrors across both axes (the axis-ambiguity convention, CONTRIBUTING "add a new model or provider rule").
     .{ .name = "zai", .label = "Z.ai", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" } },
-    // cloudflare-workers-ai: null/null — Cloudflare's Workers AI
-    // serverless inference platform (the `@cf/<org>/<model>` catalog pi
-    // sessions route through); Cloudflare trains on nothing per its
-    // commercial terms, but the platform's model-training wording is
-    // unverified here, so both stay null pending a maintainer audit.
+    // cloudflare-workers-ai: null/null — Cloudflare's Workers AI serverless inference platform (the `@cf/<org>/<model>` catalog pi sessions route through). The DPA is silent on AI training and the developers.cloudflare.com pages render no text without JS (audit attempted 2026-09-07); the "Cloudflare trains on nothing" reputation needs the Service Specific Terms wording verified before any value lands, so both stay null pending a maintainer audit. models.dev individuates `cloudflare-ai-gateway` beside this surface — known-unruled, add when a harness is observed reaching it.
     .{ .name = "cloudflare-workers-ai", .label = "Cloudflare Workers AI", .closed_training = null, .open_training = null, .sources = &.{"https://developers.cloudflare.com/workers-ai/"} },
     // zcode: mirrors `zai` (both training axes; the policy evidence lives on the zai rule) — the ZCode desktop app's bundled coding-plan provider (its session stores record providerId `builtin:zai-start-plan`, and the ZAI_* env the app exports points at api.z.ai). variation: the app's internal provider key, so session evidence resolves through the standard alias fold.
     .{ .name = "zcode", .label = "ZCode", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://docs.z.ai/legal-agreement/terms-of-use", "https://docs.z.ai/legal-agreement/privacy-policy" }, .variations = &.{"builtin:zai-start-plan"} },
@@ -714,8 +710,8 @@ pub const rulesForProviders = [_]ProviderRule{
     // intelligence models" in certain programs ("you should not
     // participate in that program" = program-gated opt-in).
     .{ .name = "stepfun", .label = "StepFun", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://platform.stepfun.ai/docs/en/agreement/userservice", "https://platform.stepfun.ai/docs/en/agreement/userprivacy" } },
-    // arcee: opt-out (closed+open) — Arcee privacy policy: unpaid instances' Inputs/Outputs "may [be] use[d] to train and improve our Services, unless you opt out … by contacting us"; paid instances are not used for training by default. Arcee is an open-weight producer (HF arcee-ai); whether its catalog is exclusively open (which would make the closed axis the vacuous never case per the exclusively-open convention) is unclassified pending a catalog audit.
-    .{ .name = "arcee", .label = "Arcee", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://www.arcee.ai/privacy-policy", "https://www.arcee.ai/terms-and-conditions" } },
+    // arcee: open opt-out / closed never (the vacuous case — Arcee is an exclusively open-weight producer, HF arcee-ai carries only open weights, so no closed models are served to train; the exclusively-open convention, CONTRIBUTING "add a new model or provider rule") — Arcee privacy policy: unpaid instances' Inputs/Outputs "may [be] use[d] to train and improve our Services, unless you opt out … by contacting us"; paid instances are not used for training by default.
+    .{ .name = "arcee", .label = "Arcee", .closed_training = "never", .open_training = "opt-out", .sources = &.{ "https://www.arcee.ai/privacy-policy", "https://www.arcee.ai/terms-and-conditions" } },
     // vercel: never/never — Vercel AI Gateway ZDR docs: "AI Gateway has a ZDR policy and does not retain prompts, outputs, or sensitive data … does not use your prompts or responses for training purposes". Caveat: "By default, AI Gateway does not route based on the data retention policy of providers" — downstream providers may train unless `disallowPromptTraining` is enabled (free) or ZDR routing is on (Pro/Enterprise); that is upstream policy, not the gateway's own use.
     .{ .name = "vercel", .label = "Vercel AI Gateway", .closed_training = "never", .open_training = "never", .sources = &.{ "https://vercel.com/docs/ai-gateway/security-and-compliance/zdr", "https://vercel.com/docs/ai-gateway/security-and-compliance/disallow-prompt-training" }, .variations = &.{"ai-gateway"} },
     // phala: never/never — Phala's TEE inference gateway (inference.phala.com/v1; an OpenRouter endpoint provider, no models.dev key), serving exclusively open-weight models inside hardware enclaves. The no-training basis is technical inaccessibility rather than an explicit sentence: inputs and outputs are end-to-end encrypted in the TEE, "The platform may retain encrypted inputs and outputs and metadata for the purpose of improving its operation and security", and "The platform retains the encrypted data for the user but technically doesn't have access to the raw data" — the platform cannot read, therefore cannot train on, user content. The closed axis is the commented vacuous case: the catalog (unauth GET /v1/models, 2026-09-07 — deepseek/llama/qwen/glm/kimi/gpt-oss/gemma plus Phala's own uncensored finetunes, all TEE-stamped) serves no closed models to train (the exclusively-open convention). Non-zero pricing → not free, no freeprovidermodel row; deepseek-v4-flash is served there without tool calling, so it has no grid cell.
@@ -951,7 +947,9 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // offer); verified from the product page and Z.ai's Terms of
     // Service, so `license` is `"NONE"`. Training postures stay
     // null/null: no public doc describes the "Improve experience"
-    // program's training target. Catalog research (2026-09-05): every
+    // program's training target (zcode.z.ai/privacy and /terms render
+    // no text without JS — audit attempted 2026-09-07, same as
+    // www.z.ai; docs.z.ai covers only the API surface). Catalog research (2026-09-05): every
     // Z.ai model the docs.z.ai API serves is open-weight on HF
     // (zai-org) — GLM-5.3, GLM-5.3-Flash, GLM-5.2, GLM-OCR,
     // GLM-Image, CogVideoX — EXCEPT GLM-ASR-2512, which is API-only
@@ -984,21 +982,29 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // open-source OpenClaw gateway) ships compiled installers only (no
     // source repo, no license offer); verified from the product page and
     // the AutoClaw Terms of Service, so `license` is `"NONE"`. Training
-    // postures
-    // stay null/null: no public doc describes a training program for the
-    // app (the bundled Z.ai channel's API terms live on the `autoclaw`
-    // provider rule). Declared last for the same reason as zcode/hermes:
-    // the AUTOCLAW_* markers leak into every child session of the app, so
-    // a cline or goose session spawned from inside AutoClaw still matches
-    // its own rule first. The embedded gateway's OPENCLAW_* variables are
-    // deliberately NOT markers — a standalone OpenClaw install sets them
-    // too; AutoClaw individuates via its product markers (CONTRIBUTING.md
-    // "pending harnesses", openclaw bullet). binary_names stay lowercase
-    // per the fixtures test contract; the macOS app binary is capitalized
+    // postures opt-out/opt-out (researched 2026-09-07, replacing the
+    // null/null "no public doc describes a training program" state):
+    // the AutoClaw Privacy Policy processes conversation content
+    // ("uploads and inputs you provide … and code submitted to us
+    // through conversation") and claims training under legitimate
+    // interests ("… such as when we train and improve our models"), with
+    // an objection right ("the right to object to processing of your
+    // personal data, including profiling conducted on grounds of public
+    // or legitimate interest") and per-conversation deletion — training
+    // by default with a legal opt-out; the policy does not distinguish
+    // model types, so the value mirrors across both axes. Declared last
+    // for the same reason as zcode/hermes: the AUTOCLAW_* markers leak
+    // into every child session of the app, so a cline or goose session
+    // spawned from inside AutoClaw still matches its own rule first. The
+    // embedded gateway's OPENCLAW_* variables are deliberately NOT
+    // markers — a standalone OpenClaw install sets them too; AutoClaw
+    // individuates via its product markers (CONTRIBUTING.md "pending
+    // harnesses", openclaw bullet). binary_names stay lowercase per the
+    // fixtures test contract; the macOS app binary is capitalized
     // ("AutoClaw"), so the AUTOCLAW_* env markers are the primary live
     // signal and the daemon guard catches gateway sessions via the
     // "openclaw" pending name.
-    .{ .name = "autoclaw", .label = "AutoClaw", .license = "NONE", .license_sources = &.{ "https://autoclaw.z.ai/", "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_agreement&favicon=autoglm" }, .env_markers = &autoclaw_env, .binary_names = if (builtin.os.tag == .windows)
+    .{ .name = "autoclaw", .label = "AutoClaw", .license = "NONE", .license_sources = &.{ "https://autoclaw.z.ai/", "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_agreement&favicon=autoglm" }, .open_training = "opt-out", .closed_training = "opt-out", .training_sources = &.{ "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_agreement&favicon=autoglm", "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_privacy&favicon=autoglm" }, .env_markers = &autoclaw_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "autoclaw", "autoclaw.exe" }
     else
         &[_][]const u8{"autoclaw"} },
