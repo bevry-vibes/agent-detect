@@ -2,7 +2,6 @@ name: build
 
 on:
   push:
-    branches: [main]
     # Calver tags match `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`, `2026.8.6-2`).
     # Pushing such a tag publishes a release that is marked `latest`.
     # See DESIGN.md "distribution / versioned releases" for the maintainer runbook.
@@ -56,60 +55,6 @@ jobs:
           set -e
           test "$OUT" = "not reciprocal"
           test "$RC" -eq 10
-
-  # Every push to `main` overwrites the `nightly` rolling release so WIP consumers can pin to `releases/tag/nightly/download/<asset>`.
-  # Marked `prerelease: true` and `latest: false` so it never becomes `latest` (which is reserved for tagged releases).
-  nightly:
-    if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # publish release assets
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: step-security/setup-zig@v2
-        with:
-          version: 0.16.0
-
-      - name: cross-compile all targets
-        run: zig build dist --prefix .
-
-      - name: smoke test (linux x86_64)
-        run: |
-          chmod +x bin/agent-detect-linux-x86_64
-          ./bin/agent-detect-linux-x86_64 --version
-
-      - name: smoke asserts (recipe mode + exit statuses)
-        run: |
-          set -e
-          B=./bin/agent-detect-linux-x86_64
-          "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
-          test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
-          # alias / case-variation resolution must equal the canonical form
-          test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
-          # closed harness: the opt-in training posture passes the harness conjunct, but the cursor provider dim is null → data incomplete (empty stdout, exit 9)
-          set +e
-          OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
-          RC=$?
-          set -e
-          test "$OUT" = ""
-          test "$RC" -eq 9
-          # closed model, complete dims → requirement failed (exit 10)
-          set +e
-          OUT="$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=gpt-5.2 2>/dev/null)"
-          RC=$?
-          set -e
-          test "$OUT" = "not reciprocal"
-          test "$RC" -eq 10
-
-      - name: publish rolling release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: nightly
-          name: nightly
-          prerelease: true
-          make_latest: false
-          files: bin/*
 
   # Pushing a calver-shaped tag (`<year>.<month>.<day>-<revision>`) publishes the release and marks it `latest: true`, which is what `releases/latest/download/<asset>` resolves to.
   # The tag name matches the version embedded in `build.zig.zon` exactly (no `v` prefix).

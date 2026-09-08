@@ -547,7 +547,7 @@ Provider-served id forms carrying a serving-environment suffix (e.g. Chutes' TEE
 
 ## cut a release
 
-See [commits.md](./commits.md) — its `releases` tweaks carry the calver versioning and this repo's release channels.
+See [commits.md](./commits.md) — its `releases` tweaks carry the calver versioning and the bump-commit style.
 
 ## pending harnesses
 
