@@ -12,7 +12,7 @@ Local application of the bevry-vibes skills [commits.md](https://github.com/bevr
 
 - This project elects **calver** (upstream "calver" section): the version lives in `build.zig.zon` and the tag equals it exactly, matching the `tags: ['*.*.*-*']` filter in `.github/workflows/build.yml`.
 
-After the cut, verify locally that the freshly built binary prints the expected version:
+After the cut, before the tag, verify locally that the freshly built binary prints the expected version:
 
 ```sh
 zig build && ./zig-out/bin/agent-detect --version
