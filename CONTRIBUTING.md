@@ -12,8 +12,7 @@ The **directory IS the channel**: the filename stem is the `<harness>-<provider>
 The binary is the only thing that writes fixtures — agents never hand-author them — and a from-capture file is written **only on a successful capture**: no meta-only stubs exist.
 A stem present in both folders has both channels; channel presence = file existence.
 
-`fixtures/index.json` is the committed state store
-— it holds only the **non-derivable** state (`queue` the filter-entry array, `invocations` the authored launch argv, `backlog` the actionable gaps + the `known_but_failed` failure memory), declared normatively in TypeScript at `fixtures/index.d.ts` (the source of truth for structure — unset optionals are omitted, never serialized as `null`), with the semantics in DESIGN.md "the state split".
+`fixtures/index.json` is the committed state store — it holds only the **non-derivable** state (`queue` the filter-entry array, `invocations` the authored launch argv, `backlog` the actionable gaps + the `known_but_failed` failure memory), declared normatively in TypeScript at `fixtures/index.d.ts` (the source of truth for structure — unset optionals are omitted, never serialized as `null`), with the semantics in DESIGN.md "the state split".
 **Invocations are the dev agent's signal** — authoring one says "rules/argv are ready for this combo to capture"; zig reads them only to handle pop and `--repair`.
 Queue entries are **filter tuples** (dims, mode, the staleness criteria set, `free`) — only the daemon expands them into concrete candidates, one per poll.
 
@@ -84,8 +83,7 @@ To refresh one fixture end-to-end:
      --platform=darwin
    ```
    With no staleness flag this carries the full `--stale` composite; re-assert the SAME flags when refreshing (the criteria set is part of the dedupe identity).
-3. The daemon expands the queue entry and evaluates candidates one per poll: the `from-identity` pass writes the declared `from-identity/<id>.json` (zero tokens), and the `from-capture` pass launches the harness headlessly via the file's `prompt_invocation` so it runs `fixtures capture` inside a live model session (token-consuming
-   — announce with the pre-capture review window and confirm with the user first).
+3. The daemon expands the queue entry and evaluates candidates one per poll: the `from-identity` pass writes the declared `from-identity/<id>.json` (zero tokens), and the `from-capture` pass launches the harness headlessly via the file's `prompt_invocation` so it runs `fixtures capture` inside a live model session (token-consuming — announce with the pre-capture review window and confirm with the user first).
 
 For batch refreshes: `fixtures queue --stale-by-days=0` re-queues everything past its declared date (date staleness covers binary drift); `fixtures queue --refresh` re-evaluates a whole filter unconditionally.
 A bare dims-only queue command (`fixtures queue --harness=cline --from-identity`) sweeps every fixtured-or-feasible combo matching those dims under the composite criteria.
@@ -107,8 +105,7 @@ A `from-capture` job launches a real model session and consumes tokens (free-tie
 ### cross-device runbook
 
 The store and the fixture files sync across hosts via git.
-Only the matching platform's daemon expands a candidate (`platform = the entry's or the host's`), so a `platform='darwin'` entry is never worked on Windows
-— the entry simply stays queued there until a darwin daemon finishes it:
+Only the matching platform's daemon expands a candidate (`platform = the entry's or the host's`), so a `platform='darwin'` entry is never worked on Windows — the entry simply stays queued there until a darwin daemon finishes it:
 
 1. On host A (e.g. macOS): run the daemon, let the platform's work drain, then commit index.json + fixture files (single-writer workflow — pull before daemon, commit after).
 2. On host B (e.g. Windows): `git pull`, `zig build dev`, run the daemon — it works only the host-platform candidates that remain.
@@ -133,9 +130,7 @@ When you author an invocation, audit it against this policy; `fixtures status` +
 
 The committed fixtures double as the integration test of the detection ladder.
 The matrix **policy** — harness scope, model/provider policy, the paid default, the global-settings rule, evidence attribution — lives in DESIGN.md "test matrix"; the install table below is the what-to-do side.
-The matrix itself is the union of the two channel folders' filename stems (`fixtures/from-identity/` + `fixtures/from-capture/`)
-— one fixture id per `agent_id`-per-platform, the capture files carrying the invocation of record (`meta.prompt_invocation`/`meta.version_invocation`)
-— expanded by the daemon from queue entries and captured per platform, plus the authored `invocations` table.
+The matrix itself is the union of the two channel folders' filename stems (`fixtures/from-identity/` + `fixtures/from-capture/`) — one fixture id per `agent_id`-per-platform, the capture files carrying the invocation of record (`meta.prompt_invocation`/`meta.version_invocation`) — expanded by the daemon from queue entries and captured per platform, plus the authored `invocations` table.
 
 ### per-harness install table
 
@@ -177,8 +172,7 @@ Stale grids send the daemon at dead combos (or miss new ones), so **refresh both
 Both probes are zero-token local work:
 
 1. **Providers per harness** → `map-harness-provider-harnessprovider.csv` (one row per harness; a non-`-` cell means the harness can reach that provider).
-   For each harness rule's binary, enumerate its provider catalog with the harness's own discovery surface
-   — e.g. `pi auth list` / `pi --list-providers`, `omp`'s per-provider `models.db`, `opencode`'s config, `kimi`/`cline`/`crush` config files, `goose config`, `qwen`/`copilot`/`cursor-agent` auth state.
+   For each harness rule's binary, enumerate its provider catalog with the harness's own discovery surface — e.g. `pi auth list` / `pi --list-providers`, `omp`'s per-provider `models.db`, `opencode`'s config, `kimi`/`cline`/`crush` config files, `goose config`, `qwen`/`copilot`/`cursor-agent` auth state.
    Record every provider the harness can actually reach on this host AND the providers documented by the harness itself (a provider the harness supports but this host has no account for is still feasible — the capture failure is the account signal, not a feasibility signal).
    Remove cells for providers the harness no longer supports (e.g. an extension was uninstalled).
 2. **Models per harness-provider pair** → `map-provider-model-providermodel.csv` (cell = that provider's served model-id string, as the harness spells it).
@@ -205,15 +199,13 @@ Contributors add other combos (rules → store rows → captures on their platfo
 - `--from-identity` — declared-only population: the harness is not installed or won't run. Zero tokens; the fixture is declared, not observed.
 - `--from-capture` — real re-captures only (token-consuming, user-confirmed).
 
-A bulk/maintenance model addition (a sweep, expanding a harness across a batch of providers, or a free-catalog import) adds a model only when it clears the evergreen model set (top 100 weekly models from OpenRouter's models API, filtered to models that support tool calling: `supported_parameters` contains `tools`)
-— the policy is DESIGN.md decision #13 and the tracked set is `fixtures/evergreen-models.json`, regenerated from OpenRouter alone as part of maintenance (no CI task; see DESIGN.md #13 for the dropped alternative sources).
+A bulk/maintenance model addition (a sweep, expanding a harness across a batch of providers, or a free-catalog import) adds a model only when it clears the evergreen model set (top 100 weekly models from OpenRouter's models API, filtered to models that support tool calling: `supported_parameters` contains `tools`) — the policy is DESIGN.md decision #13 and the tracked set is `fixtures/evergreen-models.json`, regenerated from OpenRouter alone as part of maintenance (no CI task; see DESIGN.md #13 for the dropped alternative sources).
 This does not apply retroactively to models already in the matrix, and it does not apply to an individual addition a user explicitly needs.
 The gate is on additions only — a supported model is dropped when the harness or provider whose addition made it supported no longer offers it, never merely because it fell out of the evergreen set (someone is using agent-detect for the added dim).
 Observed-but-unadded ids (the non-evergreen remainder of a provider catalog) are recorded in `fixtures/map-provider-model-providermodel.csv`.
 Free-vs-paid only decides whether a free launch/capture is attached — query the harness's own model catalog first (e.g. omp's `~/.omp/agent/models.db` per-provider `cost`: input==0 → free);
 OpenRouter's `/api/v1/models` (explicit `:free` ids + `pricing`) and artificialanalysis.ai (per-model price) are the cross-checks.
-Name variations across services (`:free` vs `-free`, release stamps like `-0731`, reasoning-effort suffixes) are coalesced into one canonical model per family and recorded as variations on the recipe
-— never added as duplicates (the CLI-side alias resolution is the "alias conventions" section below).
+Name variations across services (`:free` vs `-free`, release stamps like `-0731`, reasoning-effort suffixes) are coalesced into one canonical model per family and recorded as variations on the recipe — never added as duplicates (the CLI-side alias resolution is the "alias conventions" section below).
 
 As part of maintenance, regenerate the tracked evergreen snapshots from OpenRouter (top 100 weekly tool-calling-capable models, and the available providers) with authenticated calls:
 
@@ -232,9 +224,8 @@ curl -s -H "Authorization: Bearer $OPENROUTER_API_KEY" \
 (The authenticated calls above are canonical; an unauthenticated request returns the same public ranking when no key is available.)
 
 Three reference grids complement the snapshots, all read by the zig program at expansion time.
-The two **feasibility grids** are load-bearing: a pair is feasible iff its cell is present and not `-`, and the feasible-unfixtured universe (grid cross-product minus the fixtured stems) is what from-identity can declare
-— so keep them in sync with the fixture universe (append the provider's row alongside each catalog enumeration;
-`fixtures status` + the migration audit flag drift): `fixtures/map-provider-model-providermodel.csv` (rows = provider alphanumeric ids, columns = model alphanumeric ids, cell = that provider's served model-id string or `-`) and `fixtures/map-harness-provider-harnessprovider.csv` (rows = harness ids, columns = provider ids, cell = the harness's provider-id string or `-`).
+The two **feasibility grids** are load-bearing: a pair is feasible iff its cell is present and not `-`, and the feasible-unfixtured universe (grid cross-product minus the fixtured stems) is what from-identity can declare — so keep them in sync with the fixture universe (append the provider's row alongside each catalog enumeration; `fixtures status` + the migration audit flag drift):
+`fixtures/map-provider-model-providermodel.csv` (rows = provider alphanumeric ids, columns = model alphanumeric ids, cell = that provider's served model-id string or `-`) and `fixtures/map-harness-provider-harnessprovider.csv` (rows = harness ids, columns = provider ids, cell = the harness's provider-id string or `-`).
 The third is the free axis: `fixtures/map-provider-model-freeprovidermodel.csv` — the SOURCE OF TRUTH for free models (replacing the retired `free_provider_to_model` store table).
 It is SPARSE: rows only for providers with ≥1 free model, columns only for models that are free at some provider, cell = that provider's free model-id string, `-` otherwise.
 
@@ -322,8 +313,7 @@ Restart=on-failure
 WantedBy=default.target
 ```
 
-`Environment=PATH` is **required** for `from-capture` jobs: a user unit does not inherit your shell PATH, and the daemon spawns harness binaries by bare name (e.g. `cline`)
-— without it every real capture fails with `spawn failed: FileNotFound`.
+`Environment=PATH` is **required** for `from-capture` jobs: a user unit does not inherit your shell PATH, and the daemon spawns harness binaries by bare name (e.g. `cline`) — without it every real capture fails with `spawn failed: FileNotFound`.
 Include the directories holding your harness binaries (npm-global `bin/`, cargo `bin/`, etc.).
 The unit runs with a clean ancestry (the parent is systemd), which satisfies the user-only daemon guard.
 
@@ -455,8 +445,7 @@ After adding the rule:
    ./zig-out/bin/agent-detect-dev fixtures daemon
    ```
    (Any dim the new rule makes resolvable that was sitting in the backlog's unknown_* sets clears via `fixtures queue --repair`.)
-3. Author the invocations for the combos that should capture: add an entry to the `invocations` table in `fixtures/index.json` keyed by the fixture id, with `prompt_invocation` (the launch argv that runs `fixtures capture` inside a live session
-   — argv[0] is the concrete per-platform binary, the last element is the capture prompt placeholder `<prompt>`) and `version_invocation` (`[<binary>, "--version"]`), per the minimal-invocation policy above, then `fixtures queue --from-capture --harness=<harness_id>` and run the daemon again (token-consuming, user-confirmed).
+3. Author the invocations for the combos that should capture: add an entry to the `invocations` table in `fixtures/index.json` keyed by the fixture id, with `prompt_invocation` (the launch argv that runs `fixtures capture` inside a live session — argv[0] is the concrete per-platform binary, the last element is the capture prompt placeholder `<prompt>`) and `version_invocation` (`[<binary>, "--version"]`), per the minimal-invocation policy above, then `fixtures queue --from-capture --harness=<harness_id>` and run the daemon again (token-consuming, user-confirmed).
    A successful capture records the invocation into the fixture file's own meta.
 4. Commit the new rules, the grids, the declared fixtures, the invocations, and the store.
 
@@ -511,8 +500,7 @@ A provider whose catalog includes models that train on user data — reachable o
 open-weight / open-source models that train → `open_training` becomes at least `opt-in`.
 Values already at `opt-out` or `enforced` capture training and need no change.
 `never` is reserved for providers where **no** served model trains.
-When cataloging a new provider, audit its `map-provider-model-providermodel.csv` row for tier spellings (`:free`, `-free`, `-contributor`, free-period exceptions named in its policy docs) before writing any `never`
-— this is exactly the slip that made OpenRouter's contributor tiers and OpenCode's free-period models first land as `never`.
+When cataloging a new provider, audit its `map-provider-model-providermodel.csv` row for tier spellings (`:free`, `-free`, `-contributor`, free-period exceptions named in its policy docs) before writing any `never` — this is exactly the slip that made OpenRouter's contributor tiers and OpenCode's free-period models first land as `never`.
 
 **Axis semantics (convention).** How a policy maps onto the two training axes when the wording does not state (or states ambiguously) which model types it covers:
 
@@ -644,8 +632,7 @@ The live-combo alias `qwen3.8-flash` has its own rule with reciprocity/license `
 **hermes** (2026-09-06, authored by the maintainer's Hermes session; revised 2026-09-07 by the fold review — `.plans/1788716755355`): the harness rule landed with a live from-capture on `hermes-ollama-glm53flash-darwin` (the ollama-cloud fold renamed it;
 detection ladder: the `HERMES_AGENT=true` env marker, then `session_model_usage` in `~/.hermes/state.db` for the live provider/model — `billing_provider` + `model` per API call — then `config.yaml`'s `model.default`/`provider` as fallback;
 the daemon pins combos via `HERMES_MODEL`/`HERMES_PROVIDER`, which `hermes chat --provider P -m M` sets per session without touching the user's config).
-Provider/model discovery source: the harness's own `plugins/model-providers/` catalog (`name` + `aliases` + `env_vars` + `base_url` per profile) cross-checked against its models.dev mirror (`~/.hermes/models_dev_cache.json`
-— models.dev is a fifth index alongside OpenRouter/provider-API/harness-surface for this harness: most of its provider profiles resolve to models.dev provider keys).
+Provider/model discovery source: the harness's own `plugins/model-providers/` catalog (`name` + `aliases` + `env_vars` + `base_url` per profile) cross-checked against its models.dev mirror (`~/.hermes/models_dev_cache.json` — models.dev is a fifth index alongside OpenRouter/provider-API/harness-surface for this harness: most of its provider profiles resolve to models.dev provider keys).
 The maintainer has since uninstalled hermes — the rule, the fixture, and the invocations stand for whoever picks the harness up (contributor scope); the staged queue entries were dropped.
 The review's folds re-shaped the provider surfaces it had ruled: `ollama-cloud` folded into `ollama` (DESIGN decision #15 — the `:cloud`/baseUrl individuation is the recorded follow-up);
 the Moonshot/Kimi family folded to two rules — `moonshotai` (the api.moonshot.ai surface; pi's and the kimi-code CLI's keys) and `kimi-coding` (the api.kimi.com/coding subscription; hermes's `kimi-coding`/`kimi-coding-cn` profiles and the CLI's `kimi-code` key) — matching models.dev's `moonshotai`/`kimi-for-coding` individuation;
@@ -658,8 +645,7 @@ Training-policy research refreshed the provider rules from primary docs and was 
 The maintainer has since uninstalled autoclaw — the rule and grids stand for whoever picks it up (contributor scope); the staged queue entry was dropped.
 Catalog from the runtime config: zaicoding_glm-5.3 (glm-5.3 variation), zai_glm-5.3-flash (glm-5.3-flash variation), zai_glm-5-turbo (glm-5-turbo's channel spelling — a distinct official Z.ai model per docs.z.ai + OpenRouter, no public weights → closed),
 tdpsk_deepseek-v4-flash-202605 + tdpsk_deepseek-v4-pro-202606 (deepseek-v4-flash/pro variations — YYYYMM stamps + tdpsk_ channel prefix fold per DESIGN #13),
-and zai_auto / zai_auto-fast (the Auto router aliases — maintainer directive: NEVER model rules; the session store records the configured mode, not the routing decision, so an Auto session's underlying model is not locally observable
-— the accepted limitation; live detection passes the alias through unruled and the maintainer attributes interim Auto-mode work via recipe mode, e.g. `--harness=autoclaw --provider=autoclaw --model=glm-5.3`).
+and zai_auto / zai_auto-fast (the Auto router aliases — maintainer directive: NEVER model rules; the session store records the configured mode, not the routing decision, so an Auto session's underlying model is not locally observable — the accepted limitation; live detection passes the alias through unruled and the maintainer attributes interim Auto-mode work via recipe mode, e.g. `--harness=autoclaw --provider=autoclaw --model=glm-5.3`).
 models.dev individuates the surfaces the same way (`zai` direct API beside `zai-coding-plan`/`zhipuai-coding-plan`).
 Detection ladder: AUTOCLAW_* env markers (or AutoClaw ancestry) → session store (OPENCLAW_AGENT_SESSION_KEY → sessions.json → the newest assistant record's message.provider/message.model) → openclaw.runtime.json config fallback, with the provider surface folded via models.providers[key].baseUrl.
 Not free-axis: the bundled channel is subscription-metered.
