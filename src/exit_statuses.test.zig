@@ -1,8 +1,4 @@
-// Exit-status / policy-semantics tests for the released binary's core
-// logic: the tri-state `reciprocityOf` determination (incl. the
-// `"NONE"` / `"NOASSERTION"` license keywords, decision #1), the
-// `buildTrailerLine` trailer strings, and the `scanVersionToken`
-// `--version` format coverage (decision #6).
+// Exit-status / policy-semantics tests for the released binary's core logic: the tri-state `reciprocityOf` determination (incl. the `"NONE"` / `"NOASSERTION"` license keywords, decision #1), the `buildTrailerLine` trailer strings, and the `scanVersionToken` `--version` format coverage (decision #6).
 
 const std = @import("std");
 const testing = std.testing;
@@ -19,32 +15,25 @@ test "reciprocityOf: NOASSERTION → unknown" {
 }
 
 test "reciprocityOf: NONE + null closed-training → unknown" {
-    // The closed-harness training conjunct: no data → data-incomplete
-    // (the exit-9 nudge to correct the data), like null provider/model
-    // dims — never-guess, an unverified state is not assumed.
+    // The closed-harness training conjunct: no data → data-incomplete (the exit-9 nudge to correct the data), like null provider/model dims — never-guess, an unverified state is not assumed.
     var d = main.Detection{ .harness_license = "NONE" };
     try testing.expect(main.reciprocityOf(&d) == .unknown);
 }
 
 test "reciprocityOf: NONE + enforced closed-training → not_reciprocal even with null dims" {
-    // A verified closed harness that actively trains closed models on
-    // conversations is never reciprocal, regardless of the
-    // model/provider dims.
+    // A verified closed harness that actively trains closed models on conversations is never reciprocal, regardless of the model/provider dims.
     var d = main.Detection{ .harness_license = "NONE", .harness_closed_training = "enforced" };
     try testing.expect(main.reciprocityOf(&d) == .not_reciprocal);
 }
 
 test "reciprocityOf: NONE + NOASSERTION closed-training → not_reciprocal" {
-    // We looked at the harness's settings store and it carried no
-    // clear answer — fails safe, distinct from the never-attempted
-    // null (unknown).
+    // We looked at the harness's settings store and it carried no clear answer — fails safe, distinct from the never-attempted null (unknown).
     var d = main.Detection{ .harness_license = "NONE", .harness_closed_training = "NOASSERTION" };
     try testing.expect(main.reciprocityOf(&d) == .not_reciprocal);
 }
 
 test "reciprocityOf: NONE + never closed-training + open dims → reciprocal" {
-    // A closed harness verified not training is permitted; the
-    // model/provider conjuncts decide as usual.
+    // A closed harness verified not training is permitted; the model/provider conjuncts decide as usual.
     var d = main.Detection{
         .harness_license = "NONE",
         .harness_closed_training = "never",
@@ -55,9 +44,7 @@ test "reciprocityOf: NONE + never closed-training + open dims → reciprocal" {
 }
 
 test "reciprocityOf: NONE + posture closed-training passes like providers" {
-    // Capability-based, mirroring provider_closed_training: a
-    // docs-sourced opt-out/opt-in posture passes the harness conjunct
-    // and hinges on the model/provider conjuncts.
+    // Capability-based, mirroring provider_closed_training: a docs-sourced opt-out/opt-in posture passes the harness conjunct and hinges on the model/provider conjuncts.
     for ([_][]const u8{ "opt-out", "opt-in" }) |hct| {
         var d = main.Detection{
             .harness_license = "NONE",
@@ -85,8 +72,7 @@ test "reciprocityOf: NONE + passing closed-training + null dims → unknown" {
 }
 
 test "reciprocityOf: open-model training never blocks reciprocity" {
-    // The conjunct consumes only the closed dim — harness_open_training
-    // is informational, exactly as provider_open_training is.
+    // The conjunct consumes only the closed dim — harness_open_training is informational, exactly as provider_open_training is.
     var d = main.Detection{
         .harness_license = "NONE",
         .harness_open_training = "enforced",
@@ -113,8 +99,7 @@ test "applyHarnessTraining: static postures copy per field, instance wins" {
     main.applyHarnessTraining(&d1, rule);
     try testing.expectEqualStrings("opt-in", d1.harness_open_training.?);
     try testing.expectEqualStrings("opt-out", d1.harness_closed_training.?);
-    // an instance read wins per field, the other still sources from
-    // the rule
+    // an instance read wins per field, the other still sources from the rule
     var d2 = main.Detection{ .harness_closed_training = "never" };
     main.applyHarnessTraining(&d2, rule);
     try testing.expectEqualStrings("opt-in", d2.harness_open_training.?);
@@ -223,16 +208,13 @@ test "scanVersionToken: null on no dotted version" {
     try testing.expect(main.dev.scanVersionToken("2026-08-11\n") == null);
 }
 
-// ============================================================================
-// alias / case-variation resolution for --harness=/--provider=/--model=
-// ============================================================================
+// ============================================================================ alias / case-variation resolution for --harness=/--provider=/--model= ============================================================================
 
 const HarnessRule = main.HarnessRule;
 const ProviderRule = @TypeOf(main.rulesForProviders[0]);
 const ModelRule = @TypeOf(main.rulesForModels[0]);
 
-/// register `slug` against the per-table map, failing if a different
-/// rule already claimed it. Returns the map entry's owner rule name.
+/// register `slug` against the per-table map, failing if a different rule already claimed it. Returns the map entry's owner rule name.
 fn registerSlug(map: *std.StringHashMap([]const u8), r: anytype, slug: []const u8) !void {
     const gop = try map.getOrPut(slug);
     if (gop.found_existing) {
@@ -247,10 +229,8 @@ fn checkTableAliasUniqueness(a: std.mem.Allocator, rules: anytype) !void {
     var map = std.StringHashMap([]const u8).init(a);
     defer map.deinit();
     for (rules) |r| {
-        // base surfaces: name + label (+ short_title). Their slugs may
-        // naturally coincide within one rule (short ids where name ==
-        // label, e.g. `omp`/`omp`); that is harmless because both map
-        // to the same rule.
+        // base surfaces: name + label (+ short_title).
+        // Their slugs may naturally coincide within one rule (short ids where name == label, e.g. `omp`/`omp`); that is harmless because both map to the same rule.
         var base = std.StringHashMap(void).init(a);
         defer base.deinit();
         for ([_][]const u8{ r.name, r.label }) |d| {
@@ -259,9 +239,7 @@ fn checkTableAliasUniqueness(a: std.mem.Allocator, rules: anytype) !void {
         if (r.short_title) |st| {
             try base.put(try main.slugId(a, st), {});
         }
-        // a variation must not duplicate an existing alias surface or
-        // another variation of the same rule (a pointless variation is
-        // a data smell the test should catch).
+        // a variation must not duplicate an existing alias surface or another variation of the same rule (a pointless variation is a data smell the test should catch).
         var seen_variation = std.StringHashMap(void).init(a);
         defer seen_variation.deinit();
         for (r.variations) |v| {
@@ -270,9 +248,7 @@ fn checkTableAliasUniqueness(a: std.mem.Allocator, rules: anytype) !void {
             try testing.expect(seen_variation.get(slug) == null);
             try seen_variation.put(slug, {});
         }
-        // cross-rule uniqueness over the full alias set: a slug claimed
-        // by two different rules would make the deterministic resolver
-        // silently pick the wrong one.
+        // cross-rule uniqueness over the full alias set: a slug claimed by two different rules would make the deterministic resolver silently pick the wrong one.
         for ([_][]const u8{ r.name, r.label }) |d| {
             try registerSlug(&map, r, try main.slugId(a, d));
         }
@@ -331,9 +307,8 @@ test "canonicalIdFor: minimax-m3 aliases; deepseek-v4-flash free tier folds to t
     try testing.expectEqualStrings("deepseek-v4-flash", got);
     const got2 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "DeepSeek V4 Flash") orelse return error.TestUnexpectedResult;
     try testing.expectEqualStrings("deepseek-v4-flash", got2);
-    // the free-tier alias is a serving spelling of the same weights —
-    // folded into the model rule as a variation (2026-08-29, option B
-    // of .plans/1787978000867-retroactive-folding-options.md)
+    // the free-tier alias is a serving spelling of the same weights
+    // — folded into the model rule as a variation (2026-08-29, option B of .plans/1787978000867-retroactive-folding-options.md)
     const got3 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "deepseek-v4-flash-free") orelse return error.TestUnexpectedResult;
     try testing.expectEqualStrings("deepseek-v4-flash", got3);
     const got4 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "deepseekv4flashfree") orelse return error.TestUnexpectedResult;
@@ -350,11 +325,9 @@ test "canonicalIdFor: empty/unknown input resolves null" {
     try testing.expect(main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, "") == null);
     try testing.expect(main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, "   ") == null);
     try testing.expect(main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, "devin") == null);
-    // non-ASCII chars strip out (std.ascii), so an all-non-ASCII input
-    // normalizes to the empty slug and never matches...
+    // non-ASCII chars strip out (std.ascii), so an all-non-ASCII input normalizes to the empty slug and never matches...
     try testing.expect(main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "ΩΩΩ") == null);
-    // ...while a non-ASCII input whose ASCII remainder matches a rule
-    // still resolves (the strip is lossy, documented behavior).
+    // ...while a non-ASCII input whose ASCII remainder matches a rule still resolves (the strip is lossy, documented behavior).
     const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "M3Ω") orelse return error.TestUnexpectedResult;
     try testing.expectEqualStrings("minimax-m3", got);
 }
@@ -397,9 +370,7 @@ test "modelFromSessionRow: id + providerID resolve" {
     try testing.expectEqualStrings("hyper", mm.provider_id);
 }
 
-// ============================================================================
-// provider-served id folding (chutes TEE stamps, endpoint/tier spellings)
-// ============================================================================
+// ============================================================================ provider-served id folding (chutes TEE stamps, endpoint/tier spellings) ============================================================================
 
 test "canonicalIdFor: qwen3.8-27b aliases incl. chutes TEE forms; max stays distinct" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
@@ -447,11 +418,8 @@ test "canonicalIdFor: catalog spellings fold to their canonical rules" {
         .{ "GLM-5.1-TEE", "glm-5.1" },
         .{ "deepseek-ai/DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash" },
         .{ "deepseek-v4-flash-vision-exp", "deepseek-v4-flash" },
-        // release-date stamps (MMDD, appended by DeepSeek and Qwen) are
-        // variations of the undated model, never their own rule:
-        // `:`-separated on ollama-cloud, `-` in the kilo/opencode
-        // session stores, and org-namespaced in the catalogs. The
-        // strict slug makes the `:` and `-` spellings one alias.
+        // release-date stamps (MMDD, appended by DeepSeek and Qwen) are variations of the undated model, never their own rule: `:`-separated on ollama-cloud, `-` in the kilo/opencode session stores, and org-namespaced in the catalogs.
+        // The strict slug makes the `:` and `-` spellings one alias.
         .{ "deepseek-v4-flash:0731", "deepseek-v4-flash" },
         .{ "deepseek-v4-flash-0731", "deepseek-v4-flash" },
         .{ "deepseekv4flash0731", "deepseek-v4-flash" },
@@ -460,8 +428,7 @@ test "canonicalIdFor: catalog spellings fold to their canonical rules" {
         .{ "deepseek/deepseek-v4-pro-0813", "deepseek-v4-pro" },
         .{ "deepseek-v4-pro:0813", "deepseek-v4-pro" },
         .{ "deepseek-ai/DeepSeek-V4-Pro-0813", "deepseek-v4-pro" },
-        // 2407 is part of Mistral Nemo's official HF name, not a stamp
-        // on an undated sibling — it stays in the canonical id.
+        // 2407 is part of Mistral Nemo's official HF name, not a stamp on an undated sibling — it stays in the canonical id.
         .{ "unsloth/Mistral-Nemo-Instruct-2407", "mistral-nemo-instruct-2407" },
         .{ "qwen/qwen3-235b-a22b-2507", "qwen3-235b-a22b" },
         .{ "Qwen/Qwen3-235B-A22B-Instruct-2507", "qwen3-235b-a22b" },
@@ -493,8 +460,7 @@ test "applyModel: chutes TEE-stamped id folds to the canonical model" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    // kimi-code's `default_model` = "chutes/Qwen/Qwen3.8-27B-TEE":
-    // detectKimi strips the first segment before calling applyModel.
+    // kimi-code's `default_model` = "chutes/Qwen/Qwen3.8-27B-TEE": detectKimi strips the first segment before calling applyModel.
     var d = main.Detection{};
     try main.applyModel(a, &d, "Qwen/Qwen3.8-27B-TEE", "chutes/Qwen/Qwen3.8-27B-TEE");
     try testing.expectEqualStrings("qwen3.8-27b", d.model_name.?);
@@ -502,8 +468,7 @@ test "applyModel: chutes TEE-stamped id folds to the canonical model" {
     try testing.expectEqualStrings("qwen3827b", d.model_id.?);
     try testing.expectEqualStrings("open-weight", d.model_reciprocity.?);
     try testing.expectEqualStrings("Apache-2.0", d.model_license.?);
-    // a detector that passes the full 3-segment id unstripped folds
-    // through the namespaced variation.
+    // a detector that passes the full 3-segment id unstripped folds through the namespaced variation.
     var d2 = main.Detection{};
     try main.applyModel(a, &d2, "chutes/Qwen/Qwen3.8-27B-TEE", "chutes/Qwen/Qwen3.8-27B-TEE");
     try testing.expectEqualStrings("qwen3.8-27b", d2.model_name.?);

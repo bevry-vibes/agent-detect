@@ -1,12 +1,5 @@
-// Unit-shape tests for the index.json store's pure operations and the
-// daemon's pop protocol: the one-universe expansion (fixtured folder
-// files ∨ feasible-unfixtured per the reference grids), the OR-ed
-// staleness criteria set against the channel files' `meta`, the
-// completion-timestamp done rule, session damping, the staleness
-// defaulting matrix (--stale composite / explicit --stale-* /
-// --refresh), queue-entry upsert dedupe, the backlog table, and
-// known_but_failed. Pure operations run in-memory; the folder scans
-// run against a throwaway universe under fixtures/.test-universe.
+// Unit-shape tests for the index.json store's pure operations and the daemon's pop protocol: the one-universe expansion (fixtured folder files ∨ feasible-unfixtured per the reference grids), the OR-ed staleness criteria set against the channel files' `meta`, the completion-timestamp done rule, session damping, the staleness defaulting matrix (--stale composite / explicit --stale-* / --refresh), queue-entry upsert dedupe, the backlog table, and known_but_failed.
+// Pure operations run in-memory; the folder scans run against a throwaway universe under fixtures/.test-universe.
 
 const std = @import("std");
 const testing = std.testing;
@@ -17,8 +10,7 @@ const QueueEntry = dev.QueueEntry;
 
 const UNIVERSE = "fixtures/.test-universe";
 
-/// a throwaway fixtures tree: `UNIVERSE/from-identity` +
-/// `UNIVERSE/from-capture`, rooted at via dev.setFixturesRootForTests.
+/// a throwaway fixtures tree: `UNIVERSE/from-identity` + `UNIVERSE/from-capture`, rooted at via dev.setFixturesRootForTests.
 const Universe = struct {
     fn setup() !void {
         const io = testing.io;
@@ -50,8 +42,7 @@ const Universe = struct {
         try std.Io.Dir.cwd().writeFile(testing.io, .{ .sub_path = path, .data = contents });
     }
 
-    /// an identity channel file with the given updated_at and an
-    /// identify block whose ids are the stem's dims.
+    /// an identity channel file with the given updated_at and an identify block whose ids are the stem's dims.
     fn writeIdentity(stem: []const u8, updated_at: i64) !void {
         var buf: [1024]u8 = undefined;
         var it = std.mem.tokenizeScalar(u8, stem, '-');
@@ -62,8 +53,7 @@ const Universe = struct {
         try write("from-identity", stem, body);
     }
 
-    /// a capture channel file with meta.launch argv (and optional
-    /// identify parity with the identity file).
+    /// a capture channel file with meta.launch argv (and optional identify parity with the identity file).
     fn writeCapture(stem: []const u8, updated_at: ?i64, with_argv: bool) !void {
         var buf: [1024]u8 = undefined;
         var meta: std.ArrayList(u8) = .empty;
@@ -96,8 +86,7 @@ fn emptyStoreRoot(a: std.mem.Allocator) !std.json.Value {
     return root;
 }
 
-/// expand helper with a host parameter (empty free grid + grids, no
-/// damping, nothing blocklisted).
+/// expand helper with a host parameter (empty free grid + grids, no damping, nothing blocklisted).
 fn expand(a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, host: []const u8) !dev.ExpandResult {
     var fg = dev.FreeGrid.empty(a);
     var grids = dev.FeasibilityGrids.empty(a);
@@ -110,9 +99,7 @@ fn putInvocation(a: std.mem.Allocator, root: *std.json.Value, id: []const u8) !v
     try inv.object.put(a, id, .{ .object = .empty });
 }
 
-// ---------------------------------------------------------------------------
-// staleness defaulting (§ --stale composite)
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------- staleness defaulting (§ --stale composite) ---------------------------------------------------------------------------
 
 test "stampCriteria: no flags → the full --stale composite" {
     const crit = dev.stampCriteria(.{});
@@ -185,8 +172,7 @@ test "queueUpsertPure: re-assert replaces the tuple in place and resets started_
     try dev.queueUpsertPure(aa, &root, first);
     const second: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_minutes = 7, .runner = 2 };
     try dev.queueUpsertPure(aa, &root, second);
-    // a different tuple (different criteria) appends — a re-assert must
-    // repeat the SAME flag set or it lands as a second entry.
+    // a different tuple (different criteria) appends — a re-assert must repeat the SAME flag set or it lands as a second entry.
     const other: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_minutes = 7, .stale_by_invocation = true };
     try dev.queueUpsertPure(aa, &root, other);
     const queue = root.object.get("queue").?;
@@ -196,9 +182,7 @@ test "queueUpsertPure: re-assert replaces the tuple in place and resets started_
     try testing.expect(entry.get("started_at") == null);
 }
 
-// ---------------------------------------------------------------------------
-// identify deep-compare
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------- identify deep-compare ---------------------------------------------------------------------------
 
 test "identifyEqual: structural, order-independent deep equality" {
     const a = testing.allocator;
@@ -219,9 +203,7 @@ test "identifyEqual: structural, order-independent deep equality" {
     try testing.expect(!dev.identifyEqual(x, .null));
 }
 
-// ---------------------------------------------------------------------------
-// backlog + known_but_failed
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------- backlog + known_but_failed ---------------------------------------------------------------------------
 
 test "backlogUnionPure: idempotent union, sorted unique; backlogRemovePure removes" {
     const a = testing.allocator;
@@ -270,9 +252,7 @@ test "knownButFailedPutPure: redacts home paths + key-shaped strings, truncates;
     try testing.expect(dev.knownButFailedFor(&root, "pi-chutes-kimik3-darwin") == null);
 }
 
-// ---------------------------------------------------------------------------
-// expansion (the pop protocol)
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------- expansion (the pop protocol) ---------------------------------------------------------------------------
 
 test "expandEntry: fixtured universe — the from-identity folder's files, dims-filtered" {
     try Universe.setup();
@@ -394,8 +374,7 @@ test "expandEntry: from-capture universe — invocations known to the store (tab
     var root = try emptyStoreRoot(aa);
     // a capture file recording its invocation in meta (success case)
     try Universe.writeCapture("kilo-kilo-kimik3-darwin", null, true);
-    // a capture file with no invocation of record anywhere — backlog
-    // unknown_invocations, never a candidate
+    // a capture file with no invocation of record anywhere — backlog unknown_invocations, never a candidate
     try Universe.writeCapture("kilo-kilo-glm52-darwin", null, false);
     // a table-only invocation (authored, capture pending) — a candidate
     try putInvocation(aa, &root, "kilo-kilo-glm53-darwin");
@@ -443,9 +422,7 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     try grids.putProviderModel(aa, "deepseek", "deepseekv4flash");
     var fg = dev.FreeGrid.empty(aa);
 
-    // two feasible pairs for (kilo, deepseek) on darwin; one is fixtured
-    // (and done under this started_at — a no-criteria entry works
-    // everything, so the done rule must retire the fixtured one)
+    // two feasible pairs for (kilo, deepseek) on darwin; one is fixtured (and done under this started_at — a no-criteria entry works everything, so the done rule must retire the fixtured one)
     const entry: QueueEntry = .{ .mode = "from-identity", .started_at = 200 };
     const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, entry, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
@@ -453,8 +430,7 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     // dims filter applies
     const filtered = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 0), filtered.host_candidates.len);
-    // from-capture never expands the feasible-unfixtured universe —
-    // authoring the invocation is what adds a capture candidate
+    // from-capture never expands the feasible-unfixtured universe — authoring the invocation is what adds a capture candidate
     const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &.{});
     try testing.expectEqual(@as(usize, 0), cap.host_candidates.len);
 }
@@ -563,8 +539,7 @@ test "expandEntry: stale_by_harness_version reads the capture meta + probe" {
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    // harness_version "1.2.3" in meta; the version probe would have to
-    // run the (absent) `someharness` binary — probe failure ⇒ stale.
+    // harness_version "1.2.3" in meta; the version probe would have to run the (absent) `someharness` binary — probe failure ⇒ stale.
     try Universe.writeCapture("kilo-kilo-kimik3-darwin", 100, true);
     var root = try emptyStoreRoot(aa);
 
@@ -572,9 +547,7 @@ test "expandEntry: stale_by_harness_version reads the capture meta + probe" {
     try testing.expectEqual(@as(usize, 1), hv.host_candidates.len);
 }
 
-// ---------------------------------------------------------------------------
-// backlog refresh (folder scan)
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------- backlog refresh (folder scan) ---------------------------------------------------------------------------
 
 test "refreshBacklogPure: unknown dims union in; resolved dims removed; unknown_invocations tracks invocations" {
     try Universe.setup();
@@ -603,8 +576,7 @@ test "refreshBacklogPure: unknown dims union in; resolved dims removed; unknown_
     try testing.expectEqual(@as(usize, 1), ui.len);
     try testing.expectEqualStrings("kilo-kilo-glm52-darwin", ui[0]);
 
-    // a resolvable slug pre-seeded into unknown_harnesses is removed;
-    // an unknown_invocations id that gains a table entry is removed.
+    // a resolvable slug pre-seeded into unknown_harnesses is removed; an unknown_invocations id that gains a table entry is removed.
     try dev.backlogUnionPure(aa, &root, "unknown_harnesses", &.{"kilo"});
     try putInvocation(aa, &root, "kilo-kilo-glm52-darwin");
     try dev.refreshBacklogPure(testing.io, aa, &root);
@@ -614,9 +586,7 @@ test "refreshBacklogPure: unknown dims union in; resolved dims removed; unknown_
     try testing.expectEqual(@as(usize, 0), ui2.len); // table entry resolves it
 }
 
-// ---------------------------------------------------------------------------
-// dequeue matching (mirror defaulting)
-// ---------------------------------------------------------------------------
+// --------------------------------------------------------------------------- dequeue matching (mirror defaulting) ---------------------------------------------------------------------------
 
 test "dequeueMatches: bare filter matches the composite entry; --refresh matches criteria-less" {
     const composite_entry: QueueEntry = .{ .harness = "kilo", .mode = "from-identity", .stale_by_output = true, .stale_by_minutes = 27 * 24 * 60, .stale_by_harness_version = true, .stale_by_invocation = true };

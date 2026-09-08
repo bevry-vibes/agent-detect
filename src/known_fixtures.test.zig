@@ -1,14 +1,9 @@
-// Schema/shape tests for the fixture files under `fixtures/from-identity/`
-// and `fixtures/from-capture/` (the `{ outputs, meta }` envelope — see
-// fixtures/fixture.d.ts) and the committed `fixtures/index.json` state
-// store (see fixtures/index.d.ts). See DESIGN.md for the fixture
-// lifecycle (daemon + capture + index.json store) and CONTRIBUTING.md
-// for adding agents to the rule registry.
+// Schema/shape tests for the fixture files under `fixtures/from-identity/` and `fixtures/from-capture/` (the `{ outputs, meta }` envelope — see fixtures/fixture.d.ts) and the committed `fixtures/index.json` state store (see fixtures/index.d.ts).
+// See DESIGN.md for the fixture lifecycle (daemon + capture + index.json store) and CONTRIBUTING.md for adding agents to the rule registry.
 //
-// The suite validates committed-file shape only. The per-folder universe
-// is the union of the two folders' filename stems; channel presence =
-// file existence — no JSON parse needed. The subfolders are scanned only
-// as their own universes.
+// The suite validates committed-file shape only.
+// The per-folder universe is the union of the two folders' filename stems; channel presence = file existence — no JSON parse needed.
+// The subfolders are scanned only as their own universes.
 
 const std = @import("std");
 const testing = std.testing;
@@ -17,8 +12,7 @@ const main = @import("main.zig");
 const identity_dir = "fixtures/from-identity";
 const capture_dir = "fixtures/from-capture";
 
-/// Discover every `<stem>.json` fixture file in one channel folder,
-/// returning the stems (sorted for deterministic iteration).
+/// Discover every `<stem>.json` fixture file in one channel folder, returning the stems (sorted for deterministic iteration).
 fn discoverFolderStems(a: std.mem.Allocator, folder: []const u8) ![][]u8 {
     var stems: std.ArrayList([]u8) = .empty;
 
@@ -61,9 +55,7 @@ fn discoverStems(a: std.mem.Allocator) ![][]u8 {
     return stems.toOwnedSlice(a);
 }
 
-/// Load a channel file as a parsed JSON value, or null if the file is
-/// missing/unparseable (callers iterate the features a file may not
-/// carry — the envelope test is what flags unparseable files).
+/// Load a channel file as a parsed JSON value, or null if the file is missing/unparseable (callers iterate the features a file may not carry — the envelope test is what flags unparseable files).
 fn readChannelParsed(a: std.mem.Allocator, folder: []const u8, stem: []const u8) !?std.json.Value {
     const path = try std.fmt.allocPrint(a, "{s}/{s}.json", .{ folder, stem });
     const data = std.Io.Dir.cwd().readFileAlloc(testing.io, path, a, @enumFromInt(1 << 20)) catch return null;
@@ -71,8 +63,7 @@ fn readChannelParsed(a: std.mem.Allocator, folder: []const u8, stem: []const u8)
     return parsed.value;
 }
 
-/// Load the committed `fixtures/index.json` store. The store is
-/// committed — absent or unparseable is a broken tree, not a skip.
+/// Load the committed `fixtures/index.json` store. The store is committed — absent or unparseable is a broken tree, not a skip.
 fn readIndexParsed(a: std.mem.Allocator) !std.json.Value {
     const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index.json", a, @enumFromInt(1 << 26)) catch return error.MissingStore;
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return error.InvalidStore;
@@ -80,8 +71,7 @@ fn readIndexParsed(a: std.mem.Allocator) !std.json.Value {
     return parsed.value;
 }
 
-/// The 20 canonical `identify` fields, in emission order. No `trailer`
-/// key (the root trailer and the cooked trailer are gone).
+/// The 20 canonical `identify` fields, in emission order. No `trailer` key (the root trailer and the cooked trailer are gone).
 const identify_keys = [_][]const u8{
     "harness_label", // harness group
     "harness_short_title",
@@ -105,8 +95,7 @@ const identify_keys = [_][]const u8{
     "reciprocal", // policy / output
 };
 
-/// strict-slug equality: is `name`'s lowercase-alphanumeric slug equal
-/// to `slug`? Mirrors `main.slugId` without allocating.
+/// strict-slug equality: is `name`'s lowercase-alphanumeric slug equal to `slug`? Mirrors `main.slugId` without allocating.
 fn slugifyMatches(name: []const u8, slug: []const u8) bool {
     var i: usize = 0;
     for (name) |c| {
@@ -135,17 +124,14 @@ test "fixtures: at least one fixture is committed" {
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const stems = try discoverStems(arena.allocator());
-    // If this fails, capture new fixtures with `agent-detect-dev
-    // fixtures capture` inside each harness session you're targeting,
-    // then commit the resulting fixture files under `fixtures/from-capture/`.
+    // If this fails, capture new fixtures with `agent-detect-dev fixtures capture` inside each harness session you're targeting, then commit the resulting fixture files under `fixtures/from-capture/`.
     try testing.expect(stems.len >= 1);
 }
 
 test "fixtures: envelope shape — every channel file is exactly { outputs, meta }" {
-    // from-identity files always carry `outputs` (identify + both
-    // trailers); from-capture files are written only on success, so they
-    // always carry `outputs` (…+ raw) too — no meta-only stubs exist. No
-    // other top-level keys exist — the directory IS the channel.
+    // from-identity files always carry `outputs` (identify + both trailers);
+    // from-capture files are written only on success, so they always carry `outputs` (…+ raw) too — no meta-only stubs exist.
+    // No other top-level keys exist — the directory IS the channel.
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -175,8 +161,7 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
             };
             if (meta != .object) return error.InvalidFixtureShape;
             const mo = meta.object;
-            // output-bearing file: identify + both trailers, and the full
-            // ledger meta.
+            // output-bearing file: identify + both trailers, and the full ledger meta.
             if (outputs != .object) return error.InvalidFixtureShape;
             const oo = outputs.object;
             const identify = oo.get("identify") orelse return error.MissingIdentify;
@@ -199,14 +184,8 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                     std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
                     return error.UnexpectedOutputKey;
                 }
-                // meta: updated_at + the required full invocation of
-                // record (harness_version, prompt_invocation,
-                // version_invocation — from-capture only gets fully
-                // programmatically-invokable captures; the writer
-                // fails instead of a partial meta). The legacy stems
-                // below predate the rule and lack the fields; each is
-                // rewritten by its next re-capture (drop the stem as it
-                // lands).
+                // meta: updated_at + the required full invocation of record (harness_version, prompt_invocation, version_invocation — from-capture only gets fully programmatically-invokable captures; the writer fails instead of a partial meta).
+                // The legacy stems below predate the rule and lack the fields; each is rewritten by its next re-capture (drop the stem as it lands).
                 const legacy = isLegacyRequiredMeta(stem);
                 try testing.expect(mo.get("updated_at") != null);
                 if (!legacy) {
@@ -228,9 +207,7 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
     }
 }
 
-/// from-capture stems written before the required-meta rule (their
-/// meta carries only `updated_at`). Each is rewritten by its next
-/// re-capture — drop the stem as it lands.
+/// from-capture stems written before the required-meta rule (their meta carries only `updated_at`). Each is rewritten by its next re-capture — drop the stem as it lands.
 fn isLegacyRequiredMeta(stem: []const u8) bool {
     const legacy = [_][]const u8{
         "pi-anthropic-claudesonnet4-darwin",
@@ -264,11 +241,8 @@ test "fixtures: identify has all 20 grouped keys in emission order, no trailer k
         const cooked = identify.object;
         for (identify_keys, 0..) |key, i| {
             if (!cooked.contains(key)) {
-                // Pre-keyset-growth fixtures may lack the newer keys —
-                // the queued regen sweeps bring older files up to the
-                // full set (same transition as the raw-schema keyset
-                // test). Once the sweeps complete, drop this
-                // exemption.
+                // Pre-keyset-growth fixtures may lack the newer keys — the queued regen sweeps bring older files up to the full set (same transition as the raw-schema keyset test).
+                // Once the sweeps complete, drop this exemption.
                 if (std.mem.eql(u8, key, "harness_open_training")) continue;
                 if (std.mem.eql(u8, key, "harness_closed_training")) continue;
                 std.debug.print("fixture {s} missing identify key {s} at index {d}\n", .{ stem, key, i });
@@ -280,13 +254,9 @@ test "fixtures: identify has all 20 grouped keys in emission order, no trailer k
 }
 
 test "fixtures: outputs.raw is the dev-raw schema — exactly the raw output keys" {
-    // The from-capture `outputs.raw` block is the dev `raw` output
-    // verbatim: platform_id, harness_version (null when not yet
-    // knowable), detectable, detected, process_lineage, *-urls, evidence.
-    // No env/file objects; secret env evidence is `<redacted>`. Pre-
-    // keyset-growth fixtures may carry fewer keys — the check is "no
-    // unexpected keys", and the queued regen sweeps bring older files up
-    // to the full set.
+    // The from-capture `outputs.raw` block is the dev `raw` output verbatim: platform_id, harness_version (null when not yet knowable), detectable, detected, process_lineage, *-urls, evidence.
+    // No env/file objects; secret env evidence is `<redacted>`.
+    // Pre- keyset-growth fixtures may carry fewer keys — the check is "no unexpected keys", and the queued regen sweeps bring older files up to the full set.
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -356,8 +326,7 @@ test "fixtures: outputs.raw carries detectable + detected, process_lineage, and 
         const raw = outputs.object.get("raw") orelse continue;
         if (raw != .object) continue;
         const raw_o = raw.object;
-        // process_lineage always present (at least agent-detect), entries
-        // are subobjects with pid + name.
+        // process_lineage always present (at least agent-detect), entries are subobjects with pid + name.
         if (raw_o.get("process_lineage")) |pl| {
             try testing.expect(pl == .array);
             try testing.expect(pl.array.items.len >= 1);
@@ -378,8 +347,7 @@ test "fixtures: outputs.raw carries detectable + detected, process_lineage, and 
             try testing.expect(det == .array);
             try testing.expect(det.array.items.len == 3);
         }
-        // *-urls arrays are arrays of https:// URLs (may be empty for
-        // closed-source).
+        // *-urls arrays are arrays of https:// URLs (may be empty for closed-source).
         inline for ([_][]const u8{ "harness-urls", "provider-urls", "model-urls" }) |key| {
             if (raw_o.get(key)) |arr| {
                 try testing.expect(arr == .array);
@@ -393,11 +361,8 @@ test "fixtures: outputs.raw carries detectable + detected, process_lineage, and 
 }
 
 test "fixtures: every fixture's identify has all 8 identity fields populated" {
-    // The capture refuses to write a fixture with null provider or
-    // null model, so every committed fixture has the harness+provider
-    // +model triad populated. The four policy fields — harness_license,
-    // model_reciprocity, provider_closed_training, provider_open_training
-    // — may legitimately be `null` per the schema.
+    // The capture refuses to write a fixture with null provider or null model, so every committed fixture has the harness+provider +model triad populated.
+    // The four policy fields — harness_license, model_reciprocity, provider_closed_training, provider_open_training — may legitimately be `null` per the schema.
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -476,10 +441,7 @@ test "fixtures: fixture JSON is pretty-printed (outputs/meta envelope, identify 
 }
 
 test "fixtures: warn on null / NOASSERTION harness_license (dev should fill in from upstream)" {
-    // Decision #1 — the license tri-state: `null` (no data) and
-    // `NOASSERTION` (attempted, inconclusive) warn; `NONE` (concluded:
-    // verified proprietary/closed) is a deliberate, valid value and must
-    // NOT warn.
+    // Decision #1 — the license tri-state: `null` (no data) and `NOASSERTION` (attempted, inconclusive) warn; `NONE` (concluded: verified proprietary/closed) is a deliberate, valid value and must NOT warn.
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -549,14 +511,9 @@ test "fixtures: envelope combo-match — each folder's identify ids equal the fi
 }
 
 test "fixtures: invocation argv — exactly one <prompt> placeholder; version_invocation is [<binary>, --version]" {
-    // An invocation saves the literal `"<prompt>"` placeholder in place
-    // of the launch prompt (the daemon interpolates the real prompt at
-    // spawn time). version_invocation is always the same binary plus
-    // `--version` (minimal invocation: only the args necessary to pin
-    // harness + provider + model and run the capture prompt). Invocations
-    // live in two places: a from-capture file's meta (the invocation it
-    // ran under) and the store's `invocations` table (authored, pre- or
-    // post-success).
+    // An invocation saves the literal `"<prompt>"` placeholder in place of the launch prompt (the daemon interpolates the real prompt at spawn time).
+    // version_invocation is always the same binary plus `--version` (minimal invocation: only the args necessary to pin harness + provider + model and run the capture prompt).
+    // Invocations live in two places: a from-capture file's meta (the invocation it ran under) and the store's `invocations` table (authored, pre- or post-success).
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -603,9 +560,8 @@ fn checkInvocation(a: std.mem.Allocator, id: []const u8, launch: std.json.Value,
 }
 
 test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host platform)" {
-    // The curated argv must name a real binary for the platform the file
-    // targets. Only the files for the platform this test runs on are
-    // checked — the other platforms' name lists differ at compile time.
+    // The curated argv must name a real binary for the platform the file targets.
+    // Only the files for the platform this test runs on are checked — the other platforms' name lists differ at compile time.
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -749,9 +705,7 @@ test "index.json: queue entries match their field invariants" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const root = try readIndexParsed(arena.allocator());
-    // mode ∈ {from-identity, from-capture}; the criteria set is booleans
-    // (true|absent) + an age threshold in minutes ≥ 0; `free` is an
-    // optional boolean.
+    // mode ∈ {from-identity, from-capture}; the criteria set is booleans (true|absent) + an age threshold in minutes ≥ 0; `free` is an optional boolean.
     const queue = root.object.get("queue") orelse return;
     if (queue != .array) return error.InvalidQueue;
     for (queue.array.items) |item| {
@@ -774,10 +728,8 @@ test "index.json: queue entries match their field invariants" {
 }
 
 test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" {
-    // The known universe is the union of the two folders' filename
-    // stems, so coverage scans the folders (not the store). Per-platform
-    // coverage is derived at expansion time from the feasible-unfixtured
-    // universe (the reference grids) and the daemon's identity drain —
+    // The known universe is the union of the two folders' filename stems, so coverage scans the folders (not the store).
+    // Per-platform coverage is derived at expansion time from the feasible-unfixtured universe (the reference grids) and the daemon's identity drain —
     // the folder scan only has to show each rule at least once.
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
@@ -808,8 +760,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
             if (slugifyMatches(rr.name, parts[2])) m_ok = true;
         }
         if (!h_ok or !p_ok or !m_ok) {
-            // unresolvable dims are backlog items (unknown_* sets), not a
-            // failure — but the store scan must have recorded them.
+            // unresolvable dims are backlog items (unknown_* sets), not a failure — but the store scan must have recorded them.
             const bl = try readIndexParsed(aa);
             const backlog = bl.object.get("backlog") orelse return error.MissingBacklog;
             const set: []const u8 = if (!h_ok) "unknown_harnesses" else if (!p_ok) "unknown_providers" else "unknown_models";
@@ -844,9 +795,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
 
     for (main.rulesForHarnesses) |rr| {
         const slug = try main.slugId(aa, rr.name);
-        // rule-only harnesses (2026-09-07): autoclaw — the maintainer
-        // uninstalled the app after its rule landed; its fixture sweep
-        // is contributor scope (the staged entry was dropped).
+        // rule-only harnesses (2026-09-07): autoclaw — the maintainer uninstalled the app after its rule landed; its fixture sweep is contributor scope (the staged entry was dropped).
         const rule_only_harnesses = [_][]const u8{"autoclaw"};
         var h_exempt = false;
         for (rule_only_harnesses) |name| {
@@ -858,22 +807,14 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
             return error.HarnessWithoutStems;
         }
     }
-    // Rule-only entries — detection-coverage rules no fixture combo uses
-    // yet (a provider alias/mirror, or a model registered for detection
-    // without a curated launch). The guard still fires for any NEW rule
-    // that lands without stems; these are the pre-existing exemptions.
-    // chutes: the pi-chutes invocations live in the store's invocations
-    // table (their captures are pending), so no fixture stem covers it yet.
-    // hermes-facing provider surfaces (2026-09-06): alibaba-coding-plan,
-    // openai-codex, google-vertex, amazon-bedrock, azure-foundry,
-    // novita-ai, deepinfra, nebius, nvidia, upstage, xiaomi, stepfun,
-    // arcee, vercel, nous — ruled for detection coverage; the maintainer
-    // uninstalled hermes, so their fixture sweeps are contributor scope.
-    // autoclaw: the app is uninstalled (contributor scope, same as the
-    // harness exemption above). phala: the zcode-phala-glm53 from-identity
-    // entry is staged — resolves when the user-run daemon drains it.
-    // (The 2026-09-07 folds — moonshotai, kimi-coding, opencode — carry
-    // stems from the renamed fixtures, so they need no exemptions.)
+    // Rule-only entries — detection-coverage rules no fixture combo uses yet (a provider alias/mirror, or a model registered for detection without a curated launch).
+    // The guard still fires for any NEW rule that lands without stems; these are the pre-existing exemptions.
+    // chutes: the pi-chutes invocations live in the store's invocations table (their captures are pending), so no fixture stem covers it yet.
+    // hermes-facing provider surfaces (2026-09-06): alibaba-coding-plan, openai-codex, google-vertex, amazon-bedrock, azure-foundry, novita-ai, deepinfra, nebius, nvidia, upstage, xiaomi, stepfun, arcee, vercel, nous — ruled for detection coverage;
+    // the maintainer uninstalled hermes, so their fixture sweeps are contributor scope.
+    // autoclaw: the app is uninstalled (contributor scope, same as the harness exemption above).
+    // phala: the zcode-phala-glm53 from-identity entry is staged — resolves when the user-run daemon drains it.
+    // (The 2026-09-07 folds — moonshotai, kimi-coding, opencode — carry stems from the renamed fixtures, so they need no exemptions.)
     const rule_only_providers = [_][]const u8{
         "cline",            "chutes",           "google",
         "alibaba-coding-plan", "openai-codex",  "google-vertex",
@@ -930,12 +871,8 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
 }
 
 test "map-provider-model-freeprovidermodel.csv: free-grid entries resolve to known rules, stay sparse, and curated capture files carry a free-signal in their launch model spec" {
-    // The grid is the free-axis source of truth: rows only for providers
-    // with ≥1 free model, columns only for models free somewhere, cells
-    // the provider's free model-id or `-`. Every fixtured (provider,
-    // model) row that is free-listed must carry a free signal (`:free`,
-    // `-free`, `free/`) in its meta.prompt_invocation model spec — files
-    // whose launch implies the model via harness config are exempt.
+    // The grid is the free-axis source of truth: rows only for providers with ≥1 free model, columns only for models free somewhere, cells the provider's free model-id or `-`.
+    // Every fixtured (provider, model) row that is free-listed must carry a free signal (`:free`, `-free`, `free/`) in its meta.prompt_invocation model spec — files whose launch implies the model via harness config are exempt.
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
@@ -1042,21 +979,17 @@ test "redactPaths: project before home, backslash + slash + EOL boundaries, home
     const core = @import("lib/core.zig");
     const a = testing.allocator;
 
-    // the reported bug: a Windows project-local db path redacts to
-    // <project>, not the raw drive path (project passed first, so the
-    // home prefix inside it is consumed whole).
+    // the reported bug: a Windows project-local db path redacts to <project>, not the raw drive path (project passed first, so the home prefix inside it is consumed whole).
     const win = try core.redactPaths(a, "C:\\Users\\balup\\Projects\\vibes\\agent-detect\\.crush/crush.db", "C:\\Users\\balup\\Projects\\vibes\\agent-detect", "C:\\Users\\balup");
     try testing.expectEqualStrings("<project>/.crush/crush.db", win);
     a.free(win);
 
-    // home-only reference, Windows spelling: the full path normalizes
-    // to forward slashes after the `<home>` token.
+    // home-only reference, Windows spelling: the full path normalizes to forward slashes after the `<home>` token.
     const home_win = try core.redactPaths(a, "C:\\Users\\balup\\.omp\\agent\\config.yml", "", "C:\\Users\\balup");
     try testing.expectEqualStrings("<home>/.omp/agent/config.yml", home_win);
     a.free(home_win);
 
-    // POSIX project + a sibling prefix must NOT match (proj != proj2):
-    // the home pass still fires, but the project token never appears.
+    // POSIX project + a sibling prefix must NOT match (proj != proj2): the home pass still fires, but the project token never appears.
     const posix = try core.redactPaths(a, "/Users/balup/proj/.kilo/db", "/Users/balup/proj2", "/Users/balup");
     try testing.expectEqualStrings("<home>/proj/.kilo/db", posix);
     a.free(posix);
@@ -1073,11 +1006,10 @@ test "redactPaths: project before home, backslash + slash + EOL boundaries, home
 }
 
 test "fixtures: every harness rule's binary_names is non-empty, lowercase, and Windows-complete" {
-    // binary_names is the single hand-maintained name list (probe,
-    // launch, ancestry, daemon guard). Contract: non-empty; only
-    // lowercase letters/digits/./-; and on Windows every bare stem
-    // (no `.` extension) has its `<stem>.exe` twin so the .exe-first
-    // process ancestry and .cmd-shim launching both find their name.
+    // binary_names is the single hand-maintained name list (probe, launch, ancestry, daemon guard).
+    // Contract: non-empty;
+    // only lowercase letters/digits/./-;
+    // and on Windows every bare stem (no `.` extension) has its `<stem>.exe` twin so the .exe-first process ancestry and .cmd-shim launching both find their name.
     const builtin = @import("builtin");
     for (main.rulesForHarnesses) |rule| {
         try testing.expect(rule.binary_names.len >= 1);

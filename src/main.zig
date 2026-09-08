@@ -7,11 +7,9 @@
 // All software distributed under the RPL is provided strictly on an "AS IS"
 // basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
-// agent-detect — thin entry point + re-exports. The released CLI surface
-// (identify / trailer / check-reciprocal / help / version) dispatches into
-// lib/core.zig; the dev binary additionally exposes dev/dev.zig's `fixtures`
-// namespace + `raw` action when built with `-Ddev=true`. The re-exported
-// aliases below keep the test files compiling through `main.*` unchanged.
+// agent-detect — thin entry point + re-exports.
+// The released CLI surface (identify / trailer / check-reciprocal / help / version) dispatches into lib/core.zig; the dev binary additionally exposes dev/dev.zig's `fixtures` namespace + `raw` action when built with `-Ddev=true`.
+// The re-exported aliases below keep the test files compiling through `main.*` unchanged.
 
 const std = @import("std");
 const build_options = @import("build_options");
@@ -104,10 +102,8 @@ pub fn modelFromSessionRow(a: std.mem.Allocator, model_str: []const u8) !?core.A
     return core.modelFromSessionRow(a, model_str);
 }
 
-/// decision #8 — the dev binary's top-level help: the released usage
-/// plus a dev-actions block referencing the fixtures namespace, the
-/// two refresh modes, and the daemon pacing/control flags. The
-/// released `agent-detect --help` is `usage` alone.
+/// decision #8 — the dev binary's top-level help: the released usage plus a dev-actions block referencing the fixtures namespace, the two refresh modes, and the daemon pacing/control flags.
+/// The released `agent-detect --help` is `usage` alone.
 const devUsage = if (dev_build)
     usage ++
         \\
@@ -130,8 +126,7 @@ const devUsage = if (dev_build)
 else
     usage;
 
-// ============================================================================
-// main entry
+// ============================================================================ main entry
 
 /// is `word` one of the known top-level action words?
 fn isKnownAction(word: []const u8) bool {
@@ -144,18 +139,14 @@ fn isKnownAction(word: []const u8) bool {
 
 pub fn main(init: std.process.Init) u8 {
     if (@import("builtin").os.tag == .windows) {
-        // CP_UTF8 (65001): the default OEM console code page
-        // (cp437/850/1252) mangles the UTF-8 output (em dash, middle
-        // dot). Failure ignored: daemonized runs have no console.
+        // CP_UTF8 (65001): the default OEM console code page (cp437/850/1252) mangles the UTF-8 output (em dash, middle dot). Failure ignored: daemonized runs have no console.
         _ = core.SetConsoleOutputCP(65001);
         _ = core.SetConsoleCP(65001);
     }
     return mainInner(init) catch |err| switch (err) {
         error.OutOfMemory => EXIT_OUT_OF_MEMORY,
         else => blk: {
-            // dev-only error kinds — pruned from the released binary.
-            // Each writes its registry-name message to stderr (matching
-            // the "exact message verbage" scheme) plus its exit code.
+            // dev-only error kinds — pruned from the released binary. Each writes its registry-name message to stderr (matching the "exact message verbage" scheme) plus its exit code.
             if (dev_build) {
                 if (err == error.IndexStoreError) {
                     writeErr(init.io, MSG_INDEX_STORE);
@@ -191,27 +182,17 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
-    // subcommand dispatch. The dev binary (built with -Ddev=true)
-    // accepts a `raw` action (standalone raw block) plus a `fixtures`
-    // subcommand namespace: `fixtures --help`, `fixtures daemon`,
-    // `fixtures capture`, `fixtures queue [--harness=...]
-    // [--provider=...] [--model=...]`, `fixtures queue --recipes`,
-    // `fixtures dequeue`. The
-    // `raw`/`fixtures` dispatch is compiled out of the
-    // released binary (dev_build is false) — the released and dev
-    // binaries both run the action parser below: `identify`, `trailer`,
-    // `check-reciprocal`, `help`, `version` (with no arguments showing
-    // help).
+    // subcommand dispatch.
+    // The dev binary (built with -Ddev=true) accepts a `raw` action (standalone raw block) plus a `fixtures` subcommand namespace: `fixtures --help`, `fixtures daemon`, `fixtures capture`, `fixtures queue [--harness=...] [--provider=...] [--model=...]`, `fixtures queue --recipes`, `fixtures dequeue`.
+    // The `raw`/`fixtures` dispatch is compiled out of the released binary (dev_build is false) — the released and dev binaries both run the action parser below: `identify`, `trailer`, `check-reciprocal`, `help`, `version` (with no arguments showing help).
     if (dev_build) {
         var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.OutOfMemory;
         defer sub_iter.deinit();
         _ = sub_iter.skip(); // argv0
         const cmd = sub_iter.next() orelse "";
         const sub = sub_iter.next() orelse "";
-        // decision #8 — the dev binary's top-level help (bare no-args,
-        // `help`, `--help`, `-h`) shows the FULL dev surface: the
-        // released usage plus the dev actions section. `agent-detect
-        // --help` (released binary) is unchanged.
+        // decision #8 — the dev binary's top-level help (bare no-args, `help`, `--help`, `-h`) shows the FULL dev surface: the released usage plus the dev actions section.
+        // `agent-detect --help` (released binary) is unchanged.
         if (std.mem.eql(u8, cmd, "") or
             std.mem.eql(u8, cmd, "help") or
             std.mem.eql(u8, cmd, "--help") or
@@ -225,10 +206,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             return EXIT_OK;
         }
         if (std.mem.eql(u8, cmd, "fixtures")) {
-            // the daemon's from-capture workers run in a throwaway cwd
-            // and may be re-parented by the harness, so the store root
-            // is re-pointed from the env var, the cwd, or the binary's
-            // own location — in that order.
+            // the daemon's from-capture workers run in a throwaway cwd and may be re-parented by the harness, so the store root is re-pointed from the env var, the cwd, or the binary's own location — in that order.
             dev.applyFixturesRootEnv(io, init.environ_map);
             if (sub.len == 0 or
                 std.mem.eql(u8, sub, "--help") or
@@ -263,15 +241,11 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         }
     }
 
-    // action parser. The canonical spellings are the bare words
-    // `identify`, `trailer` (with a subtype), `check-reciprocal`, `help`,
-    // and `version`; the `--help`/`-h` and `--version`/`-V` forms are
-    // aliases. No arguments prints help. `identify`, `trailer <type>`,
-    // and `check-reciprocal` accept an optional complete combo
-    // (`--harness=H --provider=P --model=M` — all three or none) for
-    // recipe-mode output. help/version win over everything: any
-    // help/version flag anywhere at top level short-circuits to the
-    // relevant usage/version output (exit 0), never a conflict.
+    // action parser.
+    // The canonical spellings are the bare words `identify`, `trailer` (with a subtype), `check-reciprocal`, `help`, and `version`; the `--help`/`-h` and `--version`/`-V` forms are aliases.
+    // No arguments prints help.
+    // `identify`, `trailer <type>`, and `check-reciprocal` accept an optional complete combo (`--harness=H --provider=P --model=M` — all three or none) for recipe-mode output.
+    // help/version win over everything: any help/version flag anywhere at top level short-circuits to the relevant usage/version output (exit 0), never a conflict.
     var action: []const u8 = ""; // "", "identify", "trailer", "check-reciprocal", "help", "version"
     var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
     var help_wanted = false;
@@ -331,10 +305,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
 
     // version wins over everything.
     if (version_wanted) {
-        // Version is plumbed in at compile time from
-        // `build.zig.zon`'s `.version` field via `build_options`.
-        // Same value is baked into the released binary, the dev
-        // binary, and every `zig build dist` cross-compile target.
+        // Version is plumbed in at compile time from `build.zig.zon`'s `.version` field via `build_options`.
+        // Same value is baked into the released binary, the dev binary, and every `zig build dist` cross-compile target.
         writeOut(io, "agent-detect ");
         writeOut(io, build_options.version);
         writeOut(io, "\n");
@@ -366,8 +338,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_OK;
     }
 
-    // an unrecognised action word (a bare word appeared before any
-    // known action, e.g. `foobar`, `--bogus`, `foobar identify`).
+    // an unrecognised action word (a bare word appeared before any known action, e.g. `foobar`, `--bogus`, `foobar identify`).
     if (unknown != null) {
         writeErr(io, MSG_UNRECOGNISED_ARG);
         writeErr(io, unknown.?);
@@ -396,9 +367,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_MISSING_ARG;
     }
 
-    // recipe mode: a complete combo resolves against the rule tables,
-    // skipping live detection. Partial combos are rejected (exit 4);
-    // an unknown combo is exit 7.
+    // recipe mode: a complete combo resolves against the rule tables, skipping live detection. Partial combos are rejected (exit 4); an unknown combo is exit 7.
     const has_combo = combo_h.len > 0 or combo_p.len > 0 or combo_m.len > 0;
     if (has_combo) {
         if (combo_h.len == 0 or combo_p.len == 0 or combo_m.len == 0) {
@@ -407,8 +376,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             return EXIT_MISSING_ARG;
         }
         const d = (try resolveRecipe(a, combo_h, combo_p, combo_m)) orelse {
-            // report which dims resolved (strict slug id) and which did
-            // not (null) so the unknown dim is visible at a glance.
+            // report which dims resolved (strict slug id) and which did not (null) so the unknown dim is visible at a glance.
             core.writeMissingSpecifiedAgent(io, rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, combo_h), rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, combo_p), rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, combo_m));
             return EXIT_MISSING_SPECIFIED_AGENT;
         };
@@ -421,16 +389,13 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     return runAction(init, &d, action, trailer_type);
 }
 
-/// dispatch the resolved action on a fully-shaped `Detection`. Handles
-/// the shared identity-completeness gate (exit 8), the trailer subtypes
-/// (co-author / assisted-by), the check-reciprocal tri-state, and the
-/// identify/raw data-output semantics (exit 9 on incomplete policy data).
+/// dispatch the resolved action on a fully-shaped `Detection`.
+/// Handles the shared identity-completeness gate (exit 8), the trailer subtypes (co-author / assisted-by), the check-reciprocal tri-state, and the identify/raw data-output semantics (exit 9 on incomplete policy data).
 fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, trailer_type: []const u8) !u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
-    // identity incomplete → unable to detect: stderr only, no stdout
-    // (no sensible data). Applies to every action.
+    // identity incomplete → unable to detect: stderr only, no stdout (no sensible data). Applies to every action.
     if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
         core.writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
         return EXIT_UNABLE_TO_DETECT;
@@ -466,10 +431,8 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
         }
     }
 
-    // identify — the detection report (canonical at root). Data-output
-    // action: full report on 0; identity complete but policy data
-    // incomplete → the report (with null policy fields) still goes to
-    // stdout + a stderr explainer, exit 9.
+    // identify — the detection report (canonical at root).
+    // Data-output action: full report on 0; identity complete but policy data incomplete → the report (with null policy fields) still goes to stdout + a stderr explainer, exit 9.
     var buf: std.ArrayList(u8) = .empty;
     try buildJson(a, d, init.environ_map, null, .{}, &buf);
     writeOut(io, buf.items);

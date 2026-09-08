@@ -7,15 +7,12 @@
 // All software distributed under the RPL is provided strictly on an "AS IS"
 // basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
-// agent-detect core — the detection ladder and policy. In the
-// least-invasive order, detection reads:
+// agent-detect core — the detection ladder and policy. In the least-invasive order, detection reads:
 //   1. environment variables        (harness)
 //   2. <harness data>/settings      (live provider + model)
 //   3. own session via pid ancestry (session snapshot; parallel-safe)
 //   4. session messages.json        (generation truth: last modelInfo)
-// Never prints or persists secrets (auth tokens are never read into output).
-// Depends on lib/rules.zig (data + pure lookups); never imports dev/dev.zig
-// — only dev imports core.
+// Never prints or persists secrets (auth tokens are never read into output). Depends on lib/rules.zig (data + pure lookups); never imports dev/dev.zig — only dev imports core.
 //
 // Written against zig 0.16 std (std.Io interface; main takes std.process.Init).
 
@@ -42,11 +39,9 @@ const envValueAllowed = rules.envValueAllowed;
 const license_none = rules.license_none;
 const license_noassertion = rules.license_noassertion;
 
-// Exit status registry — canonical numbers, one per distinct kind of
-// outcome. `1` is NOT a fallback for everything; it is reserved for
-// genuinely unexpected/unclassified failures (uncaught zig errors,
-// bugs). The full table + per-code examples live in DESIGN.md
-// "exit status registry".
+// Exit status registry — canonical numbers, one per distinct kind of outcome.
+// `1` is NOT a fallback for everything; it is reserved for genuinely unexpected/unclassified failures (uncaught zig errors, bugs).
+// The full table + per-code examples live in DESIGN.md "exit status registry".
 pub const EXIT_OK: u8 = 0;
 pub const EXIT_UNRECOGNISED_ERROR: u8 = 1;
 pub const EXIT_UNRECOGNISED_ARG: u8 = 2;
@@ -63,9 +58,8 @@ pub const EXIT_INDEX_STORE: u8 = 12;
 pub const EXIT_IO: u8 = 13;
 
 // Error-message strings = the exit-status registry names, verbatim.
-// STDERR carries the full registry-name message; STDOUT carries the
-// concise verdict (determination / data). No repo clause, no prose —
-// the repo-update rules live in README.md per use case.
+// STDERR carries the full registry-name message; STDOUT carries the concise verdict (determination / data).
+// No repo clause, no prose — the repo-update rules live in README.md per use case.
 pub const MSG_UNRECOGNISED_ARG = "unrecognised argument: '";
 pub const MSG_CONFLICTING_ARG = "conflicting argument\n";
 pub const MSG_MISSING_ARG_COMBO = "missing required arguments: --harness= --provider= --model=\n";
@@ -79,29 +73,21 @@ pub const MSG_OUT_OF_MEMORY = "out of memory\n";
 pub const MSG_INDEX_STORE = "index store error\n";
 pub const MSG_IO = "filesystem I/O error\n";
 
-/// exit-7 stderr message for recipe mode, reporting which of the three
-/// dims resolved to a known rule (as its strict alphanumeric slug id)
-/// and which did not (`null`) — so the user sees at a glance which dim
-/// is the unknown one:
-/// `missing specified agent (harness = "kilo", provider = null, model = "deepseekv4pro")`
+/// exit-7 stderr message for recipe mode, reporting which of the three dims resolved to a known rule (as its strict alphanumeric slug id) and which did not (`null`) — so the user sees at a glance which dim is the unknown one: `missing specified agent (harness = "kilo", provider = null, model = "deepseekv4pro")`
 pub fn writeMissingSpecifiedAgent(io: std.Io, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) void {
     writeErr(io, "missing specified agent (");
     writeAgentDims(io, h, p, m);
     writeErr(io, ")\n");
 }
 
-/// exit-8 stderr message for live detection, reporting which of the
-/// three dims resolved (as its strict alphanumeric id) and which did
-/// not (`null`):
-/// `unable to detect unspecified agent (harness = "kilo", provider = null, model = null)`
+/// exit-8 stderr message for live detection, reporting which of the three dims resolved (as its strict alphanumeric id) and which did not (`null`): `unable to detect unspecified agent (harness = "kilo", provider = null, model = null)`
 pub fn writeUnableToDetect(io: std.Io, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) void {
     writeErr(io, "unable to detect unspecified agent (");
     writeAgentDims(io, h, p, m);
     writeErr(io, ")\n");
 }
 
-/// the shared `harness = "<id>", provider = "<id>", model = "<id>"`
-/// dims block for the resolved-dims error messages.
+/// the shared `harness = "<id>", provider = "<id>", model = "<id>"` dims block for the resolved-dims error messages.
 fn writeAgentDims(io: std.Io, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) void {
     writeErr(io, "harness = ");
     writeErrIdOrNull(io, h);
@@ -122,13 +108,11 @@ fn writeErrIdOrNull(io: std.Io, id: ?[]const u8) void {
     }
 }
 
-// macOS process walking (libproc + sysctl). zig 0.16 std has no darwin.zig,
-// so the headers are pulled in directly. `<libproc.h>` is *not* imported
-// via @cInclude because it transitively drags in `<mach/*.h>` opaque types
-// that trip zig's generated static size asserts — those two functions are
-// declared as externs below instead. Available on native macOS builds
-// (which link libSystem by default). Cross-builds still fall through to
-// the empty-ancestry path because the cross-built executable cannot call libc.
+// macOS process walking (libproc + sysctl).
+// zig 0.16 std has no darwin.zig, so the headers are pulled in directly.
+// `<libproc.h>` is *not* imported via @cInclude because it transitively drags in `<mach/*.h>` opaque types that trip zig's generated static size asserts — those two functions are declared as externs below instead.
+// Available on native macOS builds (which link libSystem by default).
+// Cross-builds still fall through to the empty-ancestry path because the cross-built executable cannot call libc.
 const os = @cImport({
     @cInclude("sys/sysctl.h");
     @cInclude("unistd.h");
@@ -137,8 +121,7 @@ extern "c" fn proc_pidpath(pid: c_int, buffer: [*]u8, buffersize: c_uint) c_int;
 extern "c" fn proc_pidinfo(pid: c_int, flavor: c_int, arg: c_ulong, buffer: [*]u8, buffersize: c_int) c_int;
 
 pub const Detection = struct {
-    // canonical — grouped by entity, in emission order
-    // harness group
+    // canonical — grouped by entity, in emission order harness group
     harness_label: ?[]const u8 = null, // human-readable display label, e.g. "Kimi Code" (note some have no title-cased form, such as omp, as such retain omp for omp)
     harness_short_title: ?[]const u8 = null, // optional short brand form, e.g. "Kimi" for "Kimi Code"; null when no established short form
     harness_name: ?[]const u8 = null, // canonical name (whatever casing the service uses to refer to it), e.g. "kimi-code"
@@ -166,78 +149,56 @@ pub const Detection = struct {
     // policy / output
     reciprocal: ?bool = null, // computed from harness_license + model_reciprocity + provider_closed_training
     trailer: ?[]const u8 = null,
-    // raw — typed observations; buildRaw converts these to a shapeless
-    // JSON object whose top-level keys identify the source of evidence
+    // raw — typed observations; buildRaw converts these to a shapeless JSON object whose top-level keys identify the source of evidence
     raw: RawObservation = .{},
-    // the dims this run's detection ladder (or recipe) *could* resolve;
-    // a stale per-capture record of what landed in the raw block's
-    // `detectable` key. `detected` is derived post-hoc from which
-    // canonical dims actually populated the canonical fields.
+    // the dims this run's detection ladder (or recipe) *could* resolve; a stale per-capture record of what landed in the raw block's `detectable` key.
+    // `detected` is derived post-hoc from which canonical dims actually populated the canonical fields.
     detectable: []const []const u8 = &.{},
 };
 
-/// one env-var observation. `name` is always emitted (env-var names
-/// are non-secret). `value` is the env-var's content if `present` and
-/// the name is on the `env_value_allowlist`, otherwise the empty string
-/// (secrets hygiene — `value=""` + `present=false` means the var was
-/// declared by the rule but unset in the environment; `value=""` +
-/// `present=true` means the var was present but is on the
-/// not-allowed list and got redacted). Every env-marker declared by
-/// the matched harness rule gets one entry here, regardless of whether
-/// the var was in the runtime environment — a maintainer reading the
-/// fixture can see what the rule actually checked.
+/// one env-var observation.
+/// `name` is always emitted (env-var names are non-secret).
+/// `value` is the env-var's content if `present` and the name is on the `env_value_allowlist`, otherwise the empty string (secrets hygiene — `value=""` + `present=false` means the var was declared by the rule but unset in the environment;
+/// `value=""` + `present=true` means the var was present but is on the not-allowed list and got redacted).
+/// Every env-marker declared by the matched harness rule gets one entry here, regardless of whether the var was in the runtime environment — a maintainer reading the fixture can see what the rule actually checked.
 pub const EnvVarObservation = struct {
     name: []const u8,
     value: []const u8,
     present: bool,
 };
 
-/// one process-tree observation: pid + executable basename. Subobjects
-/// (not `[pid, name]` tuples) so the convention is explicit in the
-/// JSON shape — a reader doesn't need to remember which index is which.
+/// one process-tree observation: pid + executable basename.
+/// Subobjects (not `[pid, name]` tuples) so the convention is explicit in the JSON shape — a reader doesn't need to remember which index is which.
 pub const Ancestor = struct {
     pid: u32,
     name: []const u8,
 };
 
-/// process-tree observations: the chain of processes at detection
-/// time, ordered most-immediate first (index 0 = the running
-/// `agent-detect`, index 1 = its parent, etc.). Full argv is
-/// deliberately NOT captured — see DESIGN.md for the leak vectors
-/// (tokens, paths, positional-secret parsing). Inlined as a direct
-/// `[]const Ancestor` field of `RawObservation`.
+/// process-tree observations: the chain of processes at detection time, ordered most-immediate first (index 0 = the running `agent-detect`, index 1 = its parent, etc.).
+/// Full argv is deliberately NOT captured — see DESIGN.md for the leak vectors (tokens, paths, positional-secret parsing).
+/// Inlined as a direct `[]const Ancestor` field of `RawObservation`.
 ///
-/// one field read from a file: a dotted-path pointer (e.g.
-/// "providers.cline-pass.settings.model") + the value observed.
+/// one field read from a file: a dotted-path pointer (e.g. "providers.cline-pass.settings.model") + the value observed.
 pub const FieldObservation = struct {
     dotted_path: []const u8,
     value: []const u8,
 };
 
 /// one file read: the file path + the fields that informed canonical.
-/// Used for both provider config files (providers.json, config.toml,
-/// config.yaml, config.json) and Cline session files (session.json,
-/// messages.json). The path is the raw block's top-level key in the
-/// JSON output.
+/// Used for both provider config files (providers.json, config.toml, config.yaml, config.json) and Cline session files (session.json, messages.json).
+/// The path is the raw block's top-level key in the JSON output.
 pub const FileObservation = struct {
     path: []const u8,
     fields: []const FieldObservation = &.{},
 };
 
-/// One evidence claim: "dim X was resolved from source Y, which is
-/// present in raw, and whose value was Z". Decision #11 — every
-/// detected dim in an observed fixture must carry a claim so code can
-/// mechanically verify the attribution chain (source present + value
-/// matches the canonical dim). `source` is one of "env" | "config" |
-/// "session" | "lineage":
+/// One evidence claim: "dim X was resolved from source Y, which is present in raw, and whose value was Z".
+/// Decision #11 — every detected dim in an observed fixture must carry a claim so code can mechanically verify the attribution chain (source present + value matches the canonical dim).
+/// `source` is one of "env" | "config" | "session" | "lineage":
 ///   - "env":     `name` is the env-var name (must appear in raw.env)
-///   - "config"/"session": `name` is the file path (a top-level raw
-///     key after redaction) and `field` the dotted path within it
-///   - "lineage": `name` is a process basename (must appear in
-///     raw.process_lineage)
-/// `value` is the value the detector read (or, for lineage harness
-/// claims, the matched proc name). Semantic deducibility is human
-/// review; this struct only pins the attribution chain.
+/// - "config"/"session": `name` is the file path (a top-level raw key after redaction) and `field` the dotted path within it
+/// - "lineage": `name` is a process basename (must appear in raw.process_lineage)
+/// `value` is the value the detector read (or, for lineage harness claims, the matched proc name). Semantic deducibility is human review; this struct only pins the attribution chain.
 pub const EvidenceClaim = struct {
     dim: []const u8, // "harness" | "provider" | "model"
     source: []const u8, // "env" | "config" | "session" | "lineage"
@@ -246,14 +207,12 @@ pub const EvidenceClaim = struct {
     value: ?[]const u8 = null, // the value read (null = no value seen)
 };
 
-/// All unprocessed observations in a typed shape that maps cleanly to
-/// the shapeless JSON output emitted by `buildRaw`. Top-level groups:
+/// All unprocessed observations in a typed shape that maps cleanly to the shapeless JSON output emitted by `buildRaw`. Top-level groups:
 /// - `env_vars` — env-var observations (one per matched marker)
 /// - `process_lineage` — process tree (most-immediate first)
 /// - `config_files` — provider config file reads (one per file)
 /// - `session_files` — Cline session file reads (one per file)
-/// - `harness_urls` / `provider_urls` / `model_urls` — reference URLs
-///   that informed the corresponding canonical deductions
+/// - `harness_urls` / `provider_urls` / `model_urls` — reference URLs that informed the corresponding canonical deductions
 pub const RawObservation = struct {
     env_vars: []const EnvVarObservation = &.{},
     process_lineage: []const Ancestor = &.{},
@@ -262,14 +221,11 @@ pub const RawObservation = struct {
     harness_urls: []const []const u8 = &.{},
     provider_urls: []const []const u8 = &.{},
     model_urls: []const []const u8 = &.{},
-    /// decision #11 evidence claims — per detected dim, what source
-    /// was read and with what value. Empty for `from-identity` (declared,
-    /// not observed) fixtures.
+    /// decision #11 evidence claims — per detected dim, what source was read and with what value. Empty for `from-identity` (declared, not observed) fixtures.
     evidence: []const EvidenceClaim = &.{},
 };
 
-/// append one evidence claim to `d.raw.evidence`. The old slice is
-/// leaked (arena-backed) — fine for the short-lived Detection.
+/// append one evidence claim to `d.raw.evidence`. The old slice is leaked (arena-backed) — fine for the short-lived Detection.
 fn addEvidenceClaim(a: std.mem.Allocator, d: *Detection, claim: EvidenceClaim) !void {
     const new_len = d.raw.evidence.len + 1;
     const new_slice = try a.alloc(EvidenceClaim, new_len);
@@ -278,44 +234,32 @@ fn addEvidenceClaim(a: std.mem.Allocator, d: *Detection, claim: EvidenceClaim) !
     d.raw.evidence = new_slice;
 }
 
-/// apply a model slug to the detection. `slug` is the bare model id (e.g.
-/// "kimi-k3"); it becomes `d.model_name` unchanged. `raw_input` is the
-/// original string from the config file (e.g. "cline-pass/kimi-k3" or
-/// "minimax/kimi-k3") and is preserved in the corresponding config-file
-/// FileObservation under `d.raw.config_files` for the audit trail. The
-/// provider prefix on the config value stays out of the canonical model
-/// identity.
+/// apply a model slug to the detection.
+/// `slug` is the bare model id (e.g. "kimi-k3"); it becomes `d.model_name` unchanged.
+/// `raw_input` is the original string from the config file (e.g. "cline-pass/kimi-k3" or "minimax/kimi-k3") and is preserved in the corresponding config-file FileObservation under `d.raw.config_files` for the audit trail.
+/// The provider prefix on the config value stays out of the canonical model identity.
 pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_input: []const u8) !void {
     const lower = try std.ascii.allocLowerString(a, name);
-    // everything before the LAST `/` is catalog namespace (provider or
-    // org), not model data — shed all of it, not just the first
-    // segment, so `provider/org/Model` and `Model` resolve alike.
+    // everything before the LAST `/` is catalog namespace (provider or org), not model data —
+    // shed all of it, not just the first segment, so `provider/org/Model` and `Model` resolve alike.
     const canonical_name = rules.modelIdAfterNamespace(lower);
     defer a.free(lower);
-    // fold provider-served id spellings (e.g. chutes' TEE-stamped
-    // "Qwen3.8-27B-TEE") through the rule's variation aliases before
-    // the exact-name lookup — never-guess: an id no variation names
-    // keeps the raw passthrough + family/titleCase fallback below.
+    // fold provider-served id spellings (e.g. chutes' TEE-stamped "Qwen3.8-27B-TEE") through the rule's variation aliases before the exact-name lookup —
+    // never-guess: an id no variation names keeps the raw passthrough + family/titleCase fallback below.
     const folded_name = canonicalIdFor(a, ModelRule, &rulesForModels, canonical_name);
     const lookup_name = folded_name orelse canonical_name;
     d.model_name = folded_name orelse name;
     const mi = try modelForName(a, lookup_name);
-    // display name is emitted verbatim from the rules table — the
-    // rules are the source of truth and maintainers edit them
-    // directly when adding new harnesses/models.
+    // display name is emitted verbatim from the rules table — the rules are the source of truth and maintainers edit them directly when adding new harnesses/models.
     d.model_label = try a.dupe(u8, mi.label);
-    // short_title is optional — null when the rule didn't declare one.
-    // Consumers should fall back to `model_label` (or `model_name`) when this
-    // is null.
+    // short_title is optional — null when the rule didn't declare one. Consumers should fall back to `model_label` (or `model_name`) when this is null.
     if (mi.short_title) |st| d.model_short_title = try a.dupe(u8, st);
     d.model_id = try slugId(a, lookup_name);
     d.model_reciprocity = mi.reciprocity;
     d.model_license = mi.license;
     if (mi.sources.len > 0) d.raw.model_urls = mi.sources;
     _ = raw_input; // caller is responsible for recording it in a config_file observation
-    // recompute the agent id now that model_id is fixtures —
-    // this depends on harness_id and provider_id
-    // being set first, which the calling detector is responsible for.
+    // recompute the agent id now that model_id is fixtures — this depends on harness_id and provider_id being set first, which the calling detector is responsible for.
     try setAgentId(a, d);
 }
 
@@ -327,20 +271,12 @@ pub fn writeErr(io: std.Io, bytes: []const u8) void {
     std.Io.File.stderr().writeStreamingAll(io, bytes) catch {};
 }
 
-/// apply provider rule metadata (training policies + their cross-reference
-/// sources) to `d`. No-op if the provider id is not in the table; this is
-/// the single place the four detectors should call to populate `provider_*`
-/// and the matching `raw.provider_urls` array. Also sets
-/// `provider_id` (the strict-slug form of the canonical name)
-/// so detectors that use the three-line `provider_name + label + meta`
-/// pattern still keep the slug id in lockstep with the name.
+/// apply provider rule metadata (training policies + their cross-reference sources) to `d`.
+/// No-op if the provider id is not in the table; this is the single place the four detectors should call to populate `provider_*` and the matching `raw.provider_urls` array.
+/// Also sets `provider_id` (the strict-slug form of the canonical name) so detectors that use the three-line `provider_name + label + meta` pattern still keep the slug id in lockstep with the name.
 fn applyProviderMeta(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
-    // Provider spelling folding, symmetric with applyModel's model
-    // fold: an alternate key that resolves to a known provider rule
-    // via its alias set (e.g. omp's `minimax-code`, reasonix's
-    // `deepseek-flash` config entries) reports the canonical provider
-    // the user is engaged with — never the harness's internal routing
-    // name. Unknown ids keep today's raw passthrough (never-guess).
+    // Provider spelling folding, symmetric with applyModel's model fold: an alternate key that resolves to a known provider rule via its alias set (e.g. omp's `minimax-code`, reasonix's `deepseek-flash` config entries) reports the canonical provider the user is engaged with — never the harness's internal routing name.
+    // Unknown ids keep today's raw passthrough (never-guess).
     const canonical = canonicalIdFor(a, ProviderRule, &rulesForProviders, id) orelse id;
     if (providerMetaForName(canonical)) |meta| {
         d.provider_name = meta.name;
@@ -354,11 +290,9 @@ fn applyProviderMeta(a: std.mem.Allocator, d: *Detection, id: []const u8) !void 
     }
 }
 
-/// set d.provider_label, d.provider_name, and d.provider_id together
-/// from a single id. This is the helper detectors should call instead of
-/// the old "label + applyProviderMeta" pair — it keeps the
-/// slug id in lockstep with the name so consumers can
-/// always trust the canonical trio.
+/// set d.provider_label, d.provider_name, and d.provider_id together from a single id.
+/// This is the helper detectors should call instead of the old "label + applyProviderMeta" pair —
+/// it keeps the slug id in lockstep with the name so consumers can always trust the canonical trio.
 fn setProvider(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
     const display = providerForName(id) orelse try titleCase(a, id);
     d.provider_name = try a.dupe(u8, id);
@@ -367,9 +301,7 @@ fn setProvider(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
     try applyProviderMeta(a, d, id);
 }
 
-/// compose the agent_id from the three sub-ids. Writes
-/// `null` if any of the three is null (the agent is not fully
-/// identified yet, and a partial id is more misleading than null).
+/// compose the agent_id from the three sub-ids. Writes `null` if any of the three is null (the agent is not fully identified yet, and a partial id is more misleading than null).
 fn setAgentId(a: std.mem.Allocator, d: *Detection) !void {
     const h = d.harness_id orelse return;
     const p = d.provider_id orelse return;
@@ -399,8 +331,7 @@ pub fn jint(obj: std.json.ObjectMap, key: []const u8) ?i64 {
     };
 }
 
-/// extract the string value of `key` appearing at/after byte offset `from`
-/// (scan-after-position parse; used on the last modelInfo block only)
+/// extract the string value of `key` appearing at/after byte offset `from` (scan-after-position parse; used on the last modelInfo block only)
 fn extractAfter(raw: []const u8, from: usize, key: []const u8) ?[]const u8 {
     const k = std.mem.findPos(u8, raw, from, key) orelse return null;
     const colon = std.mem.findScalarPos(u8, raw, k + key.len, ':') orelse return null;
@@ -409,8 +340,7 @@ fn extractAfter(raw: []const u8, from: usize, key: []const u8) ?[]const u8 {
     return raw[q1 + 1 .. q2];
 }
 
-// ============================================================================
-// ladder step 3: process ancestry (own session identification)
+// ============================================================================ ladder step 3: process ancestry (own session identification)
 
 // toolhelp32 (removed from zig 0.16 std.os.windows; declared here)
 const TH32CS_SNAPPROCESS: u32 = 2;
@@ -429,23 +359,20 @@ const PROCESSENTRY32W = extern struct {
 extern "kernel32" fn CreateToolhelp32Snapshot(dwFlags: u32, th32ProcessID: u32) callconv(.winapi) std.os.windows.HANDLE;
 extern "kernel32" fn Process32FirstW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
 extern "kernel32" fn Process32NextW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
-// Windows process termination — used by the dev from-capture timeout
-// watchdog (`fixtures __timeout`). PROCESS_TERMINATE = 0x0001.
+// Windows process termination — used by the dev from-capture timeout watchdog (`fixtures __timeout`). PROCESS_TERMINATE = 0x0001.
 pub extern "kernel32" fn OpenProcess(dwDesiredAccess: u32, bInheritHandle: c_int, dwProcessId: u32) callconv(.winapi) ?std.os.windows.HANDLE;
 pub extern "kernel32" fn TerminateProcess(hProcess: std.os.windows.HANDLE, uExitCode: u32) callconv(.winapi) c_int;
 pub extern "kernel32" fn CloseHandle(hObject: std.os.windows.HANDLE) callconv(.winapi) c_int;
 pub extern "kernel32" fn GetProcessId(hProcess: std.os.windows.HANDLE) callconv(.winapi) u32;
-// Windows console code page — the default OEM page (cp437/850/1252)
-// mangles UTF-8 output (em dash, middle dot); the binary sets both
-// directions to CP_UTF8 at startup so terminals render it as-is.
+// Windows console code page — the default OEM page (cp437/850/1252) mangles UTF-8 output (em dash, middle dot);
+// the binary sets both directions to CP_UTF8 at startup so terminals render it as-is.
 pub extern "kernel32" fn SetConsoleOutputCP(wCodePage: u32) callconv(.winapi) c_int;
 pub extern "kernel32" fn SetConsoleCP(wCodePage: u32) callconv(.winapi) c_int;
 
 pub const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u8 = &.{} };
 
-/// Our own process id. Windows has no libc `getpid`; macOS goes through
-/// the `unistd.h` cImport above (native builds only — a cross-built
-/// binary never prints its pid from a foreign libc).
+/// Our own process id.
+/// Windows has no libc `getpid`; macOS goes through the `unistd.h` cImport above (native builds only — a cross-built binary never prints its pid from a foreign libc).
 pub fn selfPid() u32 {
     if (builtin.os.tag == .windows) return std.os.windows.GetCurrentProcessId();
     if (builtin.os.tag == .linux) return @intCast(std.os.linux.getpid());
@@ -520,10 +447,8 @@ fn ancestorsLinux(a: std.mem.Allocator, io: std.Io) !Ancestry {
     var pid: u32 = @intCast(std.os.linux.getpid());
     while (pid > 1) {
         try pids.append(a, pid);
-        // `/proc` pseudo-files report st_size = 0, so a size-hinted read
-        // (`Dir.readFileAlloc` — a bare reader) hits immediate EOF and
-        // returns nothing on Linux. Use readProcFile (explicitly
-        // buffered reader) instead.
+        // `/proc` pseudo-files report st_size = 0, so a size-hinted read (`Dir.readFileAlloc` — a bare reader) hits immediate EOF and returns nothing on Linux.
+        // Use readProcFile (explicitly buffered reader) instead.
         const comm_path = try std.fmt.allocPrint(a, "/proc/{d}/comm", .{pid});
         const comm = readProcFile(a, io, cwd_dir, comm_path) catch "";
         try names.append(a, try std.ascii.allocLowerString(a, std.mem.trim(u8, comm, " \r\n")));
@@ -538,10 +463,9 @@ fn ancestorsLinux(a: std.mem.Allocator, io: std.Io) !Ancestry {
     return .{ .pids = try pids.toOwnedSlice(a), .names = try names.toOwnedSlice(a) };
 }
 
-/// Read a `/proc` pseudo-file fully. These files report `st_size = 0`,
-/// so `Dir.readFileAlloc` (a bare reader trusting the size hint) sees
-/// immediate EOF and returns empty on Linux — open the file and read
-/// through an explicitly-buffered reader instead.
+/// Read a `/proc` pseudo-file fully.
+/// These files report `st_size = 0`, so `Dir.readFileAlloc` (a bare reader trusting the size hint) sees immediate EOF and returns empty on Linux —
+/// open the file and read through an explicitly-buffered reader instead.
 fn readProcFile(a: std.mem.Allocator, io: std.Io, dir: std.Io.Dir, path: []const u8) ![]const u8 {
     var file = try dir.openFile(io, path, .{});
     defer file.close(io);
@@ -552,13 +476,10 @@ fn readProcFile(a: std.mem.Allocator, io: std.Io, dir: std.Io.Dir, path: []const
     return out[0..n];
 }
 
-/// Walk process ancestors on macOS. For each pid, reads the executable
-/// basename via `proc_pidpath`, and uses `proc_pidinfo` with
-/// `PROC_PIDT_SHORTBSDINFO` (a small fixed-layout struct that begins
-/// with `pid_t pbsi_pid, pbsi_ppid`) to fetch the immediate parent pid.
-/// Stops when the parent is init (pid 1), any syscall fails, or the
-/// chain exceeds 32 hops. Cross-builds still fall through because they
-/// cannot call libc at all.
+/// Walk process ancestors on macOS.
+/// For each pid, reads the executable basename via `proc_pidpath`, and uses `proc_pidinfo` with `PROC_PIDT_SHORTBSDINFO` (a small fixed-layout struct that begins with `pid_t pbsi_pid, pbsi_ppid`) to fetch the immediate parent pid.
+/// Stops when the parent is init (pid 1), any syscall fails, or the chain exceeds 32 hops.
+/// Cross-builds still fall through because they cannot call libc at all.
 const PROC_PIDT_SHORTBSDINFO: c_int = 2;
 
 fn ancestorsMacos(a: std.mem.Allocator) !Ancestry {
@@ -573,12 +494,9 @@ fn ancestorsMacos(a: std.mem.Allocator) !Ancestry {
         const filled_raw = proc_pidinfo(pid, PROC_PIDT_SHORTBSDINFO, 0, &info, @intCast(info.len));
         if (filled_raw < 32) break;
 
-        // `pbsi_pid` / `pbsi_ppid` are read at hard-coded offsets rather than
-        // through the full struct — `PROC_PIDT_SHORTBSDINFO` on macOS 26.x arm64
-        // returns the larger `proc_taskallinfo` (~232 bytes) instead of the
-        // legacy 24-byte `proc_bsdshortinfo`. The leading 12 bytes are filled
-        // with header fields (signature / opaque token), after which `pid_t`
-        // fields appear in the documented order: pid, ppid, pgid, status.
+        // `pbsi_pid` / `pbsi_ppid` are read at hard-coded offsets rather than through the full struct —
+        // `PROC_PIDT_SHORTBSDINFO` on macOS 26.x arm64 returns the larger `proc_taskallinfo` (~232 bytes) instead of the legacy 24-byte `proc_bsdshortinfo`.
+        // The leading 12 bytes are filled with header fields (signature / opaque token), after which `pid_t` fields appear in the documented order: pid, ppid, pgid, status.
         const own_pid: u32 = std.mem.readInt(u32, info[12..16], .little);
         const ppid: u32 = std.mem.readInt(u32, info[16..20], .little);
 
@@ -591,16 +509,13 @@ fn ancestorsMacos(a: std.mem.Allocator) !Ancestry {
             basename = std.fs.path.basename(full);
         }
 
-        // Node.js-launched harnesses (kimi-code, etc.) have executable = `node`
-        // but their argv carries the harness marker (argv[1] = `kimi-code` when
-        // launched with `exec -a "kimi-code" node …`). Probe `KERN_PROCARGS` to
-        // detect the harness and override the ancestor name.
+        // Node.js-launched harnesses (kimi-code, etc.) have executable = `node` but their argv carries the harness marker (argv[1] = `kimi-code` when launched with `exec -a "kimi-code" node …`).
+        // Probe `KERN_PROCARGS` to detect the harness and override the ancestor name.
         if (std.mem.eql(u8, basename, "node")) {
             if (try kimiArgvOverride(a, pid)) basename = "kimi-code";
         }
 
-        // sanity: the kernel should echo back our pid at the expected offset.
-        // if it doesn't, the layout shifted; bail out instead of walking bogus ppids.
+        // sanity: the kernel should echo back our pid at the expected offset. if it doesn't, the layout shifted; bail out instead of walking bogus ppids.
         if (own_pid != @as(u32, @intCast(pid))) break;
         if (ppid == own_pid or ppid == 0) break;
         try pids.append(a, own_pid);
@@ -612,10 +527,8 @@ fn ancestorsMacos(a: std.mem.Allocator) !Ancestry {
     return .{ .pids = try pids.toOwnedSlice(a), .names = try names.toOwnedSlice(a) };
 }
 
-/// If the given pid's argv (read via `KERN_PROCARGS`) contains the literal
-/// `kimi-code` substring, return true so the caller can override the
-/// ancestor name. Returns false on any sysctl failure, empty input, or
-/// no match.
+/// If the given pid's argv (read via `KERN_PROCARGS`) contains the literal `kimi-code` substring, return true so the caller can override the ancestor name.
+/// Returns false on any sysctl failure, empty input, or no match.
 fn kimiArgvOverride(a: std.mem.Allocator, pid: i32) !bool {
     // CTL_KERN = 1, KERN_PROCARGS = 38 on darwin
     var mib: [3]c_int = .{ 1, 38, pid };
@@ -629,13 +542,11 @@ fn kimiArgvOverride(a: std.mem.Allocator, pid: i32) !bool {
     return std.mem.indexOf(u8, buf[0..read_size], "kimi-code") != null;
 }
 
-/// `extern "c"` decl for `proc_pidpath` (libproc). Declared at file scope
-/// for `ancestorsMacos` above; pulled out as a comment so future readers
-/// don't reach for `libproc.h` and drag in `<mach/*.h>` opaque types that
-/// trip zig's generated static asserts.
+/// `extern "c"` decl for `proc_pidpath` (libproc).
+/// Declared at file scope for `ancestorsMacos` above;
+/// pulled out as a comment so future readers don't reach for `libproc.h` and drag in `<mach/*.h>` opaque types that trip zig's generated static asserts.
 
-// ============================================================================
-// cline session discovery
+// ============================================================================ cline session discovery
 
 const Session = struct {
     id: []const u8 = "",
@@ -706,8 +617,7 @@ fn findOwnSession(a: std.mem.Allocator, io: std.Io, sessions: []Session, ancesto
     return .{ .s = null, .how = "none" };
 }
 
-// ============================================================================
-// ladder step 4: generation truth (last assistant modelInfo in messages.json)
+// ============================================================================ ladder step 4: generation truth (last assistant modelInfo in messages.json)
 
 const LastMsg = struct { id: ?[]const u8, provider: ?[]const u8 };
 
@@ -721,8 +631,7 @@ fn lastModelInfo(a: std.mem.Allocator, io: std.Io, messages_path: []const u8) La
     };
 }
 
-// ============================================================================
-// per-harness extraction (ladder steps 2-4)
+// ============================================================================ per-harness extraction (ladder steps 2-4)
 
 fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8, d: *Detection) !void {
     if (home.len == 0) return;
@@ -754,8 +663,7 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
                                         if (sv == .object) {
                                             if (jstr(sv.object, "model")) |mid| {
                                                 // `mid` is "provider/model" in Cline's providers.json.
-                                                // canonical model_name is the bare slug; raw_input
-                                                // preserves the original "provider/model" string.
+                                                // canonical model_name is the bare slug; raw_input preserves the original "provider/model" string.
                                                 const slash = std.mem.findScalar(u8, mid, '/');
                                                 const slug = if (slash) |i| mid[i + 1 ..] else mid;
                                                 try applyModel(a, d, slug, mid);
@@ -786,9 +694,7 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
     const sessions_root = try std.fmt.allocPrint(a, "{s}/.cline/data/sessions", .{home});
     const found = try findOwnSession(a, io, loadSessions(a, io, sessions_root), anc.pids);
     if (found.s) |s| {
-        // build session_file FileObservation for the session.json —
-        // emit every field the Session struct carries so the fixture
-        // is informative enough to revise architecture decisions from.
+        // build session_file FileObservation for the session.json — emit every field the Session struct carries so the fixture is informative enough to revise architecture decisions from.
         var sess_fields = std.ArrayList(FieldObservation).empty;
         defer sess_fields.deinit(a);
         try sess_fields.append(a, .{ .dotted_path = "id", .value = s.id });
@@ -908,8 +814,7 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         // `m` is the bare model id from config.yaml / GOOSE_MODEL env.
         try applyModel(a, d, m, m);
     }
-    // decision #11: claims against the source that actually resolved
-    // each dim (env vars override the config file).
+    // decision #11: claims against the source that actually resolved each dim (env vars override the config file).
     if (provider) |p| {
         if (std.mem.eql(u8, src, "env")) {
             try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "GOOSE_PROVIDER", .value = p });
@@ -965,8 +870,7 @@ fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection)
             d.provider_name = prov;
             d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
             try applyProviderMeta(a, d, prov);
-            // canonical model_name is the bare slug; raw_input preserves the
-            // original "provider/model" string from config.toml.
+            // canonical model_name is the bare slug; raw_input preserves the original "provider/model" string from config.toml.
             try applyModel(a, d, model_only, dm);
             // build config_files FileObservation
             var fields = std.ArrayList(FieldObservation).empty;
@@ -976,8 +880,7 @@ fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection)
             const obs = try a.alloc(FileObservation, 1);
             obs[0] = .{ .path = path, .fields = fields_slice };
             d.raw.config_files = obs;
-            // decision #11: both dims were read from config.toml's
-            // `default_model` = "<provider>/<model>" value.
+            // decision #11: both dims were read from config.toml's `default_model` = "<provider>/<model>" value.
             try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "default_model", .value = dm });
             try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "default_model", .value = dm });
             break;
@@ -1002,11 +905,8 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
                     if (jstr(o, "defaultTextModel") orelse jstr(o, "model")) |m| {
                         raw_input = m;
                         config_value = m;
-                        // mmx config stores the bare model id; when a
-                        // "provider/model" prefix is present it is the
-                        // upstream provider (a "provider/model" form
-                        // exercises non-minimax combos). Bare ids keep the
-                        // intrinsic default.
+                        // mmx config stores the bare model id; when a "provider/model" prefix is present it is the upstream provider (a "provider/model" form exercises non-minimax combos).
+                        // Bare ids keep the intrinsic default.
                         const lower = std.ascii.allocLowerString(a, m) catch m;
                         const slash = std.mem.findScalar(u8, lower, '/');
                         if (slash) |i| {
@@ -1046,26 +946,15 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     }
 }
 
-// ----------------------------------------------------------------------------
-// partial-coverage harness detectors — the harnesses in the row of the
-// DESIGN.md harness table that don't have a `detectHarness_<Harness>`
-// function in this file are not real detectors; their entries below are
-// deliberately minimal so a fixture can still be captured, but the model
-// detection is a "best effort read of whatever the harness happens to
-// keep on disk", and the capture relies on the daemon's runner (see
-// CONTRIBUTING.md) to have written plausible config files into the
-// harness's data dir when the binary isn't actually running inside that
-// harness. Without that bootstrap, these detectors fall through to a
-// documented default and the fixture says so in the raw block
-// (provider-urls empty + model-urls from rulesForModels).
+// ---------------------------------------------------------------------------- partial-coverage harness detectors — the harnesses in the row of the DESIGN.md harness table that don't have a `detectHarness_<Harness>` function in this file are not real detectors;
+// their entries below are deliberately minimal so a fixture can still be captured, but the model detection is a "best effort read of whatever the harness happens to keep on disk", and the capture relies on the daemon's runner (see CONTRIBUTING.md) to have written plausible config files into the harness's data dir when the binary isn't actually running inside that harness.
+// Without that bootstrap, these detectors fall through to a documented default and the fixture says so in the raw block (provider-urls empty + model-urls from rulesForModels).
 //
 // Each function:
 //   - reads the harness's fixtures config file (or env var),
 //   - extracts provider + model from it (or the documented default),
-//   - attaches a FileObservation under raw.config_files for the
-//     config file it actually read,
-//   - applies the model + provider metadata (which populates
-//     canonical.harness_name / provider_name / model_name / etc).
+// - attaches a FileObservation under raw.config_files for the config file it actually read,
+// - applies the model + provider metadata (which populates canonical.harness_name / provider_name / model_name / etc).
 
 fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = env;
@@ -1084,11 +973,9 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     const model_name = (model_obj.object.get("name") orelse return).string;
     if (model_name.len == 0) return;
 
-    // qwen's auth.selectedType is the route key, not the underlying
-    // provider. Look at modelProviders[<key>][*].baseUrl to find the
-    // actual upstream service; the baseUrl host is mapped to the
-    // provider id (`providerForBaseUrl`). Unknown hosts default
-    // to "minimax" (the well-fixtures case: api.minimax.io).
+    // qwen's auth.selectedType is the route key, not the underlying provider.
+    // Look at modelProviders[<key>][*].baseUrl to find the actual upstream service; the baseUrl host is mapped to the provider id (`providerForBaseUrl`).
+    // Unknown hosts default to "minimax" (the well-fixtures case: api.minimax.io).
     var provider_name: []const u8 = "minimax";
     var provider_base_url: []const u8 = "";
     if (root.get("modelProviders")) |mps| {
@@ -1124,8 +1011,7 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
-    // decision #11: model read from settings.json model.name; provider
-    // derived from the modelProviders[].baseUrl host (when present).
+    // decision #11: model read from settings.json model.name; provider derived from the modelProviders[].baseUrl host (when present).
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "model.name", .value = model_name });
     if (provider_base_url.len > 0) {
         try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "modelProviders.openai[].baseUrl", .value = provider_base_url });
@@ -1139,15 +1025,9 @@ fn detectOmp(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
     defer a.free(data);
 
-    // omp's config is YAML where parent + child key can be on
-    // separate lines:
-    //   modelRoles:
-    //     default: minimax-code/MiniMax-M3
-    // We accept either form: a single line "modelRoles.default: …"
-    // or the multi-line YAML continuation, which is what the on-disk
-    // file actually uses. To resolve, walk lines, track whether we
-    // just saw a `modelRoles:` line without a value, and pick up
-    // the next indented `default:`.
+    // omp's config is YAML where parent + child key can be on separate lines: modelRoles: default: minimax-code/MiniMax-M3
+    // We accept either form: a single line "modelRoles.default: …" or the multi-line YAML continuation, which is what the on-disk file actually uses.
+    // To resolve, walk lines, track whether we just saw a `modelRoles:` line without a value, and pick up the next indented `default:`.
     var lines = std.mem.splitScalar(u8, data, '\n');
     var model_default: ?[]const u8 = null;
     var in_model_roles = false;
@@ -1197,8 +1077,7 @@ fn detectOmp(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
-    // decision #11: both dims read from config.yml's
-    // `modelRoles.default` = "<provider>/<model>".
+    // decision #11: both dims read from config.yml's `modelRoles.default` = "<provider>/<model>".
     try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "modelRoles.default", .value = dm });
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "modelRoles.default", .value = dm });
 }
@@ -1212,14 +1091,9 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     defer a.free(data);
 
     // Naive parser: scan top-level lines for `default_model = "<value>"`.
-    // The provider resolution matches default_model against the
-    // [[providers]] entries' `name` field, then reads that entry's
-    // `default` (or first `models = [...]` entry) for the actual model
-    // id. Keys are matched by the token before `=` so aligned columns
-    // (`name        = "..."`) parse the same as single-space ones; when
-    // the providers table can't be resolved (e.g. the model id equals
-    // the provider name in practice), fall back to using the
-    // default_model string as both the provider and model id.
+    // The provider resolution matches default_model against the [[providers]] entries' `name` field, then reads that entry's `default` (or first `models = [...]` entry) for the actual model id.
+    // Keys are matched by the token before `=` so aligned columns (`name        = "..."`) parse the same as single-space ones;
+    // when the providers table can't be resolved (e.g. the model id equals the provider name in practice), fall back to using the default_model string as both the provider and model id.
     var lines = std.mem.splitScalar(u8, data, '\n');
     var default_model: ?[]const u8 = null;
     while (lines.next()) |raw| {
@@ -1234,13 +1108,7 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     }
     const dm = default_model orelse return;
 
-    // walk the `[[providers]]` blocks: find the entry whose `name`
-    // equals `dm` and read its `default` (or first `models = [...]`
-    // entry) for the model id:
-    //   [[providers]]
-    //   name = "deepseek-flash"
-    //   default = "deepseek-v4-flash"
-    //   models = ["deepseek-v4-flash"]    (real configs, aligned)
+    // walk the `[[providers]]` blocks: find the entry whose `name` equals `dm` and read its `default` (or first `models = [...]` entry) for the model id: [[providers]] name = "deepseek-flash" default = "deepseek-v4-flash" models = ["deepseek-v4-flash"]    (real configs, aligned)
     const provider_name: []const u8 = dm;
     var model_name: []const u8 = dm;
     var model_field: []const u8 = "default_model";
@@ -1295,18 +1163,14 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
-    // decision #11: the provider is `default_model`; the model is the
-    // matched [[providers]] entry's `default`/`models` (both from
-    // config.toml).
+    // decision #11: the provider is `default_model`; the model is the matched [[providers]] entry's `default`/`models` (both from config.toml).
     try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "default_model", .value = dm });
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = model_field, .value = model_name });
 }
 
 fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     if (home.len == 0) return;
-    // The data directory follows the platform, not HOME: POSIX puts it
-    // at ~/.local/share/crush, Windows at %LOCALAPPDATA%\Crush (a stray
-    // ~/.local/share/crush may exist on Windows but is empty).
+    // The data directory follows the platform, not HOME: POSIX puts it at ~/.local/share/crush, Windows at %LOCALAPPDATA%\Crush (a stray ~/.local/share/crush may exist on Windows but is empty).
     var base = try std.fs.path.join(a, &.{ home, ".local/share/crush" });
     if (builtin.os.tag == .windows) {
         if (env.get("LOCALAPPDATA")) |lad| {
@@ -1316,28 +1180,19 @@ fn detectCrush(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         }
     }
     defer a.free(base);
-    // decision #11: the model actually in use is the live session store
-    // `<cwd>/.crush/crush.db` — the newest assistant message's
-    // model/provider (a `crush run -m <p>/<m>` override is only in
-    // memory, so the DB is the only place the launched run's real model
-    // is visible). Fall back to crush.json's `models.large`
-    // = {provider, model} — the picker's last selection, i.e. what an
-    // unpinned `crush run` uses (e.g. chutes' "Qwen/Qwen3.8-27B-TEE").
-    // hyper.json's `default_large_model_id` is NOT the active model
-    // (it is the hyper-provider catalog's default) and is never read
-    // as a model source: a partial chain ends undetected, not guessed.
+    // decision #11: the model actually in use is the live session store `<cwd>/.crush/crush.db` —
+    // the newest assistant message's model/provider (a `crush run -m <p>/<m>` override is only in memory, so the DB is the only place the launched run's real model is visible).
+    // Fall back to crush.json's `models.large` = {provider, model} —
+    // the picker's last selection, i.e. what an unpinned `crush run` uses (e.g. chutes' "Qwen/Qwen3.8-27B-TEE").
+    // hyper.json's `default_large_model_id` is NOT the active model (it is the hyper-provider catalog's default) and is never read as a model source: a partial chain ends undetected, not guessed.
     if (try detectCrushFromDb(a, io, env, d)) return;
     _ = try detectCrushFromCrushJson(a, io, base, d);
 }
 
-/// Read the model + provider from crush's project-local session store
-/// `<cwd>/.crush/crush.db` (same per-project layout as the kilo/
-/// opencode stores). The `messages` table carries `model`/`provider`
-/// per assistant message (chutes ids arrive namespaced, e.g.
-/// "Qwen/Qwen3.8-27B-TEE"; provider ids are bare, e.g. "hyper"). The
-/// newest assistant message is the model the session is currently
-/// serving. Partial/absent → false (the caller falls back to the
-/// config files).
+/// Read the model + provider from crush's project-local session store `<cwd>/.crush/crush.db` (same per-project layout as the kilo/ opencode stores).
+/// The `messages` table carries `model`/`provider` per assistant message (chutes ids arrive namespaced, e.g. "Qwen/Qwen3.8-27B-TEE"; provider ids are bare, e.g. "hyper").
+/// The newest assistant message is the model the session is currently serving.
+/// Partial/absent → false (the caller falls back to the config files).
 fn detectCrushFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, d: *Detection) !bool {
     const dir = currentDir(a, io, env) orelse return false;
     const db = try std.fs.path.join(a, &.{ dir, ".crush/crush.db" });
@@ -1388,9 +1243,7 @@ fn detectCrushFromCrushJson(a: std.mem.Allocator, io: std.Io, base: []const u8, 
     if (large.get("provider")) |pv| {
         if (pv.string.len > 0) prov = pv.string;
     }
-    // a provider field (or a "provider/model" spelling) names the
-    // provider the user engages with; without one, neither dim can be
-    // read without guessing — detection ends undetected.
+    // a provider field (or a "provider/model" spelling) names the provider the user engages with; without one, neither dim can be read without guessing — detection ends undetected.
     if (prov) |p| {
         try setProvider(a, d, p);
         try applyModel(a, d, model, model);
@@ -1420,11 +1273,9 @@ fn detectCrushFromCrushJson(a: std.mem.Allocator, io: std.Io, base: []const u8, 
 }
 
 /// Resolve the current working directory for session-store lookups.
-/// POSIX shells export `PWD` (the logical cwd) — use it for parity
-/// with existing behavior. Windows has no `PWD` (and git-bash's MSYS
-/// `/c/...` form would never match the session store), so use the OS
-/// current directory via `std.process.currentPathAlloc`. The returned
-/// slice is either env-owned or arena-owned; both outlive this call.
+/// POSIX shells export `PWD` (the logical cwd) — use it for parity with existing behavior.
+/// Windows has no `PWD` (and git-bash's MSYS `/c/...` form would never match the session store), so use the OS current directory via `std.process.currentPathAlloc`.
+/// The returned slice is either env-owned or arena-owned; both outlive this call.
 fn currentDir(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map) ?[]const u8 {
     if (builtin.os.tag != .windows) {
         if (env.get("PWD")) |pwd| {
@@ -1435,10 +1286,8 @@ fn currentDir(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 }
 
 fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    // Launcher sets KILO_MODEL=<provider>/<model> before capture runs;
-    // prefer that (matches the committed-trailer provider naming). Fall
-    // back to reading the live Kilo session DB for the `trailer`/`agent`
-    // actions run directly under the Kilo CLI, where KILO_MODEL is unset.
+    // Launcher sets KILO_MODEL=<provider>/<model> before capture runs; prefer that (matches the committed-trailer provider naming).
+    // Fall back to reading the live Kilo session DB for the `trailer`/`agent` actions run directly under the Kilo CLI, where KILO_MODEL is unset.
     const model_full = env.get("KILO_MODEL") orelse {
         return detectKiloFromDb(a, io, env, home, d);
     };
@@ -1453,25 +1302,17 @@ fn detectKilo(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
         try setProvider(a, d, "anthropic");
         try applyModel(a, d, model_full, model_full);
     }
-    // kilo has no config file — the KILO_MODEL value lives in
-    // raw.env_vars (added by applyModel via the env block), not in
-    // a fake config_file entry. Leaving config_files empty keeps the
-    // raw block honest. The evidence claims point at the KILO_MODEL
-    // env observation, whose value carries "<provider>/<model>".
+    // kilo has no config file — the KILO_MODEL value lives in raw.env_vars (added by applyModel via the env block), not in a fake config_file entry.
+    // Leaving config_files empty keeps the raw block honest.
+    // The evidence claims point at the KILO_MODEL env observation, whose value carries "<provider>/<model>".
     try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "KILO_MODEL", .value = model_full });
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "KILO_MODEL", .value = model_full });
 }
 
-/// Kilo does not export the active model to child processes, but it
-/// records it in the session store `~/.local/share/kilo/kilo.db`. Read
-/// that read-only via the `sqlite3` CLI: resolve the *active* session —
-/// the non-archived session whose newest message was written in the
-/// current working directory — and read the model from that message's
-/// data (carried at creation time), not from the session row's
-/// `session.model` column (which kilo writes lazily and which
-/// `ORDER BY time_updated DESC` can misattribute to a different
-/// window's session). Partial/absent → no-op (the caller falls back to
-/// leaving detection unresolved).
+/// Kilo does not export the active model to child processes, but it records it in the session store `~/.local/share/kilo/kilo.db`.
+/// Read that read-only via the `sqlite3` CLI: resolve the *active* session — the non-archived session whose newest message was written in the current working directory —
+/// and read the model from that message's data (carried at creation time), not from the session row's `session.model` column (which kilo writes lazily and which `ORDER BY time_updated DESC` can misattribute to a different window's session).
+/// Partial/absent → no-op (the caller falls back to leaving detection unresolved).
 fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     if (home.len == 0) return;
     const dir = currentDir(a, io, env) orelse return;
@@ -1480,9 +1321,7 @@ fn detectKiloFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.En
     const mm = (try detectActiveSessionModel(a, io, db, dir)) orelse return;
     try setProvider(a, d, mm.provider_id);
     try applyModel(a, d, stripBuildStamp(a, mm.model_full), mm.model_full);
-    // decision #11: the live session store is the source for both dims —
-    // record the db read so a real-session fixture's evidence chain is
-    // complete (the env path above already claims KILO_MODEL).
+    // decision #11: the live session store is the source for both dims — record the db read so a real-session fixture's evidence chain is complete (the env path above already claims KILO_MODEL).
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
     try fields.append(a, .{ .dotted_path = "session.model.providerID", .value = mm.provider_id });
@@ -1500,32 +1339,20 @@ pub const ActiveSessionModel = struct {
     model_full: []const u8,
 };
 
-/// Resolve the *active* session's model from a kilo/opencode-format
-/// session store (`~/.local/share/kilo/kilo.db` / `~/.local/share/
-/// opencode/opencode.db`). Both harnesses use the same schema: a
-/// `session` table (with `directory`, `time_archived`, and a
-/// lazily-written `model` JSON column) plus a `message` table whose
-/// `data` JSON carries the model at message-creation time.
+/// Resolve the *active* session's model from a kilo/opencode-format session store (`~/.local/share/kilo/kilo.db` / `~/.local/share/ opencode/opencode.db`).
+/// Both harnesses use the same schema: a `session` table (with `directory`, `time_archived`, and a lazily-written `model` JSON column) plus a `message` table whose `data` JSON carries the model at message-creation time.
 ///
-/// The active session is the non-archived session in `dir` whose newest
-/// `message.time_created` is most recent — real conversational activity,
-/// not the session row's `time_updated` (which background syncs, title
-/// generation, and compaction bump for any session in the directory,
-/// including other windows'). The message data is preferred over
-/// `session.model` because it is written at creation time (assistant
-/// messages carry flat `modelID`/`providerID`; user messages nest them
-/// under `model`), whereas `session.model` can be null for minutes after
-/// a session starts. Falls back to `session.model` only when the newest
-/// message lacks model info. Partial/absent → null (caller leaves
-/// detection unresolved).
+/// The active session is the non-archived session in `dir` whose newest `message.time_created` is most recent —
+/// real conversational activity, not the session row's `time_updated` (which background syncs, title generation, and compaction bump for any session in the directory, including other windows').
+/// The message data is preferred over `session.model` because it is written at creation time (assistant messages carry flat `modelID`/`providerID`; user messages nest them under `model`), whereas `session.model` can be null for minutes after a session starts.
+/// Falls back to `session.model` only when the newest message lacks model info.
+/// Partial/absent → null (caller leaves detection unresolved).
 fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, dir: []const u8) !?ActiveSessionModel {
     if (db.len == 0 or dir.len == 0) return null;
     if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return null;
 
     // quote dir into a SQL string literal (single-quote doubling).
-    // Windows stores session directories with forward slashes while
-    // `currentPathAlloc` returns backslashes — normalize separators so
-    // the exact match finds the active session (POSIX is a no-op).
+    // Windows stores session directories with forward slashes while `currentPathAlloc` returns backslashes — normalize separators so the exact match finds the active session (POSIX is a no-op).
     var dir_lit: std.ArrayList(u8) = .empty;
     defer dir_lit.deinit(a);
     try dir_lit.append(a, '\'');
@@ -1539,10 +1366,8 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
     }
     try dir_lit.append(a, '\'');
 
-    // newest message in a non-archived session for `dir` — the session
-    // that owns it is the active one. Read its data JSON and the
-    // session row's model JSON in one row so the message path can fall
-    // back to the (lazily-written) session column.
+    // newest message in a non-archived session for `dir` — the session that owns it is the active one.
+    // Read its data JSON and the session row's model JSON in one row so the message path can fall back to the (lazily-written) session column.
     const sql = try std.fmt.allocPrint(a,
         \\SELECT m.data, s.model FROM message m JOIN session s ON s.id = m.session_id
         \\WHERE s.directory={s} AND s.time_archived IS NULL
@@ -1565,8 +1390,7 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
             if (try modelFromMessageData(a, md.string)) |mm| return mm;
         }
     }
-    // fallback: the session row's model JSON
-    // {"id":"deepseek-v4-flash-0731","providerID":"hyper"}
+    // fallback: the session row's model JSON {"id":"deepseek-v4-flash-0731","providerID":"hyper"}
     if (row.object.get("model")) |sm| {
         if (sm == .string and sm.string.len > 0) {
             if (try modelFromSessionRow(a, sm.string)) |mm| return mm;
@@ -1575,8 +1399,7 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
     return null;
 }
 
-/// Extract `providerID` + `modelID` from a kilo/opencode message `data`
-/// JSON string. Returns null when the message carries no model info.
+/// Extract `providerID` + `modelID` from a kilo/opencode message `data` JSON string. Returns null when the message carries no model info.
 pub fn modelFromMessageData(a: std.mem.Allocator, data: []const u8) !?ActiveSessionModel {
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
     const o = switch (parsed.value) {
@@ -1598,8 +1421,7 @@ pub fn modelFromMessageData(a: std.mem.Allocator, data: []const u8) !?ActiveSess
     return .{ .provider_id = provider_id.?, .model_full = model_full.? };
 }
 
-/// Extract `providerID` + `id` from a kilo/opencode session-row `model`
-/// JSON string (e.g. `{"id":"deepseek-v4-flash-0731","providerID":"hyper"}`).
+/// Extract `providerID` + `id` from a kilo/opencode session-row `model` JSON string (e.g. `{"id":"deepseek-v4-flash-0731","providerID":"hyper"}`).
 pub fn modelFromSessionRow(a: std.mem.Allocator, model_str: []const u8) !?ActiveSessionModel {
     const parsed = std.json.parseFromSlice(std.json.Value, a, model_str, .{}) catch return null;
     const o = switch (parsed.value) {
@@ -1611,11 +1433,9 @@ pub fn modelFromSessionRow(a: std.mem.Allocator, model_str: []const u8) !?Active
     return .{ .provider_id = provider_id, .model_full = model_full };
 }
 
-/// read a spawned child's stdout (`stderr=false`) or stderr
-/// (`stderr=true`) to EOF, returning the collected bytes (caller frees).
-/// The stderr variant is bounded at 64 KiB — diagnostics are truncated
-/// rather than allowed to grow unbounded. The caller still owns
-/// `child.wait`.
+/// read a spawned child's stdout (`stderr=false`) or stderr (`stderr=true`) to EOF, returning the collected bytes (caller frees).
+/// The stderr variant is bounded at 64 KiB — diagnostics are truncated rather than allowed to grow unbounded.
+/// The caller still owns `child.wait`.
 pub fn readChildOutput(a: std.mem.Allocator, io: std.Io, child: std.process.Child, comptime stderr: bool) ![]u8 {
     var out: std.ArrayList(u8) = .empty;
     errdefer out.deinit(a);
@@ -1631,14 +1451,9 @@ pub fn readChildOutput(a: std.mem.Allocator, io: std.Io, child: std.process.Chil
     return out.toOwnedSlice(a);
 }
 
-/// spawn `sqlite3 -json <db> <sql>`; return stdout. Caller owns the
-/// returned slice — do NOT free it here: the caller's JSON parse
-/// aliases into it, and Zig 0.16's arena free-list would reclaim
-/// this most-recent allocation into the parse's own allocations
-/// (use-after-free clobbering the bytes mid-parse).
-/// The dev fixtures store no longer shells out to sqlite — the
-/// released binary's read-only session-store reads (kilo/opencode/
-/// copilot DBs) are the only sqlite use left.
+/// spawn `sqlite3 -json <db> <sql>`; return stdout.
+/// Caller owns the returned slice — do NOT free it here: the caller's JSON parse aliases into it, and Zig 0.16's arena free-list would reclaim this most-recent allocation into the parse's own allocations (use-after-free clobbering the bytes mid-parse).
+/// The dev fixtures store no longer shells out to sqlite — the released binary's read-only session-store reads (kilo/opencode/ copilot DBs) are the only sqlite use left.
 fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
     const db_z = try a.dupeZ(u8, db);
     defer a.free(db_z);
@@ -1657,9 +1472,7 @@ fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const
     return out;
 }
 
-/// strip a trailing `-NNN` build stamp (e.g. `deepseek-v4-flash-0731` →
-/// `deepseek-v4-flash`) so the id matches the model rule. No-op when the
-/// last dash-segment isn't 1+ digits.
+/// strip a trailing `-NNN` build stamp (e.g. `deepseek-v4-flash-0731` → `deepseek-v4-flash`) so the id matches the model rule. No-op when the last dash-segment isn't 1+ digits.
 fn stripBuildStamp(a: std.mem.Allocator, name: []const u8) []const u8 {
     const dash = std.mem.lastIndexOfScalar(u8, name, '-') orelse return name;
     const stamp = name[dash + 1 ..];
@@ -1671,11 +1484,8 @@ fn stripBuildStamp(a: std.mem.Allocator, name: []const u8) []const u8 {
 }
 
 fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    // opencode doesn't persist current-model in a config file. The
-    // launcher sets OPENCODE_MODEL="<provider>/<model>"; in a real
-    // session opencode stores the model in sqlite (`opencode.db`,
-    // `session.model` JSON with `providerID`/`id`), so fall back to the
-    // latest session when the env var is absent.
+    // opencode doesn't persist current-model in a config file.
+    // The launcher sets OPENCODE_MODEL="<provider>/<model>"; in a real session opencode stores the model in sqlite (`opencode.db`, `session.model` JSON with `providerID`/`id`), so fall back to the latest session when the env var is absent.
     if (env.get("OPENCODE_MODEL")) |model_full| {
         if (model_full.len == 0) return;
         const slash = std.mem.findScalar(u8, model_full, '/');
@@ -1692,18 +1502,15 @@ fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
             try applyProviderMeta(a, d, "anthropic");
             try applyModel(a, d, model_full, model_full);
         }
-        // opencode has no config file — the OPENCODE_MODEL value lives
-        // in raw.env_vars, not in a fake config_file entry.
+        // opencode has no config file — the OPENCODE_MODEL value lives in raw.env_vars, not in a fake config_file entry.
         try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
         try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
         return;
     }
 
-    // real opencode session: the active session's model in the sqlite
-    // store (`~/.local/share/opencode/opencode.db`). Same schema as
-    // kilo's — active = non-archived session for the cwd with the
-    // newest message; model read from that message's data (written at
-    // creation time), not the lazily-written session.model column.
+    // real opencode session: the active session's model in the sqlite store (`~/.local/share/opencode/opencode.db`).
+    // Same schema as kilo's — active = non-archived session for the cwd with the newest message;
+    // model read from that message's data (written at creation time), not the lazily-written session.model column.
     if (home.len == 0) return;
     const dir = currentDir(a, io, env) orelse return;
     const db = try std.fs.path.join(a, &.{ home, ".local/share/opencode/opencode.db" });
@@ -1723,9 +1530,7 @@ fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = mm.model_full });
 }
 
-/// quote a path into a SQL string literal (single-quote doubling;
-/// backslashes normalized to forward slashes on Windows, mirroring
-/// detectActiveSessionModel). Caller frees.
+/// quote a path into a SQL string literal (single-quote doubling; backslashes normalized to forward slashes on Windows, mirroring detectActiveSessionModel). Caller frees.
 fn sqlStringLit(a: std.mem.Allocator, dir: []const u8) ![]u8 {
     var lit: std.ArrayList(u8) = .empty;
     try lit.append(a, '\'');
@@ -1742,11 +1547,8 @@ fn sqlStringLit(a: std.mem.Allocator, dir: []const u8) ![]u8 {
 }
 
 fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    // Hermes's own launcher override — HERMES_MODEL carries the model
-    // (bare id or "provider/model"); HERMES_PROVIDER pins the provider
-    // when the model id is bare. The daemon uses these to capture a
-    // chosen combo (`hermes chat --provider P -m M`) without touching
-    // the user's config (the global-settings rule).
+    // Hermes's own launcher override — HERMES_MODEL carries the model (bare id or "provider/model"); HERMES_PROVIDER pins the provider when the model id is bare.
+    // The daemon uses these to capture a chosen combo (`hermes chat --provider P -m M`) without touching the user's config (the global-settings rule).
     if (env.get("HERMES_MODEL")) |model_full| {
         if (model_full.len > 0) {
             const slash = std.mem.findScalar(u8, model_full, '/');
@@ -1766,21 +1568,14 @@ fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
         }
     }
 
-    // Session-store resolution. A real session's truth is the sqlite
-    // store (`$HERMES_HOME`/state.db): `session_model_usage` carries the
-    // (model, billing_provider) per API call — written per call, so it
-    // reflects `-m`/`--provider` overrides that config.yaml never sees.
-    // The active session is the non-archived session for the cwd with
-    // the newest usage row (cwd-matched first — desktop/gateway sessions
-    // record no cwd and fall through to the newest row overall);
-    // `task=''` rows (the main agent loop) are preferred over background
-    // tasks (title_generation / compression / vision / approval), newest
-    // `last_seen` within each class.
+    // Session-store resolution.
+    // A real session's truth is the sqlite store (`$HERMES_HOME`/state.db): `session_model_usage` carries the (model, billing_provider) per API call — written per call, so it reflects `-m`/`--provider` overrides that config.yaml never sees.
+    // The active session is the non-archived session for the cwd with the newest usage row (cwd-matched first — desktop/gateway sessions record no cwd and fall through to the newest row overall);
+    // `task=''` rows (the main agent loop) are preferred over background tasks (title_generation / compression / vision / approval), newest `last_seen` within each class.
     if (home.len > 0) {
         const hermes_home = env.get("HERMES_HOME") orelse try std.fmt.allocPrint(a, "{s}/.hermes", .{home});
         var db: []const u8 = try std.fmt.allocPrint(a, "{s}/state.db", .{hermes_home});
-        // profile-aware: HERMES_PROFILE (non-default) moves the store
-        // under `<hermes_home>/profiles/<profile>/` (hermes_constants).
+        // profile-aware: HERMES_PROFILE (non-default) moves the store under `<hermes_home>/profiles/<profile>/` (hermes_constants).
         if (env.get("HERMES_PROFILE")) |prof| {
             if (prof.len > 0 and !std.mem.eql(u8, prof, "default")) {
                 const prof_db = try std.fmt.allocPrint(a, "{s}/profiles/{s}/state.db", .{ hermes_home, prof });
@@ -1839,9 +1634,7 @@ fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
         }
     }
 
-    // Config fallback — the committed default (config.yaml `model:` block:
-    // `default:` + `provider:`). Only reached when neither the launcher
-    // env nor the session store resolved the combo.
+    // Config fallback — the committed default (config.yaml `model:` block: `default:` + `provider:`). Only reached when neither the launcher env nor the session store resolved the combo.
     if (home.len == 0) return;
     const cfg_home = env.get("HERMES_HOME") orelse try std.fmt.allocPrint(a, "{s}/.hermes", .{home});
     const path = try std.fmt.allocPrint(a, "{s}/config.yaml", .{cfg_home});
@@ -1892,19 +1685,16 @@ fn yamlScalar(a: std.mem.Allocator, v: []const u8) ?[]const u8 {
     return a.dupe(u8, t) catch null;
 }
 
-/// spawn `sqlite3 -json <db> <sql>` for the Hermes session store — a
-/// thin alias over kiloSqliteJson (the spawned-sqlite3 reader is shared).
+/// spawn `sqlite3 -json <db> <sql>` for the Hermes session store — a thin alias over kiloSqliteJson (the spawned-sqlite3 reader is shared).
 fn hermesSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
     return kiloSqliteJson(a, io, db, sql);
 }
 
 fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = io;
-    // vibe's documented override: VIBE_ACTIVE_MODEL=<name> sets the
-    // active model without going through the config. Launcher uses
-    // this to capture whatever model the user is currently running.
-    // Mistral Vibe is a Mistral product, so the underlying provider is
-    // Mistral unless the launcher overrides it (VIBE_ACTIVE_PROVIDER).
+    // vibe's documented override: VIBE_ACTIVE_MODEL=<name> sets the active model without going through the config.
+    // Launcher uses this to capture whatever model the user is currently running.
+    // Mistral Vibe is a Mistral product, so the underlying provider is Mistral unless the launcher overrides it (VIBE_ACTIVE_PROVIDER).
     const model_name = env.get("VIBE_ACTIVE_MODEL") orelse return;
     if (model_name.len == 0) return;
     const provider_id = env.get("VIBE_ACTIVE_PROVIDER") orelse "mistral";
@@ -1928,13 +1718,10 @@ fn detectVibe(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 }
 
 fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    // pi: harness-only by design for the env path; real pi sessions set
-    // no PI_* env vars, so when both are unset we read the real
-    // defaults from `~/.pi/agent/settings.json` (`defaultProvider` /
-    // `defaultModel`). The env path (both set) is the launcher stand-in
-    // and stays unchanged — its evidence claims record exactly what was
-    // used, and the raw.env observation shows `present` so a reviewer
-    // can tell a launcher-set value from a default.
+    // pi: harness-only by design for the env path;
+    // real pi sessions set no PI_* env vars, so when both are unset we read the real defaults from `~/.pi/agent/settings.json` (`defaultProvider` / `defaultModel`).
+    // The env path (both set) is the launcher stand-in and stays unchanged —
+    // its evidence claims record exactly what was used, and the raw.env observation shows `present` so a reviewer can tell a launcher-set value from a default.
     const provider_env = env.get("PI_PROVIDER");
     const model_env = env.get("PI_MODEL");
     if (provider_env != null and model_env != null) {
@@ -1984,27 +1771,20 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "defaultModel", .value = model });
 }
 
-/// map ZCode's provider keys onto agent-detect's canonical provider
-/// ids. The app's bundled coding plan records providerId
-/// `builtin:zai-start-plan` (agent-detect calls that surface `zcode`,
-/// mirroring `zai`). Custom providers (source: "custom") carry opaque
-/// per-install keys — their human name lives in
-/// `~/.zcode/v2/config.json` under `provider.<key>.name`, read by the
-/// caller. Unknown keys pass through (never-guess).
+/// map ZCode's provider keys onto agent-detect's canonical provider ids.
+/// The app's bundled coding plan records providerId `builtin:zai-start-plan` (agent-detect calls that surface `zcode`, mirroring `zai`).
+/// Custom providers (source: "custom") carry opaque per-install keys — their human name lives in `~/.zcode/v2/config.json` under `provider.<key>.name`, read by the caller.
+/// Unknown keys pass through (never-guess).
 fn zcodeProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
     if (std.mem.indexOf(u8, provider, "zai-start-plan") != null) return a.dupe(u8, "zcode");
     return provider;
 }
 
 /// the human name ZCode's config records for a provider key, or null.
-/// `~/.zcode/v2/config.json` → `provider.<key>.name` (e.g. the custom
-/// ollama provider's `name: "ollama"`). The caller records the config
-/// observation; this returns just the display name.
-/// a custom provider key's configured identity from
-/// `~/.zcode/v2/config.json` — the display name
-/// (`provider.<key>.name`) and the endpoint
-/// (`provider.<key>.options.baseURL`), one file read for both. Empty
-/// fields mean the entry (or the whole file) is absent.
+/// `~/.zcode/v2/config.json` → `provider.<key>.name` (e.g. the custom ollama provider's `name: "ollama"`).
+/// The caller records the config observation; this returns just the display name.
+/// a custom provider key's configured identity from `~/.zcode/v2/config.json` — the display name (`provider.<key>.name`) and the endpoint (`provider.<key>.options.baseURL`), one file read for both.
+/// Empty fields mean the entry (or the whole file) is absent.
 const ZcodeCustomProvider = struct { name: []const u8 = "", base_url: []const u8 = "" };
 fn zcodeCustomProviderFromConfig(a: std.mem.Allocator, io: std.Io, home: []const u8, key: []const u8) ?ZcodeCustomProvider {
     if (key.len == 0) return null;
@@ -2032,14 +1812,9 @@ fn zcodeCustomProviderFromConfig(a: std.mem.Allocator, io: std.Io, home: []const
     return out;
 }
 
-/// fold a custom provider's endpoint host onto the canonical provider
-/// id it actually names — the URL is the identity of the real surface,
-/// stronger than the user-chosen display name (the detectAutoClaw
-/// baseUrl-fold precedent). Known hosts only; anything else returns
-/// null and the name path decides (never-guess). This is also the
-/// mechanism the deferred ollama local/cloud individuation rides
-/// (DESIGN.md decision #15): ollama.com is the cloud API, while local
-/// runtimes (localhost/LAN) stay on the name path.
+/// fold a custom provider's endpoint host onto the canonical provider id it actually names — the URL is the identity of the real surface, stronger than the user-chosen display name (the detectAutoClaw baseUrl-fold precedent).
+/// Known hosts only; anything else returns null and the name path decides (never-guess).
+/// This is also the mechanism the deferred ollama local/cloud individuation rides (DESIGN.md decision #15): ollama.com is the cloud API, while local runtimes (localhost/LAN) stay on the name path.
 fn providerHostFold(base_url: []const u8) ?[]const u8 {
     if (std.mem.indexOf(u8, base_url, "inference.phala.com") != null) return "phala";
     if (std.mem.indexOf(u8, base_url, "ollama.com") != null) return "ollama";
@@ -2047,27 +1822,18 @@ fn providerHostFold(base_url: []const u8) ?[]const u8 {
 }
 
 fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    // ZCode desktop app: the app version rides the ZCODE_APP_VERSION
-    // marker into every child session's env. The active provider/model
-    // pair comes from the session stores under ~/.zcode — the
-    // per-session model-io rollout files (whose newest `main`-role
-    // record carries the exact providerId/modelId the session is
-    // running), cross-referenced by the v2 settings' selected provider
-    // family when no rollout has been written yet.
+    // ZCode desktop app: the app version rides the ZCODE_APP_VERSION marker into every child session's env.
+    // The active provider/model pair comes from the session stores under ~/.zcode —
+    // the per-session model-io rollout files (whose newest `main`-role record carries the exact providerId/modelId the session is running), cross-referenced by the v2 settings' selected provider family when no rollout has been written yet.
     if (env.get("ZCODE_APP_VERSION")) |v| {
         if (v.len > 0) d.harness_version = try a.dupe(u8, v);
     }
     if (home.len == 0) return;
     const cwd_dir = std.Io.Dir.cwd();
 
-    // session side: ~/.zcode/cli/rollout/model-io-sess_*.jsonl — one
-    // append-only JSONL per session; records carry completedAt (ISO-8601,
-    // lexicographic order = chronological) and model {providerId,
-    // modelId, role}. The global winner is the main-role record with the
-    // newest completedAt across files. Reads are capped per file and in
-    // total so a machine stacked with old sessions still detects fast;
-    // values are duped before each buffer is freed (never free a slice
-    // the result aliases).
+    // session side: ~/.zcode/cli/rollout/model-io-sess_*.jsonl — one append-only JSONL per session; records carry completedAt (ISO-8601, lexicographic order = chronological) and model {providerId, modelId, role}.
+    // The global winner is the main-role record with the newest completedAt across files.
+    // Reads are capped per file and in total so a machine stacked with old sessions still detects fast; values are duped before each buffer is freed (never free a slice the result aliases).
     const rollout_dir_path = try std.fmt.allocPrint(a, "{s}/.zcode/cli/rollout", .{home});
     const best: ?struct { completed_at: []const u8, provider: []const u8, model: []const u8, path: []const u8 } = blk: {
         var dir = cwd_dir.openDir(io, rollout_dir_path, .{ .iterate = true }) catch break :blk null;
@@ -2121,16 +1887,9 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     if (best) |b| {
         if (b.model.len > 0) {
             if (b.provider.len > 0) {
-                // bundled-plan keys map to `zcode` directly; custom keys
-                // are opaque per-install ids — their identity comes from
-                // `~/.zcode/v2/config.json` (one read for both fields):
-                // the endpoint host (`provider.<key>.options.baseURL`,
-                // the stronger signal — folded via providerHostFold,
-                // e.g. inference.phala.com → `phala`) and, failing that,
-                // the display name (`provider.<key>.name`, e.g. the
-                // custom "ollama" local runtime on localhost:11434 —
-                // observed 2026-09-06, and the phala custom provider
-                // observed 2026-09-07).
+                // bundled-plan keys map to `zcode` directly;
+                // custom keys are opaque per-install ids —
+                // their identity comes from `~/.zcode/v2/config.json` (one read for both fields): the endpoint host (`provider.<key>.options.baseURL`, the stronger signal — folded via providerHostFold, e.g. inference.phala.com → `phala`) and, failing that, the display name (`provider.<key>.name`, e.g. the custom "ollama" local runtime on localhost:11434 — observed 2026-09-06, and the phala custom provider observed 2026-09-07).
                 var canon = try zcodeProviderCanonical(a, b.provider);
                 var config_obs: ?FileObservation = null;
                 if (std.mem.eql(u8, canon, b.provider)) {
@@ -2186,10 +1945,8 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         }
     }
 
-    // config side: ~/.zcode/v2/setting.json — the selected provider
-    // family and the training toggle. Family is the fallback for the
-    // provider dim when no rollout record resolved one; both are
-    // recorded as observations either way.
+    // config side: ~/.zcode/v2/setting.json — the selected provider family and the training toggle.
+    // Family is the fallback for the provider dim when no rollout record resolved one; both are recorded as observations either way.
     const settings_path = try std.fmt.allocPrint(a, "{s}/.zcode/v2/setting.json", .{home});
     var config_fields = std.ArrayList(FieldObservation).empty;
     defer config_fields.deinit(a);
@@ -2197,22 +1954,11 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         if (std.json.parseFromSlice(std.json.Value, a, sdata, .{}) catch null) |parsed| {
             defer parsed.deinit();
             if (parsed.value == .object) {
-                // training side: `optimizeAgentExperienceEnabled` is the
-                // persisted "Improve experience" toggle ("Allow us to
-                // use your conversations to improve the Agent
-                // experience") — the harness-training instance state,
-                // resolved per field into the shared vocabulary:
-                //   false → conversations verified not used at all →
-                //     open/closed both "never"
-                //   true → training actively happens on the GLM line →
-                //     open "enforced"; whether any closed
-                //     model is involved is undeterminable (Z.ai serves
-                //     one closed model, GLM-ASR-2512) → closed
-                //     "NOASSERTION" — the looked-but-unclear fail-safe
-                //   key absent (or non-bool) in an otherwise-present
-                //     store → both "NOASSERTION" (looked, no answer)
-                // A missing file leaves both dims null (no data → the
-                // exit-9 nudge).
+                // training side: `optimizeAgentExperienceEnabled` is the persisted "Improve experience" toggle ("Allow us to use your conversations to improve the Agent experience") —
+                // the harness-training instance state, resolved per field into the shared vocabulary: false → conversations verified not used at all → open/closed both "never" true → training actively happens on the GLM line → open "enforced";
+                // whether any closed model is involved is undeterminable (Z.ai serves one closed model, GLM-ASR-2512) → closed "NOASSERTION" —
+                // the looked-but-unclear fail-safe key absent (or non-bool) in an otherwise-present store → both "NOASSERTION" (looked, no answer)
+                // A missing file leaves both dims null (no data → the exit-9 nudge).
                 if (parsed.value.object.get("optimizeAgentExperienceEnabled")) |oe| {
                     if (oe == .bool) {
                         const raw: []const u8 = if (oe.bool) "true" else "false";
@@ -2269,8 +2015,7 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
             const fields_slice = try config_fields.toOwnedSlice(a);
             const obs_slice = try a.alloc(FileObservation, 1);
             obs_slice[0] = .{ .path = settings_path, .fields = fields_slice };
-            // append after any session-branch observations (rollout +
-            // provider-config), never overwrite them.
+            // append after any session-branch observations (rollout + provider-config), never overwrite them.
             var obs_list = std.ArrayList(FileObservation).empty;
             try obs_list.appendSlice(a, d.raw.config_files);
             try obs_list.append(a, obs_slice[0]);
@@ -2279,15 +2024,9 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     }
 }
 
-/// AutoClaw detection — the OpenClaw gateway packaged as Zhipu's desktop
-/// app. Ladder (the why lives in the rule comments): state dir
-/// (OPENCLAW_STATE_DIR, else ~/.openclaw-autoclaw) → session store
-/// (OPENCLAW_AGENT_SESSION_KEY → sessions.json → the newest assistant
-/// record's message.provider/message.model) → runtime-config fallback
-/// (.agents pinned/primary model), with the provider surface folded via
-/// models.providers[key].baseUrl (the bundled autoclaw-proxy channel vs
-/// a user-configured direct upstream). Partial detection is honest: a
-/// dim that doesn't resolve stays unset.
+/// AutoClaw detection — the OpenClaw gateway packaged as Zhipu's desktop app.
+/// Ladder (the why lives in the rule comments): state dir (OPENCLAW_STATE_DIR, else ~/.openclaw-autoclaw) → session store (OPENCLAW_AGENT_SESSION_KEY → sessions.json → the newest assistant record's message.provider/message.model) → runtime-config fallback (.agents pinned/primary model), with the provider surface folded via models.providers[key].baseUrl (the bundled autoclaw-proxy channel vs a user-configured direct upstream).
+/// Partial detection is honest: a dim that doesn't resolve stays unset.
 fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     const cwd_dir = std.Io.Dir.cwd();
     // 1. state dir: the gateway's OPENCLAW_STATE_DIR, else the AutoClaw
@@ -2299,10 +2038,8 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     }
 
     // 2. session store (primary): OPENCLAW_AGENT_SESSION_KEY spells
-    // "agent:<agentId>:<sessionId>"; sessions.json keys the ORIGINAL full key to
-    // the sessionFile transcript, whose newest assistant record carries
-    // message.provider/message.model. Values are duped before each
-    // buffer/parse is freed (never free a slice the result aliases).
+    // "agent:<agentId>:<sessionId>"; sessions.json keys the ORIGINAL full key to the sessionFile transcript, whose newest assistant record carries message.provider/message.model.
+    // Values are duped before each buffer/parse is freed (never free a slice the result aliases).
     var agent_id: []const u8 = "";
     var session_file: ?[]const u8 = null;
     var session_provider: ?[]const u8 = null;
@@ -2311,10 +2048,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
         const full_key = std.mem.trim(u8, raw_key, " \t\r\n");
         var rest = full_key;
         if (std.mem.startsWith(u8, rest, "agent:")) rest = rest["agent:".len..];
-        // "agent:<agentId>:<sessionId>" — the agent id is the MIDDLE
-        // segment (observed: "agent:auto-coder:67a129d6", store at
-        // agents/auto-coder/sessions/); the trailing segment is the
-        // session id.
+        // "agent:<agentId>:<sessionId>" — the agent id is the MIDDLE segment (observed: "agent:auto-coder:67a129d6", store at agents/auto-coder/sessions/); the trailing segment is the session id.
         agent_id = if (std.mem.findScalar(u8, rest, ':')) |i| rest[0..i] else rest;
         if (full_key.len > 0 and agent_id.len > 0) {
             const store_path = try std.fmt.allocPrint(a, "{s}/agents/{s}/sessions/sessions.json", .{ state, agent_id });
@@ -2338,8 +2072,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     if (session_file) |sf| {
         if (cwd_dir.readFileAlloc(io, sf, a, @enumFromInt(1 << 25)) catch null) |data| {
             defer a.free(data);
-            // scan BACKWARDS — the newest assistant record sits at the
-            // tail of the append-only transcript (the detectZcode idiom).
+            // scan BACKWARDS — the newest assistant record sits at the tail of the append-only transcript (the detectZcode idiom).
             var lines = std.mem.splitBackwardsScalar(u8, data, '\n');
             while (lines.next()) |line| {
                 const trimmed = std.mem.trim(u8, line, " \t\r");
@@ -2380,9 +2113,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
         }
     }
 
-    // 3./4. runtime config — the model fallback (.agents.list pin, else
-    // the defaults' primary, spelled "<providerKey>/<modelId>") and the
-    // provider-surface fold (models.providers[<key>].baseUrl).
+    // 3./4. runtime config — the model fallback (.agents.list pin, else the defaults' primary, spelled "<providerKey>/<modelId>") and the provider-surface fold (models.providers[<key>].baseUrl).
     const cfg_path = blk: {
         if (env.get("OPENCLAW_CONFIG_PATH")) |p| {
             if (p.len > 0) break :blk p;
@@ -2404,8 +2135,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
             defer parsed.deinit();
             if (parsed.value == .object) {
                 const root = parsed.value.object;
-                // model fallback: the agent's pinned model, else the
-                // defaults' primary (both "<providerKey>/<modelId>").
+                // model fallback: the agent's pinned model, else the defaults' primary (both "<providerKey>/<modelId>").
                 if (session_model == null) {
                     if (root.get("agents")) |ag| {
                         if (ag == .object) {
@@ -2444,9 +2174,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
                         }
                     }
                 }
-                // split "<providerKey>/<modelId>" at the LAST '/' — no
-                // '/' means a bare model id with the provider segment
-                // unset.
+                // split "<providerKey>/<modelId>" at the LAST '/' — no '/' means a bare model id with the provider segment unset.
                 if (config_model_str) |ms| {
                     if (std.mem.findScalarLast(u8, ms, '/')) |i| {
                         config_provider_seg = ms[0..i];
@@ -2457,9 +2185,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
                     if (surface_key.len == 0) surface_key = config_provider_seg;
                     try config_fields.append(a, .{ .dotted_path = config_model_field.?, .value = ms });
                 }
-                // provider surface: models.providers[<key>].baseUrl —
-                // recorded whenever read; the fold decision happens
-                // below.
+                // provider surface: models.providers[<key>].baseUrl — recorded whenever read; the fold decision happens below.
                 if (surface_key.len > 0) {
                     if (root.get("models")) |mos| {
                         if (mos == .object) {
@@ -2487,10 +2213,8 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
         }
     }
     // 4. provider surface resolution: the bundled channel's
-    // autoclaw-proxy/autoglm.ai baseUrl folds to `autoclaw`; anything
-    // else passes the raw key through (canonicalIdFor folds known keys;
-    // unknown ids stay raw — never-guess). No key → the dim stays unset
-    // (partial detection is honest).
+    // autoclaw-proxy/autoglm.ai baseUrl folds to `autoclaw`; anything else passes the raw key through (canonicalIdFor folds known keys; unknown ids stay raw — never-guess).
+    // No key → the dim stays unset (partial detection is honest).
     if (surface_key.len > 0) {
         var folded = false;
         if (base_url) |bu| {
@@ -2502,26 +2226,21 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
         }
         if (!folded) {
             try setProvider(a, d, surface_key);
-            // the config model string is the provider evidence when the
-            // session store didn't carry one.
+            // the config model string is the provider evidence when the session store didn't carry one.
             if (session_provider == null and config_model_str != null) {
                 try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = cfg_path, .field = config_model_field.?, .value = config_model_str.? });
             }
         }
     }
     // 5. model — pinned ids fold through the rule's variations; the Auto
-    // router aliases (zai_auto / zai_auto-fast) pass through unruled via
-    // applyModel's unknown-id passthrough (the accepted limitation —
-    // never special-cased).
+    // router aliases (zai_auto / zai_auto-fast) pass through unruled via applyModel's unknown-id passthrough (the accepted limitation — never special-cased).
     if (session_model) |sm| {
         try applyModel(a, d, sm, sm);
     } else if (config_model_id.len > 0) {
         try applyModel(a, d, config_model_id, config_model_str.?);
         try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = cfg_path, .field = config_model_field.?, .value = config_model_str.? });
     }
-    // config_files observation — assembled from the fields the config
-    // actually yielded (model fallback + provider baseUrl), appended
-    // after any session-branch observation, never overwriting it.
+    // config_files observation — assembled from the fields the config actually yielded (model fallback + provider baseUrl), appended after any session-branch observation, never overwriting it.
     if (config_fields.items.len > 0) {
         const fields_slice = try config_fields.toOwnedSlice(a);
         const obs_slice = try a.alloc(FileObservation, 1);
@@ -2536,12 +2255,8 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
 fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     _ = io;
     _ = home;
-    // cursor does not persist the current model in a config file — the
-    // CLI takes `--model` per run (default `auto`). The launcher sets
-    // CURSOR_MODEL="<provider>/<model>" (provider is cursor's first-party
-    // router); when unset, detection stays unresolved (no real-session
-    // on-disk source yet — a cursor session fixture can be added once a
-    // live session records its model).
+    // cursor does not persist the current model in a config file — the CLI takes `--model` per run (default `auto`).
+    // The launcher sets CURSOR_MODEL="<provider>/<model>" (provider is cursor's first-party router); when unset, detection stays unresolved (no real-session on-disk source yet — a cursor session fixture can be added once a live session records its model).
     const model_full = env.get("CURSOR_MODEL") orelse return;
     if (model_full.len == 0) return;
     const slash = std.mem.findScalar(u8, model_full, '/');
@@ -2577,20 +2292,16 @@ fn detectCopilot(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envir
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "COPILOT_MODEL", .value = model_full });
 }
 
-/// Copilot does not export the active model to child processes, but it
-/// records it in the session store `~/.copilot/data.db` (`sessions.model`,
-/// `sessions.provider_id` referencing `model_providers`). Read that
-/// read-only via the `sqlite3` CLI: the newest session row. Partial/absent
-/// → no-op (the caller falls back to leaving detection unresolved).
+/// Copilot does not export the active model to child processes, but it records it in the session store `~/.copilot/data.db` (`sessions.model`, `sessions.provider_id` referencing `model_providers`).
+/// Read that read-only via the `sqlite3` CLI: the newest session row.
+/// Partial/absent → no-op (the caller falls back to leaving detection unresolved).
 fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) !void {
     if (home.len == 0) return;
     const db = try std.fs.path.join(a, &.{ home, ".copilot/data.db" });
     defer a.free(db);
     if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return;
-    // Copilot's sessions have no cwd column, so "active" means: not
-    // archived and (prefer) currently running — never a closed session
-    // that merely updated last. `is_running DESC` keeps the live session
-    // ahead of a finished one with a newer updated_at.
+    // Copilot's sessions have no cwd column, so "active" means: not archived and (prefer) currently running — never a closed session that merely updated last.
+    // `is_running DESC` keeps the live session ahead of a finished one with a newer updated_at.
     const sql = "SELECT model, provider_id FROM sessions WHERE archived_at IS NULL ORDER BY is_running DESC, updated_at DESC LIMIT 1";
     const out = kiloSqliteJson(a, io, db, sql) catch return;
     defer a.free(out);
@@ -2604,8 +2315,7 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
         else => return,
     };
     if (model_str.len == 0) return;
-    // provider: the sessions.provider_id FK (a `model_providers` id), or
-    // the first-party GitHub route when absent/unknown.
+    // provider: the sessions.provider_id FK (a `model_providers` id), or the first-party GitHub route when absent/unknown.
     var provider_id: []const u8 = "github-copilot";
     if (row.object.get("provider_id")) |pid| {
         if (pid == .string and pid.string.len > 0 and providerMetaForName(pid.string) != null) {
@@ -2626,24 +2336,12 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
 }
 
 /// tri-state reciprocity determination for `d`:
-/// - `"NONE"` harness_license → the harness-closed-training conjunct
-///   decides the harness dim (mirroring how `provider_closed_training`
-///   decides the provider dim): `never`/`opt-in`/`opt-out` falls
-///   through to the model/provider conjuncts; `enforced` (verified
-///   training) or `NOASSERTION` (we looked, no clear answer) is
-///   `.not_reciprocal`; `null` is `.unknown` — like a null
-///   provider/model dim, the data-incomplete nudge encourages
-///   closed-harness users to correct the data (make the instance state
-///   readable / get the posture sourced) rather than failing silently.
-///   Open-model training (`harness_open_training`) never blocks
-///   reciprocity — the conjunct consumes only the closed dim, exactly
-///   as the provider conjunct treats `provider_open_training`.
-/// - `.unknown` when `harness_license` is `null` or `"NOASSERTION"`,
-///   or any of `model_reciprocity` / `provider_closed_training` is
-///   null (unverified status cannot be assumed reciprocal per the AI
-///   policy);
-/// - otherwise `.reciprocal` iff the current conjunction passes, else
-///   `.not_reciprocal`.
+/// - `"NONE"` harness_license → the harness-closed-training conjunct decides the harness dim (mirroring how `provider_closed_training` decides the provider dim): `never`/`opt-in`/`opt-out` falls through to the model/provider conjuncts;
+/// `enforced` (verified training) or `NOASSERTION` (we looked, no clear answer) is `.not_reciprocal`;
+/// `null` is `.unknown` — like a null provider/model dim, the data-incomplete nudge encourages closed-harness users to correct the data (make the instance state readable / get the posture sourced) rather than failing silently.
+/// Open-model training (`harness_open_training`) never blocks reciprocity — the conjunct consumes only the closed dim, exactly as the provider conjunct treats `provider_open_training`.
+/// - `.unknown` when `harness_license` is `null` or `"NOASSERTION"`, or any of `model_reciprocity` / `provider_closed_training` is null (unverified status cannot be assumed reciprocal per the AI policy);
+/// - otherwise `.reciprocal` iff the current conjunction passes, else `.not_reciprocal`.
 pub const Reciprocity = enum { reciprocal, not_reciprocal, unknown };
 
 pub fn reciprocityOf(d: *const Detection) Reciprocity {
@@ -2662,40 +2360,28 @@ pub fn reciprocityOf(d: *const Detection) Reciprocity {
     return .not_reciprocal;
 }
 
-/// Resolve the instance training states from the matched rule's static
-/// postures when no per-harness instance read populated them — per
-/// field, so a harness that reads only one dim still sources the other
-/// from its docs posture. The vocabulary is shared (`enforced | opt-in |
-/// opt-out | never | NOASSERTION | null`), so the static values copy
-/// verbatim; the instance read wins because it was written first.
+/// Resolve the instance training states from the matched rule's static postures when no per-harness instance read populated them —
+/// per field, so a harness that reads only one dim still sources the other from its docs posture.
+/// The vocabulary is shared (`enforced | opt-in | opt-out | never | NOASSERTION | null`), so the static values copy verbatim;
+/// the instance read wins because it was written first.
 pub fn applyHarnessTraining(d: *Detection, rule: HarnessRule) void {
     if (d.harness_open_training == null) d.harness_open_training = rule.open_training;
     if (d.harness_closed_training == null) d.harness_closed_training = rule.closed_training;
 }
 
 /// compute the `reciprocal` boolean. Returns `true` only when:
-///   - harness_license is a real SPDX id (non-null, not `"NONE"`,
-///     not `"NOASSERTION"`), or `"NONE"` with harness_closed_training
-///     in the passing set (never/opt-in/opt-out — a closed harness
-///     that doesn't unilaterally train closed models on user
-///     conversations is permitted), AND
+/// - harness_license is a real SPDX id (non-null, not `"NONE"`, not `"NOASSERTION"`), or `"NONE"` with harness_closed_training in the passing set (never/opt-in/opt-out —
+/// a closed harness that doesn't unilaterally train closed models on user conversations is permitted), AND
 ///   - model_reciprocity is "open-source" or "open-weight", AND
-///   - provider_closed_training is one of "never", "opt-in", or "opt-out"
-///     (provider does not unilaterally train closed models on customer data).
-/// Any null on the conjuncts makes the result `false`: per the AI
-/// Policy, an unverified status cannot be assumed reciprocal.
-/// `"NOASSERTION"` short-circuits to `false` because it is unverified;
-/// `"NONE"` requires a passing closed-training state.
-/// This is the same conjunction `reciprocityOf` uses for its non-null
-/// case, so the canonical JSON `reciprocal` field stays a boolean while
-/// the tri-state caller gets the full picture.
+/// - provider_closed_training is one of "never", "opt-in", or "opt-out" (provider does not unilaterally train closed models on customer data).
+/// Any null on the conjuncts makes the result `false`: per the AI Policy, an unverified status cannot be assumed reciprocal.
+/// `"NOASSERTION"` short-circuits to `false` because it is unverified; `"NONE"` requires a passing closed-training state.
+/// This is the same conjunction `reciprocityOf` uses for its non-null case, so the canonical JSON `reciprocal` field stays a boolean while the tri-state caller gets the full picture.
 pub fn computeReciprocal(d: *const Detection) bool {
     const hl = d.harness_license orelse return false;
     if (std.mem.eql(u8, hl, license_noassertion)) return false;
     if (std.mem.eql(u8, hl, license_none)) {
-        // a closed harness passes its conjunct only with a passing
-        // closed-training state, then falls through to the
-        // model/provider conjuncts like any licensed harness
+        // a closed harness passes its conjunct only with a passing closed-training state, then falls through to the model/provider conjuncts like any licensed harness
         const hct = d.harness_closed_training orelse return false;
         if (!std.mem.eql(u8, hct, "never") and !std.mem.eql(u8, hct, "opt-in") and !std.mem.eql(u8, hct, "opt-out")) return false;
     }
@@ -2706,34 +2392,22 @@ pub fn computeReciprocal(d: *const Detection) bool {
 }
 
 /// The detection report is a JSON object assembled from:
-/// - `buildCooked` — the shape-stable 20-field canonical object,
-///   grouped by entity (harness / provider / model / agent). The
-///   `trailer` field was removed so the identify output no longer
-///   carries it (fixture channels persist both trailer variants as
-///   separate keys).
-/// - `buildRaw` — the shapeless raw observations object (dev binary
-///   only), whose top-level keys identify source evidence.
-/// The released binary's `identify` action serializes `buildCooked` at
-/// the root; the dev binary's fixture files embed it as `outputs.identify`
-/// alongside the trailer variants and (for captures) the raw block.
-/// Extract the user's home directory once so we can redact it from
-/// every emitted string — fixtures must be portable across machines.
-/// `home` is empty when neither USERPROFILE nor HOME is set, in which
-/// case redactHome is a no-op for the literal-path branch.
+/// - `buildCooked` — the shape-stable 20-field canonical object, grouped by entity (harness / provider / model / agent).
+/// The `trailer` field was removed so the identify output no longer carries it (fixture channels persist both trailer variants as separate keys).
+/// - `buildRaw` — the shapeless raw observations object (dev binary only), whose top-level keys identify source evidence.
+/// The released binary's `identify` action serializes `buildCooked` at the root; the dev binary's fixture files embed it as `outputs.identify` alongside the trailer variants and (for captures) the raw block.
+/// Extract the user's home directory once so we can redact it from every emitted string — fixtures must be portable across machines.
+/// `home` is empty when neither USERPROFILE nor HOME is set, in which case redactHome is a no-op for the literal-path branch.
 pub fn reporterHome(env: *const std.process.Environ.Map) []const u8 {
     return env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
 }
 
-/// Build the canonical identification object (20 fields, grouped by entity).
-/// Returns a heap-allocated `std.json.Value` the caller owns.
+/// Build the canonical identification object (20 fields, grouped by entity). Returns a heap-allocated `std.json.Value` the caller owns.
 pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     const V = std.json.Value;
-    // Each canonical field is `?[]const u8` (or `?bool`). Use a small
-    // helper to emit `null` when absent so partial-detection fixtures
-    // read as `null`, not `""`. The previous shape serialized nulls as
-    // empty strings, which made `harness_license: ""`
-    // indistinguishable from a project that actually has an
-    // empty-string SPDX license.
+    // Each canonical field is `?[]const u8` (or `?bool`).
+    // Use a small helper to emit `null` when absent so partial-detection fixtures read as `null`, not `""`.
+    // The previous shape serialized nulls as empty strings, which made `harness_license: ""` indistinguishable from a project that actually has an empty-string SPDX license.
     var canonical: V = .{ .object = .empty };
     try canonical.object.put(a, "harness_label", optStringValue(a, d.harness_label));
     try canonical.object.put(a, "harness_short_title", optStringValue(a, d.harness_short_title));
@@ -2753,12 +2427,9 @@ pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     try canonical.object.put(a, "model_id", optStringValue(a, d.model_id));
     try canonical.object.put(a, "model_reciprocity", optStringValue(a, d.model_reciprocity));
     try canonical.object.put(a, "model_license", optStringValue(a, d.model_license));
-    // agent id is composed of the three sub-ids above; emitted in the
-    // model block (after model_id) so the canonical
-    // block reads harness → provider → model → agent.
+    // agent id is composed of the three sub-ids above; emitted in the model block (after model_id) so the canonical block reads harness → provider → model → agent.
     try canonical.object.put(a, "agent_id", optStringValue(a, d.agent_id));
-    // `reciprocal` is `?bool` in Detection but the JSON output uses
-    // `null` for "not computed" — V has no `?bool` so we unbox manually.
+    // `reciprocal` is `?bool` in Detection but the JSON output uses `null` for "not computed" — V has no `?bool` so we unbox manually.
     if (d.reciprocal) |r| {
         try canonical.object.put(a, "reciprocal", .{ .bool = r });
     } else {
@@ -2767,18 +2438,13 @@ pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     return canonical;
 }
 
-/// the trailer string for `d`, if one was computed. Delegates to the
-/// stored `d.trailer` (set by `detect` / recipe resolution).
+/// the trailer string for `d`, if one was computed. Delegates to the stored `d.trailer` (set by `detect` / recipe resolution).
 pub fn buildTrailer(d: *const Detection) ?[]const u8 {
     return d.trailer;
 }
 
-/// Build a commit-trailer line for `d` with the given keyword (e.g.
-/// `Co-authored-by` / `Assisted-by`), or `null` when the identity is
-/// incomplete (any of harness_label / model_label / agent_id null).
-/// Output format: `{keyword}: {harness_label} · {model_label}
-/// <{agent_id}@local>` — the `·` is a middle-dot separator, not a
-/// hyphen; the email local (machine-readable side) uses `-`.
+/// Build a commit-trailer line for `d` with the given keyword (e.g. `Co-authored-by` / `Assisted-by`), or `null` when the identity is incomplete (any of harness_label / model_label / agent_id null).
+/// Output format: `{keyword}: {harness_label} · {model_label} <{agent_id}@local>` — the `·` is a middle-dot separator, not a hyphen; the email local (machine-readable side) uses `-`.
 pub fn buildTrailerLine(a: std.mem.Allocator, d: *const Detection, keyword: []const u8) !?[]u8 {
     if (d.harness_label == null or d.model_label == null or d.agent_id == null) return null;
     return @as(?[]u8, try std.fmt.allocPrint(
@@ -2788,8 +2454,7 @@ pub fn buildTrailerLine(a: std.mem.Allocator, d: *const Detection, keyword: []co
     ));
 }
 
-/// emit the slim released JSON report (canonical fields at the root,
-/// no `raw` block) into `buf`. The `identify` action uses this directly.
+/// emit the slim released JSON report (canonical fields at the root, no `raw` block) into `buf`. The `identify` action uses this directly.
 pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?HarnessRule, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
     _ = env;
     _ = rule;
@@ -2811,9 +2476,9 @@ pub fn stringListValue(a: std.mem.Allocator, items: []const []const u8) std.json
     return arr;
 }
 
-/// convert `?[]const u8` into a JSON `null` or string. Heap-allocates
-/// the inner buffer only when the value is present (null leaves the
-/// arena untouched). On out-of-memory, falls back to JSON `null`.
+/// convert `?[]const u8` into a JSON `null` or string.
+/// Heap-allocates the inner buffer only when the value is present (null leaves the arena untouched).
+/// On out-of-memory, falls back to JSON `null`.
 pub fn optStringValue(a: std.mem.Allocator, opt: ?[]const u8) std.json.Value {
     if (opt) |v| {
         if (v.len == 0) return .{ .string = "" };
@@ -2823,14 +2488,10 @@ pub fn optStringValue(a: std.mem.Allocator, opt: ?[]const u8) std.json.Value {
     return .null;
 }
 
-/// substitute a literal path prefix with a replacement token. A
-/// match is only honored when the prefix is followed by a path
-/// separator (`/` or `\`) or end-of-string, so a project at
-/// `/Users/foo/proj` never matches `/Users/foo/proj2`. A backslash
-/// boundary is consumed and re-emitted as `/` so the token joins the
-/// remainder with a forward slash. The input string is returned
-/// untouched when nothing matches; otherwise a fresh allocation is
-/// returned.
+/// substitute a literal path prefix with a replacement token.
+/// A match is only honored when the prefix is followed by a path separator (`/` or `\`) or end-of-string, so a project at `/Users/foo/proj` never matches `/Users/foo/proj2`.
+/// A backslash boundary is consumed and re-emitted as `/` so the token joins the remainder with a forward slash.
+/// The input string is returned untouched when nothing matches; otherwise a fresh allocation is returned.
 fn redactPathPrefix(a: std.mem.Allocator, s: []const u8, prefix: []const u8, replacement: []const u8) ![]const u8 {
     if (s.len == 0 or prefix.len == 0) return s;
     var out: std.ArrayList(u8) = .empty;
@@ -2865,16 +2526,11 @@ fn redactPathPrefix(a: std.mem.Allocator, s: []const u8, prefix: []const u8, rep
     return out.toOwnedSlice(a);
 }
 
-/// replace the user's home directory and shell interpolations with
-/// `<home>` in a string so fixture output is portable across
-/// machines. Handles:
+/// replace the user's home directory and shell interpolations with `<home>` in a string so fixture output is portable across machines. Handles:
 ///   - `$HOME` and `${HOME}` (must be followed by non-identifier char)
 ///   - `~/` and `~` (only at start of string)
-///   - the literal home path (`/Users/foo`, `C:\Users\foo` etc., only
-///     when followed by a path separator (`/` or `\`) or end-of-string
-///     to avoid matching `/Users/fooella`)
-/// The input string is left untouched when it contains no home
-/// references; otherwise a fresh allocation is returned.
+/// - the literal home path (`/Users/foo`, `C:\Users\foo` etc., only when followed by a path separator (`/` or `\`) or end-of-string to avoid matching `/Users/fooella`)
+/// The input string is left untouched when it contains no home references; otherwise a fresh allocation is returned.
 pub fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]const u8 {
     if (s.len == 0) return s;
     var out: std.ArrayList(u8) = .empty;
@@ -2887,8 +2543,7 @@ pub fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]cons
             i += 7;
             continue;
         }
-        // $HOME interpolation — must be followed by non-identifier char
-        // (avoids matching $HOMEBREW_REPOSITORY etc.)
+        // $HOME interpolation — must be followed by non-identifier char (avoids matching $HOMEBREW_REPOSITORY etc.)
         if (i + 5 <= s.len and std.mem.eql(u8, s[i..][0..5], "$HOME")) {
             const after = i + 5;
             const next = if (after < s.len) s[after] else 0;
@@ -2912,8 +2567,7 @@ pub fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]cons
             i += 1;
             continue;
         }
-        // literal home path — followed by `/`, `\`, or end of string
-        // (a backslash boundary is consumed and re-emitted as `/`)
+        // literal home path — followed by `/`, `\`, or end of string (a backslash boundary is consumed and re-emitted as `/`)
         if (home.len > 0 and i + home.len <= s.len and
             std.mem.eql(u8, s[i..][0..home.len], home))
         {
@@ -2936,11 +2590,8 @@ pub fn redactHome(a: std.mem.Allocator, s: []const u8, home: []const u8) ![]cons
     return out.toOwnedSlice(a);
 }
 
-/// re-emit a string with every `\` as `/` (Windows path separators in
-/// fixture evidence read consistently as forward slashes). Takes
-/// ownership of `s` (a heap allocation): it is released when a new
-/// string is built, and ownership of `s` itself is returned when it
-/// holds no backslashes.
+/// re-emit a string with every `\` as `/` (Windows path separators in fixture evidence read consistently as forward slashes).
+/// Takes ownership of `s` (a heap allocation): it is released when a new string is built, and ownership of `s` itself is returned when it holds no backslashes.
 fn slashifyOwned(a: std.mem.Allocator, s: []const u8) ![]const u8 {
     if (s.len == 0 or std.mem.indexOfScalar(u8, s, '\\') == null) return s;
     var out: std.ArrayList(u8) = .empty;
@@ -2950,13 +2601,10 @@ fn slashifyOwned(a: std.mem.Allocator, s: []const u8) ![]const u8 {
     return out.toOwnedSlice(a);
 }
 
-/// redact the agent's project directory (its cwd/pwd) with
-/// `<project>`, then apply the `redactHome` home rules, so fixture
-/// evidence is portable across machines. The project path is
-/// substituted first — project paths usually sit under the home dir,
-/// so a home pass first would leave `<home>/Projects/...` behind.
-/// Remaining Windows separators are normalized to `/`. An empty
-/// `project` skips the project pass.
+/// redact the agent's project directory (its cwd/pwd) with `<project>`, then apply the `redactHome` home rules, so fixture evidence is portable across machines.
+/// The project path is substituted first — project paths usually sit under the home dir, so a home pass first would leave `<home>/Projects/...` behind.
+/// Remaining Windows separators are normalized to `/`.
+/// An empty `project` skips the project pass.
 pub fn redactPaths(a: std.mem.Allocator, s: []const u8, project: []const u8, home: []const u8) ![]const u8 {
     var p: []const u8 = s;
     if (project.len > 0) {
@@ -2972,8 +2620,7 @@ pub fn redactPaths(a: std.mem.Allocator, s: []const u8, project: []const u8, hom
     return slashifyOwned(a, h);
 }
 
-// ============================================================================
-// output
+// ============================================================================ output
 
 pub const usage =
     \\agent-detect — infer the harness, provider, and model of the current agent session
@@ -3026,37 +2673,21 @@ pub const trailerUsage =
     \\
 ;
 
-// ============================================================================
-// detection ladder — single source of truth for what `agent-detect`
-// observes in the current session. Called by the `identify` action (both
-// the released JSON report and the dev fixture capture).
+// ============================================================================ detection ladder — single source of truth for what `agent-detect` observes in the current session.
+// Called by the `identify` action (both the released JSON report and the dev fixture capture).
 //
-// Fixtures are real-agent captures, not synthetic assemblies: every
-// step reads the actual env / process tree / config files at the
-// current instant.
+// Fixtures are real-agent captures, not synthetic assemblies: every step reads the actual env / process tree / config files at the current instant.
 //
-// Returns `true` when `harness`, `provider`, and `model` all resolved
-// (caller can emit a `trailer`); `false` otherwise.
+// Returns `true` when `harness`, `provider`, and `model` all resolved (caller can emit a `trailer`); `false` otherwise.
 
-// Recipe-mode resolution — produce a fully-shaped `Detection` for a
-// known `(harness, provider, model)` combo WITHOUT running the live
-// detection ladder. Used by `identify --harness=H --provider=P
-// --model=M` and `trailer --harness=H --provider=P --model=M`, which
-// must emit output for hard-to-detect agents purely from the rule
-// tables (no env markers / config files needed).
+// Recipe-mode resolution — produce a fully-shaped `Detection` for a known `(harness, provider, model)` combo WITHOUT running the live detection ladder.
+// Used by `identify --harness=H --provider=P --model=M` and `trailer --harness=H --provider=P --model=M`, which must emit output for hard-to-detect agents purely from the rule tables (no env markers / config files needed).
 //
-// Returns `null` when any of the three ids is not a known harness /
-// provider / model rule — the combo is not a valid recipe and the
-// caller exits 7. The `detectable` list is fully populated (a full
-// known combo implies all three dims are resolvable); `detected` is
-// derived in buildRaw from whatever landed in the canonical fields.
+// Returns `null` when any of the three ids is not a known harness / provider / model rule — the combo is not a valid recipe and the caller exits 7.
+// The `detectable` list is fully populated (a full known combo implies all three dims are resolvable); `detected` is derived in buildRaw from whatever landed in the canonical fields.
 pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !?Detection {
-    // All three ids must be known rules — an unknown dim is an invalid
-    // combo (caller exits 7). Combos may be given in the canonical
-    // spelling, the strict slug form (`cline-pass` vs `clinepass`),
-    // a label (`Cline Pass`), or any explicit `variations` alias —
-    // `canonicalIdFor` normalizes the input and matches the rule's
-    // normalized alias set (name, label, short_title, variations).
+    // All three ids must be known rules — an unknown dim is an invalid combo (caller exits 7).
+    // Combos may be given in the canonical spelling, the strict slug form (`cline-pass` vs `clinepass`), a label (`Cline Pass`), or any explicit `variations` alias — `canonicalIdFor` normalizes the input and matches the rule's normalized alias set (name, label, short_title, variations).
     const harness_name = canonicalIdFor(a, HarnessRule, &rulesForHarnesses, h) orelse return null;
     const provider_name = canonicalIdFor(a, ProviderRule, &rulesForProviders, p) orelse return null;
     const model_name = canonicalIdFor(a, ModelRule, &rulesForModels, m) orelse return null;
@@ -3072,8 +2703,7 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     if (harness.version) |v| d.harness_version = try a.dupe(u8, v);
     d.harness_license = harness.license;
     d.raw.harness_urls = harness.license_sources;
-    // no instance read exists in recipe mode — the rule's static
-    // postures are the only source (copied verbatim per field).
+    // no instance read exists in recipe mode — the rule's static postures are the only source (copied verbatim per field).
     applyHarnessTraining(&d, harness);
     // A full known recipe implies all three dims are resolvable.
     d.detectable = &.{ "harness", "provider", "model" };
@@ -3125,10 +2755,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         }
     }
     if (rule == null) {
-        // ancestry scan — note the pre-existing "last match wins"
-        // overwrite semantics when two rules match the same ancestor:
-        // the loops keep assigning `rule` without breaking. Left
-        // unchanged by the binary_names rewiring.
+        // ancestry scan — note the pre-existing "last match wins" overwrite semantics when two rules match the same ancestor: the loops keep assigning `rule` without breaking.
+        // Left unchanged by the binary_names rewiring.
         for (rulesForHarnesses) |r| {
             for (r.binary_names) |pn| {
                 for (anc.names) |n| {
@@ -3150,10 +2778,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         if (r.version) |v| d.harness_version = try a.dupe(u8, v);
         d.harness_license = r.license;
         d.raw.harness_urls = r.license_sources;
-        // decision #11: the harness dim's evidence claim. The source is
-        // the marker var / proc name that actually matched (present in
-        // raw.env / raw.process_lineage); the value is the harness's
-        // canonical name, which is what the rule links the marker to.
+        // decision #11: the harness dim's evidence claim.
+        // The source is the marker var / proc name that actually matched (present in raw.env / raw.process_lineage); the value is the harness's canonical name, which is what the rule links the marker to.
         if (hclaim_name.len > 0) {
             try addEvidenceClaim(a, d, .{
                 .dim = "harness",
@@ -3162,10 +2788,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
                 .value = r.name,
             });
         }
-        // populate env_vars with one entry per declared env-marker — even
-        // when the runtime env didn't have it (`present=false`) so a
-        // human reading the fixture can tell which markers the rule
-        // checked vs. which were actually present.
+        // populate env_vars with one entry per declared env-marker —
+        // even when the runtime env didn't have it (`present=false`) so a human reading the fixture can tell which markers the rule checked vs. which were actually present.
         var env_list = std.ArrayList(EnvVarObservation).empty;
         for (r.env_markers) |m| {
             if (env.get(m)) |v| {
@@ -3176,18 +2800,10 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             }
         }
         d.raw.env_vars = try env_list.toOwnedSlice(a);
-        // populate process lineage from anc. The full chain is
-        // emitted verbatim regardless of which harness was detected
-        // and whether detection ran via env marker or proc ancestry.
-        // `canonical.harness_name` identifies the matched harness; the
-        // lineage is independent runtime provenance — it tells the
-        // maintainer WHERE the fixture was actually captured (e.g.
-        // inside a `<harness-id>` session vs. a fresh bash), which
-        // is useful audit info and never contradicts the canonical
-        // id. The launcher's `setsid` + per-harness shim (see
-        // DESIGN.md "platform invocation") guarantees the lineage
-        // contains the harness being tested without inheriting the
-        // dev harness's session.
+        // populate process lineage from anc.
+        // The full chain is emitted verbatim regardless of which harness was detected and whether detection ran via env marker or proc ancestry.
+        // `canonical.harness_name` identifies the matched harness; the lineage is independent runtime provenance — it tells the maintainer WHERE the fixture was actually captured (e.g. inside a `<harness-id>` session vs. a fresh bash), which is useful audit info and never contradicts the canonical id.
+        // The launcher's `setsid` + per-harness shim (see DESIGN.md "platform invocation") guarantees the lineage contains the harness being tested without inheriting the dev harness's session.
         var lineage = std.ArrayList(Ancestor).empty;
         for (anc.pids, 0..) |pid, i| {
             const name: []const u8 = if (i < anc.names.len) anc.names[i] else "";
@@ -3230,25 +2846,17 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         } else if (std.mem.eql(u8, r.name, "autoclaw")) {
             try detectAutoClaw(a, io, env, home, d);
         }
-        // the rule's static training postures fill each dim only when
-        // the per-harness instance read above didn't; the instance
-        // read wins because it was written first.
+        // the rule's static training postures fill each dim only when the per-harness instance read above didn't; the instance read wins because it was written first.
         applyHarnessTraining(d, r);
     }
     // compute reciprocity from the three policy fields
     d.reciprocal = computeReciprocal(d);
-    // co-author trailer (commits.md format). The email local is the
-    // `agent_id` (harness-provider-model), which now
-    // includes the provider so reciprocity on changelogs can be
-    // post-verified from the trailer alone. The display name uses
-    // `<harness_title> · <model_title>` with a middle-dot separator
-    // (rather than `-`) for human readability — the email is the
-    // machine-readable side and uses `-`.
+    // co-author trailer (commits.md format).
+    // The email local is the `agent_id` (harness-provider-model), which now includes the provider so reciprocity on changelogs can be post-verified from the trailer alone.
+    // The display name uses `<harness_title> · <model_title>` with a middle-dot separator (rather than `-`) for human readability — the email is the machine-readable side and uses `-`.
     d.trailer = try buildTrailerLine(a, d, "Co-authored-by");
-    // `detectable` — the dims this run's ladder *could* resolve (from
-    // the env-marker/process-ancestry match + the per-harness config
-    // read). `detected` is derived from the canonical fields post-hoc
-    // in buildRaw; here we record only the capability.
+    // `detectable` — the dims this run's ladder *could* resolve (from the env-marker/process-ancestry match + the per-harness config read).
+    // `detected` is derived from the canonical fields post-hoc in buildRaw; here we record only the capability.
     var detectable = std.ArrayList([]const u8).empty;
     if (d.harness_id != null) try detectable.append(a, "harness");
     if (d.provider_id != null) try detectable.append(a, "provider");

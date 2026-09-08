@@ -62,19 +62,10 @@ Check your agent (harness, model, provider)'s reciprocity compliance via:
 .\agent-detect.exe check-reciprocal   # prints "is reciprocal" (0) or "not reciprocal" (10)
 ```
 
-A closed-source harness's `harness_open_training` /
-`harness_closed_training` identify fields mirror the provider pair:
-the closed-training conjunct passes on a `never`/`opt-in`/`opt-out`
-value (capability-based, exactly as providers are treated) and fails
-on `enforced` (verified training) or `NOASSERTION` (a settings read
-with no clear answer); an undeterminable state is policy data
-incomplete so you can correct the data (for zcode: the "Improve
-experience" toggle) rather than failing silently.
+A closed-source harness's `harness_open_training` / `harness_closed_training` identify fields mirror the provider pair: the closed-training conjunct passes on a `never`/`opt-in`/`opt-out` value (capability-based, exactly as providers are treated) and fails on `enforced` (verified training) or `NOASSERTION` (a settings read with no clear answer);
+an undeterminable state is policy data incomplete so you can correct the data (for zcode: the "Improve experience" toggle) rather than failing silently.
 
-Exit codes — 0 = reciprocal, 10 = not reciprocal, 9 = policy data
-incomplete, 8 = undetectable, 7 = unknown combo — follow the registry
-in DESIGN.md "exit status registry"; see it for what each means and
-what to do.
+Exit codes — 0 = reciprocal, 10 = not reciprocal, 9 = policy data incomplete, 8 = undetectable, 7 = unknown combo — follow the registry in DESIGN.md "exit status registry"; see it for what each means and what to do.
 
 ### co-author trailer
 
@@ -108,10 +99,8 @@ Never guess or cache the identity — generate it fresh per commit. Never commit
 
 ## contributing
 
-If your platform is not detected, or the `agent-detect` CLI failed,
-you will need to contribute a patch. See
-[CONTRIBUTING.md](./CONTRIBUTING.md) for refresh / add-rule /
-cut-a-release workflows.
+If your platform is not detected, or the `agent-detect` CLI failed, you will need to contribute a patch.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for refresh / add-rule / cut-a-release workflows.
 
 <!-- LICENSE/ -->
 
