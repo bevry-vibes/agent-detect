@@ -547,47 +547,7 @@ Provider-served id forms carrying a serving-environment suffix (e.g. Chutes' TEE
 
 ## cut a release
 
-Versions follow the calver format `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`).
-The date is always UTC so devs in different timezones produce the same string.
-The revision resets to `1` each day and increments per release within the same day.
-The tag name equals the version string exactly (no `v` prefix), so `git tag 2026.8.6-1` produces a tag that matches the `tags: ['*.*.*-*']` filter in `.github/workflows/build.yml`.
-
-Maintainer runbook:
-
-```sh
-# 1. Compute today's UTC date and the next revision for that day.
-today=$(date -u +%Y.%-m.%-d)        # GNU & macOS alike with %-
-rev=$(git tag --list "${today}-*" | wc -l | tr -d ' ')
-new_version="${today}-$((rev + 1))"
-
-# 2. Bump `build.zig.zon` `.version` to the new string, commit on main
-#    with the generated co-author trailer (see AGENTS.md).
-sed -i.bak "s/\.version = \".*\"/.version = \"${new_version}\"/" build.zig.zon && rm build.zig.zon.bak
-git add build.zig.zon
-git commit -m "release: ${new_version}" --trailer "$(./zig-out/bin/agent-detect trailer co-author)"
-
-# 3. Tag with the same string (no v prefix) and push — the `release`
-#    job in build.yml picks it up, cross-compiles, and marks the
-#    release as `latest: true`.
-git tag "${new_version}"
-git push origin main "${new_version}"
-```
-
-After the runbook, verify locally that the freshly built binary prints the expected version:
-
-```sh
-zig build && ./zig-out/bin/agent-detect --version
-# → agent-detect <new_version>
-```
-
-### release channels
-
-| channel   | URL                                             | updated on                   | marked as      |
-| --------- | ----------------------------------------------- | ---------------------------- | -------------- |
-| `latest`  | `releases/latest/download/<asset>`              | push of a calver-shaped tag  | `latest:true`  |
-| `nightly` | `releases/tag/nightly/download/<asset>`         | every push to `main`         | `prerelease`   |
-
-`latest` is reserved for tagged releases — pushes to `main` only ever touch the `nightly` channel, which is marked `prerelease: true` and `latest: false` so it cannot accidentally become the stable channel.
+See [commits.md](./commits.md) — its `releases` tweaks carry the calver versioning and this repo's release channels.
 
 ## pending harnesses
 

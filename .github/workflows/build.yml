@@ -109,8 +109,6 @@ jobs:
           name: nightly
           prerelease: true
           make_latest: false
-          body: |
-            Rolling build of `agent-detect` binaries for all platforms, updated on every push to `main`. Pin WIP consumers to `releases/tag/nightly/download/<asset>`; stable consumers should use `releases/latest/download/<asset>` instead (which only updates when a calver tag is pushed).
           files: bin/*
 
   # Pushing a calver-shaped tag (`<year>.<month>.<day>-<revision>`) publishes the release and marks it `latest: true`, which is what `releases/latest/download/<asset>` resolves to.
@@ -165,6 +163,4 @@ jobs:
           name: ${{ github.ref_name }}
           prerelease: false
           make_latest: true
-          body: |
-            Stable release `agent-detect ${{ github.ref_name }}`. Cut from `main` — see DESIGN.md "distribution / versioned releases" for the runbook. Direct downloads via `releases/latest/download/<asset>` (this release IS `latest`).
           files: bin/*
