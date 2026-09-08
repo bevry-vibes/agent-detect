@@ -7,7 +7,6 @@
 # Temp Files
 **/.docpad.db
 **/*.log
-**/*.lock
 **/*.cpuprofile
 **/*.heapsnapshot
 
@@ -50,6 +49,7 @@ coffee/
 es5/
 es2015/
 esnext/
+docs/
 
 # =====================================
 # CUSTOM
@@ -70,6 +70,11 @@ fixtures/daemon.ctl
 # per-capture worker logs (the worker's stderr; teed reference is the
 # daemon.log, the logs are a scratch record — never committed)
 fixtures/tmp/
+
+# any lock file — this repo's broad cover (the base deliberately
+# ignores no lock files globally); the store entries below are listed
+# explicitly for discoverability
+**/*.lock
 
 # index.json store runtime files — the lock file and the atomic-write
 # temp file are never committed; `fixtures/index.json` itself IS

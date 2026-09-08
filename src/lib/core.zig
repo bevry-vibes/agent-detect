@@ -145,7 +145,8 @@ pub const Detection = struct {
     harness_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `harness_name` (no separators), e.g. "kimi-code" -> "kimicode" — the only id we constrain; `harness_name` carries whatever the service uses
     harness_version: ?[]const u8 = null, // optional release version, e.g. "1.2.3"
     harness_license: ?[]const u8 = null, // SPDX id, e.g. "Apache-2.0"
-    harness_open_training: ?[]const u8 = null, // instance-resolved open-model training state, mirroring the provider pair: docs posture vocabulary ("enforced" | "opt-in" | "opt-out" | "never" | "NOASSERTION" | null), with instance-determined values in their instance sense (verified actively training = "enforced", verified not training = "never", looked with no clear answer = "NOASSERTION"); informational only — the reciprocity conjunct reads harness_closed_training
+    harness_open_training: ?[]const u8 = null, // instance-resolved open-model training state, mirroring the provider pair: docs posture vocabulary ("enforced" | "opt-in" | "opt-out" | "never" | "NOASSERTION" | null), with instance-determined values in their instance sense (verified actively training = "enforced", verified not training = "never", looked with no clear answer = "NOASSERTION")
+    // informational only — the reciprocity conjunct reads harness_closed_training
     harness_closed_training: ?[]const u8 = null, // same vocabulary; for a closed harness (license "NONE") this is the harness conjunct: "never"/"opt-in"/"opt-out" passes, "enforced"/"NOASSERTION" fails, null is unknown (the data-incomplete nudge)
     // provider group
     provider_label: ?[]const u8 = null, // e.g. "Cline Pass"
@@ -1047,8 +1048,8 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
 
 // ----------------------------------------------------------------------------
 // partial-coverage harness detectors — the harnesses in the row of the
-// DESIGN.md harness table that don't have a `detectHarness_<X>` function
-// in this file are not real detectors; their entries below are
+// DESIGN.md harness table that don't have a `detectHarness_<Harness>`
+// function in this file are not real detectors; their entries below are
 // deliberately minimal so a fixture can still be captured, but the model
 // detection is a "best effort read of whatever the harness happens to
 // keep on disk", and the capture relies on the daemon's runner (see

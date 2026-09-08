@@ -68,7 +68,7 @@ separation:
   (what a harness session is asked to run). The daemon interpolates it
   into an invocation's `<prompt>` placeholder; a hand-run capture
   composes its launch around it:
-  `pi --provider chutes --model X -p "$(agent-detect-dev fixtures prompt)"`.
+  `pi --provider chutes --model <model> -p "$(agent-detect-dev fixtures prompt)"`.
 - **`agent-detect-dev fixtures queue`** — **upsert only, no
   evaluation.** One queue entry per selected mode is stamped from the
   given dims and staleness flags; the daemon expands. `--repair` pops

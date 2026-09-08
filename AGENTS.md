@@ -16,8 +16,9 @@ underneath; this process is documented in the upstream repo's
   **applies**, with this project's tweaks (zig build, generated
   co-author trailer).
 - https://github.com/bevry-vibes/skills/blob/main/conventions.md —
-  **applies** (the base config files were pulled in at scaffold time;
-  the splat-naming and no-hard-wraps rules live upstream in it).
+  **applies** (the bevry/base config files stay verbatim above their
+  CUSTOM segments, with this repo's overrides underneath; the
+  splat-naming and wrapping rules live upstream in it).
 - https://github.com/bevry-vibes/skills/blob/main/minimax.md —
   **applies** when the running agent is a MiniMax M3 model (its rules
   gate themselves on model and harness).
