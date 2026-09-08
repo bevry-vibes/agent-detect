@@ -6,6 +6,8 @@ Infers the current agent's **harness**, **provider**, and **model** — multi-ha
 
 ### installation
 
+There is no npm or crates.io package — agent-detect ships as the prebuilt binaries below, so `npx agent-detect` and friends will 404.
+
 Identify the binary for your platform from the [latest release](https://github.com/bevry-vibes/agent-detect/releases/latest):
 
 | binary                                                                                                                                      | os                   | arch   |
@@ -22,8 +24,8 @@ Identify the binary for your platform from the [latest release](https://github.c
 Download the binary for your platform using whichever tool is appropriate:
 
 ```sh
-# example: linux x86_64 (sh)
-curl -Lo agent-detect https://github.com/bevry-vibes/agent-detect/releases/latest/download/agent-detect-linux-x86_64
+# example: linux x86_64 (sh) — substitute your platform's asset name from the table above
+curl -fLo agent-detect https://github.com/bevry-vibes/agent-detect/releases/latest/download/agent-detect-linux-x86_64
 chmod +x agent-detect
 ```
 
@@ -31,6 +33,9 @@ chmod +x agent-detect
 # example: windows x86_64 (powershell 7.6)
 Invoke-WebRequest https://github.com/bevry-vibes/agent-detect/releases/latest/download/agent-detect-windows-x86_64.exe -OutFile agent-detect.exe
 ```
+
+The `-f` flag is load-bearing: without it, a mistyped asset name saves GitHub's "Not Found" page as the binary, which then fails to execute with a baffling error instead of a clear download failure.
+(`Invoke-WebRequest` already fails on HTTP errors.)
 
 Once downloaded, the use cases:
 
