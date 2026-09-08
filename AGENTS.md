@@ -13,7 +13,6 @@ this process is documented in the upstream repo's [local tweaks pattern](https:/
 - https://github.com/bevry-vibes/skills/blob/main/minimax.md — **applies** when the running agent is a MiniMax M3 model (its rules gate themselves on model and harness).
 - [plans.md](./plans.md) — **applies to every harness** that writes a plan for this project (plans + `.prompts.md` companions in `.plans/`; supersedes the `kilo.md` skill, now retired upstream, whose plan tweaks it absorbed).
 
-This file is not policy — it is a pointer.
 
 ## token cost
 
