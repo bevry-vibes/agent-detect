@@ -22,8 +22,8 @@ Token cost arises only from the session hosting it — e.g. a live `fixtures cap
 
 ## powershell
 
-The bevry-vibes [powershell.md](https://github.com/bevry-vibes/skills/blob/main/powershell.md) skill **applies** —
-the 7.6+ mandate, modern-syntax preferences, the `Set-Content` line-ending traps, IndexOf splicing, and the sqlite3 CLI patterns live there.
+The bevry-vibes [powershell.md](https://github.com/bevry-vibes/skills/blob/main/powershell.md) skill **applies**
+— the 7.6+ mandate, modern-syntax preferences, the `Set-Content` line-ending traps, IndexOf splicing, and the sqlite3 CLI patterns live there.
 This repo's and this host's tweaks — the `* -text` line-ending fact, the broken-tooling fallbacks, cleanup scoping — live in [powershell.md](./powershell.md).
 Never round-trip a bulk rewrite through `Set-Content`.
 
@@ -31,8 +31,8 @@ Never round-trip a bulk rewrite through `Set-Content`.
 
 Build with `zig build` (released), `zig build dev` (maintainer `fixtures` binary), and `zig build test`.
 The bevry-vibes [zig.md](https://github.com/bevry-vibes/skills/blob/main/zig.md) skill carries the Zig 0.16 API notes and general gotchas; this repo's patterns and gotchas live in [zig.md](./zig.md).
-The source is split across four files —
-`src/lib/rules.zig` (rule tables + pure name resolution), `src/lib/core.zig` (ladder + policy), `src/dev/dev.zig` (the dev-gated fixtures surface), `src/main.zig` (thin entry + re-exports) — in a strict no-cycles import DAG.
+The source is split across four files
+— `src/lib/rules.zig` (rule tables + pure name resolution), `src/lib/core.zig` (ladder + policy), `src/dev/dev.zig` (the dev-gated fixtures surface), `src/main.zig` (thin entry + re-exports) — in a strict no-cycles import DAG.
 
 ## harness configuration
 

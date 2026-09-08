@@ -1,7 +1,6 @@
 # zig.md
 
-Local application of the bevry-vibes skills [zig.md](https://github.com/bevry-vibes/skills/blob/main/zig.md) —
-see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
+Local application of the bevry-vibes skills [zig.md](https://github.com/bevry-vibes/skills/blob/main/zig.md) — see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
 
 ## this project's tweaks
 

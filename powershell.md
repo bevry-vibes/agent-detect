@@ -1,7 +1,6 @@
 # powershell.md
 
-Local application of the bevry-vibes skills [powershell.md](https://github.com/bevry-vibes/skills/blob/main/powershell.md) —
-see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
+Local application of the bevry-vibes skills [powershell.md](https://github.com/bevry-vibes/skills/blob/main/powershell.md) — see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
 
 ## this project's and this host's tweaks
 

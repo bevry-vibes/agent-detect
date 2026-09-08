@@ -1,7 +1,6 @@
 # plans.md
 
-Local application of the bevry-vibes skills [plans.md](https://github.com/bevry-vibes/skills/blob/main/plans.md) —
-see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
+Local application of the bevry-vibes skills [plans.md](https://github.com/bevry-vibes/skills/blob/main/plans.md) — see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
 
 ## this project's tweaks
 

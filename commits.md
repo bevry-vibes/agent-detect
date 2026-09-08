@@ -1,7 +1,6 @@
 # commits.md
 
-Local application of the bevry-vibes skills [commits.md](https://github.com/bevry-vibes/skills/blob/main/commits.md) —
-see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
+Local application of the bevry-vibes skills [commits.md](https://github.com/bevry-vibes/skills/blob/main/commits.md) — see the upstream [local tweaks pattern](https://github.com/bevry-vibes/skills#local-tweaks-pattern).
 
 ## this project's tweaks
 
@@ -15,5 +14,4 @@ The notes flow (watch the run, `gh release edit --notes-file`, draft from `git l
 The project-specific pieces:
 
 - The release runbook itself (calver version, bump, tag, push) lives in [CONTRIBUTING.md](./CONTRIBUTING.md) "cut a release".
-- The `release` job in `.github/workflows/build.yml` publishes the pushed tag with a fixed one-line body — the stable-release pointer plus the `releases/latest/download/<asset>` note —
-  and sets `latest` itself (`make_latest: true`), so the verified end state is `prerelease=false` with the assets present.
+- The `release` job in `.github/workflows/build.yml` publishes the pushed tag with a fixed one-line body — the stable-release pointer plus the `releases/latest/download/<asset>` note — and sets `latest` itself (`make_latest: true`), so the verified end state is `prerelease=false` with the assets present.

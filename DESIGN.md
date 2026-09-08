@@ -97,11 +97,11 @@ Store tables (semantics only — shapes in the schemas):
   zig reads them only to handle **pop** (the launch argv + version probe — the table entry wins over the file's recorded meta as "the latest") and **`--repair`** (an `unknown_invocations` item that gains an entry re-queues as a targeted from-capture entry).
   A successful capture records the invocation it ran under into the fixture file's own `meta`; the table entry persists as the re-capture source.
 
-  **Model pinning**: an invocation that does not pin the model via the harness's own flag (`crush -m`, `kilo --model`, `opencode --model`, `cline --provider/--model`, …) runs whatever the host's default is —
-  "safe but unreliable": the writer rule keeps strays out, but the post-check fails (session ran the default, not the combo) and the worker's stderr banner shows the *default* model, which reads like a mystery until the unpinned launch is noticed.
+  **Model pinning**: an invocation that does not pin the model via the harness's own flag (`crush -m`, `kilo --model`, `opencode --model`, `cline --provider/--model`, …) runs whatever the host's default is
+  — "safe but unreliable": the writer rule keeps strays out, but the post-check fails (session ran the default, not the combo) and the worker's stderr banner shows the *default* model, which reads like a mystery until the unpinned launch is noticed.
   Pin wherever a flag exists, using ids from the host's own model catalog (`kilo models`, `opencode models`, `crush`'s `providers.json`, …) so the session really runs the combo.
-  Two classes stay unpinned on purpose: harnesses whose detection reads a **config file** (qwen's `settings.json`, kimi-code's `config.toml`, mmx's `config.json`, goose's `config.yaml`, reasonix's `config.toml`, vibe's `VIBE_*` env) —
-  the CLI flag is session-only and does not reach the config the detector reads, so an argv pin would make the session and the detection disagree (the capture can only pass by changing the host config, which is the user's call per the global-settings rule);
+  Two classes stay unpinned on purpose: harnesses whose detection reads a **config file** (qwen's `settings.json`, kimi-code's `config.toml`, mmx's `config.json`, goose's `config.yaml`, reasonix's `config.toml`, vibe's `VIBE_*` env)
+  — the CLI flag is session-only and does not reach the config the detector reads, so an argv pin would make the session and the detection disagree (the capture can only pass by changing the host config, which is the user's call per the global-settings rule);
   and combos whose provider is not configured/authenticated on the host (no catalog entry, or the provider needs a sign-in the host lacks).
   Those are environment gaps, triaged per host, not invocation bugs.
 - `backlog` — the actionable gaps + the failure memory: `unknown_harnesses` / `unknown_providers` / `unknown_models` (unique dim slugs from unresolvable stems — folder stems and invocations-table ids alike; a fix, adding a rule, is addressable per dim), `unknown_invocations` (fixture ids of from-capture files with no invocation of record anywhere), and `known_but_failed` (see below).
@@ -130,8 +130,7 @@ A re-assert must repeat the SAME flag set (defaults included) or it lands as a s
 The **pop protocol** (the daemon's per-poll expansion):
 1. Refresh the `backlog` from a folder scan, then scan entries in mode-rank order (from-identity first), then array order; delete entries with no remaining candidates anywhere and malformed entries (logged + dropped — the errors ledger is gone; `daemon.log` is the dev agent's record).
 2. Expand the entry's universe — **one universe**: resolvable dims ∧ (fixtured ∨ feasible-unfixtured per the grids for from-identity;
-   invocation-known for from-capture — the `invocations` table ∪ capture files carrying `meta.prompt_invocation`; files without any invocation are backlog unknown_invocations, never candidates) —
-   filtered by dims, platform (the entry's, or the host's per platform in the loop), the staleness criteria, and the free flag.
+   invocation-known for from-capture — the `invocations` table ∪ capture files carrying `meta.prompt_invocation`; files without any invocation are backlog unknown_invocations, never candidates) — filtered by dims, platform (the entry's, or the host's per platform in the loop), the staleness criteria, and the free flag.
 3. A candidate is DONE when the mode's success `meta.updated_at` is present AND ≥ the entry's `started_at` (a never-worked entry has no done candidates); else if this daemon session already failed it (in-memory damping — one attempt per candidate per run) it is skipped; else it is a candidate.
    Stamp `started_at` on first work.
 4. Work ONE remaining host-platform candidate per poll (adaptive pacing unchanged).
@@ -161,8 +160,8 @@ Exceptions: any explicit `--stale-*` ⇒ `--stale` is NOT defaulted (the explici
 **Uniform default rule:** a queue item with no `--stale-*` and no `--refresh*` pops with the same `--stale` default.
 **Why:** churn prevention — with `--stale` defaulted, idle re-queues only pick genuinely stale combos.
 
-**`--repair`** (the one action flag; on `fixtures queue`): pops the backlog, re-evaluates each item against the CURRENT binary's rule tables and grids, and re-queues the now-actionable items —
-unknown_* dim item now resolvable → removed from the backlog + one from-identity entry per item filtered on that dim;
+**`--repair`** (the one action flag; on `fixtures queue`): pops the backlog, re-evaluates each item against the CURRENT binary's rule tables and grids, and re-queues the now-actionable items
+— unknown_* dim item now resolvable → removed from the backlog + one from-identity entry per item filtered on that dim;
 unknown_invocations item that now has an invocation of record → removed + a `--fixture=<id>` from-capture entry;
 the unfixtured → one from-identity entry over the feasible universe, honoring dims filters.
 Items still unresolvable / still invocation-less stay in the backlog; repair logs them.
@@ -178,8 +177,8 @@ If the agent's workflow stalls because the daemon isn't running, the correct act
 The agent never runs the daemon.
 The exact guard and what it checks is documented on `runFixturesDaemon` in `src/dev/dev.zig`.
 A user run from a terminal is the baseline;
-on macOS the same clean user context can be achieved without a terminal via the per-user LaunchAgent bootstrap (no sudo, launchd-parented), and on Windows via a per-user scheduled task (no admin, inherits the user session env) —
-both documented in CONTRIBUTING.md ("daemon launch: macOS LaunchAgent bootstrap" / "daemon launch: Windows scheduled task (no admin)").
+on macOS the same clean user context can be achieved without a terminal via the per-user LaunchAgent bootstrap (no sudo, launchd-parented), and on Windows via a per-user scheduled task (no admin, inherits the user session env)
+— both documented in CONTRIBUTING.md ("daemon launch: macOS LaunchAgent bootstrap" / "daemon launch: Windows scheduled task (no admin)").
 
 ### capture workers: isolated cwd, streamed output, whole-tree kill
 
@@ -328,8 +327,8 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
      Name variations across services (e.g. `gpt-5.6-sol` vs `gpt-5.6-luna`, `claude-opus-4.7/4.8/5`, `qwen3.5/3.6`, the `:free` vs `-free` vs `-0731` stamps) are coalesced into one canonical model per family, and the service-specific spellings are recorded as variations on the recipe, never added as duplicates.
      Provider serving-environment stamps (Chutes' TEE suffix) and endpoint/tier variants fold the same way;
      folding never crosses `model_license` or param-size differences, and ids carry a size distinction only where competing claims on the non-distinct name make it necessary to discern the model (official-claim naming; `model_license`, the 18th canonical field, keeps the license dimension explicit in every report).
-     The tracked set is a direct snapshot of OpenRouter's own ranking —
-     the raw `data` array of `GET /api/v1/models?sort=top-weekly&limit=100`, jq-filtered to models whose `supported_parameters` includes `tools` (`fixtures/evergreen-models.json`), regenerable with one authenticated call.
+     The tracked set is a direct snapshot of OpenRouter's own ranking
+     — the raw `data` array of `GET /api/v1/models?sort=top-weekly&limit=100`, jq-filtered to models whose `supported_parameters` includes `tools` (`fixtures/evergreen-models.json`), regenerable with one authenticated call.
      The available-providers snapshot is `fixtures/evergreen-providers.json` (the raw `data` array of `GET /api/v1/providers`), regenerated the same way.
      The harness target set is `fixtures/evergreen-harnesses.txt` (top 50 programming/code agents, curated from the two agent directories referenced in its header; see CONTRIBUTING.md "harness quality filters").
      See CONTRIBUTING.md "probing scope + runbook" (evergreen model set).
@@ -375,8 +374,8 @@ This section pins the matrix policy — what gets a rule, a recipe, and a fixtur
   Declared fixtures carry no evidence at all.
 - **Cross-platform daemon control principle (decision #12):** one `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop` across macOS/Linux/Windows — no per-platform signal doubles.
   Ctrl+C stays the terminal graceful-stop shortcut; the daemon clears the control file after acting.
-- **Refresh flavours:** every queue entry runs in one of two modes —
-  `from-identity` (resolve the declared identification from provided ids; declared, not observed; zero tokens; harness not required) and `from-capture` (launch the real harness so it runs `fixtures capture` in a live model session; token-consuming, user-confirmed only).
+- **Refresh flavours:** every queue entry runs in one of two modes
+  — `from-identity` (resolve the declared identification from provided ids; declared, not observed; zero tokens; harness not required) and `from-capture` (launch the real harness so it runs `fixtures capture` in a live model session; token-consuming, user-confirmed only).
   **No mode flag → both entries are queued per candidate** (declared first by mode rank, capture upgrade after); exactly one flag → that mode only; both flags → exit 3.
   The fixture envelope is the per-channel object shape defined above ("per-platform fixtures").
   See CONTRIBUTING.md for installs and the probing runbook.
