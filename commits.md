@@ -10,5 +10,12 @@ Local application of the bevry-vibes skills [commits.md](https://github.com/bevr
 
 ## releases
 
-- Versioning is calver: `<year>.<month>.<day>-<revision>` — UTC date, the revision resets to `1` each day and increments per same-day release — and the tag equals the `build.zig.zon` version exactly, with no `v` prefix, matching the `tags: ['*.*.*-*']` filter in `.github/workflows/build.yml`.
+- This project elects **calver** (upstream "calver" section): the version lives in `build.zig.zon` and the tag equals it exactly, matching the `tags: ['*.*.*-*']` filter in `.github/workflows/build.yml`.
 - The bump commit is `release: <version>` (this repo's `<area>:` style — no headline).
+
+After the cut, verify locally that the freshly built binary prints the expected version:
+
+```sh
+zig build && ./zig-out/bin/agent-detect --version
+# → agent-detect <new_version>
+```
