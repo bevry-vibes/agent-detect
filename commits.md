@@ -11,7 +11,6 @@ Local application of the bevry-vibes skills [commits.md](https://github.com/bevr
 ## releases
 
 - This project elects **calver** (upstream "calver" section): the version lives in `build.zig.zon` and the tag equals it exactly, matching the `tags: ['*.*.*-*']` filter in `.github/workflows/build.yml`.
-- The bump commit is `release: <version>` (this repo's `<area>:` style — no headline).
 
 After the cut, verify locally that the freshly built binary prints the expected version:
 
