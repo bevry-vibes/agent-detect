@@ -207,6 +207,37 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
     }
 }
 
+/// from-capture stems that predate the cross-channel rule (a from-capture file exists but no from-identity channel was ever declared).
+/// Each is declared by its next queue drain (the staged entries are in fixtures/index.json) — drop the stem as it lands.
+fn isLegacyCrossChannel(stem: []const u8) bool {
+    const legacy = [_][]const u8{
+        "goose-opencodego-deepseekv4flash-darwin",
+        "hermes-ollama-glm53flash-darwin",
+    };
+    for (legacy) |id| {
+        if (std.mem.eql(u8, id, stem)) return true;
+    }
+    return false;
+}
+
+test "fixtures: every from-capture stem carries a from-identity channel" {
+    // The declared channel is the baseline record for a combo — a capture-only stem means the declaration was never made.
+    // The missing declaration is queued (never hand-written — fixture files are regenerated, not edited); the grandfather list holds the gap until the queue drains it.
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    const capture_stems = try discoverFolderStems(aa, capture_dir);
+    for (capture_stems) |stem| {
+        if (isLegacyCrossChannel(stem)) continue;
+        const id_path = try std.fmt.allocPrint(aa, "{s}/{s}.json", .{ identity_dir, stem });
+        std.Io.Dir.cwd().access(testing.io, id_path, .{}) catch {
+            std.debug.print("from-capture fixture {s}.json has no from-identity channel — queue it via `fixtures queue --fixture={s} --from-identity`\n", .{ stem, stem });
+            return error.MissingIdentityChannel;
+        };
+    }
+}
+
 /// from-capture stems written before the required-meta rule (their meta carries only `updated_at`). Each is rewritten by its next re-capture — drop the stem as it lands.
 fn isLegacyRequiredMeta(stem: []const u8) bool {
     const legacy = [_][]const u8{

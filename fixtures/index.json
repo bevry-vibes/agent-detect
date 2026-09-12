@@ -38,6 +38,24 @@
       "mode": "from-identity",
       "stale": true,
       "runner": 23039
+    },
+    {
+      "harness": "goose",
+      "provider": "opencodego",
+      "model": "deepseekv4flash",
+      "platform": "darwin",
+      "mode": "from-identity",
+      "stale": true,
+      "runner": 49514
+    },
+    {
+      "harness": "hermes",
+      "provider": "ollama",
+      "model": "glm53flash",
+      "platform": "darwin",
+      "mode": "from-identity",
+      "stale": true,
+      "runner": 49514
     }
   ],
   "backlog": {
