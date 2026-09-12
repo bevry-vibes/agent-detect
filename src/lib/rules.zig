@@ -9,7 +9,7 @@
 
 // agent-detect rules — the curated rule tables (model / provider / harness) and pure name resolution.
 // Data-only: imports std/builtin exclusively and never imports core.zig or dev.zig (the import DAG is rules <- core <- dev <- main, no cycles).
-// `binary_names` on each harness rule is the single hand-maintained list of executable names (bare stems first, then platform extensions) shared by the detection ancestry scan, the availability probe, the `--version` probe, launch argv[0] substitution, and the daemon guard.
+// `binary_names` on each harness rule is the single hand-maintained list of executable names (bare stems first, then platform extensions) shared by the detection ancestry scan and the daemon's in-agent guard, and validated against authored invocations' argv[0] by the fixture tests — the availability/`--version` probes and the capture launch read the authored invocation arrays (the store's `invocations` table / the file's recorded meta), never this list.
 
 const std = @import("std");
 const builtin = @import("builtin");
@@ -496,7 +496,6 @@ pub const rulesForProviders = [_]ProviderRule{
     // vercel: never/never — Vercel AI Gateway ZDR docs: "AI Gateway has a ZDR policy and does not retain prompts, outputs, or sensitive data … does not use your prompts or responses for training purposes".
     // Caveat: "By default, AI Gateway does not route based on the data retention policy of providers" — downstream providers may train unless `disallowPromptTraining` is enabled (free) or ZDR routing is on (Pro/Enterprise); that is upstream policy, not the gateway's own use.
     .{ .name = "vercel", .label = "Vercel AI Gateway", .closed_training = "never", .open_training = "never", .sources = &.{ "https://vercel.com/docs/ai-gateway/security-and-compliance/zdr", "https://vercel.com/docs/ai-gateway/security-and-compliance/disallow-prompt-training" }, .variations = &.{"ai-gateway"} },
-    .{ .name = "vercel", .label = "Vercel AI Gateway", .closed_training = "never", .open_training = "never", .sources = &.{ "https://vercel.com/docs/ai-gateway/security-and-compliance/zdr", "https://vercel.com/docs/ai-gateway/security-and-compliance/disallow-prompt-training" }, .variations = &.{"ai-gateway"} },
     // phala: never/never — Phala's TEE inference gateway (inference.phala.com/v1; an OpenRouter endpoint provider, no models.dev key), serving exclusively open-weight models inside hardware enclaves.
     // The no-training basis is technical inaccessibility rather than an explicit sentence: inputs and outputs are end-to-end encrypted in the TEE, "The platform may retain encrypted inputs and outputs and metadata for the purpose of improving its operation and security", and "The platform retains the encrypted data for the user but technically doesn't have access to the raw data" — the platform cannot read, therefore cannot train on, user content.
     // The closed axis is the commented vacuous case: the catalog (unauth GET /v1/models, 2026-09-07 — deepseek/llama/qwen/glm/kimi/gpt-oss/gemma plus Phala's own uncensored finetunes, all TEE-stamped) serves no closed models to train (the exclusively-open convention).
@@ -542,7 +541,7 @@ pub const HarnessRule = struct {
     /// The rule table itself is the audit surface — these are not emitted into the raw block.
     training_sources: []const []const u8 = &.{},
     env_markers: []const []const u8,
-    binary_names: []const []const u8, // executable names for ancestry matching, probing, launching, and the daemon guard (bare stems first, then platform extensions)
+    binary_names: []const []const u8, // executable names for ancestry matching, the daemon's in-agent guard, and invocation argv[0] validation in the tests (bare stems first, then platform extensions)
     /// extra alias display-strings not covered by `name`/`label`/ `short_title`; joins the normalized alias set — see the field doc on `ModelRule.variations`.
     variations: []const []const u8 = &.{},
 };
@@ -778,10 +777,10 @@ pub fn providerMetaForName(name: []const u8) ?ProviderRule {
     return null;
 }
 
-/// map an openai-compatible `base_url` host back to the canonical provider id.
+/// map an openai-compatible `base_url` host onto the canonical provider id it names, or null when the host is unknown.
 /// Used by `detectQwen` to resolve the upstream service behind qwen's `modelProviders[].baseUrl`.
-/// Unknown hosts fall back to "minimax" (the well-fixtures endpoint).
-pub fn providerForBaseUrl(base_url: []const u8) []const u8 {
+/// Never-guess: an unknown host resolves null and the caller leaves the provider dim unresolved (never an implied fallback provider).
+pub fn providerForBaseUrl(base_url: []const u8) ?[]const u8 {
     const table = [_][2][]const u8{
         .{ "minimax.io", "minimax" },
         .{ "deepseek.com", "deepseek" },
@@ -789,7 +788,7 @@ pub fn providerForBaseUrl(base_url: []const u8) []const u8 {
         .{ "groq.com", "groq" },
         .{ "cerebras.ai", "cerebras" },
         .{ "z.ai", "zai" },
-        .{ "moonshot", "moonshot" },
+        .{ "moonshot", "moonshotai" },
         .{ "dashscope", "qwen" },
         .{ "qwen.ai", "qwen" },
         .{ "mistral.ai", "mistral" },
@@ -802,7 +801,7 @@ pub fn providerForBaseUrl(base_url: []const u8) []const u8 {
     for (table) |pair| {
         if (std.mem.indexOf(u8, base_url, pair[0]) != null) return pair[1];
     }
-    return "minimax";
+    return null;
 }
 
 /// look up a harness rule by its canonical `name` id.

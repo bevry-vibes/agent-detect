@@ -975,8 +975,8 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
 
     // qwen's auth.selectedType is the route key, not the underlying provider.
     // Look at modelProviders[<key>][*].baseUrl to find the actual upstream service; the baseUrl host is mapped to the provider id (`providerForBaseUrl`).
-    // Unknown hosts default to "minimax" (the well-fixtures case: api.minimax.io).
-    var provider_name: []const u8 = "minimax";
+    // Never-guess: a missing modelProviders block or an unknown host leaves the provider dim unresolved (partial detection is bad data, not a default provider).
+    var provider_name: ?[]const u8 = null;
     var provider_base_url: []const u8 = "";
     if (root.get("modelProviders")) |mps| {
         if (mps.object.get("openai")) |entries| {
@@ -990,9 +990,11 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
         }
     }
 
-    d.provider_name = provider_name;
-    d.provider_label = providerForName(provider_name) orelse try titleCase(a, provider_name);
-    try applyProviderMeta(a, d, provider_name);
+    if (provider_name) |pn| {
+        d.provider_name = pn;
+        d.provider_label = providerForName(pn) orelse try titleCase(a, pn);
+        try applyProviderMeta(a, d, pn);
+    }
     try applyModel(a, d, model_name, model_name);
 
     var fields = std.ArrayList(FieldObservation).empty;
@@ -1011,9 +1013,9 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     const obs = try a.alloc(FileObservation, 1);
     obs[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
     d.raw.config_files = obs;
-    // decision #11: model read from settings.json model.name; provider derived from the modelProviders[].baseUrl host (when present).
+    // decision #11: model read from settings.json model.name; provider derived from the modelProviders[].baseUrl host (only when the host mapped to a known provider).
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "model.name", .value = model_name });
-    if (provider_base_url.len > 0) {
+    if (provider_name != null and provider_base_url.len > 0) {
         try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "modelProviders.openai[].baseUrl", .value = provider_base_url });
     }
 }
@@ -1203,7 +1205,10 @@ fn detectCrushFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.E
         \\WHERE role = 'assistant' AND model IS NOT NULL AND model != '' AND provider IS NOT NULL AND provider != ''
         \\ORDER BY created_at DESC LIMIT 1
     ;
-    const out = kiloSqliteJson(a, io, db, sql) catch return false;
+    const out = kiloSqliteJson(a, io, db, sql) catch |err| {
+        if (err == error.SqliteUnavailable) return err; // optional dep missing — surface exit 6, don't misreport exit 8
+        return false;
+    };
     if (out.len == 0) return false;
     const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return false;
     defer outer.deinit();
@@ -1375,7 +1380,10 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
     , .{dir_lit.items});
     defer a.free(sql);
 
-    const out = kiloSqliteJson(a, io, db, sql) catch return null;
+    const out = kiloSqliteJson(a, io, db, sql) catch |err| {
+        if (err == error.SqliteUnavailable) return err; // optional dep missing — surface exit 6, don't misreport exit 8
+        return null;
+    };
     if (out.len == 0) return null;
     const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
     if (outer.value != .array or outer.value.array.items.len == 0) return null;
@@ -1454,6 +1462,7 @@ pub fn readChildOutput(a: std.mem.Allocator, io: std.Io, child: std.process.Chil
 /// spawn `sqlite3 -json <db> <sql>`; return stdout.
 /// Caller owns the returned slice — do NOT free it here: the caller's JSON parse aliases into it, and Zig 0.16's arena free-list would reclaim this most-recent allocation into the parse's own allocations (use-after-free clobbering the bytes mid-parse).
 /// The dev fixtures store no longer shells out to sqlite — the released binary's read-only session-store reads (kilo/opencode/ copilot DBs) are the only sqlite use left.
+/// `sqlite3` is an OPTIONAL dependency (documented in README.md): a spawn `FileNotFound` (the CLI absent from PATH) returns `error.SqliteUnavailable`, which callers propagate so the binary can exit 6 (incomplete environment) instead of a misleading exit 8 — every other failure stays a local "unreadable store" (detection ends unresolved).
 fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
     const db_z = try a.dupeZ(u8, db);
     defer a.free(db_z);
@@ -1462,7 +1471,10 @@ fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const
         .argv = &argv_buf,
         .stdout = .pipe,
         .stderr = .ignore,
-    }) catch return error.SqliteSpawnFailed;
+    }) catch |err| switch (err) {
+        error.FileNotFound => return error.SqliteUnavailable,
+        else => return error.SqliteSpawnFailed,
+    };
     const out = readChildOutput(a, io, child, false) catch return error.SqliteSpawnFailed;
     const term = child.wait(io) catch return error.SqliteSpawnFailed;
     switch (term) {
@@ -1546,6 +1558,11 @@ fn sqlStringLit(a: std.mem.Allocator, dir: []const u8) ![]u8 {
     return lit.toOwnedSlice(a);
 }
 
+/// Hermes detection. Ladder, most-invasive-last:
+/// 1. launcher override — HERMES_MODEL (bare id or "provider/model"; HERMES_PROVIDER pins the provider when the model id is bare);
+/// 2. the live sqlite session store (`$HERMES_HOME`/state.db, profile-aware via HERMES_PROFILE) — `session_model_usage` is written per API call, so it reflects `-m`/`--provider` overrides config.yaml never sees; the active session is the non-archived session for the cwd (desktop/gateway sessions record no cwd and fall through to the newest row overall), `task=''` rows (the main agent loop) preferred over background tasks;
+/// 3. config.yaml's `model:` block (the committed default) — only reached when neither the env nor the store resolved the combo.
+/// Partial detection is honest: a dim that doesn't resolve stays unset.
 fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     // Hermes's own launcher override — HERMES_MODEL carries the model (bare id or "provider/model"); HERMES_PROVIDER pins the provider when the model id is bare.
     // The daemon uses these to capture a chosen combo (`hermes chat --provider P -m M`) without touching the user's config (the global-settings rule).
@@ -1602,8 +1619,14 @@ fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
                 \\WHERE s.archived=0
                 \\ORDER BY (u.task='') DESC, u.last_seen DESC LIMIT 1
             , .{});
-            var out = hermesSqliteJson(a, io, db, sql_cwd) catch "";
-            if (out.len == 0) out = hermesSqliteJson(a, io, db, sql_any) catch "";
+            var out = hermesSqliteJson(a, io, db, sql_cwd) catch |err| switch (err) {
+                error.SqliteUnavailable => return err, // optional dep missing — surface exit 6, don't misreport exit 8
+                else => "",
+            };
+            if (out.len == 0) out = hermesSqliteJson(a, io, db, sql_any) catch |err| switch (err) {
+                error.SqliteUnavailable => return err,
+                else => "",
+            };
             if (out.len > 0) {
                 if (std.json.parseFromSlice(std.json.Value, a, out, .{}) catch null) |parsed| {
                     if (parsed.value == .array and parsed.value.array.items.len > 0) {
@@ -1821,6 +1844,11 @@ fn providerHostFold(base_url: []const u8) ?[]const u8 {
     return null;
 }
 
+/// ZCode desktop-app detection. Ladder, most-invasive-last:
+/// 1. harness version — the ZCODE_APP_VERSION marker rides into every child session's env;
+/// 2. the session stores under ~/.zcode — the per-session model-io rollout JSONL files, whose newest `main`-role record carries the exact providerId/modelId the session is running (provider keys resolve via `zcodeProviderCanonical`: bundled-plan keys → `zcode`, custom keys via `~/.zcode/v2/config.json` — the endpoint host first, `providerHostFold`, else the display name);
+/// 3. `~/.zcode/v2/setting.json` — `modelProviderFamilySelectedKeys` is the provider fallback when no rollout record resolved one, and `optimizeAgentExperienceEnabled` is the training-toggle instance read (see the harness-training policy in DESIGN.md).
+/// Partial detection is honest: a dim that doesn't resolve stays unset.
 fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     // ZCode desktop app: the app version rides the ZCODE_APP_VERSION marker into every child session's env.
     // The active provider/model pair comes from the session stores under ~/.zcode —
@@ -2303,7 +2331,10 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
     // Copilot's sessions have no cwd column, so "active" means: not archived and (prefer) currently running — never a closed session that merely updated last.
     // `is_running DESC` keeps the live session ahead of a finished one with a newer updated_at.
     const sql = "SELECT model, provider_id FROM sessions WHERE archived_at IS NULL ORDER BY is_running DESC, updated_at DESC LIMIT 1";
-    const out = kiloSqliteJson(a, io, db, sql) catch return;
+    const out = kiloSqliteJson(a, io, db, sql) catch |err| {
+        if (err == error.SqliteUnavailable) return err; // optional dep missing — surface exit 6, don't misreport exit 8
+        return;
+    };
     defer a.free(out);
     if (out.len == 0) return;
     const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return;
@@ -2803,7 +2834,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         // populate process lineage from anc.
         // The full chain is emitted verbatim regardless of which harness was detected and whether detection ran via env marker or proc ancestry.
         // `canonical.harness_name` identifies the matched harness; the lineage is independent runtime provenance — it tells the maintainer WHERE the fixture was actually captured (e.g. inside a `<harness-id>` session vs. a fresh bash), which is useful audit info and never contradicts the canonical id.
-        // The launcher's `setsid` + per-harness shim (see DESIGN.md "platform invocation") guarantees the lineage contains the harness being tested without inheriting the dev harness's session.
+        // A daemon-spawned from-capture worker runs the authored invocation verbatim in an isolated temp cwd (see dev.zig's `runOneComboCapture`), so the lineage shows where the fixture was really captured; hand-run captures show whatever tree the user invoked from.
         var lineage = std.ArrayList(Ancestor).empty;
         for (anc.pids, 0..) |pid, i| {
             const name: []const u8 = if (i < anc.names.len) anc.names[i] else "";

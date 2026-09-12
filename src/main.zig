@@ -146,6 +146,11 @@ pub fn main(init: std.process.Init) u8 {
     return mainInner(init) catch |err| switch (err) {
         error.OutOfMemory => EXIT_OUT_OF_MEMORY,
         else => blk: {
+            // the optional `sqlite3` CLI is absent while a live session-store read needed it (kilo/opencode/copilot/crush/hermes) — the harness is known, detection cannot finish: exit 6, not a misleading exit 8.
+            if (err == error.SqliteUnavailable) {
+                writeErr(init.io, MSG_ENV_INCOMPLETE);
+                break :blk EXIT_ENV_INCOMPLETE;
+            }
             // dev-only error kinds — pruned from the released binary. Each writes its registry-name message to stderr (matching the "exact message verbage" scheme) plus its exit code.
             if (dev_build) {
                 if (err == error.IndexStoreError) {

@@ -11,7 +11,7 @@
 // Compiled into the binary only when built with `-Ddev=true`; `pub const dev` below is the comptime-gated struct, so the released binary never links this surface.
 //
 // The fixtures state is split two ways.
-// `fixtures/index.json` holds only the non-derivable state — `queue` (work intent), `backlog` (unresolvable dims / missing curation), and `known_but_failed` (retryable failure messages).
+// `fixtures/index.json` holds only the non-derivable state — `queue` (work intent), `invocations` (authored launch argv), `backlog` (unresolvable dims / missing curation + `known_but_failed`), and `blocklist` (per-git-user providers that must never be tested on this host).
 // Everything else about a fixture lives in the fixture files themselves: `fixtures/from-identity/<id>.json` (declared identifications) and `fixtures/from-capture/<id>.json` (live captures — written only on success, so a from-capture file always carries `outputs`), each a whole self-contained `{ outputs, meta }` envelope owned exclusively by its writer
 // — see fixtures/fixture.d.ts and fixtures/index.d.ts for the normative schemas.
 // `fixtures capture` runs inside a real agent session (spawned by the daemon via the invocation of record — the store's `invocations` table first, else the file's own `meta.prompt_invocation` — or by hand via `fixtures prompt`) and writes the whole from-capture file atomically;
@@ -30,7 +30,6 @@ const rules = @import("../lib/rules.zig");
 const writeOut = core.writeOut;
 const writeErr = core.writeErr;
 const Detection = core.Detection;
-const Ancestor = core.Ancestor;
 const detect = core.detect;
 const resolveRecipe = core.resolveRecipe;
 const buildCooked = core.buildCooked;
@@ -2609,22 +2608,13 @@ pub const dev = if (build_options.dev) struct {
         const p = parts[1];
         const m_d = parts[2];
         const plat = parts[3];
-        var d = (try resolveRecipe(a, h, p, m_d)) orelse {
+        const d = (try resolveRecipe(a, h, p, m_d)) orelse {
             daemonWriteErr(io, "daemon: from-identity: combo not in the rule tables — cannot declare a fixture\n");
             try recordKnownButFailed(io, a, fixture_id, "combo not in the rule tables — cannot declare a fixture", init.environ_map);
             damped.put(fixture_id, {}) catch {};
             return false;
         };
-        // real process lineage (like detect() would emit) so the declared fixture still shows WHERE it was written.
-        const anc = ancestorInfo(a, io);
-        var lineage = std.ArrayList(Ancestor).empty;
-        for (anc.pids, 0..) |pid, i| {
-            const name: []const u8 = if (i < anc.names.len) anc.names[i] else "";
-            try lineage.append(a, .{ .pid = pid, .name = name });
-        }
-        d.raw.process_lineage = try lineage.toOwnedSlice(a);
-        var empty_env = std.process.Environ.Map.init(a);
-        defer empty_env.deinit();
+        // Declared, not observed: the file carries no raw block (DESIGN "Declared fixtures carry no evidence at all"), so no lineage/env is gathered here — the capture channel is the only place process lineage appears.
         const cooked = try buildCooked(a, &d);
 
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
