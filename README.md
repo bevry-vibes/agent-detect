@@ -37,6 +37,9 @@ Invoke-WebRequest https://github.com/bevry-vibes/agent-detect/releases/latest/do
 The `-f` flag is load-bearing: without it, a mistyped asset name saves GitHub's "Not Found" page as the binary, which then fails to execute with a baffling error instead of a clear download failure.
 (`Invoke-WebRequest` already fails on HTTP errors.)
 
+**Optional dependency — `sqlite3`.** The binary has no required runtime dependencies.
+Live detection inside some harnesses (Kilo Code, OpenCode, GitHub Copilot CLI, Crush, Hermes) reads that harness's local session store via the `sqlite3` CLI; when it is absent from `PATH` there, `identify`/`trailer`/`check-reciprocal` exit `6` (incomplete environment preventing run) instead of guessing — every other code path never spawns it, so a store-less environment needs nothing else installed.
+
 Once downloaded, the use cases:
 
 ### identification

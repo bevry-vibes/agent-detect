@@ -34,9 +34,9 @@ export type FixtureId = string;
 
 /**
  * The staleness criteria a queue entry carries.
- * A candidate is stale iff ANY carried criterion says stale (OR, short-circuit per candidate); all five absent = a `--refresh` entry (every candidate is worked).
+ * A candidate is stale iff ANY carried criterion says stale (OR, short-circuit per candidate); all absent = a `--refresh` entry (every candidate is worked).
  * Absent evidence (no file, no meta) ⇒ every carried criterion says stale.
- * The CLI `--stale` flag stamps the composite: output OR age 27 days OR harness-version OR detect-version OR invocation.
+ * The CLI `--stale` flag stamps the composite: output OR age 27 days OR harness-version OR invocation.
  */
 export interface StaleCriteria {
   /** the two channel files' outputs.identify not both present and deep-equal. */
@@ -116,13 +116,28 @@ export interface Invocations {
   };
 }
 
+/**
+ * The blocklist — per-git-user providers that must never be tested on the hosts running as that user (credits exhausted, rate-limited, ...).
+ * Keyed by `git config --global github.username`; the provider entries are strict provider slugs — the same alphanumeric ids the fixture dims use (`opencode-go` → `opencodego`).
+ * Blocked providers never become daemon candidates (either mode) and `fixtures capture` refuses them (exit 10).
+ * An unset git identity blocks nothing; a `{}` entry blocks nothing.
+ */
+export interface Blocklist {
+  [githubUsername: string]: {
+    /** strict provider slugs (`opencodego`, `chutes`, ...); absent/empty = nothing blocked. */
+    providers?: string[];
+  };
+}
+
 /** The whole `fixtures/index.json` document. */
 export interface IndexStore {
-  store_version: 4;
+  store_version: 5;
   /** The filter-entry work queue (order = daemon scan order). */
   queue: QueueEntry[];
   /** The actionable gaps + failure memory (see Backlog). */
   backlog: Backlog;
   /** The authored invocations (see Invocations). */
   invocations: Invocations;
+  /** The per-git-user never-test providers (see Blocklist). */
+  blocklist: Blocklist;
 }

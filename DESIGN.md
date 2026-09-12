@@ -18,7 +18,7 @@ The implementation lives in `pub fn detect` in `src/lib/core.zig`, with each ste
 
 The released binary must stay minimal — no raw dump, no subcommands, no fixtures — so it ships as a single static file with no surprises.
 Its CLI surface is `identify`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
-The dev binary (`agent-detect-dev`) carries the maintainer's full toolkit: the standalone `raw` action (raw observations block) and the `fixtures` subcommand namespace (capture / daemon / queue / dequeue / status).
+The dev binary (`agent-detect-dev`) carries the maintainer's full toolkit: the standalone `raw` action (raw observations block) and the `fixtures` subcommand namespace (capture / daemon / queue / dequeue / status / prompt — the last prints the capture prompt a harness session is asked to run; the internal `__timeout` watchdog the daemon spawns is not part of the user surface).
 The split is enforced at compile time via the `dev` flag in `build.zig` and the `pub const dev = if (build_options.dev) struct { ... } else struct {};` block in `src/dev/dev.zig`.
 The released binary cannot accidentally include dev code paths.
 
@@ -67,7 +67,7 @@ A reader can instantly see what a fixture claims without scanning the `identify`
 
 The fixture state lives in two places, split by derivability:
 
-- **`fixtures/index.json`** — the committed state store, holding only the **non-derivable** state: `queue` (work intent), `invocations` (the authored launch argv — the dev agent's signal for what should capture), and `backlog` (actionable gaps + the `known_but_failed` failure memory).
+- **`fixtures/index.json`** — the committed state store, holding only the **non-derivable** state: `queue` (work intent), `invocations` (the authored launch argv — the dev agent's signal for what should capture), `backlog` (actionable gaps + the `known_but_failed` failure memory), and `blocklist` (per-git-user never-test providers).
   The legacy store v1 `fixtures` map and `errors` ledger, and the v2 top-level `known_but_failed`, are dropped on load and never re-serialized — back-compat by drop, not dual-read.
 - **The fixture files themselves** — `fixtures/from-identity/<id>.json` (declared identifications) and `fixtures/from-capture/<id>.json` (live captures — **written only on success**, so a from-capture file always carries `outputs`), each a whole self-contained `{ outputs, meta }` envelope.
   The **directory IS the channel** — no channel key prefixes inside files.
@@ -110,6 +110,9 @@ Store tables (semantics only — shapes in the schemas):
   Written by the workers on operational failure (capture exit ≠ 0, unavailable version probe, post-check mismatch); last-failure-wins across modes; removed when any channel of that combo succeeds (the fixture file is the success memory, this is the failure memory).
   Pops never gate on failure state; the dev agent reads the message and handles it.
   `--repair` upserts `--fixture=<id>` entries so the dev agent can force a targeted re-queue after fixing the cause; clearing an entry by hand is always safe.
+- `blocklist` — the per-user never-test providers: `blocklist[<github-username>] = { providers: [strict provider slugs] }`, keyed by the host's `git config --global github.username` (the entries use the strict provider slugs the fixture dims use — `opencode-go` → `opencodego`).
+  A blocked provider never becomes a daemon candidate (either mode) and `fixtures capture` refuses it (exit 10) — the host running as that user has exhausted credits / rate limits / etc. on it, so testing it there is never wanted.
+  An unset git identity blocks nothing; the table resolves once per daemon session and is surfaced by `fixtures status`.
 
 - The free axis lives in **`fixtures/map-provider-model-freeprovidermodel.csv`** — a sparse provider×model grid (rows only for providers with ≥1 free model, columns only for models free somewhere, cell = the provider's free model-id or `-`).
   Source of truth for free models.
@@ -153,7 +156,7 @@ One candidate remains per folder stem; a candidate is stale iff ANY carried crit
 **`--stale`** ≡ output OR days=27 OR harness-version OR invocation — the composite.
 **Defaulting:** `--stale` is defaulted to true — a queue upsert with no staleness flags carries the full composite.
 Exceptions: any explicit `--stale-*` ⇒ `--stale` is NOT defaulted (the explicit flags alone form the entry's set); `--refresh` ⇒ the entry carries NO criteria, so every candidate is worked regardless of freshness (the explicit opt-back-in to full re-evaluation).
-**Component overwrite:** `--stale` provided together with an explicit `--stale-*` ⇒ the explicit value overwrites the composite's default for that component only (`--stale --stale-by-days=0` = output + days=0 + harness-version + detect-version + invocation; `--stale --stale-by-days=999999999` effectively disables the age component).
+**Component overwrite:** `--stale` provided together with an explicit `--stale-*` ⇒ the explicit value overwrites the composite's default for that component only (`--stale --stale-by-days=0` = output + days=0 + harness-version + invocation; `--stale --stale-by-days=999999999` effectively disables the age component).
 **Conflicts (exit 3):** `--refresh` with `--stale` or any `--stale-*`.
 **Uniform default rule:** a queue item with no `--stale-*` and no `--refresh*` pops with the same `--stale` default.
 **Why:** churn prevention — with `--stale` defaulted, idle re-queues only pick genuinely stale combos.
@@ -173,7 +176,7 @@ The user — not the agent — runs `fixtures daemon`.
 The daemon's agent-detect guard refuses to start if it's running inside an agent (env-marker + ancestry check).
 If the agent's workflow stalls because the daemon isn't running, the correct action is for the agent to surface the command and the directory the user should run it in.
 The agent never runs the daemon.
-The exact guard and what it checks is documented on `runFixturesDaemon` in `src/dev/dev.zig`.
+The exact guard and what it checks is documented on `assertNotInAgent` in `src/dev/dev.zig`.
 A user run from a terminal is the baseline;
 on macOS the same clean user context can be achieved without a terminal via the per-user LaunchAgent bootstrap (no sudo, launchd-parented), and on Windows via a per-user scheduled task (no admin, inherits the user session env) — both documented in CONTRIBUTING.md ("daemon launch: macOS LaunchAgent bootstrap" / "daemon launch: Windows scheduled task (no admin)").
 
@@ -204,15 +207,16 @@ All three dims are required (or none); a partial combo exits 4 and an unknown id
 - **Multi-harness, multi-OS, multi-arch.**
   Per-platform native binaries via `zig build dist`.
   Universal/fat formats rejected — see [README.md](./README.md) for the per-platform binary table.
-- **Zero runtime dependencies.**
+- **Zero required runtime dependencies.**
   The *released* binary is one file, no shared libraries, no runtime.
+  The one OPTIONAL dependency is the `sqlite3` CLI, spawned read-only for live session-store reads (kilo/opencode/copilot/crush/hermes inside a real session) — when it is absent, those detections exit 6 (see the exit status registry); everything else never spawns it.
   The maintainer `fixtures` workflow reads and writes the local `fixtures/index.json` with Zig-native file locks — no external tools are required.
 - **Windows console is CP_UTF8.**
   The binary switches the console code page to CP_UTF8 at `main()` entry so the em dash and middle dot the CLI prints survive the OEM code page (cp437/850/1252); failures are ignored so console-less runs (the fixtures daemon) are unaffected.
 - **Never guess.**
   When detection can't fully resolve harness + provider + model, the binary exits 8 (unable to detect) with a single-line error and writes no fixture.
   A partial detection is bad data, not a placeholder.
-  The test suite (`src/known_fixtures.test.zig`) enforces the 20-field identify contract (and that every committed fixture carries a `from-identity` channel), so a "backfill to make tests pass" approach can't slip in.
+  The test suite (`src/known_fixtures.test.zig`) enforces the 20-field identify contract and that every committed from-capture file carries a `from-identity` channel (pre-rule strays are grandfathered in the test until their queued declarations drain), so a "backfill to make tests pass" approach can't slip in.
 
 ## exit status registry
 
@@ -246,13 +250,14 @@ Examples per group:
 - **3** — `agent-detect identify trailer` → `conflicting argument` + usage; dev `fixtures queue --refresh --stale-by-minutes=30`.
 - **4** — `identify --harness=cline` (partial combo); bare `agent-detect trailer`; dev `fixtures queue` without filter.
 - **5** — dev `fixtures daemon` inside an agent → `incompatible environment refusing run`.
-- **6** — reserved; the released binary reports env-level failure before the dev surface runs.
-  (The sqlite3-CLI dependency this code once described is gone — the dev store is a local JSON file.)
+- **6** — the optional `sqlite3` CLI is absent from PATH while a live session-store read needs it (kilo/opencode/copilot/crush/hermes inside a real session with a store on disk): the harness is known, detection cannot finish → `incomplete environment preventing run` rather than a misleading exit 8.
+  `sqlite3` is the only optional dependency — see README.md's install section; a store-less run (recipe mode, config-file harnesses, plain shell) never spawns it.
 - **7** — `identify`/`trailer co-author`/`check-reciprocal` `--harness=foo --provider=bar --model=baz` → `missing specified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
 - **8** — `identify`/`trailer co-author`/`check-reciprocal` when live detection resolves nothing (plain shell); dev `fixtures capture` partial → `unable to detect unspecified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
-- **9** — `check-reciprocal` with identity resolved but `harness_license`/`model_reciprocity`/`provider_closed_training` null (e.g. crush/hyper/qwen3.7-plus), `harness_license` is `"NOASSERTION"` (attempted, inconclusive), or a closed harness (`"NONE"`) whose `harness_closed_training` is undetermined (null) → `agent (harness, provider, model) data incomplete to make a determination`.
+- **9** — `check-reciprocal` with identity resolved but `harness_license`/`model_reciprocity`/`provider_closed_training` null (e.g. crush/hyper/step-3.7-flash — the model's reciprocity is unverified), `harness_license` is `"NOASSERTION"` (attempted, inconclusive), or a closed harness (`"NONE"`) whose `harness_closed_training` is undetermined (null) → `agent (harness, provider, model) data incomplete to make a determination`.
   Like the null provider/model dims, the data-incomplete nudge encourages correcting the data (make the instance state readable — e.g. zcode's "Improve experience" toggle — or get the posture sourced) rather than failing silently.
 - **10** — `check-reciprocal` for kilo/anthropic/claude-sonnet-4 (closed model), or a closed harness (`harness_license` `"NONE"`) whose `harness_closed_training` is `"enforced"` (verified training) or `"NOASSERTION"` (looked, no clear answer) → stderr `agent (harness, provider, model) data complete and requirement failed`, stdout `not reciprocal`.
+  Also dev `fixtures capture` for a blocklisted provider → the host's git user must never test it (no fixture written).
   A `"NONE"` harness with a passing closed-training value (`never`/`opt-in`/`opt-out`) falls through to the model/provider conjuncts like any licensed harness.
 - **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.) → `error.OutOfMemory`.
 - **12** — dev `fixtures *` where `fixtures/index.json` is corrupt or carries an unknown `store_version` → `index store error`.
@@ -329,7 +334,8 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
      See CONTRIBUTING.md "probing scope + runbook" (evergreen model set).
  14. **`binary_names` is the single name origin.**
      Each harness rule carries one hand-maintained list of executable names (`HarnessRule.binary_names`, written inline as a platform ternary: bare stems first, then platform extensions — `.cmd`/`.ps1` only for the npm-shimmed harnesses).
-     The detection ancestry scan, the availability probe, the `--version` probe, launch argv[0] substitution, and the daemon guard all read that one list, so they can never drift.
+     The detection ancestry scan and the daemon's in-agent guard read that one list, and the fixture tests validate every authored invocation's argv[0] against it, so they can never drift.
+     The availability/`--version` probes and the capture launch read the authored invocation arrays (the store's `invocations` table / the capture file's recorded `meta`) — the invocation's argv[0] IS the concrete per-platform binary, spawned verbatim with no name substitution.
      Per-recipe name lists no longer exist; `harnessRuleForFixtureId` slug-resolves a recipe's first `agent_id` segment through `canonicalIdFor` (`kimicode` → the `kimi-code` rule).
      The guard additionally covers `pending_binary_names` (the not-yet-ruled harnesses).
      Adding a harness rule therefore means filling in one field, not five lists.
@@ -339,6 +345,10 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
      (b) the provider baseUrl is the stronger discriminator — ollama.com is the cloud API, local runtimes sit on localhost/LAN (the `providerHostFold` helper in core.zig's zcode path is the precedent, currently folding inference.phala.com and ollama.com);
      (c) longer term, all local runtimes serving non-cloud models (ollama, lmstudio — models.dev already carries `lmstudio` as a provider — llama.cpp servers) may want a shared `local` provider rule, with the caveat that a local surface still carries its own vendor policy and can still be configured to proxy cloud endpoints.
      Re-individuate before the next large ollama sweep to avoid double fixture churn.
+ 16. **Fixture files are never retrospectively edited.**
+     A committed fixture file's contents are an artifact of the run that wrote it: it is never appropriate to modify them after the fact.
+     Renames/re-keying are fine (the filename is metadata — the fold mechanics rename), but content that is out of sync with the current rules is regenerated, not edited — the combo is added to the queue (a from-identity declaration or a from-capture re-run) and the worker writes the whole file fresh.
+     Out-of-sync fixtures are fine to have in the meantime: the file's `meta.updated_at` acknowledges its age, and the staleness model re-works it on the next sweep.
 
 ## test matrix: harnesses, providers, models
 
@@ -351,9 +361,9 @@ This section pins the matrix policy — what gets a rule, a recipe, and a fixtur
   The remaining maintained CLIs (`claude`, `codex`, `grok`, `gemini`, `amp`, `roo`, `qoder`, `openhands`, `devin`, `droid`, `zencoder`, `kimchi`, `firebender`) are logged follow-ups in CONTRIBUTING.md's pending list, not in-scope until a contributor adds their rules.
 - **Model policy:** open-weight/open-source models are preferred; free closed and popular closed models also get rules (detection must exceed the preferred set).
   `reciprocity` is `open-source` | `open-weight` | `closed`, sourced from the HF card + LICENSE (or the provider's model page for closed models).
-- **Provider policy:** zero-training or reciprocal-training providers are preferred.
-  Maintainer probing covers free combos of those plus the paid MiniMax subscription; anything beyond that is contributor scope via CONTRIBUTING.md.
+- **Provider policy:** zero-training or reciprocal-training providers are preferred.  Maintainer probing covers free combos of those plus the paid MiniMax subscription; anything beyond that is contributor scope via CONTRIBUTING.md.
   New free providers: OpenRouter, Groq, Cerebras, Z.ai, Kimi/Moonshot (training policies null until verified).
+- **Controversy research:** the scandal/controversy research for ruled harnesses and providers lives in [research/scandals.md](./research/scandals.md) — the findings, the verdicts, and the mapping to rule flags; [research/README.md](./research/README.md) documents how to research, generate, and update it (the criterion, the batches, the judgement rules).
 - **Harness-training policy:** a closed-source harness (`license` `"NONE"`) is gated by `harness_closed_training` — the provider conjunct mirrored onto the harness dim.
   The two fields (`harness_open_training` / `harness_closed_training`) share the provider vocabulary (`enforced | opt-in | opt-out | never | NOASSERTION | null`), resolved per field at detection time: an instance read wins (first signal: zcode's `optimizeAgentExperienceEnabled` in `~/.zcode/v2/setting.json` — toggle off → `never`/`never`; toggle on → open `enforced` + closed `NOASSERTION` fail-safe, since whether any closed model is involved is undeterminable — Z.ai serves one closed model, the API-only GLM-ASR-2512; key absent → `NOASSERTION`/`NOASSERTION`; file missing → untouched), else the rule's docs-derived posture copies verbatim (never-guess).
   The conjunct is capability-based exactly as providers are treated: `never`/`opt-in`/`opt-out` passes, `enforced`/`NOASSERTION` fails (exit 10), null is data-incomplete (exit 9 — the nudge to correct the data).

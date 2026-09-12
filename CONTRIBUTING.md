@@ -337,8 +337,6 @@ journalctl --user -u agent-detect-drain.service -f    # follow output
 
 ### daemon launch: Windows scheduled task (no admin)
 
-### daemon launch: Windows scheduled task (no admin)
-
 A per-user scheduled task is the Windows equivalent of the LaunchAgent bootstrap: no admin, survives the terminal closing, and — unlike launchd — an **interactive** scheduled task inherits the user's full session environment (shell PATH, harness env), so `from-capture` jobs find the harness binaries without an explicit `EnvironmentVariables` block.
 PowerShell 7.6+, run once:
 
