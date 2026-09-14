@@ -82,6 +82,22 @@ pub fn reciprocityOf(d: *const Detection) Reciprocity {
     return core.reciprocityOf(d);
 }
 
+pub fn harnessReciprocityOf(d: *const Detection) ?bool {
+    return core.harnessReciprocityOf(d);
+}
+
+pub fn providerReciprocityOf(d: *const Detection) ?bool {
+    return core.providerReciprocityOf(d);
+}
+
+pub fn modelReciprocityOf(d: *const Detection) ?bool {
+    return core.modelReciprocityOf(d);
+}
+
+pub fn computeReciprocal(d: *const Detection) bool {
+    return core.computeReciprocal(d);
+}
+
 pub fn applyHarnessTraining(d: *Detection, rule: HarnessRule) void {
     return core.applyHarnessTraining(d, rule);
 }

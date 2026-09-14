@@ -80,20 +80,49 @@ const identify_keys = [_][]const u8{
     "harness_license",
     "harness_open_training",
     "harness_closed_training",
+    "harness_open_setting",
+    "harness_closed_setting",
+    "harness_reciprocity",
     "provider_label", // provider group
     "provider_name",
     "provider_id",
     "provider_closed_training",
     "provider_open_training",
+    "provider_reciprocity",
     "model_label", // model group
     "model_short_title",
     "model_name",
     "model_id",
-    "model_reciprocity",
+    "model_openness",
+    "model_open_training",
+    "model_closed_training",
     "model_license",
+    "model_reciprocity", // the computed deduction (the former openness field renamed)
     "agent_id", // composed from harness+provider+model
     "reciprocal", // policy / output
 };
+/// the keyset-growth transition keys: pre-growth files may lack them (null-as-absent / pre-rename), and the queued regen sweeps bring older files up to the full set.
+/// A missing key below is exempt (skipped), not a failure. Once the sweeps complete, drop the entries from this list.
+/// (The scandal flags `*_reciprocity_scandal` never join `identify_keys` — they are null-as-absent, so absence IS the false value.)
+const growth_exempt_keys = [_][]const u8{
+    "harness_open_training",
+    "harness_closed_training",
+    "harness_open_setting",
+    "harness_closed_setting",
+    "harness_reciprocity",
+    "provider_reciprocity",
+    "model_openness",
+    "model_open_training",
+    "model_closed_training",
+    "model_reciprocity",
+};
+
+fn isGrowthExemptKey(key: []const u8) bool {
+    for (growth_exempt_keys) |k| {
+        if (std.mem.eql(u8, k, key)) return true;
+    }
+    return false;
+}
 
 /// strict-slug equality: is `name`'s lowercase-alphanumeric slug equal to `slug`? Mirrors `main.slugId` without allocating.
 fn slugifyMatches(name: []const u8, slug: []const u8) bool {
@@ -257,7 +286,7 @@ fn isLegacyRequiredMeta(stem: []const u8) bool {
     return false;
 }
 
-test "fixtures: identify has all 20 grouped keys in emission order, no trailer key" {
+test "fixtures: identify carries the 29-field contract in emission order, no trailer key" {
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
@@ -272,10 +301,8 @@ test "fixtures: identify has all 20 grouped keys in emission order, no trailer k
         const cooked = identify.object;
         for (identify_keys, 0..) |key, i| {
             if (!cooked.contains(key)) {
-                // Pre-keyset-growth fixtures may lack the newer keys — the queued regen sweeps bring older files up to the full set (same transition as the raw-schema keyset test).
-                // Once the sweeps complete, drop this exemption.
-                if (std.mem.eql(u8, key, "harness_open_training")) continue;
-                if (std.mem.eql(u8, key, "harness_closed_training")) continue;
+                // Pre-keyset-growth fixtures may lack the newer keys (null-as-absent or pre-rename) — the queued regen sweeps bring older files up to the full set.
+                if (isGrowthExemptKey(key)) continue;
                 std.debug.print("fixture {s} missing identify key {s} at index {d}\n", .{ stem, key, i });
                 return error.MissingCookedKey;
             }
@@ -295,7 +322,7 @@ test "fixtures: outputs.raw is the dev-raw schema — exactly the raw output key
     const fixed_keys = [_][]const u8{
         "platform_id",     "harness_version", "detectable",    "detected",
         "process_lineage", "harness-urls",    "provider-urls", "model-urls",
-        "evidence",
+        "scandal-urls",    "evidence",
     };
     const stems = try discoverFolderStems(aa, capture_dir);
     for (stems) |stem| {

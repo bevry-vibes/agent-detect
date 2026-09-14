@@ -127,27 +127,35 @@ pub const Detection = struct {
     harness_name: ?[]const u8 = null, // canonical name (whatever casing the service uses to refer to it), e.g. "kimi-code"
     harness_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `harness_name` (no separators), e.g. "kimi-code" -> "kimicode" — the only id we constrain; `harness_name` carries whatever the service uses
     harness_version: ?[]const u8 = null, // optional release version, e.g. "1.2.3"
-    harness_license: ?[]const u8 = null, // SPDX id, e.g. "Apache-2.0"
-    harness_open_training: ?[]const u8 = null, // instance-resolved open-model training state, mirroring the provider pair: docs posture vocabulary ("enforced" | "opt-in" | "opt-out" | "never" | "NOASSERTION" | null), with instance-determined values in their instance sense (verified actively training = "enforced", verified not training = "never", looked with no clear answer = "NOASSERTION")
-    // informational only — the reciprocity conjunct reads harness_closed_training
-    harness_closed_training: ?[]const u8 = null, // same vocabulary; for a closed harness (license "NONE") this is the harness conjunct: "never"/"opt-in"/"opt-out" passes, "enforced"/"NOASSERTION" fails, null is unknown (the data-incomplete nudge)
+    harness_license: ?[]const u8 = null, // SPDX id — INFORMATION ONLY (the licence does not gate the determination: Grok Build is Apache-2.0 and still uploaded whole repositories)
+    harness_open_training: ?[]const u8 = null, // what the published terms permit for the data use on the open axis (the rule's static value; no detector writes it)
+    harness_closed_training: ?[]const u8 = null, // same, closed axis — the gating value
+    harness_open_setting: ?[]const u8 = null, // instance state: what the local artifact configures for the data use on the open axis ("enabled" | "disabled" | "NOASSERTION" | null) — harness only (providers have no readable setting; the --query-remote future flag)
+    harness_closed_setting: ?[]const u8 = null, // same, closed axis — the ladder input
+    harness_reciprocity_scandal: bool = false, // true when the rule flags a reciprocity scandal (null-as-absent in output)
+    harness_reciprocity: ?bool = null, // computed per-entity deduction: true (passes) | false (fails) | null (undeterminable)
     // provider group
     provider_label: ?[]const u8 = null, // e.g. "Cline Pass"
     provider_name: ?[]const u8 = null, // canonical name (whatever casing the service uses to refer to it), e.g. "cline-pass"
     provider_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `provider_name` (no separators), e.g. "cline-pass" -> "clinepass" — the only id we constrain; `provider_name` carries whatever the service uses
-    provider_closed_training: ?[]const u8 = null, // "enforced" | "opt-in" | "opt-out" | "never" | null
-    provider_open_training: ?[]const u8 = null, // same enum
+    provider_closed_training: ?[]const u8 = null, // "enforced" | "opt-in" | "opt-out" | "never" | "NOASSERTION" | null
+    provider_open_training: ?[]const u8 = null, // same enum — informational
+    provider_reciprocity_scandal: bool = false, // true when the rule flags a reciprocity scandal
+    provider_reciprocity: ?bool = null, // computed per-entity deduction
     // model group
     model_label: ?[]const u8 = null, // e.g. "Kimi K3"
     model_short_title: ?[]const u8 = null, // optional short brand form, e.g. "M3" for "MiniMax M3"; null when no established short form
     model_name: ?[]const u8 = null, // canonical bare slug (whatever casing the service uses canonically), e.g. "kimi-k3"
     model_id: ?[]const u8 = null, // strictly lowercase-alphanumeric form of `model_name` (no separators), e.g. "kimi-k3" -> "kimik3"
-    model_reciprocity: ?[]const u8 = null, // "open-source" | "open-weight" | "closed" | null
-    model_license: ?[]const u8 = null, // SPDX license id of the model weights (same semantics as harness_license); null when unverified
+    model_openness: ?[]const u8 = null, // the openness tier of the weights: "open-source" | "open-weight" | "closed" | null (the former model_reciprocity field; the freed name is the computed deduction below)
+    model_open_training: ?[]const u8 = null, // what YOUR DATA trains on the open axis as a consequence of the model selection (model-intrinsic arrangements only)
+    model_closed_training: ?[]const u8 = null, // same, closed axis — the gating value; never guess an axis (the deduction guidance)
+    model_license: ?[]const u8 = null, // SPDX license id of the model weights — informational
+    model_reciprocity: ?bool = null, // computed per-entity deduction
     // agent (composed from harness + provider + model)
     agent_id: ?[]const u8 = null, // "<harness_id>-<provider_id>-<model_id>" — the user-visible identity of the agent
     // policy / output
-    reciprocal: ?bool = null, // computed from harness_license + model_reciprocity + provider_closed_training
+    reciprocal: ?bool = null, // computed: all three per-entity deductions true (conservative false on any undeterminable)
     trailer: ?[]const u8 = null,
     // raw — typed observations; buildRaw converts these to a shapeless JSON object whose top-level keys identify the source of evidence
     raw: RawObservation = .{},
@@ -221,6 +229,8 @@ pub const RawObservation = struct {
     harness_urls: []const []const u8 = &.{},
     provider_urls: []const []const u8 = &.{},
     model_urls: []const []const u8 = &.{},
+    /// the scandal citations of the matched harness and provider rules — surfaced under raw `scandal-urls` (the "like licences" convention).
+    scandal_urls: []const []const u8 = &.{},
     /// decision #11 evidence claims — per detected dim, what source was read and with what value. Empty for `from-identity` (declared, not observed) fixtures.
     evidence: []const EvidenceClaim = &.{},
 };
@@ -255,8 +265,10 @@ pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_inp
     // short_title is optional — null when the rule didn't declare one. Consumers should fall back to `model_label` (or `model_name`) when this is null.
     if (mi.short_title) |st| d.model_short_title = try a.dupe(u8, st);
     d.model_id = try slugId(a, lookup_name);
-    d.model_reciprocity = mi.reciprocity;
+    d.model_openness = mi.openness;
     d.model_license = mi.license;
+    d.model_open_training = mi.open_training;
+    d.model_closed_training = mi.closed_training;
     if (mi.sources.len > 0) d.raw.model_urls = mi.sources;
     _ = raw_input; // caller is responsible for recording it in a config_file observation
     // recompute the agent id now that model_id is fixtures — this depends on harness_id and provider_id being set first, which the calling detector is responsible for.
@@ -284,10 +296,21 @@ fn applyProviderMeta(a: std.mem.Allocator, d: *Detection, id: []const u8) !void 
         d.provider_id = try slugId(a, meta.name);
         d.provider_closed_training = meta.closed_training;
         d.provider_open_training = meta.open_training;
+        d.provider_reciprocity_scandal = meta.reciprocity_scandal;
         d.raw.provider_urls = meta.sources;
+        d.raw.scandal_urls = appendScandalUrls(a, d.raw.scandal_urls, meta.reciprocity_scandal_sources) catch d.raw.scandal_urls;
     } else {
         d.provider_id = try slugId(a, canonical);
     }
+}
+
+/// append a rule's scandal citations to the detection's raw.scandal_urls (arena-backed; the old slice is leaked on growth — fine for the short-lived Detection).
+fn appendScandalUrls(a: std.mem.Allocator, existing: []const []const u8, add: []const []const u8) ![]const []const u8 {
+    if (add.len == 0) return existing;
+    var list: std.ArrayList([]const u8) = .empty;
+    try list.appendSlice(a, existing);
+    try list.appendSlice(a, add);
+    return list.toOwnedSlice(a);
 }
 
 /// set d.provider_label, d.provider_name, and d.provider_id together from a single id.
@@ -1982,30 +2005,27 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         if (std.json.parseFromSlice(std.json.Value, a, sdata, .{}) catch null) |parsed| {
             defer parsed.deinit();
             if (parsed.value == .object) {
-                // training side: `optimizeAgentExperienceEnabled` is the persisted "Improve experience" toggle ("Allow us to use your conversations to improve the Agent experience") —
-                // the harness-training instance state, resolved per field into the shared vocabulary: false → conversations verified not used at all → open/closed both "never" true → training actively happens on the GLM line → open "enforced";
-                // whether any closed model is involved is undeterminable (Z.ai serves one closed model, GLM-ASR-2512) → closed "NOASSERTION" —
-                // the looked-but-unclear fail-safe key absent (or non-bool) in an otherwise-present store → both "NOASSERTION" (looked, no answer)
-                // A missing file leaves both dims null (no data → the exit-9 nudge).
+                // setting side: `optimizeAgentExperienceEnabled` is the persisted "Improve experience" toggle ("Allow us to use your conversations to improve the Agent experience") —
+                // the harness setting instance state: true → the artifact explicitly configures the data use → enabled/enabled; false → explicitly against → disabled/disabled;
+                // present-but-non-bool → an artifact exists but its meaning cannot be mapped → NOASSERTION/NOASSERTION;
+                // key absent → nothing readable → null/null (the default state; the rule's training values govern);
+                // file missing → untouched (null). The ladder resolves the setting with the training values; the fail-safe for a present toggle is rung 2 (enabled → active).
                 if (parsed.value.object.get("optimizeAgentExperienceEnabled")) |oe| {
                     if (oe == .bool) {
                         const raw: []const u8 = if (oe.bool) "true" else "false";
                         if (oe.bool) {
-                            d.harness_open_training = "enforced";
-                            d.harness_closed_training = "NOASSERTION";
+                            d.harness_open_setting = "enabled";
+                            d.harness_closed_setting = "enabled";
                         } else {
-                            d.harness_open_training = "never";
-                            d.harness_closed_training = "never";
+                            d.harness_open_setting = "disabled";
+                            d.harness_closed_setting = "disabled";
                         }
                         try config_fields.append(a, .{ .dotted_path = "optimizeAgentExperienceEnabled", .value = raw });
                         try addEvidenceClaim(a, d, .{ .dim = "harness", .source = "config", .name = settings_path, .field = "optimizeAgentExperienceEnabled", .value = raw });
                     } else {
-                        d.harness_open_training = "NOASSERTION";
-                        d.harness_closed_training = "NOASSERTION";
+                        d.harness_open_setting = "NOASSERTION";
+                        d.harness_closed_setting = "NOASSERTION";
                     }
-                } else {
-                    d.harness_open_training = "NOASSERTION";
-                    d.harness_closed_training = "NOASSERTION";
                 }
                 if (parsed.value.object.get("modelProviderFamilySelectedKeys")) |fam| {
                     if (fam == .object) {
@@ -2366,33 +2386,70 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model", .value = model_str });
 }
 
-/// tri-state reciprocity determination for `d`:
-/// - `"NONE"` harness_license → the harness-closed-training conjunct decides the harness dim (mirroring how `provider_closed_training` decides the provider dim): `never`/`opt-in`/`opt-out` falls through to the model/provider conjuncts;
-/// `enforced` (verified training) or `NOASSERTION` (we looked, no clear answer) is `.not_reciprocal`;
-/// `null` is `.unknown` — like a null provider/model dim, the data-incomplete nudge encourages closed-harness users to correct the data (make the instance state readable / get the posture sourced) rather than failing silently.
-/// Open-model training (`harness_open_training`) never blocks reciprocity — the conjunct consumes only the closed dim, exactly as the provider conjunct treats `provider_open_training`.
-/// - `.unknown` when `harness_license` is `null` or `"NOASSERTION"`, or any of `model_reciprocity` / `provider_closed_training` is null (unverified status cannot be assumed reciprocal per the AI policy);
-/// - otherwise `.reciprocal` iff the current conjunction passes, else `.not_reciprocal`.
+/// the ladder: resolve one closed axis from its training value and its setting value.
+/// Returns true (inactive — the conjunct passes), false (active — the conjunct fails), or null (undeterminable → the exit-9 nudge).
+/// The worst case wins (maintainer rulings, 2026-09-09 and 2026-09-10): enforced outranks the setting (a settings artifact may only steer telemetry, so it cannot prove the training stopped); an enabled setting outranks every remaining training value (hard evidence beats a claim, including a false never); disabled passes below enforced; opt-in/opt-out with nothing readable resolve active (assume the toggle sits in the training branch); NOASSERTION or null resolve undeterminable.
+fn resolveAxisClosed(training: ?[]const u8, setting: ?[]const u8) ?bool {
+    if (training) |t| {
+        if (std.mem.eql(u8, t, "enforced")) return false; // rung 1
+    }
+    if (setting) |s| {
+        if (std.mem.eql(u8, s, "enabled")) return false; // rung 2
+        if (std.mem.eql(u8, s, "disabled")) return true; // rung 3
+        // NOASSERTION setting: an artifact exists but its meaning cannot be mapped — nothing readable; fall through to the training value
+    }
+    if (training) |t| {
+        if (std.mem.eql(u8, t, "never")) return true; // rung 4
+        if (std.mem.eql(u8, t, "opt-in") or std.mem.eql(u8, t, "opt-out")) return false; // rung 5
+        // NOASSERTION training: researched, inconclusive → rung 6
+    }
+    return null; // rung 6: null training, or NOASSERTION training, with nothing readable
+}
+
+/// the per-entity deduction for the harness: a scandal fails first; else the ladder over the closed training and the closed setting.
+/// The licence does NOT gate (ruling, 2026-09-10 — Grok Build is open licensed and still uploaded whole repositories): training, setting, and licence do not relate to each other, and `harness_license` is information only.
+pub fn harnessReciprocityOf(d: *const Detection) ?bool {
+    if (d.harness_reciprocity_scandal) return false;
+    return resolveAxisClosed(d.harness_closed_training, d.harness_closed_setting);
+}
+
+/// the per-entity deduction for the provider: a scandal fails first; else the closed training alone.
+/// A provider has NO readable setting (the shortcoming: provider toggles are server-enforced account state, and no harness mirrors them locally — the `--query-remote` future flag), so "nothing readable" is its permanent state and opt-in/opt-out resolve active.
+pub fn providerReciprocityOf(d: *const Detection) ?bool {
+    if (d.provider_reciprocity_scandal) return false;
+    return resolveAxisClosed(d.provider_closed_training, null);
+}
+
+/// the per-entity deduction for the model: the openness of the weights gates first; an open model then resolves its closed training pair (a model has no setting, so its training pair resolves directly: enforced/opt-in/opt-out → active; never → inactive; NOASSERTION → undeterminable; null records no exception and does not block).
+pub fn modelReciprocityOf(d: *const Detection) ?bool {
+    const openness = d.model_openness orelse return null;
+    if (std.mem.eql(u8, openness, "closed")) return false;
+    // open-source | open-weight
+    if (d.model_closed_training) |t| {
+        if (std.mem.eql(u8, t, "enforced") or std.mem.eql(u8, t, "opt-in") or std.mem.eql(u8, t, "opt-out")) return false;
+        if (std.mem.eql(u8, t, "NOASSERTION")) return null;
+        // "never" → inactive (fall through to true)
+    }
+    return true;
+}
+
+/// tri-state determination for `d`, from the three per-entity deductions:
+/// - any `false` → `.not_reciprocal` (exit 10 — a definitive fail outranks an unknown);
+/// - else any `null` → `.unknown` (exit 9 — the data-incomplete nudge: get the value sourced);
+/// - else `.reciprocal` (exit 0).
 pub const Reciprocity = enum { reciprocal, not_reciprocal, unknown };
 
 pub fn reciprocityOf(d: *const Detection) Reciprocity {
-    if (d.harness_license) |hl| {
-        if (std.mem.eql(u8, hl, license_none)) {
-            const hct = d.harness_closed_training orelse return .unknown;
-            if (!std.mem.eql(u8, hct, "never") and !std.mem.eql(u8, hct, "opt-in") and !std.mem.eql(u8, hct, "opt-out")) return .not_reciprocal;
-        } else if (std.mem.eql(u8, hl, license_noassertion)) {
-            return .unknown;
-        }
-    } else {
-        return .unknown;
-    }
-    if (d.model_reciprocity == null or d.provider_closed_training == null) return .unknown;
-    if (computeReciprocal(d)) return .reciprocal;
-    return .not_reciprocal;
+    const hr = harnessReciprocityOf(d);
+    const pr = providerReciprocityOf(d);
+    const mr = modelReciprocityOf(d);
+    if (hr == false or pr == false or mr == false) return .not_reciprocal;
+    if (hr == null or pr == null or mr == null) return .unknown;
+    return .reciprocal;
 }
 
-/// Resolve the instance training states from the matched rule's static postures when no per-harness instance read populated them —
-/// per field, so a harness that reads only one dim still sources the other from its docs posture.
+/// Resolve the instance training states from the matched rule's static values when no per-harness instance read populated them —
+/// per field, so a harness that reads only one dim still sources the other from its rule value.
 /// The vocabulary is shared (`enforced | opt-in | opt-out | never | NOASSERTION | null`), so the static values copy verbatim;
 /// the instance read wins because it was written first.
 pub fn applyHarnessTraining(d: *Detection, rule: HarnessRule) void {
@@ -2400,26 +2457,9 @@ pub fn applyHarnessTraining(d: *Detection, rule: HarnessRule) void {
     if (d.harness_closed_training == null) d.harness_closed_training = rule.closed_training;
 }
 
-/// compute the `reciprocal` boolean. Returns `true` only when:
-/// - harness_license is a real SPDX id (non-null, not `"NONE"`, not `"NOASSERTION"`), or `"NONE"` with harness_closed_training in the passing set (never/opt-in/opt-out —
-/// a closed harness that doesn't unilaterally train closed models on user conversations is permitted), AND
-///   - model_reciprocity is "open-source" or "open-weight", AND
-/// - provider_closed_training is one of "never", "opt-in", or "opt-out" (provider does not unilaterally train closed models on customer data).
-/// Any null on the conjuncts makes the result `false`: per the AI Policy, an unverified status cannot be assumed reciprocal.
-/// `"NOASSERTION"` short-circuits to `false` because it is unverified; `"NONE"` requires a passing closed-training state.
-/// This is the same conjunction `reciprocityOf` uses for its non-null case, so the canonical JSON `reciprocal` field stays a boolean while the tri-state caller gets the full picture.
+/// the conservative boolean: all three per-entity deductions must be true; an undeterminable entity cannot be assumed reciprocal, so it yields false (the tri-state lives in the exit code and the three computed fields).
 pub fn computeReciprocal(d: *const Detection) bool {
-    const hl = d.harness_license orelse return false;
-    if (std.mem.eql(u8, hl, license_noassertion)) return false;
-    if (std.mem.eql(u8, hl, license_none)) {
-        // a closed harness passes its conjunct only with a passing closed-training state, then falls through to the model/provider conjuncts like any licensed harness
-        const hct = d.harness_closed_training orelse return false;
-        if (!std.mem.eql(u8, hct, "never") and !std.mem.eql(u8, hct, "opt-in") and !std.mem.eql(u8, hct, "opt-out")) return false;
-    }
-    const mr = d.model_reciprocity orelse return false;
-    if (!std.mem.eql(u8, mr, "open-source") and !std.mem.eql(u8, mr, "open-weight")) return false;
-    const pct = d.provider_closed_training orelse return false;
-    return std.mem.eql(u8, pct, "never") or std.mem.eql(u8, pct, "opt-in") or std.mem.eql(u8, pct, "opt-out");
+    return reciprocityOf(d) == .reciprocal;
 }
 
 /// The detection report is a JSON object assembled from:
@@ -2433,7 +2473,8 @@ pub fn reporterHome(env: *const std.process.Environ.Map) []const u8 {
     return env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
 }
 
-/// Build the canonical identification object (20 fields, grouped by entity). Returns a heap-allocated `std.json.Value` the caller owns.
+/// Build the canonical identification object (29 fields, grouped by entity). Returns a heap-allocated `std.json.Value` the caller owns.
+/// The instance fields (`*_setting`, `*_reciprocity_scandal`) are null-as-absent: absent when unset/false. The computed `*_reciprocity` fields emit true, false, or null.
 pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     const V = std.json.Value;
     // Each canonical field is `?[]const u8` (or `?bool`).
@@ -2447,18 +2488,27 @@ pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     try canonical.object.put(a, "harness_license", optStringValue(a, d.harness_license));
     try canonical.object.put(a, "harness_open_training", optStringValue(a, d.harness_open_training));
     try canonical.object.put(a, "harness_closed_training", optStringValue(a, d.harness_closed_training));
+    if (d.harness_open_setting) |v| try canonical.object.put(a, "harness_open_setting", .{ .string = v });
+    if (d.harness_closed_setting) |v| try canonical.object.put(a, "harness_closed_setting", .{ .string = v });
+    if (d.harness_reciprocity_scandal) try canonical.object.put(a, "harness_reciprocity_scandal", .{ .bool = true });
+    try canonical.object.put(a, "harness_reciprocity", optBoolValue(d.harness_reciprocity));
     try canonical.object.put(a, "provider_label", optStringValue(a, d.provider_label));
     try canonical.object.put(a, "provider_name", optStringValue(a, d.provider_name));
     try canonical.object.put(a, "provider_id", optStringValue(a, d.provider_id));
     try canonical.object.put(a, "provider_closed_training", optStringValue(a, d.provider_closed_training));
     try canonical.object.put(a, "provider_open_training", optStringValue(a, d.provider_open_training));
+    if (d.provider_reciprocity_scandal) try canonical.object.put(a, "provider_reciprocity_scandal", .{ .bool = true });
+    try canonical.object.put(a, "provider_reciprocity", optBoolValue(d.provider_reciprocity));
     try canonical.object.put(a, "model_label", optStringValue(a, d.model_label));
     try canonical.object.put(a, "model_short_title", optStringValue(a, d.model_short_title));
     try canonical.object.put(a, "model_name", optStringValue(a, d.model_name));
     try canonical.object.put(a, "model_id", optStringValue(a, d.model_id));
-    try canonical.object.put(a, "model_reciprocity", optStringValue(a, d.model_reciprocity));
+    try canonical.object.put(a, "model_openness", optStringValue(a, d.model_openness));
+    try canonical.object.put(a, "model_open_training", optStringValue(a, d.model_open_training));
+    try canonical.object.put(a, "model_closed_training", optStringValue(a, d.model_closed_training));
     try canonical.object.put(a, "model_license", optStringValue(a, d.model_license));
-    // agent id is composed of the three sub-ids above; emitted in the model block (after model_id) so the canonical block reads harness → provider → model → agent.
+    try canonical.object.put(a, "model_reciprocity", optBoolValue(d.model_reciprocity));
+    // agent id is composed of the three sub-ids above; emitted in the model block (after model_reciprocity) so the canonical block reads harness → provider → model → agent.
     try canonical.object.put(a, "agent_id", optStringValue(a, d.agent_id));
     // `reciprocal` is `?bool` in Detection but the JSON output uses `null` for "not computed" — V has no `?bool` so we unbox manually.
     if (d.reciprocal) |r| {
@@ -2517,6 +2567,11 @@ pub fn optStringValue(a: std.mem.Allocator, opt: ?[]const u8) std.json.Value {
         return .{ .string = copy };
     }
     return .null;
+}
+
+/// convert `?bool` into a JSON `null`, `true`, or `false` (the computed per-entity reciprocity fields).
+pub fn optBoolValue(opt: ?bool) std.json.Value {
+    return if (opt) |b| .{ .bool = b } else .null;
 }
 
 /// substitute a literal path prefix with a replacement token.
@@ -2734,7 +2789,9 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     if (harness.version) |v| d.harness_version = try a.dupe(u8, v);
     d.harness_license = harness.license;
     d.raw.harness_urls = harness.license_sources;
-    // no instance read exists in recipe mode — the rule's static postures are the only source (copied verbatim per field).
+    d.harness_reciprocity_scandal = harness.reciprocity_scandal;
+    d.raw.scandal_urls = appendScandalUrls(a, &.{}, harness.reciprocity_scandal_sources) catch &.{};
+    // no instance read exists in recipe mode — the rule's static training values are the only source (copied verbatim per field), and the settings stay null.
     applyHarnessTraining(&d, harness);
     // A full known recipe implies all three dims are resolvable.
     d.detectable = &.{ "harness", "provider", "model" };
@@ -2743,15 +2800,22 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     d.provider_id = try slugId(a, provider.name);
     d.provider_closed_training = provider.closed_training;
     d.provider_open_training = provider.open_training;
+    d.provider_reciprocity_scandal = provider.reciprocity_scandal;
     d.raw.provider_urls = provider.sources;
+    d.raw.scandal_urls = appendScandalUrls(a, d.raw.scandal_urls, provider.reciprocity_scandal_sources) catch d.raw.scandal_urls;
     d.model_label = try a.dupe(u8, model.label);
     if (model.short_title) |st| d.model_short_title = try a.dupe(u8, st);
     d.model_name = model.name;
     d.model_id = try slugId(a, model.name);
-    d.model_reciprocity = model.reciprocity;
+    d.model_openness = model.openness;
     d.model_license = model.license;
+    d.model_open_training = model.open_training;
+    d.model_closed_training = model.closed_training;
     d.raw.model_urls = model.sources;
     try setAgentId(a, &d);
+    d.harness_reciprocity = harnessReciprocityOf(&d);
+    d.provider_reciprocity = providerReciprocityOf(&d);
+    d.model_reciprocity = modelReciprocityOf(&d);
     d.reciprocal = computeReciprocal(&d);
     d.trailer = try buildTrailerLine(a, &d, "Co-authored-by");
     return d;
@@ -2809,6 +2873,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         if (r.version) |v| d.harness_version = try a.dupe(u8, v);
         d.harness_license = r.license;
         d.raw.harness_urls = r.license_sources;
+        d.harness_reciprocity_scandal = r.reciprocity_scandal;
+        d.raw.scandal_urls = appendScandalUrls(a, &.{}, r.reciprocity_scandal_sources) catch &.{};
         // decision #11: the harness dim's evidence claim.
         // The source is the marker var / proc name that actually matched (present in raw.env / raw.process_lineage); the value is the harness's canonical name, which is what the rule links the marker to.
         if (hclaim_name.len > 0) {
@@ -2880,7 +2946,10 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         // the rule's static training postures fill each dim only when the per-harness instance read above didn't; the instance read wins because it was written first.
         applyHarnessTraining(d, r);
     }
-    // compute reciprocity from the three policy fields
+    // compute the per-entity deductions, then the final conservative boolean from them.
+    d.harness_reciprocity = harnessReciprocityOf(d);
+    d.provider_reciprocity = providerReciprocityOf(d);
+    d.model_reciprocity = modelReciprocityOf(d);
     d.reciprocal = computeReciprocal(d);
     // co-author trailer (commits.md format).
     // The email local is the `agent_id` (harness-provider-model), which now includes the provider so reciprocity on changelogs can be post-verified from the trailer alone.

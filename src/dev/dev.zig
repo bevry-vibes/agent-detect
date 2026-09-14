@@ -368,6 +368,8 @@ pub const dev = if (build_options.dev) struct {
         try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
         try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
         try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
+        // the scandal citations of the matched rules — the "like licences" convention (a flagged rule always carries its sources).
+        try raw.object.put(a, "scandal-urls", stringListValue(a, d.raw.scandal_urls));
         // decision #11 — evidence claims, one per detected dim, pinning the attribution chain (source present in raw + value matching the canonical dim).
         // `from-identity` fixtures carry an empty array.
         // Env-source claims on non-allowlisted env vars emit the literal `"<redacted>"` for `value` (decision #3) — the value the detector read was secret-shaped and must not be written to disk;
