@@ -893,6 +893,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "qwen3.5",                  "qwen3.5-397b-a17b",   "qwen3.6-27b",
         "qwen3.8-27b",              "gpt-oss-20b",         "laguna-s-2.1",
         "laguna-xs-2.1",            "glm-5-turbo",
+        "big-pickle",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

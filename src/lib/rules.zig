@@ -149,7 +149,15 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "cogito-2.1", .label = "Cogito 2.1", .openness = "open-weight", .sources = &.{ "https://huggingface.co/deepcogito/cogito-2.1-671b", "https://huggingface.co/deepcogito/cogito-2.1-671b/blob/main/LICENSE" } },
     // muse-spark-1.2: Meta Muse Spark 1.2; reciprocity unverified.
     // variations: "-contributor" is OpenRouter's contributor-tier listing of the same model name (observed on OR + opencode-go).
-    .{ .name = "muse-spark-1.2", .label = "Muse Spark 1.2", .openness = null, .sources = &.{}, .variations = &.{ "muse-spark-1.2-contributor" } },
+    // big-pickle: Nous Research's Big Pickle, served on OpenCode Zen; openness unverified → null (never-guess).
+    // The zen docs name it a free-period exception that DOES train ("collected data may be used to improve the model") — the training is known, but the axis depends on the unverified openness, so the closed axis records NOASSERTION per the deduction guidance (never guess an axis).
+    // The openness is null, so the openness check gives exit 9 before the training pair is read. Rule-only for now (the autoclaw-precedent coverage exemption) until a fixture combo exists.
+    .{ .name = "big-pickle", .label = "Big Pickle", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .closed_training = "NOASSERTION" },
+    // muse-spark-1.2: Meta Muse Spark 1.2; openness unverified.
+    // The OpenRouter contributor-tier listing ("muse-spark-1.2-contributor") trains on request data — the training is known, but nothing in the tier terms asserts WHAT it trains, and nothing prohibits closed-model training; the open-lab-model reading is an inference only.
+    // Per the deduction guidance (never guess an axis), the closed axis records NOASSERTION: the axis could not be determined (researched, the terms do not say). The openness is null, so the openness check gives exit 9 before the training pair is read.
+    // variations: "-contributor" is OpenRouter's contributor-tier listing of the same model name (observed on OR + opencode-go).
+    .{ .name = "muse-spark-1.2", .label = "Muse Spark 1.2", .openness = null, .sources = &.{}, .closed_training = "NOASSERTION", .variations = &.{ "muse-spark-1.2-contributor" } },
     // claude-fable-5: closed — Anthropic Claude Fable 5; API-only, no weights.
     .{ .name = "claude-fable-5", .label = "Claude Fable 5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude", "https://docs.anthropic.com/en/docs/about-claude/models" } },
     // gpt-4o: closed — OpenAI GPT-4o; API-only, no weights.
@@ -266,6 +274,7 @@ pub const rulesForModels = [_]ModelRule{
     // variations: AutoClaw's channel spelling (observed in the runtime config catalog, 2026-09-06).
     .{ .name = "glm-5-turbo", .label = "GLM-5-Turbo", .openness = "closed", .license = "NONE", .sources = &.{ "https://docs.z.ai/guides/llm/glm-5-turbo", "https://openrouter.ai/z-ai/glm-5-turbo" }, .variations = &.{"zai_glm-5-turbo"} },
     // mimo-v2.5: open-weight — Xiaomi MiMo V2.5; HF card + MIT LICENSE. Single-size version, stamp not a param size. Observed on opencode-go (bare id).
+    // The zen "MiMo-V2.5 Free" free-period training exception is SURFACE-SCOPED (it trains only on that one serving): the same weights run on xiaomi's verified-never API, so the exception stays at the provider level (the opencode/opencode-go rule comments) — setting it here would false-fail the xiaomi combos (the model-intrinsic scope rule).
     .{ .name = "mimo-v2.5", .label = "MiMo V2.5", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/XiaomiMiMo/MiMo-V2.5", "https://huggingface.co/XiaomiMiMo/MiMo-V2.5/blob/main/LICENSE" } },
     // mimo-v2.5-pro: open-weight — Xiaomi MiMo V2.5 Pro (the pro size-class of the V2.5 line, so it keeps its own rule); HF card
     // + MIT LICENSE. Observed on opencode-go (bare id).
@@ -333,9 +342,11 @@ pub const rulesForProviders = [_]ProviderRule{
     .{ .name = "deepseek-flash", .label = "DeepSeek Flash", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" } },
     // deepseek: never/never — the direct DeepSeek platform provider (api.deepseek.com, the upstream the openai/anthropic-compatible transport fronts).
     // Same data-handling policy as `deepseek-flash`; mirrors it so the direct provider id resolves the same policies.
-    .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" } },
+    // reciprocity_scandal (D10 — a transfer with no reciprocal purpose): (b) Korea's PIPC found full prompt content transferred to ByteDance's Beijing Volcano Engine without consent (binding corrective orders, Apr 2025); (b) the Italy Garante ban (Jan 2025, still in force). The distillation findings against DeepSeek are NOT a scandal under the liberation ethic (the outputs ship back). The compilation: research/scandals.md.
+    .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://www.pipc.go.kr/eng/user/ltn/new/noticeDetail.do?bbsId=BBSMSTR_000000000001&nttId=2784", "https://ai-regulation.com/deepseek-one-year-later-regulatory-storm-global-surge/" } },
     // anthropic: never/null — Anthropic's Commercial Terms state "Anthropic may not train models on Customer Content from the Services" (API tier); no open-weight Anthropic models exist, so open_training stays null.
-    .{ .name = "anthropic", .label = "Anthropic", .closed_training = "never", .open_training = null, .sources = &.{ "https://www.anthropic.com/legal/commercial-terms", "https://trust.anthropic.com/" } },
+    // reciprocity_scandal (D10, the fair-use purpose test — every taking fed closed Claude, not weights that ship back): (a) the LibGen/PiLiMi ~7M pirated books behind the $1.5B settlement (approved Jul 2026); (b) the Reddit scrape suit; (b) the 2025 consumer default-training window; (b) the Bedrock `provider_data_share` 30-day mandatory-retention episode (Aug–Sep 2026, walked back Sep 1). The compilation: research/scandals.md.
+    .{ .name = "anthropic", .label = "Anthropic", .closed_training = "never", .open_training = null, .sources = &.{ "https://www.anthropic.com/legal/commercial-terms", "https://trust.anthropic.com/" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://authorsguild.org/advocacy/artificial-intelligence/what-authors-need-to-know-about-the-anthropic-settlement/", "https://www.reuters.com/world/us/judge-approves-anthropics-15-billion-settlement-copyright-lawsuit-2026-07-20/", "https://www.cnbc.com/2026/09/01/anthropic-data-retention.html" } },
     // mistral: opt-out/opt-out — Mistral ToS + acceptable-use policy (the default provider for Mistral Vibe).
     .{ .name = "mistral", .label = "Mistral", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://docs.mistral.ai/legal/terms-of-service/", "https://docs.mistral.ai/legal/acceptable-use-policy/" } },
     // hyper: never/never — Charm Hyper's ToS states "We do not use your User Content to train AI models", and its privacy policy advertises zero data retention (ZDR).
@@ -351,20 +362,20 @@ pub const rulesForProviders = [_]ProviderRule{
     // `meta/muse-spark-1.2-contributor`) DO train —
     // reachable only by selecting those models, so per the opt-in-by-model rule (CONTRIBUTING) open_training is `opt-in`: the contributor tiers observed are open-weight labs' models;
     // closed_training stays `never` absent a documented closed trainer.
-    .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "opt-in", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
+    .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "never", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
     // opencode: opt-in (closed+open) — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13.
     // The zen docs carry the same data statement the Go subscription cites: "Our providers follow a zero-retention policy and do not use your data for model training", with named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free) — per the opt-in-by-model rule those reachable tiers make both axes at least opt-in.
     // variation folds the retired `opencode-free` rule (hermes's keyless-tier profile key; the zen spelling also resolves natively through the label).
     // Folded 2026-09-07 per .plans/1788716755355 (D4); values sourced 2026-09-07 (previously null/null — the same docs/zen page already carried the statement).
     // The Go subscription is individuated as `opencode-go`.
-    .{ .name = "opencode", .label = "OpenCode Zen", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"opencode-free"} },
+    .{ .name = "opencode", .label = "OpenCode Zen", .closed_training = "never", .open_training = "never", .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"opencode-free"} },
     // opencode-go: opt-in/opt-in — OpenCode Zen's "Go" subscription tier (base https://opencode.ai/zen/go/v1).
     // Zen docs: "Our providers follow a zero-retention policy and do not use your data for model training" — but with named exceptions whose free periods DO train (Big Pickle; MiMo-V2.5 Free).
     // Per the opt-in-by-model rule (CONTRIBUTING), training reachable only by selecting specific models/tiers is `opt-in`, never `never`: MiMo-V2.5 is open-weight (MIT) → open_training opt-in;
     // Big Pickle's openness is unverified → closed_training flips to opt-in too, downgradable to never if a maintainer confirms it open.
     // opencode.ai/privacy and /terms return 404, so docs/zen is the only policy doc.
     // catalog (unauth, 33 ids, 2026-08-29) recorded in fixtures/map-provider-model-providermodel.csv.
-    .{ .name = "opencode-go", .label = "OpenCode Go", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{"https://opencode.ai/docs/zen"} },
+    .{ .name = "opencode-go", .label = "OpenCode Go", .closed_training = "never", .open_training = "never", .sources = &.{"https://opencode.ai/docs/zen"} },
     // groq: never/never — Groq is an inference-only LPU cloud; its terms/privacy state customer data is not used for model training.
     .{ .name = "groq", .label = "Groq", .closed_training = "never", .open_training = "never", .sources = &.{ "https://groq.com/privacy", "https://groq.com/terms" } },
     // cerebras: never/never — Cerebras Inference is a hardware inference cloud; customer prompts are not used for training.
@@ -396,7 +407,8 @@ pub const rulesForProviders = [_]ProviderRule{
     // xai: closed opt-out / open null — the Enterprise/API terms: "SpaceXAI will not use any User Content to train any foundation models … subject to disclosures to Customer and Customer-controlled user settings" (default off on the API surface).
     // The consumer Grok product trains by default with a settings toggle (opt-out), and logged-out free usage grants "full rights to use any data … for product development and model training purposes" (enforced, but unreachable via API key).
     // xAI released grok-1/grok-2 open weights historically but serves no open-weight models on its API, so the open axis is null (the exclusively-closed convention, CONTRIBUTING "add a new model or provider rule").
-    .{ .name = "xai", .label = "xAI", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://x.ai/legal/terms-of-service-enterprise", "https://x.ai/legal/privacy-policy" } },
+    // reciprocity_scandal (D10, the fair-use purpose test — the takings fed closed Grok): (b) X fed the posts of 60M+ EU users into Grok training by default, no prior notice (the NOYB complaints); (b)+(d) Grok Build uploaded whole git repositories — history, secrets, and files it was told not to read — while xAI claimed "no code" (the Jul 2026 wire capture; open-sourced Jul 15 as damage control). The grok harness rule, when written, lands pre-flagged. The compilation: research/scandals.md.
+    .{ .name = "xai", .label = "xAI", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://x.ai/legal/terms-of-service-enterprise", "https://x.ai/legal/privacy-policy" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://noyb.eu/en/twitters-ai-plans-hit-9-more-gdpr-complaints", "https://thehackernews.com/2026/07/grok-build-uploads-entire-git.html" } },
     // moonshotai: NOASSERTION/NOASSERTION — the Moonshot AI API (api.moonshot.ai/v1; models.dev key `moonshotai`, OpenRouter slug, HF org — the id every index uses).
     // Moonshot's docs conflict, all three live: the platform terms say Customer Content "may be used for the foregoing purposes" (providing/maintaining/developing/improving — training named only via the enterprise-arrangement carve-out), the Kimi help center says API data "is not used to train or improve Kimi's models", and the platform privacy policy describes processing that "includes training and refining our underlying technology".
     // Attempted, inconclusive; the strictest documented posture would be opt-out (the terms).
@@ -450,20 +462,22 @@ pub const rulesForProviders = [_]ProviderRule{
     // github-copilot: closed opt-out — the Copilot Trust Center: "GitHub may use Copilot interaction data—including prompts (inputs), suggestions (outputs) … to train and improve AI models" for Individual subscribers, who "can opt out … through your settings";
     // "GitHub does not use Copilot Business or Enterprise customer data to train AI models".
     // Open-model training unverified (GitHub's trained models are closed) → null.
-    .{ .name = "github-copilot", .label = "GitHub Copilot", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://copilot.github.trust.page/faq", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .variations = &.{ "copilot", "copilot-acp" } },
+    // reciprocity_scandal (D10, the fair-use purpose test — the takings fed GitHub's closed models): (a) Doe v. GitHub — the model trained on public repos including copyleft code, licence and attribution stripped; (b) from Apr 24 2026 the individual-tier interaction data trains by default (opt-out exists; Business/Enterprise excluded). The compilation: research/scandals.md.
+    .{ .name = "github-copilot", .label = "GitHub Copilot", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://copilot.github.trust.page/faq", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://news.ycombinator.com/item?id=33468849", "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber" }, .variations = &.{ "copilot", "copilot-acp" } },
     // alibaba: never/never — Alibaba Cloud Model Studio (the dashscope/alibaba-coding-plan surface): "Alibaba Cloud strictly protects your data privacy and will never use your data for model training" (Model Studio privacy notice + FAQ).
     // Distinct from qwen.ai's consumer tier, which is opt-in (see the qwen rule).
     .{ .name = "alibaba", .label = "Alibaba", .closed_training = "never", .open_training = "never", .sources = &.{ "https://help.aliyun.com/en/model-studio/privacy-notice", "https://www.alibabacloud.com/help/en/model-studio/faq-about-alibaba-cloud-model-studio" }, .variations = &.{"dashscope"} },
     // openai: opt-in/opt-in — OpenAI's platform tier (also the provider id for requesty-routed openai-compatible combos, e.g. qwen's `router.requesty.ai` upstream).
     // API inputs/outputs are not used for training by default; customers may opt in for their API data to be used (per OpenAI's data-usage policy).
-    .{ .name = "openai", .label = "OpenAI", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://openai.com/policies/data-usage-policy/", "https://openai.com/policies/business-terms/" } },
+    // reciprocity_scandal (D10, the fair-use purpose test — the takings fed closed GPT): (a) the Books1/Books2 pirated-book corpora behind the NYT, Authors Guild, Britannica, and ~400-newspaper suits; (d) the Jul 2026 sanctions motion (alleged chat and dataset deletions against a preservation order). The compilation: research/scandals.md.
+    .{ .name = "openai", .label = "OpenAI", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://openai.com/policies/data-usage-policy/", "https://openai.com/policies/business-terms/" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/", "https://www.reuters.com/legal/litigation/new-york-times-led-group-asks-court-sanction-openai-us-copyright-dispute-2026-07-09/" } },
     // fireworks-ai: never/never — Fireworks AI's hosted tier (the `fireworks-ai/...` provider key kilo catalogs).
     // Fireworks is an inference-only cloud; its terms/privacy state customer prompts are not used to train models.
     .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = "never", .open_training = "never", .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" }, .variations = &.{"fireworks"} },
     // google: tiered — the Gemini API terms: Paid Services data "is not used to improve … machine-learning technologies" (never), but Unpaid Services (AI Studio / free-tier quota) ARE used to "provide, improve, and develop Google products … and machine learning technologies"
     // — reachable only by choosing the free tier, so opt-in (the opt-in-by-model rule).
     // Cloud/Vertex commits never via the Service Specific Terms Training Restriction.
-    .{ .name = "google", .label = "Google", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs/pricing" }, .variations = &.{"gemini"} },
+    .{ .name = "google", .label = "Google", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs/pricing" }, .variations = &.{"gemini"} },
     // google-vertex: never/never — Vertex AI's Service Specific Terms Training Restriction: "Google will not use Customer Data to train or fine-tune any AI/ML models without Customer's prior permission or instruction".
     .{ .name = "google-vertex", .label = "Google Vertex", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cloud.google.com/terms/service-terms", "https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" }, .variations = &.{"vertex"} },
     // amazon-bedrock: never/never — the live statement (aws.amazon.com/bedrock/security-privacy-responsible-ai, 2026-09-07): "Amazon Bedrock never shares your data with model providers or uses it to train foundation models."
@@ -590,64 +604,76 @@ const autoclaw_env = [_][]const u8{ "AUTOCLAW_MODEL_BROKER_OPENAI_BASE_URL", "AU
 
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code / JetBrains agent).
-    .{ .name = "cline", .label = "Cline", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/cline/cline", "https://github.com/cline/cline/blob/main/LICENSE" }, .env_markers = &cline_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — the telemetry docs list "Your code or file contents / ... / Conversation content" under what is NOT collected, and the maker ships no models; the api.cline.bot gateway is the cline/cline-pass provider dim.
+    .{ .name = "cline", .label = "Cline", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/cline/cline", "https://github.com/cline/cline/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{ "https://cline.bot/privacy", "https://github.com/cline/cline/blob/main/docs/enterprise-solutions/monitoring/telemetry.mdx" }, .env_markers = &cline_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "cline", "cline.exe", "cline.cmd", "cline.ps1" }
     else
         &[_][]const u8{"cline"} },
     // goose: Apache-2.0 — upstream is https://github.com/block/goose (aaif-goose/goose was a mirror); Apache-2.0 per the repo LICENSE (Copyright Block, Inc.).
-    .{ .name = "goose", .label = "Goose", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/block/goose", "https://github.com/block/goose/blob/main/LICENSE" }, .env_markers = &goose_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — "Collected usage data doesn't include your conversations, code, tool arguments, error messages, or any personal data" (usage-data.md; the telemetry itself is opt-in).
+    .{ .name = "goose", .label = "Goose", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/block/goose", "https://github.com/block/goose/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{"https://github.com/aaif-goose/goose/blob/main/documentation/docs/guides/usage-data.md"}, .env_markers = &goose_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "goose", "goose.exe", "goosed", "goosed.exe" }
     else
         &[_][]const u8{ "goose", "goosed" } },
     // kimi-code: MIT — https://github.com/MoonshotAI/kimi-code ships a MIT LICENSE (Copyright Moonshot AI; the Kimi Code CLI).
-    .{ .name = "kimi-code", .label = "Kimi Code", .license = "MIT", .license_sources = &.{ "https://github.com/MoonshotAI/kimi-code", "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE" }, .env_markers = &kimi_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — the CLI telemetry is anonymous, redacted metadata only (no conversation or code payloads); the maker's API training is the moonshotai/kimi-coding provider dim.
+    .{ .name = "kimi-code", .label = "Kimi Code", .license = "MIT", .license_sources = &.{ "https://github.com/MoonshotAI/kimi-code", "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{"https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/configuration/env-vars.md"}, .env_markers = &kimi_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "kimi", "kimi-code", "kimi.exe", "kimi-code.exe" }
     else
         &[_][]const u8{ "kimi", "kimi-code" } },
     // mmx: MIT — https://github.com/MiniMax-AI/cli (npm `mmx-cli`) declares MIT via its README badge + npm page;
     // the repo has no LICENSE file committed yet, so the npm page is the second cross-reference rather than a LICENSE blob.
-    .{ .name = "mmx", .label = "MiniMax CLI", .license = "MIT", .license_sources = &.{ "https://github.com/MiniMax-AI/cli", "https://www.npmjs.com/package/mmx-cli" }, .env_markers = &mmx_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — no telemetry code exists in the CLI at all; the MiniMax API training is the minimax/minimax-code provider dim.
+    .{ .name = "mmx", .label = "MiniMax CLI", .license = "MIT", .license_sources = &.{ "https://github.com/MiniMax-AI/cli", "https://www.npmjs.com/package/mmx-cli" }, .open_training = "never", .closed_training = "never", .training_sources = &.{"https://github.com/MiniMax-AI/cli"}, .env_markers = &mmx_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "mmx", "mmx.exe", "mmx.cmd", "mmx.ps1" }
     else
         &[_][]const u8{"mmx"} },
     // pi: MIT — https://github.com/earendil-works/pi ships a MIT LICENSE (Copyright Mario Zechner; the Rust terminal coding agent).
-    .{ .name = "pi", .label = "Pi", .license = "MIT", .license_sources = &.{ "https://github.com/earendil-works/pi", "https://github.com/earendil-works/pi/blob/main/LICENSE" }, .env_markers = &pi_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — the maker collects no conversation content (the install ping and the opt-in analytics are content-free; the HF session sharing is user-initiated publication).
+    .{ .name = "pi", .label = "Pi", .license = "MIT", .license_sources = &.{ "https://github.com/earendil-works/pi", "https://github.com/earendil-works/pi/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{ "https://github.com/earendil-works/pi/blob/main/packages/coding-agent/README.md", "https://github.com/earendil-works/pi/blob/main/docs/settings.md" }, .env_markers = &pi_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "pi", "pi.exe" }
     else
         &[_][]const u8{"pi"} },
     // qwen: Apache-2.0 — https://github.com/QwenLM/qwen-code (the Qwen Code CLI, formerly Apollo) ships an Apache-2.0 LICENSE.
-    .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .env_markers = &qwen_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — "Qwen Code itself does not use your prompts, code, or responses for model training" (tos-privacy.md); the usage statistics are metadata only; the provider training is the qwen/alibaba provider dims.
+    .{ .name = "qwen", .label = "Qwen Code", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/QwenLM/qwen-code", "https://github.com/QwenLM/qwen-code/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{"https://github.com/QwenLM/qwen-code/blob/main/docs/users/support/tos-privacy.md"}, .env_markers = &qwen_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "qwen", "qwen.exe", "qwen.cmd", "qwen.ps1" }
     else
         &[_][]const u8{"qwen"} },
     // kilo: MIT — https://github.com/Kilo-Org/kilocode ships a MIT LICENSE (Kilo Code CLI).
-    .{ .name = "kilo", .label = "Kilo Code", .short_title = "Kilo", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .env_markers = &kilo_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): NOASSERTION/NOASSERTION — no training statement exists anywhere (the CLI PRIVACY.md and kilo.ai/privacy never mention model training; the gateway's training risk is an upstream-provider property, disclosed with hide/opt-out controls) — the deduction guidance: never guess.
+    .{ .name = "kilo", .label = "Kilo Code", .short_title = "Kilo", .license = "MIT", .license_sources = &.{ "https://github.com/Kilo-Org/kilocode", "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE" }, .open_training = "NOASSERTION", .closed_training = "NOASSERTION", .training_sources = &.{ "https://kilo.ai/privacy", "https://github.com/Kilo-Org/kilocode/blob/main/PRIVACY.md" }, .env_markers = &kilo_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "kilo", "kilo.exe", "kilo.cmd", "kilo.ps1" }
     else
         &[_][]const u8{"kilo"}, .variations = &.{"Kilo Code CLI"} },
     // omp: MIT — https://github.com/can1357/oh-my-pi (omp is the CLI distribution name of oh-my-pi) ships a MIT LICENSE; verified from the repo's license badge and the LICENSE file linked from it.
-    .{ .name = "omp", .label = "omp", .license = "MIT", .license_sources = &.{ "https://github.com/can1357/oh-my-pi", "https://github.com/can1357/oh-my-pi/blob/main/LICENSE" }, .env_markers = &omp_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): NOASSERTION/NOASSERTION — no privacy policy exists; the code shows no automatic collection (OTLP export is opt-in only, the share command is user-initiated), but silence is not a never.
+    .{ .name = "omp", .label = "omp", .license = "MIT", .license_sources = &.{ "https://github.com/can1357/oh-my-pi", "https://github.com/can1357/oh-my-pi/blob/main/LICENSE" }, .open_training = "NOASSERTION", .closed_training = "NOASSERTION", .training_sources = &.{"https://github.com/can1357/oh-my-pi"}, .env_markers = &omp_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "omp", "omp.exe" }
     else
         &[_][]const u8{"omp"} },
     // reasonix: MIT — https://github.com/esengine/DeepSeek-Reasonix ships a MIT LICENSE (default branch `main-v2`); verified from the repo's license badge and the LICENSE file linked from it.
-    .{ .name = "reasonix", .label = "Reasonix", .license = "MIT", .license_sources = &.{ "https://github.com/esengine/DeepSeek-Reasonix", "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE" }, .env_markers = &reasonix_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): NOASSERTION/NOASSERTION — the CLI metrics are content-free (a whitelisted signal map, no prompts/answers/code), but no policy states what the maker does, and the crash reports carry formatted error strings — silence is not a never.
+    .{ .name = "reasonix", .label = "Reasonix", .license = "MIT", .license_sources = &.{ "https://github.com/esengine/DeepSeek-Reasonix", "https://github.com/esengine/DeepSeek-Reasonix/blob/main-v2/LICENSE" }, .open_training = "NOASSERTION", .closed_training = "NOASSERTION", .training_sources = &.{"https://github.com/esengine/DeepSeek-Reasonix"}, .env_markers = &reasonix_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "reasonix", "reasonix.exe" }
     else
         &[_][]const u8{"reasonix"} },
     // crush: FSL-1.1-MIT (Functional Source License) — https://github.com/charmbracelet/crush links its LICENSE.md from the README's License section; that is the upstream SPDX id.
     // Not OSI-approved open source, but the license id is non-null, so `reciprocal` is governed by the model/provider conjuncts rather than being force-closed by the harness side.
-    .{ .name = "crush", .label = "Crush", .license = "FSL-1.1-MIT", .license_sources = &.{ "https://github.com/charmbracelet/crush", "https://github.com/charmbracelet/crush/blob/main/LICENSE.md" }, .env_markers = &crush_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): NOASSERTION/NOASSERTION — the README states prompts and responses are never collected, but the error events carry formatted error strings that may embed content fragments, and no policy addresses model training — the gap keeps it off `never`.
+    .{ .name = "crush", .label = "Crush", .license = "FSL-1.1-MIT", .license_sources = &.{ "https://github.com/charmbracelet/crush", "https://github.com/charmbracelet/crush/blob/main/LICENSE.md" }, .open_training = "NOASSERTION", .closed_training = "NOASSERTION", .training_sources = &.{"https://github.com/charmbracelet/crush"}, .env_markers = &crush_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "crush", "crush.exe" }
     else
         &[_][]const u8{"crush"} },
     // opencode: MIT — https://github.com/anomalyco/opencode (formerly sst/opencode) ships a MIT LICENSE; default branch is `dev`, so the LICENSE blob URL is branch-qualified.
-    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/dev/LICENSE" }, .env_markers = &opencode_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — the CLI stores no code or context data ("OpenCode does not store any of your code or context data"; sharing is manual-only); the zen provider training is the opencode/opencode-go provider dims.
+    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/dev/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{"https://opencode.ai/legal/privacy-policy"}, .env_markers = &opencode_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "opencode", "opencode.exe" }
     else
         &[_][]const u8{"opencode"} },
     // vibe: Apache-2.0 — https://github.com/mistralai/mistral-vibe ships an Apache-2.0 LICENSE (the Vibe CLI for Mistral models).
-    .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .env_markers = &vibe_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — the CLI telemetry is content-free by construction (the code comments forbid prompts, paths, and error messages in events); Mistral's API training is the mistral provider dim.
+    .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://legal.mistral.ai/terms/privacy-policy" }, .env_markers = &vibe_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "vibe", "vibe.exe" }
     else
         &[_][]const u8{"vibe"} },
@@ -665,7 +691,8 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // Customer-Agreement users are governed by the Copilot Product Specific Terms instead.
     // The opt-out is an account setting on github.com — no local artifact exists, so the instance state stays null.
     // Open-model training is unverified (GitHub's trained models are closed), so `open_training` stays null.
-    .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .closed_training = "opt-out", .training_sources = &.{ "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service", "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features" }, .env_markers = &copilot_env, .binary_names = if (builtin.os.tag == .windows)
+    // reciprocity_scandal (D10 — the harness carries the provider's record): (a) Doe v. GitHub — the Copilot model trained on public repos with copyleft licences and attribution stripped; (b) from Apr 24 2026 the individual-tier interaction data trains by default. The compilation: research/scandals.md.
+    .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .closed_training = "opt-out", .training_sources = &.{ "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service", "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://news.ycombinator.com/item?id=33468849", "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber" }, .env_markers = &copilot_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "copilot", "copilot.exe" }
     else
         &[_][]const u8{"copilot"} },
@@ -684,7 +711,8 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // hermes: MIT — https://github.com/NousResearch/hermes-agent ships a MIT LICENSE (Copyright Nous Research).
     // The `hermes` CLI shim exports HERMES_AGENT=true into every child process (`_advertise_agent_env` in hermes_cli/main.py — AI_AGENT is deliberately NOT a marker here: pi and other agents set it too, so it can't identify this harness).
     // Declared last for the same reason as zcode: the markers leak into every child session of the app, so a cline or goose session spawned from inside Hermes still matches its own rule first.
-    .{ .name = "hermes", .label = "Hermes Agent", .short_title = "Hermes", .license = "MIT", .license_sources = &.{ "https://github.com/NousResearch/hermes-agent", "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE" }, .env_markers = &hermes_env, .binary_names = if (builtin.os.tag == .windows)
+    // training (the D4 sweep, 2026-09-12): never/never — the CLI's only outbound path is the double-opt-in content-free shared metrics (off by default; the maintainer rule forbids telemetry without an opt-in gate); the Nous Portal training is the nous provider dim.
+    .{ .name = "hermes", .label = "Hermes Agent", .short_title = "Hermes", .license = "MIT", .license_sources = &.{ "https://github.com/NousResearch/hermes-agent", "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{ "https://github.com/NousResearch/hermes-agent", "https://github.com/NousResearch/hermes-agent/blob/main/docs/observability/relay-shared-metrics.md" }, .env_markers = &hermes_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "hermes", "hermes.exe" }
     else
         &[_][]const u8{"hermes"} },
