@@ -380,6 +380,21 @@ A partial combo exits 4; an id not in the rule tables exits 7.
 Ids may be given in canonical, strict-slug, label, or case-variation form (`cline-pass`, `clinepass`, `Cline Pass`, or `CLINE_PASS` all work) — resolution follows the "alias conventions" section below.
 This is how a harness whose provider/model can't be auto-detected still gets a report and trailer.
 
+## deduction guidance (sourcing the rule values)
+
+The vocabulary: **the training** (the `*_training` rule fields — what the published terms permit for the data use, by default), **the setting** (`harness_{open,closed}_setting` — what the local artifact of this installation configures; `enabled | disabled | NOASSERTION | null`), and **the scandal** (`{harness,provider}_reciprocity_scandal` — `true` or absent).
+The code resolves an axis through the six-rung ladder and computes one `{entity}_reciprocity` deduction per entity; see DESIGN.md "the training / setting / scandal deduction". The guidance below governs every rule-curation pass:
+
+- **The axis rule.** When an axis could not be determined, record `null` (we never researched) or `NOASSERTION` (we researched, and the documents do not agree) — never guess an axis.
+  A known training arrangement with an unknown axis records NOASSERTION on the closed axis, with the inference and its gaps in the comment; the axis outcome is then undeterminable, and the exit-9 nudge drives the research.
+- **The billing rule.** If avoiding the training requires billing, the value is `opt-out`: it takes a user action to not train, and the user action is the billing. Record the billing escape in the comment.
+- **The purpose test (scandal judgement).** Judge every scandal finding by its purpose, not only by its act.
+  A taking in service of reciprocal purposes — it feeds weights that ship back — is fair use: let it slide, and note it as a caveat.
+  A taking in service of non-reciprocal purposes — it feeds enclosure — violates fair use: flag it.
+  Fair use is a right that overrides enforcement that would otherwise be draconian, and consent is not needed for fair use. That is the balance.
+  The research method and the full findings live in [research/](../research/); the flag carries its sources in `reciprocity_scandal_sources` (surfaced in raw as `scandal-urls`), one flag per entity, never `false`.
+- **The licence is not a gate.** An open licence says nothing about data behaviour — Grok Build is Apache-2.0 and uploaded whole repositories. Source the training values for every harness, whatever its licence.
+
 ## add a new harness rule
 
 Add a `HarnessRule` entry to the `rulesForHarnesses` array in `src/lib/rules.zig`. Required fields:
@@ -474,7 +489,8 @@ Their structs are `ModelRule` and `ProviderRule`.
 | `name`       | the bare model id (e.g. `kimi-k3`); stripped of any `provider/` prefix by `applyModel`                                          |
 | `label`      | the canonical display label (e.g. `Kimi K3`)                                                                                    |
 | `short_title`| optional shorter brand form (e.g. `M3` for `MiniMax M3`); `null` when there's no established short form                       |
-| `reciprocity`| one of `open-source`, `open-weight`, or `closed`                                                                                |
+| `openness`   | the openness tier of the weights: one of `open-source`, `open-weight`, or `closed` (emitted as `model_openness`)                |
+| `open_training` / `closed_training` | what the model selection trains, per axis — model-intrinsic serving arrangements only (a surface- or tier-specific exception stays at the provider level); when the axis could not be determined, record NOASSERTION/null (the deduction guidance) |
 | `license`    | SPDX id of the model weights (`Apache-2.0`, `MIT`), `NOASSERTION` when a custom non-SPDX license exists, `NONE` for a verified closed model with no license granted, or `null` when unverified — same semantics as the harness license table. Emitted as `model_license` in the canonical output |
 | `sources`    | independent cross-references that informed the reciprocity decision — typically the HF model page + its LICENSE file           |
 | `variations` | optional extra alias display-strings not covered by `name`/`label`/`short_title` (default `&.{}`)                              |
@@ -493,12 +509,11 @@ Their structs are `ModelRule` and `ProviderRule`.
 
 Reciprocity and training values are *derived from public docs*, not guessed. If you can't verify a value, leave it `null` — a maintainer fills it in once verified.
 
-**Opt-in-by-model (hard rule).**
-A provider whose catalog includes models that train on user data — reachable only by *choosing* those models (contributor tiers, free-period tiers, and the like) — must NOT record `never` on the axis those models span: closed models that train → `closed_training` becomes at least `opt-in`;
-open-weight / open-source models that train → `open_training` becomes at least `opt-in`.
-Values already at `opt-out` or `enforced` capture training and need no change.
-`never` is reserved for providers where **no** served model trains.
-When cataloging a new provider, audit its `map-provider-model-providermodel.csv` row for tier spellings (`:free`, `-free`, `-contributor`, free-period exceptions named in its policy docs) before writing any `never` — this is exactly the slip that made OpenRouter's contributor tiers and OpenCode's free-period models first land as `never`.
+**Model-intrinsic training (the opt-in-by-model successor).**
+A provider's own training values state the provider's default surface.
+Training that is model-intrinsic — reachable only by *choosing* a specific model (contributor tiers, a model's own free period) — lives on that model's `model_{open,closed}_training` pair, not on the provider.
+Training that is tier- or surface-reachable (a free tier that spans models, a billing-dependent default) keeps the strictest reachable surface at the provider (the google/nvidia precedent).
+When cataloging a new provider, audit its `map-provider-model-providermodel.csv` row for tier spellings (`:free`, `-free`, `-contributor`, free-period exceptions named in its policy docs) and route each exception to its model rule or its provider comment — this is exactly the slip that made OpenRouter's contributor tiers and OpenCode's free-period models first land as `never`.
 
 **Axis semantics (convention).** How a policy maps onto the two training axes when the wording does not state (or states ambiguously) which model types it covers:
 

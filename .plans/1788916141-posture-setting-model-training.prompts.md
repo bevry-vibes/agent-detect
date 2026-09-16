@@ -125,3 +125,7 @@ paraphrased compactly; wording follows the session.
     outside of AI, consent is not needed, as fair use is a right that
     overrides enforcements that would otherwise be draconian — this
     is the balance here.
+16. (Directive, 2026-09-15) Implement the plan (D10 ratified with the
+    purpose-test refinement). Executed as three phases: code+schema+tests,
+    rules data (including the D4 sweep values from the two research
+    passes), documents.

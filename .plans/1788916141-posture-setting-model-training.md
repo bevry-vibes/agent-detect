@@ -3,8 +3,10 @@ Assisted-by: ZCode · Glm 5.3:cloud <zcode-ollama-glm53cloud@local>
 
 # Training, setting, and scandal — the split fields and the per-entity reciprocity
 
-Status: **drafted 2026-09-09; it waits for maintainer ratification of
-D10 alone** (rulings resolved D1 through D9 — see the digest).
+Status: **implemented 2026-09-15** (D10 ratified with the purpose-test
+refinement; phases A/B/C landed as the commits after 1788916141's
+ratification — code+schema+tests, rules data, documents). The digest
+below preserves the rulings as executed.
 It supersedes the 2026-09-09 #11 options analysis for the provider
 NOASSERTION cases. This design resolves #11 at the determination
 layer, and it downgrades no data.

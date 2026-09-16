@@ -22,10 +22,11 @@ export type Platform = "darwin" | "linux" | "windows";
 export type FixtureId = string;
 
 /**
- * The 20-field identify contract — the canonical identification object (`buildCooked` output, frozen by DESIGN.md).
+ * The 29-field identify contract (`buildCooked` output, frozen by DESIGN.md #9).
  * Grouped by entity: harness, provider, model, then the composed agent fields.
- * The policy fields (harness_license, harness_open_training, harness_closed_training, model_reciprocity, provider_closed_training, provider_open_training) may be `null`.
- * The two harness-training fields are optional only during the keyset-growth transition — pre-growth fixtures regenerate via the stale-by-output sweeps; new files always carry them.
+ * The licence fields (`harness_license`, `model_license`) are INFORMATION ONLY — the licence does not gate the determination.
+ * The setting fields and the scandal flags are instance/rule state with null-as-absent semantics: absent means unset/false.
+ * The `*_reciprocity` fields at the entity level are the computed per-entity deductions: true (passes), false (fails), null (undeterminable).
  */
 export interface Identify {
   harness_label: string;
@@ -35,17 +36,31 @@ export interface Identify {
   harness_license: string | null;
   harness_open_training?: "enforced" | "opt-in" | "opt-out" | "never" | "NOASSERTION" | null;
   harness_closed_training?: "enforced" | "opt-in" | "opt-out" | "never" | "NOASSERTION" | null;
+  /** the harness setting (instance state, read from a local artifact — harness only; no readable provider setting exists). */
+  harness_open_setting?: "enabled" | "disabled" | "NOASSERTION" | null;
+  harness_closed_setting?: "enabled" | "disabled" | "NOASSERTION" | null;
+  /** true only when the rule flags a reciprocity scandal; absent = false. */
+  harness_reciprocity_scandal?: true;
+  /** the computed per-entity deduction. */
+  harness_reciprocity?: boolean | null;
   provider_label: string;
   provider_name: string;
   provider_id: string;
   provider_closed_training: string | null;
   provider_open_training: string | null;
+  provider_reciprocity_scandal?: true;
+  provider_reciprocity?: boolean | null;
   model_label: string;
   model_short_title: string | null;
   model_name: string;
   model_id: string;
-  model_reciprocity: string | null;
+  /** the openness tier of the weights — the former `model_reciprocity` field, renamed; the freed name is the computed deduction below. */
+  model_openness: string | null;
+  /** what the model selection trains (model-intrinsic serving arrangements; independent of the openness). */
+  model_open_training?: string | null;
+  model_closed_training?: string | null;
   model_license: string | null;
+  model_reciprocity?: boolean | null;
   agent_id: string;
   reciprocal: boolean;
 }
@@ -64,6 +79,8 @@ export interface Raw {
   "harness-urls": string[];
   "provider-urls": string[];
   "model-urls": string[];
+  /** the scandal citations of the matched rules — a flagged rule always carries its sources. */
+  "scandal-urls": string[];
   evidence: {
     dim: string;
     source: string;
