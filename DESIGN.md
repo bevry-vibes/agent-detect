@@ -379,7 +379,7 @@ This section pins the matrix policy — what gets a rule, a recipe, and a fixtur
   Every detected dim's attribution is human + dev-agent review (capture review window + commit review of `outputs.raw`); the code no longer gates on it.
   Sources that can't serialize into a claim (custom database formats, e.g. kilo's sqlite session store) are logged follow-ups, never faked.
   Declared fixtures carry no evidence at all.
-- **Cross-platform daemon control principle (decision #12):** one `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop` across macOS/Linux/Windows — no per-platform signal doubles.
+- **Cross-platform daemon control principle (decision #12):** one `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop`/`restart` across macOS/Linux/Windows — no per-platform signal doubles. `restart` (2026-09-20) drains like `stop`, then re-executes the daemon's own binary path with the original argv — the new-build pickup (`zig build dev` replaces the executable; POSIX exec keeps the pid, fds, and terminal, Windows spawns a copy with inherited stdio and exits).
   Ctrl+C stays the terminal graceful-stop shortcut; the daemon clears the control file after acting.
 - **Refresh flavours:** every queue entry runs in one of two modes:
   - `from-identity` (resolve the declared identification from provided ids; declared, not observed; zero tokens; harness not required)

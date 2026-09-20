@@ -176,8 +176,11 @@ pub const dev = if (build_options.dev) struct {
         \\  --capture-review-seconds=N  pre/post capture pause (default 15)
         \\  --capture-timeout-seconds=N from-capture worker timeout (default 600)
         \\
-        \\control: write pause/resume/stop to fixtures/daemon.ctl (checked every
-        \\~1s; the daemon clears it after acting). Ctrl+C is the graceful stop.
+        \\control: write pause/resume/stop/restart to fixtures/daemon.ctl
+        \\(checked every ~1s; the daemon clears it after acting). restart
+        \\finishes in-flight work, then reboots onto the current build —
+        \\write it after `zig build dev` replaced the executable. Ctrl+C
+        \\is the graceful stop.
         \\
         \\subcommands (see each subcommand's `--help` for its flags — modes,
         \\staleness, and filters are shared and documented once):
@@ -3154,6 +3157,7 @@ pub const dev = if (build_options.dev) struct {
         // decision #12 — one cross-platform control mechanism: the daemon checks `fixtures/daemon.ctl` every ~1s heartbeat and acts on pause/resume/stop, clearing the file after acting.
         var paused = false;
         var stop_requested = false;
+        var restart_requested = false;
         var phase: enum { idle, pre_capture, post_review } = .idle;
         var pending_capture: ?DaemonPick = null;
         var phase_until: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot };
@@ -3178,19 +3182,23 @@ pub const dev = if (build_options.dev) struct {
                 } else if (std.mem.eql(u8, c, "stop")) {
                     stop_requested = true;
                     daemonWrite(io, "daemon: stop requested — finishing in-flight work then exiting\n");
+                } else if (std.mem.eql(u8, c, "restart")) {
+                    // drains exactly like stop, then reboots instead of exiting — the pick-up-the-new-build path (write restart after `zig build dev` replaced the executable).
+                    stop_requested = true;
+                    restart_requested = true;
+                    daemonWrite(io, "daemon: restart requested — finishing in-flight work, then rebooting onto the current build\n");
                 }
             }
 
             if (stop_requested and phase == .idle and pending_capture == null) {
-                daemonWrite(io, "daemon: stopped\n");
-                return EXIT_OK;
+                return daemonFinish(a, io, init, restart_requested);
             }
             // a stop during the pre-capture window cancels the pending capture (it has consumed no tokens yet).
             if (stop_requested and phase == .pre_capture and pending_capture != null) {
                 daemonWrite(io, "daemon: stop during pre-capture review — canceled the pending capture\n");
                 pending_capture = null;
                 phase = .idle;
-                return EXIT_OK;
+                return daemonFinish(a, io, init, restart_requested);
             }
 
             if (paused) {
@@ -3379,15 +3387,86 @@ pub const dev = if (build_options.dev) struct {
         daemonWriteErr(io, std.fmt.bufPrint(&buf, "{d}", .{n}) catch return);
     }
 
-    /// read `fixtures/daemon.ctl`, clear it, and return the action word (`pause` / `resume` / `stop`) or null when absent/empty. The daemon clears the file after acting (decision #12).
+    /// read `fixtures/daemon.ctl`, clear it, and return the action word (`pause` / `resume` / `stop` / `restart`) or null when absent/empty. The daemon clears the file after acting (decision #12).
     fn readControlAction(a: std.mem.Allocator, io: std.Io) ?[]const u8 {
         const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/daemon.ctl", a, @enumFromInt(4096)) catch return null;
         // no `a.free(data)` — the returned word aliases `data` (Zig 0.16 arena free-list would reclaim it into the daemon's next allocations, clobbering the action word mid-use).
         std.Io.Dir.cwd().deleteFile(io, "fixtures/daemon.ctl") catch {};
         const t = std.mem.trim(u8, data, " \t\r\n");
         if (t.len == 0) return null;
-        if (std.mem.eql(u8, t, "pause") or std.mem.eql(u8, t, "resume") or std.mem.eql(u8, t, "stop")) return t;
+        if (std.mem.eql(u8, t, "pause") or std.mem.eql(u8, t, "resume") or std.mem.eql(u8, t, "stop") or std.mem.eql(u8, t, "restart")) return t;
         return null;
+    }
+
+    /// reboot the daemon onto the current build — the `restart` control action. The typical use: `zig build dev` replaced the executable while the daemon runs, and the daemon must pick the new build up.
+    /// POSIX execs itself with the original argv (same pid, same fds, same terminal — the foreground relationship and Ctrl+C survive the reboot);
+    /// Windows has no exec, so it spawns a copy with inherited stdio and exits (the copy is independent — stop it via `fixtures/daemon.ctl` or its printed pid).
+    /// Returns only on failure.
+    fn daemonRestartSelf(a: std.mem.Allocator, io: std.Io, init: std.process.Init) !void {
+        var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const self_path = selfPath(io, &path_buf) orelse return error.SelfPathUnavailable;
+
+        // the relaunched daemon keeps its flags: argv0 comes from executablePath (more reliable than argv[0]); the rest verbatim from the launch.
+        var argv_list = std.ArrayList(?[*:0]const u8).empty;
+        defer argv_list.deinit(a);
+        try argv_list.append(a, try a.dupeZ(u8, self_path));
+        var it = try std.process.Args.Iterator.initAllocator(init.minimal.args, a);
+        defer it.deinit();
+        _ = it.skip(); // argv0 — replaced above
+        while (it.next()) |arg| try argv_list.append(a, try a.dupeZ(u8, arg));
+
+        if (builtin.os.tag == .windows) {
+            const argv_slices = try a.alloc([]const u8, argv_list.items.len);
+            for (argv_list.items, 0..) |arg, i| argv_slices[i] = std.mem.span(arg.?);
+            _ = std.process.spawn(io, .{
+                .argv = argv_slices,
+                .stdin = .inherit,
+                .stdout = .inherit,
+                .stderr = .inherit,
+            }) catch return error.RestartSpawnFailed;
+            // no wait — exiting hands the terminal streams to the copy (waiting would chain one wrapper process per restart).
+            std.process.exit(0);
+        }
+
+        const argv = try a.allocSentinel(?[*:0]const u8, argv_list.items.len, null);
+        @memcpy(argv[0..argv_list.items.len], argv_list.items);
+
+        // the raw environ pointer is not exposed by the new std — reconstruct envp from the parsed environ map.
+        var envp_list = std.ArrayList(?[*:0]const u8).empty;
+        defer envp_list.deinit(a);
+        var eit = init.environ_map.iterator();
+        while (eit.next()) |kv| {
+            const pair = try std.fmt.allocPrint(a, "{s}={s}", .{ kv.key_ptr.*, kv.value_ptr.* });
+            defer a.free(pair);
+            try envp_list.append(a, try a.dupeZ(u8, pair));
+        }
+        const envp = try a.allocSentinel(?[*:0]const u8, envp_list.items.len, null);
+        @memcpy(envp[0..envp_list.items.len], envp_list.items);
+
+        if (builtin.link_libc) {
+            // darwin always links the system libc — execve through it; it returns -1 only on failure.
+            _ = std.c.execve(argv.ptr[0].?, argv.ptr, envp.ptr);
+        } else {
+            // linux freestanding — the raw syscall wrapper; it never returns on success and carries an errno-encoded usize when it does.
+            _ = std.os.linux.execve(argv.ptr[0].?, argv.ptr, envp.ptr);
+        }
+        return error.RestartExecFailed;
+    }
+
+    /// the graceful finish: print the stop line, or — when `restart` was requested — reboot onto the current build first (a successful reboot never returns). Returns the daemon's exit code.
+    fn daemonFinish(a: std.mem.Allocator, io: std.Io, init: std.process.Init, restart_requested: bool) u8 {
+        if (restart_requested) {
+            daemonWrite(io, "daemon: rebooting onto the current build\n");
+            daemonRestartSelf(a, io, init) catch |err| {
+                daemonWriteErr(io, "daemon: restart failed (");
+                daemonWriteErr(io, @errorName(err));
+                daemonWriteErr(io, ") — stopping instead; relaunch by hand\n");
+                daemonWrite(io, "daemon: stopped\n");
+                return EXIT_OK;
+            };
+        }
+        daemonWrite(io, "daemon: stopped\n");
+        return EXIT_OK;
     }
 
     /// true iff the timestamp (unix secs) is older than `threshold_minutes`.

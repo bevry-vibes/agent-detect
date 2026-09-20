@@ -241,16 +241,18 @@ on failure the daemon reads the stdout tail and the worker-log tail into the `kn
 Always close the previous instance (task / launch agent / terminal run) before starting a new one — a second daemon double-drains the queue and interleaves the same `daemon.log`.
 A hung daemon does not answer `daemon.ctl`; kill it by the pid from the banner, and kill any orphaned capture workers left behind (`Get-CimInstance Win32_Process | Where-Object CommandLine -match "fixtures capture"`).
 The common hang class is closed by design: the timeout watchdog kills the worker's whole process tree (Windows `taskkill /F /T`), so an orphaned grandchild holding the stdout pipe can no longer survive the kill (DESIGN.md "capture workers").
-Pacing: `from-identity` jobs process at ~5s intervals (`--poll-seconds=N`); each `from-capture` is announced ~15s ahead (`--capture-review-seconds=N`, cancellable) and followed by a ~15s review pause.
+Pacing: `from-identity` jobs process at ~0.25s intervals (zero-token work ignores `--poll-seconds`); each `from-capture` is announced ~15s ahead (`--capture-review-seconds=N`, cancellable) and followed by a ~15s review pause; the empty queue and capture paths poll at `--poll-seconds` (default 5).
 Control is the same on macOS/Linux/Windows:
 
 ```sh
-printf 'pause\n'  > fixtures/daemon.ctl   # pause: finish in-flight, then no new pops
-printf 'resume\n' > fixtures/daemon.ctl   # resume
-printf 'stop\n'   > fixtures/daemon.ctl   # stop after the in-flight job
+printf 'pause\n'    > fixtures/daemon.ctl   # pause: finish in-flight, then no new pops
+printf 'resume\n'   > fixtures/daemon.ctl   # resume
+printf 'stop\n'     > fixtures/daemon.ctl   # stop after the in-flight job
+printf 'restart\n'  > fixtures/daemon.ctl   # finish in-flight, then reboot onto the current build
 ```
 
 The daemon checks the file every ~1s and clears it after acting; Ctrl+C in the daemon terminal is the graceful-stop shortcut.
+`restart` is the new-build pickup: run `zig build dev`, then write `restart` — the daemon finishes its in-flight work and re-executes its own binary path with the same flags (POSIX keeps the pid, fds, and terminal; Windows spawns a copy with inherited stdio and exits).
 
 ### daemon launch: macOS LaunchAgent bootstrap (macOS-only, no sudo)
 
