@@ -477,7 +477,7 @@ test "expandEntry: session damping — failed candidates are excluded" {
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
 }
 
-test "expandEntry: blocklisted providers are excluded from both modes" {
+test "expandEntry: blocklisted providers are excluded from both modes — paid combos only, the free combos pass" {
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;
@@ -485,24 +485,31 @@ test "expandEntry: blocklisted providers are excluded from both modes" {
     defer arena.deinit();
     const aa = arena.allocator();
     try Universe.writeIdentity("pi-deepseek-deepseekv4flash-darwin", 100);
+    try Universe.writeIdentity("pi-deepseek-kimik3-darwin", 100);
     try Universe.writeIdentity("pi-openrouter-deepseekv4flash-darwin", 100);
     var root = try emptyStoreRoot(aa);
     try putInvocation(aa, &root, "pi-deepseek-deepseekv4flash-darwin");
+    try putInvocation(aa, &root, "pi-deepseek-kimik3-darwin");
     try putInvocation(aa, &root, "pi-openrouter-deepseekv4flash-darwin");
     try Universe.writeCapture("pi-deepseek-deepseekv4flash-darwin", 100, true);
+    try Universe.writeCapture("pi-deepseek-kimik3-darwin", 100, true);
     try Universe.writeCapture("pi-openrouter-deepseekv4flash-darwin", 100, true);
 
     const blocked = [_][]const u8{"deepseek"};
     var fg = dev.FreeGrid.empty(aa);
+    // the paid-only exemption (ruling 2026-09-20): kimik3 is free on the blocked provider, deepseekv4flash is not
+    try fg.put(aa, "deepseek", "kimik3");
     var grids = dev.FeasibilityGrids.empty(aa);
-    // from-capture: the invocation universe minus the blocked provider
+    // from-capture: the invocation universe minus the blocked provider's paid combos
     const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &blocked);
-    try testing.expectEqual(@as(usize, 1), cap.host_candidates.len);
-    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", cap.host_candidates[0].fixture_id);
-    // from-identity: the fixtured universe minus the blocked provider
+    try testing.expectEqual(@as(usize, 2), cap.host_candidates.len);
+    try testing.expectEqualStrings("pi-deepseek-kimik3-darwin", cap.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", cap.host_candidates[1].fixture_id);
+    // from-identity: the fixtured universe minus the blocked provider's paid combos
     const ident = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", null, &blocked);
-    try testing.expectEqual(@as(usize, 1), ident.host_candidates.len);
-    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", ident.host_candidates[0].fixture_id);
+    try testing.expectEqual(@as(usize, 2), ident.host_candidates.len);
+    try testing.expectEqualStrings("pi-deepseek-kimik3-darwin", ident.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", ident.host_candidates[1].fixture_id);
 }
 
 test "blocklistProvidersFor: resolves the user's providers; unknown user → empty" {

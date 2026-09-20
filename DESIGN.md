@@ -110,8 +110,8 @@ Store tables (semantics only — shapes in the schemas):
   Written by the workers on operational failure (capture exit ≠ 0, unavailable version probe, post-check mismatch); last-failure-wins across modes; removed when any channel of that combo succeeds (the fixture file is the success memory, this is the failure memory).
   Pops never gate on failure state; the dev agent reads the message and handles it.
   `--repair` upserts `--fixture=<id>` entries so the dev agent can force a targeted re-queue after fixing the cause; clearing an entry by hand is always safe.
-- `blocklist` — the per-user never-test providers: `blocklist[<github-username>] = { providers: [strict provider slugs] }`, keyed by the host's `git config --global github.username` (the entries use the strict provider slugs the fixture dims use — `opencode-go` → `opencodego`).
-  A blocked provider never becomes a daemon candidate (either mode) and `fixtures capture` refuses it (exit 10) — the host running as that user has exhausted credits / rate limits / etc. on it, so testing it there is never wanted.
+- `blocklist` — the per-user never-TEST providers: `blocklist[<github-username>] = { providers: [strict provider slugs] }`, keyed by the host's `git config --global github.username` (the entries use the strict provider slugs the fixture dims use — `opencode-go` → `opencodego`).
+  The blocklist is **paid-only** (ruling, 2026-09-20 — `.plans/1789895398`): a blocked provider's paid combos never become daemon candidates (either mode) and `fixtures capture` refuses them (exit 10), while its free combos (members of the free grid) stay workable — the host running as that user has an expired paid plan / exhausted credits on it, so paid testing there is never wanted, but the free models remain testable.
   An unset git identity blocks nothing; the table resolves once per daemon session and is surfaced by `fixtures status`.
 
 - The free axis lives in **`fixtures/map-provider-model-freeprovidermodel.csv`** — a sparse provider×model grid (rows only for providers with ≥1 free model, columns only for models free somewhere, cell = the provider's free model-id or `-`).

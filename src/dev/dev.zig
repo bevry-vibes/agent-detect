@@ -1390,8 +1390,8 @@ pub const dev = if (build_options.dev) struct {
                 if (!std.mem.eql(u8, parts[2], v)) continue;
             }
             if (!dimsResolvable(a, parts)) continue;
-            // blocklist gate — the invoking user's never-test providers never become candidates in either mode, so the daemon never launches (and `capture` never validates) those sessions.
-            if (providerBlocked(blocked, parts[1])) continue;
+            // blocklist gate (paid-only) — the invoking user's never-test providers never become candidates in either mode, EXCEPT their free combos: the paid plan expired, the free models stay testable. So the daemon never launches (and `capture` never validates) a paid session on those providers.
+            if (providerBlocked(blocked, parts[1]) and !free.has(parts[1], parts[2])) continue;
             if (entry.free) |fr| {
                 if (fr != free.has(parts[1], parts[2])) continue;
             }
@@ -1438,7 +1438,7 @@ pub const dev = if (build_options.dev) struct {
                     if (fixtured.contains(stem)) continue;
                     if (seen.contains(stem)) continue; // table-only invocations already queued above
                     if (!dimsResolvable(a, .{ h, p, m, plat })) continue;
-                    if (providerBlocked(blocked, p)) continue;
+                    if (providerBlocked(blocked, p) and !free.has(p, m)) continue;
                     if (entry.free) |fr| {
                         if (fr != free.has(p, m)) continue;
                     }
@@ -2064,18 +2064,21 @@ pub const dev = if (build_options.dev) struct {
 
         const fixture_id = try fixtureId(a, agent_aid);
 
-        // blocklist gate (defense in depth — the daemon's expansion already skips blocked providers, so this only fires on direct invocations): the invoking git user's never-test providers are never captured on this host.
+        // blocklist gate (paid-only, defense in depth — the daemon's expansion already skips the paid combos, so this only fires on direct invocations): the invoking git user's never-test providers are never captured on this host — unless the combo is free (map-provider-model-freeprovidermodel.csv), because the paid plan expiring never blocks the free models.
         {
             const username = gitConfigUsername(a, io);
             if (username) |u| {
                 var blocked_root = try indexLoad(io, a);
                 const blocked = try blocklistProvidersFor(a, &blocked_root, u);
                 if (d.provider_id) |pid| {
-                    if (providerBlocked(blocked, pid)) {
-                        var mbuf: [256]u8 = undefined;
-                        const m = std.fmt.bufPrint(mbuf[0..], "fixtures capture: {s} is blocklisted for git user {s} (provider \"{s}\") — not tested, no fixture written\n", .{ fixture_id, u, pid }) catch "fixtures capture: combo is blocklisted for this user — no fixture written\n";
-                        writeErr(io, m);
-                        return EXIT_REQUIREMENT_FAILED;
+                    if (d.model_id) |mid| {
+                        var free_grid = try FreeGrid.load(io, a);
+                        if (providerBlocked(blocked, pid) and !free_grid.has(pid, mid)) {
+                            var mbuf: [256]u8 = undefined;
+                            const m = std.fmt.bufPrint(mbuf[0..], "fixtures capture: {s} is blocklisted for git user {s} (provider \"{s}\") — not tested, no fixture written\n", .{ fixture_id, u, pid }) catch "fixtures capture: combo is blocklisted for this user — no fixture written\n";
+                            writeErr(io, m);
+                            return EXIT_REQUIREMENT_FAILED;
+                        }
                     }
                 }
             }
@@ -2425,7 +2428,8 @@ pub const dev = if (build_options.dev) struct {
         const id_stems = try scanFolderStems(io, a, IDENTITY_DIR);
         const cap_stems = try scanFolderStems(io, a, CAPTURE_DIR);
         const grids = try FeasibilityGrids.load(io, a);
-        // the never-test providers for this host's git user — excluded from the feasible-unfixtured counts below (they can never be worked) and surfaced as their own line.
+        const status_free_grid = try FreeGrid.load(io, a);
+        // the never-test providers for this host's git user — their PAID combos are excluded from the feasible-unfixtured counts below (they can never be worked; the free combos stay workable) and surfaced as their own line.
         const blocked: []const []const u8 = blk: {
             const u = gitConfigUsername(a, io) orelse break :blk &.{};
             break :blk blocklistProvidersFor(a, &root, u) catch &.{};
@@ -2451,7 +2455,7 @@ pub const dev = if (build_options.dev) struct {
                     const stem = (try fixtureIdFrom(a, h, p, pm[bar2 + 1 ..], plat)) orelse continue;
                     if (fixtured_ids.contains(stem)) continue;
                     if (!dimsResolvable(a, .{ h, p, pm[bar2 + 1 ..], plat })) continue;
-                    if (providerBlocked(blocked, p)) continue;
+                    if (providerBlocked(blocked, p) and !status_free_grid.has(p, pm[bar2 + 1 ..])) continue;
                     feasible_unfixtured += 1;
                     if (std.mem.eql(u8, plat, platformId())) feasible_unfixtured_host += 1;
                 }
@@ -2491,7 +2495,7 @@ pub const dev = if (build_options.dev) struct {
         if (gitConfigUsername(a, io)) |u| {
             writeOut(io, "  blocklist for ");
             writeOut(io, u);
-            writeOut(io, ": ");
+            writeOut(io, " (paid combos only; free-grid combos stay workable): ");
             if (blocked.len == 0) {
                 writeOut(io, "(none)");
             } else {

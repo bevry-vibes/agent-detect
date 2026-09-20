@@ -117,9 +117,9 @@ export interface Invocations {
 }
 
 /**
- * The blocklist — per-git-user providers that must never be tested on the hosts running as that user (credits exhausted, rate-limited, ...).
+ * The blocklist — per-git-user providers whose PAID combos must never be tested on the hosts running as that user (paid plan expired, credits exhausted, ...).
  * Keyed by `git config --global github.username`; the provider entries are strict provider slugs — the same alphanumeric ids the fixture dims use (`opencode-go` → `opencodego`).
- * Blocked providers never become daemon candidates (either mode) and `fixtures capture` refuses them (exit 10).
+ * Paid-only (ruling 2026-09-20): a blocked provider's paid combos never become daemon candidates (either mode) and `fixtures capture` refuses them (exit 10); its free combos (members of map-provider-model-freeprovidermodel.csv) stay workable.
  * An unset git identity blocks nothing; a `{}` entry blocks nothing.
  */
 export interface Blocklist {
@@ -138,6 +138,6 @@ export interface IndexStore {
   backlog: Backlog;
   /** The authored invocations (see Invocations). */
   invocations: Invocations;
-  /** The per-git-user never-test providers (see Blocklist). */
+  /** The per-git-user paid-only never-test providers (see Blocklist). */
   blocklist: Blocklist;
 }

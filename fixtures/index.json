@@ -7058,7 +7058,9 @@
         "chutes",
         "opencodego",
         "deepseek",
-        "hyper"
+        "hyper",
+        "clinepass",
+        "ollamacloud"
       ]
     }
   }
