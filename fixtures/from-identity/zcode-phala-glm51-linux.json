@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "ZCode",
+      "harness_short_title": null,
+      "harness_name": "zcode",
+      "harness_id": "zcode",
+      "harness_license": "NONE",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
+      "harness_reciprocity": false,
+      "provider_label": "Phala",
+      "provider_name": "phala",
+      "provider_id": "phala",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "GLM 5.1",
+      "model_short_title": null,
+      "model_name": "glm-5.1",
+      "model_id": "glm51",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "zcode-phala-glm51",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: ZCode · GLM 5.1 <zcode-phala-glm51@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · GLM 5.1 <zcode-phala-glm51@local>"
+  },
+  "meta": {
+    "updated_at": 1789898344
+  }
+}

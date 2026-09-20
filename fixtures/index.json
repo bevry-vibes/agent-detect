@@ -4,6 +4,7 @@
     {
       "harness": "zcode",
       "mode": "from-identity",
+      "started_at": 1789898238,
       "runner": 592638
     },
     {
@@ -59,12 +60,14 @@
     {
       "provider": "ollamacloud",
       "mode": "from-identity",
+      "started_at": 1789898415,
       "runner": 592638
     },
     {
       "provider": "clinepass",
       "mode": "from-identity",
       "free": true,
+      "started_at": 1789898904,
       "runner": 598648
     },
     {
@@ -77,6 +80,7 @@
       "provider": "opencode",
       "mode": "from-identity",
       "free": true,
+      "started_at": 1789898919,
       "runner": 598648
     },
     {
@@ -89,6 +93,7 @@
       "provider": "openrouter",
       "mode": "from-identity",
       "free": true,
+      "started_at": 1789898940,
       "runner": 598648
     },
     {
@@ -446,13 +451,12 @@
       "vibe-minimax-minimaxm3-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
       "vibe-mistral-mistrallargelatest-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
       "vibe-mistral-mistralsmalllatest-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
-      "cline-clinepass-deepseekv4flash-linux": "harness unavailable — version probe failed",
+      "cline-openrouter-deepseekv4flash-linux": "harness unavailable — version probe failed",
       "cline-clinepass-glm53flash-linux": "harness unavailable — version probe failed",
       "cline-clinepass-kimik3-linux": "harness unavailable — version probe failed",
       "cline-clinepass-step37flash-linux": "harness unavailable — version probe failed",
       "cline-deepseek-deepseekv4flash-linux": "harness unavailable — version probe failed",
-      "cline-minimax-minimaxm3-linux": "harness unavailable — version probe failed",
-      "cline-openrouter-deepseekv4flash-linux": "harness unavailable — version probe failed"
+      "cline-minimax-minimaxm3-linux": "harness unavailable — version probe failed"
     }
   },
   "invocations": {

@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity": true,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Nex N2.5 Pro",
+      "model_short_title": null,
+      "model_name": "nex-n2.5-pro",
+      "model_id": "nexn25pro",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "cline-openrouter-nexn25pro",
+      "reciprocal": true
+    },
+    "trailer co-author": null,
+    "trailer assisted-by": null
+  },
+  "meta": {
+    "updated_at": 1789899008
+  }
+}

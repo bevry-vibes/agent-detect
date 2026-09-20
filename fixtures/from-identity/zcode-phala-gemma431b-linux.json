@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "ZCode",
+      "harness_short_title": null,
+      "harness_name": "zcode",
+      "harness_id": "zcode",
+      "harness_license": "NONE",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
+      "harness_reciprocity": false,
+      "provider_label": "Phala",
+      "provider_name": "phala",
+      "provider_id": "phala",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Gemma 4 31B",
+      "model_short_title": null,
+      "model_name": "gemma-4-31b",
+      "model_id": "gemma431b",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "zcode-phala-gemma431b",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: ZCode · Gemma 4 31B <zcode-phala-gemma431b@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · Gemma 4 31B <zcode-phala-gemma431b@local>"
+  },
+  "meta": {
+    "updated_at": 1789898339
+  }
+}

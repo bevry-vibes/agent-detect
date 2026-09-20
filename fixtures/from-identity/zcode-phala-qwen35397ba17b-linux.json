@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "ZCode",
+      "harness_short_title": null,
+      "harness_name": "zcode",
+      "harness_id": "zcode",
+      "harness_license": "NONE",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
+      "harness_reciprocity": false,
+      "provider_label": "Phala",
+      "provider_name": "phala",
+      "provider_id": "phala",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Qwen3.5 397B A17B",
+      "model_short_title": null,
+      "model_name": "qwen3.5-397b-a17b",
+      "model_id": "qwen35397ba17b",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "zcode-phala-qwen35397ba17b",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: ZCode · Qwen3.5 397B A17B <zcode-phala-qwen35397ba17b@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · Qwen3.5 397B A17B <zcode-phala-qwen35397ba17b@local>"
+  },
+  "meta": {
+    "updated_at": 1789898395
+  }
+}
