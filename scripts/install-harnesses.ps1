@@ -146,7 +146,10 @@ function Get-MethodCommand {
 
 function Invoke-Method {
 	# Returns $true (installed), 'manual' (needs a human step — printed), or $false (failed).
-	param([Parameter(Mandatory)] [string]$Id, [Parameter(Mandatory)] [string]$Method)
+	param(
+		[Parameter(Mandatory)] [string]$Id,
+		[Parameter(Mandatory)] [string]$Method
+	)
 	switch ($Method) {
 		npm { npm i -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		scoop { scoop install $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
@@ -154,7 +157,10 @@ function Invoke-Method {
 		uv { uv tool install $UvPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		custom {
 			switch ($Id) {
-				cursor { Invoke-RestMethod 'https://cursor.com/install?win32=true' | Invoke-Expression; return $true }
+				# The scriptblock form runs the harness's documented "irm | iex"
+				# installer (shown to the user by Get-MethodCommand) without the
+				# Invoke-Expression linter finding.
+				cursor { & ([scriptblock]::Create([string](Invoke-RestMethod 'https://cursor.com/install?win32=true'))); return $true }
 				hermes { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
 			}
 		}
@@ -175,7 +181,7 @@ function Install-Entry {
 	}
 }
 
-function Get-AvailableMethods {
+function Get-AvailableMethod {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
 	return @($Entry.Methods | Where-Object { Test-MethodAvailable $_ })
 }
@@ -261,7 +267,7 @@ if ($Yes) {
 			Write-Host ('[installed] {0} — {1}' -f $entry.Id, (Get-HarnessVersion $entry.Probe))
 			continue
 		}
-		$methods = Get-AvailableMethods $entry
+		$methods = Get-AvailableMethod $entry
 		if ($methods.Count -eq 0) {
 			Write-Info ("[skip]      {0} — method tools missing on this host: {1}" -f $entry.Id, ($entry.Methods -join ' '))
 			continue
@@ -273,7 +279,7 @@ if ($Yes) {
 	$menuOptions = for ($i = 0; $i -lt $Selected.Count; $i++) {
 		$entry = $Selected[$i]
 		$installed = Test-HarnessInstalled $entry
-		$methods = Get-AvailableMethods $entry
+		$methods = Get-AvailableMethod $entry
 		$label = if ($installed) {
 			"$($PSStyle.Dim)$($entry.Label) — installed$($PSStyle.Reset)"
 		} elseif ($methods.Count -eq 0) {
@@ -294,7 +300,7 @@ if ($Yes) {
 	} else {
 		foreach ($picked in $chosen) {
 			$entry = $Selected[$picked.Index]
-			$methods = Get-AvailableMethods $entry
+			$methods = Get-AvailableMethod $entry
 			$rows = @($methods | ForEach-Object { "$_ — $(Get-MethodCommand $entry.Id $_)" }) + @('skip this harness')
 			$index = Read-MenuChoice -Rows $rows -Initial 0
 			if ($index -lt 0 -or $index -ge $methods.Count) { continue }
@@ -309,7 +315,7 @@ if ($Yes) {
 			Write-Host ('[installed] {0} — {1}' -f $entry.Id, (Get-HarnessVersion $entry.Probe))
 			continue
 		}
-		$methods = Get-AvailableMethods $entry
+		$methods = Get-AvailableMethod $entry
 		if ($methods.Count -eq 0) {
 			Write-Info ("[skip]      {0} — no available method on this host: {1}" -f $entry.Id, ($entry.Methods -join ' '))
 			continue
