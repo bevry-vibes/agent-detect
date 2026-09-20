@@ -226,7 +226,9 @@ function Install-Entry {
 
 function Get-AvailableMethod {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
-	return @($Entry.Methods[$Platform] | Where-Object { Test-MethodAvailable $Entry.Id $_ })
+	# the comma stops PowerShell unrolling a single-element array into a scalar -
+	# every caller reads .Count under StrictMode, where a scalar has no Count
+	return , @($Entry.Methods[$Platform] | Where-Object { Test-MethodAvailable $Entry.Id $_ })
 }
 
 # --- selection ------------------------------------------------------------------
