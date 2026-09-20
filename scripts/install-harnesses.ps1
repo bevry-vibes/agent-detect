@@ -6,7 +6,7 @@
 agent-detect — install the test-matrix harnesses (macOS, Linux, Windows).
 
 .DESCRIPTION
-Interactive on a user machine: pick the harnesses from a multiselect, then pick an install method for each (the methods show in preference order, and nothing runs before you confirm).
+Interactive on a user machine: pick harnesses and actions from the multiselect. Each row's radios sit beneath its title and description — a missing harness offers `○ install`; an installed harness offers `○ upgrade    ○ uninstall`. The radios are a hybrid: at most one set per row, none required — space sets the focused action (clearing its sibling), space again unsets, left/right or h/l move between a row's actions. After Enter, each chosen action walks a method menu before anything runs.
 Non-interactive on CI: pass -Yes (or run under CI=true) and every harness installs through its first available method — the flow the daemon runner uses.
 
 Method preference (policy — see CONTRIBUTING.md "per-harness install"):
@@ -43,7 +43,7 @@ if ($Help) {
 	@'
 usage: pwsh -File ./scripts/install-harnesses.ps1 [-Yes] [-Check] [-List] [-Harness <id>[,<id>]]
 
-  (no flags)  interactive: pick harnesses and install methods from the menus
+  (no flags)  interactive: pick harnesses and actions from the radios, then a method per action
   -Yes        non-interactive: install every harness through its first available method
   -Check      probe every harness binary and print the state; install nothing
   -List       print the registry (id, probe, methods for this platform) and exit
@@ -203,16 +203,38 @@ function Test-MethodAvailable {
 }
 
 function Get-MethodCommand {
-	param([Parameter(Mandatory)] [string]$Id, [Parameter(Mandatory)] [string]$Method)
-	switch ($Method) {
-		npm { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])" }
-		brew { return "brew install $($BrewPackage[$Id])" }
-		scoop { return "scoop install $($ScoopPackage[$Id])" }
-		winget { return "winget install $($WingetPackage[$Id])" }
-		uv { return "uv tool install $($UvPackage[$Id])" }
-		soar { return "soar install $($SoarPackage[$Id])" }
-		flatpak { return "flatpak install -y $($FlatpakPackage[$Id])" }
-		custom {
+	param(
+		[Parameter(Mandatory)] [string]$Id,
+		[Parameter(Mandatory)] [string]$Method,
+		[ValidateSet('install', 'upgrade', 'uninstall')] [string]$Action = 'install'
+	)
+	switch ("$Method/$Action") {
+		'npm/install' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])" }
+		'npm/upgrade' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])@latest" }
+		'npm/uninstall' { return "$($NpmCommand -join ' ') rm -g $($NpmPackage[$Id])" }
+		'brew/install' { return "brew install $($BrewPackage[$Id])" }
+		'brew/upgrade' { return "brew upgrade $($BrewPackage[$Id])" }
+		'brew/uninstall' { return "brew uninstall $($BrewPackage[$Id])" }
+		'scoop/install' { return "scoop install $($ScoopPackage[$Id])" }
+		'scoop/upgrade' { return "scoop update $($ScoopPackage[$Id])" }
+		'scoop/uninstall' { return "scoop uninstall $($ScoopPackage[$Id])" }
+		'winget/install' { return "winget install $($WingetPackage[$Id])" }
+		'winget/upgrade' { return "winget upgrade --id $($WingetPackage[$Id])" }
+		'winget/uninstall' { return "winget uninstall --id $($WingetPackage[$Id])" }
+		'uv/install' { return "uv tool install $($UvPackage[$Id])" }
+		'uv/upgrade' { return "uv tool upgrade $($UvPackage[$Id])" }
+		'uv/uninstall' { return "uv tool uninstall $($UvPackage[$Id])" }
+		'soar/install' { return "soar install $($SoarPackage[$Id])" }
+		'soar/upgrade' { return 'soar update' }
+		'soar/uninstall' { return "soar remove $($SoarPackage[$Id])" }
+		'flatpak/install' { return "flatpak install -y $($FlatpakPackage[$Id])" }
+		'flatpak/upgrade' { return "flatpak update -y $($FlatpakPackage[$Id])" }
+		'flatpak/uninstall' { return "flatpak uninstall -y $($FlatpakPackage[$Id])" }
+		default {
+			# custom and manual: rerunning the installer is the upgrade; uninstall is manual
+			if ($Method -eq 'custom' -and $Action -eq 'uninstall') {
+				return 'manual — remove the harness with its own uninstaller'
+			}
 			switch ("$Platform/$Id") {
 				'Darwin/cursor' { return 'brew install cursor-cli  (fallback: curl -fsSL https://cursor.com/install | bash)' }
 				'Linux/cursor' { return 'curl -fsSL https://cursor.com/install | bash' }
@@ -223,31 +245,51 @@ function Get-MethodCommand {
 				'Darwin/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash' }
 				'Linux/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash' }
 				'Windows/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash  (needs a POSIX shell: Git Bash or WSL)' }
-			}
-		}
-		manual {
-			switch ($Id) {
-				autoclaw { return 'download the desktop installer from https://autoclaw.z.ai' }
+				default {
+					switch ($Id) {
+						autoclaw { return 'download the desktop installer from https://autoclaw.z.ai' }
+					}
+				}
 			}
 		}
 	}
 }
 
 function Invoke-Method {
-	# Returns $true (installed), 'manual' (needs a human step — printed), or $false (failed).
+	# Returns $true (done), 'manual' (needs a human step — printed), or $false (failed).
 	param(
 		[Parameter(Mandatory)] [string]$Id,
-		[Parameter(Mandatory)] [string]$Method
+		[Parameter(Mandatory)] [string]$Method,
+		[ValidateSet('install', 'upgrade', 'uninstall')] [string]$Action = 'install'
 	)
-	switch ($Method) {
-		npm { & $NpmCommand i -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		brew { brew install $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		scoop { scoop install $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		winget { winget install $WingetPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		uv { uv tool install $UvPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		soar { soar install $SoarPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		flatpak { flatpak install -y $FlatpakPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		custom {
+	switch ("$Method/$Action") {
+		'npm/install' { & $NpmCommand i -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'npm/upgrade' { & $NpmCommand i -g "$($NpmPackage[$Id])@latest"; return ($LASTEXITCODE -eq 0) }
+		'npm/uninstall' { & $NpmCommand rm -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'brew/install' { brew install $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'brew/upgrade' { brew upgrade $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'brew/uninstall' { brew uninstall $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'scoop/install' { scoop install $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'scoop/upgrade' { scoop update $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'scoop/uninstall' { scoop uninstall $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'winget/install' { winget install $WingetPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'winget/upgrade' { winget upgrade --id $WingetPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'winget/uninstall' { winget uninstall --id $WingetPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'uv/install' { uv tool install $UvPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'uv/upgrade' { uv tool upgrade $UvPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'uv/uninstall' { uv tool uninstall $UvPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'soar/install' { soar install $SoarPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'soar/upgrade' { soar update; return ($LASTEXITCODE -eq 0) }
+		'soar/uninstall' { soar remove $SoarPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'flatpak/install' { flatpak install -y $FlatpakPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'flatpak/upgrade' { flatpak update -y $FlatpakPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'flatpak/uninstall' { flatpak uninstall -y $FlatpakPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		default {
+			if ($Action -eq 'uninstall') {
+				# custom/manual harnesses have no scriptable uninstall
+				Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"
+				return 'manual'
+			}
 			switch ("$Platform/$Id") {
 				'Darwin/cursor' { & bash -c 'curl -fsSL https://cursor.com/install | bash'; return ($LASTEXITCODE -eq 0) }
 				'Linux/cursor' { & bash -c 'curl -fsSL https://cursor.com/install | bash'; return ($LASTEXITCODE -eq 0) }
@@ -260,28 +302,38 @@ function Invoke-Method {
 				}
 				'Darwin/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
 				'Linux/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
-				'Windows/hermes' { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
+				'Windows/hermes' { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
 				'Darwin/opencode2' { & bash -c 'curl -fsSL https://opencode.ai/v2/install | bash'; return ($LASTEXITCODE -eq 0) }
 				'Linux/opencode2' { & bash -c 'curl -fsSL https://opencode.ai/v2/install | bash'; return ($LASTEXITCODE -eq 0) }
-				'Windows/opencode2' { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
+				'Windows/opencode2' { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
+				default {
+					switch ($Id) {
+						autoclaw { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
+					}
+				}
 			}
 		}
-		manual { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
 	}
 	return $false
 }
 
-function Install-Entry {
-	param([Parameter(Mandatory)] [pscustomobject]$Entry, [Parameter(Mandatory)] [string]$Method)
-	Write-Host ('[install]   {0} via {1}: {2}' -f $Entry.Id, $Method, (Get-MethodCommand $Entry.Id $Method))
-	$result = Invoke-Method $Entry.Id $Method
+function Invoke-Entry {
+	param(
+		[Parameter(Mandatory)] [pscustomobject]$Entry,
+		[Parameter(Mandatory)] [string]$Method,
+		[ValidateSet('install', 'upgrade', 'uninstall')] [string]$Action = 'install'
+	)
+	Write-Host ('[{0}]   {1} via {2}: {3}' -f $Action, $Entry.Id, $Method, (Get-MethodCommand -Id $Entry.Id -Method $Method -Action $Action))
+	$result = Invoke-Method -Id $Entry.Id -Method $Method -Action $Action
 	# "$result" forces string comparison: a $true result -eq 'manual' would coerce
-	# the string to bool and mislabel every successful install as a manual step
+	# the string to bool and mislabel every successful run as a manual step
 	if ("$result" -eq 'manual') {
 		Write-Info "[manual]    $($Entry.Id) — needs a manual step (printed above); not counted as a failure"
 	} elseif (-not $result) {
-		Write-Fail "[fail]      $($Entry.Id) — the install command exited nonzero"
+		Write-Fail "[fail]      $($Entry.Id) — the ${Action} command exited nonzero"
 		$script:failures++
+	} elseif ($Action -eq 'uninstall') {
+		Write-Info "[ok]        $($Entry.Id) — uninstalled"
 	} elseif (Get-Command $Entry.Probe -ErrorAction Ignore) {
 		Write-Info "[ok]        $($Entry.Id) — $(Get-HarnessVersion $Entry.Probe)"
 	} else {
@@ -393,45 +445,72 @@ if ($Yes) {
 			}
 			continue
 		}
-		Install-Entry $entry $methods[0]
+		Invoke-Entry -Entry $entry -Method $methods[0] -Action install
 	}
 } elseif ($menuLoaded) {
 	$menuOptions = for ($i = 0; $i -lt $Selected.Count; $i++) {
 		$entry = $Selected[$i]
 		$installed = Test-HarnessInstalled $entry
 		$methods = Get-AvailableMethod $entry
-		$label = if ($installed) {
-			"$($PSStyle.Dim)$($entry.Label) — installed$($PSStyle.Reset)"
-		} elseif ($methods.Count -eq 0) {
-			"$($PSStyle.Dim)$($entry.Label) — no available method$($PSStyle.Reset)"
+		if ($installed -and $methods.Count -gt 0) {
+			# installed rows stay active: the radios select upgrade or uninstall
+			$label = "$($PSStyle.Foreground.Cyan)$($entry.Label)$($PSStyle.Reset)$($PSStyle.Dim) — installed$($PSStyle.Reset)"
+			$actions = @('upgrade', 'uninstall')
+			$detail = @("upgrade via $($methods[0]): $(Get-MethodCommand -Id $entry.Id -Method $methods[0] -Action upgrade)")
+			$locked = $false
+		} elseif ($installed) {
+			$label = "$($PSStyle.Dim)$($entry.Label) — installed (no available method)$($PSStyle.Reset)"
+			$actions = @()
+			$detail = @()
+			$locked = $true
+		} elseif ($methods.Count -gt 0) {
+			$label = "$($PSStyle.Foreground.Green)$($entry.Label)$($PSStyle.Reset)"
+			$actions = @('install')
+			$detail = @($methods | ForEach-Object { Get-MethodCommand -Id $entry.Id -Method $_ -Action install })
+			$locked = $false
 		} else {
-			"$($PSStyle.Foreground.Green)$($entry.Label)$($PSStyle.Reset)"
+			$label = "$($PSStyle.Dim)$($entry.Label) — no available method$($PSStyle.Reset)"
+			$actions = @()
+			$detail = @()
+			$locked = $true
 		}
 		[pscustomobject]@{
-			Index  = $i
-			Label  = $label
-			Detail = @($methods | ForEach-Object { Get-MethodCommand $entry.Id $_ })
-			Locked = ($installed -or $methods.Count -eq 0)
+			Index   = $i
+			Label   = $label
+			Detail  = $detail
+			Locked  = $locked
+			Actions = $actions
 		}
 	}
-	$chosen = Read-MultiChoice -Options $menuOptions -Title 'Select harnesses to install'
+	$installSummary = {
+		# Runs inside the shared menu (dynamic scoping): read only fields the
+		# selection items carry.
+		param($Chosen)
+		$parts = @($Chosen | Where-Object { $_.PSObject.Properties['Action'] } | ForEach-Object { $_.Action })
+		"$($Chosen.Count) selected$(if ($parts.Count -gt 0) { ': ' + ($parts -join ', ') } else { '' })"
+	}
+	$chosen = Read-MultiChoice -Options $menuOptions -Title 'Select harnesses and actions' -FooterSummary $installSummary
 	if ($null -eq $chosen) {
 		Write-Info 'cancelled.'
 	} else {
 		foreach ($picked in $chosen) {
+			# every installer row carries Actions, so every pick is a wrapper
+			if (-not ($picked.PSObject.Properties['Action'])) { continue }
 			$entry = $Selected[$picked.Index]
+			$action = $picked.Action
 			$methods = Get-AvailableMethod $entry
-			$rows = @($methods | ForEach-Object { "$_ — $(Get-MethodCommand $entry.Id $_)" }) + @('skip this harness')
+			$rows = @($methods | ForEach-Object { "$_ — $(Get-MethodCommand -Id $entry.Id -Method $_ -Action $action)" }) + @("skip this $action")
 			$index = Read-MenuChoice -Rows $rows -Initial 0
 			if ($index -lt 0 -or $index -ge $methods.Count) { continue }
-			Install-Entry $entry $methods[$index]
+			Invoke-Entry -Entry $entry -Method $methods[$index] -Action $action
 		}
 	}
 } else {
-	# numbered-prompt fallback (the shared menu did not resolve)
+	# numbered-prompt fallback (the shared menu did not resolve; install only —
+	# the menu flow adds upgrade and uninstall)
 	foreach ($entry in $Selected) {
 		if (Test-HarnessInstalled $entry) {
-			Write-Host ('[installed] {0} — {1}' -f $entry.Id, (Get-HarnessVersion $entry.Probe))
+			Write-Host ('[installed] {0} — {1} (the menu flow offers upgrade and uninstall)' -f $entry.Id, (Get-HarnessVersion $entry.Probe))
 			continue
 		}
 		$methods = Get-AvailableMethod $entry
@@ -457,7 +536,7 @@ if ($Yes) {
 			Write-Info 'not a choice — skipped'
 			continue
 		}
-		Install-Entry $entry $methods[$pick - 1]
+		Invoke-Entry -Entry $entry -Method $methods[$pick - 1] -Action install
 	}
 }
 

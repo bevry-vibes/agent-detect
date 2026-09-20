@@ -139,7 +139,7 @@ The matrix itself is the union of the two channel folders' filename stems (`fixt
 ### per-harness install
 
 `scripts/install-harnesses.ps1` (PowerShell 7.6+, macOS / Linux / Windows — one script, one registry) installs the matrix harnesses, so there is no install table here anymore — the script is the registry.
-Run it without flags for the interactive flow: each harness that is not installed yet lists its install methods in preference order, and nothing runs before you confirm.
+Run it without flags for the interactive flow: every harness renders, a missing one offering an `install` radio and an installed one `upgrade` / `uninstall` radios (a hybrid: at most one set per row, none required) — each chosen action then walks its method menu, and nothing runs before you confirm.
 Add `-Yes` (or run under `CI=true`) for the non-interactive flow the CI daemon runner uses: every harness installs through its first available method, and the exit code reports failures.
 
 The method order is policy:
