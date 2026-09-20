@@ -4,6 +4,7 @@ Local application of the bevry-vibes skills [powershell.md](https://github.com/b
 
 ## this project's and this host's tweaks
 
+- Interactive PowerShell menus use the upstream skill's shared handler — [scripts/menu.ps1](https://github.com/bevry-vibes/skills/blob/main/scripts/menu.ps1) (`Read-MenuChoice` / `Read-MultiChoice`), resolved per the upstream "shared console menu" bootstrap (sibling checkout → cache → download). It supersedes the menu implementations that used to live in windows-natural-scrolling (`menu.ps1`) and mac-move-apps (`Read-MultiChoice`); never vendor a copy into this repo (`scripts/install-harnesses.ps1` shows the bootstrap with its numbered-prompt fallback).
 - This repo's `.gitattributes` is `* -text` — git will **not** normalize line endings for you, and the checked-out files are LF, so the upstream Set-Content traps apply with full force.
 - The Kilo `grep`/`glob` tools are broken on this host (they fail with a `Microsoft.PowerShell.Archive` / `Expand-Archive` load error).
   Use `Select-String -Path ... -Pattern ...` (bash tool) instead.

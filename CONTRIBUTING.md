@@ -111,6 +111,8 @@ Only the matching platform's daemon expands a candidate (`platform = the entry's
 2. On host B (e.g. Windows): `git pull`, `zig build dev`, run the daemon — it works only the host-platform candidates that remain.
 3. Failed candidates retry on the host that can reach the harness (re-assert the entry or use `--repair`).
 
+Bring a new host's harnesses up once before its first daemon run: `scripts/install-harnesses.sh --check` (or the `.ps1`) shows what is missing, the same script installs it, and `scripts/sync-harness-configs.sh` (run from macOS) ships the config/auth state across — see "per-harness install" and "per-harness config locations" above.
+
 ### committed-store hygiene
 
 `fixtures/index.json` is **committed** with each landing (it is the cross-host work queue + failure memory).
@@ -129,31 +131,49 @@ When you author an invocation, audit it against this policy; `fixtures status` +
 ## test matrix: harnesses, providers, models
 
 The committed fixtures double as the integration test of the detection ladder.
-The matrix **policy** — harness scope, model/provider policy, the paid default, the global-settings rule, evidence attribution — lives in DESIGN.md "test matrix"; the install table below is the what-to-do side.
+The matrix **policy** — harness scope, model/provider policy, the paid default, the global-settings rule, evidence attribution — lives in DESIGN.md "test matrix"; the install scripts and the config-location table below are the what-to-do side.
 The matrix itself is the union of the two channel folders' filename stems (`fixtures/from-identity/` + `fixtures/from-capture/`) — one fixture id per `agent_id`-per-platform, the capture files carrying the invocation of record (`meta.prompt_invocation`/`meta.version_invocation`) — expanded by the daemon from queue entries and captured per platform, plus the authored `invocations` table.
 
-### per-harness install table
+### per-harness install
 
-Confirm every install with the user; prefer homebrew / npm / uv / scoop over web scripts.
+`scripts/install-harnesses.sh` (macOS, Linux) and `scripts/install-harnesses.ps1` (Windows) install the matrix harnesses, so there is no install table here anymore — the two scripts are the registry.
+Run either without flags for the interactive flow: each harness that is not installed yet lists its install methods in preference order, and nothing runs before you confirm.
+Add `--yes` (or run under `CI=true`) for the non-interactive flow the CI daemon runner uses: every harness installs through its first available method, and the exit code reports failures.
 
-| harness   | macOS / Linux (homebrew)                          | cross-platform (npm / uv)                                      | Windows (install → binary location)                                                                           |
-| --------- | ------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| cline     | —                                                 | `npm i -g cline`                                                 | `npm i -g cline` → `~\scoop\apps\nodejs\current\bin\cline{,.cmd,.ps1}`                                        |
-| kimi-code | —                                                 | `npm i -g @moonshot-ai/kimi-code`                                | `npm i -g @moonshot-ai/kimi-code` → `~\.kimi-code\bin\kimi.exe`                                               |
-| mmx       | —                                                 | `npm i -g mmx-cli`                                               | `npm i -g mmx-cli` → `~\scoop\apps\nodejs\current\bin\mmx{,.cmd,.ps1}`                                        |
-| pi        | —                                                 | `npm i -g @earendil-works/pi-coding-agent`                       | `scoop install pi-coding-agent` → `~\scoop\shims\pi.exe`                                                      |
-| qwen      | `brew install qwen-code`                          | `npm i -g @qwen-code/qwen-code`                                  | `npm i -g @qwen-code/qwen-code` → `~\scoop\apps\nodejs\current\bin\qwen{,.cmd,.ps1}`                          |
-| kilo      | `brew install Kilo-Org/tap/kilo`                  | `npm i -g @kilocode/cli`                                         | `npm i -g @kilocode/cli` → `~\scoop\apps\nodejs\current\bin\kilo{,.cmd,.ps1}`                                 |
-| omp       | `brew install can1357/tap/omp`                    | `bun i -g @oh-my-pi/pi-coding-agent`                             | `scoop install oh-my-pi` → `~\scoop\shims\omp.exe`                                                            |
-| reasonix  | `brew install esengine/reasonix/reasonix`         | `npm i -g reasonix`                                              | `scoop install reasonix` → `~\scoop\shims\reasonix.exe`                                                       |
-| crush     | `brew install charmbracelet/tap/crush`            | `npm i -g @charmland/crush`                                      | `winget install charmbracelet.crush` → winget package dir (alias on PATH)                                     |
-| opencode  | `brew install anomalyco/tap/opencode`             | `npm i -g opencode-ai`                                           | `scoop install opencode` → `~\scoop\shims\opencode.exe`                                                       |
-| vibe      | —                                                 | `uv tool install mistral-vibe`                                   | `uv tool install mistral-vibe` → `~\scoop\persist\uv\tools\shims\vibe.exe`                                    |
-| cursor    | `brew install cursor-cli`                         | — (binaries: `cursor-agent`)                                    | `irm 'https://cursor.com/install?win32=true' \| iex` → `%LOCALAPPDATA%\cursor-agent\cursor-agent{,.cmd,.ps1}` |
-| copilot   | `brew install copilot-cli`                        | — (binaries: `copilot`)                                         | `scoop install copilot-cli` → `~\scoop\shims\copilot.exe`                                                     |
-| hermes    | — (git install)                                   | `curl -fsSL https://hermes-agent.nousresearch.com/install.sh \| bash` → `~/.local/bin/hermes` | install.sh (per-user, no admin); the desktop app binary is `Hermes` inside the .app bundle  |
-| goose     | —                                                  | — (contributor-scope example)                               | `scoop install goose-cli` → `~\scoop\shims\goose.exe` (contributor-scope example)                             |
-| autoclaw | — (desktop app from autoclaw.z.ai) | — | installer from autoclaw.z.ai |
+The method order is policy:
+
+- Windows: scoop before winget before the app store; npm before custom installers.
+- macOS: homebrew before npm for the harnesses with a native tap; custom installers last.
+- Linux: npm before anything; soar appimages before flatpak (both wait for verified package ids in the registry); custom installers last.
+
+`--check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
+The registry (probe binary, package names, custom installers) lives in the two scripts; add a harness to both when its rule lands, and keep them in sync.
+
+### per-harness config locations
+
+Where each harness keeps the config and session state that `identify` reads (read-only), that a capture exercises, and that `scripts/sync-harness-configs.sh` ships between hosts.
+Paths are `$HOME`-relative; the Windows variants follow each harness's own platform split.
+
+| harness    | config                                                                       | session store / data                                                                 |
+| ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| cline      | `~/.cline/data/settings/providers.json`                                       | —                                                                                     |
+| copilot    | —                                                                             | `~/.copilot/data.db`                                                                   |
+| crush      | `~/.local/share/crush/crush.json` (Windows: `%LOCALAPPDATA%\Crush\crush.json`) | `<project>/.crush/crush.db` (project-local)                                            |
+| goose      | `~/.config/goose/config.yaml` (Windows: `%APPDATA%\Block\goose\config\config.yaml`) | —                                                                                 |
+| hermes     | `$HERMES_HOME` (default `~/.hermes`): `config.yaml`                            | `$HERMES_HOME/state.db` (`profiles/<profile>/state.db` under a non-default `HERMES_PROFILE`) |
+| kilo       | —                                                                             | `~/.local/share/kilo/kilo.db`                                                          |
+| kimi-code  | `~/.kimi-code/config.toml` (binary `~/.kimi-code/bin/kimi`)                    | —                                                                                      |
+| mmx        | `~/.mmx/config.json`                                                           | —                                                                                      |
+| omp        | `~/.omp/agent/config.yml`                                                      | —                                                                                      |
+| opencode   | —                                                                             | `~/.local/share/opencode/opencode.db`                                                  |
+| pi         | `~/.pi/agent/settings.json`                                                    | —                                                                                      |
+| qwen       | `~/.qwen/settings.json`                                                        | —                                                                                      |
+| reasonix   | `~/.reasonix/config.toml`                                                      | —                                                                                      |
+| vibe       | `~/.vibe/config.toml`                                                          | —                                                                                      |
+| zcode      | `~/.zcode/v2/config.json` (custom providers), `~/.zcode/v2/setting.json` (family + the training toggle) | rollouts under `~/.zcode/`                                              |
+
+`cursor` keeps no model config on disk (`~/.cursor/cli-config.json` carries only an unwired privacy candidate signal; the model arrives via `CURSOR_MODEL`), and `autoclaw` reads env/state only.
+`scripts/sync-harness-configs.sh` runs on the macOS host and rsyncs the table's directories to a Linux host: dry-run by default, `--apply` to transfer, never deletes on the destination — the config/auth setup for a new daemon host short of the keychain-held logins (those need a one-time re-login per harness).
 
 ### provider model discovery (three sources)
 
