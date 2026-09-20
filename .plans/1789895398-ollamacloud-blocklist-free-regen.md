@@ -3,7 +3,12 @@ Assisted-by: ZCode · GLM 5.3 <zcode-zcode-glm53@local>
 
 # The ollamacloud individuation, the paid-only blocklist, the free-model refresh, and the regeneration
 
-Status: **ratified 2026-09-20**. This plan picks up the threads the
+Status: **executed 2026-09-20** (phases: the individuation
+`552afca` with the zcode 3.14 drift repair, the paid-only blocklist
+`e76bae0`, the free-axis refresh `f05b5f1`, the regeneration queues
+`9c56614`). The daemon drains the queues per platform after hand-off;
+the rename-transition warnings burn down with each landed batch. This
+plan picks up the threads the
 1788916141 plan left open: the ollama `:cloud` individuation (DESIGN
 decision #15), the blocklist and free-model refresh, and the fixture
 regeneration. It also carries one repair found at implementation time:
@@ -116,6 +121,20 @@ existing from-capture must carry the free signal in its launch id —
 the old ollama captures launch `ollama-cloud/<model>` with no signal,
 so a model lists as free only when it is genuinely free (or it waits
 for a re-capture).
+
+Execution findings (2026-09-20): OpenRouter's live API carries the
+push (21 free ids; `nemotron-3-nano-30b-a3b:free` died in favour of
+the omni-reasoning variant), ZenMux dropped its old `-free` ids
+except the two z-ai flashes, and the NIM catalog gained
+nemotron-3.5-lightning and the nano-omni reasoning variant. Eight new
+rules cleared the evergreen gate with HF-verified licenses; the
+ling-3.0-flash rule folds the `-fin`/`-sante` fine-tune spellings.
+**Ollama Cloud gained no free row**: its catalog marks no model free
+(the Free plan's "starter models" are unidentified) and no launch id
+carries a free signal — never-guess. The clinepass, opencode, and
+vercel rows stand unchanged: their free surfaces sit behind the
+selector and the auth-gated dashboard, which this refresh cannot
+probe; cline's free models rotate by the docs' own statement.
 
 ## The regeneration — zcode, the free models, and the full ollamacloud sweep
 
