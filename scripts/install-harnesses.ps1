@@ -154,9 +154,9 @@ $UvPackage = @{ vibe = 'mistral-vibe' }
 $SoarPackage = @{}
 $FlatpakPackage = @{}
 
-# the radio colors: install adds, upgrade refreshes, uninstall removes
+# the radio colors: install adds (gold), upgrade refreshes, uninstall removes
 $ActionColors = @{
-	install   = $PSStyle.Foreground.Blue
+	install   = $PSStyle.Foreground.BrightYellow
 	upgrade   = $PSStyle.Foreground.Green
 	uninstall = $PSStyle.Foreground.Red
 }
