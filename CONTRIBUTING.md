@@ -111,7 +111,7 @@ Only the matching platform's daemon expands a candidate (`platform = the entry's
 2. On host B (e.g. Windows): `git pull`, `zig build dev`, run the daemon — it works only the host-platform candidates that remain.
 3. Failed candidates retry on the host that can reach the harness (re-assert the entry or use `--repair`).
 
-Bring a new host's harnesses up once before its first daemon run: `scripts/install-harnesses.sh --check` (or the `.ps1`) shows what is missing, the same script installs it, and `scripts/sync-harness-configs.sh` (run from macOS) ships the config/auth state across — see "per-harness install" and "per-harness config locations" above.
+Bring a new host's harnesses up once before its first daemon run: `pwsh scripts/install-harnesses.ps1 -Check` shows what is missing, the same script installs it, and `scripts/sync-harness-configs.ps1` (run from macOS) ships the config/auth state across — see "per-harness install" and "per-harness config locations" above.
 
 ### committed-store hygiene
 
@@ -136,9 +136,9 @@ The matrix itself is the union of the two channel folders' filename stems (`fixt
 
 ### per-harness install
 
-`scripts/install-harnesses.sh` (macOS, Linux) and `scripts/install-harnesses.ps1` (Windows) install the matrix harnesses, so there is no install table here anymore — the two scripts are the registry.
-Run either without flags for the interactive flow: each harness that is not installed yet lists its install methods in preference order, and nothing runs before you confirm.
-Add `--yes` (or run under `CI=true`) for the non-interactive flow the CI daemon runner uses: every harness installs through its first available method, and the exit code reports failures.
+`scripts/install-harnesses.ps1` (PowerShell 7.6+, macOS / Linux / Windows — one script, one registry) installs the matrix harnesses, so there is no install table here anymore — the script is the registry.
+Run it without flags for the interactive flow: each harness that is not installed yet lists its install methods in preference order, and nothing runs before you confirm.
+Add `-Yes` (or run under `CI=true`) for the non-interactive flow the CI daemon runner uses: every harness installs through its first available method, and the exit code reports failures.
 
 The method order is policy:
 
@@ -146,12 +146,12 @@ The method order is policy:
 - macOS: homebrew before npm for the harnesses with a native tap; custom installers last.
 - Linux: npm before anything; soar appimages before flatpak (both wait for verified package ids in the registry); custom installers last.
 
-`--check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
-The registry (probe binary, package names, custom installers) lives in the two scripts; add a harness to both when its rule lands, and keep them in sync.
+`-Check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
+The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands.
 
 ### per-harness config locations
 
-Where each harness keeps the config and session state that `identify` reads (read-only), that a capture exercises, and that `scripts/sync-harness-configs.sh` ships between hosts.
+Where each harness keeps the config and session state that `identify` reads (read-only), that a capture exercises, and that `scripts/sync-harness-configs.ps1` ships between hosts.
 Paths are `$HOME`-relative; the Windows variants follow each harness's own platform split.
 
 | harness    | config                                                                       | session store / data                                                                 |
@@ -173,7 +173,7 @@ Paths are `$HOME`-relative; the Windows variants follow each harness's own platf
 | zcode      | `~/.zcode/v2/config.json` (custom providers), `~/.zcode/v2/setting.json` (family + the training toggle) | rollouts under `~/.zcode/`                                              |
 
 `cursor` keeps no model config on disk (`~/.cursor/cli-config.json` carries only an unwired privacy candidate signal; the model arrives via `CURSOR_MODEL`), and `autoclaw` reads env/state only.
-`scripts/sync-harness-configs.sh` runs on the macOS host and rsyncs the table's directories to a Linux host: dry-run by default, `--apply` to transfer, never deletes on the destination — the config/auth setup for a new daemon host short of the keychain-held logins (those need a one-time re-login per harness).
+`scripts/sync-harness-configs.ps1` runs on the macOS host and rsyncs the table's directories to a Linux host: dry-run by default, `-Apply` to transfer, never deletes on the destination — the config/auth setup for a new daemon host short of the keychain-held logins (those need a one-time re-login per harness).
 
 ### provider model discovery (three sources)
 

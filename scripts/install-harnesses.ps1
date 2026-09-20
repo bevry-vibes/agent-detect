@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-agent-detect — install the test-matrix harnesses (Windows).
+agent-detect — install the test-matrix harnesses (macOS, Linux, Windows).
 
 .DESCRIPTION
 Interactive on a user machine: pick the harnesses from a multiselect, then pick an install method for each (the methods show in preference order, and nothing runs before you confirm).
@@ -10,10 +10,11 @@ Non-interactive on CI: pass -Yes (or run under CI=true) and every harness instal
 
 Method preference (policy — see CONTRIBUTING.md "per-harness install"):
 
-- scoop before winget before the app store
-- npm before custom installers (web scripts run last, after a printed notice)
+- Windows: scoop before winget before the app store; npm before custom installers
+- macOS: homebrew before npm for the harnesses with a native tap; custom installers last
+- Linux: npm before anything; soar appimages before flatpak (both wait for verified package ids); custom installers last
 
-The per-harness registry (probe binary, package names, custom installers) lives here and in scripts/install-harnesses.sh — add a harness to both when its rule lands.
+The per-harness registry (probe binary, per-OS methods, package names, custom installers) lives in this one script — add a harness here when its rule lands.
 
 .EXAMPLE
 pwsh -File ./scripts/install-harnesses.ps1
@@ -44,7 +45,7 @@ usage: pwsh -File ./scripts/install-harnesses.ps1 [-Yes] [-Check] [-List] [-Harn
   (no flags)  interactive: pick harnesses and install methods from the menus
   -Yes        non-interactive: install every harness through its first available method
   -Check      probe every harness binary and print the state; install nothing
-  -List       print the registry (id, probe, methods) and exit
+  -List       print the registry (id, probe, methods for this platform) and exit
   -Harness    restrict to the named harness ids (comma separated)
 
 CI=true or GITHUB_ACTIONS=true in the environment implies -Yes.
@@ -53,25 +54,32 @@ CI=true or GITHUB_ACTIONS=true in the environment implies -Yes.
 }
 if ($env:CI -eq 'true' -or $env:GITHUB_ACTIONS -eq 'true') { $Yes = $true }
 
-# --- registry ---------------------------------------------------------------
+# --- platform ----------------------------------------------------------------
+
+$Platform = if ($IsMacOS) { 'Darwin' } elseif ($IsLinux) { 'Linux' } elseif ($IsWindows) { 'Windows' } else { $null }
+if (-not $Platform) { throw 'unsupported platform: install-harnesses.ps1 runs on macOS, Linux, and Windows' }
+
+# --- registry ----------------------------------------------------------------
+# Probe: the binary agent-detect's invocations table probes with --version.
+# Methods: the ordered install methods per platform (the policy above sets the order).
 
 $Registry = @(
-	[pscustomobject]@{ Id = 'cline'; Label = 'Cline CLI'; Probe = 'cline'; Methods = @('npm') }
-	[pscustomobject]@{ Id = 'kimi-code'; Label = 'Kimi Code'; Probe = 'kimi'; Methods = @('npm') }
-	[pscustomobject]@{ Id = 'mmx'; Label = 'MMX (MiniMax M3 CLI)'; Probe = 'mmx'; Methods = @('npm') }
-	[pscustomobject]@{ Id = 'pi'; Label = 'pi (π coding agent)'; Probe = 'pi'; Methods = @('scoop', 'npm') }
-	[pscustomobject]@{ Id = 'qwen'; Label = 'Qwen Code'; Probe = 'qwen'; Methods = @('npm') }
-	[pscustomobject]@{ Id = 'kilo'; Label = 'Kilo Code'; Probe = 'kilo'; Methods = @('npm') }
-	[pscustomobject]@{ Id = 'omp'; Label = 'oh-my-pi (omp)'; Probe = 'omp'; Methods = @('scoop', 'npm') }
-	[pscustomobject]@{ Id = 'reasonix'; Label = 'Reasonix'; Probe = 'reasonix'; Methods = @('scoop', 'npm') }
-	[pscustomobject]@{ Id = 'crush'; Label = 'Crush'; Probe = 'crush'; Methods = @('winget', 'npm') }
-	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @('scoop', 'npm') }
-	[pscustomobject]@{ Id = 'vibe'; Label = 'Mistral Vibe'; Probe = 'vibe'; Methods = @('uv') }
-	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @('custom') }
-	[pscustomobject]@{ Id = 'copilot'; Label = 'GitHub Copilot CLI'; Probe = 'copilot'; Methods = @('scoop') }
-	[pscustomobject]@{ Id = 'hermes'; Label = 'Hermes (contributor scope)'; Probe = 'hermes'; Methods = @('custom') }
-	[pscustomobject]@{ Id = 'goose'; Label = 'Goose (contributor scope)'; Probe = 'goose'; Methods = @('scoop') }
-	[pscustomobject]@{ Id = 'autoclaw'; Label = 'AutoClaw (desktop app)'; Probe = 'autoclaw'; Methods = @('manual') }
+	[pscustomobject]@{ Id = 'cline'; Label = 'Cline CLI'; Probe = 'cline'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'kimi-code'; Label = 'Kimi Code'; Probe = 'kimi'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'mmx'; Label = 'MMX (MiniMax M3 CLI)'; Probe = 'mmx'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'pi'; Label = 'pi (π coding agent)'; Probe = 'pi'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('scoop', 'npm') } }
+	[pscustomobject]@{ Id = 'qwen'; Label = 'Qwen Code'; Probe = 'qwen'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'kilo'; Label = 'Kilo Code'; Probe = 'kilo'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'omp'; Label = 'oh-my-pi (omp)'; Probe = 'omp'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
+	[pscustomobject]@{ Id = 'reasonix'; Label = 'Reasonix'; Probe = 'reasonix'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
+	[pscustomobject]@{ Id = 'crush'; Label = 'Crush'; Probe = 'crush'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('winget', 'npm') } }
+	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
+	[pscustomobject]@{ Id = 'vibe'; Label = 'Mistral Vibe'; Probe = 'vibe'; Methods = @{ Darwin = @('uv'); Linux = @('uv'); Windows = @('uv') } }
+	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @{ Darwin = @('brew', 'custom'); Linux = @('custom'); Windows = @('custom') } }
+	[pscustomobject]@{ Id = 'copilot'; Label = 'GitHub Copilot CLI'; Probe = 'copilot'; Methods = @{ Darwin = @('brew'); Linux = @(); Windows = @('scoop') } }
+	[pscustomobject]@{ Id = 'hermes'; Label = 'Hermes (contributor scope)'; Probe = 'hermes'; Methods = @{ Darwin = @('custom'); Linux = @('custom'); Windows = @('custom') } }
+	[pscustomobject]@{ Id = 'goose'; Label = 'Goose (contributor scope)'; Probe = 'goose'; Methods = @{ Darwin = @(); Linux = @(); Windows = @('scoop') } }
+	[pscustomobject]@{ Id = 'autoclaw'; Label = 'AutoClaw (desktop app)'; Probe = 'autoclaw'; Methods = @{ Darwin = @('manual'); Linux = @('manual'); Windows = @('manual') } }
 )
 
 $NpmPackage = @{
@@ -86,6 +94,16 @@ $NpmPackage = @{
 	crush = '@charmland/crush'
 	opencode = 'opencode-ai'
 }
+$BrewPackage = @{
+	qwen = 'qwen-code'
+	kilo = 'Kilo-Org/tap/kilo'
+	omp = 'can1357/tap/omp'
+	reasonix = 'esengine/reasonix/reasonix'
+	crush = 'charmbracelet/tap/crush'
+	opencode = 'anomalyco/tap/opencode'
+	cursor = 'cursor-cli'
+	copilot = 'copilot-cli'
+}
 $ScoopPackage = @{
 	pi = 'pi-coding-agent'
 	omp = 'oh-my-pi'
@@ -96,6 +114,10 @@ $ScoopPackage = @{
 }
 $WingetPackage = @{ crush = 'charmbracelet.crush' }
 $UvPackage = @{ vibe = 'mistral-vibe' }
+# soar and flatpak ids stay empty until verified against the package indexes;
+# the methods are wired so a verified id only needs one entry here.
+$SoarPackage = @{}
+$FlatpakPackage = @{}
 
 # --- helpers ------------------------------------------------------------------
 
@@ -113,13 +135,16 @@ function Get-HarnessVersion {
 }
 
 function Test-MethodAvailable {
-	param([Parameter(Mandatory)] [string]$Method)
+	param([Parameter(Mandatory)] [string]$Id, [Parameter(Mandatory)] [string]$Method)
 	switch ($Method) {
 		npm { return [bool](Get-Command npm -ErrorAction Ignore) }
+		brew { return [bool](Get-Command brew -ErrorAction Ignore) }
 		scoop { return [bool](Get-Command scoop -ErrorAction Ignore) }
 		winget { return [bool](Get-Command winget -ErrorAction Ignore) }
 		uv { return [bool](Get-Command uv -ErrorAction Ignore) }
-		default { return $true }   # custom, manual, store
+		soar { return ([bool](Get-Command soar -ErrorAction Ignore)) -and $SoarPackage.ContainsKey($Id) }
+		flatpak { return ([bool](Get-Command flatpak -ErrorAction Ignore)) -and $FlatpakPackage.ContainsKey($Id) }
+		default { return $true }   # custom, manual
 	}
 }
 
@@ -127,13 +152,20 @@ function Get-MethodCommand {
 	param([Parameter(Mandatory)] [string]$Id, [Parameter(Mandatory)] [string]$Method)
 	switch ($Method) {
 		npm { return "npm i -g $($NpmPackage[$Id])" }
+		brew { return "brew install $($BrewPackage[$Id])" }
 		scoop { return "scoop install $($ScoopPackage[$Id])" }
 		winget { return "winget install $($WingetPackage[$Id])" }
 		uv { return "uv tool install $($UvPackage[$Id])" }
+		soar { return "soar install $($SoarPackage[$Id])" }
+		flatpak { return "flatpak install -y $($FlatpakPackage[$Id])" }
 		custom {
-			switch ($Id) {
-				cursor { return "Invoke-RestMethod 'https://cursor.com/install?win32=true' | Invoke-Expression" }
-				hermes { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash  (needs a POSIX shell: Git Bash or WSL)' }
+			switch ("$Platform/$Id") {
+				'Darwin/cursor' { return 'brew install cursor-cli  (fallback: curl -fsSL https://cursor.com/install | bash)' }
+				'Linux/cursor' { return 'curl -fsSL https://cursor.com/install | bash' }
+				'Windows/cursor' { return "Invoke-RestMethod 'https://cursor.com/install?win32=true' | Invoke-Expression" }
+				'Darwin/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
+				'Linux/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
+				'Windows/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash  (needs a POSIX shell: Git Bash or WSL)' }
 			}
 		}
 		manual {
@@ -152,16 +184,26 @@ function Invoke-Method {
 	)
 	switch ($Method) {
 		npm { npm i -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		brew { brew install $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		scoop { scoop install $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		winget { winget install $WingetPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		uv { uv tool install $UvPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		soar { soar install $SoarPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		flatpak { flatpak install -y $FlatpakPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		custom {
-			switch ($Id) {
-				# The scriptblock form runs the harness's documented "irm | iex"
-				# installer (shown to the user by Get-MethodCommand) without the
-				# Invoke-Expression linter finding.
-				cursor { & ([scriptblock]::Create([string](Invoke-RestMethod 'https://cursor.com/install?win32=true'))); return $true }
-				hermes { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
+			switch ("$Platform/$Id") {
+				'Darwin/cursor' { & bash -c 'curl -fsSL https://cursor.com/install | bash'; return ($LASTEXITCODE -eq 0) }
+				'Linux/cursor' { & bash -c 'curl -fsSL https://cursor.com/install | bash'; return ($LASTEXITCODE -eq 0) }
+				'Windows/cursor' {
+					# The scriptblock form runs the harness's documented "irm | iex"
+					# installer (shown to the user by Get-MethodCommand) without the
+					# Invoke-Expression linter finding.
+					& ([scriptblock]::Create([string](Invoke-RestMethod 'https://cursor.com/install?win32=true')))
+					return ($LASTEXITCODE -eq 0)
+				}
+				'Darwin/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
+				'Linux/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
+				'Windows/hermes' { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
 			}
 		}
 		manual { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
@@ -176,14 +218,14 @@ function Install-Entry {
 	if ($result -eq 'manual') {
 		Write-Info "[manual]    $($Entry.Id) — needs a manual step (printed above); not counted as a failure"
 	} elseif (-not $result) {
-		Write-Fail "[fail]      $($entry.Id) — the install command exited nonzero"
+		Write-Fail "[fail]      $($Entry.Id) — the install command exited nonzero"
 		$script:failures++
 	}
 }
 
 function Get-AvailableMethod {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
-	return @($Entry.Methods | Where-Object { Test-MethodAvailable $_ })
+	return @($Entry.Methods[$Platform] | Where-Object { Test-MethodAvailable $Entry.Id $_ })
 }
 
 # --- selection ------------------------------------------------------------------
@@ -200,7 +242,7 @@ $Selected = if ($Harness) {
 
 if ($List) {
 	foreach ($entry in $Registry) {
-		'{0,-12} {1,-14} {2}' -f $entry.Id, $entry.Probe, ($entry.Methods -join ',')
+		'{0,-12} {1,-14} {2}' -f $entry.Id, $entry.Probe, ($entry.Methods[$Platform] -join ',')
 	}
 	exit 0
 }
@@ -238,7 +280,7 @@ if (-not $Yes) {
 		if ($candidate -and (Test-Path $candidate)) { $menuPath = $candidate; break }
 	}
 	if (-not $menuPath) {
-		$menuCacheDir = Join-Path $env:LOCALAPPDATA 'bevry-vibes/skills/scripts'
+		$menuCacheDir = if ($IsWindows) { Join-Path $env:LOCALAPPDATA 'bevry-vibes/skills/scripts' } else { Join-Path $HOME '.cache/bevry-vibes/skills/scripts' }
 		$menuCache = Join-Path $menuCacheDir 'menu.ps1'
 		if (-not (Test-Path $menuCache)) {
 			try {
@@ -269,11 +311,15 @@ if ($Yes) {
 		}
 		$methods = Get-AvailableMethod $entry
 		if ($methods.Count -eq 0) {
-			Write-Info ("[skip]      {0} — method tools missing on this host: {1}" -f $entry.Id, ($entry.Methods -join ' '))
+			$planned = @($entry.Methods[$Platform])
+			if ($planned.Count -eq 0) {
+				Write-Info ("[skip]      {0} — no install method on {1}" -f $entry.Id, $Platform)
+			} else {
+				Write-Info ("[skip]      {0} — method tools missing on this host: {1}" -f $entry.Id, ($planned -join ' '))
+			}
 			continue
 		}
-		$method = $methods[0]
-		Install-Entry $entry $method
+		Install-Entry $entry $methods[0]
 	}
 } elseif ($menuLoaded) {
 	$menuOptions = for ($i = 0; $i -lt $Selected.Count; $i++) {
@@ -304,8 +350,7 @@ if ($Yes) {
 			$rows = @($methods | ForEach-Object { "$_ — $(Get-MethodCommand $entry.Id $_)" }) + @('skip this harness')
 			$index = Read-MenuChoice -Rows $rows -Initial 0
 			if ($index -lt 0 -or $index -ge $methods.Count) { continue }
-			$method = $methods[$index]
-			Install-Entry $entry $method
+			Install-Entry $entry $methods[$index]
 		}
 	}
 } else {
@@ -317,7 +362,12 @@ if ($Yes) {
 		}
 		$methods = Get-AvailableMethod $entry
 		if ($methods.Count -eq 0) {
-			Write-Info ("[skip]      {0} — no available method on this host: {1}" -f $entry.Id, ($entry.Methods -join ' '))
+			$planned = @($entry.Methods[$Platform])
+			if ($planned.Count -eq 0) {
+				Write-Info ("[skip]      {0} — no install method on {1}" -f $entry.Id, $Platform)
+			} else {
+				Write-Info ("[skip]      {0} — method tools missing on this host: {1}" -f $entry.Id, ($planned -join ' '))
+			}
 			continue
 		}
 		Write-Host ''
@@ -333,8 +383,7 @@ if ($Yes) {
 			Write-Info 'not a choice — skipped'
 			continue
 		}
-		$method = $methods[$pick - 1]
-		Install-Entry $entry $method
+		Install-Entry $entry $methods[$pick - 1]
 	}
 }
 
