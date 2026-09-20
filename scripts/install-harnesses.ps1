@@ -154,6 +154,13 @@ $UvPackage = @{ vibe = 'mistral-vibe' }
 $SoarPackage = @{}
 $FlatpakPackage = @{}
 
+# the radio colors: install adds, upgrade refreshes, uninstall removes
+$ActionColors = @{
+	install   = $PSStyle.Foreground.Blue
+	upgrade   = $PSStyle.Foreground.Green
+	uninstall = $PSStyle.Foreground.Red
+}
+
 # --- helpers ------------------------------------------------------------------
 
 function Write-Info { param([string]$Message) Write-Host "$($PSStyle.Foreground.BrightBlue)info $Message$($PSStyle.Reset)" }
@@ -475,11 +482,12 @@ if ($Yes) {
 			$unavailable = $true
 		}
 		[pscustomobject]@{
-			Index   = $i
-			Label   = $label
-			Detail  = $detail
-			Unavailable = $unavailable
-			Actions = $actions
+			Index        = $i
+			Label        = $label
+			Detail       = $detail
+			Unavailable  = $unavailable
+			Actions      = $actions
+			ActionColors = $ActionColors
 		}
 	}
 	$installSummary = {
