@@ -161,15 +161,18 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\blocklist: `blocklist` maps `git config --global github.username`
         \\→ { providers: [provider-slug, ...] } — providers the hosts
-        \\running as that user must never test (credits exhausted, ...).
-        \\Blocked providers never become daemon candidates (either mode)
-        \\and `fixtures capture` refuses them (exit 10); entries use the
-        \\strict provider slugs the fixture dims use (`opencode-go` →
-        \\`opencodego`).
+        \\running as that user must never test PAID combos on (paid plan
+        \\expired, credits exhausted, ...). A blocked provider's paid
+        \\combos never become daemon candidates (either mode) and
+        \\`fixtures capture` refuses them (exit 10); its free-grid combos
+        \\stay workable. Entries use the strict provider slugs the
+        \\fixture dims use (`opencode-go` → `opencodego`).
         \\
         \\daemon flags:
         \\  --write-log                 tee daemon output to fixtures/daemon.log
-        \\  --poll-seconds=N            base poll interval (default 5)
+        \\  --poll-seconds=N            base poll interval (default 5;
+        \\                              from-identity work ignores it and
+        \\                              paces at 0.25s — it is zero-token)
         \\  --capture-review-seconds=N  pre/post capture pause (default 15)
         \\  --capture-timeout-seconds=N from-capture worker timeout (default 600)
         \\
@@ -3155,6 +3158,9 @@ pub const dev = if (build_options.dev) struct {
         var pending_capture: ?DaemonPick = null;
         var phase_until: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot };
         var next_poll: std.Io.Clock.Timestamp = .{ .raw = .zero, .clock = .boot };
+        // the near-instant from-identity pacing (2026-09-20): identity work is zero-token, so it paces at 0.25s instead of the poll interval — `tick_ns` carries the matching tick so the sleep never overshoots the pace.
+        const identity_pace_ns: u64 = @as(u64, 250) * std.time.ns_per_ms;
+        var tick_ns: u64 = std.time.ns_per_s;
 
         while (true) {
             const now = std.Io.Clock.Timestamp.now(io, .boot);
@@ -3241,8 +3247,9 @@ pub const dev = if (build_options.dev) struct {
                     if (boot_now_ns < next_poll.raw.nanoseconds) {
                         daemonWrite(io, "daemon: idle\n");
                     } else {
-                        // one candidate per poll (decision #10): schedule the next poll `poll_seconds` out on EVERY path below.
+                        // one candidate per poll (decision #10): the from-capture and empty-queue paths schedule the next poll `poll_seconds` out on EVERY path below; a worked from-identity candidate schedules the near-instant pacing instead — identity work is zero-token and needs no cool-down.
                         next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
+                        tick_ns = std.time.ns_per_s;
                         const pick = daemonPick(io, a, &damped, blocked) catch |err| blk: {
                             daemonWriteErr(io, "daemon: pick error: ");
                             daemonWriteErr(io, @errorName(err));
@@ -3269,6 +3276,9 @@ pub const dev = if (build_options.dev) struct {
                                 continue;
                             }
 
+                            // the near-instant identity pacing: the next identity pick comes 0.25s out, and the tick shortens to match (the control file is checked MORE often, never less).
+                            next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = identity_pace_ns }, .clock = .boot });
+                            tick_ns = identity_pace_ns;
                             const ok = runOneComboIdentity(a, io, init, &damped, p.candidate.fixture_id) catch |err| blk: {
                                 daemonWriteErr(io, "daemon: identity worker error: ");
                                 daemonWriteErr(io, @errorName(err));
@@ -3291,8 +3301,8 @@ pub const dev = if (build_options.dev) struct {
                     }
                 },
             }
-            // the ~1s tick — also the control-check cadence.
-            try std.Io.sleep(io, .{ .nanoseconds = std.time.ns_per_s }, .boot);
+            // the tick — also the control-check cadence: ~1s normally, 0.25s while the identity fast path drains.
+            try std.Io.sleep(io, .{ .nanoseconds = tick_ns }, .boot);
         }
     }
 
