@@ -232,7 +232,7 @@ It is SPARSE: rows only for providers with ≥1 free model, columns only for mod
 ### monitoring + control runbook
 
 Run the daemon with `fixtures daemon --write-log` (log: `fixtures/daemon.log`) and poll that log at ~1s — the daemon writes a status heartbeat every ~1s, faster than the iteration delays.
-The startup banner prints the daemon's own `process id` (how you kill it or tell two instances' log streams apart), each `from-capture` announces its `worker pid` and a `worker log` path, and the worker's stdout is teed to the log live (`worker: ` prefix) so a capture can be followed while it runs.
+The startup banner prints the daemon's own `process id` (how you kill it or tell two instances' log streams apart) and the resolved `git identity` — the `github.username` the blocklist keys on; an unset identity prints with a ⚠ (the blocklist gates nothing on that host, and the banner says so instead of staying silent) — each `from-capture` announces its `worker pid` and a `worker log` path, and the worker's stdout is teed to the log live (`worker: ` prefix) so a capture can be followed while it runs.
 The daemon also logs the exact spawn command (quoted argv) under a fresh, empty OS temp-dir cwd per capture (the worker's `<project>`; see DESIGN.md "capture workers").
 The worker's stderr goes to `fixtures/tmp/<fixture-id>.worker.log` (tail it while the capture runs);
 on failure the daemon reads the stdout tail and the worker-log tail into the `known_but_failed` record, so a failure line always says what the worker actually saw.

@@ -3099,28 +3099,15 @@ pub const dev = if (build_options.dev) struct {
         // session-scoped failure damping — one attempt per candidate per daemon run (in-memory; the fixture files + known_but_failed are the durable memory).
         var damped = std.StringHashMap(void).init(a);
 
-        // the blocklist resolves once per daemon session: the providers the invoking git user must never test (index.json `blocklist` keyed by `git config --global github.username`).
-        // An unset git identity blocks nothing.
+        // the blocklist resolves once per daemon session: the providers the invoking git user must never test paid combos on (index.json `blocklist` keyed by `git config --global github.username`).
+        // An unset git identity blocks nothing — and the intro below makes that state loud (⚠), never silent.
+        const daemon_username: ?[]const u8 = gitConfigUsername(a, io);
         const blocked: []const []const u8 = blk: {
-            const username = gitConfigUsername(a, io) orelse break :blk &.{};
+            const username = daemon_username orelse break :blk &.{};
             const lock_file = acquireIndexLock(io) catch break :blk &.{};
             defer lock_file.close(io);
             const root = indexLoad(io, a) catch break :blk &.{};
-            const list = blocklistProvidersFor(a, &root, username) catch break :blk &.{};
-            if (list.len > 0) {
-                var fbs = std.ArrayList(u8).empty;
-                defer fbs.deinit(a);
-                fbs.appendSlice(a, "  blocklist for ") catch break :blk list;
-                fbs.appendSlice(a, username) catch break :blk list;
-                fbs.appendSlice(a, ": ") catch break :blk list;
-                for (list, 0..) |p, i| {
-                    if (i > 0) fbs.appendSlice(a, ", ") catch break :blk list;
-                    fbs.appendSlice(a, p) catch break :blk list;
-                }
-                fbs.appendSlice(a, "\n") catch break :blk list;
-                daemonWrite(io, fbs.items);
-            }
-            break :blk list;
+            break :blk blocklistProvidersFor(a, &root, username) catch &.{};
         };
 
         daemonWrite(io, "agent-detect-dev fixtures daemon: running\n");
@@ -3132,6 +3119,27 @@ pub const dev = if (build_options.dev) struct {
         daemonWrite(io, "  index file: fixtures/index.json\n");
         daemonWrite(io, "  control file: fixtures/daemon.ctl (write pause/resume/stop)\n");
         if (write_log) daemonWrite(io, "  log file: fixtures/daemon.log\n");
+        {
+            // the git identity is the blocklist key — print it up front so a host that forgot `git config --global github.username` is visible at a glance (the ⚠ marks the unset case: the blocklist gates nothing there).
+            if (daemon_username) |u| {
+                var gbuf: [160]u8 = undefined;
+                const m = std.fmt.bufPrint(gbuf[0..], "  git identity: {s} (the blocklist key)\n", .{u}) catch "  git identity: (unreadable — too long)\n";
+                daemonWrite(io, m);
+            } else {
+                daemonWrite(io, "  git identity: ⚠ unset — `git config --global github.username` is not set, so the blocklist gates nothing on this host\n");
+            }
+            if (blocked.len > 0) {
+                var fbs = std.ArrayList(u8).empty;
+                defer fbs.deinit(a);
+                fbs.appendSlice(a, "  blocklisted providers (paid combos only): ") catch {};
+                for (blocked, 0..) |p, i| {
+                    if (i > 0) fbs.appendSlice(a, ", ") catch {};
+                    fbs.appendSlice(a, p) catch {};
+                }
+                fbs.appendSlice(a, "\n") catch {};
+                daemonWrite(io, fbs.items);
+            }
+        }
         {
             // the pid is how this instance is referenced (kill it, tell two interleaved log streams apart) — print it up front.
             var pbuf: [32]u8 = undefined;
