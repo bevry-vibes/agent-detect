@@ -457,28 +457,28 @@ if ($Yes) {
 			$label = "$($PSStyle.Foreground.Cyan)$($entry.Label)$($PSStyle.Reset)$($PSStyle.Dim) — installed$($PSStyle.Reset)"
 			$actions = @('upgrade', 'uninstall')
 			$detail = @("upgrade via $($methods[0]): $(Get-MethodCommand -Id $entry.Id -Method $methods[0] -Action upgrade)")
-			$locked = $false
+			$unavailable = $false
 		} elseif ($installed) {
 			$label = "$($PSStyle.Dim)$($entry.Label) — installed (no available method)$($PSStyle.Reset)"
 			$actions = @()
 			$detail = @()
-			$locked = $true
+			$unavailable = $true
 		} elseif ($methods.Count -gt 0) {
 			$label = "$($PSStyle.Foreground.Green)$($entry.Label)$($PSStyle.Reset)"
 			$actions = @('install')
 			$detail = @($methods | ForEach-Object { Get-MethodCommand -Id $entry.Id -Method $_ -Action install })
-			$locked = $false
+			$unavailable = $false
 		} else {
 			$label = "$($PSStyle.Dim)$($entry.Label) — no available method$($PSStyle.Reset)"
 			$actions = @()
 			$detail = @()
-			$locked = $true
+			$unavailable = $true
 		}
 		[pscustomobject]@{
 			Index   = $i
 			Label   = $label
 			Detail  = $detail
-			Locked  = $locked
+			Unavailable = $unavailable
 			Actions = $actions
 		}
 	}
