@@ -54,11 +54,29 @@ CI=true or GITHUB_ACTIONS=true in the environment implies -Yes.
 	exit 0
 }
 if ($env:CI -eq 'true' -or $env:GITHUB_ACTIONS -eq 'true') { $Yes = $true }
+# -File passes "a,b" as one argument (pwsh -Command is what splits commas), so split it here
+if ($Harness) { $Harness = @($Harness | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 
 # --- platform ----------------------------------------------------------------
 
 $Platform = if ($IsMacOS) { 'Darwin' } elseif ($IsLinux) { 'Linux' } elseif ($IsWindows) { 'Windows' } else { $null }
 if (-not $Platform) { throw 'unsupported platform: install-harnesses.ps1 runs on macOS, Linux, and Windows' }
+
+# npm may sit behind the user's node-env wrapper (a dorothy command that exposes
+# a node.js environment): when plain npm is not on PATH, every npm invocation
+# runs as "node-env -- npm ...". The array form splats into the & call operator.
+$NpmCommand = if (Get-Command npm -ErrorAction Ignore) {
+	@('npm')
+} elseif (Get-Command node-env -ErrorAction Ignore) {
+	@('node-env', '--', 'npm')
+} else {
+	$null
+}
+
+# Installers may place binaries in XDG_BIN_HOME (default ~/.local/bin), which is
+# fine — but that directory is not always on PATH in the current session, so the
+# probe treats a binary there as installed and says where it is.
+$XdgBinHome = if ($env:XDG_BIN_HOME) { $env:XDG_BIN_HOME } else { Join-Path $HOME '.local/bin' }
 
 # --- registry ----------------------------------------------------------------
 # Probe: the binary agent-detect's invocations table probes with --version.
@@ -75,6 +93,8 @@ $Registry = @(
 	[pscustomobject]@{ Id = 'reasonix'; Label = 'Reasonix'; Probe = 'reasonix'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
 	[pscustomobject]@{ Id = 'crush'; Label = 'Crush'; Probe = 'crush'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('winget', 'npm') } }
 	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
+	[pscustomobject]@{ Id = 'opencode2'; Label = 'OpenCode v2 (opencode2)'; Probe = 'opencode2'; Methods = @{ Darwin = @('npm', 'custom'); Linux = @('npm', 'custom'); Windows = @('npm', 'custom') } }
+	[pscustomobject]@{ Id = 'dsh'; Label = 'DeepSeek Harness — dsh (developer preview)'; Probe = 'dsh'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'vibe'; Label = 'Mistral Vibe'; Probe = 'vibe'; Methods = @{ Darwin = @('uv'); Linux = @('uv'); Windows = @('uv') } }
 	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @{ Darwin = @('brew', 'custom'); Linux = @('custom'); Windows = @('custom') } }
 	[pscustomobject]@{ Id = 'copilot'; Label = 'GitHub Copilot CLI'; Probe = 'copilot'; Methods = @{ Darwin = @('brew'); Linux = @(); Windows = @('scoop') } }
@@ -94,6 +114,8 @@ $NpmPackage = @{
 	reasonix = 'reasonix'
 	crush = '@charmland/crush'
 	opencode = 'opencode-ai'
+	opencode2 = '@opencode-ai/cli'
+	dsh = '@deepseek-ai/dsh'
 }
 $BrewPackage = @{
 	qwen = 'qwen-code'
@@ -127,7 +149,8 @@ function Write-Fail { param([string]$Message) Write-Host "$($PSStyle.Foreground.
 
 function Test-HarnessInstalled {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
-	return [bool](Get-Command $Entry.Probe -ErrorAction Ignore)
+	if (Get-Command $Entry.Probe -ErrorAction Ignore) { return $true }
+	return (Test-Path (Join-Path $XdgBinHome $Entry.Probe))
 }
 
 function Get-HarnessVersion {
@@ -138,7 +161,7 @@ function Get-HarnessVersion {
 function Test-MethodAvailable {
 	param([Parameter(Mandatory)] [string]$Id, [Parameter(Mandatory)] [string]$Method)
 	switch ($Method) {
-		npm { return [bool](Get-Command npm -ErrorAction Ignore) }
+		npm { return ($null -ne $NpmCommand) }
 		brew { return [bool](Get-Command brew -ErrorAction Ignore) }
 		scoop { return [bool](Get-Command scoop -ErrorAction Ignore) }
 		winget { return [bool](Get-Command winget -ErrorAction Ignore) }
@@ -152,7 +175,7 @@ function Test-MethodAvailable {
 function Get-MethodCommand {
 	param([Parameter(Mandatory)] [string]$Id, [Parameter(Mandatory)] [string]$Method)
 	switch ($Method) {
-		npm { return "npm i -g $($NpmPackage[$Id])" }
+		npm { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])" }
 		brew { return "brew install $($BrewPackage[$Id])" }
 		scoop { return "scoop install $($ScoopPackage[$Id])" }
 		winget { return "winget install $($WingetPackage[$Id])" }
@@ -167,6 +190,9 @@ function Get-MethodCommand {
 				'Darwin/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
 				'Linux/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
 				'Windows/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash  (needs a POSIX shell: Git Bash or WSL)' }
+				'Darwin/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash' }
+				'Linux/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash' }
+				'Windows/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash  (needs a POSIX shell: Git Bash or WSL)' }
 			}
 		}
 		manual {
@@ -184,7 +210,7 @@ function Invoke-Method {
 		[Parameter(Mandatory)] [string]$Method
 	)
 	switch ($Method) {
-		npm { npm i -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		npm { & $NpmCommand i -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		brew { brew install $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		scoop { scoop install $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		winget { winget install $WingetPackage[$Id]; return ($LASTEXITCODE -eq 0) }
@@ -205,6 +231,9 @@ function Invoke-Method {
 				'Darwin/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
 				'Linux/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
 				'Windows/hermes' { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
+				'Darwin/opencode2' { & bash -c 'curl -fsSL https://opencode.ai/v2/install | bash'; return ($LASTEXITCODE -eq 0) }
+				'Linux/opencode2' { & bash -c 'curl -fsSL https://opencode.ai/v2/install | bash'; return ($LASTEXITCODE -eq 0) }
+				'Windows/opencode2' { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
 			}
 		}
 		manual { Write-Info "manual step: $(Get-MethodCommand $Id $Method)"; return 'manual' }
@@ -216,11 +245,17 @@ function Install-Entry {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry, [Parameter(Mandatory)] [string]$Method)
 	Write-Host ('[install]   {0} via {1}: {2}' -f $Entry.Id, $Method, (Get-MethodCommand $Entry.Id $Method))
 	$result = Invoke-Method $Entry.Id $Method
-	if ($result -eq 'manual') {
+	# "$result" forces string comparison: a $true result -eq 'manual' would coerce
+	# the string to bool and mislabel every successful install as a manual step
+	if ("$result" -eq 'manual') {
 		Write-Info "[manual]    $($Entry.Id) — needs a manual step (printed above); not counted as a failure"
 	} elseif (-not $result) {
 		Write-Fail "[fail]      $($Entry.Id) — the install command exited nonzero"
 		$script:failures++
+	} elseif (Get-Command $Entry.Probe -ErrorAction Ignore) {
+		Write-Info "[ok]        $($Entry.Id) — $(Get-HarnessVersion $Entry.Probe)"
+	} else {
+		Write-Info "[ok]        $($Entry.Id) — installed, but the probe is not on PATH yet; check $XdgBinHome and the npm prefix bin (add it to PATH or restart the shell)"
 	}
 }
 
@@ -258,7 +293,11 @@ if ($Check) {
 	foreach ($entry in $Selected) {
 		if (Test-HarnessInstalled $entry) {
 			$installed++
-			Write-Host ('[ok]       {0,-10} {1} ({2})' -f $entry.Id, $entry.Label, (Get-HarnessVersion $entry.Probe))
+			if (Get-Command $entry.Probe -ErrorAction Ignore) {
+				Write-Host ('[ok]       {0,-10} {1} ({2})' -f $entry.Id, $entry.Label, (Get-HarnessVersion $entry.Probe))
+			} else {
+				Write-Host ('[ok]       {0,-10} {1} (in {2} — add it to PATH or restart the shell)' -f $entry.Id, $entry.Label, $XdgBinHome)
+			}
 		} else {
 			$missing++
 			Write-Host ('[missing]  {0,-10} {1}' -f $entry.Id, $entry.Label)

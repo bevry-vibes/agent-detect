@@ -45,6 +45,8 @@ usage: pwsh -File ./scripts/sync-harness-configs.ps1 [-Apply] [-Harness <id>[,<i
 }
 
 if (-not $Remote) { throw 'missing <user@linux-host> argument (see -Help)' }
+# -File passes "a,b" as one argument (pwsh -Command is what splits commas), so split it here
+if ($Harness) { $Harness = @($Harness | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 if (-not $IsMacOS) { throw "run this on the macOS host (detected platform is not macOS)" }
 if (-not (Get-Command rsync -ErrorAction Ignore)) { throw 'rsync not found on PATH' }
 if (-not (Get-Command ssh -ErrorAction Ignore)) { throw 'ssh not found on PATH' }
