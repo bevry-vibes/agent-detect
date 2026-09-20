@@ -508,6 +508,19 @@ test "canonicalIdFor: providers chutes and opencode-go resolve" {
     try testing.expectEqualStrings("opencode", oc);
 }
 
+test "canonicalIdFor: the ollama individuation — ollama-cloud spellings resolve the cloud rule, never the local one" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    for ([_][]const u8{ "ollama-cloud", "Ollama Cloud", "ollamacloud" }) |f| {
+        const got = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("ollama-cloud", got);
+    }
+    // whole-string slugs: `ollama` (the local runtime) never resolves to `ollama-cloud`
+    const ol = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, "ollama") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("ollama", ol);
+}
+
 test "canonicalIdFor: catalog spellings fold to their canonical rules" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -587,6 +600,32 @@ test "applyModel: unknown id keeps raw passthrough (never-guess)" {
     try testing.expectEqualStrings("footee", d.model_id.?);
     try testing.expect(d.model_reciprocity == null);
     try testing.expect(d.model_license == null);
+}
+
+test "applyModel: the :cloud suffix re-resolves an ollama provider to ollama-cloud (DESIGN #15)" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // the observed fold flaw: ZCode's custom provider `name: "ollama"` (localhost:11434) serving `glm-5.3-flash:cloud` — the suffix is the cloud signal.
+    var d = main.Detection{};
+    try main.applyModel(a, &d, "glm-5.3-flash:cloud", "glm-5.3-flash:cloud");
+    try testing.expectEqualStrings("glm53flash", d.model_id.?);
+    // a caller that set the provider first (every detector runs setProvider before applyModel) flips to the cloud rule.
+    var d2 = main.Detection{};
+    d2.provider_id = "ollama";
+    try main.applyModel(a, &d2, "glm-5.3-flash:cloud", "glm-5.3-flash:cloud");
+    try testing.expectEqualStrings("ollama-cloud", d2.provider_name.?);
+    try testing.expectEqualStrings("ollamacloud", d2.provider_id.?);
+    // without the suffix the provider stays on the local rule.
+    var d3 = main.Detection{};
+    d3.provider_id = "ollama";
+    try main.applyModel(a, &d3, "glm-5.3-flash", "glm-5.3-flash");
+    try testing.expectEqualStrings("ollama", d3.provider_id.?);
+    // and the flip never touches another provider (never-guess).
+    var d4 = main.Detection{};
+    d4.provider_id = "zai";
+    try main.applyModel(a, &d4, "glm-5.3-flash:cloud", "glm-5.3-flash:cloud");
+    try testing.expectEqualStrings("zai", d4.provider_id.?);
 }
 
 test "buildTrailerLine: kimi-code chutes and opencode-go combos" {

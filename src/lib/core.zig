@@ -254,6 +254,13 @@ pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_inp
     // shed all of it, not just the first segment, so `provider/org/Model` and `Model` resolve alike.
     const canonical_name = rules.modelIdAfterNamespace(lower);
     defer a.free(lower);
+    // the ollama local/cloud boundary (DESIGN.md decision #15, executed 2026-09-20): a `:cloud`-tagged model serves through ollama.com even under a local-looking provider key (ZCode's custom provider `name: "ollama"` on localhost:11434 was the observed fold flaw) — the suffix is the cloud signal, so the provider re-resolves to the cloud rule.
+    // This runs before the variation fold because the fold sheds the suffix (`glm-5.3-flash:cloud` → `glm-5.3-flash`); every caller runs setProvider before applyModel, so the provider dim is already present.
+    if (d.provider_id) |pid| {
+        if (std.mem.eql(u8, pid, "ollama") and std.mem.endsWith(u8, canonical_name, ":cloud")) {
+            try setProvider(a, d, "ollama-cloud");
+        }
+    }
     // fold provider-served id spellings (e.g. chutes' TEE-stamped "Qwen3.8-27B-TEE") through the rule's variation aliases before the exact-name lookup —
     // never-guess: an id no variation names keeps the raw passthrough + family/titleCase fallback below.
     const folded_name = canonicalIdFor(a, ModelRule, &rulesForModels, canonical_name);
@@ -1818,11 +1825,12 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
 }
 
 /// map ZCode's provider keys onto agent-detect's canonical provider ids.
-/// The app's bundled coding plan records providerId `builtin:zai-start-plan` (agent-detect calls that surface `zcode`, mirroring `zai`).
+/// The app's bundled coding plan records providerId `builtin:zai-start-plan` (agent-detect calls that surface `zcode`, mirroring `zai`); zcode 3.14 renamed the surface's keys — the settings' selected key is `coding-plan:builtin:zai-coding-plan` and the rollout providerId is `account:zai-individual-coding-plan` (observed 2026-09-20) — same bundled zai coding plan.
 /// Custom providers (source: "custom") carry opaque per-install keys — their human name lives in `~/.zcode/v2/config.json` under `provider.<key>.name`, read by the caller.
 /// Unknown keys pass through (never-guess).
 fn zcodeProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
     if (std.mem.indexOf(u8, provider, "zai-start-plan") != null) return a.dupe(u8, "zcode");
+    if (std.mem.indexOf(u8, provider, "zai") != null and std.mem.indexOf(u8, provider, "coding-plan") != null) return a.dupe(u8, "zcode");
     return provider;
 }
 
@@ -1860,10 +1868,10 @@ fn zcodeCustomProviderFromConfig(a: std.mem.Allocator, io: std.Io, home: []const
 
 /// fold a custom provider's endpoint host onto the canonical provider id it actually names — the URL is the identity of the real surface, stronger than the user-chosen display name (the detectAutoClaw baseUrl-fold precedent).
 /// Known hosts only; anything else returns null and the name path decides (never-guess).
-/// This is also the mechanism the deferred ollama local/cloud individuation rides (DESIGN.md decision #15): ollama.com is the cloud API, while local runtimes (localhost/LAN) stay on the name path.
+/// This is one of the two ollama local/cloud discriminators (DESIGN.md decision #15, executed 2026-09-20): ollama.com is the cloud API, while local runtimes (localhost/LAN) stay on the name path.
 fn providerHostFold(base_url: []const u8) ?[]const u8 {
     if (std.mem.indexOf(u8, base_url, "inference.phala.com") != null) return "phala";
-    if (std.mem.indexOf(u8, base_url, "ollama.com") != null) return "ollama";
+    if (std.mem.indexOf(u8, base_url, "ollama.com") != null) return "ollama-cloud";
     return null;
 }
 
@@ -1899,6 +1907,7 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
             if (ent.kind != .file) continue;
             if (!std.mem.startsWith(u8, ent.name, "model-io-sess_")) continue;
             if (!std.mem.endsWith(u8, ent.name, ".jsonl")) continue;
+            if (std.mem.indexOf(u8, ent.name, "_subagent_") != null) continue; // subagent sessions get their own files — outside the main session's scope
             if (total_read > (1 << 27)) break; // 128 MiB session-store budget
             const path = std.fmt.allocPrint(a, "{s}/{s}", .{ rollout_dir_path, ent.name }) catch continue;
             const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 26)) catch continue; // 64 MiB per file
@@ -1916,8 +1925,8 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
                 const mv = parsed.value.object.get("model") orelse continue;
                 if (mv != .object) continue;
                 const mo = mv.object;
-                const role = jstr(mo, "role") orelse continue;
-                if (!std.mem.eql(u8, role, "main")) continue;
+                const role = jstr(mo, "role") orelse ""; // zcode 3.14 dropped the role field — every record in a main-session file is a main record (subagents get their own files)
+                if (role.len > 0 and !std.mem.eql(u8, role, "main")) continue;
                 const model_id = jstr(mo, "modelId") orelse continue;
                 const provider_id = jstr(mo, "providerId") orelse "";
                 const completed = jstr(parsed.value.object, "completedAt") orelse "";

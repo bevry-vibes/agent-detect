@@ -426,13 +426,14 @@ pub const rulesForProviders = [_]ProviderRule{
     .{ .name = "siliconflow", .label = "SiliconFlow", .closed_training = null, .open_training = null, .sources = &.{ "https://siliconflow.cn/", "https://docs.siliconflow.cn/" } },
     // sakana: null/null — Sakana AI trains the Fugu/Namazu families (Japanese LLMs); API policy unverified, stays null.
     .{ .name = "sakana", .label = "Sakana AI", .closed_training = null, .open_training = null, .sources = &.{"https://sakana.ai/"} },
-    // ollama: never/never — Ollama, one rule for both the local runtime and the cloud service (ollama.com/v1; individuated as `ollama`/`ollama-cloud` 2026-09-06, folded 2026-09-07 per .plans/1788716755355 D3 — same vendor, same policy values, and the local/cloud boundary is not yet reliably observable).
-    // Policy (ollama.com/privacy + terms): "When using cloud-hosted models, we process your prompts and responses transiently to provide the service and never train on it"; "We do not use your inputs or outputs to train AI models"; local models: nothing leaves the machine.
-    // variation folds the retired `ollama-cloud` rule (hermes's profile key; kilo/omp/opencode catalog spellings `ollama-cloud/...`).
-    // KNOWN FOLD FLAW: cloud traffic reported under a local-looking key (ZCode's custom provider `name: "ollama"` serving `:cloud`-tagged models) lands here too — the `:cloud` model-id suffix and the provider baseUrl are the individuation discriminators; the follow-up design is DESIGN.md decision #15.
-    // Every fixture observed so far is ollama-cloud traffic (the maintainer's host runs no local models).
-    // The `:cloud` spellings fold on the model rules, not here.
-    .{ .name = "ollama", .label = "Ollama", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" }, .variations = &.{"ollama-cloud"} },
+    // ollama: never/never — the local runtime (localhost/LAN serving; local models: nothing leaves the machine).
+    // Individuated from `ollama-cloud` 2026-09-06, folded 2026-09-07 (.plans/1788716755355 D3), re-individuated 2026-09-20 (.plans/1789895398) — both recorded discriminators are implemented now: the `:cloud` model-id suffix (a cross-dim post-pass) and the provider baseUrl (providerHostFold sends ollama.com to the cloud rule), so the local rule keeps only local traffic.
+    // No fixture carries it yet (every observed ollama session was cloud traffic — the maintainer's host runs no local models); it lands with the rule-only coverage exemption.
+    .{ .name = "ollama", .label = "Ollama", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" } },
+    // ollama-cloud: never/never — Ollama's cloud service (ollama.com/v1; strict slug `ollamacloud`).
+    // Policy (ollama.com/privacy + terms): "When using cloud-hosted models, we process your prompts and responses transiently to provide the service and never train on it"; "We do not use your inputs or outputs to train AI models".
+    // The retired pre-fold rule's name is this rule's name — hermes's profile key `ollama-cloud` and the kilo/omp/opencode catalog spellings `ollama-cloud/...` resolve natively (no variation needed). The `:cloud` model spellings fold on the model rules, not here.
+    .{ .name = "ollama-cloud", .label = "Ollama Cloud", .closed_training = "never", .open_training = "never", .sources = &.{ "https://ollama.com/privacy", "https://ollama.com/terms" } },
     // Hermes-facing alias folds — the harness's provider ids are the model-provider plugin names + models.dev keys, several of which name a surface this table already ruled under another id.
     // Each entry mirrors its canonical rule (same policy + URLs) so a Hermes session's provider dim canonicalizes (applyProviderMeta's alias fold), exactly as `kimi`/`minimax-code` do for other harnesses.
     // — kimi-coding (hermes profile alias `kimi`; models.dev `kimi-for-coding`) mirrors `moonshot`/`kimi`.

@@ -241,7 +241,7 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
 fn isLegacyCrossChannel(stem: []const u8) bool {
     const legacy = [_][]const u8{
         "goose-opencodego-deepseekv4flash-darwin",
-        "hermes-ollama-glm53flash-darwin",
+        "hermes-ollamacloud-glm53flash-darwin",
     };
     for (legacy) |id| {
         if (std.mem.eql(u8, id, stem)) return true;
@@ -558,9 +558,15 @@ test "fixtures: envelope combo-match — each folder's identify ids equal the fi
             };
             if (h != .string or p != .string or m != .string) return error.InvalidId;
             if (!std.mem.eql(u8, h.string, parts[0]) or
-                !std.mem.eql(u8, p.string, parts[1]) or
-                !std.mem.eql(u8, m.string, parts[2]))
+                !std.mem.eql(u8, m.string, parts[2]) or
+                !std.mem.eql(u8, p.string, parts[1]))
             {
+                // The 2026-09-20 ollama individuation rename-transition (.plans/1789895398; DESIGN decision #16 — files are renamed, content refreshes only on regeneration):
+                // a stem whose provider segment is `ollamacloud` may still carry the pre-split `provider_id: "ollama"` until its queue drain rewrites it. Warn, do not fail — drop the mapping when no warning remains.
+                if (std.mem.eql(u8, parts[1], "ollamacloud") and std.mem.eql(u8, p.string, "ollama")) {
+                    std.debug.print("WARNING: fixture {s} still carries the pre-individuation provider_id \"ollama\" — queue it via `fixtures queue --provider=ollamacloud --refresh --from-identity`\n", .{stem});
+                    continue;
+                }
                 std.debug.print("fixture {s}: identify ids '{s}/{s}/{s}' do not match the filename '{s}/{s}/{s}'\n", .{ stem, h.string, p.string, m.string, parts[0], parts[1], parts[2] });
                 return error.IdMismatch;
             }
@@ -872,6 +878,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     // the maintainer uninstalled hermes, so their fixture sweeps are contributor scope.
     // autoclaw: the app is uninstalled (contributor scope, same as the harness exemption above).
     // phala: the zcode-phala-glm53 from-identity entry is staged — resolves when the user-run daemon drains it.
+    // ollama: the 2026-09-20 individuation (.plans/1789895398) moved every stem to `ollamacloud` — every observed ollama session was cloud traffic, so the local rule has no stems until a local runtime is actually fixtured.
     // (The 2026-09-07 folds — moonshotai, kimi-coding, opencode — carry stems from the renamed fixtures, so they need no exemptions.)
     const rule_only_providers = [_][]const u8{
         "cline",            "chutes",           "google",
@@ -880,7 +887,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "deepinfra",        "nebius",           "nvidia",
         "upstage",          "xiaomi",           "stepfun",
         "arcee",            "vercel",           "nous",
-        "autoclaw",         "phala",
+        "autoclaw",         "phala",            "ollama",
     };
     const rule_only_models = [_][]const u8{
         "claude-haiku-4",           "claude-opus-4",       "devstral-2",
