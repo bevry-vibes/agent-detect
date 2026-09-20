@@ -180,8 +180,21 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "phi-4-mini", .label = "Phi-4 Mini", .openness = "open-weight", .sources = &.{ "https://huggingface.co/microsoft/phi-4-mini-instruct", "https://huggingface.co/microsoft/phi-4-mini-instruct/blob/main/LICENSE" } },
     // command-a: open-weight — Cohere Command A; HF card + LICENSE.
     .{ .name = "command-a", .label = "Command A", .openness = "open-weight", .sources = &.{ "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025", "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025/blob/main/LICENSE" } },
+    // north-mini-code: open-weight — Cohere Labs North Mini Code; Apache-2.0 (added by the 2026-09-20 free-axis refresh — free on OpenRouter, clears the evergreen set).
+    .{ .name = "north-mini-code", .label = "North Mini Code", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/CohereLabs/North-Mini-Code-1.0", "https://huggingface.co/CohereLabs/North-Mini-Code-1.0/blob/main/LICENSE" } },
     // ling-3.0-flash: open-weight — InclusionAI Ling 3.0 Flash; HF card.
-    .{ .name = "ling-3.0-flash", .label = "Ling 3.0 Flash", .openness = "open-weight", .sources = &.{ "https://huggingface.co/inclusionai/Ling-3.0-Flash", "https://huggingface.co/inclusionai/Ling-3.0-Flash/blob/main/LICENSE" } },
+    // variations fold the domain fine-tune spellings that ride the family on the free surfaces (the -fin finance tune is OpenRouter/ZenMux/Vercel's free listing; the -sante health tune is OpenRouter's — the same coalescing the 2026-09-20 free-axis refresh recorded).
+    .{ .name = "ling-3.0-flash", .label = "Ling 3.0 Flash", .openness = "open-weight", .sources = &.{ "https://huggingface.co/inclusionai/Ling-3.0-Flash", "https://huggingface.co/inclusionai/Ling-3.0-Flash/blob/main/LICENSE" }, .variations = &.{ "ling-3.0-flash-fin", "ling-3.0-flash-fin-free", "ling-3.0-flash-sante" } },
+    // ling-3.0-flash-vl: open-weight — InclusionAI Ling 3.0 Flash VL (the vision-language tune); MIT (added by the 2026-09-20 free-axis refresh — free on OpenRouter and ZenMux, clears the evergreen set).
+    .{ .name = "ling-3.0-flash-vl", .label = "Ling 3.0 Flash VL", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/inclusionAI/Ling-3.0-flash-VL", "https://huggingface.co/inclusionAI/Ling-3.0-flash-VL/blob/main/LICENSE" } },
+    // dots-3-note-preview: open-weight — dots-studio Dots3 Note (preview); Apache-2.0 (added by the 2026-09-20 free-axis refresh — free on OpenRouter and ZenMux, clears the evergreen set).
+    .{ .name = "dots-3-note-preview", .label = "Dots 3 Note Preview", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/dots-studio/dots3-note-prev", "https://huggingface.co/dots-studio/dots3-note-prev/blob/main/LICENSE" }, .variations = &.{"dots3-note-prev"} },
+    // nex-n2.5-mini / nex-n2.5-pro: open-weight — Nex AGI N2.5; Apache-2.0 (added by the 2026-09-20 free-axis refresh — free on OpenRouter, clear the evergreen set).
+    .{ .name = "nex-n2.5-mini", .label = "Nex N2.5 Mini", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/nex-agi/Nex-N2.5-mini", "https://huggingface.co/nex-agi/Nex-N2.5-mini/blob/main/LICENSE" } },
+    .{ .name = "nex-n2.5-pro", .label = "Nex N2.5 Pro", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/nex-agi/Nex-N2.5-Pro", "https://huggingface.co/nex-agi/Nex-N2.5-Pro/blob/main/LICENSE" } },
+    // inkling / inkling-small: open-weight — Thinking Machines Inkling; Apache-2.0 (added by the 2026-09-20 free-axis refresh — free on OpenRouter, clear the evergreen set).
+    .{ .name = "inkling", .label = "Inkling", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/thinkingmachines/Inkling", "https://huggingface.co/thinkingmachines/Inkling/blob/main/LICENSE" } },
+    .{ .name = "inkling-small", .label = "Inkling Small", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/thinkingmachines/Inkling-Small", "https://huggingface.co/thinkingmachines/Inkling-Small/blob/main/LICENSE" } },
     // ling-2.6-1t: open-weight — InclusionAI Ling 2.6 1T; HF card.
     .{ .name = "ling-2.6-1t", .label = "Ling 2.6 1T", .openness = "open-weight", .sources = &.{ "https://huggingface.co/inclusionai/Ling-2.6-1T", "https://huggingface.co/inclusionai/Ling-2.6-1T/blob/main/LICENSE" } },
     // olmo-3-32b-think: open-weight — Ai2 OLMo 3 32B Think; HF card + LICENSE.
@@ -256,8 +269,10 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "mistral-nemo-instruct-2407", .label = "Mistral Nemo Instruct 2407", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407", "https://www.apache.org/licenses/LICENSE-2.0" }, .variations = &.{ "Mistral-Nemo-Instruct-2407-TEE" } },
     // nemotron-3-nano-omni: open-weight — NVIDIA Nemotron 3 Nano Omni (multimodal line of the nano tier; official HF repos are the A3B-Reasoning quantizations, single size so the id omits it, per the `nemotron-3-nano` convention).
     // LICENSE: HF tag `other` (custom NVIDIA terms; no LICENSE file in the repos) → NOASSERTION; card is the only independent doc.
-    // variations: Chutes TEE spelling (observed bare: chutes/Nemotron-3-Nano- Omni-30B-TEE — no namespace, so the bare form suffices).
-    .{ .name = "nemotron-3-nano-omni", .label = "Nemotron 3 Nano Omni", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{"https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16"}, .variations = &.{ "Nemotron-3-Nano-Omni-30B-TEE" } },
+    // variations: Chutes TEE spelling (observed bare: chutes/Nemotron-3-Nano- Omni-30B-TEE — no namespace, so the bare form suffices) and the NIM catalog spelling (the 2026-09-20 free-axis refresh — free on OpenRouter and NIM).
+    .{ .name = "nemotron-3-nano-omni", .label = "Nemotron 3 Nano Omni", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{"https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16"}, .variations = &.{ "Nemotron-3-Nano-Omni-30B-TEE", "nemotron-3-nano-omni-30b-a3b-reasoning" } },
+    // nemotron-3.5-lightning: open-weight — NVIDIA Nemotron 3.5 Lightning 30B A3B; the NVIDIA Open Model License is custom (not SPDX) → NOASSERTION (added by the 2026-09-20 free-axis refresh — free on OpenRouter and NIM, clears the evergreen set).
+    .{ .name = "nemotron-3.5-lightning", .label = "Nemotron 3.5 Lightning", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/blob/main/LICENSE" }, .variations = &.{"nemotron-3.5-lightning-30b-a3b"} },
     // glm-5: open-weight — Z.ai GLM 5; HF card + MIT LICENSE.
     // No "Pure Open" claim on the card (like glm-5.1), so the conservative open-weight tier.
     // Observed on opencode-go (bare id, evergreen z-ai/glm-5) — no serving-variant spellings yet.

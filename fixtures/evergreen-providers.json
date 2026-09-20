@@ -125,17 +125,6 @@
     ]
   },
   {
-    "name": "Z.AI",
-    "slug": "z-ai",
-    "privacy_policy_url": "https://chat.z.ai/legal-agreement/privacy-policy",
-    "terms_of_service_url": "https://chat.z.ai/legal-agreement/terms-of-service",
-    "status_page_url": null,
-    "headquarters": "SG",
-    "datacenters": [
-      "SG"
-    ]
-  },
-  {
     "name": "Io Net",
     "slug": "io-net",
     "privacy_policy_url": "https://io.net/privacy",
@@ -143,6 +132,15 @@
     "status_page_url": "https://status.io.net/",
     "headquarters": "US",
     "datacenters": []
+  },
+  {
+    "name": "Claude Platform on AWS",
+    "slug": "claude-on-aws",
+    "privacy_policy_url": "https://www.anthropic.com/legal/privacy",
+    "terms_of_service_url": "https://www.anthropic.com/legal/commercial-terms",
+    "status_page_url": "https://status.anthropic.com/",
+    "headquarters": "US",
+    "datacenters": null
   },
   {
     "name": "Ionstream",
@@ -165,22 +163,15 @@
     "datacenters": null
   },
   {
-    "name": "NCompass",
-    "slug": "ncompass",
-    "privacy_policy_url": "https://ncompass.tech/privacy",
-    "terms_of_service_url": "https://ncompass.tech/terms",
+    "name": "Z.AI",
+    "slug": "z-ai",
+    "privacy_policy_url": "https://chat.z.ai/legal-agreement/privacy-policy",
+    "terms_of_service_url": "https://chat.z.ai/legal-agreement/terms-of-service",
     "status_page_url": null,
-    "headquarters": null,
-    "datacenters": null
-  },
-  {
-    "name": "Claude Platform on AWS",
-    "slug": "claude-on-aws",
-    "privacy_policy_url": "https://www.anthropic.com/legal/privacy",
-    "terms_of_service_url": "https://www.anthropic.com/legal/commercial-terms",
-    "status_page_url": "https://status.anthropic.com/",
-    "headquarters": "US",
-    "datacenters": null
+    "headquarters": "SG",
+    "datacenters": [
+      "SG"
+    ]
   },
   {
     "name": "BaseTen",
@@ -201,15 +192,6 @@
     "datacenters": null
   },
   {
-    "name": "Crusoe",
-    "slug": "crusoe",
-    "privacy_policy_url": "https://legal.crusoe.ai/open-router#cloud-privacy-policy",
-    "terms_of_service_url": "https://legal.crusoe.ai/open-router#managed-inference-tos-open-router",
-    "status_page_url": "https://status.crusoecloud.com/",
-    "headquarters": "US",
-    "datacenters": null
-  },
-  {
     "name": "Modal",
     "slug": "modal",
     "privacy_policy_url": "https://modal.com/legal/privacy-policy",
@@ -225,6 +207,15 @@
     "terms_of_service_url": "https://chat.deepseek.com/downloads/DeepSeek%20Terms%20of%20Use.html",
     "status_page_url": "https://status.deepseek.com/",
     "headquarters": "CN",
+    "datacenters": null
+  },
+  {
+    "name": "Crusoe",
+    "slug": "crusoe",
+    "privacy_policy_url": "https://legal.crusoe.ai/open-router#cloud-privacy-policy",
+    "terms_of_service_url": "https://legal.crusoe.ai/open-router#managed-inference-tos-open-router",
+    "status_page_url": "https://status.crusoecloud.com/",
+    "headquarters": "US",
     "datacenters": null
   },
   {
@@ -271,15 +262,6 @@
     "privacy_policy_url": "https://avian.io/privacy",
     "terms_of_service_url": "https://avian.io/terms",
     "status_page_url": null,
-    "headquarters": "US",
-    "datacenters": null
-  },
-  {
-    "name": "DeepInfra",
-    "slug": "deepinfra",
-    "privacy_policy_url": "https://deepinfra.com/privacy",
-    "terms_of_service_url": "https://deepinfra.com/terms",
-    "status_page_url": "https://status.deepinfra.com/",
     "headquarters": "US",
     "datacenters": null
   },
@@ -342,13 +324,13 @@
     ]
   },
   {
-    "name": "Krea",
-    "slug": "krea",
-    "privacy_policy_url": "https://www.krea.ai/privacy-policy",
-    "terms_of_service_url": "https://www.krea.ai/terms",
-    "status_page_url": null,
+    "name": "DeepInfra",
+    "slug": "deepinfra",
+    "privacy_policy_url": "https://deepinfra.com/privacy",
+    "terms_of_service_url": "https://deepinfra.com/terms",
+    "status_page_url": "https://status.deepinfra.com/",
     "headquarters": "US",
-    "datacenters": []
+    "datacenters": null
   },
   {
     "name": "Amazon Nova",
@@ -416,6 +398,15 @@
     "status_page_url": "https://status.azure.com/",
     "headquarters": "US",
     "datacenters": null
+  },
+  {
+    "name": "Krea",
+    "slug": "krea",
+    "privacy_policy_url": "https://www.krea.ai/privacy-policy",
+    "terms_of_service_url": "https://www.krea.ai/terms",
+    "status_page_url": null,
+    "headquarters": "US",
+    "datacenters": []
   },
   {
     "name": "Cloudflare",
@@ -492,6 +483,15 @@
     "datacenters": null
   },
   {
+    "name": "Phala",
+    "slug": "phala",
+    "privacy_policy_url": "https://redpill.ai/privacy",
+    "terms_of_service_url": "https://redpill.ai/terms",
+    "status_page_url": "https://status.phala.network/",
+    "headquarters": "US",
+    "datacenters": null
+  },
+  {
     "name": "Seed",
     "slug": "seed",
     "privacy_policy_url": "https://docs.byteplus.com/en/docs/legal/docs-privacy-policy",
@@ -512,26 +512,6 @@
     ]
   },
   {
-    "name": "DekaLLM",
-    "slug": "dekallm",
-    "privacy_policy_url": "https://www.cloudeka.id/id/privacy-policy/",
-    "terms_of_service_url": "https://docs.cloudeka.ai/service-portal-ai/end-user-license-agreement",
-    "status_page_url": null,
-    "headquarters": "ID",
-    "datacenters": [
-      "ID"
-    ]
-  },
-  {
-    "name": "Phala",
-    "slug": "phala",
-    "privacy_policy_url": "https://redpill.ai/privacy",
-    "terms_of_service_url": "https://redpill.ai/terms",
-    "status_page_url": "https://status.phala.network/",
-    "headquarters": "US",
-    "datacenters": null
-  },
-  {
     "name": "SiliconFlow",
     "slug": "siliconflow",
     "privacy_policy_url": "https://docs.siliconflow.com/en/legals/privacy-policy",
@@ -543,13 +523,15 @@
     ]
   },
   {
-    "name": "OpenAI",
-    "slug": "openai",
-    "privacy_policy_url": "https://openai.com/policies/privacy-policy/",
-    "terms_of_service_url": "https://openai.com/policies/row-terms-of-use/",
-    "status_page_url": "https://status.openai.com/",
-    "headquarters": "US",
-    "datacenters": null
+    "name": "DekaLLM",
+    "slug": "dekallm",
+    "privacy_policy_url": "https://www.cloudeka.id/id/privacy-policy/",
+    "terms_of_service_url": "https://docs.cloudeka.ai/service-portal-ai/end-user-license-agreement",
+    "status_page_url": null,
+    "headquarters": "ID",
+    "datacenters": [
+      "ID"
+    ]
   },
   {
     "name": "Poolside",
@@ -655,27 +637,6 @@
     "datacenters": null
   },
   {
-    "name": "DigitalOcean",
-    "slug": "digitalocean",
-    "privacy_policy_url": "https://www.digitalocean.com/legal/privacy-policy",
-    "terms_of_service_url": "https://www.digitalocean.com/legal/terms-of-service-agreement",
-    "status_page_url": null,
-    "headquarters": null,
-    "datacenters": []
-  },
-  {
-    "name": "Alibaba",
-    "slug": "alibaba",
-    "privacy_policy_url": "https://www.alibabacloud.com/help/en/legal/latest/alibaba-cloud-international-website-privacy-policy",
-    "terms_of_service_url": "https://www.alibabacloud.com/help/en/legal/latest/alibaba-cloud-international-website-product-terms-of-service-v-3-8-0",
-    "status_page_url": "https://status.alibabacloud.com/",
-    "headquarters": "SG",
-    "datacenters": [
-      "SG",
-      "CN"
-    ]
-  },
-  {
     "name": "Nex AGI",
     "slug": "nex-agi",
     "privacy_policy_url": "https://api.nex-agi.cn/privacy-policy",
@@ -685,6 +646,24 @@
     "datacenters": [
       "SG"
     ]
+  },
+  {
+    "name": "DigitalOcean",
+    "slug": "digitalocean",
+    "privacy_policy_url": "https://www.digitalocean.com/legal/privacy-policy",
+    "terms_of_service_url": "https://www.digitalocean.com/legal/terms-of-service-agreement",
+    "status_page_url": null,
+    "headquarters": null,
+    "datacenters": []
+  },
+  {
+    "name": "Thinking Machines",
+    "slug": "thinkingmachines",
+    "privacy_policy_url": "https://thinkingmachines.ai/legal/tml-free-research-api-tier-privacy-notice.pdf",
+    "terms_of_service_url": "https://thinkingmachines.ai/legal/tml-free-research-api-tier-terms-of-service.pdf",
+    "status_page_url": null,
+    "headquarters": null,
+    "datacenters": null
   },
   {
     "name": "Chutes",
@@ -716,12 +695,12 @@
     "datacenters": []
   },
   {
-    "name": "Thinking Machines",
-    "slug": "thinkingmachines",
-    "privacy_policy_url": "https://thinkingmachines.ai/legal/tml-free-research-api-tier-privacy-notice.pdf",
-    "terms_of_service_url": "https://thinkingmachines.ai/legal/tml-free-research-api-tier-terms-of-service.pdf",
-    "status_page_url": null,
-    "headquarters": null,
+    "name": "Google",
+    "slug": "google-vertex",
+    "privacy_policy_url": "https://cloud.google.com/terms/cloud-privacy-notice",
+    "terms_of_service_url": "https://cloud.google.com/terms/",
+    "status_page_url": "https://status.cloud.google.com/products/sdXM79fz1FS6ekNpu37K/history",
+    "headquarters": "US",
     "datacenters": null
   },
   {
@@ -735,15 +714,6 @@
       "SG",
       "NL"
     ]
-  },
-  {
-    "name": "Google",
-    "slug": "google-vertex",
-    "privacy_policy_url": "https://cloud.google.com/terms/cloud-privacy-notice",
-    "terms_of_service_url": "https://cloud.google.com/terms/",
-    "status_page_url": "https://status.cloud.google.com/products/sdXM79fz1FS6ekNpu37K/history",
-    "headquarters": "US",
-    "datacenters": null
   },
   {
     "name": "Google AI Studio",
@@ -769,15 +739,6 @@
     "privacy_policy_url": "https://www.databricks.com/legal/privacynotice",
     "terms_of_service_url": "https://www.databricks.com/terms-of-use",
     "status_page_url": "https://status.databricks.com",
-    "headquarters": "US",
-    "datacenters": null
-  },
-  {
-    "name": "OpenInference",
-    "slug": "open-inference",
-    "privacy_policy_url": "https://www.openinference.ai/privacy",
-    "terms_of_service_url": "https://www.openinference.ai/terms",
-    "status_page_url": null,
     "headquarters": "US",
     "datacenters": null
   },
@@ -820,13 +781,45 @@
     "datacenters": []
   },
   {
-    "name": "StreamLake",
-    "slug": "streamlake",
-    "privacy_policy_url": "https://www.streamlake.ai/document/DOC/mgkci47q13qr66h9i54",
-    "terms_of_service_url": "https://www.streamlake.ai/document/DOC/mgkchnd89grpt1961fw",
-    "status_page_url": "https://status.streamlake.ai/",
-    "headquarters": "CN",
-    "datacenters": []
+    "name": "OpenAI",
+    "slug": "openai",
+    "privacy_policy_url": "https://openai.com/policies/privacy-policy/",
+    "terms_of_service_url": "https://openai.com/policies/row-terms-of-use/",
+    "status_page_url": "https://status.openai.com/",
+    "headquarters": "US",
+    "datacenters": null
+  },
+  {
+    "name": "InferenceNet",
+    "slug": "inference-net",
+    "privacy_policy_url": "https://inference.net/privacy-policy",
+    "terms_of_service_url": "https://inference.net/terms-of-service",
+    "status_page_url": "https://status.inference.net",
+    "headquarters": "US",
+    "datacenters": null
+  },
+  {
+    "name": "Alibaba",
+    "slug": "alibaba",
+    "privacy_policy_url": "https://www.alibabacloud.com/help/en/legal/latest/alibaba-cloud-international-website-privacy-policy",
+    "terms_of_service_url": "https://www.alibabacloud.com/help/en/legal/latest/alibaba-cloud-international-website-product-terms-of-service-v-3-8-0",
+    "status_page_url": "https://status.alibabacloud.com/",
+    "headquarters": "SG",
+    "datacenters": [
+      "SG",
+      "CN"
+    ]
+  },
+  {
+    "name": "AssemblyAI",
+    "slug": "assemblyai",
+    "privacy_policy_url": "https://www.assemblyai.com/legal/privacy-policy",
+    "terms_of_service_url": "https://www.assemblyai.com/legal/terms-of-service",
+    "status_page_url": "https://status.assemblyai.com",
+    "headquarters": null,
+    "datacenters": [
+      "US"
+    ]
   },
   {
     "name": "Amazon Bedrock",
@@ -855,6 +848,33 @@
     "terms_of_service_url": null,
     "status_page_url": null,
     "headquarters": null,
+    "datacenters": []
+  },
+  {
+    "name": "TypeSafe",
+    "slug": "typesafe",
+    "privacy_policy_url": "https://typesafe.ai/legal/privacy-policy",
+    "terms_of_service_url": "https://typesafe.ai/legal/terms",
+    "status_page_url": null,
+    "headquarters": null,
+    "datacenters": null
+  },
+  {
+    "name": "Near AI",
+    "slug": "near-ai",
+    "privacy_policy_url": "https://near.ai/privacy-policy",
+    "terms_of_service_url": "https://near.ai/terms-of-service",
+    "status_page_url": null,
+    "headquarters": null,
+    "datacenters": []
+  },
+  {
+    "name": "StreamLake",
+    "slug": "streamlake",
+    "privacy_policy_url": "https://www.streamlake.ai/document/DOC/mgkci47q13qr66h9i54",
+    "terms_of_service_url": "https://www.streamlake.ai/document/DOC/mgkchnd89grpt1961fw",
+    "status_page_url": "https://status.streamlake.ai/",
+    "headquarters": "CN",
     "datacenters": []
   },
   {
@@ -887,15 +907,6 @@
     "datacenters": null
   },
   {
-    "name": "InferenceNet",
-    "slug": "inference-net",
-    "privacy_policy_url": "https://inference.net/privacy-policy",
-    "terms_of_service_url": "https://inference.net/terms-of-service",
-    "status_page_url": null,
-    "headquarters": "US",
-    "datacenters": null
-  },
-  {
     "name": "Inferact vLLM",
     "slug": "inferact-vllm",
     "privacy_policy_url": null,
@@ -911,6 +922,15 @@
     "terms_of_service_url": "https://friendli.ai/terms-of-service",
     "status_page_url": "https://status.friendli.ai/",
     "headquarters": "US",
+    "datacenters": null
+  },
+  {
+    "name": "Unbiased",
+    "slug": "unbiased",
+    "privacy_policy_url": "https://unbiased.ai/terms/#privacy-policy",
+    "terms_of_service_url": "https://unbiased.ai/terms/",
+    "status_page_url": null,
+    "headquarters": null,
     "datacenters": null
   },
   {
@@ -961,15 +981,13 @@
     "datacenters": []
   },
   {
-    "name": "GMICloud",
-    "slug": "gmicloud",
-    "privacy_policy_url": "https://docs.gmicloud.ai/privacy",
-    "terms_of_service_url": "https://www.gmicloud.ai/terms-and-conditions",
+    "name": "OpenInference",
+    "slug": "open-inference",
+    "privacy_policy_url": "https://www.openinference.ai/privacy",
+    "terms_of_service_url": "https://www.openinference.ai/terms",
     "status_page_url": null,
     "headquarters": "US",
-    "datacenters": [
-      "US"
-    ]
+    "datacenters": null
   },
   {
     "name": "Fireworks",
@@ -979,6 +997,17 @@
     "status_page_url": "https://status.fireworks.ai/",
     "headquarters": "US",
     "datacenters": null
+  },
+  {
+    "name": "GMICloud",
+    "slug": "gmicloud",
+    "privacy_policy_url": "https://docs.gmicloud.ai/privacy",
+    "terms_of_service_url": "https://www.gmicloud.ai/terms-and-conditions",
+    "status_page_url": null,
+    "headquarters": "US",
+    "datacenters": [
+      "US"
+    ]
   },
   {
     "name": "Mistral",
@@ -991,7 +1020,7 @@
   },
   {
     "name": "PrimeIntellect",
-    "slug": "prime-intellect",
+    "slug": "primeintellect",
     "privacy_policy_url": null,
     "terms_of_service_url": null,
     "status_page_url": null,

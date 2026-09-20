@@ -901,6 +901,10 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "qwen3.8-27b",              "gpt-oss-20b",         "laguna-s-2.1",
         "laguna-xs-2.1",            "glm-5-turbo",
         "big-pickle",
+        // the 2026-09-20 free-axis refresh (.plans/1789895398) — new rules land rule-only until the free sweeps fixture them.
+        "north-mini-code",          "ling-3.0-flash-vl",   "dots-3-note-preview",
+        "nex-n2.5-mini",            "nex-n2.5-pro",        "inkling",
+        "inkling-small",            "nemotron-3.5-lightning",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;
