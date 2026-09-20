@@ -1336,12 +1336,14 @@ pub const dev = if (build_options.dev) struct {
     /// A candidate is DONE when the mode's success `meta.updated_at` is present AND ≥ the entry's `started_at` (a never-worked entry has no done candidates);
     /// candidates this daemon session already failed are damped out.
     /// Absent evidence ⇒ every carried criterion says stale.
-    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void), blocked: []const []const u8) !ExpandResult {
+    pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void), skips: ?*const SessionSkips, blocked: []const []const u8) !ExpandResult {
         const platforms: []const []const u8 = if (entry.platform) |p| &.{p} else &platforms_all;
         var host_list: std.ArrayListUnmanaged(Candidate) = .empty;
         var remaining: usize = 0;
         for (platforms) |plat| {
-            const list = try expandForPlatform(io, a, root, free, grids, entry, plat, damped, blocked);
+            // the skips gate the capture universe only — from-identity work never launches a harness binary, so a harness skipped for being uninstalled still declares its identity fixtures.
+            const plat_skips: ?*const SessionSkips = if (std.mem.eql(u8, entry.mode, "from-capture")) skips else null;
+            const list = try expandForPlatform(io, a, root, free, grids, entry, plat, damped, plat_skips, blocked);
             remaining += list.len;
             if (std.mem.eql(u8, plat, host)) {
                 for (list) |c| try host_list.append(a, c);
@@ -1351,7 +1353,7 @@ pub const dev = if (build_options.dev) struct {
         return .{ .host_candidates = try host_list.toOwnedSlice(a), .remaining_anywhere = remaining };
     }
 
-    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, plat: []const u8, damped: ?*const std.StringHashMap(void), blocked: []const []const u8) ![]Candidate {
+    fn expandForPlatform(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, plat: []const u8, damped: ?*const std.StringHashMap(void), skips: ?*const SessionSkips, blocked: []const []const u8) ![]Candidate {
         const folder = modeFolder(entry.mode) orelse return &.{};
         var out: std.ArrayListUnmanaged(Candidate) = .empty;
         var fixtured: std.StringHashMap(void) = .init(a);
@@ -1398,6 +1400,10 @@ pub const dev = if (build_options.dev) struct {
             if (!dimsResolvable(a, parts)) continue;
             // blocklist gate (paid-only) — the invoking user's never-test providers never become candidates in either mode, EXCEPT their free combos: the paid plan expired, the free models stay testable. So the daemon never launches (and `capture` never validates) a paid session on those providers.
             if (providerBlocked(blocked, parts[1]) and !free.has(parts[1], parts[2])) continue;
+            // the session-skip hierarchy (capture mode only — identity work never launches a harness binary, so an uninstalled harness cannot fail it): a skipped harness/provider-under-harness/model-combo is not a candidate this session.
+            if (skips) |sk| {
+                if (sk.skipped(parts[0], parts[1], parts[2])) continue;
+            }
             if (entry.free) |fr| {
                 if (fr != free.has(parts[1], parts[2])) continue;
             }
@@ -2614,6 +2620,89 @@ pub const dev = if (build_options.dev) struct {
     /// `from-identity` worker: resolve the combo via `resolveRecipe` (recipe-mode, no detection, zero tokens, no harness required), assemble the from-identity file (`outputs` = identify + both trailer variants; `meta` = updated_at), and write it whole (atomically).
     /// Declared, not observed.
     /// Failures land in known_but_failed and damp this daemon session; a success clears the combo's known_but_failed entry.
+    /// a from-capture attempt's coarse outcome — the session-skip hierarchy's input (ruling, 2026-09-20):
+    /// a failure we can reasonably expect to persist for the session skips at the coarsest level that covers it, so the daemon never burns a review window per combo of a dead harness.
+    const CaptureOutcome = enum {
+        ok,
+        /// the harness binary is not installed / not runnable (version probe failed) — every combo of the harness is dead this session.
+        harness_unavailable,
+        /// the provider rejected the session under this harness — auth missing/invalid, tokens/credits exhausted (401/402/403, quota, billing) — dead for this harness this session, alive under other harnesses.
+        provider_auth,
+        /// the model rejected the session under this provider+harness — not found, unknown, deprecated — dead for this combo this session.
+        model_unavailable,
+        /// transient or unclassifiable — the per-fixture damping already covers it.
+        other,
+    };
+
+    /// classify a failed capture's output tails (case-insensitive substring probes over the combined stdout+stderr text).
+    /// Pure on purpose — the unit tests pin the patterns; the harness-side strings drift, so the probes stay broad and the classifier never guesses beyond the named classes.
+    pub fn classifyCaptureFailure(text: []const u8) CaptureOutcome {
+        var lower_buf: [512]u8 = undefined;
+        const n = @min(text.len, lower_buf.len);
+        const lower = std.ascii.lowerString(lower_buf[0..n], text[0..n]);
+        const provider_markers = [_][]const u8{
+            "unauthorized",   "forbidden",          "payment required", "invalid api key", "incorrect api key",
+            "api key",        "authentication",     "not authed",       "quota",           "credit",
+            "out of tokens",  "insufficient",       "billing",          "balance",         "401",
+            "402",            "403",
+        };
+        const model_markers = [_][]const u8{
+            "model not found", "no such model", "model_not_found", "unknown model", "invalid model",
+            "does not exist",  "no longer available", "deprecated",
+        };
+        for (model_markers) |marker| {
+            if (std.mem.indexOf(u8, lower, marker) != null) return .model_unavailable;
+        }
+        for (provider_markers) |marker| {
+            if (std.mem.indexOf(u8, lower, marker) != null) return .provider_auth;
+        }
+        return .other;
+    }
+
+    /// the session's skip hierarchy — the daemon-side memory of failures expected to persist for the session:
+    /// a harness skipped because it is not installed covers every combo; a provider skipped for an auth/token failure covers only its combos under that harness; a model skipped for a likewise-persistent failure covers only that provider+harness combo.
+    /// Finer than the blocklist (which is paid-combos-only and permanent), coarser than the per-fixture damping (which stays the fallback for everything unclassifiable) — and it evaporates with the session, so a fix (an install, a top-up, a login) is only a restart away.
+    pub const SessionSkips = struct {
+        harnesses: std.StringHashMap(void),
+        providers: std.StringHashMap(void), // "harness|provider"
+        models: std.StringHashMap(void), // "harness|provider|model"
+
+        pub fn init(a: std.mem.Allocator) SessionSkips {
+            return .{
+                .harnesses = std.StringHashMap(void).init(a),
+                .providers = std.StringHashMap(void).init(a),
+                .models = std.StringHashMap(void).init(a),
+            };
+        }
+
+        pub fn skipHarness(self: *SessionSkips, a: std.mem.Allocator, h: []const u8) !void {
+            try self.harnesses.put(try a.dupe(u8, h), {});
+        }
+
+        pub fn skipProvider(self: *SessionSkips, a: std.mem.Allocator, h: []const u8, p: []const u8) !void {
+            const key = try std.fmt.allocPrint(a, "{s}|{s}", .{ h, p });
+            try self.providers.put(key, {});
+        }
+
+        pub fn skipModel(self: *SessionSkips, a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !void {
+            const key = try std.fmt.allocPrint(a, "{s}|{s}|{s}", .{ h, p, m });
+            try self.models.put(key, {});
+        }
+
+        /// is this combo covered by any skip level? Stack buffers — no allocation on the hot expansion path.
+        fn skipped(self: *const SessionSkips, h: []const u8, p: []const u8, m: []const u8) bool {
+            var hb: [64]u8 = undefined;
+            const hz = std.fmt.bufPrint(&hb, "{s}", .{h}) catch return false;
+            if (self.harnesses.contains(hz)) return true;
+            var pb: [160]u8 = undefined;
+            const pz = std.fmt.bufPrint(&pb, "{s}|{s}", .{ h, p }) catch return false;
+            if (self.providers.contains(pz)) return true;
+            var mb: [224]u8 = undefined;
+            const mz = std.fmt.bufPrint(&mb, "{s}|{s}|{s}", .{ h, p, m }) catch return false;
+            return self.models.contains(mz);
+        }
+    };
+
     fn runOneComboIdentity(a: std.mem.Allocator, io: std.Io, init: std.process.Init, damped: *std.StringHashMap(void), fixture_id: []const u8) !bool {
         const parts = try splitFixtureId(a, fixture_id);
         const h = parts[0];
@@ -2664,7 +2753,7 @@ pub const dev = if (build_options.dev) struct {
     /// Success = child exit 0 AND the post-check passing; failures land in known_but_failed (truncated + redacted) and damp this daemon session — retry via `fixtures queue --refresh`.
     /// A successful capture clears the combo's known_but_failed entry.
     /// Token-consuming — user-confirmed only.
-    fn runOneComboCapture(a: std.mem.Allocator, io: std.Io, init: std.process.Init, damped: *std.StringHashMap(void), fixture_id: []const u8, timeout_seconds: u64) !bool {
+    fn runOneComboCapture(a: std.mem.Allocator, io: std.Io, init: std.process.Init, damped: *std.StringHashMap(void), fixture_id: []const u8, timeout_seconds: u64) !CaptureOutcome {
         const attempt_started = unixNow(io);
         const parts = try splitFixtureId(a, fixture_id);
         const h = parts[0];
@@ -2686,7 +2775,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, fixture_id);
             daemonWriteErr(io, " — backlog unknown_invocations\n");
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         };
         // availability probe via the same source's version_invocation (absent ⇒ the probe fails closed → unavailable).
         const version_invocation: ?[]const []const u8 = blk: {
@@ -2701,7 +2790,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, " — no version_invocation\n");
             try recordKnownButFailed(io, a, fixture_id, "harness unavailable — no version_invocation", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .harness_unavailable;
         };
         if (!launchExitZero(io, a, vl_probe)) {
             daemonWriteErr(io, "daemon: from-capture: harness unavailable for ");
@@ -2709,7 +2798,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "harness unavailable — version probe failed", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .harness_unavailable;
         }
 
         // spawn the invocation verbatim — its argv[0] IS the concrete binary for this platform, so there is no name cycling (a failed spawn is an artifact failure, not a name miss).
@@ -2720,7 +2809,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — malformed prompt_invocation", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         }
         // the worker runs in a fresh, empty OS temp dir as its cwd: the harness's project-local stores (`.crush/`, `.kilo/`, omp's `threads.cwd` rows) isolate per capture and never see the repo, so the agent can't prowl agent-detect's own files or this live session.
         // The temp dir is the fixture's `<project>` (evidence paths rooted there redact to `<project>`, see redactPaths).
@@ -2740,7 +2829,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot build workdir path", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         }
         std.Io.Dir.cwd().createDirPath(io, workdir.?) catch |err| switch (err) {
             error.PathAlreadyExists => {},
@@ -2752,7 +2841,7 @@ pub const dev = if (build_options.dev) struct {
                 daemonWriteErr(io, "\n");
                 try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot create workdir", init.environ_map);
                 damped.put(fixture_id, {}) catch {};
-                return false;
+                return .other;
             },
         };
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
@@ -2767,7 +2856,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot resolve own path", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         }
         defer a.free(launch_prompt.?);
         // the worker's store target: the repo's fixtures dir, absolute (the worker's cwd is the throwaway workdir). Inherited down to the harness shell that runs the capture command.
@@ -2777,7 +2866,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot clone env", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         };
         defer child_env.deinit();
         const repo_dir = std.process.currentPathAlloc(io, a) catch "";
@@ -2816,7 +2905,7 @@ pub const dev = if (build_options.dev) struct {
                 daemonWriteErr(io, "\n");
                 try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot create worker log dir", init.environ_map);
                 damped.put(fixture_id, {}) catch {};
-                return false;
+                return .other;
             },
         };
         const log_file = std.Io.Dir.cwd().createFile(io, worker_log_rel, .{ .read = true, .truncate = true }) catch |err| {
@@ -2825,7 +2914,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — cannot open worker log", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         };
         {
             var lbuf: [160]u8 = undefined;
@@ -2845,7 +2934,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — spawn error", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         };
         // best-effort removal after the wait (every return path below hits this); the OS temp-dir cleanup is the backstop.
         defer std.Io.Dir.cwd().deleteTree(io, workdir.?) catch {};
@@ -2853,11 +2942,11 @@ pub const dev = if (build_options.dev) struct {
         log_file.close(io);
 
         // timeout watchdog — `agent-detect-dev fixtures __timeout <sec> <pid>`.
-        const argv0 = selfPath(io, &self_path_buf) orelse return false;
+        const argv0 = selfPath(io, &self_path_buf) orelse return .other;
         const pid_num: u32 = if (builtin.os.tag == .windows)
-            GetProcessId(child.id orelse return false)
+            GetProcessId(child.id orelse return .other)
         else
-            @intCast(child.id orelse return false);
+            @intCast(child.id orelse return .other);
         const pid_str = try std.fmt.allocPrint(a, "{d}", .{pid_num});
         {
             var wpbuf: [64]u8 = undefined;
@@ -2893,7 +2982,7 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — child wait error", init.environ_map);
             damped.put(fixture_id, {}) catch {};
-            return false;
+            return .other;
         };
         switch (term) {
             .exited => |code| {
@@ -2934,16 +3023,21 @@ pub const dev = if (build_options.dev) struct {
                     }
                     try recordKnownButFailed(io, a, fixture_id, msg.items, init.environ_map);
                     damped.put(fixture_id, {}) catch {};
-                    return false;
+                    // the session-skip hierarchy reads the combined tails (stdout carries the harness's own error text; stderr the worker's)
+                    var combined: std.ArrayList(u8) = .empty;
+                    defer combined.deinit(a);
+                    try combined.appendSlice(a, out_capture.items);
+                    try combined.appendSlice(a, err_tail);
+                    return classifyCaptureFailure(combined.items);
                 }
                 if (!(try postCheckComboFixture(a, io, h, p, m_d, plat, attempt_started))) {
                     // the worker already wrote its file; the combo mismatch is a failure of the queued dims, not the session.
                     try recordKnownButFailed(io, a, fixture_id, "post-check mismatch", init.environ_map);
                     damped.put(fixture_id, {}) catch {};
-                    return false;
+                    return .other;
                 }
                 try clearKnownButFailed(io, a, fixture_id);
-                return true;
+                return .ok;
             },
             else => {
                 daemonWriteErr(io, "daemon: from-capture child terminated abnormally for ");
@@ -2951,7 +3045,7 @@ pub const dev = if (build_options.dev) struct {
                 daemonWriteErr(io, "\n");
                 try recordKnownButFailed(io, a, fixture_id, "capture failed — child terminated abnormally", init.environ_map);
                 damped.put(fixture_id, {}) catch {};
-                return false;
+                return .other;
             },
         }
     }
@@ -2972,7 +3066,7 @@ pub const dev = if (build_options.dev) struct {
     /// the daemon's per-poll pick: refresh the backlog table, then scan the queue-entry array in mode-rank order (from-identity first, then array order), deleting fully-satisfied entries (no remaining candidates anywhere) and malformed entries (logged + dropped — the errors ledger is gone;
     /// `daemon.log` is the dev agent's record), stamp `started_at` on the first entry with remaining host work, re-expand it, and return ONE candidate.
     /// All under one store lock cycle so the refresh + stamp + expansion + save are atomic against other writers.
-    fn daemonPick(io: std.Io, a: std.mem.Allocator, damped: *std.StringHashMap(void), blocked: []const []const u8) !?DaemonPick {
+    fn daemonPick(io: std.Io, a: std.mem.Allocator, damped: *std.StringHashMap(void), skips: *const SessionSkips, blocked: []const []const u8) !?DaemonPick {
         const lock_file = try acquireIndexLock(io);
         defer lock_file.close(io);
         var root = try indexLoad(io, a);
@@ -3004,7 +3098,7 @@ pub const dev = if (build_options.dev) struct {
                     i += 1;
                     continue;
                 }
-                const exp = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped, blocked);
+                const exp = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped, skips, blocked);
                 if (exp.remaining_anywhere == 0) {
                     _ = q.orderedRemove(i);
                     dirty = true;
@@ -3019,7 +3113,7 @@ pub const dev = if (build_options.dev) struct {
                     // first work: stamp started_at (ONCE — re-stamping every poll would defeat the done rule and loop on this entry's first candidate forever), then re-expand with the completion-timestamp done rule live.
                     entry.started_at = unixNow(io);
                     q.items[i] = try queueEntryValue(a, entry);
-                    const exp2 = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped, blocked);
+                    const exp2 = try expandEntry(io, a, &root, &free_grid, &grids, entry, host, damped, skips, blocked);
                     if (exp2.host_candidates.len > 0) {
                         pick = .{ .queue_index = i, .candidate = exp2.host_candidates[0], .entry = entry };
                     }
@@ -3043,6 +3137,7 @@ pub const dev = if (build_options.dev) struct {
     /// from-capture jobs probe availability via the invocation's `version_invocation` then launch the real harness session via its `prompt_invocation` (with a pre-capture review window, token-consuming, user-confirmed only).
     /// A candidate's completion timestamp (the mode's success `meta.updated_at`) ≥ the entry's `started_at` makes it done;
     /// a candidate this daemon session already failed is damped (one attempt per candidate per run) —
+    /// and a failure we can reasonably expect to persist for the session skips at the coarsest level that covers it (ruling, 2026-09-20): an uninstalled harness skips every combo, an auth/token provider failure skips that provider under that harness only, and a likewise-persistent model failure skips that provider+harness combo only (the skips gate the capture universe alone — identity work never launches a harness binary — and they evaporate with the session);
     /// crash-resume derives from the fixture files, so a capture that died with the daemon left no channel write and simply re-runs.
     /// Failures also persist as `known_but_failed` message rows plus `daemon.log` for the dev agent to discern; pops never gate on failure state.
     /// **The daemon never writes fixture files outside pop processing and never inserts queue entries.**
@@ -3104,6 +3199,10 @@ pub const dev = if (build_options.dev) struct {
 
         // session-scoped failure damping — one attempt per candidate per daemon run (in-memory; the fixture files + known_but_failed are the durable memory).
         var damped = std.StringHashMap(void).init(a);
+        // the session-skip hierarchy (ruling, 2026-09-20): a failure we can reasonably expect to persist for the session skips at the coarsest level that covers it —
+        // an uninstalled harness skips every combo; an auth/token provider failure skips that provider under that harness only; a likewise-persistent model failure skips that provider+harness combo only.
+        // It evaporates with the session (an install, a top-up, or a login is one restart away), and it gates the capture universe only — identity work never launches a harness binary.
+        var skips = SessionSkips.init(a);
 
         // the blocklist resolves once per daemon session: the providers the invoking git user must never test paid combos on (index.json `blocklist` keyed by `git config --global github.username`).
         // An unset git identity blocks nothing — and the intro below makes that state loud (⚠), never silent.
@@ -3222,15 +3321,15 @@ pub const dev = if (build_options.dev) struct {
                         daemonWrite(io, "daemon: starting capture for ");
                         daemonWrite(io, job.candidate.fixture_id);
                         daemonWrite(io, "\n");
-                        const ok = runOneComboCapture(a, io, init, &damped, job.candidate.fixture_id, capture_timeout_seconds) catch |err| blk: {
+                        const outcome = runOneComboCapture(a, io, init, &damped, job.candidate.fixture_id, capture_timeout_seconds) catch |err| blk: {
                             daemonWriteErr(io, "daemon: capture worker error: ");
                             daemonWriteErr(io, @errorName(err));
                             daemonWriteErr(io, "\n");
-                            break :blk false;
+                            break :blk CaptureOutcome.other;
                         };
                         phase = .post_review;
                         phase_until = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, review_seconds) * std.time.ns_per_s }, .clock = .boot });
-                        if (ok) {
+                        if (outcome == .ok) {
                             daemonWrite(io, "daemon: captured ");
                             daemonWrite(io, job.candidate.fixture_id);
                             daemonWrite(io, "\n");
@@ -3238,6 +3337,34 @@ pub const dev = if (build_options.dev) struct {
                             daemonWriteErr(io, "daemon: from-capture failed for ");
                             daemonWriteErr(io, job.candidate.fixture_id);
                             daemonWriteErr(io, " — attempt damped this session; see known_but_failed / daemon.log; retry via `fixtures queue --refresh`\n");
+                            // the session-skip hierarchy: a persistent-looking failure skips the coarsest level that covers it, so the session stops burning review windows on combos it cannot land.
+                            switch (outcome) {
+                                .harness_unavailable => {
+                                    skips.skipHarness(a, job.candidate.harness) catch {};
+                                    daemonWriteErr(io, "daemon: harness ");
+                                    daemonWriteErr(io, job.candidate.harness);
+                                    daemonWriteErr(io, " is unavailable (not installed) — skipping its combos for the rest of the session\n");
+                                },
+                                .provider_auth => {
+                                    skips.skipProvider(a, job.candidate.harness, job.candidate.provider) catch {};
+                                    daemonWriteErr(io, "daemon: provider ");
+                                    daemonWriteErr(io, job.candidate.provider);
+                                    daemonWriteErr(io, " under harness ");
+                                    daemonWriteErr(io, job.candidate.harness);
+                                    daemonWriteErr(io, " failed on auth/tokens — skipping that pair for the rest of the session (other harnesses still try it)\n");
+                                },
+                                .model_unavailable => {
+                                    skips.skipModel(a, job.candidate.harness, job.candidate.provider, job.candidate.model) catch {};
+                                    daemonWriteErr(io, "daemon: model ");
+                                    daemonWriteErr(io, job.candidate.model);
+                                    daemonWriteErr(io, " under ");
+                                    daemonWriteErr(io, job.candidate.provider);
+                                    daemonWriteErr(io, "/");
+                                    daemonWriteErr(io, job.candidate.harness);
+                                    daemonWriteErr(io, " is unavailable — skipping that combo for the rest of the session\n");
+                                },
+                                .ok, .other => {},
+                            }
                         }
                         daemonWrite(io, "daemon: capture finished — human review window ");
                         daemonWriteCount(io, review_seconds);
@@ -3258,7 +3385,7 @@ pub const dev = if (build_options.dev) struct {
                         // one candidate per poll (decision #10): the from-capture and empty-queue paths schedule the next poll `poll_seconds` out on EVERY path below; a worked from-identity candidate schedules the near-instant pacing instead — identity work is zero-token and needs no cool-down.
                         next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
                         tick_ns = std.time.ns_per_s;
-                        const pick = daemonPick(io, a, &damped, blocked) catch |err| blk: {
+                        const pick = daemonPick(io, a, &damped, &skips, blocked) catch |err| blk: {
                             daemonWriteErr(io, "daemon: pick error: ");
                             daemonWriteErr(io, @errorName(err));
                             daemonWriteErr(io, "\n");

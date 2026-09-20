@@ -90,7 +90,7 @@ fn emptyStoreRoot(a: std.mem.Allocator) !std.json.Value {
 fn expand(a: std.mem.Allocator, root: *const std.json.Value, entry: QueueEntry, host: []const u8) !dev.ExpandResult {
     var fg = dev.FreeGrid.empty(a);
     var grids = dev.FeasibilityGrids.empty(a);
-    return dev.expandEntry(testing.io, a, root, &fg, &grids, entry, host, null, &.{});
+    return dev.expandEntry(testing.io, a, root, &fg, &grids, entry, host, null, null, &.{});
 }
 
 /// add an invocation-table entry (dev-authored argv).
@@ -424,14 +424,14 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
 
     // two feasible pairs for (kilo, deepseek) on darwin; one is fixtured (and done under this started_at — a no-criteria entry works everything, so the done rule must retire the fixtured one)
     const entry: QueueEntry = .{ .mode = "from-identity", .started_at = 200 };
-    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, entry, "darwin", null, &.{});
+    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, entry, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("kilo-deepseek-deepseekv4flash-darwin", result.host_candidates[0].fixture_id);
     // dims filter applies
-    const filtered = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null, &.{});
+    const filtered = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 0), filtered.host_candidates.len);
     // from-capture never expands the feasible-unfixtured universe — authoring the invocation is what adds a capture candidate
-    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &.{});
+    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 0), cap.host_candidates.len);
 }
 
@@ -449,10 +449,10 @@ test "expandEntry: free axis filters by map-provider-model-freeprovidermodel.csv
     var fg = dev.FreeGrid.empty(aa);
     try fg.put(aa, "openrouter", "nemotron3ultra");
     var grids = dev.FeasibilityGrids.empty(aa);
-    const free_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = true }, "darwin", null, &.{});
+    const free_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = true }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), free_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-nemotron3ultra-darwin", free_result.host_candidates[0].fixture_id);
-    const paid_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = false }, "darwin", null, &.{});
+    const paid_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = false }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), paid_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", paid_result.host_candidates[0].fixture_id);
 }
@@ -472,7 +472,7 @@ test "expandEntry: session damping — failed candidates are excluded" {
 
     var fg = dev.FreeGrid.empty(aa);
     var grids = dev.FeasibilityGrids.empty(aa);
-    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", &damped, &.{});
+    const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", &damped, null, &.{});
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
     try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
 }
@@ -501,12 +501,12 @@ test "expandEntry: blocklisted providers are excluded from both modes — paid c
     try fg.put(aa, "deepseek", "kimik3");
     var grids = dev.FeasibilityGrids.empty(aa);
     // from-capture: the invocation universe minus the blocked provider's paid combos
-    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &blocked);
+    const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, null, &blocked);
     try testing.expectEqual(@as(usize, 2), cap.host_candidates.len);
     try testing.expectEqualStrings("pi-deepseek-kimik3-darwin", cap.host_candidates[0].fixture_id);
     try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", cap.host_candidates[1].fixture_id);
     // from-identity: the fixtured universe minus the blocked provider's paid combos
-    const ident = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", null, &blocked);
+    const ident = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", null, null, &blocked);
     try testing.expectEqual(@as(usize, 2), ident.host_candidates.len);
     try testing.expectEqualStrings("pi-deepseek-kimik3-darwin", ident.host_candidates[0].fixture_id);
     try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", ident.host_candidates[1].fixture_id);
@@ -537,6 +537,86 @@ test "blocklistProvidersFor: resolves the user's providers; unknown user → emp
     try testing.expectEqual(@as(usize, 0), other.len);
     const anon = try dev.blocklistProvidersFor(aa, &root, "");
     try testing.expectEqual(@as(usize, 0), anon.len);
+}
+
+test "classifyCaptureFailure: the session-skip classes from failure text" {
+    // provider auth/tokens — persistent for the session under that harness
+    try testing.expect(dev.classifyCaptureFailure("API error: 401 Unauthorized") == .provider_auth);
+    try testing.expect(dev.classifyCaptureFailure("402 Payment Required — add credits") == .provider_auth);
+    try testing.expect(dev.classifyCaptureFailure("403 Forbidden") == .provider_auth);
+    try testing.expect(dev.classifyCaptureFailure("invalid api key provided") == .provider_auth);
+    try testing.expect(dev.classifyCaptureFailure("You are out of tokens this month") == .provider_auth);
+    try testing.expect(dev.classifyCaptureFailure("quota exceeded for this account") == .provider_auth);
+    try testing.expect(dev.classifyCaptureFailure("insufficient credits") == .provider_auth);
+    try testing.expect(dev.classifyCaptureFailure("INVALID API KEY") == .provider_auth); // case-insensitive probes
+    // model-level persistence — the combo is dead even though the account is fine
+    try testing.expect(dev.classifyCaptureFailure("Error: model not found: foo-latest") == .model_unavailable);
+    try testing.expect(dev.classifyCaptureFailure("no such model in the catalog") == .model_unavailable);
+    try testing.expect(dev.classifyCaptureFailure("this model has been deprecated") == .model_unavailable);
+    try testing.expect(dev.classifyCaptureFailure("The model `foo` does not exist") == .model_unavailable);
+    // model wins when both classes match (a 403 naming a missing model is a dead model, not a dead account)
+    try testing.expect(dev.classifyCaptureFailure("403: model not found") == .model_unavailable);
+    // everything else stays per-fixture damped
+    try testing.expect(dev.classifyCaptureFailure("worker timed out") == .other);
+    try testing.expect(dev.classifyCaptureFailure("connection reset by peer") == .other);
+    try testing.expect(dev.classifyCaptureFailure("") == .other);
+}
+
+test "expandEntry: the session-skip hierarchy — harness covers all, provider per-harness, model per-combo, identity ignores skips" {
+    try Universe.setup();
+    defer Universe.teardown() catch {};
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    try Universe.writeIdentity("pi-deepseek-kimik3-darwin", 100);
+    try Universe.writeIdentity("cline-deepseek-kimik3-darwin", 100);
+    try Universe.writeIdentity("cline-deepseek-deepseekv4flash-darwin", 100);
+    var root = try emptyStoreRoot(aa);
+    try putInvocation(aa, &root, "pi-deepseek-kimik3-darwin");
+    try putInvocation(aa, &root, "cline-deepseek-kimik3-darwin");
+    try putInvocation(aa, &root, "cline-deepseek-deepseekv4flash-darwin");
+    try Universe.writeCapture("pi-deepseek-kimik3-darwin", 100, true);
+    try Universe.writeCapture("cline-deepseek-kimik3-darwin", 100, true);
+    try Universe.writeCapture("cline-deepseek-deepseekv4flash-darwin", 100, true);
+    var fg = dev.FreeGrid.empty(aa);
+    var grids = dev.FeasibilityGrids.empty(aa);
+
+    // a skipped harness (not installed) covers every combo — only the other harness's candidates remain
+    {
+        var skips = dev.SessionSkips.init(aa);
+        try skips.skipHarness(aa, "pi");
+        const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &skips, &.{});
+        try testing.expectEqual(@as(usize, 2), cap.host_candidates.len);
+        try testing.expectEqualStrings("cline-deepseek-deepseekv4flash-darwin", cap.host_candidates[0].fixture_id);
+        try testing.expectEqualStrings("cline-deepseek-kimik3-darwin", cap.host_candidates[1].fixture_id);
+    }
+    // a skipped provider covers only its combos under that harness — the same provider under another harness stays, and sibling providers under the skipped harness stay
+    {
+        var skips = dev.SessionSkips.init(aa);
+        try skips.skipProvider(aa, "cline", "deepseek");
+        const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &skips, &.{});
+        try testing.expectEqual(@as(usize, 1), cap.host_candidates.len);
+        try testing.expectEqualStrings("pi-deepseek-kimik3-darwin", cap.host_candidates[0].fixture_id);
+    }
+    // a skipped model covers only that provider+harness combo
+    {
+        var skips = dev.SessionSkips.init(aa);
+        try skips.skipModel(aa, "cline", "deepseek", "kimik3");
+        const cap = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture" }, "darwin", null, &skips, &.{});
+        try testing.expectEqual(@as(usize, 2), cap.host_candidates.len);
+        try testing.expectEqualStrings("cline-deepseek-deepseekv4flash-darwin", cap.host_candidates[0].fixture_id);
+        try testing.expectEqualStrings("pi-deepseek-kimik3-darwin", cap.host_candidates[1].fixture_id);
+    }
+    // identity work ignores the skips — an uninstalled harness still declares its identity fixtures
+    {
+        var skips = dev.SessionSkips.init(aa);
+        try skips.skipHarness(aa, "pi");
+        try skips.skipProvider(aa, "cline", "deepseek");
+        try skips.skipModel(aa, "cline", "deepseek", "kimik3");
+        const ident = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", null, &skips, &.{});
+        try testing.expectEqual(@as(usize, 3), ident.host_candidates.len);
+    }
 }
 
 test "expandEntry: stale_by_harness_version reads the capture meta + probe" {

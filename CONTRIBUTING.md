@@ -25,6 +25,8 @@ The refresh flow uses three binaries/actions with strict role separation:
   It never writes fixture files outside pop processing and never inserts queue entries.
   Crash-resume derives from the fixture files — a capture that died with the daemon simply re-runs.
   Failed candidates damp for the daemon run (one attempt per candidate per run) and persist their redacted message in `known_but_failed` + `daemon.log`; pops never gate on failure.
+  A failure we can reasonably expect to persist for the session skips at the coarsest level that covers it: an uninstalled harness (version probe failed) skips every combo; a provider that fails on auth/tokens (401/402/403, quota, credits) skips only its combos under that harness; a model with a likewise-persistent failure (not found, deprecated) skips only that provider+harness combo.
+  The skips gate the capture universe alone — from-identity work never launches a harness binary — and they evaporate with the session (an install, a top-up, or a login is one daemon restart away).
 - **`agent-detect-dev fixtures capture`** — runs *inside an agent* session;
   captures the current session into `fixtures/from-capture/<id>.json` (whole-file atomic write, written only on success; the invocation of record persists, the ledger stamps fresh) and clears the combo's `backlog.known_but_failed` entry.
   **Fixtures only** — a partial detection exits 8 with no file written (never writes `queue`).
