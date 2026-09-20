@@ -4,8 +4,7 @@
     {
       "harness": "zcode",
       "mode": "from-identity",
-      "started_at": 1788456702,
-      "runner": 21344
+      "runner": 592638
     },
     {
       "provider": "cloudflareworkersai",
@@ -56,6 +55,83 @@
       "mode": "from-identity",
       "stale": true,
       "runner": 49514
+    },
+    {
+      "provider": "ollamacloud",
+      "mode": "from-identity",
+      "runner": 592638
+    },
+    {
+      "provider": "clinepass",
+      "mode": "from-identity",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "clinepass",
+      "mode": "from-capture",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "opencode",
+      "mode": "from-identity",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "opencode",
+      "mode": "from-capture",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "openrouter",
+      "mode": "from-identity",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "openrouter",
+      "mode": "from-capture",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "nvidia",
+      "mode": "from-identity",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "nvidia",
+      "mode": "from-capture",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "vercel",
+      "mode": "from-identity",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "vercel",
+      "mode": "from-capture",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "zenmux",
+      "mode": "from-identity",
+      "free": true,
+      "runner": 598648
+    },
+    {
+      "provider": "zenmux",
+      "mode": "from-capture",
+      "free": true,
+      "runner": 598648
     }
   ],
   "backlog": {
