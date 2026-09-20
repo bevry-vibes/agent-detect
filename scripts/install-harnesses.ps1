@@ -73,10 +73,22 @@ $NpmCommand = if (Get-Command npm -ErrorAction Ignore) {
 	$null
 }
 
-# Installers may place binaries in XDG_BIN_HOME (default ~/.local/bin), which is
-# fine — but that directory is not always on PATH in the current session, so the
-# probe treats a binary there as installed and says where it is.
+# Installers may place binaries in XDG_BIN_HOME (default ~/.local/bin) or the
+# npm global prefix bin (behind node-env when plain npm is off PATH), which is
+# fine — but those directories are not always on PATH in the current session, so
+# the probe resolves all three and reports where the binary is.
 $XdgBinHome = if ($env:XDG_BIN_HOME) { $env:XDG_BIN_HOME } else { Join-Path $HOME '.local/bin' }
+$NpmGlobalBin = $null
+if ($NpmCommand) {
+	try {
+		# the prefix query runs through the same routing as installs (node-env -- npm ...)
+		$npmPrefix = [string](& $NpmCommand prefix -g | Select-Object -First 1)
+		if ($npmPrefix) {
+			$npmPrefix = $npmPrefix.Trim()
+			$NpmGlobalBin = $IsWindows ? $npmPrefix : (Join-Path $npmPrefix 'bin')
+		}
+	} catch { $NpmGlobalBin = $null }
+}
 
 # --- registry ----------------------------------------------------------------
 # Probe: the binary agent-detect's invocations table probes with --version.
@@ -147,15 +159,33 @@ $FlatpakPackage = @{}
 function Write-Info { param([string]$Message) Write-Host "$($PSStyle.Foreground.BrightBlue)info $Message$($PSStyle.Reset)" }
 function Write-Fail { param([string]$Message) Write-Host "$($PSStyle.Foreground.Red)fail $Message$($PSStyle.Reset)" }
 
+function Resolve-HarnessBinary {
+	# PATH first, then XDG_BIN_HOME, then the npm global prefix bin.
+	# Returns the binary's path (the command name when on PATH), or $null.
+	param([Parameter(Mandatory)] [string]$Probe)
+	$onPath = Get-Command $Probe -ErrorAction Ignore
+	if ($onPath) { return $onPath.Source }
+	$names = if ($IsWindows) { @($Probe, "$Probe.exe", "$Probe.cmd") } else { @($Probe) }
+	foreach ($dir in @($XdgBinHome, $NpmGlobalBin)) {
+		if (-not $dir) { continue }
+		foreach ($name in $names) {
+			$candidate = Join-Path $dir $name
+			if (Test-Path $candidate) { return $candidate }
+		}
+	}
+	return $null
+}
+
 function Test-HarnessInstalled {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
-	if (Get-Command $Entry.Probe -ErrorAction Ignore) { return $true }
-	return (Test-Path (Join-Path $XdgBinHome $Entry.Probe))
+	return ($null -ne (Resolve-HarnessBinary $Entry.Probe))
 }
 
 function Get-HarnessVersion {
 	param([Parameter(Mandatory)] [string]$Probe)
-	try { return (@(& $Probe --version 2>&1) | Select-Object -First 1) } catch { return 'unknown' }
+	$bin = Resolve-HarnessBinary $Probe
+	if (-not $bin) { return 'unknown' }
+	try { return (@(& $bin --version 2>&1) | Select-Object -First 1) } catch { return 'unknown' }
 }
 
 function Test-MethodAvailable {
@@ -255,7 +285,8 @@ function Install-Entry {
 	} elseif (Get-Command $Entry.Probe -ErrorAction Ignore) {
 		Write-Info "[ok]        $($Entry.Id) — $(Get-HarnessVersion $Entry.Probe)"
 	} else {
-		Write-Info "[ok]        $($Entry.Id) — installed, but the probe is not on PATH yet; check $XdgBinHome and the npm prefix bin (add it to PATH or restart the shell)"
+		$resolved = Resolve-HarnessBinary $Entry.Probe
+		Write-Info "[ok]        $($Entry.Id) — installed at $resolved, which is not on PATH yet (add it to PATH, or run it through node-env)"
 	}
 }
 
@@ -296,7 +327,8 @@ if ($Check) {
 			if (Get-Command $entry.Probe -ErrorAction Ignore) {
 				Write-Host ('[ok]       {0,-10} {1} ({2})' -f $entry.Id, $entry.Label, (Get-HarnessVersion $entry.Probe))
 			} else {
-				Write-Host ('[ok]       {0,-10} {1} (in {2} — add it to PATH or restart the shell)' -f $entry.Id, $entry.Label, $XdgBinHome)
+				$resolved = Resolve-HarnessBinary $entry.Probe
+				Write-Host ('[ok]       {0,-10} {1} (at {2} — add it to PATH, or run it through node-env)' -f $entry.Id, $entry.Label, $resolved)
 			}
 		} else {
 			$missing++

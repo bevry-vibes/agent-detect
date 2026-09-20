@@ -146,7 +146,7 @@ The method order is policy:
 - macOS: homebrew before npm for the harnesses with a native tap; custom installers last.
 - Linux: npm before anything; soar appimages before flatpak (both wait for verified package ids in the registry); custom installers last.
 - npm itself may sit behind the maintainer's `node-env` wrapper (a dorothy command exposing a node.js environment): when plain `npm` is not on `PATH`, the script routes every npm invocation through `node-env -- npm ...`.
-- Installers may place binaries in `XDG_BIN_HOME` (default `~/.local/bin`): the probe counts a binary there as installed and reports it, even when the directory is not on the current session's `PATH`.
+- Installers may place binaries in `XDG_BIN_HOME` (default `~/.local/bin`) or the npm global prefix bin (behind `node-env` when plain npm is off `PATH`): the probe resolves `PATH`, then both directories, and reports where an off-`PATH` binary lives.
 
 `-Check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
 The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands.
