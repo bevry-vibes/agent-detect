@@ -113,7 +113,7 @@ Only the matching platform's daemon expands a candidate (`platform = the entry's
 2. On host B (e.g. Windows): `git pull`, `zig build dev`, run the daemon — it works only the host-platform candidates that remain.
 3. Failed candidates retry on the host that can reach the harness (re-assert the entry or use `--repair`).
 
-Bring a new host's harnesses up once before its first daemon run: `pwsh scripts/install-harnesses.ps1 -Check` shows what is missing, the same script installs it, and `scripts/sync-harness-configs.ps1` (run from macOS) ships the config/auth state across — see "per-harness install" and "per-harness config locations" above.
+Bring a new host's harnesses up once before its first daemon run: `pwsh scripts/install-harnesses.ps1 -Check` shows what is missing, the same script installs it, and `scripts/sync-harness-configs.ps1` (run from any host; it prompts for the target) ships the config/auth state across — see "per-harness install" and "per-harness config locations" above.
 
 ### committed-store hygiene
 
@@ -177,7 +177,7 @@ Paths are `$HOME`-relative; the Windows variants follow each harness's own platf
 | zcode      | `~/.zcode/v2/config.json` (custom providers), `~/.zcode/v2/setting.json` (family + the training toggle) | rollouts under `~/.zcode/`                                              |
 
 `cursor` keeps no model config on disk (`~/.cursor/cli-config.json` carries only an unwired privacy candidate signal; the model arrives via `CURSOR_MODEL`), and `autoclaw` reads env/state only.
-`scripts/sync-harness-configs.ps1` runs on the macOS host and rsyncs the table's directories to a Linux host: dry-run by default, `-Apply` to transfer, never deletes on the destination — the config/auth setup for a new daemon host short of the keychain-held logins (those need a one-time re-login per harness).
+`scripts/sync-harness-configs.ps1` ships the table's directories to another host over ssh from any pwsh host (macOS, Linux, Windows): run it without arguments and it prompts for the target hostname, the username there, and the target platform — linux / macos take the same HOME-relative paths, windows follows the harnesses' own split (crush to `LOCALAPPDATA`, goose to `APPDATA`, both probed over ssh; a windows target needs an ssh server and rsync on `PATH`). Dry-run by default, `-Apply` to transfer, never deletes on the destination — the config/auth setup for a new daemon host short of the keychain/credential-manager logins (those need a one-time re-login per harness).
 
 ### provider model discovery (three sources)
 
