@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Hugging Face",
+      "provider_name": "huggingface",
+      "provider_id": "huggingface",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Cogito 2.1",
+      "model_short_title": null,
+      "model_name": "cogito-2.1",
+      "model_id": "cogito21",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "hermes-huggingface-cogito21",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Cogito 2.1 <hermes-huggingface-cogito21@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Cogito 2.1 <hermes-huggingface-cogito21@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://huggingface.co/docs/inference-providers/en/security",
+        "https://huggingface.co/privacy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepcogito/cogito-2.1-671b",
+        "https://huggingface.co/deepcogito/cogito-2.1-671b/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789957569
+  }
+}

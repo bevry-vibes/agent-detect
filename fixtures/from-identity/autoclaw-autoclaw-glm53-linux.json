@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "AutoClaw",
+      "harness_short_title": null,
+      "harness_name": "autoclaw",
+      "harness_id": "autoclaw",
+      "harness_license": "NONE",
+      "harness_open_training": "opt-out",
+      "harness_closed_training": "opt-out",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": false,
+      "provider_label": "AutoClaw",
+      "provider_name": "autoclaw",
+      "provider_id": "autoclaw",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "GLM 5.3",
+      "model_short_title": null,
+      "model_name": "glm-5.3",
+      "model_id": "glm53",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
+      "agent_id": "autoclaw-autoclaw-glm53",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: AutoClaw · GLM 5.3 <autoclaw-autoclaw-glm53@local>",
+    "trailer assisted-by": "Assisted-by: AutoClaw · GLM 5.3 <autoclaw-autoclaw-glm53@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://autoclaw.z.ai/",
+        "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_agreement&favicon=autoglm"
+      ],
+      "provider-urls": [
+        "https://docs.z.ai/legal-agreement/terms-of-use",
+        "https://docs.z.ai/legal-agreement/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/zai-org/GLM-5.3",
+        "https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789957439
+  }
+}

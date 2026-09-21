@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Hugging Face",
+      "provider_name": "huggingface",
+      "provider_id": "huggingface",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Command A",
+      "model_short_title": null,
+      "model_name": "command-a",
+      "model_id": "commanda",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "hermes-huggingface-commanda",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Command A <hermes-huggingface-commanda@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Command A <hermes-huggingface-commanda@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://huggingface.co/docs/inference-providers/en/security",
+        "https://huggingface.co/privacy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025",
+        "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789957570
+  }
+}

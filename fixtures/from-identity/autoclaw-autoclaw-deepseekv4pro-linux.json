@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "AutoClaw",
+      "harness_short_title": null,
+      "harness_name": "autoclaw",
+      "harness_id": "autoclaw",
+      "harness_license": "NONE",
+      "harness_open_training": "opt-out",
+      "harness_closed_training": "opt-out",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": false,
+      "provider_label": "AutoClaw",
+      "provider_name": "autoclaw",
+      "provider_id": "autoclaw",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "DeepSeek V4 Pro",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-pro",
+      "model_id": "deepseekv4pro",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "autoclaw-autoclaw-deepseekv4pro",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: AutoClaw · DeepSeek V4 Pro <autoclaw-autoclaw-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: AutoClaw · DeepSeek V4 Pro <autoclaw-autoclaw-deepseekv4pro@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://autoclaw.z.ai/",
+        "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_agreement&favicon=autoglm"
+      ],
+      "provider-urls": [
+        "https://docs.z.ai/legal-agreement/terms-of-use",
+        "https://docs.z.ai/legal-agreement/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789957439
+  }
+}

@@ -8,12 +8,14 @@
       "harness_license": "Apache-2.0",
       "harness_open_training": "never",
       "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
       "provider_label": "OpenRouter",
       "provider_name": "openrouter",
       "provider_id": "openrouter",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "Nemotron 3 Super",
       "model_short_title": null,
@@ -27,10 +29,35 @@
       "agent_id": "cline-openrouter-nemotron3super",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null
+    "trailer co-author": "Co-authored-by: Cline · Nemotron 3 Super <cline-openrouter-nemotron3super@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Nemotron 3 Super <cline-openrouter-nemotron3super@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B",
+        "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789898992
+    "updated_at": 1789957471
   }
 }

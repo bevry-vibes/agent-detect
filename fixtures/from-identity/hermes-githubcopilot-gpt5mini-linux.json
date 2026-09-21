@@ -1,0 +1,66 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "GitHub Copilot",
+      "provider_name": "github-copilot",
+      "provider_id": "githubcopilot",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": true,
+      "provider_reciprocity": false,
+      "model_label": "GPT-5 mini",
+      "model_short_title": null,
+      "model_name": "gpt-5-mini",
+      "model_id": "gpt5mini",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "hermes-githubcopilot-gpt5mini",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · GPT-5 mini <hermes-githubcopilot-gpt5mini@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · GPT-5 mini <hermes-githubcopilot-gpt5mini@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://copilot.github.trust.page/faq",
+        "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+      ],
+      "model-urls": [
+        "https://openai.com/index/gpt-5/",
+        "https://platform.openai.com/docs/models"
+      ],
+      "scandal-urls": [
+        "https://news.ycombinator.com/item?id=33468849",
+        "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1789957555
+  }
+}

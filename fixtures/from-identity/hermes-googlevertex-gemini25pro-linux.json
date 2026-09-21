@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Google Vertex",
+      "provider_name": "google-vertex",
+      "provider_id": "googlevertex",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Gemini 2.5 Pro",
+      "model_short_title": null,
+      "model_name": "gemini-2.5-pro",
+      "model_id": "gemini25pro",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "hermes-googlevertex-gemini25pro",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Gemini 2.5 Pro <hermes-googlevertex-gemini25pro@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Gemini 2.5 Pro <hermes-googlevertex-gemini25pro@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cloud.google.com/terms/service-terms",
+        "https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance"
+      ],
+      "model-urls": [
+        "https://deepmind.google/models/",
+        "https://ai.google.dev/gemini-api/docs/models"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789957567
+  }
+}

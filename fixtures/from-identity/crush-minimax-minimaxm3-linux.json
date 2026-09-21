@@ -1,0 +1,64 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Crush",
+      "harness_short_title": null,
+      "harness_name": "crush",
+      "harness_id": "crush",
+      "harness_license": "FSL-1.1-MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "MiniMax M3",
+      "model_short_title": "M3",
+      "model_name": "minimax-m3",
+      "model_id": "minimaxm3",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "crush-minimax-minimaxm3",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Crush · MiniMax M3 <crush-minimax-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Crush · MiniMax M3 <crush-minimax-minimaxm3@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/charmbracelet/crush",
+        "https://github.com/charmbracelet/crush/blob/main/LICENSE.md"
+      ],
+      "provider-urls": [
+        "https://platform.minimax.io/docs/guides/terms-of-service",
+        "https://platform.minimax.io/docs/guides/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE",
+        "https://www.minimax.io/blog/minimax-m3"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789957485
+  }
+}

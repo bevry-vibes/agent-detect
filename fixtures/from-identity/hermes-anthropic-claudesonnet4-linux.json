@@ -1,0 +1,67 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Anthropic",
+      "provider_name": "anthropic",
+      "provider_id": "anthropic",
+      "provider_closed_training": "never",
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": true,
+      "provider_reciprocity": false,
+      "model_label": "Claude Sonnet 4",
+      "model_short_title": null,
+      "model_name": "claude-sonnet-4",
+      "model_id": "claudesonnet4",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "hermes-anthropic-claudesonnet4",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Claude Sonnet 4 <hermes-anthropic-claudesonnet4@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Claude Sonnet 4 <hermes-anthropic-claudesonnet4@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://www.anthropic.com/legal/commercial-terms",
+        "https://trust.anthropic.com/"
+      ],
+      "model-urls": [
+        "https://www.anthropic.com/claude/sonnet",
+        "https://docs.anthropic.com/en/docs/about-claude/models"
+      ],
+      "scandal-urls": [
+        "https://authorsguild.org/advocacy/artificial-intelligence/what-authors-need-to-know-about-the-anthropic-settlement/",
+        "https://www.reuters.com/world/us/judge-approves-anthropics-15-billion-settlement-copyright-lawsuit-2026-07-20/",
+        "https://www.cnbc.com/2026/09/01/anthropic-data-retention.html"
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1789957504
+  }
+}
