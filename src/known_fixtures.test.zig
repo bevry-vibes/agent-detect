@@ -71,7 +71,7 @@ fn readIndexParsed(a: std.mem.Allocator) !std.json.Value {
     return parsed.value;
 }
 
-/// The 20 canonical `identify` fields, in emission order. No `trailer` key (the root trailer and the cooked trailer are gone).
+/// The 29 canonical `identify` fields, in emission order. No `trailer` key (the root trailer and the cooked trailer are gone).
 const identify_keys = [_][]const u8{
     "harness_label", // harness group
     "harness_short_title",
@@ -82,12 +82,14 @@ const identify_keys = [_][]const u8{
     "harness_closed_training",
     "harness_open_setting",
     "harness_closed_setting",
+    "harness_reciprocity_scandal", // explicit boolean (ruling, 2026-09-21) — the false state is visible, not inferred from absence
     "harness_reciprocity",
     "provider_label", // provider group
     "provider_name",
     "provider_id",
     "provider_closed_training",
     "provider_open_training",
+    "provider_reciprocity_scandal",
     "provider_reciprocity",
     "model_label", // model group
     "model_short_title",
@@ -101,9 +103,9 @@ const identify_keys = [_][]const u8{
     "agent_id", // composed from harness+provider+model
     "reciprocal", // policy / output
 };
-/// the keyset-growth transition keys: pre-growth files may lack them (null-as-absent / pre-rename), and the queued regen sweeps bring older files up to the full set.
+/// the keyset-growth transition keys: pre-growth files may lack them (null-as-absent / pre-rename / pre-explicit-boolean), and the queued regen sweeps bring older files up to the full set.
 /// A missing key below is exempt (skipped), not a failure. Once the sweeps complete, drop the entries from this list.
-/// (The scandal flags `*_reciprocity_scandal` never join `identify_keys` — they are null-as-absent, so absence IS the false value.)
+/// (The setting fields stay null-as-absent by design — only their growth transition rides here.)
 const growth_exempt_keys = [_][]const u8{
     "harness_open_training",
     "harness_closed_training",
@@ -115,6 +117,8 @@ const growth_exempt_keys = [_][]const u8{
     "model_open_training",
     "model_closed_training",
     "model_reciprocity",
+    "harness_reciprocity_scandal",
+    "provider_reciprocity_scandal",
 };
 
 fn isGrowthExemptKey(key: []const u8) bool {
@@ -198,8 +202,15 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
             try testing.expect(oo.get("trailer co-author") != null);
             try testing.expect(oo.get("trailer assisted-by") != null);
             if (std.mem.eql(u8, folder, identity_dir)) {
-                // from-identity outputs are exactly identify + trailers
-                try testing.expectEqual(@as(usize, 3), oo.count());
+                // from-identity outputs: identify + trailers + the declared raw (the rule-derived evidence; pre-declared-raw files predate the key — their next sweep adds it, decision #16)
+                for (oo.keys()) |k| {
+                    if (std.mem.eql(u8, k, "identify") or
+                        std.mem.eql(u8, k, "trailer co-author") or
+                        std.mem.eql(u8, k, "trailer assisted-by") or
+                        std.mem.eql(u8, k, "raw")) continue;
+                    std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
+                    return error.UnexpectedOutputKey;
+                }
                 // meta is exactly updated_at
                 try testing.expectEqual(@as(usize, 1), mo.count());
                 try testing.expect(mo.get("updated_at") != null);
@@ -412,6 +423,53 @@ test "fixtures: outputs.raw carries detectable + detected, process_lineage, and 
                 for (arr.array.items) |item| {
                     try testing.expect(item == .string);
                     try testing.expect(std.mem.startsWith(u8, item.string, "https://"));
+                }
+            }
+        }
+    }
+}
+
+test "fixtures: from-identity outputs.raw is the declared-raw schema — exactly the six rule-derived keys" {
+    // The declared raw (ruling, 2026-09-21): a declared fixture ships what the rules assert and nothing else — detectable/detected plus the four source arrays.
+    // The instance-only fields (platform_id, harness_version, process_lineage, evidence) must NOT appear: nothing was observed, and the worker's own lineage would be fiction.
+    // Pre-declared-raw files lack the key entirely — tolerated (decision #16); the queued regen sweeps add it.
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    const stems = try discoverFolderStems(aa, identity_dir);
+    for (stems) |stem| {
+        const root = (try readChannelParsed(aa, identity_dir, stem)) orelse continue;
+        const outputs = root.object.get("outputs") orelse continue;
+        if (outputs != .object) continue;
+        const raw = outputs.object.get("raw") orelse continue; // pre-growth: absent until its next sweep
+        if (raw != .object) return error.InvalidDeclaredRaw;
+        const ro = raw.object;
+        const fixed_keys = [_][]const u8{ "detectable", "detected", "harness-urls", "provider-urls", "model-urls", "scandal-urls" };
+        if (ro.count() != fixed_keys.len) {
+            std.debug.print("declared raw of {s}.json carries {d} keys, expected exactly {d}\n", .{ stem, ro.count(), fixed_keys.len });
+            return error.InvalidDeclaredRaw;
+        }
+        for (fixed_keys) |k| {
+            if (ro.get(k) == null) {
+                std.debug.print("declared raw of {s}.json is missing {s}\n", .{ stem, k });
+                return error.InvalidDeclaredRaw;
+            }
+        }
+        for ([_][]const u8{ "detectable", "detected" }) |k| {
+            const arr = ro.get(k).?;
+            if (arr != .array or arr.array.items.len != 3) {
+                std.debug.print("declared raw of {s}.json: {s} must list all three dims (a resolved recipe implies them)\n", .{ stem, k });
+                return error.InvalidDeclaredRaw;
+            }
+        }
+        for ([_][]const u8{ "harness-urls", "provider-urls", "model-urls", "scandal-urls" }) |k| {
+            const arr = ro.get(k).?;
+            if (arr != .array) return error.InvalidDeclaredRaw;
+            for (arr.array.items) |item| {
+                if (item != .string or !std.mem.startsWith(u8, item.string, "https://")) {
+                    std.debug.print("declared raw of {s}.json: {s} carries a non-https entry\n", .{ stem, k });
+                    return error.InvalidDeclaredRaw;
                 }
             }
         }

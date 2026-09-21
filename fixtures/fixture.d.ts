@@ -25,7 +25,7 @@ export type FixtureId = string;
  * The 29-field identify contract (`buildCooked` output, frozen by DESIGN.md #9).
  * Grouped by entity: harness, provider, model, then the composed agent fields.
  * The licence fields (`harness_license`, `model_license`) are INFORMATION ONLY — the licence does not gate the determination.
- * The setting fields and the scandal flags are instance/rule state with null-as-absent semantics: absent means unset/false.
+ * The setting fields are instance state with null-as-absent semantics: absent means unset. The scandal flags are explicit booleans (ruling, 2026-09-21): false is visible, not inferred from absence — pre-growth fixtures may lack the keys until their next regeneration.
  * The `*_reciprocity` fields at the entity level are the computed per-entity deductions: true (passes), false (fails), null (undeterminable).
  */
 export interface Identify {
@@ -39,8 +39,8 @@ export interface Identify {
   /** the harness setting (instance state, read from a local artifact — harness only; no readable provider setting exists). */
   harness_open_setting?: "enabled" | "disabled" | "NOASSERTION" | null;
   harness_closed_setting?: "enabled" | "disabled" | "NOASSERTION" | null;
-  /** true only when the rule flags a reciprocity scandal; absent = false. */
-  harness_reciprocity_scandal?: true;
+  /** true when the rule flags a reciprocity scandal; explicit false otherwise. */
+  harness_reciprocity_scandal?: boolean;
   /** the computed per-entity deduction. */
   harness_reciprocity?: boolean | null;
   provider_label: string;
@@ -48,7 +48,7 @@ export interface Identify {
   provider_id: string;
   provider_closed_training: string | null;
   provider_open_training: string | null;
-  provider_reciprocity_scandal?: true;
+  provider_reciprocity_scandal?: boolean;
   provider_reciprocity?: boolean | null;
   model_label: string;
   model_short_title: string | null;
@@ -90,13 +90,27 @@ export interface Raw {
   }[];
 }
 
+/** The DECLARED raw block — the from-identity channel's `outputs.raw` (ruling, 2026-09-21).
+ *  A declared fixture observed nothing, so the instance-only fields (platform_id, harness_version, process_lineage, evidence) are absent;
+ *  what ships is exactly what the rules assert: the dimension arrays and the four source arrays backing every rule-derived identify field. */
+export interface DeclaredRaw {
+  detectable: string[];
+  detected: string[];
+  "harness-urls": string[];
+  "provider-urls": string[];
+  "model-urls": string[];
+  "scandal-urls": string[];
+}
+
 /** Declared-identification file (from-identity worker; zero tokens).
- *  Always carries `outputs` — there is no meta-only identity stub. */
+ *  Always carries `outputs` — there is no meta-only identity stub.
+ *  Pre-declared-raw files lack `outputs.raw` until their next regeneration (decision #16). */
 export interface IdentityFile {
   outputs: {
     identify: Identify;
     "trailer co-author": string;
     "trailer assisted-by": string;
+    raw?: DeclaredRaw;
   };
   meta: {
     /** was identity.declared_at — the channel WAS the declaration. */

@@ -42,7 +42,7 @@ Harness config locations differ per platform (macOS uses `~/Library/Application 
 The fixture filename includes the `platform_id` so a CI run on one platform never invalidates another platform's committed files.
 Each platform's fixture id (`<harness>-<provider>-<model>-<platform>`) names two per-channel files, each a whole self-contained `{ outputs, meta }` envelope (normative schema: `fixtures/fixture.d.ts`):
 
-- `fixtures/from-identity/<id>.json` — the declared identification channel, written by the from-identity worker (zero tokens): `outputs` = `identify` (the 20-field canonical object: `harness_id`, `provider_id`, `model_id`, `agent_id`, policy fields) plus `"trailer co-author"` and `"trailer assisted-by"`;
+- `fixtures/from-identity/<id>.json` — the declared identification channel, written by the from-identity worker (zero tokens): `outputs` = `identify` (the 29-field canonical object: `harness_id`, `provider_id`, `model_id`, `agent_id`, the training/setting/scandal fields, the computed reciprocities) plus `"trailer co-author"` and `"trailer assisted-by"`, plus `raw` — the **declared raw** (2026-09-21): `detectable`/`detected` and the four rule-derived source arrays (`harness-urls`, `provider-urls`, `model-urls`, `scandal-urls`), so a declaration is self-verifying without an instance; the instance-only fields (`platform_id`, `harness_version`, `process_lineage`, `evidence`) stay absent — nothing was observed;
   `meta` = `updated_at`.
 - `fixtures/from-capture/<id>.json` — the live-capture channel, written by `fixtures capture` on success only (authored invocations for not-yet-captured combos live in the store's `invocations` table): `outputs` = identify + trailers + `raw` (the slimmed shapeless runtime observations, headed by `platform_id`, then `harness_version` (the live version snapshot — null when the agent's version is not yet knowable), then `detectable` and `detected`, then `process_lineage`, the `*-urls` reference arrays, and the `evidence` claims — the dev `raw` output verbatim);
   `meta` = `updated_at` (+ `harness_version`, + the invocation of record — `prompt_invocation`/`version_invocation`).
@@ -216,7 +216,7 @@ All three dims are required (or none); a partial combo exits 4 and an unknown id
 - **Never guess.**
   When detection can't fully resolve harness + provider + model, the binary exits 8 (unable to detect) with a single-line error and writes no fixture.
   A partial detection is bad data, not a placeholder.
-  The test suite (`src/known_fixtures.test.zig`) enforces the 20-field identify contract and that every committed from-capture file carries a `from-identity` channel (pre-rule strays are grandfathered in the test until their queued declarations drain), so a "backfill to make tests pass" approach can't slip in.
+  The test suite (`src/known_fixtures.test.zig`) enforces the 29-field identify contract and that every committed from-capture file carries a `from-identity` channel (pre-rule strays are grandfathered in the test until their queued declarations drain), so a "backfill to make tests pass" approach can't slip in.
 
 ## exit status registry
 
@@ -298,8 +298,9 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
    No index.json store, no `fixtures`, no raw dump in the released artifact — the `dev` module (comptime-gated) in `src/dev/dev.zig` drops that code at compile time.
    Released actions: `identify`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
 9. **The 29-field canonical identify contract.**
-   Test-enforced (see `src/known_fixtures.test.zig`); the raw block is shapeless (source-grouped keys, embedded as the from-capture file's `outputs.raw`), and harness rule *static* data (env-marker/binary-name lists) is intentionally NOT re-emitted in raw.
-   The 29 fields: the 20-field base, with `model_reciprocity` (the openness tier) renamed `model_openness` and the freed name reused for the computed model deduction, plus the harness setting pair, the two scandal flags (null-as-absent), the three computed `{entity}_reciprocity` deductions, and the model training pair — the full shape lives in `fixtures/fixture.d.ts`.
+   Test-enforced (see `src/known_fixtures.test.zig`); the capture raw block is shapeless (source-grouped keys, embedded as the from-capture file's `outputs.raw`), and harness rule *static* data (env-marker/binary-name lists) is intentionally NOT re-emitted in raw.
+   The 29 fields: the 20-field base, with `model_reciprocity` (the openness tier) renamed `model_openness` and the freed name reused for the computed model deduction, plus the harness setting pair (null-as-absent), the two scandal flags (**explicit booleans** — false is visible, never inferred from absence; 2026-09-21), the three computed `{entity}_reciprocity` deductions, and the model training pair — the full shape lives in `fixtures/fixture.d.ts`.
+   The from-identity file carries the **declared raw** as its `outputs.raw` (2026-09-21): `detectable`/`detected` plus the four rule-derived source arrays — the declaration's own evidence; the instance-only raw fields stay capture-side.
 10. **`fixtures dequeue` = DELETE, `fixtures capture` = fixtures-only.**
     Dequeue never mutates fixtures; capture never touches queue; the daemon never writes `fixtures` outside pop processing and never inserts queue rows (purity).
 11. **Recipe-mode `identify`.**
@@ -378,7 +379,7 @@ This section pins the matrix policy — what gets a rule, a recipe, and a fixtur
 - **Evidence-attribution rule:** raw/evidence are **review artifacts** — the mechanical evidence check was removed.
   Every detected dim's attribution is human + dev-agent review (capture review window + commit review of `outputs.raw`); the code no longer gates on it.
   Sources that can't serialize into a claim (custom database formats, e.g. kilo's sqlite session store) are logged follow-ups, never faked.
-  Declared fixtures carry no evidence at all.
+  Declared fixtures carry no OBSERVED evidence — their raw is the rule-derived source arrays (decision #9's declared raw), never an instance claim.
 - **Cross-platform daemon control principle (decision #12):** one `fixtures/daemon.ctl` protocol for `pause`/`resume`/`stop`/`restart` across macOS/Linux/Windows — no per-platform signal doubles. `restart` (2026-09-20) drains like `stop`, then re-executes the daemon's own binary path with the original argv — the new-build pickup (`zig build dev` replaces the executable; POSIX exec keeps the pid, fds, and terminal, Windows spawns a copy with inherited stdio and exits).
   Ctrl+C stays the terminal graceful-stop shortcut; the daemon clears the control file after acting.
 - **Refresh flavours:** every queue entry runs in one of two modes:

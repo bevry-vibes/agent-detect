@@ -334,6 +334,21 @@ pub const dev = if (build_options.dev) struct {
         return list.toOwnedSlice(a);
     }
 
+    /// build the DECLARED raw object — the from-identity channel's `outputs.raw` (ruling, 2026-09-21).
+    /// A declared fixture observed nothing, so the instance-only fields (platform_id, harness_version, process_lineage, evidence) stay absent — the worker's own lineage would be fiction.
+    /// What the rules assert is exactly what ships: `detectable`/`detected` plus the four source arrays backing every rule-derived identify field (resolveRecipe populates all six).
+    fn buildDeclaredRaw(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
+        const V = std.json.Value;
+        var raw: V = .{ .object = .empty };
+        try raw.object.put(a, "detectable", stringListValue(a, d.detectable));
+        try raw.object.put(a, "detected", stringListValue(a, try detectedDims(a, d)));
+        try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
+        try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
+        try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
+        try raw.object.put(a, "scandal-urls", stringListValue(a, d.raw.scandal_urls));
+        return raw;
+    }
+
     /// build the `raw` observations object (dev binary only).
     /// Top-level keys: `platform_id`, then `harness_version` (the live version snapshot — null when not yet knowable; only emitted for the capture path or when a value is present), then the `detectable` + `detected` dimension arrays adjacent to it, then the shapeless runtime observations.
     /// Returns a heap-allocated `std.json.Value`; the caller owns it.
@@ -2715,8 +2730,9 @@ pub const dev = if (build_options.dev) struct {
             damped.put(fixture_id, {}) catch {};
             return false;
         };
-        // Declared, not observed: the file carries no raw block (DESIGN "Declared fixtures carry no evidence at all"), so no lineage/env is gathered here — the capture channel is the only place process lineage appears.
+        // Declared, not observed — but the declaration carries its own evidence (ruling, 2026-09-21): the declared raw ships the rule-derived source arrays (harness/provider/model/scandal urls) plus detectable/detected, so an identity fixture is self-verifying without an instance. The instance-only fields (lineage, env, evidence claims) stay absent — nothing was observed; the capture channel is the only place they appear.
         const cooked = try buildCooked(a, &d);
+        const raw = try buildDeclaredRaw(a, &d);
 
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const self_path = selfPath(io, &self_path_buf);
@@ -2727,6 +2743,7 @@ pub const dev = if (build_options.dev) struct {
         try outputs.object.put(a, "identify", cooked);
         try outputs.object.put(a, "trailer co-author", optStringValue(a, co));
         try outputs.object.put(a, "trailer assisted-by", optStringValue(a, ab));
+        try outputs.object.put(a, "raw", raw);
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
         var root: std.json.Value = .{ .object = .empty };

@@ -2483,7 +2483,7 @@ pub fn reporterHome(env: *const std.process.Environ.Map) []const u8 {
 }
 
 /// Build the canonical identification object (29 fields, grouped by entity). Returns a heap-allocated `std.json.Value` the caller owns.
-/// The instance fields (`*_setting`, `*_reciprocity_scandal`) are null-as-absent: absent when unset/false. The computed `*_reciprocity` fields emit true, false, or null.
+/// The setting fields (`*_setting`) are null-as-absent: absent when unset. The scandal flags (`*_reciprocity_scandal`) emit explicit booleans — the false state must be visible, not inferred from absence (ruling, 2026-09-21). The computed `*_reciprocity` fields emit true, false, or null.
 pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     const V = std.json.Value;
     // Each canonical field is `?[]const u8` (or `?bool`).
@@ -2499,14 +2499,14 @@ pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     try canonical.object.put(a, "harness_closed_training", optStringValue(a, d.harness_closed_training));
     if (d.harness_open_setting) |v| try canonical.object.put(a, "harness_open_setting", .{ .string = v });
     if (d.harness_closed_setting) |v| try canonical.object.put(a, "harness_closed_setting", .{ .string = v });
-    if (d.harness_reciprocity_scandal) try canonical.object.put(a, "harness_reciprocity_scandal", .{ .bool = true });
+    try canonical.object.put(a, "harness_reciprocity_scandal", .{ .bool = d.harness_reciprocity_scandal });
     try canonical.object.put(a, "harness_reciprocity", optBoolValue(d.harness_reciprocity));
     try canonical.object.put(a, "provider_label", optStringValue(a, d.provider_label));
     try canonical.object.put(a, "provider_name", optStringValue(a, d.provider_name));
     try canonical.object.put(a, "provider_id", optStringValue(a, d.provider_id));
     try canonical.object.put(a, "provider_closed_training", optStringValue(a, d.provider_closed_training));
     try canonical.object.put(a, "provider_open_training", optStringValue(a, d.provider_open_training));
-    if (d.provider_reciprocity_scandal) try canonical.object.put(a, "provider_reciprocity_scandal", .{ .bool = true });
+    try canonical.object.put(a, "provider_reciprocity_scandal", .{ .bool = d.provider_reciprocity_scandal });
     try canonical.object.put(a, "provider_reciprocity", optBoolValue(d.provider_reciprocity));
     try canonical.object.put(a, "model_label", optStringValue(a, d.model_label));
     try canonical.object.put(a, "model_short_title", optStringValue(a, d.model_short_title));
