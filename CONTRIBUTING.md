@@ -366,6 +366,7 @@ The persistent unit above is the installed form; the transient form needs no uni
 
 ```sh
 systemd-run --user --unit=agent-detect-daemon --collect \
+  --property=MemoryMax=1G \
   --working-directory="$PWD" \
   --setenv=PATH="$PATH" \
   "$PWD/zig-out/bin/agent-detect-dev" fixtures daemon --write-log
@@ -375,7 +376,7 @@ journalctl --user -u agent-detect-daemon       # its stdout; fixtures/daemon.log
 
 `--setenv=PATH` carries the session's PATH — the user manager's default PATH misses the harness binaries, the same failure mode the persistent unit's `Environment=PATH` guards against.
 `--collect` removes the unit once it exits, so the name is reusable for the next drain.
-One daemon per host still applies: stop any terminal-run instance before starting the transient one.
+One daemon per host still applies: stop any terminal-run instance before starting the transient one. The `MemoryMax` guard is belt-and-braces: the daemon resets its per-iteration arena (a drain OOM taught it that, 2026-09-21), and the cap degrades any future leak into a clean unit kill instead of a machine-wide OOM.
 - On headless (ssh-only) hosts, `loginctl enable-linger "$USER"` keeps the user manager (and the daemon) alive after logout; otherwise the unit stops at end-of-session.
 - While the unit holds `agent-detect-dev` open, `zig build` (whose default step installs the dev binary) fails with `AccessDenied` / `ETXTBSY` — stop the daemon before rebuilding.
 
