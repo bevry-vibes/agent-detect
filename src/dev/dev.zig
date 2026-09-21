@@ -3281,13 +3281,20 @@ pub const dev = if (build_options.dev) struct {
         // the near-instant from-identity pacing (2026-09-20): identity work is zero-token, so it paces at 0.25s instead of the poll interval — `tick_ns` carries the matching tick so the sleep never overshoots the pace.
         const identity_pace_ns: u64 = @as(u64, 250) * std.time.ns_per_ms;
         var tick_ns: u64 = std.time.ns_per_s;
+        // the per-iteration arena: every poll's pick + worker allocations come from here and reset once the iteration is done — the daemon used to draw everything from the process-lifetime arena, and a long drain (each pick re-expands the whole channel universe, thousands of parsed files) OOM'd at 6.7G within minutes once the identity fast path raised the poll rate (observed 2026-09-21).
+        // Cross-iteration state lives on the outer arena instead: the damped/skips sets dupe their keys, and the pending-capture pick is kept alive by gating the reset (it only fires when the loop is idle with no pending job).
+        var iter_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        const ia = iter_arena.allocator();
 
         while (true) {
+            if (phase == .idle and pending_capture == null and !paused) {
+                _ = iter_arena.reset(.retain_capacity);
+            }
             const now = std.Io.Clock.Timestamp.now(io, .boot);
             const boot_now_ns = now.raw.nanoseconds;
 
             // --- control check (every tick) ---
-            const ctl = readControlAction(a, io);
+            const ctl = readControlAction(ia, io);
             if (ctl) |c| {
                 if (std.mem.eql(u8, c, "pause") and !paused) {
                     paused = true;
@@ -3402,14 +3409,14 @@ pub const dev = if (build_options.dev) struct {
                         // one candidate per poll (decision #10): the from-capture and empty-queue paths schedule the next poll `poll_seconds` out on EVERY path below; a worked from-identity candidate schedules the near-instant pacing instead — identity work is zero-token and needs no cool-down.
                         next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
                         tick_ns = std.time.ns_per_s;
-                        const pick = daemonPick(io, a, &damped, &skips, blocked) catch |err| blk: {
+                        const pick = daemonPick(io, ia, &damped, &skips, blocked) catch |err| blk: {
                             daemonWriteErr(io, "daemon: pick error: ");
                             daemonWriteErr(io, @errorName(err));
                             daemonWriteErr(io, "\n");
                             break :blk null;
                         };
                         if (pick) |p| {
-                            const desc = try describeQueueEntry(a, p.entry);
+                            const desc = try describeQueueEntry(ia, p.entry);
                             var msg_buf: [320]u8 = undefined;
                             const m = std.fmt.bufPrint(msg_buf[0..], "daemon: processing {s} [{s}]\n", .{ desc, p.entry.mode }) catch "daemon: processing\n";
                             daemonWrite(io, m);
@@ -3431,7 +3438,8 @@ pub const dev = if (build_options.dev) struct {
                             // the near-instant identity pacing: the next identity pick comes 0.25s out, and the tick shortens to match (the control file is checked MORE often, never less).
                             next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = identity_pace_ns }, .clock = .boot });
                             tick_ns = identity_pace_ns;
-                            const ok = runOneComboIdentity(a, io, init, &damped, p.candidate.fixture_id) catch |err| blk: {
+                            const fid_outer = try a.dupe(u8, p.candidate.fixture_id);
+                            const ok = runOneComboIdentity(ia, io, init, &damped, fid_outer) catch |err| blk: {
                                 daemonWriteErr(io, "daemon: identity worker error: ");
                                 daemonWriteErr(io, @errorName(err));
                                 daemonWriteErr(io, "\n");
