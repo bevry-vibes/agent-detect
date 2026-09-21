@@ -358,6 +358,24 @@ journalctl --user -u agent-detect-drain.service -f    # follow output
   Symptom when missing: every `from-capture` candidate fails within milliseconds with `harness unavailable — version probe failed` (the spawn can't resolve the binary), while `from-identity` work is unaffected.
   Fix the PATH first, then re-assert the entry (`fixtures queue --harness=<h> --platform=linux`) and rerun the daemon — the next success clears the `known_but_failed` record.
 - The `--write-log` heartbeat lands in `fixtures/daemon.log` as on the other platforms; `journalctl` carries the same lines.
+
+#### the transient unit — programmatic, no files
+
+The persistent unit above is the installed form; the transient form needs no unit file and writes nothing under `~/.config/systemd/user/` — it is how an agent session hands the daemon over without hosting it.
+`systemd-run --user` starts the daemon as a child of the user manager: a clean ancestry (the in-agent guard passes even though an agent issued the command), the manager's environment (no agent markers contaminate the captures), and it survives the session that started it.
+
+```sh
+systemd-run --user --unit=agent-detect-daemon --collect \
+  --working-directory="$PWD" \
+  --setenv=PATH="$PATH" \
+  "$PWD/zig-out/bin/agent-detect-dev" fixtures daemon --write-log
+systemctl --user stop agent-detect-daemon      # stop (writing stop to fixtures/daemon.ctl also works)
+journalctl --user -u agent-detect-daemon       # its stdout; fixtures/daemon.log carries the same lines
+```
+
+`--setenv=PATH` carries the session's PATH — the user manager's default PATH misses the harness binaries, the same failure mode the persistent unit's `Environment=PATH` guards against.
+`--collect` removes the unit once it exits, so the name is reusable for the next drain.
+One daemon per host still applies: stop any terminal-run instance before starting the transient one.
 - On headless (ssh-only) hosts, `loginctl enable-linger "$USER"` keeps the user manager (and the daemon) alive after logout; otherwise the unit stops at end-of-session.
 - While the unit holds `agent-detect-dev` open, `zig build` (whose default step installs the dev binary) fails with `AccessDenied` / `ETXTBSY` — stop the daemon before rebuilding.
 

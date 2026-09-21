@@ -90,7 +90,11 @@ pub const rulesForModels = [_]ModelRule{
     // qwen3.5: open-weight — Qwen3.5 weights on HF under the Qwen (Apache-2.0) license; the hosted alias is what most combos run.
     .{ .name = "qwen3.5", .label = "Qwen3.5", .openness = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.5", "https://huggingface.co/Qwen/Qwen3.5/blob/main/LICENSE" } },
     // qwen3: open-weight — the base Qwen3 family (Apache-2.0); used by Cerebras-hosted combos.
-    .{ .name = "qwen3", .label = "Qwen3", .openness = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3", "https://huggingface.co/Qwen/Qwen3/blob/main/LICENSE" } },
+    // variations: the ollama local runtime's size-tagged spellings (observed on the maintainer's host 2026-09-20 — `qwen3:1.7b`, `qwen3:0.6b`; local tags are per-install, so the observed sizes are recorded verbatim).
+    .{ .name = "qwen3", .label = "Qwen3", .openness = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3", "https://huggingface.co/Qwen/Qwen3/blob/main/LICENSE" }, .variations = &.{ "qwen3:1.7b", "qwen3:0.6b" } },
+    // granite-3.3-2b: open-weight — IBM Granite 3.3 2B; Apache-2.0 (added for the ollama local runtime 2026-09-20 — the maintainer's explicit need, outside the evergreen gate).
+    // The ollama local spelling `granite3.3:2b` slugs to this rule's name — no variation needed.
+    .{ .name = "granite-3.3-2b", .label = "Granite 3.3 2B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct", "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct/blob/main/LICENSE" } },
     // mistral-small-latest: open-weight — Mistral Small's alias; Apache-2.0 weights per the models overview, same as mistral-large-latest.
     .{ .name = "mistral-small-latest", .label = "Mistral Small (latest)", .openness = "open-weight", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" } },
     // gemini-3-flash: closed — Google Gemini API-only; no weights.
@@ -219,7 +223,7 @@ pub const rulesForModels = [_]ModelRule{
     // + LICENSE.
     .{ .name = "nemotron-3-super", .label = "Nemotron 3 Super", .openness = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B", "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B/blob/main/LICENSE" } },
     // nemotron-3-nano: open-weight — NVIDIA Nemotron 3 Nano; HF card + LICENSE.
-    .{ .name = "nemotron-3-nano", .label = "Nemotron 3 Nano", .openness = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B", "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE" } },
+    .{ .name = "nemotron-3-nano", .label = "Nemotron 3 Nano", .openness = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B", "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE" }, .variations = &.{"nemotron-3-nano:4b"} },
     // llama-3.3-70b: open-weight — Meta Llama 3.3 70B; HF card + LICENSE. variations: hyper's serving id spelling (observed: the hyper catalog's `llama-3.3-70b-instruct`).
     .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .openness = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct", "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE" }, .variations = &.{ "llama-3.3-70b-instruct" } },
     // llama-4-maverick: open-weight — Meta Llama 4 Maverick; HF card + LICENSE.

@@ -878,7 +878,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     // the maintainer uninstalled hermes, so their fixture sweeps are contributor scope.
     // autoclaw: the app is uninstalled (contributor scope, same as the harness exemption above).
     // phala: the zcode-phala-glm53 from-identity entry is staged — resolves when the user-run daemon drains it.
-    // ollama: the 2026-09-20 individuation (.plans/1789895398) moved every stem to `ollamacloud` — every observed ollama session was cloud traffic, so the local rule has no stems until a local runtime is actually fixtured.
+    // ollama: resolved 2026-09-21 — the local runtime's first stems landed (zcode-ollama-{granite332b,nemotron3nano,qwen3}-linux, .plans/1789895398's local sweep).
     // (The 2026-09-07 folds — moonshotai, kimi-coding, opencode — carry stems from the renamed fixtures, so they need no exemptions.)
     const rule_only_providers = [_][]const u8{
         "cline",            "chutes",           "google",
@@ -887,7 +887,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "deepinfra",        "nebius",           "nvidia",
         "upstage",          "xiaomi",           "stepfun",
         "arcee",            "vercel",           "nous",
-        "autoclaw",         "phala",            "ollama",
+        "autoclaw",         "phala",
     };
     const rule_only_models = [_][]const u8{
         "claude-haiku-4",           "claude-opus-4",       "devstral-2",
@@ -991,6 +991,8 @@ test "map-provider-model-freeprovidermodel.csv: free-grid entries resolve to kno
             for (stems) |stem| {
                 const parts = (split4(stem)) orelse continue;
                 if (!std.mem.eql(u8, parts[1], provider) or !std.mem.eql(u8, parts[2], cols.items[idx])) continue;
+                // the local ollama runtime has no paid tier — every combo is free by construction, and the `:` in its tags (`qwen3:1.7b`) is a size tag, never a tier marker; the free-signal probe does not apply.
+                if (std.mem.eql(u8, provider, "ollama")) continue;
                 const root_v = (try readChannelParsed(a, capture_dir, stem)) orelse continue;
                 const meta = root_v.object.get("meta") orelse continue;
                 if (meta != .object) continue;
