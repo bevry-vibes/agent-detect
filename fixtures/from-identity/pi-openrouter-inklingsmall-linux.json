@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity": true,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Inkling Small",
+      "model_short_title": null,
+      "model_name": "inkling-small",
+      "model_id": "inklingsmall",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "pi-openrouter-inklingsmall",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · Inkling Small <pi-openrouter-inklingsmall@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Inkling Small <pi-openrouter-inklingsmall@local>"
+  },
+  "meta": {
+    "updated_at": 1789899333
+  }
+}

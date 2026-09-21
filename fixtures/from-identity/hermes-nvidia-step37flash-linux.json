@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity": true,
+      "provider_label": "NVIDIA NIM",
+      "provider_name": "nvidia",
+      "provider_id": "nvidia",
+      "provider_closed_training": "enforced",
+      "provider_open_training": "enforced",
+      "provider_reciprocity": false,
+      "model_label": "Step 3.7 Flash",
+      "model_short_title": null,
+      "model_name": "step-3.7-flash",
+      "model_id": "step37flash",
+      "model_openness": null,
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": null,
+      "agent_id": "hermes-nvidia-step37flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Step 3.7 Flash <hermes-nvidia-step37flash@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Step 3.7 Flash <hermes-nvidia-step37flash@local>"
+  },
+  "meta": {
+    "updated_at": 1789899339
+  }
+}

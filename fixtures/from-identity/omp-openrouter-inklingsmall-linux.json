@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity": null,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Inkling Small",
+      "model_short_title": null,
+      "model_name": "inkling-small",
+      "model_id": "inklingsmall",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "omp-openrouter-inklingsmall",
+      "reciprocal": false
+    },
+    "trailer co-author": null,
+    "trailer assisted-by": null
+  },
+  "meta": {
+    "updated_at": 1789899296
+  }
+}

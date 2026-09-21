@@ -15,14 +15,6 @@
     },
     {
       "harness": "zcode",
-      "provider": "ollamacloud",
-      "model": "glm53flash",
-      "mode": "from-identity",
-      "started_at": 1788472026,
-      "runner": 75853
-    },
-    {
-      "harness": "zcode",
       "provider": "phala",
       "model": "glm53",
       "platform": "darwin",
@@ -40,30 +32,6 @@
       "runner": 23039
     },
     {
-      "harness": "goose",
-      "provider": "opencodego",
-      "model": "deepseekv4flash",
-      "platform": "darwin",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 49514
-    },
-    {
-      "harness": "hermes",
-      "provider": "ollamacloud",
-      "model": "glm53flash",
-      "platform": "darwin",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 49514
-    },
-    {
-      "provider": "ollamacloud",
-      "mode": "from-identity",
-      "started_at": 1789898415,
-      "runner": 592638
-    },
-    {
       "provider": "clinepass",
       "mode": "from-identity",
       "free": true,
@@ -74,6 +42,7 @@
       "provider": "clinepass",
       "mode": "from-capture",
       "free": true,
+      "started_at": 1789899341,
       "runner": 598648
     },
     {
@@ -84,12 +53,6 @@
       "runner": 598648
     },
     {
-      "provider": "opencode",
-      "mode": "from-capture",
-      "free": true,
-      "runner": 598648
-    },
-    {
       "provider": "openrouter",
       "mode": "from-identity",
       "free": true,
@@ -97,46 +60,32 @@
       "runner": 598648
     },
     {
-      "provider": "openrouter",
-      "mode": "from-capture",
-      "free": true,
-      "runner": 598648
-    },
-    {
       "provider": "nvidia",
       "mode": "from-identity",
       "free": true,
-      "runner": 598648
-    },
-    {
-      "provider": "nvidia",
-      "mode": "from-capture",
-      "free": true,
+      "started_at": 1789899337,
       "runner": 598648
     },
     {
       "provider": "vercel",
       "mode": "from-identity",
       "free": true,
-      "runner": 598648
-    },
-    {
-      "provider": "vercel",
-      "mode": "from-capture",
-      "free": true,
+      "started_at": 1789899339,
       "runner": 598648
     },
     {
       "provider": "zenmux",
       "mode": "from-identity",
       "free": true,
+      "started_at": 1789899341,
       "runner": 598648
     },
     {
-      "provider": "zenmux",
-      "mode": "from-capture",
+      "provider": "ollama",
+      "mode": "from-identity",
       "free": true,
-      "runner": 598648
+      "started_at": 1789955319,
+      "runner": 91261
     }
   ],
   "backlog": {
@@ -456,7 +405,11 @@
       "cline-clinepass-kimik3-linux": "harness unavailable — version probe failed",
       "cline-clinepass-step37flash-linux": "harness unavailable — version probe failed",
       "cline-deepseek-deepseekv4flash-linux": "harness unavailable — version probe failed",
-      "cline-minimax-minimaxm3-linux": "harness unavailable — version probe failed"
+      "cline-minimax-minimaxm3-linux": "harness unavailable — version probe failed",
+      "kimicode-openrouter-gemma431b-linux": "harness unavailable — version probe failed",
+      "opencode-opencode-nemotron3ultra-linux": "harness unavailable — version probe failed",
+      "pi-openrouter-gemma431b-linux": "capture failed (exit 1); stderr No API key found for openrouter.\n\nUse /login to log into a provider via OAuth or API key. See:\n  <home>/.local/lib/node_modules/@earendil-works/pi-coding-agent/docs/providers.md\n  <home>/.local/lib/node_modules/@earendil-works/pi-coding-agent/docs/models.md\n",
+      "omp-zenmux-glm47flash-linux": "harness unavailable — version probe failed"
     }
   },
   "invocations": {

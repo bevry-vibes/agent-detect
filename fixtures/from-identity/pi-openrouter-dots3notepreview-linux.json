@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity": true,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Dots 3 Note Preview",
+      "model_short_title": null,
+      "model_name": "dots-3-note-preview",
+      "model_id": "dots3notepreview",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "pi-openrouter-dots3notepreview",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · Dots 3 Note Preview <pi-openrouter-dots3notepreview@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Dots 3 Note Preview <pi-openrouter-dots3notepreview@local>"
+  },
+  "meta": {
+    "updated_at": 1789899331
+  }
+}

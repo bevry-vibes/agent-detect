@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity": true,
+      "provider_label": "NVIDIA NIM",
+      "provider_name": "nvidia",
+      "provider_id": "nvidia",
+      "provider_closed_training": "enforced",
+      "provider_open_training": "enforced",
+      "provider_reciprocity": false,
+      "model_label": "Laguna XS 2.1",
+      "model_short_title": null,
+      "model_name": "laguna-xs-2.1",
+      "model_id": "lagunaxs21",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
+      "agent_id": "hermes-nvidia-lagunaxs21",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Laguna XS 2.1 <hermes-nvidia-lagunaxs21@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Laguna XS 2.1 <hermes-nvidia-lagunaxs21@local>"
+  },
+  "meta": {
+    "updated_at": 1789899338
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity": true,
+      "provider_label": "Vercel AI Gateway",
+      "provider_name": "vercel",
+      "provider_id": "vercel",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Llama 3.3 70B",
+      "model_short_title": null,
+      "model_name": "llama-3.3-70b",
+      "model_id": "llama3370b",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "hermes-vercel-llama3370b",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Llama 3.3 70B <hermes-vercel-llama3370b@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Llama 3.3 70B <hermes-vercel-llama3370b@local>"
+  },
+  "meta": {
+    "updated_at": 1789899340
+  }
+}

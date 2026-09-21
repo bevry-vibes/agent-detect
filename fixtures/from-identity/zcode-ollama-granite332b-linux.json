@@ -1,0 +1,36 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "ZCode",
+      "harness_short_title": null,
+      "harness_name": "zcode",
+      "harness_id": "zcode",
+      "harness_license": "NONE",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
+      "harness_reciprocity": false,
+      "provider_label": "Ollama",
+      "provider_name": "ollama",
+      "provider_id": "ollama",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "Granite 3.3 2B",
+      "model_short_title": null,
+      "model_name": "granite-3.3-2b",
+      "model_id": "granite332b",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "zcode-ollama-granite332b",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: ZCode · Granite 3.3 2B <zcode-ollama-granite332b@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · Granite 3.3 2B <zcode-ollama-granite332b@local>"
+  },
+  "meta": {
+    "updated_at": 1789955319
+  }
+}
