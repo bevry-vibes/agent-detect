@@ -651,7 +651,7 @@ Provider catalog verdicts (2026-08-29, kimi-code host): **chutes** is inferable 
 the two non-evergreen ids (`Qwen/Qwen3-32B-TEE`, `Qwen/Qwen3.6-27B-TEE`) are grid-recorded, not ruled.
 **opencode-go** (OpenCode Zen's Go subscription, `https://opencode.ai/zen/go/v1`) is inferable from its unauthenticated `/v1/models` (33 ids);
 the evergreen subset got rules, the non-evergreen remainder (`longcat-2.0`, `qwen3.7-max`, `qwen3.6-plus`, `qwen3.5-plus`, `mimo-v2-pro`, `mimo-v2-omni`, `hy3-preview`) is grid-recorded.
-The live-combo alias `qwen3.8-flash` has its own rule with reciprocity/license `null` pending a backing audit (no `Qwen/Qwen3.8-Flash` HF repo; the 3.8 flash open line is the separate `qwen38-flash-next` collection).
+The live-combo alias `qwen3.8-flash` was audited 2026-09-24 (`.plans/1790219820902`): it IS the Flash-Next line — the `Qwen/Qwen3.8-Flash-Next` card states "Qwen3.8-Flash is the official version based on Qwen3.8-Flash-Next", OpenRouter's listing maps the id to that repo, and the weights carry the custom Qwen Community License 1.0 (open-weight, license NOASSERTION).
 
 **hermes** (2026-09-06, authored by the maintainer's Hermes session; revised 2026-09-07 by the fold review — `.plans/1788716755355`): the harness rule landed with a live from-capture on `hermes-ollamacloud-glm53flash-darwin` (the ollama-cloud fold renamed it, and the 2026-09-20 individuation renamed it again;
 detection ladder: the `HERMES_AGENT=true` env marker, then `session_model_usage` in `~/.hermes/state.db` for the live provider/model — `billing_provider` + `model` per API call — then `config.yaml`'s `model.default`/`provider` as fallback;

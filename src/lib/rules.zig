@@ -304,10 +304,12 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "hy4-preview", .label = "Hy4 Preview", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/tencent/Hy4-preview", "https://huggingface.co/tencent/Hy4-preview/blob/main/LICENSE" } },
     // grok-4.6: closed — xAI Grok 4.6; API-only, no weights → NONE (same source set as the grok-4.5 rule). Observed on opencode-go (bare id).
     .{ .name = "grok-4.6", .label = "Grok 4.6", .openness = "closed", .license = "NONE", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
-    // qwen3.8-flash: unverified — served as `qwen3.8-flash` by opencode-go and listed by OpenRouter with no hugging_face_id mapping;
-    // no `Qwen/Qwen3.8-Flash` repo exists on HF (the 3.8 flash line's open repos are `Qwen3.8-Flash-Next[ -FP8]`, a separate HF collection from `qwen38`).
-    // Whether the hosted alias is the Flash-Next serving form is unverified, so reciprocity and license stay null (never-guess) pending a maintainer audit.
-    .{ .name = "qwen3.8-flash", .label = "Qwen3.8 Flash", .openness = null, .sources = &.{} },
+    // qwen3.8-flash: open-weight — the backing audit landed (2026-09-24): the hosted alias IS the Flash-Next line.
+    // The Qwen/Qwen3.8-Flash-Next card states "Qwen3.8-Flash is the official version based on Qwen3.8-Flash-Next" (the card links the qwencloud.com/models/qwen3.8-flash overview), and OpenRouter's listing now maps `qwen/qwen3.8-flash` → hugging_face_id `Qwen/Qwen3.8-Flash-Next` — its one endpoint is Alibaba-served (`qwen/qwen3.8-flash-20260826`, an endpoint version stamp, not a surfaced id, so no variation).
+    // The weights are downloadable under the "Qwen Community License 1.0" (custom grant: >100M-MAU / $20M-revenue naming clause, MaaS/AI-Work-Assistant commercial carve-out) — not OSI, so open-weight per the card's own term and license NOASSERTION per the custom-license rule.
+    // No model-intrinsic training arrangement exists on any serving surface (no contributor/`:free` tier), so the training pair stays unset like the sibling open-line rules (qwen3.8-27b, qwen3.7-flash).
+    // sources: the HF card + its LICENSE (the two same-provider sources), the qwencloud official overview the card links, and the OpenRouter listing for concurrence.
+    .{ .name = "qwen3.8-flash", .label = "Qwen3.8 Flash", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.8-Flash-Next", "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/LICENSE", "https://www.qwencloud.com/models/qwen3.8-flash", "https://openrouter.ai/qwen/qwen3.8-flash" } },
     // gpt-oss-20b: open-weight — OpenAI's GPT-OSS small size (sibling of gpt-oss-120b; same Apache-2.0 weights on HF).
     // Observed on ollama-cloud (`gpt-oss:20b` — the `:size` tag folds here per the strict-slug alias rule, same as gpt-oss-120b's `gpt-oss:120b` on the same catalog) and on nvidia/deepinfra (namespaced bare ids).
     .{ .name = "gpt-oss-20b", .label = "GPT-OSS 20B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/openai/gpt-oss-20b", "https://huggingface.co/openai/gpt-oss-20b/blob/main/LICENSE" } },
