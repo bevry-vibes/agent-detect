@@ -912,7 +912,9 @@ test "buildDeclaredRaw: byte-stable against a committed from-identity fixture" {
         return err;
     };
     const parsed = try std.json.parseFromSliceLeaky(std.json.Value, a, fixture_bytes, .{});
-    const theirs = parsed.object.get("outputs").?.object.get("raw").?;
+    const oo = parsed.object.get("outputs").?.object;
+    // regenerated files carry the renamed `found` channel; legacy files keep `raw` until their sweep — the validator accepts both.
+    const theirs = oo.get("found") orelse (oo.get("raw") orelse return error.MissingDeclaredRaw);
     const theirs_str = try std.json.Stringify.valueAlloc(a, theirs, .{ .whitespace = .indent_2 });
 
     try testing.expectEqualStrings(theirs_str, mine);
