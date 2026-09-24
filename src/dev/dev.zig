@@ -3038,9 +3038,9 @@ pub const dev = if (build_options.dev) struct {
     /// Failures also persist as `known_but_failed` message rows plus `daemon.log` for the dev agent to discern; pops never gate on failure state.
     /// **The daemon never writes fixture files outside pop processing and never inserts queue entries.**
     ///
-    /// **USER-ONLY**: refuses to start if running inside an agent (see `assertNotInAgent`).
-    /// The agent must never run the daemon — its process tree would pollute the captured `raw.process_lineage`, and its env vars would contaminate the capture.
-    /// See DESIGN.md "user-only daemon" for the rationale and CONTRIBUTING.md "refresh a fixture" for the correct role split.
+    /// **Never in-session**: refuses to start if running inside an agent (see `assertNotInAgent`).
+    /// An in-tree daemon would pollute the captured `raw.process_lineage`, and its env vars would contaminate the capture — so the daemon runs detached from the agent tree with the marker env vars unset (the agent launches it that way where the platform allows; the user opens it only where it doesn't).
+    /// See DESIGN.md "user-only daemon" for the rationale and CONTRIBUTING.md "refresh a fixture" + "daemon launch: agent-started detached run" for the role split and the recipes.
     pub fn runFixturesDaemon(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;

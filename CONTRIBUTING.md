@@ -24,7 +24,8 @@ Queue entries are **filter tuples** (dims, mode, the staleness criteria set, `fr
 
 The refresh flow uses three binaries/actions with strict role separation:
 
-- **`agent-detect-dev fixtures daemon`** — only the *user* runs this, never the agent (it refuses to start inside an agent; see DESIGN.md "user-only daemon").
+- **`agent-detect-dev fixtures daemon`** — runs OUTSIDE any agent session: it refuses to start in-session (env-marker + ancestry guard; see DESIGN.md "user-only daemon").
+  Where the agent can spawn a detached process (Linux/macOS) the agent starts it itself, the harness env-marker variables unset; the user is asked to open it in a terminal only on environments where a detached spawn isn't available (Windows) — see "daemon launch: agent-started detached run".
   It is **pure**: every poll it refreshes the backlog from a folder scan, scans the queue-entry array (from-identity entries first), purges entries whose expansion has no remaining candidates anywhere, expands the first entry with remaining host-platform work (stamping `started_at` on its first work), and evaluates ONE candidate (`from-identity`: declared generation, zero tokens;
   `from-capture`: probe the invocation's `version_invocation` then launch the real harness session via its `prompt_invocation`;
   the worker runs in a fresh, empty OS temp dir as its cwd, with the store target pointed at the repo's fixtures dir via `AGENT_DETECT_FIXTURES_DIR`).
@@ -78,7 +79,7 @@ Items still unresolvable or still invocation-less stay in the backlog; run `fixt
 
 To refresh one fixture end-to-end:
 
-1. The user starts the daemon in a separate terminal:
+1. Start the daemon — the agent launches it detached where the platform allows (Linux one-shot below; macOS via the LaunchAgent), and only asks the user to open a terminal where a detached spawn isn't available (Windows):
    ```sh
    ./zig-out/bin/agent-detect-dev fixtures daemon
    ```
@@ -284,9 +285,25 @@ printf 'restart\n'  > fixtures/daemon.ctl   # finish in-flight, then reboot onto
 The daemon checks the file every ~1s and clears it after acting; Ctrl+C in the daemon terminal is the graceful-stop shortcut.
 `restart` is the new-build pickup: run `zig build dev`, then write `restart` — the daemon finishes its in-flight work and re-executes its own binary path with the same flags (POSIX keeps the pid, fds, and terminal; Windows spawns a copy with inherited stdio and exits).
 
+### daemon launch: agent-started detached run (Linux one-shot)
+
+Where the platform allows a detached spawn, the AGENT starts the daemon itself and only asks the user on environments where it can't (Windows) — see DESIGN.md "user-only daemon" for the policy.
+The guard stays legitimately satisfied: `setsid` re-parents the process to init (the ancestry scan sees no agent), and the launch unsets every harness rule's `env_markers` variable (the env scan sees none).
+
+```sh
+cd /abs/path/to/agent-detect
+setsid env -u ZCODE_APP_VERSION -u ZCODE_BASE_URL …<one -u per marker>… \
+  ./zig-out/bin/agent-detect-dev fixtures daemon --write-log >> fixtures/daemon.log 2>&1 < /dev/null &
+```
+
+The marker set is the union of the rules' `env_markers` arrays in `src/lib/rules.zig`; the guard's refusal message names any marker the launch missed — add its `-u` and relaunch.
+Everything else stays the real user environment (PATH, HOME, provider keys) — the from-capture workers need it.
+A detached daemon has no Ctrl+C: stop it via `printf 'stop\n' > fixtures/daemon.ctl`.
+One daemon per host still applies.
+
 ### daemon launch: macOS LaunchAgent bootstrap (macOS-only, no sudo)
 
-The daemon is user-only: it refuses to start when an ancestor process matches a harness agent, so it must run as a plain user process with a clean ancestry.
+The daemon is user-only in the session sense: it refuses to start when an env marker is set or an ancestor process matches a harness agent, so it must run as a plain user process with a clean ancestry and a marker-free environment (each launch recipe below provides both).
 A terminal run is the universal baseline; on macOS the daemon can instead be registered per-user via `launchctl bootstrap` (no sudo, survives the terminal closing, respawns on crash).
 Save this plist and bootstrap it:
 

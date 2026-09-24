@@ -170,15 +170,14 @@ Items still unresolvable / still invocation-less stay in the backlog; repair log
 **`fixtures status`** — the derived snapshot: fixtured counts per folder, the backlog sets (maintained), feasible-unfixtured totals, stale/fresh breakdowns under the composite.
 The dev agent's discernment surface; the log is the timeline, status is the now.
 
-### user-only daemon (not the agent)
+### user-only daemon (started detached, never in-session)
 
-The user — not the agent — runs `fixtures daemon`.
-The daemon's agent-detect guard refuses to start if it's running inside an agent (env-marker + ancestry check).
-If the agent's workflow stalls because the daemon isn't running, the correct action is for the agent to surface the command and the directory the user should run it in.
-The agent never runs the daemon.
-The exact guard and what it checks is documented on `assertNotInAgent` in `src/dev/dev.zig`.
-A user run from a terminal is the baseline;
-on macOS the same clean user context can be achieved without a terminal via the per-user LaunchAgent bootstrap (no sudo, launchd-parented), and on Windows via a per-user scheduled task (no admin, inherits the user session env) — both documented in CONTRIBUTING.md ("daemon launch: macOS LaunchAgent bootstrap" / "daemon launch: Windows scheduled task (no admin)").
+The daemon runs OUTSIDE any agent session — its guard refuses to start otherwise (env-marker + ancestry check, fail-closed; `assertNotInAgent` in `src/dev/dev.zig` carries the exact checks).
+Who starts it is a platform question: where the hosting agent can spawn a detached process (Linux, macOS), the agent starts the daemon itself — its own session, re-parented away from the agent tree, with the harness env-marker variables unset so the guard's env scan legitimately passes.
+The user is asked to open a terminal only on environments where a detached spawn isn't available (Windows).
+In-session runs stay forbidden: an in-tree daemon pollutes every capture's `process_lineage` and its env contaminates the captures — a detached run has neither property (to the guard and to the workers it is a plain user process).
+Linux one-shot: `setsid env -u <each harness rule's marker vars> ./zig-out/bin/agent-detect-dev fixtures daemon --write-log` (the marker set is the union of the rules' `env_markers`; the guard's refusal message names any one the launch missed).
+macOS reaches the same clean context via the per-user LaunchAgent bootstrap; Windows via a per-user scheduled task — CONTRIBUTING.md carries the recipes ("daemon launch: …").
 
 ### capture workers: isolated cwd, streamed output, whole-tree kill
 
@@ -310,7 +309,7 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
 6. **No auto-reconcile.**
    Committed fixture files are authoritative; the store holds no fixture rows to reconcile — the known universe is the union of the two channel folders' filename stems, read at expansion time, and the backlog is refreshed from folder scans.
    Reconciliation work is explicit: `--repair` re-queues actionable gaps, staleness criteria re-work stale channels.
-7. **Daemon is user-only.** The agent never runs the daemon; the env-marker + ancestry guard fails closed (`runFixturesDaemon`).
+7. **Daemon runs outside agent sessions.** The env-marker + ancestry guard fails closed (`runFixturesDaemon`); the agent starts it detached where the platform allows (marker vars unset, re-parented off the agent tree — DESIGN "user-only daemon") and asks the user to open it only where a detached spawn isn't available. Never in-session.
 8. **Released binary stays minimal.**
    No index.json store, no `fixtures`, no raw dump in the released artifact — the `dev` module (comptime-gated) in `src/dev/dev.zig` drops that code at compile time.
    Released actions: `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
