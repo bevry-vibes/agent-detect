@@ -91,6 +91,11 @@
       "mode": "from-identity",
       "started_at": 1789957438,
       "runner": 138991
+    },
+    {
+      "provider": "ollamacloud",
+      "mode": "from-identity",
+      "runner": 587835
     }
   ],
   "backlog": {
