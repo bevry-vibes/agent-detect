@@ -29,9 +29,9 @@
       "agent_id": "opencode-opencode-qwen3coder",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode · Qwen3 Coder <opencode-opencode-qwen3coder@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3 Coder <opencode-opencode-qwen3coder@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,19 @@
         "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "opencode",
+        "model": "qwen3coder"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960427
+    "updated_at": 1790226872
   }
 }

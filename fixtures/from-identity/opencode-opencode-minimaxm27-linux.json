@@ -29,9 +29,9 @@
       "agent_id": "opencode-opencode-minimaxm27",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode · MiniMax M2.7 <opencode-opencode-minimaxm27@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode · MiniMax M2.7 <opencode-opencode-minimaxm27@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,19 @@
         "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "opencode",
+        "model": "minimaxm27"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960425
+    "updated_at": 1790226871
   }
 }

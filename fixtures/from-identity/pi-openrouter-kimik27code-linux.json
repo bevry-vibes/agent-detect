@@ -29,9 +29,9 @@
       "agent_id": "pi-openrouter-kimik27code",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi · Kimi K2.7 Code <pi-openrouter-kimik27code@local>",
-    "trailer assisted-by": "Assisted-by: Pi · Kimi K2.7 Code <pi-openrouter-kimik27code@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "kimik27code"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960449
+    "updated_at": 1790226898
   }
 }

@@ -29,9 +29,9 @@
       "agent_id": "pi-openrouter-qwen38max",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Pi · Qwen3.8-Max <pi-openrouter-qwen38max@local>",
-    "trailer assisted-by": "Assisted-by: Pi · Qwen3.8-Max <pi-openrouter-qwen38max@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,54 @@
         "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "qwen38max"
+      },
+      "reasons": [
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Qwen3.8-Max model has closed weights (openness = closed)",
+          "sources": [
+            "https://qwen.ai/",
+            "https://qwen.ai/blog?id=qwen3.8-max",
+            "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - model: the Qwen3.8-Max model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960459
+    "updated_at": 1790226910
   }
 }

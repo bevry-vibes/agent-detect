@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Kilo Code · Claude Sonnet 4 <kilo-kilo-claudesonnet4@local>",
     "trailer assisted-by": "Assisted-by: Kilo Code · Claude Sonnet 4 <kilo-kilo-claudesonnet4@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,104 @@
         "https://docs.anthropic.com/en/docs/about-claude/models"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "kilo",
+        "provider": "kilo",
+        "model": "claudesonnet4"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the Kilo Code harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://kilo.ai/privacy",
+            "https://github.com/Kilo-Org/kilocode/blob/main/PRIVACY.md"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Kilo Code harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the Kilo Gateway provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/Kilo-Org/kilocode"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Kilo Gateway provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Claude Sonnet 4 model has closed weights (openness = closed)",
+          "sources": [
+            "https://www.anthropic.com/claude/sonnet",
+            "https://docs.anthropic.com/en/docs/about-claude/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the Kilo Code harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the Kilo Gateway provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - model: the Claude Sonnet 4 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960277
+    "updated_at": 1790226698
   }
 }

@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Gemini 3.5 Flash <hermes-google-gemini35flash@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Gemini 3.5 Flash <hermes-google-gemini35flash@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,80 @@
         "https://ai.google.dev/gemini-api/docs/models"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "google",
+        "model": "gemini35flash"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-out"
+            }
+          ],
+          "summary": "the Google provider may train on user data (closed_training = opt-out) with no readable opt-out",
+          "sources": [
+            "https://ai.google.dev/gemini-api/terms",
+            "https://ai.google.dev/gemini-api/docs/pricing"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Gemini 3.5 Flash model has closed weights (openness = closed)",
+          "sources": [
+            "https://deepmind.google/models/",
+            "https://ai.google.dev/gemini-api/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the Google provider may train on user data (closed_training = opt-out) with no readable opt-out (see: agent-detect explain)",
+      "  - model: the Gemini 3.5 Flash model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957566
+    "updated_at": 1790226565
   }
 }

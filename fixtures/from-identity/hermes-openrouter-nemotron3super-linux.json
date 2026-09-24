@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Nemotron 3 Super <hermes-openrouter-nemotron3super@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Nemotron 3 Super <hermes-openrouter-nemotron3super@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/nvidia/Nemotron-3-Super-120B-A12B/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "nemotron3super"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960245
+    "updated_at": 1790226658
   }
 }

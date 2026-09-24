@@ -29,9 +29,9 @@
       "agent_id": "kilo-openrouter-lagunaxs21",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Kilo Code · Laguna XS 2.1 <kilo-openrouter-lagunaxs21@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code · Laguna XS 2.1 <kilo-openrouter-lagunaxs21@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,58 @@
         "https://openmdw.ai/faq/"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "kilo",
+        "provider": "openrouter",
+        "model": "lagunaxs21"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the Kilo Code harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://kilo.ai/privacy",
+            "https://github.com/Kilo-Org/kilocode/blob/main/PRIVACY.md"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Kilo Code harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the Kilo Code harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the Kilo Code harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960316
+    "updated_at": 1790226743
   }
 }

@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Cline · Z.ai GLM 4.7 Flash <cline-openrouter-glm47flash@local>",
     "trailer assisted-by": "Assisted-by: Cline · Z.ai GLM 4.7 Flash <cline-openrouter-glm47flash@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/zai-org/GLM-4.7-Flash/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "cline",
+        "provider": "openrouter",
+        "model": "glm47flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789957450
+    "updated_at": 1790226495
   }
 }

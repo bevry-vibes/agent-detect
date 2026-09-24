@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · MiniMax M3 <hermes-openrouter-minimaxm3@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · MiniMax M3 <hermes-openrouter-minimaxm3@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,19 @@
         "https://www.minimax.io/blog/minimax-m3"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "minimaxm3"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960243
+    "updated_at": 1790226656
   }
 }

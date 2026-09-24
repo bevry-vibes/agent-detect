@@ -29,9 +29,9 @@
       "agent_id": "omp-minimaxcode-minimaxm3",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
-    "trailer assisted-by": "Assisted-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,81 @@
         "https://www.minimax.io/blog/minimax-m3"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "omp",
+        "provider": "minimaxcode",
+        "model": "minimaxm3"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the omp harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/can1357/oh-my-pi"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the omp harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-in"
+            }
+          ],
+          "summary": "the Minimax Code provider may train on user data (closed_training = opt-in) with no readable opt-out",
+          "sources": [
+            "https://platform.minimax.io/docs/guides/terms-of-service",
+            "https://platform.minimax.io/docs/guides/privacy-policy"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the Minimax Code provider may train on user data (closed_training = opt-in) with no readable opt-out (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960370
+    "updated_at": 1790226808
   }
 }

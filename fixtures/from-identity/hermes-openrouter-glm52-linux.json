@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · GLM 5.2 <hermes-openrouter-glm52@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · GLM 5.2 <hermes-openrouter-glm52@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,19 @@
         "https://opensource.org/ai/open-source-ai-definition"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "glm52"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960231
+    "updated_at": 1790226642
   }
 }

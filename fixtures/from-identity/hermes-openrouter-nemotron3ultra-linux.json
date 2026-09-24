@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Nemotron 3 Ultra <hermes-openrouter-nemotron3ultra@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Nemotron 3 Ultra <hermes-openrouter-nemotron3ultra@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "nemotron3ultra"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960245
+    "updated_at": 1790226658
   }
 }

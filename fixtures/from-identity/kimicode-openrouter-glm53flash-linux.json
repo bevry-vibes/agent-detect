@@ -29,9 +29,9 @@
       "agent_id": "kimicode-openrouter-glm53flash",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · GLM 5.3 Flash <kimicode-openrouter-glm53flash@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · GLM 5.3 Flash <kimicode-openrouter-glm53flash@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "glm53flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960337
+    "updated_at": 1790226768
   }
 }

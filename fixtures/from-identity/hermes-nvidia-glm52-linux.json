@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · GLM 5.2 <hermes-nvidia-glm52@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · GLM 5.2 <hermes-nvidia-glm52@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,53 @@
         "https://opensource.org/ai/open-source-ai-definition"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "nvidia",
+        "model": "glm52"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-closed-enforced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "enforced"
+            }
+          ],
+          "summary": "the NVIDIA NIM provider trains on user data by default (closed_training = enforced)",
+          "sources": [
+            "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/",
+            "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the NVIDIA NIM provider trains on user data by default (closed_training = enforced) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960208
+    "updated_at": 1790226613
   }
 }

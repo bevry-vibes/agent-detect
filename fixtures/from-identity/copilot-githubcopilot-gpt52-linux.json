@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: GitHub Copilot CLI · GPT-5.2 <copilot-githubcopilot-gpt52@local>",
     "trailer assisted-by": "Assisted-by: GitHub Copilot CLI · GPT-5.2 <copilot-githubcopilot-gpt52@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -60,9 +60,97 @@
         "https://news.ycombinator.com/item?id=33468849",
         "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
       ]
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "copilot",
+        "provider": "githubcopilot",
+        "model": "gpt52"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-scandal",
+          "summary": "the GitHub Copilot CLI harness is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the harness to a reciprocal one to comply with the policy (e.g. cline, goose, kimi-code, mmx, pi)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-scandal",
+          "summary": "the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber",
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the GPT-5.2 model has closed weights (openness = closed)",
+          "sources": [
+            "https://openai.com/index/gpt-5/",
+            "https://platform.openai.com/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the GitHub Copilot CLI harness is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - provider: the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - model: the GPT-5.2 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957482
+    "updated_at": 1790226520
   }
 }

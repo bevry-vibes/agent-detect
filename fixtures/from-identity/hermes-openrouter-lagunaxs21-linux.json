@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Laguna XS 2.1 <hermes-openrouter-lagunaxs21@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Laguna XS 2.1 <hermes-openrouter-lagunaxs21@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,19 @@
         "https://openmdw.ai/faq/"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "lagunaxs21"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960240
+    "updated_at": 1790226652
   }
 }

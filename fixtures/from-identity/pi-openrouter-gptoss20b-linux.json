@@ -29,9 +29,9 @@
       "agent_id": "pi-openrouter-gptoss20b",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi · GPT-OSS 20B <pi-openrouter-gptoss20b@local>",
-    "trailer assisted-by": "Assisted-by: Pi · GPT-OSS 20B <pi-openrouter-gptoss20b@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/openai/gpt-oss-20b/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "gptoss20b"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960445
+    "updated_at": 1790226893
   }
 }

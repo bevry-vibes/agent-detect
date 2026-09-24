@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Kilo Code · Claude Sonnet 4 <kilo-anthropic-claudesonnet4@local>",
     "trailer assisted-by": "Assisted-by: Kilo Code · Claude Sonnet 4 <kilo-anthropic-claudesonnet4@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -59,9 +59,104 @@
         "https://www.reuters.com/world/us/judge-approves-anthropics-15-billion-settlement-copyright-lawsuit-2026-07-20/",
         "https://www.cnbc.com/2026/09/01/anthropic-data-retention.html"
       ]
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "kilo",
+        "provider": "anthropic",
+        "model": "claudesonnet4"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the Kilo Code harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://kilo.ai/privacy",
+            "https://github.com/Kilo-Org/kilocode/blob/main/PRIVACY.md"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Kilo Code harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-scandal",
+          "summary": "the Anthropic provider is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://authorsguild.org/advocacy/artificial-intelligence/what-authors-need-to-know-about-the-anthropic-settlement/",
+            "https://www.reuters.com/world/us/judge-approves-anthropics-15-billion-settlement-copyright-lawsuit-2026-07-20/",
+            "https://www.cnbc.com/2026/09/01/anthropic-data-retention.html"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Claude Sonnet 4 model has closed weights (openness = closed)",
+          "sources": [
+            "https://www.anthropic.com/claude/sonnet",
+            "https://docs.anthropic.com/en/docs/about-claude/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the Kilo Code harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the Anthropic provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - model: the Claude Sonnet 4 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960275
+    "updated_at": 1790226695
   }
 }

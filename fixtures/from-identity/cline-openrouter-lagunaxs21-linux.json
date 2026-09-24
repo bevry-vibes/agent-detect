@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Cline · Laguna XS 2.1 <cline-openrouter-lagunaxs21@local>",
     "trailer assisted-by": "Assisted-by: Cline · Laguna XS 2.1 <cline-openrouter-lagunaxs21@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,19 @@
         "https://openmdw.ai/faq/"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "cline",
+        "provider": "openrouter",
+        "model": "lagunaxs21"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789957464
+    "updated_at": 1790226507
   }
 }

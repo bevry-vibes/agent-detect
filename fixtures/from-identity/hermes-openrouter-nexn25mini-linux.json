@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Nex N2.5 Mini <hermes-openrouter-nexn25mini@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Nex N2.5 Mini <hermes-openrouter-nexn25mini@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/nex-agi/Nex-N2.5-mini/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "nexn25mini"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960245
+    "updated_at": 1790226659
   }
 }

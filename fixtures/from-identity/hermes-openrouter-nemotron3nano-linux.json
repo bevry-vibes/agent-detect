@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Nemotron 3 Nano <hermes-openrouter-nemotron3nano@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Nemotron 3 Nano <hermes-openrouter-nemotron3nano@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "nemotron3nano"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960244
+    "updated_at": 1790226657
   }
 }

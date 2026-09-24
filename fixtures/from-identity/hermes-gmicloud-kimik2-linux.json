@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Kimi K2 <hermes-gmicloud-kimik2@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Kimi K2 <hermes-gmicloud-kimik2@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,52 @@
         "https://huggingface.co/moonshotai/Kimi-K2/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "hermes",
+        "provider": "gmicloud",
+        "model": "kimik2"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the GMI Cloud provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://gmicloud.ai/en/legal/privacy",
+            "https://www.gmicloud.ai/en/legal/console-terms-of-service"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the GMI Cloud provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - provider: the GMI Cloud provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - provider: the GMI Cloud provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957563
+    "updated_at": 1790226564
   }
 }

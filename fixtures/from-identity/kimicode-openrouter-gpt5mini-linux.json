@@ -29,9 +29,9 @@
       "agent_id": "kimicode-openrouter-gpt5mini",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · GPT-5 mini <kimicode-openrouter-gpt5mini@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · GPT-5 mini <kimicode-openrouter-gpt5mini@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,53 @@
         "https://platform.openai.com/docs/models"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "gpt5mini"
+      },
+      "reasons": [
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the GPT-5 mini model has closed weights (openness = closed)",
+          "sources": [
+            "https://openai.com/index/gpt-5/",
+            "https://platform.openai.com/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - model: the GPT-5 mini model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960339
+    "updated_at": 1790226770
   }
 }

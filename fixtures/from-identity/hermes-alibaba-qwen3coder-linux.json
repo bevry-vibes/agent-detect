@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Qwen3 Coder <hermes-alibaba-qwen3coder@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Qwen3 Coder <hermes-alibaba-qwen3coder@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "alibaba",
+        "model": "qwen3coder"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789957498
+    "updated_at": 1790226531
   }
 }

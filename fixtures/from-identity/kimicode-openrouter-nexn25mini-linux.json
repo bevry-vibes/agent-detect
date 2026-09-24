@@ -29,9 +29,9 @@
       "agent_id": "kimicode-openrouter-nexn25mini",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · Nex N2.5 Mini <kimicode-openrouter-nexn25mini@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · Nex N2.5 Mini <kimicode-openrouter-nexn25mini@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/nex-agi/Nex-N2.5-mini/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "nexn25mini"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960350
+    "updated_at": 1790226784
   }
 }

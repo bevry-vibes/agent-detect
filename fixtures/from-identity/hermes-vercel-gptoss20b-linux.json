@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · GPT-OSS 20B <hermes-vercel-gptoss20b@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · GPT-OSS 20B <hermes-vercel-gptoss20b@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/openai/gpt-oss-20b/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "vercel",
+        "model": "gptoss20b"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960261
+    "updated_at": 1790226678
   }
 }

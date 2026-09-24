@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Muse Spark 1.2 <hermes-vercel-musespark12@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Muse Spark 1.2 <hermes-vercel-musespark12@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -52,9 +52,48 @@
       ],
       "model-urls": [],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "hermes",
+        "provider": "vercel",
+        "model": "musespark12"
+      },
+      "reasons": [
+        {
+          "entity": "model",
+          "code": "model-openness-unknown",
+          "summary": "the Muse Spark 1.2 model is absent from the model rules — its openness is unknown",
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Muse Spark 1.2 model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - model: the Muse Spark 1.2 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - model: the Muse Spark 1.2 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960269
+    "updated_at": 1790226687
   }
 }

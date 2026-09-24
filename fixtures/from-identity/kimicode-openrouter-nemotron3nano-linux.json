@@ -29,9 +29,9 @@
       "agent_id": "kimicode-openrouter-nemotron3nano",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · Nemotron 3 Nano <kimicode-openrouter-nemotron3nano@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · Nemotron 3 Nano <kimicode-openrouter-nemotron3nano@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "nemotron3nano"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960349
+    "updated_at": 1790226783
   }
 }

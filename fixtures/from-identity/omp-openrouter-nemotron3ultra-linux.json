@@ -29,9 +29,9 @@
       "agent_id": "omp-openrouter-nemotron3ultra",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp · Nemotron 3 Ultra <omp-openrouter-nemotron3ultra@local>",
-    "trailer assisted-by": "Assisted-by: omp · Nemotron 3 Ultra <omp-openrouter-nemotron3ultra@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,57 @@
         "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "omp",
+        "provider": "openrouter",
+        "model": "nemotron3ultra"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the omp harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/can1357/oh-my-pi"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the omp harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960398
+    "updated_at": 1790226839
   }
 }

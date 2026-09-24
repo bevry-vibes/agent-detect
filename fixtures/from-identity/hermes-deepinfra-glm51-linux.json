@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · GLM 5.1 <hermes-deepinfra-glm51@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · GLM 5.1 <hermes-deepinfra-glm51@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/zai-org/GLM-5.1/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "deepinfra",
+        "model": "glm51"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789957529
+    "updated_at": 1790226548
   }
 }

@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Claude Fable 5 <hermes-gmicloud-claudefable5@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Claude Fable 5 <hermes-gmicloud-claudefable5@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,76 @@
         "https://docs.anthropic.com/en/docs/about-claude/models"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "gmicloud",
+        "model": "claudefable5"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the GMI Cloud provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://gmicloud.ai/en/legal/privacy",
+            "https://www.gmicloud.ai/en/legal/console-terms-of-service"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the GMI Cloud provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Claude Fable 5 model has closed weights (openness = closed)",
+          "sources": [
+            "https://www.anthropic.com/claude",
+            "https://docs.anthropic.com/en/docs/about-claude/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the GMI Cloud provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - model: the Claude Fable 5 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957557
+    "updated_at": 1790226561
   }
 }

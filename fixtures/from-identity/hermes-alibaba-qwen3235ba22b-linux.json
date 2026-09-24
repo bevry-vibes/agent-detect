@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Qwen3 235B A22B <hermes-alibaba-qwen3235ba22b@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Qwen3 235B A22B <hermes-alibaba-qwen3235ba22b@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "alibaba",
+        "model": "qwen3235ba22b"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789957495
+    "updated_at": 1790226528
   }
 }

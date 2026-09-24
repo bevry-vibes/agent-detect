@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Claude Sonnet 5 <hermes-githubcopilot-claudesonnet5@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Claude Sonnet 5 <hermes-githubcopilot-claudesonnet5@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -58,9 +58,74 @@
         "https://news.ycombinator.com/item?id=33468849",
         "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
       ]
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "githubcopilot",
+        "model": "claudesonnet5"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-scandal",
+          "summary": "the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Claude Sonnet 5 model has closed weights (openness = closed)",
+          "sources": [
+            "https://www.anthropic.com/claude/sonnet",
+            "https://docs.anthropic.com/en/docs/about-claude/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - model: the Claude Sonnet 5 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957550
+    "updated_at": 1790226558
   }
 }

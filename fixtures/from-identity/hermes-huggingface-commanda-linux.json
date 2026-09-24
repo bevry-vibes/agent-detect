@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Command A <hermes-huggingface-commanda@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Command A <hermes-huggingface-commanda@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/CohereForAI/c4ai-command-a-03-2025/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "huggingface",
+        "model": "commanda"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789957570
+    "updated_at": 1790226567
   }
 }

@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Qwen3.8-Max <hermes-qwen-qwen38max@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Qwen3.8-Max <hermes-qwen-qwen38max@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,81 @@
         "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "qwen",
+        "model": "qwen38max"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-closed-enforced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "enforced"
+            }
+          ],
+          "summary": "the Qwen provider trains on user data by default (closed_training = enforced)",
+          "sources": [
+            "https://qwen.ai/termsservice",
+            "https://qwen.ai/privacypolicy"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Qwen3.8-Max model has closed weights (openness = closed)",
+          "sources": [
+            "https://qwen.ai/",
+            "https://qwen.ai/blog?id=qwen3.8-max",
+            "https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the Qwen provider trains on user data by default (closed_training = enforced) (see: agent-detect explain)",
+      "  - model: the Qwen3.8-Max model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960250
+    "updated_at": 1790226665
   }
 }

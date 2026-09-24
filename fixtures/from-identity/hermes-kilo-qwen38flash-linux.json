@@ -21,17 +21,17 @@
       "model_short_title": null,
       "model_name": "qwen3.8-flash",
       "model_id": "qwen38flash",
-      "model_openness": null,
+      "model_openness": "open-weight",
       "model_open_training": null,
       "model_closed_training": null,
-      "model_license": null,
-      "model_reciprocity": null,
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
       "agent_id": "hermes-kilo-qwen38flash",
       "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Qwen3.8 Flash <hermes-kilo-qwen38flash@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Qwen3.8 Flash <hermes-kilo-qwen38flash@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -49,11 +49,58 @@
       "provider-urls": [
         "https://github.com/Kilo-Org/kilocode"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://huggingface.co/Qwen/Qwen3.8-Flash-Next",
+        "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/LICENSE",
+        "https://www.qwencloud.com/models/qwen3.8-flash",
+        "https://openrouter.ai/qwen/qwen3.8-flash"
+      ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "hermes",
+        "provider": "kilo",
+        "model": "qwen38flash"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the Kilo Gateway provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/Kilo-Org/kilocode"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Kilo Gateway provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - provider: the Kilo Gateway provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - provider: the Kilo Gateway provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960194
+    "updated_at": 1790226596
   }
 }

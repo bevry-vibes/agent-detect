@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Grok 4.20 <hermes-xai-grok420@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Grok 4.20 <hermes-xai-grok420@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -58,9 +58,74 @@
         "https://noyb.eu/en/twitters-ai-plans-hit-9-more-gdpr-complaints",
         "https://thehackernews.com/2026/07/grok-build-uploads-entire-git.html"
       ]
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "xai",
+        "model": "grok420"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-scandal",
+          "summary": "the xAI provider is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://noyb.eu/en/twitters-ai-plans-hit-9-more-gdpr-complaints",
+            "https://thehackernews.com/2026/07/grok-build-uploads-entire-git.html"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Grok 4.20 model has closed weights (openness = closed)",
+          "sources": [
+            "https://x.ai/grok",
+            "https://docs.x.ai/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the xAI provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - model: the Grok 4.20 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960273
+    "updated_at": 1790226693
   }
 }

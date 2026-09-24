@@ -5,7 +5,7 @@
       "harness_short_title": null,
       "harness_name": "zcode",
       "harness_id": "zcode",
-      "harness_license": "NONE",
+      "harness_license": "Apache-2.0",
       "harness_open_training": "opt-in",
       "harness_closed_training": "opt-in",
       "harness_reciprocity_scandal": false,
@@ -29,9 +29,9 @@
       "agent_id": "zcode-phala-glm51",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: ZCode · GLM 5.1 <zcode-phala-glm51@local>",
-    "trailer assisted-by": "Assisted-by: ZCode · GLM 5.1 <zcode-phala-glm51@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -43,8 +43,8 @@
         "model"
       ],
       "harness-urls": [
-        "https://zcode.z.ai/",
-        "https://www.z.ai/terms-of-service"
+        "https://github.com/zai-org/ZCode",
+        "https://github.com/zai-org/ZCode/blob/main/LICENSE"
       ],
       "provider-urls": [
         "https://phala.com/privacy",
@@ -55,9 +55,53 @@
         "https://huggingface.co/zai-org/GLM-5.1/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "zcode",
+        "provider": "phala",
+        "model": "glm51"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-in"
+            }
+          ],
+          "summary": "the ZCode harness may train on user data (closed_training = opt-in) with no readable opt-out",
+          "sources": [
+            "https://zcode.z.ai/privacy",
+            "https://zcode.z.ai/terms"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the harness to a reciprocal one to comply with the policy (e.g. cline, goose, kimi-code, mmx, pi)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the ZCode harness may train on user data (closed_training = opt-in) with no readable opt-out (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960471
+    "updated_at": 1790226924
   }
 }

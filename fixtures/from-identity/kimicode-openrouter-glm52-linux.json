@@ -29,9 +29,9 @@
       "agent_id": "kimicode-openrouter-glm52",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · GLM 5.2 <kimicode-openrouter-glm52@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · GLM 5.2 <kimicode-openrouter-glm52@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,19 @@
         "https://opensource.org/ai/open-source-ai-definition"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "glm52"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960336
+    "updated_at": 1790226767
   }
 }

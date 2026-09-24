@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Ling 3.0 Flash VL <hermes-openrouter-ling30flashvl@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Ling 3.0 Flash VL <hermes-openrouter-ling30flashvl@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/inclusionAI/Ling-3.0-flash-VL/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "ling30flashvl"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960241
+    "updated_at": 1790226653
   }
 }

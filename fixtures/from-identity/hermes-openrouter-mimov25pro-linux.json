@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · MiMo V2.5 Pro <hermes-openrouter-mimov25pro@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · MiMo V2.5 Pro <hermes-openrouter-mimov25pro@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "mimov25pro"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960242
+    "updated_at": 1790226655
   }
 }

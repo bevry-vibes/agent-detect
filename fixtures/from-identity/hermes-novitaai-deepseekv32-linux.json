@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · DeepSeek V3.2 <hermes-novitaai-deepseekv32@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · DeepSeek V3.2 <hermes-novitaai-deepseekv32@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "novitaai",
+        "model": "deepseekv32"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960200
+    "updated_at": 1790226603
   }
 }

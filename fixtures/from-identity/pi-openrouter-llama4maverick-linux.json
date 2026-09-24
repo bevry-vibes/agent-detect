@@ -29,9 +29,9 @@
       "agent_id": "pi-openrouter-llama4maverick",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi · Llama 4 Maverick <pi-openrouter-llama4maverick@local>",
-    "trailer assisted-by": "Assisted-by: Pi · Llama 4 Maverick <pi-openrouter-llama4maverick@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "llama4maverick"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960451
+    "updated_at": 1790226901
   }
 }

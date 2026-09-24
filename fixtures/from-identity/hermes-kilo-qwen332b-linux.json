@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Qwen3 32B <hermes-kilo-qwen332b@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Qwen3 32B <hermes-kilo-qwen332b@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,51 @@
         "https://huggingface.co/Qwen/Qwen3-32B/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "hermes",
+        "provider": "kilo",
+        "model": "qwen332b"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the Kilo Gateway provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/Kilo-Org/kilocode"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Kilo Gateway provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - provider: the Kilo Gateway provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - provider: the Kilo Gateway provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960192
+    "updated_at": 1790226593
   }
 }

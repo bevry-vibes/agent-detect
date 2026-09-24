@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: AutoClaw · GLM 5.3 <autoclaw-autoclaw-glm53@local>",
     "trailer assisted-by": "Assisted-by: AutoClaw · GLM 5.3 <autoclaw-autoclaw-glm53@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,80 @@
         "https://huggingface.co/zai-org/GLM-5.3/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "autoclaw",
+        "provider": "autoclaw",
+        "model": "glm53"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-out"
+            }
+          ],
+          "summary": "the AutoClaw harness may train on user data (closed_training = opt-out) with no readable opt-out",
+          "sources": [
+            "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_agreement&favicon=autoglm",
+            "https://autoclaw.z.ai/privacy/md2html/?md=autoclaw_privacy&favicon=autoglm"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the harness to a reciprocal one to comply with the policy (e.g. cline, goose, kimi-code, mmx, pi)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-in"
+            }
+          ],
+          "summary": "the AutoClaw provider may train on user data (closed_training = opt-in) with no readable opt-out",
+          "sources": [
+            "https://docs.z.ai/legal-agreement/terms-of-use",
+            "https://docs.z.ai/legal-agreement/privacy-policy"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the AutoClaw harness may train on user data (closed_training = opt-out) with no readable opt-out (see: agent-detect explain)",
+      "  - provider: the AutoClaw provider may train on user data (closed_training = opt-in) with no readable opt-out (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957439
+    "updated_at": 1790226483
   }
 }

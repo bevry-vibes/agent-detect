@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · DeepSeek V4 Pro <hermes-opencode-deepseekv4pro@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · DeepSeek V4 Pro <hermes-opencode-deepseekv4pro@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,19 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "opencode",
+        "model": "deepseekv4pro"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960214
+    "updated_at": 1790226621
   }
 }

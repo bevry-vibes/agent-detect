@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · MiniMax M2.5 <hermes-vercel-minimaxm25@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · MiniMax M2.5 <hermes-vercel-minimaxm25@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/MiniMaxAI/MiniMax-M2.5/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "vercel",
+        "model": "minimaxm25"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960268
+    "updated_at": 1790226686
   }
 }

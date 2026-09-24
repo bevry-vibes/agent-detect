@@ -29,9 +29,9 @@
       "agent_id": "omp-cursor-grok45",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp · Grok 4.5 <omp-cursor-grok45@local>",
-    "trailer assisted-by": "Assisted-by: omp · Grok 4.5 <omp-cursor-grok45@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,103 @@
         "https://docs.x.ai/docs/models"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "omp",
+        "provider": "cursor",
+        "model": "grok45"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the omp harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/can1357/oh-my-pi"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the omp harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the Cursor provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://cursor.com/"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Cursor provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Grok 4.5 model has closed weights (openness = closed)",
+          "sources": [
+            "https://x.ai/grok",
+            "https://docs.x.ai/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the Cursor provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - model: the Grok 4.5 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960360
+    "updated_at": 1790226795
   }
 }

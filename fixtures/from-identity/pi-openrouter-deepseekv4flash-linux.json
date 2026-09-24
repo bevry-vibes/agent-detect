@@ -29,9 +29,9 @@
       "agent_id": "pi-openrouter-deepseekv4flash",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi · DeepSeek V4 Flash <pi-openrouter-deepseekv4flash@local>",
-    "trailer assisted-by": "Assisted-by: Pi · DeepSeek V4 Flash <pi-openrouter-deepseekv4flash@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "deepseekv4flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960436
+    "updated_at": 1790226884
   }
 }

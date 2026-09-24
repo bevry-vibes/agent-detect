@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · GLM 5.3 Flash <hermes-opencode-glm53flash@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · GLM 5.3 Flash <hermes-opencode-glm53flash@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,19 @@
         "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "opencode",
+        "model": "glm53flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960218
+    "updated_at": 1790226625
   }
 }

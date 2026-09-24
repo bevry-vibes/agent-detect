@@ -29,9 +29,9 @@
       "agent_id": "kimicode-openrouter-lagunas21",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · Laguna S 2.1 <kimicode-openrouter-lagunas21@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · Laguna S 2.1 <kimicode-openrouter-lagunas21@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,19 @@
         "https://openmdw.ai/faq/"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "lagunas21"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960345
+    "updated_at": 1790226777
   }
 }

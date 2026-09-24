@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Gemma 4 31B <hermes-openrouter-gemma431b@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Gemma 4 31B <hermes-openrouter-gemma431b@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "openrouter",
+        "model": "gemma431b"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960229
+    "updated_at": 1790226639
   }
 }

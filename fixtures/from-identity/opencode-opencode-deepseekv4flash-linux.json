@@ -29,9 +29,9 @@
       "agent_id": "opencode-opencode-deepseekv4flash",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode · DeepSeek V4 Flash <opencode-opencode-deepseekv4flash@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode · DeepSeek V4 Flash <opencode-opencode-deepseekv4flash@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,19 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "opencode",
+        "model": "deepseekv4flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960416
+    "updated_at": 1790226860
   }
 }

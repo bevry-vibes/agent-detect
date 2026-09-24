@@ -29,9 +29,9 @@
       "agent_id": "omp-githubcopilot-gemini3pro",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: omp · Gemini 3 Pro <omp-githubcopilot-gemini3pro@local>",
-    "trailer assisted-by": "Assisted-by: omp · Gemini 3 Pro <omp-githubcopilot-gemini3pro@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -58,9 +58,102 @@
         "https://news.ycombinator.com/item?id=33468849",
         "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
       ]
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "omp",
+        "provider": "githubcopilot",
+        "model": "gemini3pro"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the omp harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/can1357/oh-my-pi"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the omp harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-scandal",
+          "summary": "the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Gemini 3 Pro model has closed weights (openness = closed)",
+          "sources": [
+            "https://deepmind.google/models/",
+            "https://ai.google.dev/gemini-api/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - model: the Gemini 3 Pro model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960361
+    "updated_at": 1790226797
   }
 }

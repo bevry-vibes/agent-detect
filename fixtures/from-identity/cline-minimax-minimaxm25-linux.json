@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Cline · MiniMax M2.5 <cline-minimax-minimaxm25@local>",
     "trailer assisted-by": "Assisted-by: Cline · MiniMax M2.5 <cline-minimax-minimaxm25@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,53 @@
         "https://huggingface.co/MiniMaxAI/MiniMax-M2.5/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "cline",
+        "provider": "minimax",
+        "model": "minimaxm25"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-in"
+            }
+          ],
+          "summary": "the MiniMax provider may train on user data (closed_training = opt-in) with no readable opt-out",
+          "sources": [
+            "https://platform.minimax.io/docs/guides/terms-of-service",
+            "https://platform.minimax.io/docs/guides/privacy-policy"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the MiniMax provider may train on user data (closed_training = opt-in) with no readable opt-out (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957442
+    "updated_at": 1790226486
   }
 }

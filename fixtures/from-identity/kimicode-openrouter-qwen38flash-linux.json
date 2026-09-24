@@ -21,17 +21,17 @@
       "model_short_title": null,
       "model_name": "qwen3.8-flash",
       "model_id": "qwen38flash",
-      "model_openness": null,
+      "model_openness": "open-weight",
       "model_open_training": null,
       "model_closed_training": null,
-      "model_license": null,
-      "model_reciprocity": null,
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
       "agent_id": "kimicode-openrouter-qwen38flash",
-      "reciprocal": false
+      "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · Qwen3.8 Flash <kimicode-openrouter-qwen38flash@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · Qwen3.8 Flash <kimicode-openrouter-qwen38flash@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -50,11 +50,26 @@
         "https://openrouter.ai/privacy",
         "https://openrouter.ai/terms"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://huggingface.co/Qwen/Qwen3.8-Flash-Next",
+        "https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/LICENSE",
+        "https://www.qwencloud.com/models/qwen3.8-flash",
+        "https://openrouter.ai/qwen/qwen3.8-flash"
+      ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "qwen38flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960353
+    "updated_at": 1790226788
   }
 }

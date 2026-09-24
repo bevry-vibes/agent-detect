@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Cogito 2.1 <hermes-huggingface-cogito21@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Cogito 2.1 <hermes-huggingface-cogito21@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/deepcogito/cogito-2.1-671b/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "huggingface",
+        "model": "cogito21"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789957569
+    "updated_at": 1790226566
   }
 }

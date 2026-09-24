@@ -29,9 +29,9 @@
       "agent_id": "pi-openrouter-glm51",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi · GLM 5.1 <pi-openrouter-glm51@local>",
-    "trailer assisted-by": "Assisted-by: Pi · GLM 5.1 <pi-openrouter-glm51@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/zai-org/GLM-5.1/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "glm51"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960440
+    "updated_at": 1790226888
   }
 }

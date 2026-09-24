@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Step 3.7 Flash <hermes-stepfun-step37flash@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Step 3.7 Flash <hermes-stepfun-step37flash@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -52,9 +52,72 @@
       ],
       "model-urls": [],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "stepfun",
+        "model": "step37flash"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-in"
+            }
+          ],
+          "summary": "the StepFun provider may train on user data (closed_training = opt-in) with no readable opt-out",
+          "sources": [
+            "https://platform.stepfun.ai/docs/en/agreement/userservice",
+            "https://platform.stepfun.ai/docs/en/agreement/userprivacy"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-openness-unknown",
+          "summary": "the Step 3.7 Flash model is absent from the model rules — its openness is unknown",
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Step 3.7 Flash model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the StepFun provider may train on user data (closed_training = opt-in) with no readable opt-out (see: agent-detect explain)",
+      "  - model: the Step 3.7 Flash model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960251
+    "updated_at": 1790226665
   }
 }

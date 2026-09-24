@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · Kimi K2.7 Code <hermes-nebius-kimik27code@local>",
     "trailer assisted-by": "Assisted-by: Hermes Agent · Kimi K2.7 Code <hermes-nebius-kimik27code@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,53 @@
         "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "hermes",
+        "provider": "nebius",
+        "model": "kimik27code"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-out"
+            }
+          ],
+          "summary": "the Nebius Token Factory provider may train on user data (closed_training = opt-out) with no readable opt-out",
+          "sources": [
+            "https://docs.tokenfactory.nebius.com/legal/terms-of-service",
+            "https://nebius.com/services/token-factory"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the Nebius Token Factory provider may train on user data (closed_training = opt-out) with no readable opt-out (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789960199
+    "updated_at": 1790226601
   }
 }

@@ -29,9 +29,9 @@
       "agent_id": "pi-openrouter-minimaxm3",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Pi · MiniMax M3 <pi-openrouter-minimaxm3@local>",
-    "trailer assisted-by": "Assisted-by: Pi · MiniMax M3 <pi-openrouter-minimaxm3@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -56,9 +56,19 @@
         "https://www.minimax.io/blog/minimax-m3"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "minimaxm3"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960453
+    "updated_at": 1790226903
   }
 }

@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Cline · Mistral Large (latest) <cline-mistral-mistrallargelatest@local>",
     "trailer assisted-by": "Assisted-by: Cline · Mistral Large (latest) <cline-mistral-mistrallargelatest@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,53 @@
         "https://docs.mistral.ai/getting-started/models/"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "cline",
+        "provider": "mistral",
+        "model": "mistrallargelatest"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-out"
+            }
+          ],
+          "summary": "the Mistral provider may train on user data (closed_training = opt-out) with no readable opt-out",
+          "sources": [
+            "https://docs.mistral.ai/legal/terms-of-service/",
+            "https://docs.mistral.ai/legal/acceptable-use-policy/"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the Mistral provider may train on user data (closed_training = opt-out) with no readable opt-out (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957443
+    "updated_at": 1790226487
   }
 }

@@ -29,9 +29,9 @@
       "agent_id": "kimicode-openrouter-inklingsmall",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: Kimi Code · Inkling Small <kimicode-openrouter-inklingsmall@local>",
-    "trailer assisted-by": "Assisted-by: Kimi Code · Inkling Small <kimicode-openrouter-inklingsmall@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,19 @@
         "https://huggingface.co/thinkingmachines/Inkling-Small/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "inklingsmall"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960342
+    "updated_at": 1790226775
   }
 }

@@ -29,9 +29,9 @@
       "agent_id": "opencode-opencode-kimik27code",
       "reciprocal": true
     },
-    "trailer co-author": "Co-authored-by: OpenCode · Kimi K2.7 Code <opencode-opencode-kimik27code@local>",
-    "trailer assisted-by": "Assisted-by: OpenCode · Kimi K2.7 Code <opencode-opencode-kimik27code@local>",
-    "raw": {
+    "trailer co-author": null,
+    "trailer assisted-by": null,
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -54,9 +54,19 @@
         "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "opencode",
+        "model": "kimik27code"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1789960424
+    "updated_at": 1790226869
   }
 }

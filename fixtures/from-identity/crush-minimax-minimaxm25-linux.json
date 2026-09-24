@@ -31,7 +31,7 @@
     },
     "trailer co-author": "Co-authored-by: Crush · MiniMax M2.5 <crush-minimax-minimaxm25@local>",
     "trailer assisted-by": "Assisted-by: Crush · MiniMax M2.5 <crush-minimax-minimaxm25@local>",
-    "raw": {
+    "found": {
       "detectable": [
         "harness",
         "provider",
@@ -55,9 +55,81 @@
         "https://huggingface.co/MiniMaxAI/MiniMax-M2.5/blob/main/LICENSE"
       ],
       "scandal-urls": []
-    }
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "crush",
+        "provider": "minimax",
+        "model": "minimaxm25"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the Crush harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/charmbracelet/crush"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Crush harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-in"
+            }
+          ],
+          "summary": "the MiniMax provider may train on user data (closed_training = opt-in) with no readable opt-out",
+          "sources": [
+            "https://platform.minimax.io/docs/guides/terms-of-service",
+            "https://platform.minimax.io/docs/guides/privacy-policy"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the Crush harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the MiniMax provider may train on user data (closed_training = opt-in) with no readable opt-out (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1789957484
+    "updated_at": 1790226521
   }
 }
