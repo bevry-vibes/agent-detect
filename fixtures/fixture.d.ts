@@ -138,6 +138,9 @@ export interface IdentityFile {
     explain?: Explain;
     "identify.stderr"?: StderrLines;
     "explain.stderr"?: StderrLines;
+    /** the stdout verdict `check-reciprocal` prints for the recorded state — present on the states that print stdout (0/10), absent on the stderr-only states (8/9). */
+    "check-reciprocal"?: "is reciprocal" | "not reciprocal";
+    "check-reciprocal.stderr"?: StderrLines;
   };
   meta: {
     /** was identity.declared_at — the channel WAS the declaration. */
@@ -160,6 +163,9 @@ export interface CaptureFile {
     explain?: Explain;
     "identify.stderr"?: StderrLines;
     "explain.stderr"?: StderrLines;
+    /** the stdout verdict `check-reciprocal` prints for the recorded state — present on the states that print stdout (0/10), absent on the stderr-only states (8/9). */
+    "check-reciprocal"?: "is reciprocal" | "not reciprocal";
+    "check-reciprocal.stderr"?: StderrLines;
   };
   meta: {
     /** was capture.captured_at. */

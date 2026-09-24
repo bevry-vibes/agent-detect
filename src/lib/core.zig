@@ -2874,8 +2874,9 @@ pub fn writeReasonsCompact(io: std.Io, reasons: []const Reason) void {
 }
 
 /// the stderr an action would print for `d`'s state, as newline-split lines (trailing empty element dropped) — the fixture `.stderr` channels carry line arrays, never multiline strings.
-/// `identify` stderr exists only on the exit-9 state (registry line + compact reason lines); `explain` stderr only on the non-reciprocal/non-unknown states (registry line alone — its stdout already carries the reasons).
-pub fn stderrLinesFor(a: std.mem.Allocator, d: *const Detection, comptime which: enum { identify, explain }) !?[]const []const u8 {
+/// `identify` stderr exists only on the exit-9 state (registry line + compact reason lines); `explain` stderr only on the non-reciprocal/non-unknown states (registry line alone — its stdout already carries the reasons);
+/// `check_reciprocal` stderr on every state that prints stderr (8/9/10: registry line + compact reason lines — exactly what runAction prints), null on the clean reciprocal state.
+pub fn stderrLinesFor(a: std.mem.Allocator, d: *const Detection, comptime which: enum { identify, explain, check_reciprocal }) !?[]const []const u8 {
     var lines: std.ArrayList([]const u8) = .empty;
     switch (which) {
         .identify => {
@@ -2898,8 +2899,36 @@ pub fn stderrLinesFor(a: std.mem.Allocator, d: *const Detection, comptime which:
                 },
             }
         },
+        .check_reciprocal => {
+            if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
+                // the shared identity gate fires before the verdict (runAction's gate order) — the exit-8 shape: registry line + compact reasons.
+                try lines.append(a, std.mem.trimEnd(u8, MSG_UNABLE_TO_DETECT_PREFIX, "\n"));
+                for (try reasonsFor(a, d)) |r| try lines.append(a, try reasonCompactLine(a, r));
+            } else switch (reciprocityOf(d)) {
+                .reciprocal => return null,
+                .unknown => {
+                    try lines.append(a, std.mem.trimEnd(u8, MSG_AGENT_DATA_INCOMPLETE, "\n"));
+                    for (try reasonsFor(a, d)) |r| try lines.append(a, try reasonCompactLine(a, r));
+                },
+                .not_reciprocal => {
+                    try lines.append(a, std.mem.trimEnd(u8, MSG_REQUIREMENT_FAILED, "\n"));
+                    for (try reasonsFor(a, d)) |r| try lines.append(a, try reasonCompactLine(a, r));
+                },
+            }
+        },
     }
     return try lines.toOwnedSlice(a);
+}
+
+/// the stdout verdict the `check-reciprocal` action prints for `d`'s determination — `"is reciprocal"` / `"not reciprocal"`;
+/// null on the stderr-only states (identity-incomplete/exit 8 and unknown/exit 9 print no stdout).
+pub fn checkReciprocalVerdict(d: *const Detection) ?[]const u8 {
+    if (d.harness_label == null or d.provider_label == null or d.model_label == null) return null;
+    return switch (reciprocityOf(d)) {
+        .reciprocal => "is reciprocal",
+        .not_reciprocal => "not reciprocal",
+        .unknown => null,
+    };
 }
 
 /// the exit-8 registry line as an owned string (sans trailing newline): `unable to detect unspecified agent (harness = "<id>", provider = null, model = null)`.

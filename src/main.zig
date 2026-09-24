@@ -107,6 +107,8 @@ pub fn reasonsFor(a: std.mem.Allocator, d: *const Detection) ![]Reason {
     return core.reasonsFor(a, d);
 }
 
+pub const checkReciprocalVerdict = core.checkReciprocalVerdict;
+
 pub fn applyHarnessTraining(d: *Detection, rule: HarnessRule) void {
     return core.applyHarnessTraining(d, rule);
 }
@@ -498,7 +500,8 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
     if (std.mem.eql(u8, action, "check-reciprocal")) {
         switch (reciprocityOf(d)) {
             .reciprocal => {
-                writeOut(io, "is reciprocal\n");
+                writeOut(io, core.checkReciprocalVerdict(d).?);
+                writeOut(io, "\n");
                 return EXIT_OK;
             },
             .not_reciprocal => {

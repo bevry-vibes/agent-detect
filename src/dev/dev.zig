@@ -2030,6 +2030,8 @@ pub const dev = if (build_options.dev) struct {
         try outputs.object.put(a, "explain", try core.buildExplain(a, &d, reasons));
         if (try core.stderrLinesFor(a, &d, .identify)) |lines| try outputs.object.put(a, "identify.stderr", stringListValue(a, lines));
         if (try core.stderrLinesFor(a, &d, .explain)) |lines| try outputs.object.put(a, "explain.stderr", stringListValue(a, lines));
+        if (core.checkReciprocalVerdict(&d)) |verdict| try outputs.object.put(a, "check-reciprocal", .{ .string = verdict });
+        if (try core.stderrLinesFor(a, &d, .check_reciprocal)) |lines| try outputs.object.put(a, "check-reciprocal.stderr", stringListValue(a, lines));
 
         // meta — complete by construction (all fields required, see fixtures/fixture.d.ts): the invocation of record persists, the ledger stamps fresh.
         var meta: std.json.Value = .{ .object = .empty };
@@ -2619,6 +2621,8 @@ pub const dev = if (build_options.dev) struct {
         try outputs.object.put(a, "explain", try core.buildExplain(a, &d, reasons));
         if (try core.stderrLinesFor(a, &d, .identify)) |lines| try outputs.object.put(a, "identify.stderr", stringListValue(a, lines));
         if (try core.stderrLinesFor(a, &d, .explain)) |lines| try outputs.object.put(a, "explain.stderr", stringListValue(a, lines));
+        if (core.checkReciprocalVerdict(&d)) |verdict| try outputs.object.put(a, "check-reciprocal", .{ .string = verdict });
+        if (try core.stderrLinesFor(a, &d, .check_reciprocal)) |lines| try outputs.object.put(a, "check-reciprocal.stderr", stringListValue(a, lines));
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
         var root: std.json.Value = .{ .object = .empty };

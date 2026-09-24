@@ -957,6 +957,52 @@ test "stderrLinesFor: null on clean states, lines on 9/10" {
     try testing.expectEqualStrings("agent (harness, provider, model) data complete and requirement failed", elines2[0]);
 }
 
+// checkReciprocalVerdict + stderrLinesFor(.check_reciprocal): the fixture channel pair — the verdict string on the stdout states (0/10), the line arrays on every state that prints stderr (8/9/10).
+test "check-reciprocal channels: verdict on 0/10, stderr on 8/9/10" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    // clean reciprocal — verdict present, stderr absent.
+    var d = main.Detection{
+        .harness_label = "Kimi Code",
+        .harness_closed_training = "never",
+        .provider_label = "DeepSeek",
+        .provider_closed_training = "never",
+        .model_label = "DeepSeek V4 Flash",
+        .model_openness = "open-weight",
+    };
+    try testing.expectEqualStrings("is reciprocal", main.checkReciprocalVerdict(&d).?);
+    try testing.expect((try core.stderrLinesFor(a, &d, .check_reciprocal)) == null);
+
+    // exit-9 state — stderr only (registry line + compact reason lines), no verdict.
+    d.model_openness = null;
+    d.model_label = "Mystery Model";
+    try testing.expect(main.checkReciprocalVerdict(&d) == null);
+    const lines9 = (try core.stderrLinesFor(a, &d, .check_reciprocal)).?;
+    try testing.expect(lines9.len == 2);
+    try testing.expectEqualStrings("agent (harness, provider, model) data incomplete to make a determination", lines9[0]);
+    try testing.expect(std.mem.indexOf(u8, lines9[1], "- model:") != null);
+
+    // exit-10 state — verdict + stderr (registry line + compact reason lines).
+    d.model_label = "GPT-OSS 20B";
+    d.model_openness = "open-weight";
+    d.provider_closed_training = "enforced";
+    try testing.expectEqualStrings("not reciprocal", main.checkReciprocalVerdict(&d).?);
+    const lines10 = (try core.stderrLinesFor(a, &d, .check_reciprocal)).?;
+    try testing.expect(lines10.len == 2);
+    try testing.expectEqualStrings("agent (harness, provider, model) data complete and requirement failed", lines10[0]);
+    try testing.expect(std.mem.indexOf(u8, lines10[1], "- provider:") != null);
+
+    // identity-incomplete (exit 8, the shared gate firing before the verdict) — stderr only, no verdict.
+    const d8 = main.Detection{};
+    try testing.expect(main.checkReciprocalVerdict(&d8) == null);
+    const lines8 = (try core.stderrLinesFor(a, &d8, .check_reciprocal)).?;
+    try testing.expect(lines8.len == 2);
+    try testing.expectEqualStrings(std.mem.trimEnd(u8, core.MSG_UNABLE_TO_DETECT_PREFIX, "\n"), lines8[0]);
+    try testing.expect(std.mem.indexOf(u8, lines8[1], "- harness:") != null);
+}
+
 // alternatives + setting hint: the switch suggestions come from the compiled rule tables (resolve-true only, capped, excluding the failing entity); the fixable fail carries the rule's setting pointer.
 test "reciprocalAlternativesFor: resolve-true only, capped, excludes the failing entity" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);

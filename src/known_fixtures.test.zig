@@ -212,6 +212,9 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
             if (oo.get("explain.stderr")) |sv| {
                 if (sv != .array) return error.InvalidFixtureShape;
             }
+            if (oo.get("check-reciprocal.stderr")) |sv| {
+                if (sv != .array) return error.InvalidFixtureShape;
+            }
             if (std.mem.eql(u8, folder, identity_dir)) {
                 // from-identity outputs: identify + trailers + the declared raw (the rule-derived evidence; pre-declared-raw files predate the key — their next sweep adds it, decision #16)
                 for (oo.keys()) |k| {
@@ -222,7 +225,9 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                         std.mem.eql(u8, k, "found") or
                         std.mem.eql(u8, k, "explain") or
                         std.mem.eql(u8, k, "identify.stderr") or
-                        std.mem.eql(u8, k, "explain.stderr")) continue;
+                        std.mem.eql(u8, k, "explain.stderr") or
+                        std.mem.eql(u8, k, "check-reciprocal") or
+                        std.mem.eql(u8, k, "check-reciprocal.stderr")) continue;
                     std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
                     return error.UnexpectedOutputKey;
                 }
@@ -239,7 +244,9 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                         std.mem.eql(u8, k, "found") or
                         std.mem.eql(u8, k, "explain") or
                         std.mem.eql(u8, k, "identify.stderr") or
-                        std.mem.eql(u8, k, "explain.stderr")) continue;
+                        std.mem.eql(u8, k, "explain.stderr") or
+                        std.mem.eql(u8, k, "check-reciprocal") or
+                        std.mem.eql(u8, k, "check-reciprocal.stderr")) continue;
                     std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
                     return error.UnexpectedOutputKey;
                 }

@@ -284,6 +284,7 @@ The interpretation layer over the ladder — one pure derivation (`reasonsFor` o
 **stderr layering** — append-only after the registry first lines (the registry messages are the contract); one compact line per reason (entity + summary + the explain pointer); no action prose or URLs on stderr — `agent-detect explain` carries the full remediation.
 
 **Fixture channels** — `outputs.explain` (the buildExplain object), `outputs["identify.stderr"]` / `outputs["explain.stderr"]` (newline-split line arrays, never multiline strings; absent when the action printed no stderr), and `outputs.found` (the renamed raw key — legacy files keep `raw` until their next sweep; the validator accepts both).
+The check-reciprocal channels mirror that action's two surfaces: `outputs["check-reciprocal"]` is the stdout verdict string (`"is reciprocal"` / `"not reciprocal"` — present on the states that print stdout, 0 and 10; exit 9 is stderr-only so the verdict is absent there), and `outputs["check-reciprocal.stderr"]` is the same line-array convention (registry first line + compact reason lines; present on 9 and 10, absent on the clean state).
 
 ## evergreen decisions
 
