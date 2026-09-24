@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "GMI Cloud",
+      "provider_name": "gmi-cloud",
+      "provider_id": "gmicloud",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "GLM 4.7",
+      "model_short_title": null,
+      "model_name": "glm-4.7",
+      "model_id": "glm47",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "omp-gmicloud-glm47",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · GLM 4.7 <omp-gmicloud-glm47@local>",
+    "trailer assisted-by": "Assisted-by: omp · GLM 4.7 <omp-gmicloud-glm47@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://gmicloud.ai/en/legal/privacy",
+        "https://www.gmicloud.ai/en/legal/console-terms-of-service"
+      ],
+      "model-urls": [
+        "https://huggingface.co/zai-org/GLM-4.7",
+        "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960364
+  }
+}

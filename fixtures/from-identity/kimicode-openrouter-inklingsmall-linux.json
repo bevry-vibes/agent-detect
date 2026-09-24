@@ -8,12 +8,14 @@
       "harness_license": "MIT",
       "harness_open_training": "never",
       "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
       "provider_label": "OpenRouter",
       "provider_name": "openrouter",
       "provider_id": "openrouter",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "Inkling Small",
       "model_short_title": null,
@@ -27,10 +29,35 @@
       "agent_id": "kimicode-openrouter-inklingsmall",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null
+    "trailer co-author": "Co-authored-by: Kimi Code · Inkling Small <kimicode-openrouter-inklingsmall@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Inkling Small <kimicode-openrouter-inklingsmall@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/MoonshotAI/kimi-code",
+        "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/thinkingmachines/Inkling-Small",
+        "https://huggingface.co/thinkingmachines/Inkling-Small/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789899212
+    "updated_at": 1789960342
   }
 }

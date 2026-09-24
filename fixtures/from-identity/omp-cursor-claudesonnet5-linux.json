@@ -1,0 +1,62 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "Cursor",
+      "provider_name": "cursor",
+      "provider_id": "cursor",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "Claude Sonnet 5",
+      "model_short_title": null,
+      "model_name": "claude-sonnet-5",
+      "model_id": "claudesonnet5",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "omp-cursor-claudesonnet5",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Claude Sonnet 5 <omp-cursor-claudesonnet5@local>",
+    "trailer assisted-by": "Assisted-by: omp · Claude Sonnet 5 <omp-cursor-claudesonnet5@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cursor.com/"
+      ],
+      "model-urls": [
+        "https://www.anthropic.com/claude/sonnet",
+        "https://docs.anthropic.com/en/docs/about-claude/models"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960357
+  }
+}

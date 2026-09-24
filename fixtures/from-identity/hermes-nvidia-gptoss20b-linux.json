@@ -8,12 +8,14 @@
       "harness_license": "MIT",
       "harness_open_training": "never",
       "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
       "provider_label": "NVIDIA NIM",
       "provider_name": "nvidia",
       "provider_id": "nvidia",
       "provider_closed_training": "enforced",
       "provider_open_training": "enforced",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": false,
       "model_label": "GPT-OSS 20B",
       "model_short_title": null,
@@ -28,9 +30,34 @@
       "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: Hermes Agent · GPT-OSS 20B <hermes-nvidia-gptoss20b@local>",
-    "trailer assisted-by": "Assisted-by: Hermes Agent · GPT-OSS 20B <hermes-nvidia-gptoss20b@local>"
+    "trailer assisted-by": "Assisted-by: Hermes Agent · GPT-OSS 20B <hermes-nvidia-gptoss20b@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/",
+        "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/"
+      ],
+      "model-urls": [
+        "https://huggingface.co/openai/gpt-oss-20b",
+        "https://huggingface.co/openai/gpt-oss-20b/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789899337
+    "updated_at": 1789960209
   }
 }

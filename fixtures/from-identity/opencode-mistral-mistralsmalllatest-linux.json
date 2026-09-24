@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Mistral",
+      "provider_name": "mistral",
+      "provider_id": "mistral",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": "opt-out",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "Mistral Small (latest)",
+      "model_short_title": null,
+      "model_name": "mistral-small-latest",
+      "model_id": "mistralsmalllatest",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "opencode-mistral-mistralsmalllatest",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Mistral Small (latest) <opencode-mistral-mistralsmalllatest@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Mistral Small (latest) <opencode-mistral-mistralsmalllatest@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://docs.mistral.ai/legal/terms-of-service/",
+        "https://docs.mistral.ai/legal/acceptable-use-policy/"
+      ],
+      "model-urls": [
+        "https://docs.mistral.ai/getting-started/models/models_overview/",
+        "https://docs.mistral.ai/getting-started/models/"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960414
+  }
+}

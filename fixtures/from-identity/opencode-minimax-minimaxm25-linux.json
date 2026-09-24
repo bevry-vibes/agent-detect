@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "MiniMax",
+      "provider_name": "minimax",
+      "provider_id": "minimax",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "MiniMax M2.5",
+      "model_short_title": null,
+      "model_name": "minimax-m2.5",
+      "model_id": "minimaxm25",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "opencode-minimax-minimaxm25",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · MiniMax M2.5 <opencode-minimax-minimaxm25@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · MiniMax M2.5 <opencode-minimax-minimaxm25@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.minimax.io/docs/guides/terms-of-service",
+        "https://platform.minimax.io/docs/guides/privacy-policy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M2.5",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M2.5/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960412
+  }
+}

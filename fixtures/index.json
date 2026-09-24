@@ -405,14 +405,10 @@
       "vibe-minimax-minimaxm3-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
       "vibe-mistral-mistrallargelatest-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
       "vibe-mistral-mistralsmalllatest-darwin": "capture failed (exit 1); stderr Error: API error from mistral (model: mistral-vibe-cli-latest): Invalid API key. Please check your API key and try again.\n",
-      "pi-openrouter-gemma431b-linux": "capture failed (exit 1); stderr No API key found for openrouter.\n\nUse /login to log into a provider via OAuth or API key. See:\n  <home>/.local/lib/node_modules/@earendil-works/pi-coding-agent/docs/providers.md\n  <home>/.local/lib/node_modules/@earendil-works/pi-coding-agent/docs/models.md\n",
+      "cline-deepseek-deepseekv4flash-linux": "harness unavailable — version probe failed",
       "cline-clinepass-glm53flash-linux": "harness unavailable — version probe failed",
       "cline-clinepass-kimik3-linux": "harness unavailable — version probe failed",
-      "cline-clinepass-step37flash-linux": "harness unavailable — version probe failed",
-      "cline-deepseek-deepseekv4flash-linux": "harness unavailable — version probe failed",
-      "omp-zenmux-glm47flash-linux": "harness unavailable — version probe failed",
-      "kimicode-openrouter-gemma431b-linux": "harness unavailable — version probe failed",
-      "opencode-opencode-nemotron3ultra-linux": "harness unavailable — version probe failed"
+      "cline-clinepass-step37flash-linux": "harness unavailable — version probe failed"
     }
   },
   "invocations": {

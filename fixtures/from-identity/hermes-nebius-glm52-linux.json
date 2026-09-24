@@ -1,0 +1,64 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Nebius Token Factory",
+      "provider_name": "nebius",
+      "provider_id": "nebius",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": "opt-out",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "GLM 5.2",
+      "model_short_title": null,
+      "model_name": "glm-5.2",
+      "model_id": "glm52",
+      "model_openness": "open-source",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "hermes-nebius-glm52",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · GLM 5.2 <hermes-nebius-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · GLM 5.2 <hermes-nebius-glm52@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://docs.tokenfactory.nebius.com/legal/terms-of-service",
+        "https://nebius.com/services/token-factory"
+      ],
+      "model-urls": [
+        "https://huggingface.co/zai-org/GLM-5.2",
+        "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE",
+        "https://opensource.org/ai/open-source-ai-definition"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960198
+  }
+}

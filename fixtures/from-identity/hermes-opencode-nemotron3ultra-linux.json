@@ -8,12 +8,14 @@
       "harness_license": "MIT",
       "harness_open_training": "never",
       "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
       "provider_label": "OpenCode Zen",
       "provider_name": "opencode",
       "provider_id": "opencode",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "Nemotron 3 Ultra",
       "model_short_title": null,
@@ -27,10 +29,34 @@
       "agent_id": "hermes-opencode-nemotron3ultra",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null
+    "trailer co-author": "Co-authored-by: Hermes Agent · Nemotron 3 Ultra <hermes-opencode-nemotron3ultra@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Nemotron 3 Ultra <hermes-opencode-nemotron3ultra@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://opencode.ai/docs/zen"
+      ],
+      "model-urls": [
+        "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B",
+        "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789898924
+    "updated_at": 1789960224
   }
 }

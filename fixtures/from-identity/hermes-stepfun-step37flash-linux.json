@@ -1,0 +1,60 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "StepFun",
+      "provider_name": "stepfun",
+      "provider_id": "stepfun",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "Step 3.7 Flash",
+      "model_short_title": null,
+      "model_name": "step-3.7-flash",
+      "model_id": "step37flash",
+      "model_openness": null,
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": null,
+      "agent_id": "hermes-stepfun-step37flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Step 3.7 Flash <hermes-stepfun-step37flash@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Step 3.7 Flash <hermes-stepfun-step37flash@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.stepfun.ai/docs/en/agreement/userservice",
+        "https://platform.stepfun.ai/docs/en/agreement/userprivacy"
+      ],
+      "model-urls": [],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960251
+  }
+}

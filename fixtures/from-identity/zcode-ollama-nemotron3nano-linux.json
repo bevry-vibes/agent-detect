@@ -8,12 +8,14 @@
       "harness_license": "NONE",
       "harness_open_training": "opt-in",
       "harness_closed_training": "opt-in",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": false,
       "provider_label": "Ollama",
       "provider_name": "ollama",
       "provider_id": "ollama",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "Nemotron 3 Nano",
       "model_short_title": null,
@@ -28,9 +30,34 @@
       "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: ZCode · Nemotron 3 Nano <zcode-ollama-nemotron3nano@local>",
-    "trailer assisted-by": "Assisted-by: ZCode · Nemotron 3 Nano <zcode-ollama-nemotron3nano@local>"
+    "trailer assisted-by": "Assisted-by: ZCode · Nemotron 3 Nano <zcode-ollama-nemotron3nano@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://zcode.z.ai/",
+        "https://www.z.ai/terms-of-service"
+      ],
+      "provider-urls": [
+        "https://ollama.com/privacy",
+        "https://ollama.com/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B",
+        "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789955319
+    "updated_at": 1789960470
   }
 }

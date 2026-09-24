@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "NVIDIA NIM",
+      "provider_name": "nvidia",
+      "provider_id": "nvidia",
+      "provider_closed_training": "enforced",
+      "provider_open_training": "enforced",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "DeepSeek V4 Pro",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-pro",
+      "model_id": "deepseekv4pro",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "hermes-nvidia-deepseekv4pro",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · DeepSeek V4 Pro <hermes-nvidia-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · DeepSeek V4 Pro <hermes-nvidia-deepseekv4pro@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/",
+        "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960208
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Vibe",
+      "harness_short_title": null,
+      "harness_name": "vibe",
+      "harness_id": "vibe",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Mistral",
+      "provider_name": "mistral",
+      "provider_id": "mistral",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": "opt-out",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "Mistral Large (latest)",
+      "model_short_title": null,
+      "model_name": "mistral-large-latest",
+      "model_id": "mistrallargelatest",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "vibe-mistral-mistrallargelatest",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Vibe · Mistral Large (latest) <vibe-mistral-mistrallargelatest@local>",
+    "trailer assisted-by": "Assisted-by: Vibe · Mistral Large (latest) <vibe-mistral-mistrallargelatest@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/mistralai/mistral-vibe",
+        "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://docs.mistral.ai/legal/terms-of-service/",
+        "https://docs.mistral.ai/legal/acceptable-use-policy/"
+      ],
+      "model-urls": [
+        "https://docs.mistral.ai/getting-started/models/models_overview/",
+        "https://docs.mistral.ai/getting-started/models/"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960468
+  }
+}

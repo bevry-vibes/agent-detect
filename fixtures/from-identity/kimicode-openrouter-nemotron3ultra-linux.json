@@ -8,12 +8,14 @@
       "harness_license": "MIT",
       "harness_open_training": "never",
       "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
       "provider_label": "OpenRouter",
       "provider_name": "openrouter",
       "provider_id": "openrouter",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "Nemotron 3 Ultra",
       "model_short_title": null,
@@ -27,10 +29,35 @@
       "agent_id": "kimicode-openrouter-nemotron3ultra",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null
+    "trailer co-author": "Co-authored-by: Kimi Code · Nemotron 3 Ultra <kimicode-openrouter-nemotron3ultra@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Nemotron 3 Ultra <kimicode-openrouter-nemotron3ultra@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/MoonshotAI/kimi-code",
+        "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B",
+        "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789899249
+    "updated_at": 1789960350
   }
 }

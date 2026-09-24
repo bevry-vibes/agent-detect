@@ -1,0 +1,62 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenCode Zen",
+      "provider_name": "opencode",
+      "provider_id": "opencode",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "GPT-5.5",
+      "model_short_title": null,
+      "model_name": "gpt-5.5",
+      "model_id": "gpt55",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "opencode-opencode-gpt55",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · GPT-5.5 <opencode-opencode-gpt55@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GPT-5.5 <opencode-opencode-gpt55@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://opencode.ai/docs/zen"
+      ],
+      "model-urls": [
+        "https://openai.com/index/gpt-5/",
+        "https://platform.openai.com/docs/models"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960421
+  }
+}

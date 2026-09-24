@@ -1,0 +1,127 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity": true,
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity": true,
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "cline-clinepass-deepseekv4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Cline · DeepSeek V4 Flash <cline-clinepass-deepseekv4flash@local>",
+    "raw": {
+      "platform_id": "linux",
+      "harness_version": "3.0.62",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 93431,
+          "name": "agent-detect-de"
+        },
+        {
+          "pid": 8127,
+          "name": ".cline"
+        },
+        {
+          "pid": 8081,
+          "name": ".cline"
+        },
+        {
+          "pid": 8073,
+          "name": "node"
+        },
+        {
+          "pid": 7907,
+          "name": "bash"
+        },
+        {
+          "pid": 7869,
+          "name": "ghostty"
+        },
+        {
+          "pid": 3861,
+          "name": "systemd"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cline.bot/privacy",
+        "https://cline.bot/tos"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "CLINE_WRAPPER_PATH",
+          "value": "cline"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "lastUsedProvider",
+          "value": "cline-pass"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "providers.cline-pass.settings.model",
+          "value": "free/deepseek-v4-flash"
+        }
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1789955345,
+    "harness_version": "3.0.62",
+    "prompt_invocation": [
+      "cline",
+      "--auto-approve",
+      "--provider=cline-pass",
+      "--model=free/deepseek-v4-flash",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "cline",
+      "--version"
+    ]
+  }
+}

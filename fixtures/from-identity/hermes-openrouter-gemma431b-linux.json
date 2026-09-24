@@ -8,12 +8,14 @@
       "harness_license": "MIT",
       "harness_open_training": "never",
       "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
       "provider_label": "OpenRouter",
       "provider_name": "openrouter",
       "provider_id": "openrouter",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "Gemma 4 31B",
       "model_short_title": null,
@@ -27,10 +29,35 @@
       "agent_id": "hermes-openrouter-gemma431b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null
+    "trailer co-author": "Co-authored-by: Hermes Agent · Gemma 4 31B <hermes-openrouter-gemma431b@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Gemma 4 31B <hermes-openrouter-gemma431b@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/google/gemma-4-31b-it",
+        "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789899029
+    "updated_at": 1789960229
   }
 }

@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Qwen Code",
+      "harness_short_title": null,
+      "harness_name": "qwen",
+      "harness_id": "qwen",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Qwen",
+      "provider_name": "qwen",
+      "provider_id": "qwen",
+      "provider_closed_training": "enforced",
+      "provider_open_training": "enforced",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "DeepSeek V4 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4-flash",
+      "model_id": "deepseekv4flash",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "qwen-qwen-deepseekv4flash",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Qwen Code · DeepSeek V4 Flash <qwen-qwen-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code · DeepSeek V4 Flash <qwen-qwen-deepseekv4flash@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/QwenLM/qwen-code",
+        "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://qwen.ai/termsservice",
+        "https://qwen.ai/privacypolicy"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960463
+  }
+}

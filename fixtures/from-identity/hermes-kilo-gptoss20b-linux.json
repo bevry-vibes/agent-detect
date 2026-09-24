@@ -1,0 +1,62 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Kilo Gateway",
+      "provider_name": "kilo",
+      "provider_id": "kilo",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "GPT-OSS 20B",
+      "model_short_title": null,
+      "model_name": "gpt-oss-20b",
+      "model_id": "gptoss20b",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "hermes-kilo-gptoss20b",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · GPT-OSS 20B <hermes-kilo-gptoss20b@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · GPT-OSS 20B <hermes-kilo-gptoss20b@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://github.com/Kilo-Org/kilocode"
+      ],
+      "model-urls": [
+        "https://huggingface.co/openai/gpt-oss-20b",
+        "https://huggingface.co/openai/gpt-oss-20b/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960184
+  }
+}

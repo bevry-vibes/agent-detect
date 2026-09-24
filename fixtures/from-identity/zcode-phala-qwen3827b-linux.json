@@ -8,12 +8,14 @@
       "harness_license": "NONE",
       "harness_open_training": "opt-in",
       "harness_closed_training": "opt-in",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": false,
       "provider_label": "Phala",
       "provider_name": "phala",
       "provider_id": "phala",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "Qwen3.8 27B",
       "model_short_title": null,
@@ -28,9 +30,34 @@
       "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: ZCode · Qwen3.8 27B <zcode-phala-qwen3827b@local>",
-    "trailer assisted-by": "Assisted-by: ZCode · Qwen3.8 27B <zcode-phala-qwen3827b@local>"
+    "trailer assisted-by": "Assisted-by: ZCode · Qwen3.8 27B <zcode-phala-qwen3827b@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://zcode.z.ai/",
+        "https://www.z.ai/terms-of-service"
+      ],
+      "provider-urls": [
+        "https://phala.com/privacy",
+        "https://phala.com/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/Qwen/Qwen3.8-27B",
+        "https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789898400
+    "updated_at": 1789960475
   }
 }

@@ -1,0 +1,62 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Kilo Gateway",
+      "provider_name": "kilo",
+      "provider_id": "kilo",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "Kimi K2",
+      "model_short_title": null,
+      "model_name": "kimi-k2",
+      "model_id": "kimik2",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "hermes-kilo-kimik2",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Kimi K2 <hermes-kilo-kimik2@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Kimi K2 <hermes-kilo-kimik2@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://github.com/Kilo-Org/kilocode"
+      ],
+      "model-urls": [
+        "https://huggingface.co/moonshotai/Kimi-K2",
+        "https://huggingface.co/moonshotai/Kimi-K2/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960186
+  }
+}

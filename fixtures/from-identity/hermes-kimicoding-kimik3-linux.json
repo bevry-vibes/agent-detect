@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Kimi for Coding",
+      "provider_name": "kimi-coding",
+      "provider_id": "kimicoding",
+      "provider_closed_training": "NOASSERTION",
+      "provider_open_training": "NOASSERTION",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "Kimi K3",
+      "model_short_title": null,
+      "model_name": "kimi-k3",
+      "model_id": "kimik3",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
+      "agent_id": "hermes-kimicoding-kimik3",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Kimi K3 <hermes-kimicoding-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Kimi K3 <hermes-kimicoding-kimik3@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://platform.kimi.ai/docs/agreement/modeluse",
+        "https://www.kimi.ai/help/kimi-api/api-data-security"
+      ],
+      "model-urls": [
+        "https://huggingface.co/moonshotai/Kimi-K3",
+        "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960195
+  }
+}

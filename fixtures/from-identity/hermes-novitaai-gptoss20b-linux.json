@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "NovitaAI",
+      "provider_name": "novita-ai",
+      "provider_id": "novitaai",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "GPT-OSS 20B",
+      "model_short_title": null,
+      "model_name": "gpt-oss-20b",
+      "model_id": "gptoss20b",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "hermes-novitaai-gptoss20b",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · GPT-OSS 20B <hermes-novitaai-gptoss20b@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · GPT-OSS 20B <hermes-novitaai-gptoss20b@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://novita.ai/legal/terms-of-service",
+        "https://trust.novita.ai/faq"
+      ],
+      "model-urls": [
+        "https://huggingface.co/openai/gpt-oss-20b",
+        "https://huggingface.co/openai/gpt-oss-20b/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960204
+  }
+}

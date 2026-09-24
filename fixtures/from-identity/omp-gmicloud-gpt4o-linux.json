@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "GMI Cloud",
+      "provider_name": "gmi-cloud",
+      "provider_id": "gmicloud",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "GPT-4o",
+      "model_short_title": null,
+      "model_name": "gpt-4o",
+      "model_id": "gpt4o",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "omp-gmicloud-gpt4o",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · GPT-4o <omp-gmicloud-gpt4o@local>",
+    "trailer assisted-by": "Assisted-by: omp · GPT-4o <omp-gmicloud-gpt4o@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://gmicloud.ai/en/legal/privacy",
+        "https://www.gmicloud.ai/en/legal/console-terms-of-service"
+      ],
+      "model-urls": [
+        "https://openai.com/api/pricing/",
+        "https://platform.openai.com/docs/models"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960365
+  }
+}

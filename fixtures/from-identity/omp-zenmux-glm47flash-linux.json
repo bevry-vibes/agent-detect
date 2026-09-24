@@ -8,12 +8,14 @@
       "harness_license": "MIT",
       "harness_open_training": "NOASSERTION",
       "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": null,
       "provider_label": "ZenMux",
       "provider_name": "zenmux",
       "provider_id": "zenmux",
       "provider_closed_training": null,
       "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": null,
       "model_label": "Z.ai GLM 4.7 Flash",
       "model_short_title": null,
@@ -28,9 +30,33 @@
       "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: omp · Z.ai GLM 4.7 Flash <omp-zenmux-glm47flash@local>",
-    "trailer assisted-by": "Assisted-by: omp · Z.ai GLM 4.7 Flash <omp-zenmux-glm47flash@local>"
+    "trailer assisted-by": "Assisted-by: omp · Z.ai GLM 4.7 Flash <omp-zenmux-glm47flash@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://zenmux.ai/"
+      ],
+      "model-urls": [
+        "https://huggingface.co/zai-org/GLM-4.7-Flash",
+        "https://huggingface.co/zai-org/GLM-4.7-Flash/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789899341
+    "updated_at": 1789960405
   }
 }

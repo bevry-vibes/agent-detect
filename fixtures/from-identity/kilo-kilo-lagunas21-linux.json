@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "Kilo Gateway",
+      "provider_name": "kilo",
+      "provider_id": "kilo",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "Laguna S 2.1",
+      "model_short_title": null,
+      "model_name": "laguna-s-2.1",
+      "model_id": "lagunas21",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
+      "agent_id": "kilo-kilo-lagunas21",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code · Laguna S 2.1 <kilo-kilo-lagunas21@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Laguna S 2.1 <kilo-kilo-lagunas21@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/Kilo-Org/kilocode",
+        "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://github.com/Kilo-Org/kilocode"
+      ],
+      "model-urls": [
+        "https://huggingface.co/poolside/Laguna-S-2.1",
+        "https://huggingface.co/poolside/Laguna-S-2.1/blob/main/LICENSE.md",
+        "https://openmdw.ai/faq/"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960290
+  }
+}

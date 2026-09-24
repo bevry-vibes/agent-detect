@@ -1,0 +1,66 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "GitHub Copilot",
+      "provider_name": "github-copilot",
+      "provider_id": "githubcopilot",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": true,
+      "provider_reciprocity": false,
+      "model_label": "Grok 4.5",
+      "model_short_title": null,
+      "model_name": "grok-4.5",
+      "model_id": "grok45",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "omp-githubcopilot-grok45",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · Grok 4.5 <omp-githubcopilot-grok45@local>",
+    "trailer assisted-by": "Assisted-by: omp · Grok 4.5 <omp-githubcopilot-grok45@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://copilot.github.trust.page/faq",
+        "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+      ],
+      "model-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "scandal-urls": [
+        "https://news.ycombinator.com/item?id=33468849",
+        "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1789960363
+  }
+}

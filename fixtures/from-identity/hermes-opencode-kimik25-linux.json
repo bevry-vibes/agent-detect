@@ -1,0 +1,62 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenCode Zen",
+      "provider_name": "opencode",
+      "provider_id": "opencode",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Kimi K2.5",
+      "model_short_title": null,
+      "model_name": "kimi-k2.5",
+      "model_id": "kimik25",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "hermes-opencode-kimik25",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · Kimi K2.5 <hermes-opencode-kimik25@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · Kimi K2.5 <hermes-opencode-kimik25@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://opencode.ai/docs/zen"
+      ],
+      "model-urls": [
+        "https://huggingface.co/moonshotai/Kimi-K2.5",
+        "https://huggingface.co/moonshotai/Kimi-K2.5/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960221
+  }
+}

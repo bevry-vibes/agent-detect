@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Xiaomi",
+      "provider_name": "xiaomi",
+      "provider_id": "xiaomi",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "MiMo V2.5 Pro",
+      "model_short_title": null,
+      "model_name": "mimo-v2.5-pro",
+      "model_id": "mimov25pro",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "hermes-xiaomi-mimov25pro",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · MiMo V2.5 Pro <hermes-xiaomi-mimov25pro@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · MiMo V2.5 Pro <hermes-xiaomi-mimov25pro@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://privacy.mi.com/XiaomiMiMoPlatformos/en_GB/",
+        "https://www.mi.com/about/privacy/"
+      ],
+      "model-urls": [
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro",
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960274
+  }
+}

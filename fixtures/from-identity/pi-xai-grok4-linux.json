@@ -1,0 +1,66 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "xAI",
+      "provider_name": "xai",
+      "provider_id": "xai",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": true,
+      "provider_reciprocity": false,
+      "model_label": "Grok 4",
+      "model_short_title": null,
+      "model_name": "grok-4",
+      "model_id": "grok4",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "pi-xai-grok4",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Pi · Grok 4 <pi-xai-grok4@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Grok 4 <pi-xai-grok4@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/earendil-works/pi",
+        "https://github.com/earendil-works/pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://x.ai/legal/terms-of-service-enterprise",
+        "https://x.ai/legal/privacy-policy"
+      ],
+      "model-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "scandal-urls": [
+        "https://noyb.eu/en/twitters-ai-plans-hit-9-more-gdpr-complaints",
+        "https://thehackernews.com/2026/07/grok-build-uploads-entire-git.html"
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1789960460
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Hermes Agent",
+      "harness_short_title": "Hermes",
+      "harness_name": "hermes",
+      "harness_id": "hermes",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "NVIDIA NIM",
+      "provider_name": "nvidia",
+      "provider_id": "nvidia",
+      "provider_closed_training": "enforced",
+      "provider_open_training": "enforced",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "MiniMax M2.7",
+      "model_short_title": "M2.7",
+      "model_name": "minimax-m2.7",
+      "model_id": "minimaxm27",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "hermes-nvidia-minimaxm27",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Hermes Agent · MiniMax M2.7 <hermes-nvidia-minimaxm27@local>",
+    "trailer assisted-by": "Assisted-by: Hermes Agent · MiniMax M2.7 <hermes-nvidia-minimaxm27@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/NousResearch/hermes-agent",
+        "https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/",
+        "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/"
+      ],
+      "model-urls": [
+        "https://huggingface.co/MiniMaxAI/MiniMax-M2.7",
+        "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960210
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "Kilo Gateway",
+      "provider_name": "kilo",
+      "provider_id": "kilo",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "Grok 4.6",
+      "model_short_title": null,
+      "model_name": "grok-4.6",
+      "model_id": "grok46",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "NONE",
+      "model_reciprocity": false,
+      "agent_id": "kilo-kilo-grok46",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code · Grok 4.6 <kilo-kilo-grok46@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Grok 4.6 <kilo-kilo-grok46@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/Kilo-Org/kilocode",
+        "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://github.com/Kilo-Org/kilocode"
+      ],
+      "model-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "scandal-urls": []
+    }
+  },
+  "meta": {
+    "updated_at": 1789960287
+  }
+}

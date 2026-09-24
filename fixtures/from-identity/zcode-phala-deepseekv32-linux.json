@@ -8,12 +8,14 @@
       "harness_license": "NONE",
       "harness_open_training": "opt-in",
       "harness_closed_training": "opt-in",
+      "harness_reciprocity_scandal": false,
       "harness_reciprocity": false,
       "provider_label": "Phala",
       "provider_name": "phala",
       "provider_id": "phala",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
       "model_label": "DeepSeek V3.2",
       "model_short_title": null,
@@ -28,9 +30,34 @@
       "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: ZCode · DeepSeek V3.2 <zcode-phala-deepseekv32@local>",
-    "trailer assisted-by": "Assisted-by: ZCode · DeepSeek V3.2 <zcode-phala-deepseekv32@local>"
+    "trailer assisted-by": "Assisted-by: ZCode · DeepSeek V3.2 <zcode-phala-deepseekv32@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://zcode.z.ai/",
+        "https://www.z.ai/terms-of-service"
+      ],
+      "provider-urls": [
+        "https://phala.com/privacy",
+        "https://phala.com/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V3.2",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    }
   },
   "meta": {
-    "updated_at": 1789898334
+    "updated_at": 1789960470
   }
 }

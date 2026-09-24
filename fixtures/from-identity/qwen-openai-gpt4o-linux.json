@@ -1,0 +1,66 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Qwen Code",
+      "harness_short_title": null,
+      "harness_name": "qwen",
+      "harness_id": "qwen",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenAI",
+      "provider_name": "openai",
+      "provider_id": "openai",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "provider_reciprocity_scandal": true,
+      "provider_reciprocity": false,
+      "model_label": "GPT-4o",
+      "model_short_title": null,
+      "model_name": "gpt-4o",
+      "model_id": "gpt4o",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "qwen-openai-gpt4o",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>",
+    "raw": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/QwenLM/qwen-code",
+        "https://github.com/QwenLM/qwen-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openai.com/policies/data-usage-policy/",
+        "https://openai.com/policies/business-terms/"
+      ],
+      "model-urls": [
+        "https://openai.com/api/pricing/",
+        "https://platform.openai.com/docs/models"
+      ],
+      "scandal-urls": [
+        "https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/",
+        "https://www.reuters.com/legal/litigation/new-york-times-led-group-asks-court-sanction-openai-us-copyright-dispute-2026-07-09/"
+      ]
+    }
+  },
+  "meta": {
+    "updated_at": 1789960463
+  }
+}
