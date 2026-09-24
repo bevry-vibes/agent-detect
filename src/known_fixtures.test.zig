@@ -8,6 +8,7 @@
 const std = @import("std");
 const testing = std.testing;
 const main = @import("main.zig");
+const core = @import("lib/core.zig");
 
 const identity_dir = "fixtures/from-identity";
 const capture_dir = "fixtures/from-capture";
@@ -201,13 +202,27 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
             if (identify != .object) return error.InvalidFixtureShape;
             try testing.expect(oo.get("trailer co-author") != null);
             try testing.expect(oo.get("trailer assisted-by") != null);
+            // the introspection channels, when present: explain is an object, the `.stderr` channels are arrays of non-empty line strings (arrays-not-multiline ruling).
+            if (oo.get("explain")) |ev| {
+                if (ev != .object) return error.InvalidFixtureShape;
+            }
+            if (oo.get("identify.stderr")) |sv| {
+                if (sv != .array) return error.InvalidFixtureShape;
+            }
+            if (oo.get("explain.stderr")) |sv| {
+                if (sv != .array) return error.InvalidFixtureShape;
+            }
             if (std.mem.eql(u8, folder, identity_dir)) {
                 // from-identity outputs: identify + trailers + the declared raw (the rule-derived evidence; pre-declared-raw files predate the key — their next sweep adds it, decision #16)
                 for (oo.keys()) |k| {
                     if (std.mem.eql(u8, k, "identify") or
                         std.mem.eql(u8, k, "trailer co-author") or
                         std.mem.eql(u8, k, "trailer assisted-by") or
-                        std.mem.eql(u8, k, "raw")) continue;
+                        std.mem.eql(u8, k, "raw") or // legacy key — files keep it until their next sweep (the found rename)
+                        std.mem.eql(u8, k, "found") or
+                        std.mem.eql(u8, k, "explain") or
+                        std.mem.eql(u8, k, "identify.stderr") or
+                        std.mem.eql(u8, k, "explain.stderr")) continue;
                     std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
                     return error.UnexpectedOutputKey;
                 }
@@ -220,7 +235,11 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                     if (std.mem.eql(u8, k, "identify") or
                         std.mem.eql(u8, k, "trailer co-author") or
                         std.mem.eql(u8, k, "trailer assisted-by") or
-                        std.mem.eql(u8, k, "raw")) continue;
+                        std.mem.eql(u8, k, "raw") or // legacy key — files keep it until their next sweep (the found rename)
+                        std.mem.eql(u8, k, "found") or
+                        std.mem.eql(u8, k, "explain") or
+                        std.mem.eql(u8, k, "identify.stderr") or
+                        std.mem.eql(u8, k, "explain.stderr")) continue;
                     std.debug.print("fixture {s}/{s}.json has unexpected outputs key '{s}'\n", .{ folder, stem, k });
                     return error.UnexpectedOutputKey;
                 }
@@ -688,7 +707,7 @@ test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host pla
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    const host = main.dev.platformId();
+    const host = core.platformId();
     const stems = try discoverFolderStems(aa, capture_dir);
     for (stems) |stem| {
         const parts = (split4(stem)) orelse continue;
@@ -939,30 +958,30 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     // ollama: resolved 2026-09-21 — the local runtime's first stems landed (zcode-ollama-{granite332b,nemotron3nano,qwen3}-linux, .plans/1789895398's local sweep).
     // (The 2026-09-07 folds — moonshotai, kimi-coding, opencode — carry stems from the renamed fixtures, so they need no exemptions.)
     const rule_only_providers = [_][]const u8{
-        "cline",            "chutes",           "google",
+        "cline",               "chutes",        "google",
         "alibaba-coding-plan", "openai-codex",  "google-vertex",
-        "amazon-bedrock",   "azure-foundry",    "novita-ai",
-        "deepinfra",        "nebius",           "nvidia",
-        "upstage",          "xiaomi",           "stepfun",
-        "arcee",            "vercel",           "nous",
-        "autoclaw",         "phala",
+        "amazon-bedrock",      "azure-foundry", "novita-ai",
+        "deepinfra",           "nebius",        "nvidia",
+        "upstage",             "xiaomi",        "stepfun",
+        "arcee",               "vercel",        "nous",
+        "autoclaw",            "phala",
     };
     const rule_only_models = [_][]const u8{
-        "claude-haiku-4",           "claude-opus-4",       "devstral-2",
-        "gemini-3.1-pro",           "glm-4.6",             "glm-5",
-        "glm-5.1",                  "glm-5.3",             "gpt-5.5",
-        "grok-3-mini",              "grok-4.6",            "hy3",
-        "hy4-preview",              "kimi-k2.6",           "mimo-v2.5",
-        "mimo-v2.5-pro",            "mistral-nemo-instruct-2407",
-        "nemotron-3-nano-omni",     "qwen3-235b-a22b",     "qwen3-32b",
-        "qwen3.5",                  "qwen3.5-397b-a17b",   "qwen3.6-27b",
-        "qwen3.8-27b",              "gpt-oss-20b",         "laguna-s-2.1",
-        "laguna-xs-2.1",            "glm-5-turbo",
-        "big-pickle",
+        "claude-haiku-4",         "claude-opus-4",              "devstral-2",
+        "gemini-3.1-pro",         "glm-4.6",                    "glm-5",
+        "glm-5.1",                "glm-5.3",                    "gpt-5.5",
+        "grok-3-mini",            "grok-4.6",                   "hy3",
+        "hy4-preview",            "kimi-k2.6",                  "mimo-v2.5",
+        "mimo-v2.5-pro",          "mistral-nemo-instruct-2407", "nemotron-3-nano-omni",
+        "qwen3-235b-a22b",        "qwen3-32b",                  "qwen3.5",
+        "qwen3.5-397b-a17b",      "qwen3.6-27b",                "qwen3.8-27b",
+        "gpt-oss-20b",            "laguna-s-2.1",               "laguna-xs-2.1",
+        "glm-5-turbo",            "big-pickle",
         // the 2026-09-20 free-axis refresh (.plans/1789895398) — new rules land rule-only until the free sweeps fixture them.
-        "north-mini-code",          "ling-3.0-flash-vl",   "dots-3-note-preview",
-        "nex-n2.5-mini",            "nex-n2.5-pro",        "inkling",
-        "inkling-small",            "nemotron-3.5-lightning",
+                        "north-mini-code",
+        "ling-3.0-flash-vl",      "dots-3-note-preview",        "nex-n2.5-mini",
+        "nex-n2.5-pro",           "inkling",                    "inkling-small",
+        "nemotron-3.5-lightning",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;
@@ -1106,7 +1125,6 @@ test "map-provider-model-freeprovidermodel.csv: free-grid entries resolve to kno
 }
 
 test "redactPaths: project before home, backslash + slash + EOL boundaries, home backslash-aware" {
-    const core = @import("lib/core.zig");
     const a = testing.allocator;
 
     // the reported bug: a Windows project-local db path redacts to <project>, not the raw drive path (project passed first, so the home prefix inside it is consumed whole).

@@ -594,6 +594,8 @@ pub const HarnessRule = struct {
     binary_names: []const []const u8, // executable names for ancestry matching, the daemon's in-agent guard, and invocation argv[0] validation in the tests (bare stems first, then platform extensions)
     /// extra alias display-strings not covered by `name`/`label`/ `short_title`; joins the normalized alias set — see the field doc on `ModelRule.variations`.
     variations: []const []const u8 = &.{},
+    /// one imperative line naming where the harness's data-sharing/training setting lives — feeds the fix_setting remediation; null → generic fallback text. Never emitted into fixtures.
+    closed_setting_hint: ?[]const u8 = null,
 };
 
 const cline_env = [_][]const u8{ "CLINE_WRAPPER_PATH", "CLINE_BUILD_ENV", "CLINE_NO_INTERACTIVE", "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH" };
@@ -724,7 +726,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     // EXCEPT GLM-ASR-2512, which is API-only (no public weights; only the Nano variant is released), so the blanket closed_training="never" is structurally unsafe and the toggle-ON instance read still carries the fail-safe instead (see `detectZcode` — the instance read wins over this static posture whenever the settings file is present).
     // Declared last so its env markers (which leak into every child session of the app, like any desktop harness's shell env) are checked only after every other harness's markers —
     // a cline or goose session spawned from inside ZCode still matches its own rule first.
-    .{ .name = "zcode", .label = "ZCode", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/zai-org/ZCode", "https://github.com/zai-org/ZCode/blob/main/LICENSE" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://zcode.z.ai/privacy", "https://zcode.z.ai/terms" }, .env_markers = &zcode_env, .binary_names = if (builtin.os.tag == .windows)
+    .{ .name = "zcode", .label = "ZCode", .closed_setting_hint = "disable the \"Improve experience\" toggle (Settings → \"Allow us to use your conversations to improve the Agent experience\", persisted as optimizeAgentExperienceEnabled in ~/.zcode/v2/setting.json)", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/zai-org/ZCode", "https://github.com/zai-org/ZCode/blob/main/LICENSE" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://zcode.z.ai/privacy", "https://zcode.z.ai/terms" }, .env_markers = &zcode_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1", "zcode.exe", "zcode-cli.exe", "zcode-host-local-1.exe" }
     else
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1" } },

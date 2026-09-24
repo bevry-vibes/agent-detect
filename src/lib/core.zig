@@ -69,6 +69,8 @@ pub const MSG_ENV_INCOMPATIBLE = "incompatible environment refusing run\n";
 pub const MSG_ENV_INCOMPLETE = "incomplete environment preventing run\n";
 pub const MSG_AGENT_DATA_INCOMPLETE = "agent (harness, provider, model) data incomplete to make a determination\n";
 pub const MSG_REQUIREMENT_FAILED = "agent (harness, provider, model) data complete and requirement failed\n";
+/// the exit-8 message's fixed prefix; the per-dim `(harness = …, provider = …, model = …)` block follows (see `writeUnableToDetect` / `unableToDetectLine`).
+pub const MSG_UNABLE_TO_DETECT_PREFIX = "unable to detect unspecified agent ";
 pub const MSG_OUT_OF_MEMORY = "out of memory\n";
 pub const MSG_INDEX_STORE = "index store error\n";
 pub const MSG_IO = "filesystem I/O error\n";
@@ -82,7 +84,8 @@ pub fn writeMissingSpecifiedAgent(io: std.Io, h: ?[]const u8, p: ?[]const u8, m:
 
 /// exit-8 stderr message for live detection, reporting which of the three dims resolved (as its strict alphanumeric id) and which did not (`null`): `unable to detect unspecified agent (harness = "kilo", provider = null, model = null)`
 pub fn writeUnableToDetect(io: std.Io, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) void {
-    writeErr(io, "unable to detect unspecified agent (");
+    writeErr(io, MSG_UNABLE_TO_DETECT_PREFIX);
+    writeErr(io, "(");
     writeAgentDims(io, h, p, m);
     writeErr(io, ")\n");
 }
@@ -162,6 +165,8 @@ pub const Detection = struct {
     // the dims this run's detection ladder (or recipe) *could* resolve; a stale per-capture record of what landed in the raw block's `detectable` key.
     // `detected` is derived post-hoc from which canonical dims actually populated the canonical fields.
     detectable: []const []const u8 = &.{},
+    // the matched harness rule, stashed by detect()/resolveRecipe() so post-hoc layers (reasons, explain) can cite rule-carried sources the raw URL arrays do not carry (harness training_sources — raw.harness_urls holds the licence sources instead). Never emitted.
+    matched_rule: ?HarnessRule = null,
 };
 
 /// one env-var observation.
@@ -2491,6 +2496,505 @@ pub fn computeReciprocal(d: *const Detection) bool {
     return reciprocityOf(d) == .reciprocal;
 }
 
+// ============================================================================ reasons + remediation — the interpretation layer over the ladder
+
+/// the canonical URLs the remediation actions refer to.
+pub const contributing_url = "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md";
+pub const policy_url = "https://github.com/bevry-vibes/skills/blob/main/policy.md";
+
+/// the entity a reason is about.
+pub const ReasonEntity = enum { harness, provider, model };
+
+/// the reason registry — one code per distinct way a determination can fail or stall.
+/// The exit-10 family (a definitive fail) classifies in the ladder's own rung order — scandal first, enforced outranking the setting, an enabled setting outranking every remaining training value, opt-in/opt-out with nothing readable resolving active (see `resolveAxisClosed`);
+/// the exit-9 family (undeterminable — the value is unsourced, the nudge); the exit-8 family (the dim never resolved).
+pub const ReasonCode = enum {
+    // exit 10 — definitive fail
+    harness_scandal,
+    harness_closed_enforced,
+    harness_setting_enabled,
+    harness_closed_opt,
+    provider_scandal,
+    provider_closed_enforced,
+    provider_closed_opt,
+    model_closed,
+    model_closed_enforced,
+    model_closed_opt,
+    // exit 9 — undeterminable
+    harness_training_unsourced,
+    provider_training_unsourced,
+    model_openness_unknown,
+    model_training_unsourced,
+    // exit 8 — identity gap
+    harness_unmatched,
+    provider_unreadable,
+    model_unreadable,
+};
+
+/// what a remediation action tells the consumer to do — the kinds are the contract (rendered kebab-case in JSON); the instruction prose is advisory.
+pub const ActionKind = enum { fix_setting, switch_entity, preflight_combo, contribute_data, read_policy };
+
+/// one remediation action: an imperative instruction, plus the runnable command and/or the canonical URL where either applies.
+pub const Action = struct {
+    kind: ActionKind,
+    instruction: []const u8,
+    command: ?[]const u8 = null,
+    url: ?[]const u8 = null,
+};
+
+/// one judged value pair — carried inline in the reason so it reads self-contained without the raw block (`agent-detect found` owns the observation trail).
+pub const ValuePair = struct { name: []const u8, value: []const u8 };
+
+/// one reason: which entity, which code, the judged values, a one-sentence summary, the citable sources, and the remediation actions.
+pub const Reason = struct {
+    entity: ReasonEntity,
+    code: ReasonCode,
+    values: []const ValuePair = &.{},
+    summary: []const u8,
+    sources: []const []const u8 = &.{},
+    actions: []const Action = &.{},
+};
+
+/// the shared preflight action — recipe mode is how a candidate combo is verified before any switch.
+fn preflightAction() Action {
+    return .{
+        .kind = .preflight_combo,
+        .instruction = "verify a candidate combo resolves reciprocal before switching",
+        .command = "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>",
+    };
+}
+
+/// the policy-reading action scandal reasons point at.
+fn readPolicyAction() Action {
+    return .{ .kind = .read_policy, .instruction = "read the policy for what reciprocity requires", .url = policy_url };
+}
+
+/// the canonical ids of same-dim rules whose own static reciprocity resolves true — never null/unknown (a suggestion is a claim), capped at five, stable table order.
+/// Harness alternatives evaluate static rule values only (no instance setting is readable cross-harness) — the same semantics recipe mode applies.
+pub fn reciprocalAlternativesFor(a: std.mem.Allocator, comptime entity: ReasonEntity, exclude: ?[]const u8) ![]const []const u8 {
+    var list: std.ArrayList([]const u8) = .empty;
+    switch (entity) {
+        .harness => for (rulesForHarnesses) |r| {
+            if (exclude != null and std.mem.eql(u8, r.name, exclude.?)) continue;
+            var scratch = Detection{};
+            scratch.harness_closed_training = r.closed_training;
+            scratch.harness_reciprocity_scandal = r.reciprocity_scandal;
+            if (harnessReciprocityOf(&scratch) == true and list.items.len < 5) try list.append(a, r.name);
+        },
+        .provider => for (rulesForProviders) |r| {
+            if (exclude != null and std.mem.eql(u8, r.name, exclude.?)) continue;
+            var scratch = Detection{};
+            scratch.provider_closed_training = r.closed_training;
+            scratch.provider_reciprocity_scandal = r.reciprocity_scandal;
+            if (providerReciprocityOf(&scratch) == true and list.items.len < 5) try list.append(a, r.name);
+        },
+        .model => for (rulesForModels) |r| {
+            if (exclude != null and std.mem.eql(u8, r.name, exclude.?)) continue;
+            var scratch = Detection{};
+            scratch.model_openness = r.openness;
+            scratch.model_closed_training = r.closed_training;
+            if (modelReciprocityOf(&scratch) == true and list.items.len < 5) try list.append(a, r.name);
+        },
+    }
+    return list.toOwnedSlice(a);
+}
+
+/// the switch action for an entity that definitively fails — switching is the compliance path when no setting can fix it.
+/// Alternatives, when available, ride the instruction as e.g. candidates (capped, rule-table-derived).
+fn switchAction(a: std.mem.Allocator, subject: []const u8, alternatives: []const []const u8) !Action {
+    const instruction = if (alternatives.len > 0)
+        try std.fmt.allocPrint(a, "switch {s} to a reciprocal one to comply with the policy (e.g. {s})", .{ subject, try commaJoin(a, alternatives) })
+    else
+        try std.fmt.allocPrint(a, "switch {s} to a reciprocal one to comply with the policy", .{subject});
+    return .{
+        .kind = .switch_entity,
+        .instruction = instruction,
+    };
+}
+
+/// join with ", " — the alternatives render inside an instruction sentence.
+fn commaJoin(a: std.mem.Allocator, items: []const []const u8) ![]u8 {
+    return std.mem.join(a, ", ", items);
+}
+
+/// the shared contribute action — the dual reference is deliberate: `agent-detect found` gathers the evidence now (immediately runnable), CONTRIBUTING.md carries the submission workflow.
+fn contributeAction(a: std.mem.Allocator, subject: []const u8) !Action {
+    return .{
+        .kind = .contribute_data,
+        .instruction = try std.fmt.allocPrint(a, "{s} — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value", .{subject}),
+        .command = "agent-detect found",
+        .url = contributing_url,
+    };
+}
+
+/// a one-pair `values` slice.
+fn oneValuePair(a: std.mem.Allocator, name: []const u8, value: []const u8) ![]const ValuePair {
+    const arr = try a.alloc(ValuePair, 1);
+    arr[0] = .{ .name = name, .value = value };
+    return arr;
+}
+
+/// a two-action `actions` slice.
+fn twoActions(a: std.mem.Allocator, x: Action, y: Action) ![]const Action {
+    const arr = try a.alloc(Action, 2);
+    arr[0] = x;
+    arr[1] = y;
+    return arr;
+}
+
+/// the harness's policy reasons, in rung order — an entity that passes contributes nothing.
+fn harnessReasons(a: std.mem.Allocator, d: *const Detection, list: *std.ArrayList(Reason)) !void {
+    const label = d.harness_label orelse return;
+    // the per-harness setting pointer when the rule carries one; otherwise the generic "in its settings" phrasing.
+    const setting_hint: []const u8 = if (d.matched_rule) |r| (r.closed_setting_hint orelse "") else "";
+    const setting_hint_with_lead: []const u8 = if (setting_hint.len > 0) try std.fmt.allocPrint(a, " — {s}", .{setting_hint}) else "";
+    const t = d.harness_closed_training;
+    const s = d.harness_closed_setting;
+    const training_sources: []const []const u8 = if (d.matched_rule) |r| r.training_sources else &.{};
+    if (d.harness_reciprocity_scandal) {
+        try list.append(a, .{
+            .entity = .harness,
+            .code = .harness_scandal,
+            .summary = try std.fmt.allocPrint(a, "the {s} harness is flagged with a reciprocity scandal (verified misconduct)", .{label}),
+            .sources = if (d.matched_rule) |r| r.reciprocity_scandal_sources else d.raw.scandal_urls,
+            .actions = try twoActions(a, try switchAction(a, "the harness", try reciprocalAlternativesFor(a, .harness, d.harness_name)), readPolicyAction()),
+        });
+        return;
+    }
+    if (t != null and std.mem.eql(u8, t.?, "enforced")) {
+        try list.append(a, .{
+            .entity = .harness,
+            .code = .harness_closed_enforced,
+            .values = try oneValuePair(a, "closed_training", t.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} harness trains on user data by default (closed_training = enforced)", .{label}),
+            .sources = training_sources,
+            .actions = try twoActions(a, try switchAction(a, "the harness", try reciprocalAlternativesFor(a, .harness, d.harness_name)), preflightAction()),
+        });
+        return;
+    }
+    if (s != null and std.mem.eql(u8, s.?, "enabled")) {
+        try list.append(a, .{
+            .entity = .harness,
+            .code = .harness_setting_enabled,
+            .values = try oneValuePair(a, "closed_setting", s.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} harness's data-sharing setting is enabled (closed_setting = enabled)", .{label}),
+            .sources = training_sources,
+            .actions = try twoActions(a, .{
+                .kind = .fix_setting,
+                .instruction = try std.fmt.allocPrint(a, "set the {s} harness's data-sharing/training setting to disabled (or never){s}, then re-run", .{ label, setting_hint_with_lead }),
+            }, preflightAction()),
+        });
+        return;
+    }
+    if (s != null and std.mem.eql(u8, s.?, "disabled")) return; // rung 3 — the artifact turns the data use off; passes
+    if (t != null and std.mem.eql(u8, t.?, "never")) return; // rung 4 — the verified claim stands
+    if (t != null and (std.mem.eql(u8, t.?, "opt-in") or std.mem.eql(u8, t.?, "opt-out"))) {
+        try list.append(a, .{
+            .entity = .harness,
+            .code = .harness_closed_opt,
+            .values = try oneValuePair(a, "closed_training", t.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} harness may train on user data (closed_training = {s}) with no readable opt-out", .{ label, t.? }),
+            .sources = training_sources,
+            .actions = try twoActions(a, try switchAction(a, "the harness", try reciprocalAlternativesFor(a, .harness, d.harness_name)), preflightAction()),
+        });
+        return;
+    }
+    // rung 6 — NOASSERTION or null training with nothing readable: unsourced.
+    try list.append(a, .{
+        .entity = .harness,
+        .code = .harness_training_unsourced,
+        .values = if (t) |v| try oneValuePair(a, "closed_training", v) else &.{},
+        .summary = try std.fmt.allocPrint(a, "the {s} harness's training posture is unsourced — the determination cannot be made", .{label}),
+        .sources = training_sources,
+        .actions = try twoActions(a, try contributeAction(a, try std.fmt.allocPrint(a, "the {s} harness rule lacks a sourced training posture", .{label})), preflightAction()),
+    });
+}
+
+/// the provider's policy reasons, in rung order — a provider has no readable setting (see `providerReciprocityOf`), so the training value alone classifies.
+fn providerReasons(a: std.mem.Allocator, d: *const Detection, list: *std.ArrayList(Reason)) !void {
+    const label = d.provider_label orelse return;
+    const t = d.provider_closed_training;
+    if (d.provider_reciprocity_scandal) {
+        try list.append(a, .{
+            .entity = .provider,
+            .code = .provider_scandal,
+            .summary = try std.fmt.allocPrint(a, "the {s} provider is flagged with a reciprocity scandal (verified misconduct)", .{label}),
+            .sources = d.raw.scandal_urls,
+            .actions = try twoActions(a, try switchAction(a, "the provider", try reciprocalAlternativesFor(a, .provider, d.provider_name)), readPolicyAction()),
+        });
+        return;
+    }
+    if (t != null and std.mem.eql(u8, t.?, "enforced")) {
+        try list.append(a, .{
+            .entity = .provider,
+            .code = .provider_closed_enforced,
+            .values = try oneValuePair(a, "closed_training", t.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} provider trains on user data by default (closed_training = enforced)", .{label}),
+            .sources = d.raw.provider_urls,
+            .actions = try twoActions(a, try switchAction(a, "the provider", try reciprocalAlternativesFor(a, .provider, d.provider_name)), preflightAction()),
+        });
+        return;
+    }
+    if (t != null and std.mem.eql(u8, t.?, "never")) return;
+    if (t != null and (std.mem.eql(u8, t.?, "opt-in") or std.mem.eql(u8, t.?, "opt-out"))) {
+        try list.append(a, .{
+            .entity = .provider,
+            .code = .provider_closed_opt,
+            .values = try oneValuePair(a, "closed_training", t.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} provider may train on user data (closed_training = {s}) with no readable opt-out", .{ label, t.? }),
+            .sources = d.raw.provider_urls,
+            .actions = try twoActions(a, try switchAction(a, "the provider", try reciprocalAlternativesFor(a, .provider, d.provider_name)), preflightAction()),
+        });
+        return;
+    }
+    try list.append(a, .{
+        .entity = .provider,
+        .code = .provider_training_unsourced,
+        .values = if (t) |v| try oneValuePair(a, "closed_training", v) else &.{},
+        .summary = try std.fmt.allocPrint(a, "the {s} provider's training posture is unsourced — the determination cannot be made", .{label}),
+        .sources = d.raw.provider_urls,
+        .actions = try twoActions(a, try contributeAction(a, try std.fmt.allocPrint(a, "the {s} provider rule lacks a sourced training posture", .{label})), preflightAction()),
+    });
+}
+
+/// the model's policy reasons, in `modelReciprocityOf` order — the openness of the weights gates first.
+fn modelReasons(a: std.mem.Allocator, d: *const Detection, list: *std.ArrayList(Reason)) !void {
+    const label = d.model_label orelse return;
+    const openness = d.model_openness orelse {
+        try list.append(a, .{
+            .entity = .model,
+            .code = .model_openness_unknown,
+            .summary = try std.fmt.allocPrint(a, "the {s} model is absent from the model rules — its openness is unknown", .{label}),
+            .sources = d.raw.model_urls,
+            .actions = try twoActions(a, try contributeAction(a, try std.fmt.allocPrint(a, "the {s} model is absent from the rule tables", .{label})), preflightAction()),
+        });
+        return;
+    };
+    if (std.mem.eql(u8, openness, "closed")) {
+        try list.append(a, .{
+            .entity = .model,
+            .code = .model_closed,
+            .values = try oneValuePair(a, "openness", openness),
+            .summary = try std.fmt.allocPrint(a, "the {s} model has closed weights (openness = closed)", .{label}),
+            .sources = d.raw.model_urls,
+            .actions = try twoActions(a, try switchAction(a, "the model", try reciprocalAlternativesFor(a, .model, d.model_name)), preflightAction()),
+        });
+        return;
+    }
+    const t = d.model_closed_training;
+    if (t != null and std.mem.eql(u8, t.?, "enforced")) {
+        try list.append(a, .{
+            .entity = .model,
+            .code = .model_closed_enforced,
+            .values = try oneValuePair(a, "closed_training", t.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} model's arrangement trains on user data by default (closed_training = enforced)", .{label}),
+            .sources = d.raw.model_urls,
+            .actions = try twoActions(a, try switchAction(a, "the model", try reciprocalAlternativesFor(a, .model, d.model_name)), preflightAction()),
+        });
+        return;
+    }
+    if (t != null and (std.mem.eql(u8, t.?, "opt-in") or std.mem.eql(u8, t.?, "opt-out"))) {
+        try list.append(a, .{
+            .entity = .model,
+            .code = .model_closed_opt,
+            .values = try oneValuePair(a, "closed_training", t.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} model's arrangement may train on user data (closed_training = {s}) with no readable opt-out", .{ label, t.? }),
+            .sources = d.raw.model_urls,
+            .actions = try twoActions(a, try switchAction(a, "the model", try reciprocalAlternativesFor(a, .model, d.model_name)), preflightAction()),
+        });
+        return;
+    }
+    if (t != null and std.mem.eql(u8, t.?, "NOASSERTION")) {
+        try list.append(a, .{
+            .entity = .model,
+            .code = .model_training_unsourced,
+            .values = try oneValuePair(a, "closed_training", t.?),
+            .summary = try std.fmt.allocPrint(a, "the {s} model's training arrangement is unsourced — the determination cannot be made", .{label}),
+            .sources = d.raw.model_urls,
+            .actions = try twoActions(a, try contributeAction(a, try std.fmt.allocPrint(a, "the {s} model rule lacks a sourced training posture", .{label})), preflightAction()),
+        });
+        return;
+    }
+    // "never" or absent — no exception recorded; passes.
+}
+
+/// Derive the reasons for `d`'s determination state — pure, no I/O, one source of truth for the explain JSON and the compact stderr layer alike.
+/// Identity gaps contribute the first unresolved dim only (the ladder is sequential — a later dim could not be attempted meaningfully before the earlier one resolved);
+/// once identity is complete each entity contributes at most one policy reason, in harness → provider → model order.
+pub fn reasonsFor(a: std.mem.Allocator, d: *const Detection) ![]Reason {
+    var list: std.ArrayList(Reason) = .empty;
+    if (d.harness_label == null) {
+        try list.append(a, .{
+            .entity = .harness,
+            .code = .harness_unmatched,
+            .summary = "no harness rule matched this session",
+            .actions = try twoActions(a, preflightAction(), try contributeAction(a, "this harness is absent from the rule tables")),
+        });
+        return list.toOwnedSlice(a);
+    }
+    if (d.provider_label == null) {
+        try list.append(a, .{
+            .entity = .provider,
+            .code = .provider_unreadable,
+            .summary = try std.fmt.allocPrint(a, "the {s} harness matched but its provider dim did not resolve (no config or session read landed)", .{d.harness_label.?}),
+            .actions = try twoActions(a, preflightAction(), try contributeAction(a, "this harness's provider is not being read correctly")),
+        });
+        return list.toOwnedSlice(a);
+    }
+    if (d.model_label == null) {
+        try list.append(a, .{
+            .entity = .model,
+            .code = .model_unreadable,
+            .summary = try std.fmt.allocPrint(a, "the {s} harness matched but its model dim did not resolve (no config or session read landed)", .{d.harness_label.?}),
+            .actions = try twoActions(a, preflightAction(), try contributeAction(a, "this harness's model is not being read correctly")),
+        });
+        return list.toOwnedSlice(a);
+    }
+    try harnessReasons(a, d, &list);
+    try providerReasons(a, d, &list);
+    try modelReasons(a, d, &list);
+    return list.toOwnedSlice(a);
+}
+
+/// one compact reason line (sans trailing newline): `  - {entity}: {summary} (see: agent-detect explain)`.
+fn reasonCompactLine(a: std.mem.Allocator, r: Reason) ![]u8 {
+    return std.fmt.allocPrint(a, "  - {s}: {s} (see: agent-detect explain)", .{ @tagName(r.entity), r.summary });
+}
+
+/// render the compact stderr layer — one line per reason, appended AFTER the byte-stable registry first line (never before it; the registry messages are the contract).
+/// No action prose, no URLs here — the full remediation lives in `agent-detect explain`.
+pub fn writeReasonsCompact(io: std.Io, reasons: []const Reason) void {
+    for (reasons) |r| {
+        writeErr(io, "  - ");
+        writeErr(io, @tagName(r.entity));
+        writeErr(io, ": ");
+        writeErr(io, r.summary);
+        writeErr(io, " (see: agent-detect explain)\n");
+    }
+}
+
+/// the stderr an action would print for `d`'s state, as newline-split lines (trailing empty element dropped) — the fixture `.stderr` channels carry line arrays, never multiline strings.
+/// `identify` stderr exists only on the exit-9 state (registry line + compact reason lines); `explain` stderr only on the non-reciprocal/non-unknown states (registry line alone — its stdout already carries the reasons).
+pub fn stderrLinesFor(a: std.mem.Allocator, d: *const Detection, comptime which: enum { identify, explain }) !?[]const []const u8 {
+    var lines: std.ArrayList([]const u8) = .empty;
+    switch (which) {
+        .identify => {
+            if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
+                // the data action's exit-8 shape: registry line + compact reasons (the gate order in runAction).
+                try lines.append(a, std.mem.trimEnd(u8, MSG_UNABLE_TO_DETECT_PREFIX, "\n"));
+                for (try reasonsFor(a, d)) |r| try lines.append(a, try reasonCompactLine(a, r));
+            } else if (reciprocityOf(d) == .unknown) {
+                try lines.append(a, std.mem.trimEnd(u8, MSG_AGENT_DATA_INCOMPLETE, "\n"));
+                for (try reasonsFor(a, d)) |r| try lines.append(a, try reasonCompactLine(a, r));
+            } else return null;
+        },
+        .explain => {
+            switch (explainStateOf(d)) {
+                .reciprocal => return null,
+                .unknown => try lines.append(a, std.mem.trimEnd(u8, MSG_AGENT_DATA_INCOMPLETE, "\n")),
+                .not_reciprocal => try lines.append(a, std.mem.trimEnd(u8, MSG_REQUIREMENT_FAILED, "\n")),
+                .undetectable => {
+                    try lines.append(a, try unableToDetectLine(a, d.harness_id, d.provider_id, d.model_id));
+                },
+            }
+        },
+    }
+    return try lines.toOwnedSlice(a);
+}
+
+/// the exit-8 registry line as an owned string (sans trailing newline): `unable to detect unspecified agent (harness = "<id>", provider = null, model = null)`.
+fn unableToDetectLine(a: std.mem.Allocator, h: ?[]const u8, p: ?[]const u8, m: ?[]const u8) ![]u8 {
+    var buf: std.ArrayList(u8) = .empty;
+    try buf.appendSlice(a, MSG_UNABLE_TO_DETECT_PREFIX);
+    try buf.appendSlice(a, "(harness = ");
+    try appendIdOrNull(a, &buf, h);
+    try buf.appendSlice(a, ", provider = ");
+    try appendIdOrNull(a, &buf, p);
+    try buf.appendSlice(a, ", model = ");
+    try appendIdOrNull(a, &buf, m);
+    try buf.appendSlice(a, ")");
+    return buf.toOwnedSlice(a);
+}
+
+/// append `"<id>"` or bare `null` to `buf`.
+fn appendIdOrNull(a: std.mem.Allocator, buf: *std.ArrayList(u8), id: ?[]const u8) !void {
+    if (id) |s| {
+        try buf.append(a, '"');
+        try buf.appendSlice(a, s);
+        try buf.append(a, '"');
+    } else {
+        try buf.appendSlice(a, "null");
+    }
+}
+
+/// the explain state — the tri-state determination plus the identity-gap state the data actions gate on.
+pub const ExplainState = enum { reciprocal, not_reciprocal, unknown, undetectable };
+
+/// the determination state for `explain`: identity incomplete → `.undetectable`; else the tri-state `reciprocityOf`.
+pub fn explainStateOf(d: *const Detection) ExplainState {
+    if (d.harness_label == null or d.provider_label == null or d.model_label == null) return .undetectable;
+    return switch (reciprocityOf(d)) {
+        .reciprocal => .reciprocal,
+        .not_reciprocal => .not_reciprocal,
+        .unknown => .unknown,
+    };
+}
+
+/// kebab-case a zig enum tag name for the JSON surface (`not_reciprocal` → `not-reciprocal`).
+fn tagKebab(a: std.mem.Allocator, tag: []const u8) ![]const u8 {
+    const out = try a.dupe(u8, tag);
+    for (out) |*c| {
+        if (c.* == '_') c.* = '-';
+    }
+    return out;
+}
+
+/// build the explain report — `{state, identity:{harness,provider,model}, reasons[]}` (identity carries the canonical ids only, no agent_id — it stays derivable from the trio).
+/// The reasons layer is the same `reasonsFor` output the compact stderr renderer uses; actions carry kind/instruction plus the runnable command and/or canonical url.
+pub fn buildExplain(a: std.mem.Allocator, d: *const Detection, reasons: []const Reason) !std.json.Value {
+    const V = std.json.Value;
+    var root: V = .{ .object = .empty };
+    try root.object.put(a, "state", .{ .string = try tagKebab(a, @tagName(explainStateOf(d))) });
+    var identity: V = .{ .object = .empty };
+    try identity.object.put(a, "harness", optStringValue(a, d.harness_id));
+    try identity.object.put(a, "provider", optStringValue(a, d.provider_id));
+    try identity.object.put(a, "model", optStringValue(a, d.model_id));
+    try root.object.put(a, "identity", identity);
+    var r_arr: V = .{ .array = std.json.Array.init(a) };
+    for (reasons) |r| {
+        var r_obj: V = .{ .object = .empty };
+        try r_obj.object.put(a, "entity", .{ .string = try tagKebab(a, @tagName(r.entity)) });
+        try r_obj.object.put(a, "code", .{ .string = try tagKebab(a, @tagName(r.code)) });
+        if (r.values.len > 0) {
+            var v_arr: V = .{ .array = std.json.Array.init(a) };
+            for (r.values) |vp| {
+                var v_obj: V = .{ .object = .empty };
+                try v_obj.object.put(a, "name", .{ .string = vp.name });
+                try v_obj.object.put(a, "value", .{ .string = vp.value });
+                try v_arr.array.append(v_obj);
+            }
+            try r_obj.object.put(a, "values", v_arr);
+        }
+        try r_obj.object.put(a, "summary", .{ .string = r.summary });
+        if (r.sources.len > 0) try r_obj.object.put(a, "sources", stringListValue(a, r.sources));
+        if (r.actions.len > 0) {
+            var a_arr: V = .{ .array = std.json.Array.init(a) };
+            for (r.actions) |act| {
+                var a_obj: V = .{ .object = .empty };
+                try a_obj.object.put(a, "kind", .{ .string = try tagKebab(a, @tagName(act.kind)) });
+                try a_obj.object.put(a, "instruction", .{ .string = act.instruction });
+                if (act.command) |cmd| try a_obj.object.put(a, "command", .{ .string = cmd });
+                if (act.url) |u| try a_obj.object.put(a, "url", .{ .string = u });
+                try a_arr.array.append(a_obj);
+            }
+            try r_obj.object.put(a, "actions", a_arr);
+        }
+        try r_arr.array.append(r_obj);
+    }
+    try root.object.put(a, "reasons", r_arr);
+    return root;
+}
+
 /// The detection report is a JSON object assembled from:
 /// - `buildCooked` — the shape-stable 20-field canonical object, grouped by entity (harness / provider / model / agent).
 /// The `trailer` field was removed so the identify output no longer carries it (fixture channels persist both trailer variants as separate keys).
@@ -2601,6 +3105,111 @@ pub fn optStringValue(a: std.mem.Allocator, opt: ?[]const u8) std.json.Value {
 /// convert `?bool` into a JSON `null`, `true`, or `false` (the computed per-entity reciprocity fields).
 pub fn optBoolValue(opt: ?bool) std.json.Value {
     return if (opt) |b| .{ .bool = b } else .null;
+}
+
+/// strictly alphanumeric form of the current platform — just the OS name, no arch (e.g. `darwin`, `linux`, `windows`).
+/// Computed at compile time from `builtin.target` so it's free.
+/// macOS is remapped to `darwin` to match the conventional platform name (the `builtin.target.os.tag` is `.macos` but the conventional name is "darwin" — we want one canonical name for fixtures).
+/// Arch is dropped because the same fixture JSON is valid on all archs of a given OS; the platform id only differentiates OS.
+pub fn platformId() []const u8 {
+    return switch (builtin.target.os.tag) {
+        .macos, .ios, .tvos, .watchos, .visionos => "darwin",
+        else => @tagName(builtin.target.os.tag),
+    };
+}
+
+/// which of the three detection dims actually populated `d`'s canonical fields (harness_id / provider_id / model_id non-null).
+pub fn detectedDims(a: std.mem.Allocator, d: *const Detection) ![]const []const u8 {
+    var list: std.ArrayList([]const u8) = .empty;
+    if (d.harness_id != null) try list.append(a, "harness");
+    if (d.provider_id != null) try list.append(a, "provider");
+    if (d.model_id != null) try list.append(a, "model");
+    return list.toOwnedSlice(a);
+}
+
+/// build the DECLARED raw object — the from-identity channel's declared channel (ruling, 2026-09-21).
+/// A declared fixture observed nothing, so the instance-only fields (platform_id, harness_version, process_lineage, evidence) stay absent — the worker's own lineage would be fiction.
+/// What the rules assert is exactly what ships: `detectable`/`detected` plus the four source arrays backing every rule-derived identify field (resolveRecipe populates all six).
+pub fn buildDeclaredRaw(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
+    const V = std.json.Value;
+    var raw: V = .{ .object = .empty };
+    try raw.object.put(a, "detectable", stringListValue(a, d.detectable));
+    try raw.object.put(a, "detected", stringListValue(a, try detectedDims(a, d)));
+    try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
+    try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
+    try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
+    try raw.object.put(a, "scandal-urls", stringListValue(a, d.raw.scandal_urls));
+    return raw;
+}
+
+/// build the raw observations object (the `found` action's payload; the dev fixture channels embed it under the legacy `raw` key).
+/// Top-level keys: `platform_id`, then `harness_version` (the live version snapshot — null when not yet knowable; only emitted for the capture path or when a value is present), then the `detectable` + `detected` dimension arrays adjacent to it, then the shapeless runtime observations.
+/// Returns a heap-allocated `std.json.Value`; the caller owns it.
+pub fn buildRaw(a: std.mem.Allocator, io: std.Io, d: *const Detection, env: *const std.process.Environ.Map, hver: ?[]const u8, comptime emit_hver_always: bool) !std.json.Value {
+    const V = std.json.Value;
+    const home = reporterHome(env);
+    // the agent's project dir — its cwd/pwd. Evidence paths rooted there (project-local session stores, per-project config) are redacted to `<project>` so fixtures stay portable.
+    const project = std.process.currentPathAlloc(io, a) catch "";
+    var raw: V = .{ .object = .empty };
+    // platform id (compile-time constant) is emitted as a top-level raw key so a maintainer reading a fixture knows which platform it was captured on, even before they read the canonical `agent_id` (which is also platform-tagged via the `fixture_id` filename).
+    try raw.object.put(a, "platform_id", .{ .string = platformId() });
+    // harness_version — the live version snapshot of the agent, right after platform_id.
+    // The capture path always emits it (null when the agent's version is not yet knowable); the standalone `found` action only emits it when a value is present.
+    if (emit_hver_always or hver != null) {
+        try raw.object.put(a, "harness_version", optStringValue(a, hver));
+    }
+    // `detectable` — the dims this run's ladder/recipe *could* resolve; `detected` — the subset that actually landed in the canonical fields.
+    // Emitted adjacent to each other so a reader instantly sees what the fixture claims without scanning the canonical fields.
+    try raw.object.put(a, "detectable", stringListValue(a, d.detectable));
+    try raw.object.put(a, "detected", stringListValue(a, try detectedDims(a, d)));
+    // The `env` object and per-file config/session objects were dropped from the raw block (decision #4 — raw slimming): the evidence section below documents the sources that informed each canonical deduction, so the raw observations are not duplicated verbatim.
+    // `RawObservation.env_vars` / `config_files` / `session_files` are still populated internally (detection + the redaction decision in the evidence block rely on them); they just never reach the JSON.
+
+    // process_lineage — always present so a maintainer reading the fixture sees "no process info" rather than absence.
+    // The array is ordered most-immediate first (index 0 = the running agent-detect, index 1 = its parent, etc.).
+    {
+        var lineage: V = .{ .array = std.json.Array.init(a) };
+        for (d.raw.process_lineage) |entry_obs| {
+            var entry: V = .{ .object = .empty };
+            try entry.object.put(a, "pid", .{ .integer = entry_obs.pid });
+            try entry.object.put(a, "name", .{ .string = entry_obs.name });
+            try lineage.array.append(entry);
+        }
+        try raw.object.put(a, "process_lineage", lineage);
+    }
+
+    // *-urls arrays + static rule declarations
+    try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
+    try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
+    try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
+    // the scandal citations of the matched rules — the "like licences" convention (a flagged rule always carries its sources).
+    try raw.object.put(a, "scandal-urls", stringListValue(a, d.raw.scandal_urls));
+    // decision #11 — evidence claims, one per detected dim, pinning the attribution chain (source present in raw + value matching the canonical dim).
+    // `from-identity` fixtures carry an empty array.
+    // Env-source claims on non-allowlisted env vars emit the literal `"<redacted>"` for `value` (decision #3) — the value the detector read was secret-shaped and must not be written to disk;
+    // the claim still records the dim/source/name so the attribution chain stays audit-trailable.
+    {
+        var ev_arr: V = .{ .array = std.json.Array.init(a) };
+        for (d.raw.evidence) |claim| {
+            var c_obj: V = .{ .object = .empty };
+            try c_obj.object.put(a, "dim", .{ .string = claim.dim });
+            try c_obj.object.put(a, "source", .{ .string = claim.source });
+            try c_obj.object.put(a, "name", .{ .string = try redactPaths(a, claim.name, project, home) });
+            if (claim.field) |fld| {
+                try c_obj.object.put(a, "field", .{ .string = fld });
+            }
+            if (claim.value) |val| {
+                const emitted = if (std.mem.eql(u8, claim.source, "env") and !envValueAllowed(claim.name))
+                    "<redacted>"
+                else
+                    try redactPaths(a, val, project, home);
+                try c_obj.object.put(a, "value", .{ .string = emitted });
+            }
+            try ev_arr.array.append(c_obj);
+        }
+        try raw.object.put(a, "evidence", ev_arr);
+    }
+    return raw;
 }
 
 /// substitute a literal path prefix with a replacement token.
@@ -2745,6 +3354,9 @@ pub const usage =
     \\
     \\actions:
     \\  identify       print the detection report as JSON (harness, provider, model, policy)
+    \\  found          print what the detection ladder observed, as JSON
+    \\  explain        print why the determination resolved as it did — reasons and
+    \\                 remediation actions, as JSON
     \\  trailer        print a commit trailer — requires a subtype (see `trailer help`)
     \\                   co-author     Co-authored-by: (Bevry commits.md)
     \\                   assisted-by   Assisted-by:   (e.g. GCC AI policy)
@@ -2759,6 +3371,8 @@ pub const usage =
     \\
     \\examples:
     \\  agent-detect identify
+    \\  agent-detect found
+    \\  agent-detect explain
     \\  agent-detect trailer co-author
     \\  agent-detect trailer assisted-by
     \\  agent-detect check-reciprocal
@@ -2781,6 +3395,12 @@ pub const trailerUsage =
     \\types:
     \\  co-author      print the Co-authored-by: trailer (Bevry's commits.md)
     \\  assisted-by    print the Assisted-by: trailer (e.g. GCC AI policy)
+    \\
+    \\choosing — exactly one trailer per artifact, never both:
+    \\  git commits                                  → co-author
+    \\  issue-tracker posts (issues, PRs, discussions,
+    \\  comments)                                    → assisted-by
+    \\  your org's or harness's instructions take precedence when they name one
     \\
     \\examples:
     \\  git commit --trailer "$(agent-detect trailer co-author)"
@@ -2822,6 +3442,7 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     d.raw.scandal_urls = appendScandalUrls(a, &.{}, harness.reciprocity_scandal_sources) catch &.{};
     // no instance read exists in recipe mode — the rule's static training values are the only source (copied verbatim per field), and the settings stay null.
     applyHarnessTraining(&d, harness);
+    d.matched_rule = harness;
     // A full known recipe implies all three dims are resolvable.
     d.detectable = &.{ "harness", "provider", "model" };
     d.provider_name = provider.name;
@@ -2904,6 +3525,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         d.raw.harness_urls = r.license_sources;
         d.harness_reciprocity_scandal = r.reciprocity_scandal;
         d.raw.scandal_urls = appendScandalUrls(a, &.{}, r.reciprocity_scandal_sources) catch &.{};
+        d.matched_rule = r;
         // decision #11: the harness dim's evidence claim.
         // The source is the marker var / proc name that actually matched (present in raw.env / raw.process_lineage); the value is the harness's canonical name, which is what the rule links the marker to.
         if (hclaim_name.len > 0) {

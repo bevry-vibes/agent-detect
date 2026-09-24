@@ -75,9 +75,42 @@ an undeterminable state is policy data incomplete so you can correct the data (f
 
 Exit codes — 0 = reciprocal, 10 = not reciprocal, 9 = policy data incomplete, 8 = undetectable, 7 = unknown combo — follow the registry in DESIGN.md "exit status registry"; see it for what each means and what to do.
 
+### failure introspection
+
+When a determination fails or stalls, two actions explain it:
+
+```sh
+# sh (linux, macos)
+./agent-detect explain   # why the verdict resolved as it did — per-entity reasons, judged values, sources, remediation actions, as JSON
+./agent-detect found     # what the detection ladder observed on this machine — the observation trail, as JSON
+```
+
+```powershell
+# powershell (windows)
+.\agent-detect.exe explain   # reasons + remediation, as JSON
+.\agent-detect.exe found     # observations, as JSON
+```
+
+`explain` never gates on a successful detection — exit-8/9/10 states yield their reasons (which entity, which ladder rung, what to do: fix the setting, switch the entity with suggested reciprocal alternatives, verify a candidate combo first via recipe mode, or contribute the missing sourced value).
+`found` is the observation trail for debugging detection and for contributing — the failure actions refer to both `agent-detect found` (gather the evidence now) and [CONTRIBUTING.md](./CONTRIBUTING.md) (the submission workflow).
+Both accept a recipe-mode combo (`--harness=H --provider=P --model=M`) to introspect a hypothetical switch before making it.
+Their exit codes mirror the state (0/8/9/10) exactly like `check-reciprocal`, so wrappers gate on them identically.
+
+### choosing a trailer
+
+Exactly **one** trailer per artifact — never both on the same commit, and never both on the same issue/PR/discussion/comment.
+Precedence: **your org's or harness's instructions win** when they name a trailer type; the table below is the default for when nothing specifies one.
+
+| artifact | trailer | conventions |
+| --- | --- | --- |
+| git commits | `trailer co-author` | Bevry [commits.md](https://github.com/bevry-vibes/skills/blob/main/commits.md) ("commit identities and verification"); also matches GitHub's native `Co-authored-by` rendering |
+| issue-tracker posts — issues, PRs, discussions, comments | `trailer assisted-by` | Bevry commits.md §"github issues, pull requests, discussions, and comments"; the GCC AI policy's `Assisted-by` |
+
+Never guess or cache the identity — generate it fresh for each artifact. Never post the artifact without the resolved trailer; if generation fails, fix it (see [contributing](#contributing)) rather than skip it.
+
 ### co-author trailer
 
-Generate your agent (harness, model, provider) co-author trailer via:
+For git commits:
 
 ```sh
 # sh (linux, macos)
@@ -89,9 +122,9 @@ git commit --trailer "$(./agent-detect trailer co-author)"
 git commit --trailer "$(.\agent-detect.exe trailer co-author)"
 ```
 
-Never guess or cache the identity — generate it fresh per commit. Never commit without the resolved trailer.
-
 ### assisted-by trailer
+
+For issue-tracker posts (issues, PRs, discussions, comments):
 
 ```sh
 # sh (linux, macos)
@@ -102,8 +135,6 @@ git commit --trailer "$(./agent-detect trailer assisted-by)"
 # powershell (windows)
 git commit --trailer "$(.\agent-detect.exe trailer assisted-by)"
 ```
-
-Never guess or cache the identity — generate it fresh per commit. Never commit without the resolved trailer.
 
 ## contributing
 

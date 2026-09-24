@@ -4,10 +4,16 @@ How to maintain `agent-detect` as an agent or human.
 Read this when you need to *do* something — refresh a fixture, add a harness rule, add a model or provider rule, cut a release.
 For the *why* behind the design, see [DESIGN.md](./DESIGN.md).
 
+## when detection fails you
+
+`agent-detect explain` names the failing entity, the ladder rung that fired, and the remediation actions; its `contribute-data` actions point here.
+When you open that issue or PR, attach the evidence: run **`agent-detect found`** and attach its output (plus `agent-detect explain` when the failure is a determination, not a detection).
+`found` is the observation trail — what the ladder actually saw on your machine — which is exactly what a rule addition or a detector fix needs; redacted and portable by construction.
+
 ## refresh a fixture
 
 A fixture's state is split across per-channel files under `fixtures/from-identity/` and `fixtures/from-capture/` — each a whole self-contained `{ outputs, meta }` envelope (normative schema: `fixtures/fixture.d.ts`).
-The **directory IS the channel**: the filename stem is the `<harness>-<provider>-<model>-<platform>` fixture id (e.g. `cline-clinepass-kimik3-darwin`), and `outputs` carries `identify` (the 20-field canonical object) plus `"trailer co-author"` and `"trailer assisted-by"` — for from-capture also `raw`.
+The **directory IS the channel**: the filename stem is the `<harness>-<provider>-<model>-<platform>` fixture id (e.g. `cline-clinepass-kimik3-darwin`), and `outputs` carries `identify` (the 20-field canonical object) plus `"trailer co-author"` and `"trailer assisted-by"` — and the introspection channels: `found` (renamed from `raw`; legacy files keep `raw` until their next sweep — the validator accepts both), `explain`, and the dotted `.stderr` channels (`identify.stderr`, `explain.stderr` — newline-split line arrays, present only on states that print stderr).
 `meta` carries the ledger (`updated_at`, and for captures `harness_version`) and the invocation of record (`prompt_invocation`/`version_invocation`).
 The binary is the only thing that writes fixtures — agents never hand-author them — and a from-capture file is written **only on a successful capture**: no meta-only stubs exist.
 A stem present in both folders has both channels; channel presence = file existence.

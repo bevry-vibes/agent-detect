@@ -102,6 +102,28 @@ export interface DeclaredRaw {
   "scandal-urls": string[];
 }
 
+/** The explain report (`buildExplain` output — why the determination resolved as it did, with remediation actions).
+ *  `state` is kebab-cased; `identity` carries the canonical ids only (no agent_id — it stays derivable from the trio);
+ *  each reason carries its judged `values` inline, `sources` when citable, and `actions` ({kind kebab-cased, instruction, command?, url?}). */
+export interface Explain {
+  state: "reciprocal" | "not-reciprocal" | "unknown" | "undetectable";
+  identity: { harness: string | null; provider: string | null; model: string | null };
+  reasons: {
+    entity: "harness" | "provider" | "model";
+    code: string;
+    values?: { name: string; value: string }[];
+    summary: string;
+    sources?: string[];
+    actions?: { kind: string; instruction: string; command?: string; url?: string }[];
+  }[];
+}
+
+/**
+ * The stderr an action would print for the recorded state, as newline-split line arrays (never multiline strings — arrays read better in JSON).
+ * Absent when the action printed no stderr (the clean states).
+ */
+export type StderrLines = string[];
+
 /** Declared-identification file (from-identity worker; zero tokens).
  *  Always carries `outputs` — there is no meta-only identity stub.
  *  Pre-declared-raw files lack `outputs.raw` until their next regeneration (decision #16). */
@@ -110,7 +132,12 @@ export interface IdentityFile {
     identify: Identify;
     "trailer co-author": string;
     "trailer assisted-by": string;
+    /** legacy key — files carry it until their next regeneration sweep (the found rename); the validator accepts both, writers emit only `found`. */
     raw?: DeclaredRaw;
+    found?: DeclaredRaw;
+    explain?: Explain;
+    "identify.stderr"?: StderrLines;
+    "explain.stderr"?: StderrLines;
   };
   meta: {
     /** was identity.declared_at — the channel WAS the declaration. */
@@ -127,8 +154,12 @@ export interface CaptureFile {
     identify: Identify;
     "trailer co-author": string;
     "trailer assisted-by": string;
-    /** the raw observations block, verbatim. */
+    /** legacy key — files carry it until their next re-capture (the found rename); the validator accepts both, writers emit only `found`. */
     raw: Raw;
+    found?: Raw;
+    explain?: Explain;
+    "identify.stderr"?: StderrLines;
+    "explain.stderr"?: StderrLines;
   };
   meta: {
     /** was capture.captured_at. */

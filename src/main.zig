@@ -61,6 +61,11 @@ const MSG_IO = core.MSG_IO;
 
 pub const Detection = core.Detection;
 pub const Reciprocity = core.Reciprocity;
+pub const ReasonEntity = core.ReasonEntity;
+pub const ReasonCode = core.ReasonCode;
+pub const Reason = core.Reason;
+pub const ActionKind = core.ActionKind;
+pub const Action = core.Action;
 pub const HarnessRule = rules.HarnessRule;
 pub const rulesForHarnesses = rules.rulesForHarnesses;
 pub const rulesForProviders = rules.rulesForProviders;
@@ -96,6 +101,10 @@ pub fn modelReciprocityOf(d: *const Detection) ?bool {
 
 pub fn computeReciprocal(d: *const Detection) bool {
     return core.computeReciprocal(d);
+}
+
+pub fn reasonsFor(a: std.mem.Allocator, d: *const Detection) ![]Reason {
+    return core.reasonsFor(a, d);
 }
 
 pub fn applyHarnessTraining(d: *Detection, rule: HarnessRule) void {
@@ -150,6 +159,8 @@ else
 /// is `word` one of the known top-level action words?
 fn isKnownAction(word: []const u8) bool {
     return std.mem.eql(u8, word, "identify") or
+        std.mem.eql(u8, word, "found") or
+        std.mem.eql(u8, word, "explain") or
         std.mem.eql(u8, word, "trailer") or
         std.mem.eql(u8, word, "check-reciprocal") or
         std.mem.eql(u8, word, "help") or
@@ -168,6 +179,7 @@ pub fn main(init: std.process.Init) u8 {
             // the optional `sqlite3` CLI is absent while a live session-store read needed it (kilo/opencode/copilot/crush/hermes) — the harness is known, detection cannot finish: exit 6, not a misleading exit 8.
             if (err == error.SqliteUnavailable) {
                 writeErr(init.io, MSG_ENV_INCOMPLETE);
+                writeErr(init.io, "  - the optional sqlite3 CLI is absent from PATH — install it, then re-run\n");
                 break :blk EXIT_ENV_INCOMPLETE;
             }
             // dev-only error kinds — pruned from the released binary. Each writes its registry-name message to stderr (matching the "exact message verbage" scheme) plus its exit code.
@@ -207,8 +219,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     const io = init.io;
 
     // subcommand dispatch.
-    // The dev binary (built with -Ddev=true) accepts a `raw` action (standalone raw block) plus a `fixtures` subcommand namespace: `fixtures --help`, `fixtures daemon`, `fixtures capture`, `fixtures queue [--harness=...] [--provider=...] [--model=...]`, `fixtures queue --recipes`, `fixtures dequeue`.
-    // The `raw`/`fixtures` dispatch is compiled out of the released binary (dev_build is false) — the released and dev binaries both run the action parser below: `identify`, `trailer`, `check-reciprocal`, `help`, `version` (with no arguments showing help).
+    // The dev binary (built with -Ddev=true) accepts a `fixtures` subcommand namespace: `fixtures --help`, `fixtures daemon`, `fixtures capture`, `fixtures queue [--harness=...] [--provider=...] [--model=...]`, `fixtures queue --recipes`, `fixtures dequeue`.
+    // The `fixtures` dispatch is compiled out of the released binary (dev_build is false) — the released and dev binaries both run the action parser below: `identify`, `found`, `explain`, `trailer`, `check-reciprocal`, `help`, `version` (with no arguments showing help).
     if (dev_build) {
         var sub_iter = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.OutOfMemory;
         defer sub_iter.deinit();
@@ -260,17 +272,15 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 writeOut(io, dev.fixturesUsage);
                 return EXIT_UNRECOGNISED_ARG;
             }
-        } else if (std.mem.eql(u8, cmd, "raw")) {
-            return dev.runRawAction(init);
         }
     }
 
     // action parser.
-    // The canonical spellings are the bare words `identify`, `trailer` (with a subtype), `check-reciprocal`, `help`, and `version`; the `--help`/`-h` and `--version`/`-V` forms are aliases.
+    // The canonical spellings are the bare words `identify`, `found`, `explain`, `trailer` (with a subtype), `check-reciprocal`, `help`, and `version`; the `--help`/`-h` and `--version`/`-V` forms are aliases.
     // No arguments prints help.
-    // `identify`, `trailer <type>`, and `check-reciprocal` accept an optional complete combo (`--harness=H --provider=P --model=M` — all three or none) for recipe-mode output.
+    // `identify`, `found`, `explain`, `trailer <type>`, and `check-reciprocal` accept an optional complete combo (`--harness=H --provider=P --model=M` — all three or none) for recipe-mode output.
     // help/version win over everything: any help/version flag anywhere at top level short-circuits to the relevant usage/version output (exit 0), never a conflict.
-    var action: []const u8 = ""; // "", "identify", "trailer", "check-reciprocal", "help", "version"
+    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "help", "version"
     var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
     var help_wanted = false;
     var version_wanted = false;
@@ -289,7 +299,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             if (action.len == 0) action = "help";
         } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
             version_wanted = true;
-        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal")) {
+        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal")) {
             // an action word. After `help` it is the topic (`help trailer`).
             if (action.len == 0) {
                 action = arg;
@@ -385,8 +395,11 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     }
 
     // bare `trailer` → missing required arguments (subtype absent).
+    // The compact decision guidance follows the stable registry line — the agent reads the menu and re-invokes with the subtype (the CLI stays non-interactive: agents call one-shot, so a menu + re-invoke is the agent-native prompt).
     if (std.mem.eql(u8, action, "trailer") and trailer_type.len == 0) {
         writeErr(io, MSG_MISSING_ARG_TRAILER_SUBTYPE);
+        writeErr(io, "choose one, never both — git commits: co-author · issue-tracker posts (issues, PRs, discussions, comments): assisted-by\n");
+        writeErr(io, "your org's or harness's instructions take precedence when they name one\n");
         writeOut(io, trailerUsage);
         return EXIT_MISSING_ARG;
     }
@@ -404,24 +417,70 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             core.writeMissingSpecifiedAgent(io, rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, combo_h), rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, combo_p), rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, combo_m));
             return EXIT_MISSING_SPECIFIED_AGENT;
         };
-        return runAction(init, &d, action, trailer_type);
+        return runAction(init, &d, action, trailer_type, true);
     }
 
     // live detection.
     var d = Detection{};
     _ = try detect(init, &d);
-    return runAction(init, &d, action, trailer_type);
+    return runAction(init, &d, action, trailer_type, false);
 }
 
 /// dispatch the resolved action on a fully-shaped `Detection`.
-/// Handles the shared identity-completeness gate (exit 8), the trailer subtypes (co-author / assisted-by), the check-reciprocal tri-state, and the identify/raw data-output semantics (exit 9 on incomplete policy data).
-fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, trailer_type: []const u8) !u8 {
+/// Handles the shared identity-completeness gate (exit 8), the trailer subtypes (co-author / assisted-by), the check-reciprocal tri-state, and the identify data-output semantics (exit 9 on incomplete policy data).
+/// The introspection actions are the deliberate exception to the gate: `found` and `explain` emit their payload even when identity is incomplete — observations and reasons are most wanted exactly when detection failed.
+fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, trailer_type: []const u8, from_recipe: bool) !u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
-    // identity incomplete → unable to detect: stderr only, no stdout (no sensible data). Applies to every action.
+    // found — the observation layer: what the ladder saw on this machine (live) or what the rules assert (recipe mode, the declared shape the from-identity fixtures carry).
+    // Always emits the block; the exit mirrors the state (8 undetectable / 9 unknown / 0) so wrappers gate on it identically to identify.
+    if (std.mem.eql(u8, action, "found")) {
+        const raw_v = if (from_recipe) try core.buildDeclaredRaw(a, d) else try core.buildRaw(a, io, d, init.environ_map, d.harness_version, false);
+        const json_bytes = try std.json.Stringify.valueAlloc(a, raw_v, .{ .whitespace = .indent_2 });
+        writeOut(io, json_bytes);
+        writeOut(io, "\n");
+        if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
+            core.writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
+            return EXIT_UNABLE_TO_DETECT;
+        }
+        if (reciprocityOf(d) == .unknown) {
+            writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
+            return EXIT_AGENT_DATA_INCOMPLETE;
+        }
+        return EXIT_OK;
+    }
+
+    // explain — the interpretation layer: why the determination resolved as it did, with the remediation actions.
+    // Never gated on identity completeness (exit-8 states yield the unmatched/unreadable reasons); the exit mirrors the state (0 / 8 / 9 / 10).
+    if (std.mem.eql(u8, action, "explain")) {
+        const reasons = try core.reasonsFor(a, d);
+        const explain_v = try core.buildExplain(a, d, reasons);
+        const json_bytes = try std.json.Stringify.valueAlloc(a, explain_v, .{ .whitespace = .indent_2 });
+        writeOut(io, json_bytes);
+        writeOut(io, "\n");
+        switch (core.explainStateOf(d)) {
+            .reciprocal => return EXIT_OK,
+            .unknown => {
+                writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
+                return EXIT_AGENT_DATA_INCOMPLETE;
+            },
+            .not_reciprocal => {
+                writeErr(io, MSG_REQUIREMENT_FAILED);
+                return EXIT_REQUIREMENT_FAILED;
+            },
+            .undetectable => {
+                core.writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
+                return EXIT_UNABLE_TO_DETECT;
+            },
+        }
+    }
+
+    // identity incomplete → unable to detect: stderr only, no stdout (no sensible data). Applies to every data action.
+    // The compact reason lines follow the registry line — which dim stalled and where to look next (`agent-detect explain` carries the full remediation).
     if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
         core.writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
+        core.writeReasonsCompact(io, try core.reasonsFor(a, d));
         return EXIT_UNABLE_TO_DETECT;
     }
 
@@ -445,11 +504,13 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
             .not_reciprocal => {
                 writeOut(io, "not reciprocal\n");
                 writeErr(io, MSG_REQUIREMENT_FAILED);
+                core.writeReasonsCompact(io, try core.reasonsFor(a, d));
                 return EXIT_REQUIREMENT_FAILED;
             },
             .unknown => {
                 // identity resolved, policy data missing: stderr only.
                 writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
+                core.writeReasonsCompact(io, try core.reasonsFor(a, d));
                 return EXIT_AGENT_DATA_INCOMPLETE;
             },
         }
@@ -462,6 +523,7 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
     writeOut(io, buf.items);
     if (reciprocityOf(d) == .unknown) {
         writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
+        core.writeReasonsCompact(io, try core.reasonsFor(a, d));
         return EXIT_AGENT_DATA_INCOMPLETE;
     }
     return EXIT_OK;

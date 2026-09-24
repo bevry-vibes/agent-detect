@@ -20,7 +20,6 @@
 // `fixtures daemon` is the long-running user-side mode: it watches the `queue` array of `fixtures/index.json` and, per poll, expands one queue entry into its candidate set (resolvable dims ∧ (fixtured ∨ feasible-unfixtured per the reference grids) ∧ the entry's staleness criteria) and works ONE remaining host-platform candidate (runFixturesCapture runs in-process in the session the daemon launched).
 // The released binary (built with -Ddev=false, the default) has none of this — its CLI surface is `identify` (JSON report), `trailer co-author` / `trailer assisted-by`, `check-reciprocal`, `help`, and `version`; no arguments shows help.
 
-
 const std = @import("std");
 const builtin = @import("builtin");
 const build_options = @import("build_options");
@@ -133,7 +132,6 @@ pub const dev = if (build_options.dev) struct {
     pub fn isEnvValueAllowed(name: []const u8) bool {
         return envValueAllowed(name);
     }
-
 
     /// usage text for the `fixtures` subcommand namespace — printed by `fixtures --help`, bare `fixtures`, and `fixtures help`.
     pub const fixturesUsage =
@@ -303,7 +301,6 @@ pub const dev = if (build_options.dev) struct {
         \\
     ;
 
-
     /// true when the args after a `fixtures` subcommand contain a help flag (`help`, `--help`, `-h`) — lets `fixtures queue --help` print the subcommand usage instead of an argument error.
     pub fn subcommandWantsHelp(init: std.process.Init) bool {
         const a = init.arena.allocator();
@@ -323,125 +320,6 @@ pub const dev = if (build_options.dev) struct {
         const io = init.io;
         writeOut(io, fixturesUsage);
         return 0;
-    }
-
-    /// which of the three detection dims actually populated `d`'s canonical fields (harness_id / provider_id / model_id non-null).
-    fn detectedDims(a: std.mem.Allocator, d: *const Detection) ![]const []const u8 {
-        var list: std.ArrayList([]const u8) = .empty;
-        if (d.harness_id != null) try list.append(a, "harness");
-        if (d.provider_id != null) try list.append(a, "provider");
-        if (d.model_id != null) try list.append(a, "model");
-        return list.toOwnedSlice(a);
-    }
-
-    /// build the DECLARED raw object — the from-identity channel's `outputs.raw` (ruling, 2026-09-21).
-    /// A declared fixture observed nothing, so the instance-only fields (platform_id, harness_version, process_lineage, evidence) stay absent — the worker's own lineage would be fiction.
-    /// What the rules assert is exactly what ships: `detectable`/`detected` plus the four source arrays backing every rule-derived identify field (resolveRecipe populates all six).
-    fn buildDeclaredRaw(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
-        const V = std.json.Value;
-        var raw: V = .{ .object = .empty };
-        try raw.object.put(a, "detectable", stringListValue(a, d.detectable));
-        try raw.object.put(a, "detected", stringListValue(a, try detectedDims(a, d)));
-        try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
-        try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
-        try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
-        try raw.object.put(a, "scandal-urls", stringListValue(a, d.raw.scandal_urls));
-        return raw;
-    }
-
-    /// build the `raw` observations object (dev binary only).
-    /// Top-level keys: `platform_id`, then `harness_version` (the live version snapshot — null when not yet knowable; only emitted for the capture path or when a value is present), then the `detectable` + `detected` dimension arrays adjacent to it, then the shapeless runtime observations.
-    /// Returns a heap-allocated `std.json.Value`; the caller owns it.
-    fn buildRaw(a: std.mem.Allocator, io: std.Io, d: *const Detection, env: *const std.process.Environ.Map, hver: ?[]const u8, comptime emit_hver_always: bool) !std.json.Value {
-        const V = std.json.Value;
-        const home = reporterHome(env);
-        // the agent's project dir — its cwd/pwd. Evidence paths rooted there (project-local session stores, per-project config) are redacted to `<project>` so fixtures stay portable.
-        const project = std.process.currentPathAlloc(io, a) catch "";
-        var raw: V = .{ .object = .empty };
-        // platform id (compile-time constant) is emitted as a top-level raw key so a maintainer reading a fixture knows which platform it was captured on, even before they read the canonical `agent_id` (which is also platform-tagged via the `fixture_id` filename).
-        try raw.object.put(a, "platform_id", .{ .string = platformId() });
-        // harness_version — the live version snapshot of the agent, right after platform_id.
-        // The capture path always emits it (null when the agent's version is not yet knowable); the standalone `raw` action only emits it when a value is present.
-        if (emit_hver_always or hver != null) {
-            try raw.object.put(a, "harness_version", optStringValue(a, hver));
-        }
-        // `detectable` — the dims this run's ladder/recipe *could* resolve; `detected` — the subset that actually landed in the canonical fields.
-        // Emitted adjacent to each other so a reader instantly sees what the fixture claims without scanning the canonical fields.
-        try raw.object.put(a, "detectable", stringListValue(a, d.detectable));
-        try raw.object.put(a, "detected", stringListValue(a, try detectedDims(a, d)));
-        // The `env` object and per-file config/session objects were dropped from the raw block (decision #4 — raw slimming): the evidence section below documents the sources that informed each canonical deduction, so the raw observations are not duplicated verbatim.
-        // `RawObservation.env_vars` / `config_files` / `session_files` are still populated internally (detection + the redaction decision in the evidence block rely on them); they just never reach the JSON.
-
-        // process_lineage — always present so a maintainer reading the fixture sees "no process info" rather than absence.
-        // The array is ordered most-immediate first (index 0 = the running agent-detect, index 1 = its parent, etc.).
-        {
-            var lineage: V = .{ .array = std.json.Array.init(a) };
-            for (d.raw.process_lineage) |entry_obs| {
-                var entry: V = .{ .object = .empty };
-                try entry.object.put(a, "pid", .{ .integer = entry_obs.pid });
-                try entry.object.put(a, "name", .{ .string = entry_obs.name });
-                try lineage.array.append(entry);
-            }
-            try raw.object.put(a, "process_lineage", lineage);
-        }
-
-        // *-urls arrays + static rule declarations
-        try raw.object.put(a, "harness-urls", stringListValue(a, d.raw.harness_urls));
-        try raw.object.put(a, "provider-urls", stringListValue(a, d.raw.provider_urls));
-        try raw.object.put(a, "model-urls", stringListValue(a, d.raw.model_urls));
-        // the scandal citations of the matched rules — the "like licences" convention (a flagged rule always carries its sources).
-        try raw.object.put(a, "scandal-urls", stringListValue(a, d.raw.scandal_urls));
-        // decision #11 — evidence claims, one per detected dim, pinning the attribution chain (source present in raw + value matching the canonical dim).
-        // `from-identity` fixtures carry an empty array.
-        // Env-source claims on non-allowlisted env vars emit the literal `"<redacted>"` for `value` (decision #3) — the value the detector read was secret-shaped and must not be written to disk;
-        // the claim still records the dim/source/name so the attribution chain stays audit-trailable.
-        {
-            var ev_arr: V = .{ .array = std.json.Array.init(a) };
-            for (d.raw.evidence) |claim| {
-                var c_obj: V = .{ .object = .empty };
-                try c_obj.object.put(a, "dim", .{ .string = claim.dim });
-                try c_obj.object.put(a, "source", .{ .string = claim.source });
-                try c_obj.object.put(a, "name", .{ .string = try redactPaths(a, claim.name, project, home) });
-                if (claim.field) |fld| {
-                    try c_obj.object.put(a, "field", .{ .string = fld });
-                }
-                if (claim.value) |val| {
-                    const emitted = if (std.mem.eql(u8, claim.source, "env") and !envValueAllowed(claim.name))
-                        "<redacted>"
-                    else
-                        try redactPaths(a, val, project, home);
-                    try c_obj.object.put(a, "value", .{ .string = emitted });
-                }
-                try ev_arr.array.append(c_obj);
-            }
-            try raw.object.put(a, "evidence", ev_arr);
-        }
-        return raw;
-    }
-
-    /// dev-only `raw` action — emit only the raw observations block (standalone, with `detectable` + `detected`).
-    /// Data-output action: identity unresolved → exit 8 with no stdout (no sensible data);
-    /// identity complete but reciprocity/policy data incomplete → exit 9 with the raw block on stdout + a stderr explainer;
-    /// full identity → exit 0.
-    pub fn runRawAction(init: std.process.Init) !u8 {
-        const a = init.arena.allocator();
-        const io = init.io;
-        var d = Detection{};
-        const ok = try detect(init, &d);
-        const raw_v = try buildRaw(a, io, &d, init.environ_map, d.harness_version, false);
-        const json_bytes = try std.json.Stringify.valueAlloc(a, raw_v, .{ .whitespace = .indent_2 });
-        defer a.free(json_bytes);
-        if (!ok) {
-            writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
-            return EXIT_UNABLE_TO_DETECT;
-        }
-        writeOut(io, json_bytes);
-        writeOut(io, "\n");
-        if (reciprocityOf(&d) == .unknown) {
-            writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
-            return EXIT_AGENT_DATA_INCOMPLETE;
-        }
-        return EXIT_OK;
     }
 
     // ------------------------------------------------------------------ index.json state store (queue + backlog + known_but_failed) ------------------------------------------------------------------
@@ -1535,7 +1413,6 @@ pub const dev = if (build_options.dev) struct {
         return false;
     }
 
-
     /// one expanded candidate for a queue entry (a concrete 4-tuple).
     pub const Candidate = struct {
         fixture_id: []const u8,
@@ -1787,26 +1664,14 @@ pub const dev = if (build_options.dev) struct {
         return null;
     }
 
-
     // ---------------------------------------------------------------- fixtures fixture subcommands ----------------------------------------------------------------
-
-    /// strictly alphanumeric form of the current platform — just the OS name, no arch (e.g. `darwin`, `linux`, `windows`).
-    /// Computed at compile time from `builtin.target` so it's free.
-    /// macOS is remapped to `darwin` to match the conventional platform name (the `builtin.target.os.tag` is `.macos` but the conventional name is "darwin" — we want one canonical name for fixtures).
-    /// Arch is dropped because the same fixture JSON is valid on all archs of a given OS; the platform id only differentiates OS.
-    pub fn platformId() []const u8 {
-        return switch (builtin.target.os.tag) {
-            .macos, .ios, .tvos, .watchos, .visionos => "darwin",
-            else => @tagName(builtin.target.os.tag),
-        };
-    }
 
     /// assemble a fixture_id from the three sub-ids. Caller owns the returned slice.
     pub fn fixtureId(a: std.mem.Allocator, agent: []const u8) ![]u8 {
         var list: std.ArrayList(u8) = .empty;
         try list.appendSlice(a, agent);
         try list.append(a, '-');
-        try list.appendSlice(a, platformId());
+        try list.appendSlice(a, core.platformId());
         return list.toOwnedSlice(a);
     }
 
@@ -2153,13 +2018,18 @@ pub const dev = if (build_options.dev) struct {
             break :blk v.?;
         };
 
-        const raw = try buildRaw(a, io, &d, init.environ_map, hver, true);
+        const raw = try core.buildRaw(a, io, &d, init.environ_map, hver, true);
 
         var outputs: std.json.Value = .{ .object = .empty };
         try outputs.object.put(a, "identify", cooked);
         try outputs.object.put(a, "trailer co-author", optStringValue(a, co));
         try outputs.object.put(a, "trailer assisted-by", optStringValue(a, ab));
-        try outputs.object.put(a, "raw", raw);
+        // the new channel keyset: `found` (renamed from `raw` — legacy files keep `raw` until their next re-capture; the validator accepts both) + the explain/stderr channels (in-process derivations of the captured Detection).
+        try outputs.object.put(a, "found", raw);
+        const reasons = try core.reasonsFor(a, &d);
+        try outputs.object.put(a, "explain", try core.buildExplain(a, &d, reasons));
+        if (try core.stderrLinesFor(a, &d, .identify)) |lines| try outputs.object.put(a, "identify.stderr", stringListValue(a, lines));
+        if (try core.stderrLinesFor(a, &d, .explain)) |lines| try outputs.object.put(a, "explain.stderr", stringListValue(a, lines));
 
         // meta — complete by construction (all fields required, see fixtures/fixture.d.ts): the invocation of record persists, the ledger stamps fresh.
         var meta: std.json.Value = .{ .object = .empty };
@@ -2484,7 +2354,7 @@ pub const dev = if (build_options.dev) struct {
                     if (!dimsResolvable(a, .{ h, p, pm[bar2 + 1 ..], plat })) continue;
                     if (providerBlocked(blocked, p) and !status_free_grid.has(p, pm[bar2 + 1 ..])) continue;
                     feasible_unfixtured += 1;
-                    if (std.mem.eql(u8, plat, platformId())) feasible_unfixtured_host += 1;
+                    if (std.mem.eql(u8, plat, core.platformId())) feasible_unfixtured_host += 1;
                 }
             }
         }
@@ -2656,13 +2526,13 @@ pub const dev = if (build_options.dev) struct {
         const n = @min(text.len, lower_buf.len);
         const lower = std.ascii.lowerString(lower_buf[0..n], text[0..n]);
         const provider_markers = [_][]const u8{
-            "unauthorized",   "forbidden",          "payment required", "invalid api key", "incorrect api key",
-            "api key",        "authentication",     "not authed",       "quota",           "credit",
-            "out of tokens",  "insufficient",       "billing",          "balance",         "401",
-            "402",            "403",
+            "unauthorized",  "forbidden",      "payment required", "invalid api key", "incorrect api key",
+            "api key",       "authentication", "not authed",       "quota",           "credit",
+            "out of tokens", "insufficient",   "billing",          "balance",         "401",
+            "402",           "403",
         };
         const model_markers = [_][]const u8{
-            "model not found", "no such model", "model_not_found", "unknown model", "invalid model",
+            "model not found", "no such model",       "model_not_found", "unknown model", "invalid model",
             "does not exist",  "no longer available", "deprecated",
         };
         for (model_markers) |marker| {
@@ -2732,7 +2602,7 @@ pub const dev = if (build_options.dev) struct {
         };
         // Declared, not observed — but the declaration carries its own evidence (ruling, 2026-09-21): the declared raw ships the rule-derived source arrays (harness/provider/model/scandal urls) plus detectable/detected, so an identity fixture is self-verifying without an instance. The instance-only fields (lineage, env, evidence claims) stay absent — nothing was observed; the capture channel is the only place they appear.
         const cooked = try buildCooked(a, &d);
-        const raw = try buildDeclaredRaw(a, &d);
+        const raw = try core.buildDeclaredRaw(a, &d);
 
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const self_path = selfPath(io, &self_path_buf);
@@ -2743,7 +2613,12 @@ pub const dev = if (build_options.dev) struct {
         try outputs.object.put(a, "identify", cooked);
         try outputs.object.put(a, "trailer co-author", optStringValue(a, co));
         try outputs.object.put(a, "trailer assisted-by", optStringValue(a, ab));
-        try outputs.object.put(a, "raw", raw);
+        // the new channel keyset: `found` (renamed from `raw` — legacy files keep `raw` until their next sweep; the validator accepts both) + the explain/stderr channels (pure derivations of the recipe Detection — zero tokens).
+        try outputs.object.put(a, "found", raw);
+        const reasons = try core.reasonsFor(a, &d);
+        try outputs.object.put(a, "explain", try core.buildExplain(a, &d, reasons));
+        if (try core.stderrLinesFor(a, &d, .identify)) |lines| try outputs.object.put(a, "identify.stderr", stringListValue(a, lines));
+        if (try core.stderrLinesFor(a, &d, .explain)) |lines| try outputs.object.put(a, "explain.stderr", stringListValue(a, lines));
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
         var root: std.json.Value = .{ .object = .empty };
@@ -3093,7 +2968,7 @@ pub const dev = if (build_options.dev) struct {
         const free_grid = try FreeGrid.load(io, a);
         const grids = try FeasibilityGrids.load(io, a);
         const q = try getOrPutArray(a, &root, "queue");
-        const host = platformId();
+        const host = core.platformId();
         var dirty = !std.mem.eql(u8, backlog_before, backlog_after);
         var pick: ?DaemonPick = null;
         for ([_][]const u8{ "from-identity", "from-capture" }) |want_mode| {
@@ -3465,7 +3340,6 @@ pub const dev = if (build_options.dev) struct {
             try std.Io.sleep(io, .{ .nanoseconds = tick_ns }, .boot);
         }
     }
-
 
     /// `fixtures __timeout <seconds> <pid>` — internal watchdog used by the from-capture worker: sleeps N seconds (1s increments), then sends SIGTERM to the capture child so a hung harness fails out at `--capture-timeout-seconds` instead of blocking the poll loop.
     /// Fire-and-forget from the daemon's perspective.

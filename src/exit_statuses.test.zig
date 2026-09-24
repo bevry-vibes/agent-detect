@@ -4,6 +4,7 @@
 const std = @import("std");
 const testing = std.testing;
 const main = @import("main.zig");
+const core = @import("lib/core.zig");
 
 test "ladder: enforced training resolves active, whatever the setting says" {
     // rung 1 — a settings artifact may only steer telemetry, so even `disabled` cannot prove the training stopped.
@@ -478,8 +479,8 @@ test "canonicalIdFor: qwen3.8-27b aliases incl. chutes TEE forms; max stays dist
     defer arena.deinit();
     const a = arena.allocator();
     const forms = [_][]const u8{
-        "qwen3.8-27b", "Qwen3.8 27B", "qwen3827b",
-        "Qwen3.8-27B-TEE", "qwen3.8-27b-tee", "QWEN3.8-27B-TEE",
+        "qwen3.8-27b",          "Qwen3.8 27B",     "qwen3827b",
+        "Qwen3.8-27B-TEE",      "qwen3.8-27b-tee", "QWEN3.8-27B-TEE",
         "Qwen/Qwen3.8-27B-TEE",
     };
     for (forms) |f| {
@@ -645,4 +646,372 @@ test "buildTrailerLine: kimi-code chutes and opencode-go combos" {
     const line2 = (try main.buildTrailerLine(testing.allocator, &d2, "Assisted-by")).?;
     defer testing.allocator.free(line2);
     try testing.expectEqualStrings("Assisted-by: Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>", line2);
+}
+
+// reasons: the interpretation layer over the ladder — one code per distinct way a determination fails or stalls, classified in the ladder's own rung order.
+
+fn reasonCodeAt(reasons: []const main.Reason, i: usize) main.ReasonCode {
+    return reasons[i].code;
+}
+
+fn hasActionKind(r: main.Reason, kind: main.ActionKind) bool {
+    for (r.actions) |act| {
+        if (act.kind == kind) return true;
+    }
+    return false;
+}
+
+test "reasons: a clean reciprocal detection yields none" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var d = main.Detection{
+        .harness_label = "Kimi Code",
+        .harness_closed_training = "never",
+        .provider_label = "DeepSeek",
+        .provider_closed_training = "never",
+        .model_label = "DeepSeek V4 Flash",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 0), reasons.len);
+}
+test "reasons: harness scandal fails first, with switch + read-policy" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var d = main.Detection{
+        .harness_label = "Grok Build",
+        .harness_reciprocity_scandal = true,
+        .provider_label = "xAI",
+        .provider_closed_training = "never",
+        .model_label = "Grok 4",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 1), reasons.len);
+    try testing.expectEqual(main.ReasonCode.harness_scandal, reasonCodeAt(reasons, 0));
+    try testing.expect(hasActionKind(reasons[0], .switch_entity));
+    try testing.expect(hasActionKind(reasons[0], .read_policy));
+}
+test "reasons: enforced training outranks an enabled setting (rung 1 before rung 2)" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var d = main.Detection{
+        .harness_label = "ZCode",
+        .harness_closed_training = "enforced",
+        .harness_closed_setting = "enabled",
+        .provider_label = "Z.ai",
+        .provider_closed_training = "never",
+        .model_label = "GLM-5.3",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 1), reasons.len);
+    try testing.expectEqual(main.ReasonCode.harness_closed_enforced, reasonCodeAt(reasons, 0));
+    try testing.expect(hasActionKind(reasons[0], .switch_entity));
+    // the judged pair rides inline so the reason reads self-contained.
+    try testing.expectEqualStrings("closed_training", reasons[0].values[0].name);
+    try testing.expectEqualStrings("enforced", reasons[0].values[0].value);
+}
+test "reasons: an enabled setting is the fixable fail (fix_setting)" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var d = main.Detection{
+        .harness_label = "ZCode",
+        .harness_closed_training = "opt-in",
+        .harness_closed_setting = "enabled",
+        .provider_label = "Z.ai",
+        .provider_closed_training = "never",
+        .model_label = "GLM-5.3",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 1), reasons.len);
+    try testing.expectEqual(main.ReasonCode.harness_setting_enabled, reasonCodeAt(reasons, 0));
+    try testing.expect(hasActionKind(reasons[0], .fix_setting));
+    try testing.expectEqualStrings("closed_setting", reasons[0].values[0].name);
+    try testing.expectEqualStrings("enabled", reasons[0].values[0].value);
+}
+test "reasons: a disabled setting passes opt-in (rung 3 before rung 5 — no reason)" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var d = main.Detection{
+        .harness_label = "ZCode",
+        .harness_closed_training = "opt-in",
+        .harness_closed_setting = "disabled",
+        .provider_label = "Z.ai",
+        .provider_closed_training = "never",
+        .model_label = "GLM-5.3",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 0), reasons.len);
+}
+test "reasons: opt-in with nothing readable resolves the opt reason" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var d = main.Detection{
+        .harness_label = "ZCode",
+        .harness_closed_training = "opt-out",
+        .provider_label = "Z.ai",
+        .provider_closed_training = "never",
+        .model_label = "GLM-5.3",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 1), reasons.len);
+    try testing.expectEqual(main.ReasonCode.harness_closed_opt, reasonCodeAt(reasons, 0));
+    try testing.expect(hasActionKind(reasons[0], .switch_entity));
+    try testing.expect(hasActionKind(reasons[0], .preflight_combo));
+}
+test "reasons: unsourced training yields the exit-9 nudge (contribute_data, dual reference)" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    // null training — nothing judged rides inline.
+    var d = main.Detection{
+        .harness_label = "Crush",
+        .provider_label = "Chutes",
+        .model_label = "GLM-5.2",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 2), reasons.len); // harness + provider both unsourced
+    try testing.expectEqual(main.ReasonCode.harness_training_unsourced, reasonCodeAt(reasons, 0));
+    try testing.expectEqual(main.ReasonCode.provider_training_unsourced, reasonCodeAt(reasons, 1));
+    try testing.expect(hasActionKind(reasons[0], .contribute_data));
+    // the dual reference: the runnable command and the workflow URL.
+    try testing.expect(reasons[0].actions[0].command != null);
+    try testing.expectEqualStrings("agent-detect found", reasons[0].actions[0].command.?);
+    try testing.expect(reasons[0].actions[0].url != null);
+    // NOASSERTION carries the judged pair.
+    var d2 = main.Detection{
+        .harness_label = "Crush",
+        .harness_closed_training = "NOASSERTION",
+        .provider_label = "Chutes",
+        .provider_closed_training = "never",
+        .model_label = "GLM-5.2",
+        .model_openness = "open-weight",
+    };
+    const reasons2 = try main.reasonsFor(arena.allocator(), &d2);
+    try testing.expectEqual(@as(usize, 1), reasons2.len);
+    try testing.expectEqual(main.ReasonCode.harness_training_unsourced, reasonCodeAt(reasons2, 0));
+    try testing.expectEqualStrings("NOASSERTION", reasons2[0].values[0].value);
+}
+test "reasons: provider enforced and scandal" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var d = main.Detection{
+        .harness_label = "Kimi Code",
+        .harness_closed_training = "never",
+        .provider_label = "NVIDIA NIM",
+        .provider_closed_training = "enforced",
+        .model_label = "GPT-OSS 20B",
+        .model_openness = "open-weight",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 1), reasons.len);
+    try testing.expectEqual(main.ReasonCode.provider_closed_enforced, reasonCodeAt(reasons, 0));
+    try testing.expectEqual(main.ReasonEntity.provider, reasons[0].entity);
+
+    var d2 = main.Detection{
+        .harness_label = "Kimi Code",
+        .harness_closed_training = "never",
+        .provider_label = "xAI",
+        .provider_reciprocity_scandal = true,
+        .model_label = "Grok 4",
+        .model_openness = "open-weight",
+    };
+    const reasons2 = try main.reasonsFor(arena.allocator(), &d2);
+    try testing.expectEqual(@as(usize, 1), reasons2.len);
+    try testing.expectEqual(main.ReasonCode.provider_scandal, reasonCodeAt(reasons2, 0));
+    try testing.expect(hasActionKind(reasons2[0], .read_policy));
+}
+test "reasons: model gates — openness unknown, closed weights, then the training pair" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    // openness unknown — the model is absent from the rules.
+    var d = main.Detection{
+        .harness_label = "Kimi Code",
+        .harness_closed_training = "never",
+        .provider_label = "Chutes",
+        .provider_closed_training = "never",
+        .model_label = "Mystery Model",
+    };
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 1), reasons.len);
+    try testing.expectEqual(main.ReasonCode.model_openness_unknown, reasonCodeAt(reasons, 0));
+    try testing.expect(hasActionKind(reasons[0], .contribute_data));
+
+    // closed weights gate first — the training pair never classifies.
+    var d2 = d;
+    d2.model_openness = "closed";
+    d2.model_closed_training = "never";
+    const reasons2 = try main.reasonsFor(arena.allocator(), &d2);
+    try testing.expectEqual(@as(usize, 1), reasons2.len);
+    try testing.expectEqual(main.ReasonCode.model_closed, reasonCodeAt(reasons2, 0));
+
+    // open weights with an enforced arrangement.
+    var d3 = d;
+    d3.model_openness = "open-weight";
+    d3.model_closed_training = "enforced";
+    const reasons3 = try main.reasonsFor(arena.allocator(), &d3);
+    try testing.expectEqual(@as(usize, 1), reasons3.len);
+    try testing.expectEqual(main.ReasonCode.model_closed_enforced, reasonCodeAt(reasons3, 0));
+
+    // open weights with an opt-out arrangement and nothing readable.
+    var d4 = d;
+    d4.model_openness = "open-source";
+    d4.model_closed_training = "opt-out";
+    const reasons4 = try main.reasonsFor(arena.allocator(), &d4);
+    try testing.expectEqual(@as(usize, 1), reasons4.len);
+    try testing.expectEqual(main.ReasonCode.model_closed_opt, reasonCodeAt(reasons4, 0));
+
+    // open weights with NOASSERTION — the exit-9 nudge.
+    var d5 = d;
+    d5.model_openness = "open-weight";
+    d5.model_closed_training = "NOASSERTION";
+    const reasons5 = try main.reasonsFor(arena.allocator(), &d5);
+    try testing.expectEqual(@as(usize, 1), reasons5.len);
+    try testing.expectEqual(main.ReasonCode.model_training_unsourced, reasonCodeAt(reasons5, 0));
+}
+test "reasons: identity gaps contribute the first unresolved dim only" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    // no harness matched — the ladder never attempted provider/model.
+    var d = main.Detection{};
+    const reasons = try main.reasonsFor(arena.allocator(), &d);
+    try testing.expectEqual(@as(usize, 1), reasons.len);
+    try testing.expectEqual(main.ReasonCode.harness_unmatched, reasonCodeAt(reasons, 0));
+    try testing.expect(hasActionKind(reasons[0], .preflight_combo));
+    try testing.expect(hasActionKind(reasons[0], .contribute_data));
+
+    // harness matched, provider did not resolve.
+    var d2 = main.Detection{ .harness_label = "Kilo Code" };
+    const reasons2 = try main.reasonsFor(arena.allocator(), &d2);
+    try testing.expectEqual(@as(usize, 1), reasons2.len);
+    try testing.expectEqual(main.ReasonCode.provider_unreadable, reasonCodeAt(reasons2, 0));
+
+    // harness + provider matched, model did not resolve.
+    var d3 = main.Detection{ .harness_label = "Kilo Code", .provider_label = "DeepSeek" };
+    const reasons3 = try main.reasonsFor(arena.allocator(), &d3);
+    try testing.expectEqual(@as(usize, 1), reasons3.len);
+    try testing.expectEqual(main.ReasonCode.model_unreadable, reasonCodeAt(reasons3, 0));
+}
+
+// buildDeclaredRaw: the move from dev.zig to core.zig changed nothing — a rule-derived declared raw must serialize byte-identically to the committed corpus.
+test "buildDeclaredRaw: byte-stable against a committed from-identity fixture" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const d = (try core.resolveRecipe(a, "hermes", "nvidia", "gptoss20b")).?;
+    const raw = try core.buildDeclaredRaw(a, &d);
+    const mine = try std.json.Stringify.valueAlloc(a, raw, .{ .whitespace = .indent_2 });
+
+    const fixture_bytes = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/from-identity/hermes-nvidia-gptoss20b-linux.json", a, @enumFromInt(1 << 20)) catch |err| {
+        // the corpus file is a build input, not a runtime dependency — a missing/unreadable one is a broken checkout, not a pass.
+        return err;
+    };
+    const parsed = try std.json.parseFromSliceLeaky(std.json.Value, a, fixture_bytes, .{});
+    const theirs = parsed.object.get("outputs").?.object.get("raw").?;
+    const theirs_str = try std.json.Stringify.valueAlloc(a, theirs, .{ .whitespace = .indent_2 });
+
+    try testing.expectEqualStrings(theirs_str, mine);
+}
+
+// stderrLinesFor: the fixture `.stderr` channels — line arrays, present only on the states that print stderr.
+test "stderrLinesFor: null on clean states, lines on 9/10" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    // clean reciprocal — no stderr for either action.
+    var d = main.Detection{
+        .harness_label = "Kimi Code",
+        .harness_closed_training = "never",
+        .provider_label = "DeepSeek",
+        .provider_closed_training = "never",
+        .model_label = "DeepSeek V4 Flash",
+        .model_openness = "open-weight",
+    };
+    try testing.expect((try core.stderrLinesFor(a, &d, .identify)) == null);
+    try testing.expect((try core.stderrLinesFor(a, &d, .explain)) == null);
+
+    // exit-9 state — identify prints the registry line + compact reasons; explain prints the registry line alone.
+    d.model_openness = null;
+    d.model_label = "Mystery Model";
+    const ilines = (try core.stderrLinesFor(a, &d, .identify)).?;
+    try testing.expect(ilines.len == 2);
+    try testing.expectEqualStrings("agent (harness, provider, model) data incomplete to make a determination", ilines[0]);
+    try testing.expect(std.mem.indexOf(u8, ilines[1], "- model:") != null);
+    const elines = (try core.stderrLinesFor(a, &d, .explain)).?;
+    try testing.expect(elines.len == 1);
+    try testing.expectEqualStrings("agent (harness, provider, model) data incomplete to make a determination", elines[0]);
+
+    // exit-10 state — identify prints nothing (its stdout carries the report), explain prints the requirement-failed registry line.
+    d.model_label = "GPT-OSS 20B";
+    d.model_openness = "open-weight";
+    d.provider_closed_training = "enforced";
+    try testing.expect((try core.stderrLinesFor(a, &d, .identify)) == null);
+    const elines2 = (try core.stderrLinesFor(a, &d, .explain)).?;
+    try testing.expect(elines2.len == 1);
+    try testing.expectEqualStrings("agent (harness, provider, model) data complete and requirement failed", elines2[0]);
+}
+
+// alternatives + setting hint: the switch suggestions come from the compiled rule tables (resolve-true only, capped, excluding the failing entity); the fixable fail carries the rule's setting pointer.
+test "reciprocalAlternativesFor: resolve-true only, capped, excludes the failing entity" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const alts = try core.reciprocalAlternativesFor(a, .provider, "zcode");
+    try testing.expect(alts.len > 0 and alts.len <= 5);
+    for (alts) |name| {
+        try testing.expect(!std.mem.eql(u8, name, "zcode"));
+    }
+    // the first provider alternative resolves reciprocal by its own static values.
+    if (alts.len > 0) {
+        var scratch = main.Detection{};
+        for (main.rulesForProviders) |r| {
+            if (std.mem.eql(u8, r.name, alts[0])) {
+                scratch.provider_closed_training = r.closed_training;
+                scratch.provider_reciprocity_scandal = r.reciprocity_scandal;
+            }
+        }
+        try testing.expect(main.providerReciprocityOf(&scratch) == true);
+    }
+
+    // every model alternative is open weights with no enforced/opt arrangement.
+    const malts = try core.reciprocalAlternativesFor(a, .model, null);
+    try testing.expect(malts.len > 0 and malts.len <= 5);
+
+    // the harness alternatives exist and cap at five.
+    const halts = try core.reciprocalAlternativesFor(a, .harness, null);
+    try testing.expect(halts.len > 0 and halts.len <= 5);
+}
+
+test "fix_setting carries the matched rule's setting hint" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    // the zcode rule carries the "Improve experience" pointer — the fixable fail names where the setting lives.
+    for (main.rulesForHarnesses) |r| {
+        if (std.mem.eql(u8, r.name, "zcode")) {
+            var d = main.Detection{
+                .harness_label = "ZCode",
+                .harness_closed_training = "opt-in",
+                .harness_closed_setting = "enabled",
+                .provider_label = "Z.ai",
+                .provider_closed_training = "never",
+                .model_label = "GLM-5.3",
+                .model_openness = "open-weight",
+                .matched_rule = r,
+            };
+            const reasons = try main.reasonsFor(a, &d);
+            try testing.expect(reasons.len == 1);
+            try testing.expectEqual(main.ReasonCode.harness_setting_enabled, reasons[0].code);
+            try testing.expect(reasons[0].actions[0].kind == .fix_setting);
+            try testing.expect(std.mem.indexOf(u8, reasons[0].actions[0].instruction, "Improve experience") != null);
+        }
+    }
 }

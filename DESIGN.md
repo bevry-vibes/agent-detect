@@ -17,7 +17,7 @@ The implementation lives in `pub fn detect` in `src/lib/core.zig`, with each ste
 ### two-binary split (released + dev-only)
 
 The released binary must stay minimal — no raw dump, no subcommands, no fixtures — so it ships as a single static file with no surprises.
-Its CLI surface is `identify`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
+Its CLI surface is `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
 The dev binary (`agent-detect-dev`) carries the maintainer's full toolkit: the standalone `raw` action (raw observations block) and the `fixtures` subcommand namespace (capture / daemon / queue / dequeue / status / prompt — the last prints the capture prompt a harness session is asked to run; the internal `__timeout` watchdog the daemon spawns is not part of the user surface).
 The split is enforced at compile time via the `dev` flag in `build.zig` and the `pub const dev = if (build_options.dev) struct { ... } else struct {};` block in `src/dev/dev.zig`.
 The released binary cannot accidentally include dev code paths.
@@ -198,7 +198,7 @@ A daemon-spawned `from-capture` worker is a real harness session and therefore a
 ### recipe-mode identify/trailer (hard-to-detect agents)
 
 Some harnesses are hard or impossible to detect live (they don't run inside their own session, or leave no reliable markers).
-For those, a maintainer adds the harness/provider/model to the rule tables and `identify`/`trailer co-author`/`trailer assisted-by`/`check-reciprocal` accept a complete combo (`--harness=H --provider=P --model=M`) that resolves against the rules without live detection.
+For those, a maintainer adds the harness/provider/model to the rule tables and `identify`/`found`/`explain`/`trailer co-author`/`trailer assisted-by`/`check-reciprocal` accept a complete combo (`--harness=H --provider=P --model=M`) that resolves against the rules without live detection.
 All three dims are required (or none); a partial combo exits 4 and an unknown id exits 7.
 `detectable` in recipe mode reflects the recipe (up to all three dims).
 
@@ -244,7 +244,7 @@ The registry lives here; the CLI `--help` text only points at this section (plus
 
 Examples per group:
 
-- **0** — `identify` (identified) → JSON; `trailer co-author` → `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`; `check-reciprocal` → `is reciprocal`; `version` → `agent-detect <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help trailer` → usage.
+- **0** — `identify` (identified) → JSON; `found` → the observations JSON; `explain` (reciprocal) → the reasons JSON with an empty `reasons` array; `trailer co-author` → `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`; `check-reciprocal` → `is reciprocal`; `version` → `agent-detect <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help trailer` → usage.
 - **1** — uncaught error → `error: <name>` + trace.
 - **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` + usage; `--bogus`; dev `fixtures frobnicate`.
 - **3** — `agent-detect identify trailer` → `conflicting argument` + usage; dev `fixtures queue --refresh --stale-by-minutes=30`.
@@ -252,11 +252,11 @@ Examples per group:
 - **5** — dev `fixtures daemon` inside an agent → `incompatible environment refusing run`.
 - **6** — the optional `sqlite3` CLI is absent from PATH while a live session-store read needs it (kilo/opencode/copilot/crush/hermes inside a real session with a store on disk): the harness is known, detection cannot finish → `incomplete environment preventing run` rather than a misleading exit 8.
   `sqlite3` is the only optional dependency — see README.md's install section; a store-less run (recipe mode, config-file harnesses, plain shell) never spawns it.
-- **7** — `identify`/`trailer co-author`/`check-reciprocal` `--harness=foo --provider=bar --model=baz` → `missing specified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
-- **8** — `identify`/`trailer co-author`/`check-reciprocal` when live detection resolves nothing (plain shell); dev `fixtures capture` partial → `unable to detect unspecified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
-- **9** — `check-reciprocal` when any per-entity deduction is undeterminable: an axis outcome that could not be determined (training `NOASSERTION` — researched, inconclusive — or null, never researched; e.g. crush/hyper/step-3.7-flash, the model's openness unverified) → `agent (harness, provider, model) data incomplete to make a determination`.
+- **7** — `identify`/`found`/`explain`/`trailer co-author`/`check-reciprocal` `--harness=foo --provider=bar --model=baz` → `missing specified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
+- **8** — `identify`/`trailer co-author`/`check-reciprocal` when live detection resolves nothing (plain shell); `found`/`explain` still emit their payload on stdout (the deliberate gate exception — observations and reasons are most wanted exactly then) plus the stderr registry line; dev `fixtures capture` partial → `unable to detect unspecified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
+- **9** — `check-reciprocal`/`identify`/`found`/`explain` when any per-entity deduction is undeterminable: an axis outcome that could not be determined (training `NOASSERTION` — researched, inconclusive — or null, never researched; e.g. crush/hyper/step-3.7-flash, the model's openness unverified) → `agent (harness, provider, model) data incomplete to make a determination`.
   Like the null provider/model dims, the nudge encourages correcting the data (source the training value, make the instance setting readable) rather than failing silently; the exit-9 wave over unresearched axes is the designed driver for the research sweeps.
-- **10** — `check-reciprocal` when any per-entity deduction is false: a closed model (kilo/anthropic/claude-sonnet-4), an `enforced` or `enabled` closed axis, an `opt-in`/`opt-out` closed axis with no readable setting (worst case), or a scandal-flagged entity → stderr `agent (harness, provider, model) data complete and requirement failed`, stdout `not reciprocal`.
+- **10** — `check-reciprocal`/`explain` when any per-entity deduction is false: a closed model (kilo/anthropic/claude-sonnet-4), an `enforced` or `enabled` closed axis, an `opt-in`/`opt-out` closed axis with no readable setting (worst case), or a scandal-flagged entity → stderr `agent (harness, provider, model) data complete and requirement failed`, stdout `not reciprocal`.
   Also dev `fixtures capture` for a blocklisted provider → the host's git user must never test it (no fixture written).
 - **11** — allocation failure anywhere (`try a.dupe`/`allocPrint` etc.) → `error.OutOfMemory`.
 - **12** — dev `fixtures *` where `fixtures/index.json` is corrupt or carries an unknown `store_version` → `index store error`.
@@ -265,9 +265,25 @@ Examples per group:
 
 **stdout/stderr discipline.**
 `check-reciprocal` writes its determination to stdout only (`is reciprocal` on 0, `not reciprocal` on 10); exits 7/8/9 are stderr-only.
-`identify`/`raw` are data-output actions: exit 8 (identity unresolved) writes **no stdout** (no sensible data), exit 9 (identity complete, policy data missing) writes the partial report to stdout plus a stderr explainer, exit 0 writes the full report.
+`identify` is a data-output action: exit 8 (identity unresolved) writes **no stdout** (no sensible data), exit 9 (identity complete, policy data missing) writes the partial report to stdout plus a stderr explainer, exit 0 writes the full report.
+`found` (the promoted, renamed `raw` action) and `explain` are the introspection actions — the deliberate exception: they emit their payload on every exit including 8, because observations and reasons are most wanted exactly when detection failed; their exit codes mirror the state (0/8/9/10) so wrappers gate on them identically.
 `trailer` writes to stdout only on success; 4/7/8 are stderr-only.
 Usage errors (2/3/4) dump the relevant usage text.
+
+## failure reasons & remediation
+
+The interpretation layer over the ladder — one pure derivation (`reasonsFor` over `Detection` state, no I/O) feeding three surfaces: the `explain` action's JSON, the compact stderr lines appended after the byte-stable registry first lines, and the fixture `explain`/`.stderr` channels.
+
+**Reason codes** (kebab-cased in JSON) — one per distinct way a determination can fail or stall, classified in the ladder's own rung order:
+- exit-10 family: `*-scandal` (fails first), `*-closed-enforced` (rung 1), `harness-setting-enabled` (rung 2 — the fixable fail), `*-closed-opt` (rung 5), `model-closed` (the openness gate).
+- exit-9 family: `*-training-unsourced` (rung 6 — NOASSERTION or null; the nudge), `model-openness-unknown`.
+- exit-8 family: `harness-unmatched`, `provider-unreadable`, `model-unreadable` — the first unresolved dim only (the ladder is sequential).
+
+**Action kinds**: `fix-setting` (the rule's `closed_setting_hint` names where the setting lives; generic fallback when null), `switch-entity` (instruction carries rule-table-derived reciprocal alternatives — resolve-true only, never null/unknown, capped five, static values only for harnesses as in recipe mode), `preflight-combo` (the recipe-mode command form), `contribute-data` (the dual reference: `agent-detect found` command + CONTRIBUTING.md url), `read-policy`.
+
+**stderr layering** — append-only after the registry first lines (the registry messages are the contract); one compact line per reason (entity + summary + the explain pointer); no action prose or URLs on stderr — `agent-detect explain` carries the full remediation.
+
+**Fixture channels** — `outputs.explain` (the buildExplain object), `outputs["identify.stderr"]` / `outputs["explain.stderr"]` (newline-split line arrays, never multiline strings; absent when the action printed no stderr), and `outputs.found` (the renamed raw key — legacy files keep `raw` until their next sweep; the validator accepts both).
 
 ## evergreen decisions
 
@@ -296,7 +312,7 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
 7. **Daemon is user-only.** The agent never runs the daemon; the env-marker + ancestry guard fails closed (`runFixturesDaemon`).
 8. **Released binary stays minimal.**
    No index.json store, no `fixtures`, no raw dump in the released artifact — the `dev` module (comptime-gated) in `src/dev/dev.zig` drops that code at compile time.
-   Released actions: `identify`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
+   Released actions: `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
 9. **The 29-field canonical identify contract.**
    Test-enforced (see `src/known_fixtures.test.zig`); the capture raw block is shapeless (source-grouped keys, embedded as the from-capture file's `outputs.raw`), and harness rule *static* data (env-marker/binary-name lists) is intentionally NOT re-emitted in raw.
    The 29 fields: the 20-field base, with `model_reciprocity` (the openness tier) renamed `model_openness` and the freed name reused for the computed model deduction, plus the harness setting pair (null-as-absent), the two scandal flags (**explicit booleans** — false is visible, never inferred from absence; 2026-09-21), the three computed `{entity}_reciprocity` deductions, and the model training pair — the full shape lives in `fixtures/fixture.d.ts`.
@@ -304,7 +320,7 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
 10. **`fixtures dequeue` = DELETE, `fixtures capture` = fixtures-only.**
     Dequeue never mutates fixtures; capture never touches queue; the daemon never writes `fixtures` outside pop processing and never inserts queue rows (purity).
 11. **Recipe-mode `identify`.**
-    A harness whose provider/model can't be auto-detected is a warning for a later dev agent, not a hard failure: `identify`/`trailer co-author`/`trailer assisted-by`/ `check-reciprocal` accept a full `--harness= --provider= --model=` combo resolved from the rule tables.
+    A harness whose provider/model can't be auto-detected is a warning for a later dev agent, not a hard failure: `identify`/`found`/`explain`/`trailer co-author`/`trailer assisted-by`/`check-reciprocal` accept a full `--harness= --provider= --model=` combo resolved from the rule tables.
  12. **`*_id` fields are strict slugs.**
      `harness_id`, `provider_id`, `model_id`, `agent_id`, `platform_id`, and the derived `fixture_id` are strictly lowercase-alphanumeric slugs of the canonical `*_name` (no separators).
      `*_name` carries the service's own spelling; the ids are what machine matching and fixture filenames use.
