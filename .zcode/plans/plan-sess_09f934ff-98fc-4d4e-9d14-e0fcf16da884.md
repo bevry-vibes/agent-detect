@@ -1,55 +1,29 @@
-# ollamacloud individuation, paid-only blocklist, free-model refresh, and the zcode + free regeneration
+# Identity fixtures carry `outputs.raw`, and the scandal booleans become explicit `true`/`false`
 
-## Where we left off
+Two schema changes, one regeneration pass. Per DESIGN #16 no file is hand-edited — the drain rewrites them.
 
-The last plan (`.plans/1788916141-posture-setting-model-training.md`) is **implemented** — phases A/B/C landed as `a9b0f89`/`064fb88`/`f82b43a`. Its "What this plan does not do" section names the unfinished threads this session picks up: the ollama `:cloud` individuation (DESIGN #15 — "re-individuate before the next large ollama sweep"), plus the blocklist/free-model refresh and the fixture regeneration. New directives: split `ollama` → `ollama` (local) + `ollama-cloud` (cloud, slug `ollamacloud`); rename-but-don't-rewrite the fixtures; make the blocklist paid-only and add `clinepass` + `ollamacloud`; refresh free models everywhere (recent free push); then regenerate **zcode + all free models**, plus a **full ollamacloud sweep** (user-confirmed), with **from-capture upgrades** where invocations of record exist (user-confirmed).
+## A. The scandal booleans: null-as-absent → always emitted
 
-## Phase 0 — the plan files
+1. **`src/lib/core.zig` `buildCooked`** (lines 2502, 2509): drop the `if (d.…_reciprocity_scandal)` gates — emit `harness_reciprocity_scandal` and `provider_reciprocity_scandal` as `.{ .bool = d.… }` unconditionally, in their current emission positions (before the computed `*_reciprocity`). Update the doc comment at 2486 (the settings stay null-as-absent; the scandal flags are explicit booleans).
+2. **`src/known_fixtures.test.zig`**: add both keys to `identify_keys` at their emission positions (`harness_reciprocity_scandal` before `harness_reciprocity`; `provider_reciprocity_scandal` before `provider_reciprocity`) — the list finally holds all 29 keys its name advertises; fix the stale "20 canonical" header comment. Add both to `growth_exempt_keys` so pre-growth fixtures (which lack them) stay valid until their next sweep; replace the line-106 "never join identify_keys" comment.
+3. **`fixtures/fixture.d.ts`**: `harness_reciprocity_scandal?: true` → `harness_reciprocity_scandal: boolean` (same for provider), header note that pre-growth fixtures may lack the keys until regeneration.
 
-Write `.plans/<ts>-ollamacloud-blocklist-free-regen.md` + `.prompts.md` per `plans.md` (house style, `Assisted-by` trailer via `./zig-out/bin/agent-detect trailer assisted-by`). Land with the docs commit.
+## B. Identity fixtures gain `outputs.raw` — the rule-derived evidence
 
-## Phase A — the ollama / ollama-cloud individuation (DESIGN #15 executed)
+The declared raw is a **reduced** shape: only what the rules actually assert. Instance-observation fields (`platform_id`, `harness_version`, `process_lineage`, `evidence`) stay absent — a declared fixture observed nothing, and the worker's own lineage would be fiction.
 
-Both recorded discriminators go live; the `local` umbrella idea stays deferred (no second local runtime observed).
+1. **`src/dev/dev.zig`**: new `buildDeclaredRaw(a, &d) !std.json.Value` emitting, in order: `detectable`, `detected` (via the existing `detectedDims` helper), `harness-urls`, `provider-urls`, `model-urls`, `scandal-urls` — `resolveRecipe` already populates all six from the rule tables (core.zig 2800-2823), so this is pure assembly.
+2. **`runOneComboIdentity`**: build and put `raw` into `outputs` after the two trailers (matching the capture channel's key order); rewrite the "carries no raw block" comment.
+3. **Tests**: the envelope-shape test's identity branch — outputs count 3 → 4, allow `raw` beside the whitelist; add a tolerant declared-raw schema test over `identity_dir` (present ⇒ exactly the six keys, `*-urls` items `https://`, `detectable`/`detected` len 3; absent ⇒ pre-growth, tolerated). The two existing capture-scoped raw tests stay untouched.
+4. **`fixtures/fixture.d.ts`**: new `DeclaredRaw` interface; `IdentityFile.outputs` gains `raw: DeclaredRaw`; channel-header docs updated.
+5. **`DESIGN.md`**: decision #9 (the scandal flags are explicit booleans; raw is no longer capture-only — identity carries the declared raw); the channel description at ~45; the evidence-attribution rule at ~381 ("Declared fixtures carry no evidence at all" → they carry the rule-derived URL evidence; instance-only fields stay absent); the stale "20-field" counts at ~219.
 
-1. **`src/lib/rules.zig`** — new `ProviderRule` `.name = "ollama-cloud"`, label `Ollama Cloud`, training `never/never` (cloud = transient processing, never trains; sources ollama.com/privacy + terms), no scandal; comment absorbs the retired pre-fold rule name. The `ollama` rule drops its `ollama-cloud` variation (its slug `ollamacloud` must not match two rules) and its comment rewrites: local runtime only, fold flaw resolved, zero fixtures.
-2. **`src/lib/core.zig`** — `providerHostFold`: `ollama.com` → `ollama-cloud` (was `ollama`); `inference.phala.com` unchanged. New cross-dim post-pass after provider+model resolution: provider `ollama` ∧ raw model spelling carries `:cloud` → provider re-resolves `ollama-cloud` (covers zcode's localhost:11434 custom provider serving `:cloud` models). Model rules keep their `:cloud` variations.
-3. **Fixture renames — content untouched** (DESIGN #16 + directive): `git mv` all **129** stems `-ollama-` → `-ollamacloud-` (116 from-identity + 13 from-capture; every observed fixture is cloud traffic).
-4. **`fixtures/index.json`** — re-key the 32 `invocations` keys and 18 `known_but_failed` keys; re-key the 2 queue entries' provider dim (`ollama` → `ollamacloud`). Argv strings inside entries stay (historical launch commands).
-5. **Grids** — `map-harness-provider`: zcode row's `ollama` cell moves to the cloud rule (kilo/omp/opencode `ollamacloud` cells and hermes `ollama-cloud` cell already resolve to it); `map-provider-model`: row key `ollama` → `ollama-cloud`, cells unchanged (all cloud-catalog launch ids); no local `ollama` row remains. Confirm cell semantics against the grid reader (`dev.zig:741–783`) while editing.
-6. **Tests** — `known_fixtures.test.zig`: combo-match test gains a rename-transition allowance (provider segment `ollamacloud` with content `provider_id: "ollama"` → **warn, not fail**, with the queue nudge — the unverified-harness_license warning is the precedent; drop it when zero warnings remain); `rule_only_providers` += `ollama`; `isLegacyCrossChannel` stem re-keys to `hermes-ollamacloud-glm53flash-darwin`; stem-dim name-match is satisfied by name `ollama-cloud`. `exit_statuses.test.zig` / `index_store.test.zig`: cover the `:cloud` flip and the new host-fold target.
-7. **Docs** — DESIGN #15 marked executed (both discriminators live; umbrella deferred); CONTRIBUTING fold-doctrine line, hermes/phala section notes updated.
-8. Build + `zig build test`, commit: `core: the ollama/ollama-cloud individuation (DESIGN #15) — rules, detectors, renames, store, grids`.
+## C. Propagation — one zero-token refresh sweep
 
-## Phase B — the paid-only blocklist
+Build + full test run, commit (selective staging — the other agent's files stay out). Then queue the whole identity universe for regeneration:
 
-The blocklist today blocks the **whole** provider (`dev.zig:1394`/`1441` run before the free-axis check; capture refusal `dev.zig:2067–2082` is unconditional). Per the directive it blocks **only paid models**: free-grid combos of a blocked provider stay eligible.
+```sh
+./zig-out/bin/agent-detect-dev fixtures queue --refresh --from-identity
+```
 
-1. **`src/dev/dev.zig`** — all three gates become `blocked(provider) ∧ !FreeGrid.has(provider, model)`; the capture path loads the FreeGrid.
-2. **`fixtures/index.json`** — `blocklist.balupton.providers` += `clinepass`, `ollamacloud` (strict slugs; alongside `chutes`, `opencodego`, `deepseek`, `hyper`).
-3. **`fixtures/index.d.ts` + DESIGN.md** blocklist paragraphs rewritten to paid-only semantics.
-4. `index_store.test.zig`: exclusion test gains the free-exemption case. Commit: `store: the paid-only blocklist semantics and the clinepass + ollamacloud entries`.
-
-## Phase C — the free-model refresh (research)
-
-Follow the CONTRIBUTING probing runbook (lines ~168–230): for `clinepass, opencode, openrouter, zenmux, nvidia, vercel` + new `ollamacloud`, cross-check current catalogs (OpenRouter `/api/v1/models`, harness catalogs, evergreen snapshot curls, web search for the recent free push). Update `fixtures/map-provider-model-freeprovidermodel.csv` (sparse; slugs must resolve to rules); new free models without rules get new `ModelRule`s (license/openness research per the rule-writing sections) + `map-provider-model` cells so combos are feasible; add the `ollamacloud` row if it has free models. **Watch the free-signal test** (`known_fixtures.test.zig:932`): a free-listed combo with an existing from-capture must carry `free` in its launch id — existing ollama captures launch `ollama-cloud/<model>` with no free signal, so only list models that are genuinely free (or leave until re-capture). Commits: `rules:` (any new model rules), then the grid.
-
-## Phase D — regeneration: zcode + all free models + the full ollamacloud sweep
-
-`--stale-by-output` cannot see the rename (it compares identity↔capture channels, which still agree), so the queues use **`--refresh`**:
-
-1. Queue (re-asserting identical flags per dedupe rules):
-   - `fixtures queue --harness=zcode --refresh --from-identity` (the 6 zcode fixtures, incl. the renamed zcode-ollamacloud pair)
-   - `fixtures queue --provider=ollamacloud --refresh --from-identity` (full sweep — all 129 renamed files; also mints feasible-unfixtured grid combos, zero-token, same as the earlier zcode sweep minted its six)
-   - per free provider: `fixtures queue --provider=<p> --free --refresh --from-identity`
-   - capture upgrades: `fixtures queue --provider=<p> --free --refresh --from-capture` (invocation-of-record combos only; zcode has none — from-identity only)
-2. **User runs the daemon per host** (never inside the agent): `zig build dev && ./zig-out/bin/agent-detect-dev fixtures daemon --write-log` — linux here; darwin/windows on the other hosts later (each daemon drains only its platform, `dev.zig:2975`).
-3. Review landed batches (`fixtures status`, `daemon.log`, backlog), commit per batch as they land: `fixtures: the zcode + free-model + ollamacloud regeneration`; burn the combo-match allowance down as warnings reach zero, then drop it.
-
-## Verification & risks
-
-- `zig build && zig build test` green at every commit; generated co-author trailer per `commits.md`.
-- The interim combo-match warnings are by design (DESIGN #16) and burn down as daemons drain.
-- New free models may need model-rule research (bounded by the runbook); the free-signal/old-capture conflict is checked before listing.
-- zcode from-capture stays impossible until an invocation of record is authored (out of scope).
-- Harness config/auth files are never touched (AGENTS.md hard rule) — the daemon/capture flow is read-only on `~/.zcode/`.
+The running transient-unit daemon rewrites every identity file with the new shape (~2,000 files at the 0.25s pacing, zero tokens); pre-growth files gain the booleans and the raw block in the same pass. Review a sample, `zig build test` green, commit the regenerated batch. The flag-bearing fixtures (deepseek, anthropic, xai, github-copilot, copilot) will now visibly carry `*_reciprocity_scandal: true` and `scandal-urls` — the visibility that motivated this.

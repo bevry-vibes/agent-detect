@@ -350,6 +350,10 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
      A committed fixture file's contents are an artifact of the run that wrote it: it is never appropriate to modify them after the fact.
      Renames/re-keying are fine (the filename is metadata — the fold mechanics rename), but content that is out of sync with the current rules is regenerated, not edited — the combo is added to the queue (a from-identity declaration or a from-capture re-run) and the worker writes the whole file fresh.
      Out-of-sync fixtures are fine to have in the meantime: the file's `meta.updated_at` acknowledges its age, and the staleness model re-works it on the next sweep.
+17. **A drift repair extends parsing; it never drops a format still inside the version window.**
+     Session-store, config-file, and env parsing must keep working for every format emitted by any harness version released within the staleness window (the 27-day default ≈ four weeks — the span of versions a user's running binary or a live capture can still come from).
+     Concretely: when a harness renames or drops a field, the parser gains a second accepted shape — the zcode 3.14 repair accepts both role-bearing and role-absent rollout records and maps both the retired `builtin:zai-start-plan` and the renamed coding-plan provider keys; it never switches to the new shape alone.
+     An old shape may be retired only once no in-window release emits it, and until then the retired shape stays pinned by a test so a cleanup cannot silently strand it (the zcode rollout tests pin both sides of the 3.14 drift, and `zcodeProviderCanonical` is pinned for every in-window key spelling plus the never-guess pass-through).
 
 ## test matrix: harnesses, providers, models
 

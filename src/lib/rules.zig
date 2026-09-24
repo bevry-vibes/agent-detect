@@ -716,15 +716,15 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "copilot", "copilot.exe" }
     else
         &[_][]const u8{"copilot"} },
-    // zcode: NONE — Z.ai's ZCode desktop app (bundle `dev.zcode.app`) ships compiled installers only (no source repo, no license offer);
-    // verified from the product page and Z.ai's Terms of Service, so `license` is `"NONE"`.
+    // zcode: Apache-2.0 — https://github.com/zai-org/ZCode (open-sourced: client, backend server, shared UI, and the Agent CLI/runtime source; "Copyright 2026 Z.AI Co., Ltd") ships the Apache License 2.0 text at its root LICENSE, with third-party attribution in NOTICE.md / THIRD-PARTY-NOTICES.md.
+    // Supersedes the 2026-09-07 NONE finding — the app shipped compiled installers only back then; the open-sourcing changes the licence but not the training posture (the cloud data terms are a separate surface).
     // Training postures opt-in/opt-in (sourced 2026-09-07 via a reader render of zcode.z.ai/privacy — the pages carry no text for plain crawlers): the "Improve experience" program is the Optimization Program, and "our Optimization Program is not enabled by default, and we will only use such User Content for this purpose after you have actively opted in" —
     // off by default with an active opt-in, and the statement covers "product or model training and optimization" without distinguishing model types, so the value mirrors across both axes (the axis-ambiguity convention).
     // Catalog research (2026-09-05): every Z.ai model the docs.z.ai API serves is open-weight on HF (zai-org) — GLM-5.3, GLM-5.3-Flash, GLM-5.2, GLM-OCR, GLM-Image, CogVideoX —
     // EXCEPT GLM-ASR-2512, which is API-only (no public weights; only the Nano variant is released), so the blanket closed_training="never" is structurally unsafe and the toggle-ON instance read still carries the fail-safe instead (see `detectZcode` — the instance read wins over this static posture whenever the settings file is present).
     // Declared last so its env markers (which leak into every child session of the app, like any desktop harness's shell env) are checked only after every other harness's markers —
     // a cline or goose session spawned from inside ZCode still matches its own rule first.
-    .{ .name = "zcode", .label = "ZCode", .license = "NONE", .license_sources = &.{ "https://zcode.z.ai/", "https://www.z.ai/terms-of-service" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://zcode.z.ai/privacy", "https://zcode.z.ai/terms" }, .env_markers = &zcode_env, .binary_names = if (builtin.os.tag == .windows)
+    .{ .name = "zcode", .label = "ZCode", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/zai-org/ZCode", "https://github.com/zai-org/ZCode/blob/main/LICENSE" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://zcode.z.ai/privacy", "https://zcode.z.ai/terms" }, .env_markers = &zcode_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1", "zcode.exe", "zcode-cli.exe", "zcode-host-local-1.exe" }
     else
         &[_][]const u8{ "zcode", "zcode-cli", "zcode-host-local-1" } },

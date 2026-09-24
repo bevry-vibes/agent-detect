@@ -118,6 +118,9 @@ pub fn modelFromSessionRow(a: std.mem.Allocator, model_str: []const u8) !?core.A
     return core.modelFromSessionRow(a, model_str);
 }
 
+pub const zcodeRolloutNewestMainRecord = core.zcodeRolloutNewestMainRecord;
+pub const zcodeProviderCanonical = core.zcodeProviderCanonical;
+
 /// decision #8 — the dev binary's top-level help: the released usage plus a dev-actions block referencing the fixtures namespace, the two refresh modes, and the daemon pacing/control flags.
 /// The released `agent-detect --help` is `usage` alone.
 const devUsage = if (dev_build)

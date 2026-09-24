@@ -1828,7 +1828,7 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
 /// The app's bundled coding plan records providerId `builtin:zai-start-plan` (agent-detect calls that surface `zcode`, mirroring `zai`); zcode 3.14 renamed the surface's keys — the settings' selected key is `coding-plan:builtin:zai-coding-plan` and the rollout providerId is `account:zai-individual-coding-plan` (observed 2026-09-20) — same bundled zai coding plan.
 /// Custom providers (source: "custom") carry opaque per-install keys — their human name lives in `~/.zcode/v2/config.json` under `provider.<key>.name`, read by the caller.
 /// Unknown keys pass through (never-guess).
-fn zcodeProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
+pub fn zcodeProviderCanonical(a: std.mem.Allocator, provider: []const u8) ![]const u8 {
     if (std.mem.indexOf(u8, provider, "zai-start-plan") != null) return a.dupe(u8, "zcode");
     if (std.mem.indexOf(u8, provider, "zai") != null and std.mem.indexOf(u8, provider, "coding-plan") != null) return a.dupe(u8, "zcode");
     return provider;
@@ -1875,6 +1875,75 @@ fn providerHostFold(base_url: []const u8) ?[]const u8 {
     return null;
 }
 
+/// the newest main-role record across a rollout directory's `model-io-sess_*.jsonl` files, or null when none parses.
+/// Records append chronologically per file, so each file is read from its tail only — a bounded window that keeps a huge or still-growing session file in the race (the whole-file read it replaces died with StreamTooLong at the 64 MiB cap, silently dropping exactly the longest — often the current — session).
+/// A window that starts mid-line discards the partial head record; the rest parses as before (the caller-owned parse semantics are unchanged).
+/// The cumulative read budget is a circuit breaker for pathological stores: with 256 KiB windows it only bites past ~256 session files, where directory order would decide which files get read (accepted — the winner is still whichever read record carries the newest completedAt).
+pub fn zcodeRolloutNewestMainRecord(a: std.mem.Allocator, io: std.Io, rollout_dir_path: []const u8) !?struct { completed_at: []const u8, provider: []const u8, model: []const u8, path: []const u8 } {
+    const tail_window: u64 = 1 << 18; // 256 KiB — dozens of records
+    const cwd_dir = std.Io.Dir.cwd();
+    var dir = cwd_dir.openDir(io, rollout_dir_path, .{ .iterate = true }) catch return null;
+    defer dir.close(io);
+    var it = dir.iterate();
+    var total_read: usize = 0;
+    var best_completed: []const u8 = "";
+    var best_provider: []const u8 = "";
+    var best_model: []const u8 = "";
+    var best_path: []const u8 = "";
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .file) continue;
+        if (!std.mem.startsWith(u8, ent.name, "model-io-sess_")) continue;
+        if (!std.mem.endsWith(u8, ent.name, ".jsonl")) continue;
+        if (std.mem.indexOf(u8, ent.name, "_subagent_") != null) continue; // subagent sessions get their own files — outside the main session's scope
+        if (total_read > (1 << 26)) break; // 64 MiB cumulative tail budget
+        const path = std.fmt.allocPrint(a, "{s}/{s}", .{ rollout_dir_path, ent.name }) catch continue;
+        var file = cwd_dir.openFile(io, path, .{}) catch continue;
+        defer file.close(io);
+        var read_buf: [4096]u8 = undefined;
+        var file_reader = file.reader(io, &read_buf);
+        const size = file_reader.getSize() catch continue;
+        const window = @min(size, tail_window);
+        file_reader.seekTo(size - window) catch continue;
+        // the limit must exceed the bytes that remain (window) — a reached-or-exceeded limit fails the read with StreamTooLong
+        const data = file_reader.interface.allocRemaining(a, .limited64(window + 1)) catch continue;
+        total_read += data.len;
+        // the window may open mid-record — everything before its first newline is a partial line, not parseable
+        var view: []const u8 = data;
+        if (window < size) {
+            view = if (std.mem.indexOfScalar(u8, data, '\n')) |nl| data[nl + 1 ..] else "";
+        }
+        var lines = std.mem.splitBackwardsScalar(u8, view, '\n');
+        var scanned: usize = 0;
+        while (lines.next()) |line| {
+            if (scanned >= 200) break; // the newest main record sits at the tail
+            scanned += 1;
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0) continue;
+            const parsed = std.json.parseFromSlice(std.json.Value, a, trimmed, .{}) catch continue;
+            defer parsed.deinit();
+            if (parsed.value != .object) continue;
+            const mv = parsed.value.object.get("model") orelse continue;
+            if (mv != .object) continue;
+            const mo = mv.object;
+            const role = jstr(mo, "role") orelse ""; // zcode 3.14 dropped the role field — every record in a main-session file is a main record (subagents get their own files)
+            if (role.len > 0 and !std.mem.eql(u8, role, "main")) continue;
+            const model_id = jstr(mo, "modelId") orelse continue;
+            const provider_id = jstr(mo, "providerId") orelse "";
+            const completed = jstr(parsed.value.object, "completedAt") orelse "";
+            if (best_path.len == 0 or (completed.len > 0 and std.mem.order(u8, completed, best_completed) == .gt)) {
+                best_completed = a.dupe(u8, completed) catch continue;
+                best_provider = a.dupe(u8, provider_id) catch continue;
+                best_model = a.dupe(u8, model_id) catch continue;
+                best_path = a.dupe(u8, path) catch continue;
+            }
+            break; // first (newest) main record of this file is enough
+        }
+        a.free(data);
+    }
+    if (best_path.len == 0) return null;
+    return .{ .completed_at = best_completed, .provider = best_provider, .model = best_model, .path = best_path };
+}
+
 /// ZCode desktop-app detection. Ladder, most-invasive-last:
 /// 1. harness version — the ZCODE_APP_VERSION marker rides into every child session's env;
 /// 2. the session stores under ~/.zcode — the per-session model-io rollout JSONL files, whose newest `main`-role record carries the exact providerId/modelId the session is running (provider keys resolve via `zcodeProviderCanonical`: bundled-plan keys → `zcode`, custom keys via `~/.zcode/v2/config.json` — the endpoint host first, `providerHostFold`, else the display name);
@@ -1891,58 +1960,9 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     const cwd_dir = std.Io.Dir.cwd();
 
     // session side: ~/.zcode/cli/rollout/model-io-sess_*.jsonl — one append-only JSONL per session; records carry completedAt (ISO-8601, lexicographic order = chronological) and model {providerId, modelId, role}.
-    // The global winner is the main-role record with the newest completedAt across files.
-    // Reads are capped per file and in total so a machine stacked with old sessions still detects fast; values are duped before each buffer is freed (never free a slice the result aliases).
+    // The global winner is the main-role record with the newest completedAt across files (read tail-only per file — see the helper).
     const rollout_dir_path = try std.fmt.allocPrint(a, "{s}/.zcode/cli/rollout", .{home});
-    const best: ?struct { completed_at: []const u8, provider: []const u8, model: []const u8, path: []const u8 } = blk: {
-        var dir = cwd_dir.openDir(io, rollout_dir_path, .{ .iterate = true }) catch break :blk null;
-        defer dir.close(io);
-        var it = dir.iterate();
-        var total_read: usize = 0;
-        var best_completed: []const u8 = "";
-        var best_provider: []const u8 = "";
-        var best_model: []const u8 = "";
-        var best_path: []const u8 = "";
-        while (it.next(io) catch null) |ent| {
-            if (ent.kind != .file) continue;
-            if (!std.mem.startsWith(u8, ent.name, "model-io-sess_")) continue;
-            if (!std.mem.endsWith(u8, ent.name, ".jsonl")) continue;
-            if (std.mem.indexOf(u8, ent.name, "_subagent_") != null) continue; // subagent sessions get their own files — outside the main session's scope
-            if (total_read > (1 << 27)) break; // 128 MiB session-store budget
-            const path = std.fmt.allocPrint(a, "{s}/{s}", .{ rollout_dir_path, ent.name }) catch continue;
-            const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 26)) catch continue; // 64 MiB per file
-            total_read += data.len;
-            var lines = std.mem.splitBackwardsScalar(u8, data, '\n');
-            var scanned: usize = 0;
-            while (lines.next()) |line| {
-                if (scanned >= 200) break; // the newest main record sits at the tail
-                scanned += 1;
-                const trimmed = std.mem.trim(u8, line, " \t\r");
-                if (trimmed.len == 0) continue;
-                const parsed = std.json.parseFromSlice(std.json.Value, a, trimmed, .{}) catch continue;
-                defer parsed.deinit();
-                if (parsed.value != .object) continue;
-                const mv = parsed.value.object.get("model") orelse continue;
-                if (mv != .object) continue;
-                const mo = mv.object;
-                const role = jstr(mo, "role") orelse ""; // zcode 3.14 dropped the role field — every record in a main-session file is a main record (subagents get their own files)
-                if (role.len > 0 and !std.mem.eql(u8, role, "main")) continue;
-                const model_id = jstr(mo, "modelId") orelse continue;
-                const provider_id = jstr(mo, "providerId") orelse "";
-                const completed = jstr(parsed.value.object, "completedAt") orelse "";
-                if (best_path.len == 0 or (completed.len > 0 and std.mem.order(u8, completed, best_completed) == .gt)) {
-                    best_completed = a.dupe(u8, completed) catch continue;
-                    best_provider = a.dupe(u8, provider_id) catch continue;
-                    best_model = a.dupe(u8, model_id) catch continue;
-                    best_path = a.dupe(u8, path) catch continue;
-                }
-                break; // first (newest) main record of this file is enough
-            }
-            a.free(data);
-        }
-        if (best_path.len == 0) break :blk null;
-        break :blk .{ .completed_at = best_completed, .provider = best_provider, .model = best_model, .path = best_path };
-    };
+    const best = try zcodeRolloutNewestMainRecord(a, io, rollout_dir_path);
 
     if (best) |b| {
         if (b.model.len > 0) {

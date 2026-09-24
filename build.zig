@@ -84,6 +84,7 @@ pub fn build(b: *std.Build) void {
         "src/known_fixtures.test.zig",
         "src/index_store.test.zig",
         "src/exit_statuses.test.zig",
+        "src/zcode_rollout.test.zig",
     };
     inline for (test_files) |file| {
         const test_exe = b.addTest(.{
