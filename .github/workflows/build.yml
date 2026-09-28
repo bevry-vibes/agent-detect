@@ -38,12 +38,14 @@ jobs:
           set -e
           B=./bin/agent-detect-linux-x86_64
           "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
-          test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          # the reciprocal-path pin: a combo that resolves reciprocal per the current rule tables (the 2026-09-15 deepseek scandal flag retired the old kilo/deepseek combo)
+          test "$("$B" check-reciprocal --harness=kimi-code --provider=chutes --model=glm-5.2)" = "is reciprocal"
           # alias / case-variation resolution must equal the canonical form
           test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
-          # closed harness: the opt-in training posture passes the harness conjunct, but the cursor provider dim is null → data incomplete (empty stdout, exit 9)
+          # unsourced provider training posture (zenmux) with every resolvable conjunct passing → data incomplete (empty stdout, exit 9)
+          # (the old cursor/cursor combo went exit-10 when the cursor harness rule landed opt-in)
           set +e
-          OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          OUT="$("$B" check-reciprocal --harness=kimi-code --provider=zenmux --model=glm-5.2 2>/dev/null)"
           RC=$?
           set -e
           test "$OUT" = ""
@@ -83,12 +85,14 @@ jobs:
           set -e
           B=./bin/agent-detect-linux-x86_64
           "$B" trailer co-author --harness=cline --provider=clinepass --model=kimi-k3 >/dev/null
-          test "$("$B" check-reciprocal --harness=kilo --provider=deepseek --model=deepseek-v4-flash)" = "is reciprocal"
+          # the reciprocal-path pin: a combo that resolves reciprocal per the current rule tables (the 2026-09-15 deepseek scandal flag retired the old kilo/deepseek combo)
+          test "$("$B" check-reciprocal --harness=kimi-code --provider=chutes --model=glm-5.2)" = "is reciprocal"
           # alias / case-variation resolution must equal the canonical form
           test "$("$B" check-reciprocal --harness='Kilo Code' --provider='Cline Pass' --model='DeepSeek V4 Flash')" = "$("$B" check-reciprocal --harness=kilo --provider=clinepass --model=deepseekv4flash)"
-          # closed harness: the opt-in training posture passes the harness conjunct, but the cursor provider dim is null → data incomplete (empty stdout, exit 9)
+          # unsourced provider training posture (zenmux) with every resolvable conjunct passing → data incomplete (empty stdout, exit 9)
+          # (the old cursor/cursor combo went exit-10 when the cursor harness rule landed opt-in)
           set +e
-          OUT="$("$B" check-reciprocal --harness=cursor --provider=cursor --model=gpt-5.2 2>/dev/null)"
+          OUT="$("$B" check-reciprocal --harness=kimi-code --provider=zenmux --model=glm-5.2 2>/dev/null)"
           RC=$?
           set -e
           test "$OUT" = ""
