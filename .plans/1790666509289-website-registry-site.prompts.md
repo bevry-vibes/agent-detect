@@ -28,3 +28,31 @@ from the same branch; no prompts were lost.
 ## 5 — 2026-09-29
 
 > allow columns to be sorted
+
+## 6 — 2026-09-29
+
+> verify visually the table header, currently it's contents are not visible, and it is blocking the first row
+
+## 7 — 2026-09-29
+
+> horizontal scroll and line-height issues are present on mobile widths
+
+## 8 — 2026-09-29
+
+> there is still some tightness between different ui elements, such as the 17 harnesses" and the install and use sections... do a visual verification on margins and line-heights for different ui elements in desktop mode and mobile mode - and in mobile mode, we need a way to identify the collapsed rows into cards what is harness, provider, model - as right now that requires user pre-awareness
+>
+> also, the table values should be from the last updated json
+>
+> and the agent result next to copy, should also have a copy command button for reproducing with the args/flags
+
+## 9 — 2026-09-29
+
+> you've forgot the copy command button next to the copy button, so on the identify result, there should be copy command next to the copy button
+
+## 10 — 2026-09-29
+
+> don't do this:
+> >agent-detect check-reciprocal --harness=cline --provider=clinepass --model=deepseekv4flash
+> >reproduce this verdict against the live detection with the recipe-mode flags
+>
+> do the copy command button

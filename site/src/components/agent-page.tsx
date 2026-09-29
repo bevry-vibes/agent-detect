@@ -3,7 +3,6 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
 import { type AgentFile, type ComboRow, type FixtureOutputs } from "@/lib/registry";
-import { CodeLine } from "@/components/json-block";
 import { JsonBlock } from "@/components/json-block";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,13 +26,29 @@ function sectionsFor(outputs: FixtureOutputs): { title: string; value: unknown }
 /** per-session cache — revisiting an agent (back/forward) renders instantly */
 const fileCache = new Map<string, AgentFile>();
 
-function FixtureDetail({ fixture }: { fixture: AgentFile["fixtures"][number] }) {
+/** the recipe-mode actions whose blocks gain a "copy command" button —
+ * the CLI invocation that reproduces that block for this combo */
+const RECIPE_ACTIONS: Record<string, string> = {
+  identify: "identify",
+  explain: "explain",
+  found: "found",
+  "check-reciprocal": "check-reciprocal",
+};
+
+function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][number]; dims: { h: string; p: string; m: string } }) {
   const sections = useMemo(() => sectionsFor(fixture.outputs), [fixture]);
   const meta: Record<string, unknown> = { ...fixture.meta, updated_at: formatDate(fixture.updated_at) };
+  const bin = fixture.platform === "windows" ? ".\\agent-detect.exe" : "./agent-detect";
+  const commandFor = (title: string) => {
+    const action = RECIPE_ACTIONS[title];
+    return action
+      ? `${bin} ${action} --harness=${dims.h} --provider=${dims.p} --model=${dims.m}`
+      : undefined;
+  };
   return (
     <div className="flex flex-col gap-3">
       {sections.map((s) => (
-        <JsonBlock key={s.title} title={s.title} value={s.value} />
+        <JsonBlock key={s.title} title={s.title} value={s.value} command={commandFor(s.title)} />
       ))}
       <JsonBlock title="meta" value={meta} />
     </div>
@@ -146,14 +161,6 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
             <span className="text-muted-foreground font-mono text-xs">{formatDate(row.updated_at)}</span>
           </div>
           <p className="text-muted-foreground font-mono text-xs">{row.email}</p>
-          <div className="mt-1 flex flex-col gap-1">
-            <CodeLine
-              code={`agent-detect check-reciprocal --harness=${row.harness} --provider=${row.provider} --model=${row.model}`}
-            />
-            <p className="text-muted-foreground pl-1 text-xs">
-              reproduce this verdict against the live detection with the recipe-mode flags
-            </p>
-          </div>
         </header>
       )}
 
@@ -176,7 +183,7 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
           </TabsList>
           {file.fixtures.map((f) => (
             <TabsContent key={f.id} value={`${f.platform}:${f.channel}`}>
-              <FixtureDetail fixture={f} />
+              <FixtureDetail fixture={f} dims={{ h: row.harness, p: row.provider, m: row.model }} />
             </TabsContent>
           ))}
         </Tabs>
