@@ -1,5 +1,18 @@
-import { Check, Copy, ExternalLink, Mail, ScrollText, SlidersHorizontal, WifiOff } from "lucide-react";
-import { Terminal } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
+  Eye,
+  Mail,
+  ScrollText,
+  SlidersHorizontal,
+  Sparkles,
+  SquareTerminal,
+  Terminal,
+  WifiOff,
+} from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { Registry } from "@/lib/registry";
@@ -72,8 +85,10 @@ function Feature({ icon: Icon, children }: { icon: typeof Mail; children: ReactN
       <span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/50">
         <Icon className="size-4" />
       </span>
-      {/* mt-1.5 puts the first text line on the icon's midline; extra lines flow below */}
-      <span className="text-muted-foreground mt-1.5 text-sm leading-snug">{children}</span>
+      {/* leading-5 makes the math exact — (32px icon − 20px line) / 2 = mt-1.5 — so
+          the first line's center sits on the icon's midline and every feature's
+          first line shares the same y; extra lines flow below */}
+      <span className="text-muted-foreground mt-1.5 text-sm leading-5">{children}</span>
     </li>
   );
 }
@@ -121,8 +136,9 @@ export function Hero() {
         <p className="mt-2 text-lg font-medium">Give your agent self-awareness.</p>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           <Feature icon={Mail}>
-            Generate accurate <code className="font-mono text-[0.9em]">Co-Authored-By</code> &amp;{" "}
-            <code className="font-mono text-[0.9em]">Assisted-By</code> trailers for agent-made commits and issues.
+            Generate accurate <code className="font-mono text-[0.9em] leading-none">Co-Authored-By</code> &amp;{" "}
+            <code className="font-mono text-[0.9em] leading-none">Assisted-By</code> trailers for agent-made commits and
+            issues.
           </Feature>
           <Feature icon={SlidersHorizontal}>
             Scope rules, skills, and policies by agent harness, provider, and/or model.
@@ -161,14 +177,6 @@ export function Hero() {
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-2">
-                  <Badge variant="secondary" className="font-mono text-[10px]">
-                    {platform === "windows" ? "powershell" : "sh"}
-                  </Badge>
-                  <span className="text-muted-foreground truncate font-mono text-[10px]" title={asset}>
-                    {asset}
-                  </span>
-                </div>
                 {installLines.map((line) => (
                   <CodeLine key={line} code={line} />
                 ))}
@@ -179,9 +187,9 @@ export function Hero() {
           <Card id="commands" className="min-w-0 scroll-mt-14">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Terminal className="size-4" /> Commands
+                <SquareTerminal className="size-4" /> Commands
               </CardTitle>
-              <CardDescription>click a line to copy it — exactly one trailer per artifact, never both</CardDescription>
+              <CardDescription>Have your agent run these commands.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {usage.map((u) => (
@@ -196,50 +204,31 @@ export function Hero() {
           <Card id="prompts" className="min-w-0 scroll-mt-14">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Terminal className="size-4" /> Prompts
+                <Sparkles className="size-4" /> Prompts
               </CardTitle>
-              <CardDescription>
-                paste these to your agent — snippets load live from{" "}
-                <a
-                  className="underline underline-offset-4"
-                  href="https://github.com/bevry-vibes/skills"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  bevry-vibes/skills
-                </a>
-              </CardDescription>
+              <CardDescription>Enhance your prompting with these snippets.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Make a new project with Bevry's conventions.</p>
-                <CodeLine code="Scaffold a new project using github.com/bevry-vibes/skills. The project will ..." />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Restrict a skill to a specific model.</p>
-                <SkillSnippet file="minimax.md" startWith="# MiniMax" endBefore="### Never use" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Instruct your agents to write their plans to a consistent directory.</p>
-                <SkillSnippet file="plans.md" lines={5} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Instruct the agent to use co-authored-by trailer for commits.</p>
-                <SkillSnippet file="commits.md" startWith="### co-author trailer" endBefore="### signing" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Instruct the agent to use assisted-by trailer for issues.</p>
-                <SkillSnippet
-                  file="commits.md"
-                  startWith="## github issues"
-                  endBefore="## releases"
-                  anchor="#github-issues-pull-requests-discussions-and-comments"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Restrict your project to reciprocal agents only.</p>
-                <SkillSnippet file="policy.md" startWith="# AI Policy" />
-              </div>
+            <CardContent className="flex flex-col gap-3">
+              <InlinePrompt
+                description="Make a new project with Bevry's conventions."
+                text="Scaffold a new project using github.com/bevry-vibes/skills. The project will ..."
+              />
+              <SkillSnippet description="Restrict a skill to a specific model." file="minimax.md" startWith="# MiniMax" endBefore="### Never use" />
+              <SkillSnippet description="Instruct your agents to write their plans to a consistent directory." file="plans.md" lines={5} />
+              <SkillSnippet
+                description="Instruct the agent to use co-authored-by trailer for commits."
+                file="commits.md"
+                startWith="### co-author trailer"
+                endBefore="### signing"
+              />
+              <SkillSnippet
+                description="Instruct the agent to use assisted-by trailer for issues."
+                file="commits.md"
+                startWith="## github issues"
+                endBefore="## releases"
+                anchor="#github-issues-pull-requests-discussions-and-comments"
+              />
+              <SkillSnippet description="Restrict your project to reciprocal agents only." file="policy.md" startWith="# AI Policy" />
             </CardContent>
           </Card>
         </div>
@@ -298,6 +287,8 @@ export function RegistryIntro({
 const snippetCache = new Map<string, { full: string[]; start: number; end: number }>();
 
 interface SnippetSpec {
+  /** the prompt description doubles as the snippet header */
+  description: string;
   file: "policy.md" | "minimax.md" | "commits.md" | "plans.md";
   /** the line the snippet starts at (substring match) */
   startWith?: string;
@@ -329,11 +320,71 @@ function markdownLineHtml(line: string): string {
   return h;
 }
 
-/** the whole bevry-vibes/skills doc, line-numbered, syntax highlighted — the
- * relevant lines are scrolled into view by default while the rest of the file
- * stays lazily unrendered until scrolled for */
+function CollapseToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-7 w-7 p-0"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-label={open ? "collapse" : "expand"}
+      title={open ? "collapse" : "expand"}
+    >
+      {open ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+    </Button>
+  );
+}
+
+function SnippetHeader({ description, children }: { description: string; children: ReactNode }) {
+  return (
+    <header className="bg-muted/50 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-3 py-1.5">
+      <span className="text-sm font-medium">{description}</span>
+      <div className="flex items-center gap-1">{children}</div>
+    </header>
+  );
+}
+
+/** the scaffold prompt — plain text with no skill file behind it, so copy prompt
+ * and the collapse toggle are all it has */
+function InlinePrompt({ description, text }: { description: string; text: string }) {
+  const [open, setOpen] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable — the text is still selectable
+    }
+  };
+  return (
+    <section className="overflow-hidden rounded-lg border">
+      <SnippetHeader description={description}>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copy}>
+          {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+          {copied ? "copied" : "copy prompt"}
+        </Button>
+        <CollapseToggle open={open} onToggle={() => setOpen(!open)} />
+      </SnippetHeader>
+      {open && (
+        <div className="p-3">
+          <CodeLine code={text} />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** a bevry-vibes/skills doc rendered in stages: collapsed until first opened,
+ * then just the relevant line-numbered lines; `show file` brings in the whole
+ * file scrolled to the relevant lines, and `view file` permalinks there with
+ * the range highlighted on GitHub */
 function SkillSnippet(spec: SnippetSpec) {
   const key = `${spec.file}:${spec.startWith ?? ""}:${spec.lines ?? ""}`;
+  const [open, setOpen] = useState(false);
+  const [stage, setStage] = useState<"prompt" | "file">("prompt");
   const [meta, setMeta] = useState<{ full: string[]; start: number; end: number } | null>(
     () => snippetCache.get(key) ?? null,
   );
@@ -341,8 +392,9 @@ function SkillSnippet(spec: SnippetSpec) {
   const [failed, setFailed] = useState(false);
   const preRef = useRef<HTMLPreElement>(null);
 
+  // staged loading — nothing hits the network until the block is first expanded
   useEffect(() => {
-    if (meta) return;
+    if (!open || meta || failed) return;
     let alive = true;
     fetch(`https://raw.githubusercontent.com/bevry-vibes/skills/main/${spec.file}`)
       .then((r) => {
@@ -375,40 +427,31 @@ function SkillSnippet(spec: SnippetSpec) {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec.file, spec.startWith, spec.endBefore, spec.lines]);
+  }, [open, meta, failed, key, spec.file, spec.startWith, spec.endBefore, spec.lines]);
 
-  // the relevant lines are the default view — scroll them to the top of the
-  // block once the file is in
+  // in the file stage the relevant lines are scrolled to the top of the block
   useEffect(() => {
     const pre = preRef.current;
-    if (!meta || !pre) return;
+    if (!open || stage !== "file" || !meta || !pre) return;
     const first = pre.querySelector('[data-relevant-start="true"]');
     if (first) pre.scrollTop = (first as HTMLElement).offsetTop - pre.offsetTop - 4;
-  }, [meta]);
+  }, [open, stage, meta]);
 
-  if (failed) {
-    return (
-      <a
-        className="text-muted-foreground inline-flex items-center gap-1 rounded-lg border border-dashed px-3 py-2 font-mono text-xs underline underline-offset-4"
-        href={`https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        view {spec.file} on GitHub ↗
-      </a>
-    );
-  }
-  if (!meta) {
-    return <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-2 font-mono text-xs">loading {spec.file}…</p>;
-  }
-
-  const from = meta.start + 1;
-  const to = meta.end;
-  const fileLink = `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}#L${from}-L${to}`;
-  const linePermalink = `https://github.com/bevry-vibes/skills/blob/main/${spec.file}#L${from}-L${to}`;
-  const copyPrompt = async () => {
+  const toggleStage = () => {
+    setStage(stage === "prompt" ? "file" : "prompt");
+    setOpen(true);
+  };
+  const from = meta ? meta.start + 1 : 0;
+  const to = meta ? meta.end : 0;
+  const linePermalink = meta
+    ? `https://github.com/bevry-vibes/skills/blob/main/${spec.file}#L${from}-L${to}`
+    : `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`;
+  const copyText = async () => {
+    if (!meta) return; // nothing fetched yet — expand first
     try {
-      await navigator.clipboard.writeText(meta.full.slice(meta.start, meta.end).join("\n"));
+      await navigator.clipboard.writeText(
+        stage === "file" ? meta.full.join("\n") : meta.full.slice(meta.start, meta.end).join("\n"),
+      );
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -416,58 +459,74 @@ function SkillSnippet(spec: SnippetSpec) {
     }
   };
 
+  const renderLines = (lines: { text: string; n: number; relevant: boolean }[]) => (
+    <pre ref={preRef} className="max-h-96 overflow-auto p-0 font-mono text-xs leading-relaxed">
+      {lines.map(({ text, n, relevant }) => (
+        <div
+          key={n}
+          data-relevant-start={relevant && n === from ? "true" : undefined}
+          className={cn(
+            "flex items-start",
+            relevant
+              ? stage === "file" && "bg-muted/40"
+              : "[content-visibility:auto] [contain-intrinsic-size:auto_20px]",
+          )}
+        >
+          <span className="text-muted-foreground/50 w-12 shrink-0 select-none pr-3 text-right">{n}</span>
+          <span
+            className="min-w-0 flex-1 pr-3"
+            dangerouslySetInnerHTML={{ __html: markdownLineHtml(text) || "&nbsp;" }}
+          />
+        </div>
+      ))}
+    </pre>
+  );
+
   return (
     <section className="overflow-hidden rounded-lg border">
-      <header className="bg-muted/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-1.5">
-        <span className="font-mono text-xs">
-          <a
-            href="https://github.com/bevry-vibes/skills"
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-4 hover:text-foreground"
-          >
-            bevry-vibes/skills
-          </a>
-          {" · "}
-          <a href={fileLink} target="_blank" rel="noreferrer" title={fileLink} className="underline underline-offset-4 hover:text-foreground">
-            {spec.file} · L{from}–L{to}
-          </a>
-        </span>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyPrompt}>
-            {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-            {copied ? "copied" : "copy prompt"}
-          </Button>
-          <a
-            href={linePermalink}
-            target="_blank"
-            rel="noreferrer"
-            title="view source"
-            aria-label="view source"
-            className="text-muted-foreground hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded-md"
-          >
-            <ExternalLink className="size-3.5" />
-          </a>
-        </div>
-      </header>
-      <pre ref={preRef} className="max-h-96 overflow-auto p-0 font-mono text-xs leading-relaxed">
-        {meta.full.map((line, i) => {
-          const relevant = i >= meta.start && i < meta.end;
-          return (
-            <div
-              key={i}
-              data-relevant-start={i === meta.start ? "true" : undefined}
-              className={cn("flex items-start", !relevant && "[content-visibility:auto] [contain-intrinsic-size:auto_20px]")}
+      <SnippetHeader description={spec.description}>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyText}>
+          {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+          {copied ? "copied" : stage === "file" ? "copy file" : "copy prompt"}
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={toggleStage}>
+          <Eye className="size-3" />
+          {stage === "file" ? "show prompt" : "show file"}
+        </Button>
+        <a
+          href={linePermalink}
+          target="_blank"
+          rel="noreferrer"
+          title="view file"
+          aria-label="view file"
+          className="text-muted-foreground hover:text-foreground inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs"
+        >
+          <ExternalLink className="size-3" />
+          view file
+        </a>
+        <CollapseToggle open={open} onToggle={() => setOpen(!open)} />
+      </SnippetHeader>
+      {open &&
+        (failed ? (
+          <div className="p-3">
+            <a
+              className="text-muted-foreground inline-flex items-center gap-1 rounded-lg border border-dashed px-3 py-2 font-mono text-xs underline underline-offset-4"
+              href={linePermalink}
+              target="_blank"
+              rel="noreferrer"
             >
-              <span className="text-muted-foreground/50 w-12 shrink-0 select-none pr-3 text-right">{i + 1}</span>
-              <span
-                className="min-w-0 flex-1 pr-3"
-                dangerouslySetInnerHTML={{ __html: markdownLineHtml(line) || "&nbsp;" }}
-              />
-            </div>
-          );
-        })}
-      </pre>
+              view {spec.file} on GitHub ↗
+            </a>
+          </div>
+        ) : !meta ? (
+          <p className="text-muted-foreground px-3 py-3 font-mono text-xs">loading {spec.file}…</p>
+        ) : stage === "file" ? (
+          renderLines(meta.full.map((text, i) => ({ text, n: i + 1, relevant: i >= meta.start && i < meta.end })))
+        ) : (
+          renderLines(
+            meta.full.slice(meta.start, meta.end).map((text, i) => ({ text, n: meta.start + 1 + i, relevant: true })),
+          )
+        ))}
     </section>
   );
 }

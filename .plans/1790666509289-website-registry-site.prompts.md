@@ -222,3 +222,35 @@ from the same branch; no prompts were lost.
 > Snippet to https://github.com/bevry-vibes/skills/blob/main/plans.md?plain=1#L1-L5
 >
 > Make the prompts syntax hightlighted, and to show the whole file, but just default to only showing the relevnt lines. Rename their `copy result` to `copy prompt` (copying only the relevant lines), and add a `view source` (hyperlink to the full permeanent)
+
+## 25 — 2026-09-29
+
+> the cli registry header links need to be on registry result page too
+>
+> Change the prompts code headers to be the prompt description, removing the repo and file links, as they are handled by `[icon] view file`
+>
+> instead of loading the full file right away, let's do it in stages, so load only the relevant lines, then have the `[icon] copy prompt/file` link then `[icon] show prompt/file` link, then `[icon] open file` (opens the permalink hyperlink with default prompt lines hihglighted via anchor)
+>
+> the `[icon] show file` will change the snippet content to show the full file, then will change `[icon] copy prompt` to `[icon] copy file` and change itself to `[icon] show prompt`, which changes it back to the default ``[icon] copy prompt`, `[icon] show file`
+>
+> the last `[icon] view file` stays consistent
+>
+> note the first scaffold prompt does not have a file associated with it, so it just has `[icon] copy prompt`
+>
+> by default make all these prompts collapsed except for the first, have the last link be a `[icon]` for toggle the collapse
+>
+> the first line of the cli features is still not aligned with the icons, so the first line of the first feature and the first line of the second feature should be in the same vertical alignment, they are not
+
+## 25 (continued) — 2026-09-29
+
+> do not modify the scaffold prompt! I told you to adapt to it, as in just have `[icon] copy prompt [toggle icon]` nothing more on the right side
+>
+> change the icon of commands and prompts, for their cards, as currently it is the same icon as the install card
+>
+> remove the sh and agent-detect... line in the install card, it is not needed
+>
+> change the commands card description to be:
+> Have your agent run these commands.
+>
+> change the prompts card cescription to be, no need for the lbevry-vibes/skills link in the description, it is redundant:
+> Enhance your prompting with these snippets.

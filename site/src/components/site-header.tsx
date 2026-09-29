@@ -29,7 +29,17 @@ export interface AnchorLink {
   href: string;
 }
 
-export function SiteHeader({ onHome, centerNav }: { onHome?: () => void; centerNav?: AnchorLink[] }) {
+export function SiteHeader({
+  onHome,
+  centerNav,
+  onNavClick,
+}: {
+  onHome?: () => void;
+  centerNav?: AnchorLink[];
+  /** return true when the click was handled (e.g. leaving the agent page) so
+   * the native anchor jump is suppressed */
+  onNavClick?: (href: string) => boolean;
+}) {
   const [gh, setGh] = useState(false);
   useEffect(() => setGh(true), []); // lucide's Github is fine client-side; keeps SSR-safe habit out of the way
 
@@ -65,6 +75,9 @@ export function SiteHeader({ onHome, centerNav }: { onHome?: () => void; centerN
                 key={link.href}
                 href={link.href}
                 className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center rounded-md px-3 text-sm"
+                onClick={(e) => {
+                  if (onNavClick?.(link.href)) e.preventDefault();
+                }}
               >
                 {link.label}
               </a>

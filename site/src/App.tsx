@@ -178,6 +178,29 @@ export default function App() {
     if (next === "index") window.scrollTo(0, scrollMem.current.get(window.location.search) ?? 0);
   }, [agent]);
 
+  // a center-nav click on the agent page closes it and jumps to the section
+  const pendingAnchor = useRef<string | null>(null);
+  const onNavClick = (href: string): boolean => {
+    if (!agent) return false;
+    // carry the anchor into the index url so the closeAgent push keeps it
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${href.slice(1)}`);
+    pendingAnchor.current = href.slice(1);
+    closeAgent();
+    return true;
+  };
+  useEffect(() => {
+    if (agent) return;
+    const id = pendingAnchor.current;
+    if (!id) return;
+    pendingAnchor.current = null;
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView();
+      el.classList.add("anchor-flash");
+      setTimeout(() => el.classList.remove("anchor-flash"), 1800);
+    }
+  }, [agent]);
+
   const searchIndex = useMemo(() => {
     const m = new Map<string, string>();
     if (registry && combosFile) for (const c of combosFile.combos) m.set(c.agent_id, comboSearchText(c, registry));
@@ -214,14 +237,11 @@ export default function App() {
     <div className="flex min-h-svh flex-col">
       <SiteHeader
         onHome={agent ? closeAgent : undefined}
-        centerNav={
-          agent
-            ? undefined
-            : [
-                { label: "cli", href: "#cli" },
-                { label: "registry", href: "#registry" },
-              ]
-        }
+        onNavClick={onNavClick}
+        centerNav={[
+          { label: "cli", href: "#cli" },
+          { label: "registry", href: "#registry" },
+        ]}
       />
       {agent ? (
         <AgentPage
