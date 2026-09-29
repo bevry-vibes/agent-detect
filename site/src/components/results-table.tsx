@@ -22,7 +22,7 @@ import { formatDate } from "@/lib/utils";
 const GRID = "grid grid-cols-[minmax(200px,1.3fr)_minmax(130px,1fr)_minmax(150px,1.1fr)_minmax(150px,1.2fr)_150px_150px_110px]";
 const CELL = "px-3 py-2.5 flex flex-col justify-center gap-0.5 leading-snug min-w-0";
 const ROW_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_57px]";
-const CARD_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_150px]";
+const CARD_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_165px]";
 
 type SortKey = "id" | "harness" | "provider" | "model" | "reciprocal" | "platforms" | "updated_at";
 type Sort = { key: SortKey; dir: "asc" | "desc" } | null;
@@ -42,12 +42,12 @@ function ReciprocalBadge({ row }: { row: ComboRow }) {
     ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
     : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400";
   return (
-    <span className="flex shrink-0 items-center gap-1.5" title={row.state ?? undefined}>
-      <Badge variant="outline" className={className}>
+    <span className="flex shrink-0 items-center gap-1" title={row.state ?? undefined}>
+      <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${className}`}>
         {row.reciprocal ? "reciprocal" : "not reciprocal"}
       </Badge>
       {row.state && row.state !== "reciprocal" && row.state !== "not-reciprocal" && (
-        <Badge variant="outline" className="text-muted-foreground">
+        <Badge variant="outline" className="text-muted-foreground px-1.5 py-0 text-[10px]">
           {row.state}
         </Badge>
       )}
@@ -59,7 +59,7 @@ function PlatformBadges({ row, wrap }: { row: ComboRow; wrap?: boolean }) {
   return (
     <span className={`gap-1 ${wrap ? "flex flex-wrap" : "flex"}`}>
       {row.platforms.map((p) => (
-        <Badge key={p} variant="secondary" className="font-mono text-[10px]">
+        <Badge key={p} variant="secondary" className="px-1.5 py-0 font-mono text-[10px]">
           {p}
         </Badge>
       ))}
@@ -150,12 +150,8 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
             className={`${CARD_LAZY} cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
           >
             <div className="flex min-w-0 flex-col gap-1 leading-snug">
-              <div className="flex items-baseline gap-2 min-w-0">
-                <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  id
-                </span>
-                <span className="min-w-0 flex-1 break-all font-mono text-xs">{row.agent_id}</span>
-              </div>
+              {/* the id heads the card, styled like the result page's title */}
+              <p className="min-w-0 break-all font-mono text-lg font-semibold tracking-tight">{row.agent_id}</p>
               {([
                 { label: "harness", dim: "harnesses", field: "harness" },
                 { label: "provider", dim: "providers", field: "provider" },
@@ -172,12 +168,16 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                 </div>
               ))}
             </div>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <span className="flex flex-wrap items-center gap-1.5">
+            {/* one line like the result page's header row: reciprocal left,
+              platforms centered, date right */}
+            <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1 whitespace-nowrap">
+              <span className="justify-self-start">
                 <ReciprocalBadge row={row} />
+              </span>
+              <span className="justify-self-center">
                 <PlatformBadges row={row} />
               </span>
-              <span className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</span>
+              <span className="text-muted-foreground justify-self-end text-[11px]">{formatDate(row.updated_at)}</span>
             </div>
           </div>
         ))}

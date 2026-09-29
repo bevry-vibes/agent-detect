@@ -292,3 +292,9 @@ from the same branch; no prompts were lost.
 > - furthermore, the leftmost header button should have its icon start at the same y-axis as the title text; and the rightmost header button should have its rightmost text end with the y-axis of the ending of the collapse icon - so these buttons when given their own combined row, should be left aligned, center aligned, and right aligned
 >
 > when clicking show file, it should force the snippet scrollbar to be visible so one is aware there is more content
+
+## 30 — 2026-09-29
+
+> on the homapage, make the result cards look a bit more like the result page, in that sense drop the ID: prefix for the id, and have it a bit larger font size, as per the result page
+>
+> also, reduce the size or whatever of the reciprocal pill, platform pills, and date, as on mobile they don't fit on the same line, they must fit on the same line, with reciprocal left aligned, platforms center aligned, and date right-aligned - to mimic result page too
