@@ -33,7 +33,7 @@ export function SiteHeader({ jsonHref, onHome }: { jsonHref: string; onHome?: ()
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
         <a
           href="/"
-          className="flex items-center gap-2 font-semibold tracking-tight"
+          className="flex shrink-0 items-center gap-2 whitespace-nowrap font-semibold tracking-tight"
           onClick={(e) => {
             if (onHome) {
               e.preventDefault();
@@ -64,7 +64,7 @@ export function SiteHeader({ jsonHref, onHome }: { jsonHref: string; onHome?: ()
           <a href="/llms.txt" className="text-muted-foreground hover:text-foreground rounded-md px-2 py-1.5">
             llms.txt
           </a>
-          <a href={jsonHref} className="text-muted-foreground hover:text-foreground rounded-md px-2 py-1.5 font-mono text-xs">
+          <a href={jsonHref} className="text-muted-foreground hover:text-foreground hidden sm:inline rounded-md px-2 py-1.5 font-mono text-xs">
             index.json
           </a>
           <ThemeToggle />

@@ -16,10 +16,13 @@ import { formatDate } from "@/lib/utils";
  * and content-visibility does not apply to <tr> internals.
  *
  * Columns sort client-side on header click: ascending → descending → default.
+ * Below the md breakpoint the grid is replaced by a stacked card list — no
+ * horizontal scroll, same rows, same click target.
  */
 const GRID = "grid grid-cols-[minmax(130px,1fr)_minmax(150px,1.1fr)_minmax(150px,1.2fr)_150px_150px_minmax(210px,1.4fr)_110px]";
-const CELL = "px-3 py-2.5 flex flex-col justify-center leading-tight min-w-0";
+const CELL = "px-3 py-2.5 flex flex-col justify-center gap-0.5 leading-snug min-w-0";
 const ROW_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_57px]";
+const CARD_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_150px]";
 
 type SortKey = "harness" | "provider" | "model" | "reciprocal" | "platforms" | "email" | "updated_at";
 type Sort = { key: SortKey; dir: "asc" | "desc" } | null;
@@ -39,7 +42,7 @@ function ReciprocalBadge({ row }: { row: ComboRow }) {
     ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
     : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400";
   return (
-    <span className="flex items-center gap-1.5" title={row.state ?? undefined}>
+    <span className="flex shrink-0 items-center gap-1.5" title={row.state ?? undefined}>
       <Badge variant="outline" className={className}>
         {row.reciprocal ? "reciprocal" : "not reciprocal"}
       </Badge>
@@ -48,6 +51,18 @@ function ReciprocalBadge({ row }: { row: ComboRow }) {
           {row.state}
         </Badge>
       )}
+    </span>
+  );
+}
+
+function PlatformBadges({ row, wrap }: { row: ComboRow; wrap?: boolean }) {
+  return (
+    <span className={`gap-1 ${wrap ? "flex flex-wrap" : "flex"}`}>
+      {row.platforms.map((p) => (
+        <Badge key={p} variant="secondary" className="font-mono text-[10px]">
+          {p}
+        </Badge>
+      ))}
     </span>
   );
 }
@@ -122,78 +137,115 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
   }
 
   return (
-    <div className="max-h-[calc(100svh-11rem)] overflow-auto rounded-xl border">
-      <div role="table" aria-label="agent combos" className="w-full min-w-[1080px]">
-        <div role="row" className={`${GRID} text-muted-foreground sticky top-0 z-20 border-b bg-background text-xs font-medium`}>
-          {COLUMNS.map((col) => {
-            const active = sort?.key === col.key;
-            const ariaSort = active ? (sort.dir === "asc" ? "ascending" : "descending") : "none";
-            const Arrow = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
-            return (
-              <div key={col.key} role="columnheader" aria-sort={ariaSort} className={`px-3 py-2.5 ${col.align === "right" ? "text-right" : ""}`}>
-                <button
-                  type="button"
-                  onClick={() => cycleSort(col.key)}
-                  title={`sort by ${col.label.toLowerCase()}${active ? (sort.dir === "asc" ? " — descending next" : " — default order next") : ""}`}
-                  className={`inline-flex items-center gap-1 hover:text-foreground ${active ? "text-foreground" : ""}`}
-                >
-                  {col.label}
-                  <Arrow className={`size-3 ${active ? "" : "opacity-40"}`} />
-                </button>
+    <>
+      {/* mobile: stacked cards — no horizontal scroll, same rows in the DOM */}
+      <div role="list" aria-label="agent combos" className="md:hidden flex flex-col gap-2">
+        {sorted.map((row) => (
+          <div
+            key={row.agent_id}
+            role="listitem"
+            tabIndex={0}
+            onClick={() => onSelect(row.agent_id)}
+            onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
+            className={`${CARD_LAZY} cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex flex-col gap-0.5 leading-snug">
+                {(["harnesses", "providers", "models"] as const).map((dim, i) => {
+                  const field = (["harness", "provider", "model"] as const)[i];
+                  return (
+                    <p key={dim} className="flex flex-wrap items-baseline gap-x-2 min-w-0">
+                      <span className="text-sm font-medium">{labelOf(dim, row[field])}</span>
+                      <span className="text-muted-foreground font-mono text-[11px]">{row[field]}</span>
+                    </p>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
-        <div role="rowgroup">
-          {sorted.map((row) => (
-            <div
-              key={row.agent_id}
-              role="row"
-              tabIndex={0}
-              onClick={() => onSelect(row.agent_id)}
-              onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
-              className={`${GRID} ${ROW_LAZY} cursor-pointer border-b transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
-            >
-              <div role="cell" className={CELL}>
-                <span className="truncate">{labelOf("harnesses", row.harness)}</span>
-                <span className="text-muted-foreground truncate font-mono text-xs">{row.harness}</span>
-              </div>
-              <div role="cell" className={CELL}>
-                <span className="truncate">{labelOf("providers", row.provider)}</span>
-                <span className="text-muted-foreground truncate font-mono text-xs">{row.provider}</span>
-              </div>
-              <div role="cell" className={CELL}>
-                <span className="truncate">{labelOf("models", row.model)}</span>
-                <span className="text-muted-foreground truncate font-mono text-xs">{row.model}</span>
-              </div>
-              <div role="cell" className={CELL}>
-                <ReciprocalBadge row={row} />
-              </div>
-              <div role="cell" className={CELL}>
-                <span className="flex gap-1">
-                  {row.platforms.map((p) => (
-                    <Badge key={p} variant="secondary" className="font-mono text-[10px]">
-                      {p}
-                    </Badge>
-                  ))}
-                </span>
-              </div>
-              <div role="cell" className={CELL}>
-                <span className="text-muted-foreground truncate font-mono text-xs" title={row.email}>
-                  {row.email}
-                </span>
-              </div>
-              <div role="cell" className={`${CELL} text-right`}>
-                <span className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</span>
-              </div>
+              <ReciprocalBadge row={row} />
             </div>
-          ))}
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <PlatformBadges row={row} />
+              <span className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</span>
+            </div>
+            <p className="text-muted-foreground mt-1.5 font-mono text-[11px] break-all">{row.email}</p>
+          </div>
+        ))}
+        <p className="text-muted-foreground px-1 text-xs">
+          {rows.length.toLocaleString()} of {totalCount.toLocaleString()} fixture-backed combos — tap one for its result
+          JSON
+        </p>
+      </div>
+
+      {/* desktop: the lazy div-grid table with sortable headers */}
+      <div className="hidden md:block rounded-xl border">
+        <div className="max-h-[calc(100svh-11rem)] overflow-auto">
+          <div role="table" aria-label="agent combos" className="w-full min-w-[1080px]">
+            <div role="row" className={`${GRID} text-muted-foreground sticky top-0 z-20 border-b bg-background text-xs font-medium`}>
+              {COLUMNS.map((col) => {
+                const active = sort?.key === col.key;
+                const ariaSort = active ? (sort.dir === "asc" ? "ascending" : "descending") : "none";
+                const Arrow = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+                return (
+                  <div key={col.key} role="columnheader" aria-sort={ariaSort} className={`px-3 py-2.5 ${col.align === "right" ? "text-right" : ""}`}>
+                    <button
+                      type="button"
+                      onClick={() => cycleSort(col.key)}
+                      title={`sort by ${col.label.toLowerCase()}${active ? (sort.dir === "asc" ? " — descending next" : " — default order next") : ""}`}
+                      className={`inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground ${active ? "text-foreground" : ""}`}
+                    >
+                      {col.label}
+                      <Arrow className={`size-3 shrink-0 ${active ? "" : "opacity-40"}`} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div role="rowgroup">
+              {sorted.map((row) => (
+                <div
+                  key={row.agent_id}
+                  role="row"
+                  tabIndex={0}
+                  onClick={() => onSelect(row.agent_id)}
+                  onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
+                  className={`${GRID} ${ROW_LAZY} cursor-pointer border-b transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
+                >
+                  <div role="cell" className={CELL}>
+                    <span className="truncate">{labelOf("harnesses", row.harness)}</span>
+                    <span className="text-muted-foreground truncate font-mono text-xs">{row.harness}</span>
+                  </div>
+                  <div role="cell" className={CELL}>
+                    <span className="truncate">{labelOf("providers", row.provider)}</span>
+                    <span className="text-muted-foreground truncate font-mono text-xs">{row.provider}</span>
+                  </div>
+                  <div role="cell" className={CELL}>
+                    <span className="truncate">{labelOf("models", row.model)}</span>
+                    <span className="text-muted-foreground truncate font-mono text-xs">{row.model}</span>
+                  </div>
+                  <div role="cell" className={CELL}>
+                    <ReciprocalBadge row={row} />
+                  </div>
+                  <div role="cell" className={CELL}>
+                    <PlatformBadges row={row} wrap />
+                  </div>
+                  <div role="cell" className={CELL}>
+                    <span className="text-muted-foreground truncate font-mono text-xs" title={row.email}>
+                      {row.email}
+                    </span>
+                  </div>
+                  <div role="cell" className={`${CELL} text-right`}>
+                    <span className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="text-muted-foreground border-t px-3 py-2 text-xs">
+          {rows.length.toLocaleString()} of {totalCount.toLocaleString()} fixture-backed combos — click a row for its
+          result JSON, a column header to sort, or Ctrl/Cmd+F to search the whole list
         </div>
       </div>
-      <div className="text-muted-foreground border-t px-3 py-2 text-xs">
-        {rows.length.toLocaleString()} of {totalCount.toLocaleString()} fixture-backed combos — click a row for its result
-        JSON, a column header to sort, or Ctrl/Cmd+F to search the whole list
-      </div>
-    </div>
+    </>
   );
 }

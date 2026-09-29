@@ -45,8 +45,8 @@ export function Hero({ registry, combos, fixtures }: { registry: Registry; combo
           <Badge variant="outline">no network I/O at detection time</Badge>
         </div>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-2">
-          <Card>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card className="min-w-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Terminal className="size-4" /> Install
@@ -83,7 +83,7 @@ export function Hero({ registry, combos, fixtures }: { registry: Registry; combo
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="min-w-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Terminal className="size-4" /> Use
