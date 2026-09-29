@@ -320,12 +320,20 @@ function markdownLineHtml(line: string): string {
   return h;
 }
 
-function CollapseToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+function CollapseToggle({
+  open,
+  onToggle,
+  className,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
   return (
     <Button
       variant="ghost"
       size="sm"
-      className="h-7 w-7 cursor-pointer p-0"
+      className={cn("h-7 w-7 cursor-pointer p-0", className)}
       onClick={onToggle}
       aria-expanded={open}
       aria-label={open ? "collapse" : "expand"}
@@ -337,24 +345,35 @@ function CollapseToggle({ open, onToggle }: { open: boolean; onToggle: () => voi
 }
 
 /** the snippet bar — clicking the description or the bar background toggles
- * the expansion; the actions stop propagation so they keep their own behavior */
+ * the expansion; the actions stop propagation so they keep their own behavior.
+ * Mobile: the chevron stays on the title line top right (centered on the
+ * title's first line) while the other actions wrap to their own row, spread
+ * edge-to-edge; desktop: everything on one line, right-aligned. */
 function SnippetHeader({
   description,
+  open,
   onToggle,
   children,
 }: {
   description: string;
+  open: boolean;
   onToggle: () => void;
   children: ReactNode;
 }) {
   return (
     <header
-      className="bg-muted/50 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-3 py-1.5"
+      className="bg-muted/50 flex flex-wrap items-start justify-between gap-x-2 gap-y-1 border-b px-3 py-1.5 sm:items-center"
       onClick={onToggle}
     >
-      <span className="text-sm font-medium">{description}</span>
+      {/* flex-1 so the title always leaves room for the chevron on its first
+        line, wrapping within what remains */}
+      <span className="order-1 min-w-0 flex-1 text-sm font-medium">{description}</span>
+      <CollapseToggle open={open} onToggle={onToggle} className="order-2 max-sm:-mt-1 sm:order-3" />
       {/* the actions swallow their clicks so the bar's toggle doesn't fire */}
-      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="order-3 flex items-center justify-between max-sm:w-full sm:order-2 sm:ml-auto sm:w-auto sm:justify-start sm:gap-1"
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </header>
@@ -377,12 +396,11 @@ function InlinePrompt({ description, text }: { description: string; text: string
   };
   return (
     <section className="overflow-hidden rounded-lg border">
-      <SnippetHeader description={description} onToggle={() => setOpen(!open)}>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" onClick={copy}>
+      <SnippetHeader description={description} open={open} onToggle={() => setOpen(!open)}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" onClick={copy}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : "copy prompt"}
         </Button>
-        <CollapseToggle open={open} onToggle={() => setOpen(!open)} />
       </SnippetHeader>
       {open && (
         <div className="p-3">
@@ -479,7 +497,15 @@ function SkillSnippet(spec: SnippetSpec) {
   };
 
   const renderLines = (lines: { text: string; n: number; relevant: boolean }[]) => (
-    <pre ref={preRef} className="max-h-96 overflow-y-auto p-0 font-mono text-xs leading-relaxed">
+    <pre
+      ref={preRef}
+      className={cn(
+        "max-h-96 overflow-y-auto p-0 font-mono text-xs leading-relaxed",
+        // the whole file is taller than the block — keep its scrollbar visible
+        // so it's obvious there is more content beyond the fold
+        stage === "file" && "scrollbar-always",
+      )}
+    >
       {lines.map(({ text, n, relevant }) => (
         <div
           key={n}
@@ -503,22 +529,21 @@ function SkillSnippet(spec: SnippetSpec) {
 
   return (
     <section className="overflow-hidden rounded-lg border">
-      <SnippetHeader description={spec.description} onToggle={() => setOpen(!open)}>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" onClick={copyText}>
+      <SnippetHeader description={spec.description} open={open} onToggle={() => setOpen(!open)}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" onClick={copyText}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : stage === "file" ? "copy file" : "copy prompt"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" onClick={toggleStage}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" onClick={toggleStage}>
           <Eye className="size-3" />
           {stage === "file" ? "show prompt" : "show file"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" asChild>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" asChild>
           <a href={linePermalink} target="_blank" rel="noreferrer" title="view file" aria-label="view file">
             <ExternalLink className="size-3" />
             view file
           </a>
         </Button>
-        <CollapseToggle open={open} onToggle={() => setOpen(!open)} />
       </SnippetHeader>
       {open &&
         (failed ? (

@@ -95,3 +95,19 @@
     animation: target-flash 1.8s ease-out 1;
   }
 }
+
+/* a permanently visible scrollbar for long snippet views — styling it also
+   takes Chrome out of overlay-scrollbar mode, which is the point */
+.scrollbar-always {
+  scrollbar-width: auto;
+}
+.scrollbar-always::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-always::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-always::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--muted-foreground) 40%, transparent);
+}

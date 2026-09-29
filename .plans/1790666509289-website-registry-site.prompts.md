@@ -281,3 +281,14 @@ from the same branch; no prompts were lost.
 > on tehr esult page, clicking the dims should scroll the user to the registry section so they can actually see the filtered results
 >
 > you ran out of memory and crashed, resume
+
+## 29 — 2026-09-29
+
+> re the snippets
+>
+> when in mobile view:
+> - collapse icon should be top right, aligned with the first line of the title
+> - the header buttons should have their margins reduced to all be visible, currently they are cut off
+> - furthermore, the leftmost header button should have its icon start at the same y-axis as the title text; and the rightmost header button should have its rightmost text end with the y-axis of the ending of the collapse icon - so these buttons when given their own combined row, should be left aligned, center aligned, and right aligned
+>
+> when clicking show file, it should force the snippet scrollbar to be visible so one is aware there is more content
