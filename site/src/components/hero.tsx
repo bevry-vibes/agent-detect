@@ -1,10 +1,11 @@
-import { Mail, ScrollText, SlidersHorizontal, WifiOff } from "lucide-react";
+import { Check, Copy, Mail, ScrollText, SlidersHorizontal, WifiOff } from "lucide-react";
 import { Terminal } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import type { Registry } from "@/lib/registry";
 import { CodeLine, JsonBlock } from "@/components/json-block";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -214,12 +215,12 @@ export function Hero() {
                 <CodeLine code="Scaffold a new project using github.com/bevry-vibes/skills. The project will ..." />
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Restrict your project to reciprocal agents only.</p>
-                <SkillSnippet file="policy.md" startWith="# AI Policy" />
-              </div>
-              <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium">Restrict a skill to a specific model.</p>
                 <SkillSnippet file="minimax.md" startWith="# MiniMax" endBefore="### Never use" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Instruct your agents to write their plans to a consistent directory.</p>
+                <SkillSnippet file="plans.md" lines={5} />
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium">Instruct the agent to use co-authored-by trailer for commits.</p>
@@ -233,6 +234,10 @@ export function Hero() {
                   endBefore="## releases"
                   anchor="#github-issues-pull-requests-discussions-and-comments"
                 />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Restrict your project to reciprocal agents only.</p>
+                <SkillSnippet file="policy.md" startWith="# AI Policy" />
               </div>
             </CardContent>
           </Card>
@@ -289,23 +294,51 @@ export function RegistryIntro({
 }
 
 // skill snippets are fetched once per session and shared across renders
-const snippetCache = new Map<string, { lines: string[]; start: number }>();
+const snippetCache = new Map<string, { relevant: string[]; full: string[]; start: number }>();
 
 interface SnippetSpec {
-  file: "policy.md" | "minimax.md" | "commits.md";
+  file: "policy.md" | "minimax.md" | "commits.md" | "plans.md";
   /** the line the snippet starts at (substring match) */
-  startWith: string;
+  startWith?: string;
   /** the line the snippet stops before (substring match); omitted = to the end */
   endBefore?: string;
+  /** take the first N lines instead of anchor extraction */
+  lines?: number;
   /** a github anchor on the blob url, when the section has one */
   anchor?: string;
 }
 
-/** the relevant lines of a bevry-vibes/skills doc, fetched live and linked to
- * the github permalink covering exactly the shown lines */
+// tiny markdown line highlighter — escapes, then colors the common constructs
+function markdownLineHtml(line: string): string {
+  let h = line
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  if (/^#{1,6}\s/.test(line)) {
+    h = `<span class="font-semibold text-foreground">${h}</span>`;
+  } else if (/^>\s?/.test(line)) {
+    h = `<span class="text-muted-foreground italic">${h}</span>`;
+  } else {
+    h = h.replace(/\[([^\]]*)\]\(([^)]*)\)/g, '<span class="text-sky-400">[$1]($2)</span>');
+    h = h.replace(/(^|[\s(])((?:https?:\/\/)[^\s)]+)/g, '$1<span class="text-sky-400">$2</span>');
+    h = h.replace(/\*\*([^*]+)\*\*/g, '<span class="font-semibold text-foreground">$1</span>');
+    h = h.replace(/`([^`]+)`/g, '<span class="text-emerald-400">$1</span>');
+    h = h.replace(/^(\s*)([-*])\s/, '$1<span class="text-muted-foreground">$2</span> ');
+  }
+  return h;
+}
+
+/** the relevant lines of a bevry-vibes/skills doc, fetched live, syntax
+ * highlighted, defaulting to the relevant lines with the whole file one
+ * toggle away. "copy prompt" always copies the relevant lines; "view source"
+ * links the github permalink covering exactly them. */
 function SkillSnippet(spec: SnippetSpec) {
-  const key = `${spec.file}:${spec.startWith}`;
-  const [meta, setMeta] = useState<{ lines: string[]; start: number } | null>(() => snippetCache.get(key) ?? null);
+  const key = `${spec.file}:${spec.startWith ?? ""}:${spec.lines ?? ""}`;
+  const [meta, setMeta] = useState<{ relevant: string[]; full: string[]; start: number } | null>(
+    () => snippetCache.get(key) ?? null,
+  );
+  const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -318,15 +351,23 @@ function SkillSnippet(spec: SnippetSpec) {
       })
       .then((text) => {
         const all = text.split("\n");
-        const start = all.findIndex((l) => l.includes(spec.startWith));
-        if (start === -1) throw new Error("anchor not found");
-        let end = all.length;
-        if (spec.endBefore) {
+        let relevant: string[];
+        let start: number;
+        if (spec.lines) {
+          start = 0;
+          relevant = all.slice(0, spec.lines);
+        } else {
+          start = all.findIndex((l) => l.includes(spec.startWith ?? ""));
+          if (start === -1) throw new Error("anchor not found");
+          let end = all.length;
           const endBefore = spec.endBefore ?? "";
-          const stop = endBefore ? all.findIndex((l, i) => i > start && l.includes(endBefore)) : -1;
-          if (stop !== -1) end = stop;
+          if (endBefore) {
+            const stop = all.findIndex((l, i) => i > start && l.includes(endBefore));
+            if (stop !== -1) end = stop;
+          }
+          relevant = all.slice(start, end);
         }
-        const found = { lines: all.slice(start, end).join("\n").trimEnd().split("\n"), start };
+        const found = { relevant, full: all, start };
         snippetCache.set(key, found);
         if (alive) setMeta(found);
       })
@@ -337,7 +378,7 @@ function SkillSnippet(spec: SnippetSpec) {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spec.file, spec.startWith, spec.endBefore]);
+  }, [spec.file, spec.startWith, spec.endBefore, spec.lines]);
 
   if (failed) {
     return (
@@ -354,12 +395,60 @@ function SkillSnippet(spec: SnippetSpec) {
   if (!meta) {
     return <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-2 font-mono text-xs">loading {spec.file}…</p>;
   }
-  const to = meta.start + meta.lines.length;
+
+  const shown = expanded ? meta.full : meta.relevant;
+  const from = meta.start + 1;
+  const to = meta.start + meta.relevant.length;
+  // github takes one hash fragment: the title keeps the section anchor (when
+  // the section has one), view source carries the exact line range
+  const titleHref = `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`;
+  const linePermalink = `https://github.com/bevry-vibes/skills/blob/main/${spec.file}#L${from}-L${to}`;
+  const copyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(meta.relevant.join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable — the snippet is still selectable
+    }
+  };
+
   return (
-    <JsonBlock
-      title={`${spec.file} · L${meta.start + 1}–L${to}`}
-      titleHref={`https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}#L${meta.start + 1}-L${to}`}
-      value={meta.lines.join("\n")}
-    />
+    <section className="overflow-hidden rounded-lg border">
+      <header className="bg-muted/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-1.5">
+        <a
+          href={titleHref}
+          target="_blank"
+          rel="noreferrer"
+          title={linePermalink}
+          className="font-mono text-xs font-medium underline underline-offset-4 hover:text-foreground"
+        >
+          {spec.file} · L{from}–L{to}
+        </a>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setExpanded(!expanded)}>
+            {expanded ? "show relevant lines" : "show whole file"}
+          </Button>
+          <a
+            href={linePermalink}
+            target="_blank"
+            rel="noreferrer"
+            className="text-muted-foreground hover:text-foreground inline-flex h-7 items-center rounded-md px-2 text-xs underline underline-offset-4"
+            title={linePermalink}
+          >
+            view source
+          </a>
+          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyPrompt}>
+            {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+            {copied ? "copied" : "copy prompt"}
+          </Button>
+        </div>
+      </header>
+      <pre className="max-h-96 overflow-auto p-3 font-mono text-xs leading-relaxed">
+        {shown.map((line, i) => (
+          <div key={i} dangerouslySetInnerHTML={{ __html: markdownLineHtml(line) || "&nbsp;" }} />
+        ))}
+      </pre>
+    </section>
   );
 }
