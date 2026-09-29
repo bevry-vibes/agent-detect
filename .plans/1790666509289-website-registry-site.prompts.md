@@ -146,3 +146,8 @@ from the same branch; no prompts were lost.
 > filters
 >
 > add a link to contributing.md into the footer on the rightmost of the right side
+
+## 21 — 2026-09-29
+
+> the use section should have toggles for platform then arch
+> sh and powershell should be platform sepecific, show powershell only on windows platform
