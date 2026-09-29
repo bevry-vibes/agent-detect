@@ -113,3 +113,14 @@ from the same branch; no prompts were lost.
 > just drop index.json and llms.txt from the header menu, they are already in the footer - and you seem incapable of aligning them correctly
 >
 > use the word `generated` instead of `regenerated` in the footer, and have a github icon preceeding the repo link
+
+## 19 — 2026-09-29
+
+> actually, just drop the pretext in the footer, so
+> [icon] generated from bevry-vibes/agent-detectt · generated 2026-09-29 · RPL-1.5
+> becomes
+> [icon] bevry-vibes/agent-detect · 2026-09-29 · RPL-1.5
+>
+> back to results doesn't go back to results if one has clicked the platform buttons, it should just go back to results, rather than a browser back button
+>
+> Also drop `registry` from the header too, so it is just agent-detect`

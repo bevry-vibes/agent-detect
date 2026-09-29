@@ -75,7 +75,6 @@ export default function App() {
   // full-page agent view: the index's scroll position is remembered per entry
   // so "back to results" lands where the click happened
   const scrollMem = useRef(new Map<string, number>());
-  const cameFromIndex = useRef(false);
   const viewRef = useRef<"index" | "agent">("index");
 
   useEffect(() => {
@@ -156,23 +155,18 @@ export default function App() {
   const onSelect = (selected: string) => {
     if (agent === selected) return;
     scrollMem.current.set(window.location.search, window.scrollY);
-    cameFromIndex.current = true;
     setAgent(selected);
     pushURL(filters, selected, platformParam);
   };
 
-  /** "close" the agent results — back to the exact index entry when we came
-   * from one, otherwise push the filtered index as a new entry */
+  /** "close" the agent results — always lands on the index entry for the
+   * current filters (never a browser back, which platform-tab clicks would
+   * send sideways), with the remembered scroll position restored */
   const closeAgent = () => {
-    if (cameFromIndex.current) {
-      cameFromIndex.current = false;
-      history.back();
-    } else {
-      const qs = buildSearch(filters, null);
-      history.pushState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
-      setAgent(null);
-      setNotices([]);
-    }
+    setAgent(null);
+    setPlatformParam(null);
+    setNotices([]);
+    pushURL(filters, null, null);
   };
 
   // view transitions: returning to the index restores its remembered scroll;
@@ -275,13 +269,10 @@ export default function App() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs">
           <span className="flex flex-wrap items-center gap-1.5">
             <Github className="size-3.5" />
-            <span>
-              generated from{" "}
-              <a className="underline underline-offset-4" href="https://github.com/bevry-vibes/agent-detect" target="_blank" rel="noreferrer">
-                bevry-vibes/agent-detect
-              </a>
-            </span>
-            {combosFile ? `· generated ${new Date(combosFile.generated_at * 1000).toISOString().slice(0, 10)} ·` : "·"} RPL-1.5
+            <a className="underline underline-offset-4" href="https://github.com/bevry-vibes/agent-detect" target="_blank" rel="noreferrer">
+              bevry-vibes/agent-detect
+            </a>
+            {combosFile ? `· ${new Date(combosFile.generated_at * 1000).toISOString().slice(0, 10)} ·` : "·"} RPL-1.5
           </span>
           <span className="flex gap-3">
             <a className="underline underline-offset-4" href="/registry.json">registry.json</a>
