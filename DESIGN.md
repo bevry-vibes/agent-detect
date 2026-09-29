@@ -17,7 +17,7 @@ The implementation lives in `pub fn detect` in `src/lib/core.zig`, with each ste
 ### two-binary split (released + dev-only)
 
 The released binary must stay minimal — no raw dump, no subcommands, no fixtures — so it ships as a single static file with no surprises.
-Its CLI surface is `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `help`, `version`.
+Its CLI surface is `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `web`, `help`, `version`.
 The dev binary (`agent-detect-dev`) carries the maintainer's full toolkit: the standalone `raw` action (raw observations block) and the `fixtures` subcommand namespace (capture / daemon / queue / dequeue / status / prompt — the last prints the capture prompt a harness session is asked to run; the internal `__timeout` watchdog the daemon spawns is not part of the user surface).
 The split is enforced at compile time via the `dev` flag in `build.zig` and the `pub const dev = if (build_options.dev) struct { ... } else struct {};` block in `src/dev/dev.zig`.
 The released binary cannot accidentally include dev code paths.
@@ -215,7 +215,7 @@ The released CLI opens it — `agent-detect web` deep-links the same filters: an
   Universal/fat formats rejected — see [README.md](./README.md) for the per-platform binary table.
 - **Zero required runtime dependencies.**
   The *released* binary is one file, no shared libraries, no runtime.
-  The one OPTIONAL dependency is the `sqlite3` CLI, spawned read-only for live session-store reads (kilo/opencode/copilot/crush/hermes inside a real session) — when it is absent, those detections exit 6 (see the exit status registry); everything else never spawns it.
+  The two OPTIONAL dependencies are the `sqlite3` CLI, spawned read-only for live session-store reads (kilo/opencode/copilot/crush/hermes inside a real session) — when it is absent, those detections exit 6 (see the exit status registry); and `web`'s platform url opener (`xdg-open`/`open`/`cmd start`), absent or failed there → exit 6 too. Everything else never spawns either.
   The maintainer `fixtures` workflow reads and writes the local `fixtures/index.json` with Zig-native file locks — no external tools are required.
 - **Windows console is CP_UTF8.**
   The binary switches the console code page to CP_UTF8 at `main()` entry so the em dash and middle dot the CLI prints survive the OEM code page (cp437/850/1252); failures are ignored so console-less runs (the fixtures daemon) are unaffected.
@@ -250,15 +250,16 @@ The registry lives here; the CLI `--help` text only points at this section (plus
 
 Examples per group:
 
-- **0** — `identify` (identified) → JSON; `found` → the observations JSON; `explain` (reciprocal) → the reasons JSON with an empty `reasons` array; `trailer co-author` → `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`; `check-reciprocal` → `is reciprocal`; `version` → `agent-detect <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help trailer` → usage.
+- **0** — `identify` (identified) → JSON; `found` → the observations JSON; `explain` (reciprocal) → the reasons JSON with an empty `reasons` array; `trailer co-author` → `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`; `check-reciprocal` → `is reciprocal`; `web` → the url (opened, or printed with `--no-open`); `version` → `agent-detect <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help trailer`/`web --help`/`help web` → usage.
 - **1** — uncaught error → `error: <name>` + trace.
-- **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` + usage; `--bogus`; dev `fixtures frobnicate`.
-- **3** — `agent-detect identify trailer` → `conflicting argument` + usage; dev `fixtures queue --refresh --stale-by-minutes=30`.
-- **4** — `identify --harness=cline` (partial combo); bare `agent-detect trailer`; dev `fixtures queue` without filter.
+- **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` + usage; `--bogus`; `web --platform=macosx` (no platform by that name — darwin/linux/windows, with macos→darwin and win→windows aliasing in); dev `fixtures frobnicate`.
+- **3** — `agent-detect identify trailer` → `conflicting argument` + usage; `web --no-open identify` (the web-only flags mean nothing to another action); dev `fixtures queue --refresh --stale-by-minutes=30`.
+- **4** — `identify --harness=cline` (partial combo); bare `agent-detect trailer`; `web --platform=linux` on a partial combo (the pin is a result-page param; the index ignores it); dev `fixtures queue` without filter.
 - **5** — dev `fixtures daemon` inside an agent → `incompatible environment refusing run`.
 - **6** — the optional `sqlite3` CLI is absent from PATH while a live session-store read needs it (kilo/opencode/copilot/crush/hermes inside a real session with a store on disk): the harness is known, detection cannot finish → `incomplete environment preventing run` rather than a misleading exit 8.
   `sqlite3` is the only optional dependency — see README.md's install section; a store-less run (recipe mode, config-file harnesses, plain shell) never spawns it.
-- **7** — `identify`/`found`/`explain`/`trailer co-author`/`check-reciprocal` `--harness=foo --provider=bar --model=baz` → `missing specified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
+  `web`'s opener is the second: `xdg-open` (linux) / `open` (macOS) / `cmd /c start` (Windows) absent from PATH or exiting failed → exit 6 with the `--no-open` hint (`--no-open` never spawns it).
+- **7** — `identify`/`found`/`explain`/`trailer co-author`/`check-reciprocal` `--harness=foo --provider=bar --model=baz` → `missing specified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`; `web --harness=bogus` reports the same block (each provided dim `null` when unresolvable, unprovided dims `null`).
 - **8** — `identify`/`trailer co-author`/`check-reciprocal` when live detection resolves nothing (plain shell); `found`/`explain` still emit their payload on stdout (the deliberate gate exception — observations and reasons are most wanted exactly then) plus the stderr registry line; dev `fixtures capture` partial → `unable to detect unspecified agent (harness = "<resolved>", provider = "<resolved>", model = null)` — each dim reports its resolved strict-slug id or `null`.
 - **9** — `check-reciprocal`/`identify`/`found`/`explain` when any per-entity deduction is undeterminable: an axis outcome that could not be determined (training `NOASSERTION` — researched, inconclusive — or null, never researched; e.g. crush/hyper/step-3.7-flash, the model's openness unverified) → `agent (harness, provider, model) data incomplete to make a determination`.
   Like the null provider/model dims, the nudge encourages correcting the data (source the training value, make the instance setting readable) rather than failing silently; the exit-9 wave over unresearched axes is the designed driver for the research sweeps.

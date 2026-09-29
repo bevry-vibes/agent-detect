@@ -24,10 +24,13 @@ const writeOut = core.writeOut;
 const writeErr = core.writeErr;
 const usage = core.usage;
 const trailerUsage = core.trailerUsage;
+const webUsage = core.webUsage;
 
 const resolveRecipe = core.resolveRecipe;
 const detect = core.detect;
 const buildJson = core.buildJson;
+const buildWebUrl = core.buildWebUrl;
+const openURL = core.openURL;
 
 const EXIT_OK = core.EXIT_OK;
 const EXIT_UNRECOGNISED_ERROR = core.EXIT_UNRECOGNISED_ERROR;
@@ -165,6 +168,7 @@ fn isKnownAction(word: []const u8) bool {
         std.mem.eql(u8, word, "explain") or
         std.mem.eql(u8, word, "trailer") or
         std.mem.eql(u8, word, "check-reciprocal") or
+        std.mem.eql(u8, word, "web") or
         std.mem.eql(u8, word, "help") or
         std.mem.eql(u8, word, "version");
 }
@@ -282,7 +286,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     // No arguments prints help.
     // `identify`, `found`, `explain`, `trailer <type>`, and `check-reciprocal` accept an optional complete combo (`--harness=H --provider=P --model=M` — all three or none) for recipe-mode output.
     // help/version win over everything: any help/version flag anywhere at top level short-circuits to the relevant usage/version output (exit 0), never a conflict.
-    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "help", "version"
+    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "web", "help", "version"
     var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
     var help_wanted = false;
     var version_wanted = false;
@@ -292,6 +296,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     var combo_h: []const u8 = "";
     var combo_p: []const u8 = "";
     var combo_m: []const u8 = "";
+    var web_platform: []const u8 = ""; // the --platform= value (web-only)
+    var no_open = false; // the --no-open flag (web-only)
     var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.OutOfMemory;
     defer args_it.deinit();
     _ = args_it.skip(); // argv0
@@ -301,7 +307,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             if (action.len == 0) action = "help";
         } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
             version_wanted = true;
-        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal")) {
+        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal") or std.mem.eql(u8, arg, "web")) {
             // an action word. After `help` it is the topic (`help trailer`).
             if (action.len == 0) {
                 action = arg;
@@ -327,6 +333,10 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             combo_p = arg["--provider=".len..];
         } else if (std.mem.startsWith(u8, arg, "--model=")) {
             combo_m = arg["--model=".len..];
+        } else if (std.mem.startsWith(u8, arg, "--platform=")) {
+            web_platform = arg["--platform=".len..];
+        } else if (std.mem.eql(u8, arg, "--no-open")) {
+            no_open = true;
         } else {
             // unrecognised bare word / flag.
             if (std.mem.eql(u8, action, "help") and help_topic == null) {
@@ -355,9 +365,17 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             writeOut(io, trailerUsage);
             return EXIT_OK;
         }
+        if (std.mem.eql(u8, action, "web")) {
+            writeOut(io, webUsage);
+            return EXIT_OK;
+        }
         if (help_topic) |topic| {
             if (std.mem.eql(u8, topic, "trailer")) {
                 writeOut(io, trailerUsage);
+                return EXIT_OK;
+            }
+            if (std.mem.eql(u8, topic, "web")) {
+                writeOut(io, webUsage);
                 return EXIT_OK;
             }
             if (isKnownAction(topic)) {
@@ -396,6 +414,22 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_CONFLICTING_ARG;
     }
 
+    // the web-only flags on any other action (or no action) → conflicting argument:
+    // `--platform=` pins a result-page tab and `--no-open` suppresses the opener;
+    // neither means anything to identify/trailer/check-reciprocal.
+    if ((web_platform.len > 0 or no_open) and !std.mem.eql(u8, action, "web")) {
+        writeErr(io, MSG_CONFLICTING_ARG);
+        writeOut(io, usage);
+        return EXIT_CONFLICTING_ARG;
+    }
+
+    // `web` — the site deep-links. Partial combos are the feature here (they
+    // filter the registry), so this dispatches BEFORE recipe mode's
+    // all-three-or-none combo gate below.
+    if (std.mem.eql(u8, action, "web")) {
+        return runWeb(init, combo_h, combo_p, combo_m, web_platform, no_open);
+    }
+
     // bare `trailer` → missing required arguments (subtype absent).
     // The compact decision guidance follows the stable registry line — the agent reads the menu and re-invokes with the subtype (the CLI stays non-interactive: agents call one-shot, so a menu + re-invoke is the agent-native prompt).
     if (std.mem.eql(u8, action, "trailer") and trailer_type.len == 0) {
@@ -426,6 +460,77 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     var d = Detection{};
     _ = try detect(init, &d);
     return runAction(init, &d, action, trailer_type, false);
+}
+
+// ============================================================================ web
+
+/// the `--platform=` value → the fixture platform ids the site's tabs use
+/// (darwin / linux / windows); the common shell names alias in.
+fn canonicalWebPlatform(v: []const u8) ?[]const u8 {
+    const rows = [_]struct { canon: []const u8, aliases: []const []const u8 }{
+        .{ .canon = "darwin", .aliases = &.{ "macos", "mac" } },
+        .{ .canon = "linux", .aliases = &.{} },
+        .{ .canon = "windows", .aliases = &.{"win"} },
+    };
+    for (rows) |row| {
+        if (std.mem.eql(u8, row.canon, v)) return row.canon;
+        for (row.aliases) |alias| {
+            if (std.mem.eql(u8, alias, v)) return row.canon;
+        }
+    }
+    return null;
+}
+
+/// the `web` action — build the website url from the dims and open it
+/// (`--no-open` just prints it). Dims resolve exactly like the recipe flags
+/// (names, labels, aliases); a complete combo deep-links the combo's result
+/// page, any partial set filters the registry at the `#registry` anchor.
+fn runWeb(init: std.process.Init, h: []const u8, p: []const u8, m: []const u8, platform: []const u8, no_open: bool) !u8 {
+    const a = init.arena.allocator();
+    const io = init.io;
+
+    // strict CLI-side resolution — a dead url is knowable before any browser is involved.
+    const rh: ?[]const u8 = if (h.len > 0) rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, h) else null;
+    const rp: ?[]const u8 = if (p.len > 0) rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, p) else null;
+    const rm: ?[]const u8 = if (m.len > 0) rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, m) else null;
+    if ((h.len > 0 and rh == null) or (p.len > 0 and rp == null) or (m.len > 0 and rm == null)) {
+        core.writeMissingSpecifiedAgent(io, rh, rp, rm);
+        return EXIT_MISSING_SPECIFIED_AGENT;
+    }
+
+    // the platform pin only lands on the result page (?platform= is an
+    // agent-page param; the index ignores it) — so it needs the complete combo.
+    const cp: []const u8 = if (platform.len > 0) blk: {
+        const canon = canonicalWebPlatform(platform) orelse {
+            writeErr(io, MSG_UNRECOGNISED_ARG);
+            writeErr(io, "--platform=");
+            writeErr(io, platform);
+            writeErr(io, "' — one of darwin (macos), linux, windows\n");
+            writeOut(io, webUsage);
+            return EXIT_UNRECOGNISED_ARG;
+        };
+        break :blk canon;
+    } else "";
+    if (cp.len > 0 and (h.len == 0 or p.len == 0 or m.len == 0)) {
+        writeErr(io, MSG_MISSING_ARG);
+        writeErr(io, "  - --platform pins a result-page tab — it needs the complete combo (--harness= --provider= --model=)\n");
+        writeOut(io, webUsage);
+        return EXIT_MISSING_ARG;
+    }
+
+    const url = try buildWebUrl(a, rh orelse "", rp orelse "", rm orelse "", cp);
+    writeOut(io, url);
+    writeOut(io, "\n");
+    if (no_open) return EXIT_OK;
+    openURL(a, io, url) catch |err| switch (err) {
+        error.OutOfMemory => return err,
+        else => {
+            writeErr(io, MSG_ENV_INCOMPLETE);
+            writeErr(io, "  - the platform url opener is absent or failed — install it (xdg-open on linux, open on macos), or re-run with --no-open\n");
+            return EXIT_ENV_INCOMPLETE;
+        },
+    };
+    return EXIT_OK;
 }
 
 /// dispatch the resolved action on a fully-shaped `Detection`.

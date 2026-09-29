@@ -3390,6 +3390,8 @@ pub const usage =
     \\                   co-author     Co-authored-by: (Bevry commits.md)
     \\                   assisted-by   Assisted-by:   (e.g. GCC AI policy)
     \\  check-reciprocal  check reciprocity compliance with Bevry's AI policy
+    \\  web            open the registry website — dims deep-link the site's
+    \\                 filters (see `web --help`)
     \\  help           this help (also --help, -h, or no arguments)
     \\  version        print the version (also --version, -V)
     \\
@@ -3397,6 +3399,9 @@ pub const usage =
     \\  --harness=H --provider=P --model=M
     \\                 resolve the action from the rule tables instead of live
     \\                 detection (all three together, or none)
+    \\  --platform=PL --no-open
+    \\                 web only: pin the result page's platform tab; print the
+    \\                 url instead of opening it
     \\
     \\examples:
     \\  agent-detect identify
@@ -3405,6 +3410,7 @@ pub const usage =
     \\  agent-detect trailer co-author
     \\  agent-detect trailer assisted-by
     \\  agent-detect check-reciprocal
+    \\  agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2
     \\  agent-detect identify --harness=kilo --provider=deepseek --model=deepseek-v4-flash
     \\
     \\exit codes:
@@ -3436,6 +3442,113 @@ pub const trailerUsage =
     \\  git commit --trailer "$(agent-detect trailer assisted-by)"
     \\
 ;
+
+pub const webUsage =
+    \\agent-detect web — open the registry website (agent-detect.bevry.workers.dev)
+    \\
+    \\usage:
+    \\  agent-detect web [--harness=H] [--provider=P] [--model=M] [--platform=PL] [--no-open]
+    \\
+    \\url forms:
+    \\  no dims      the homepage
+    \\  any dim(s)   the registry filtered to them, scrolled to the results (#registry)
+    \\  all three    the combo's result page (?agent=<harness>-<provider>-<model>)
+    \\               — add --platform=PL to pin the platform tab
+    \\
+    \\options:
+    \\  --harness=H --provider=P --model=M
+    \\               filter dims; names, labels, and aliases resolve exactly like
+    \\               the recipe flags — an unresolvable dim exits 7
+    \\  --platform=PL  pin the result page's platform tab (complete combo required)
+    \\  --no-open    print the url instead of opening it
+    \\
+    \\examples:
+    \\  agent-detect web
+    \\  agent-detect web --harness=kimi-code
+    \\  agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2 --platform=linux
+    \\  agent-detect web --no-open
+    \\
+    \\exit codes:
+    \\  0 opened · 2 unrecognised argument (--platform value) · 3 conflicting
+    \\  argument (web-only flags on another action) · 4 --platform without the
+    \\  complete combo · 6 the platform url opener is absent or failed
+    \\  (install it, or re-run with --no-open) · 7 a dim resolved to no rule.
+    \\
+;
+
+/// the registry website's base url — the sole coupling between the CLI's `web`
+/// action and the `site/` deployment (see DESIGN.md "the website").
+pub const siteUrl = "https://agent-detect.bevry.workers.dev";
+
+/// compose a website url from canonical dim ids (empty = not provided).
+/// All three → the combo's result page (`/?agent=<h-p-m>`, `--platform` pinning
+/// the tab); any partial set → the filtered registry at the `#registry` anchor
+/// (the anchor appears iff a dim was given — it is what scrolls the results
+/// into view); none → the bare homepage. `platform` is only meaningful on the
+/// result page, so it is only emitted there.
+pub fn buildWebUrl(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, platform: []const u8) ![]u8 {
+    if (h.len > 0 and p.len > 0 and m.len > 0) {
+        if (platform.len > 0) {
+            return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}-{s}-{s}&platform={s}", .{ h, p, m, platform });
+        }
+        return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}-{s}-{s}", .{ h, p, m });
+    }
+    var q: std.ArrayList(u8) = .empty;
+    for ([_][]const u8{ "harness", "provider", "model" }, [_][]const u8{ h, p, m }) |key, v| {
+        if (v.len == 0) continue;
+        if (q.items.len > 0) try q.append(a, '&');
+        try q.appendSlice(a, key);
+        try q.append(a, '=');
+        try q.appendSlice(a, v);
+    }
+    if (q.items.len == 0) return a.dupe(u8, siteUrl ++ "/");
+    return std.fmt.allocPrint(a, siteUrl ++ "/?{s}#registry", .{q.items});
+}
+
+/// open `url` in the platform's default browser — linux `xdg-open`, macOS
+/// `open`, Windows `cmd /c start`. The child's output is ignored; the caller
+/// maps every failure (the opener absent from PATH, or a failed exit) to the
+/// exit-6 "incomplete environment" case with the `--no-open` hint.
+pub fn openURL(a: std.mem.Allocator, io: std.Io, url: []const u8) !void {
+    const url_z = try a.dupeZ(u8, url);
+    defer a.free(url_z);
+    var argv_buf: [5][]const u8 = undefined;
+    const argv: []const []const u8 = switch (@import("builtin").os.tag) {
+        .windows => blk: {
+            // `start` eats a quoted first argument as the window title — the
+            // empty title arg keeps the url itself out of that slot.
+            argv_buf[0] = "cmd";
+            argv_buf[1] = "/c";
+            argv_buf[2] = "start";
+            argv_buf[3] = "";
+            argv_buf[4] = url_z;
+            break :blk argv_buf[0..5];
+        },
+        .macos => blk: {
+            argv_buf[0] = "open";
+            argv_buf[1] = url_z;
+            break :blk argv_buf[0..2];
+        },
+        else => blk: {
+            argv_buf[0] = "xdg-open";
+            argv_buf[1] = url_z;
+            break :blk argv_buf[0..2];
+        },
+    };
+    var child = std.process.spawn(io, .{
+        .argv = argv,
+        .stdout = .ignore,
+        .stderr = .ignore,
+    }) catch |err| switch (err) {
+        error.FileNotFound => return error.OpenerUnavailable,
+        else => return error.OpenerUnavailable,
+    };
+    const term = child.wait(io) catch return error.OpenerUnavailable;
+    switch (term) {
+        .exited => |code| if (code != 0) return error.OpenerUnavailable,
+        else => return error.OpenerUnavailable,
+    }
+}
 
 // ============================================================================ detection ladder — single source of truth for what `agent-detect` observes in the current session.
 // Called by the `identify` action (both the released JSON report and the dev fixture capture).
