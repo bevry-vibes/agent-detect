@@ -24,3 +24,7 @@ from the same branch; no prompts were lost.
 ## 4 — 2026-09-29
 
 > instead of pagination, isn't there like a lazy table thing? that still allows for ctrl/cmd+f search?
+
+## 5 — 2026-09-29
+
+> allow columns to be sorted

@@ -62,7 +62,8 @@ Data is generated at build/deploy time from the committed sources, so it can nev
   and the result table (one row per combo). The results table is a div-grid with every row kept in
   the DOM under CSS `content-visibility: auto` — lazy rendering without dropping rows, so native
   Ctrl/Cmd+F searches the whole list (JS virtualization would break find-in-page, and
-  content-visibility does not apply to `<tr>` internals).
+  content-visibility does not apply to `<tr>` internals). Columns sort client-side on header click —
+  ascending → descending → default — with `aria-sort` tracking on the columnheader.
 - Filters write `?harness=&provider=&model=&email=` through the **HTML5 history API** (pushState on
   user interaction, replaceState to canonicalise hand-typed names, popstate to go back/forward).
   Values resolve **exactly like the arg flags**: display names ("Kimi Code", "kimi-code",
