@@ -37,8 +37,9 @@ deno task deploy      # build + wrangler deploy → agent-detect.bevry.workers.d
 
 ## urls
 
-- `/` — the app; filters write `?harness=&provider=&model=&email=` (+`?agent=`) via the history API,
-  accepting names and resolving to the strict-slug ids exactly like the CLI flags
+- `/` — the app; filters write `?harness=&provider=&model=&search=` (+`?agent=` and `?platform=`) via
+  the history API, the dims accepting names and resolving to the strict-slug ids exactly like the
+  CLI flags, `search` free-text matching combo ids and dim names/ids
 - `/index.json` — the filtered view as JSON (see `public/llms.txt`)
 - `/identify/<agent_id>.json` — one combo's merged fixture outputs
 - `/registry.json`, `/llms.txt` — the rule registry; the LLM-facing site map

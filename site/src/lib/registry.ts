@@ -136,6 +136,31 @@ export function resolveDimId(rules: Rule[], input: string): string | null {
   return rule ? rule.id : null;
 }
 
+/** the haystack a combo's free-text search matches against — the combo id and
+ * email (identical modulo @local) plus each dim's label, name, and id */
+export function comboSearchText(row: ComboRow, registry: Registry): string {
+  const rule = (dim: "harnesses" | "providers" | "models", id: string) => registry[dim].find((r) => r.id === id);
+  const h = rule("harnesses", row.harness);
+  const p = rule("providers", row.provider);
+  const m = rule("models", row.model);
+  return [
+    row.agent_id,
+    row.email,
+    row.harness,
+    row.provider,
+    row.model,
+    h?.label,
+    h?.name,
+    p?.label,
+    p?.name,
+    m?.label,
+    m?.name,
+  ]
+    .filter((v): v is string => !!v)
+    .join("\n")
+    .toLowerCase();
+}
+
 /** resolve a rule's aliases into combobox search keywords */
 export function ruleKeywords(rule: Rule): string[] {
   return [rule.name, rule.label, rule.id, ...(rule.short_title ? [rule.short_title] : []), ...rule.variations];

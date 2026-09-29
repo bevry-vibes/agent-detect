@@ -12,27 +12,32 @@ https://github.com/bevry-vibes/agent-detect
 
 ## how the site is organised
 
-`/` is a single-page app. Three searchable dropdowns (harness, provider, model) plus a trailer-email
-lookup filter a results table; clicking a row opens that combo's full-page results view — `identify`,
-`trailer co-author`, `trailer assisted-by`, and `explain` (plus `found`/`raw`, `check-reciprocal`,
-stderr lines, and capture meta when recorded) — tabbed per platform and channel (`captured` = live
-fixture, `declared` = declared fixture). The results table keeps every row in the DOM with CSS
-`content-visibility: auto`, so native Ctrl/Cmd+F searches the whole list.
+`/` is a single-page app. Three searchable dropdowns (harness, provider, model) plus a free-text
+search box filter a results table; clicking a row opens that combo's full-page results view —
+`identify`, `trailer co-author`, `trailer assisted-by`, and `explain` (plus `found`/`raw`,
+`check-reciprocal`, stderr lines, and capture meta when recorded) — tabbed per platform and channel
+(`captured` = live fixture, `declared` = declared fixture), sorted latest-generated first. Each
+block carries copy + copy-command buttons for the CLI invocation behind it. The results table keeps
+every row in the DOM with CSS `content-visibility: auto`, so native Ctrl/Cmd+F searches the whole
+list.
 
 URL query params mirror the CLI's `--harness= / --provider= / --model=` flags: display names,
 labels, and aliases are accepted, and the URL is canonicalised to the strict-slug alphanumeric ids
-("Kimi Code" and "kimi-code" land as `kimicode`). `?agent=<agent_id>` is the agent results page —
-a full-page replacement of the index (not a modal); the site header wordmark or its "back to
-results" button returns to the index with the scroll position restored. All navigation uses the
-HTML5 history API (pushState/replaceState/popstate).
+("Kimi Code" and "kimi-code" land as `kimicode`). `?search=` free-text matches combo ids and
+harness/provider/model names and ids (substring, case-insensitive). `?agent=<agent_id>` is the
+agent results page — a full-page replacement of the index (not a modal); `?platform=<platform>`
+pins a fixture tab (the default is the latest-generated fixture; clicking it again clears the
+param). The site header wordmark or the page's "back to results" button returns to the index with
+the scroll position restored. All navigation uses the HTML5 history API
+(pushState/replaceState/popstate).
 
 ## endpoints
 
 - `/` — the app (hero, filters, results table, detail panel)
-- `/index.json` — JSON results. Accepts `?harness=&provider=&model=&email=&agent=` with the same
-  name→id resolution. Unfiltered it returns the compact combo index; with any filter it embeds each
-  matching combo's full fixtures (identify + both trailers + explain + meta), capped at 50 combos
-  before degrading to compact rows with `"truncated": true`.
+- `/index.json` — JSON results. Accepts `?harness=&provider=&model=&search=&agent=&platform=` with
+  the same name→id resolution on the dims. Unfiltered it returns the compact combo index; with any
+  filter it embeds each matching combo's full fixtures (identify + both trailers + explain + meta),
+  capped at 50 combos before degrading to compact rows with `"truncated": true`.
 - `/identify/<agent_id>.json` — one combo's merged result: every platform × channel fixture with its
   verbatim outputs and meta. agent_id is the dash-joined strict slugs, e.g.
   `cline-clinepass-deepseekv4flash`.
@@ -46,9 +51,8 @@ HTML5 history API (pushState/replaceState/popstate).
 
 - ids are strict slugs: lowercase alphanumeric with all separators stripped
   (`kimi-code` → `kimicode`, `qwen3.8-27b` → `qwen3827b`); agent_id joins the three dims with dashes
-  (`cline-clinepass-deepseekv4flash`).
-- trailer emails are `<agent_id@local>` for every combo; `?email=` matches the full email, the local
-  part, or the agent_id.
+  (`cline-clinepass-deepseekv4flash`), and doubles as the trailer email local part
+  (`<agent_id@local>`).
 - `reciprocal: true` means the combo passes agent-detect's reciprocity requirement (per the policy
   documented in the upstream repo); `explain.state` is the detailed state
   (`reciprocal | not-reciprocal | unknown | undetectable`).

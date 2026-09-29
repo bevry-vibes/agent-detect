@@ -26,13 +26,17 @@ function sectionsFor(outputs: FixtureOutputs): { title: string; value: unknown }
 /** per-session cache — revisiting an agent (back/forward) renders instantly */
 const fileCache = new Map<string, AgentFile>();
 
-/** the recipe-mode actions whose blocks gain a "copy command" button —
- * the CLI invocation that reproduces that block for this combo */
+/** the CLI invocations each result block corresponds to — recipe actions take
+ * the combo flags, the trailers take none */
 const RECIPE_ACTIONS: Record<string, string> = {
   identify: "identify",
   explain: "explain",
   found: "found",
   "check-reciprocal": "check-reciprocal",
+};
+const TRAILER_ACTIONS: Record<string, string> = {
+  "trailer co-author": "trailer co-author",
+  "trailer assisted-by": "trailer assisted-by",
 };
 
 function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][number]; dims: { h: string; p: string; m: string } }) {
@@ -40,16 +44,21 @@ function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][numbe
   const meta: Record<string, unknown> = { ...fixture.meta, updated_at: formatDate(fixture.updated_at) };
   const bin = fixture.platform === "windows" ? ".\\agent-detect.exe" : "./agent-detect";
   const commandFor = (title: string) => {
-    const action = RECIPE_ACTIONS[title];
-    return action
-      ? `${bin} ${action} --harness=${dims.h} --provider=${dims.p} --model=${dims.m}`
-      : undefined;
+    if (RECIPE_ACTIONS[title])
+      return `${bin} ${RECIPE_ACTIONS[title]} --harness=${dims.h} --provider=${dims.p} --model=${dims.m}`;
+    if (TRAILER_ACTIONS[title]) return `${bin} ${TRAILER_ACTIONS[title]}`;
+    return undefined;
   };
   return (
     <div className="flex flex-col gap-3">
       {sections.map((s) => (
         <JsonBlock key={s.title} title={s.title} value={s.value} command={commandFor(s.title)} />
       ))}
+      {!fixture.outputs.explain && (
+        <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-2 text-xs">
+          no explain recorded for this fixture — the newer tabs carry it
+        </p>
+      )}
       <JsonBlock title="meta" value={meta} />
     </div>
   );
@@ -89,23 +98,24 @@ function ReciprocalTag({ row, dims }: { row: ComboRow; dims: { h: string; p: str
 interface AgentPageProps {
   row: ComboRow | null;
   agentId: string;
+  /** the ?platform= param — selects a fixture; null = the latest one */
+  platform: string | null;
+  onPlatformChange: (platform: string | null) => void;
   onBack: () => void;
 }
 
 /** the full-page replacement for an agent combo — the result JSON (identify,
  * both trailers, explain, and the rest of the recorded outputs), one tab per
- * platform × channel fixture. The index stays one back-button away. */
-export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
+ * platform × channel fixture sorted latest-first. The index stays one
+ * back-button away. */
+export function AgentPage({ row, agentId, platform, onPlatformChange, onBack }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
-  // the active platform × channel tab — the header's date follows it
-  const [activeTab, setActiveTab] = useState<string | null>(null);
 
   useEffect(() => {
     const cached = fileCache.get(agentId);
     setFile(cached ?? null);
     setError(null);
-    setActiveTab(null);
     if (cached) return;
     let alive = true;
     fetch(`/data/agents/${agentId}.json`)
@@ -129,11 +139,17 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
     window.scrollTo(0, 0);
   }, []);
 
-  const defaultTab = file?.fixtures[0] ? `${file.fixtures[0].platform}:${file.fixtures[0].channel}` : undefined;
-  const activeTabValue = activeTab ?? defaultTab;
-  const activeFixture = file?.fixtures.find((f) => `${f.platform}:${f.channel}` === activeTabValue);
+  // tabs sorted by generation time, latest first — the default selection is
+  // the newest fixture; ?platform= pins a platform (its latest fixture)
+  const sortedFixtures = useMemo(
+    () => (file ? [...file.fixtures].sort((a, b) => b.updated_at - a.updated_at) : null),
+    [file],
+  );
+  const defaultFixture = sortedFixtures?.[0] ?? null;
+  const activeFixture = (platform && sortedFixtures?.find((f) => f.platform === platform)) || defaultFixture;
+  const activeTabValue = activeFixture ? `${activeFixture.platform}:${activeFixture.channel}` : undefined;
   // the header date is the selected platform × channel result's generation time
-  const activeDate = formatDate((activeFixture ?? file?.fixtures[0])?.updated_at ?? row?.updated_at ?? 0);
+  const activeDate = formatDate(activeFixture?.updated_at ?? 0);
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
@@ -183,7 +199,6 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
               {row.model}
             </Badge>
           </div>
-          <p className="text-muted-foreground font-mono text-xs">{row.email}</p>
         </header>
       )}
 
@@ -194,11 +209,22 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
       )}
       {row && !error && !file && <p className="text-muted-foreground text-sm">loading result JSON…</p>}
       {row && file && (
-        <Tabs value={activeTabValue} onValueChange={(v) => setActiveTab(v)}>
+        <Tabs
+          value={activeTabValue}
+          onValueChange={(v) => {
+            const f = file.fixtures.find((x) => `${x.platform}:${x.channel}` === v);
+            if (f)
+              onPlatformChange(
+                defaultFixture && f.platform === defaultFixture.platform && f.channel === defaultFixture.channel
+                  ? null
+                  : f.platform,
+              );
+          }}
+        >
           <div className="flex flex-wrap items-center justify-between gap-2">
+            <ReciprocalTag row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} />
             <TabsList className="h-auto flex-wrap">
-              <ReciprocalTag row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} />
-              {file.fixtures.map((f) => (
+              {sortedFixtures!.map((f) => (
                 <TabsTrigger key={f.id} value={`${f.platform}:${f.channel}`}>
                   <span className="font-mono text-xs">
                     {f.platform} · {f.channel === "capture" ? "captured" : "declared"}
@@ -207,13 +233,13 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
               ))}
             </TabsList>
             <span
-              title={`result generated ${new Date((activeFixture ?? file.fixtures[0]).updated_at * 1000).toISOString()}`}
+              title={`result generated ${new Date((activeFixture ?? defaultFixture)!.updated_at * 1000).toISOString()}`}
               className="text-muted-foreground inline-flex h-9 items-center rounded-md border bg-muted/50 px-3 font-mono text-xs"
             >
               {activeDate}
             </span>
           </div>
-          {file.fixtures.map((f) => (
+          {sortedFixtures!.map((f) => (
             <TabsContent key={f.id} value={`${f.platform}:${f.channel}`}>
               <FixtureDetail fixture={f} dims={{ h: row.harness, p: row.provider, m: row.model }} />
             </TabsContent>

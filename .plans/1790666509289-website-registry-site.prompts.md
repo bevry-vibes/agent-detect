@@ -56,3 +56,60 @@ from the same branch; no prompts were lost.
 > >reproduce this verdict against the live detection with the recipe-mode flags
 >
 > do the copy command button
+
+## 11 — 2026-09-29
+
+> change copy button to copy result
+
+## 12 — 2026-09-29
+
+> right align the harness provider model column in the cards
+>
+> in the header, "registry" is not vertically aligned correctly, or perhaps it ias "agent-detect" that is not vertically aligned correctly
+
+## 13 — 2026-09-29
+
+> move the agent email under the model in the card, with email on the left column
+> move the agent email under the harness provider model header on its result page
+> this makes the bottom row the tags on the left side and the date on the right side in the card
+> on the result page, the date should be right aligned on the platforms row, and update to the date of the platform result generation
+> in the cards, move the reciprocal tag/pill to be before the platform tags/pills, to match how it works on the result page
+
+## 14 — 2026-09-29
+
+> actually, drop email, change it to id, make it the first column in the table, and first item in the card - id is just email without the `@local`
+>
+> drop the email line in the header altogether on the result page
+>
+> the reciproca tag on the result page should not be in the same ui element as the clickable platforms
+>
+> change the trailer email search box to just be search, have it match names and ids
+>
+> verify your work visually as the header vertical alignment is still off
+
+## 15 — 2026-09-29
+
+> rate limit reset
+>
+> explain seems to now be missing from the result page, also each command result on the result page needs a copy command button
+>
+> the alignment of the 1,387 of 1,387 combos is off, same with the view as JSON, please visually verify
+>
+> the result page should default to the paltform that was generated last, which should be the first platform bage, they should be sorted by latest gen first - clicking a platform button adds it to the querystring ?platform= via the pushtate API, clicking the first/default platform again removes it from the url
+>
+> Every header item's center now sits at exactly the same pixel (28.0 vs header mid 28.3 — subpixel rounding). Now the table and search:
+> you are insane... do like temporary red boxes or something around them so you can see the issue
+
+## 16 — 2026-09-29
+
+> the index.json is also off
+
+## 17 — 2026-09-29
+
+> the combos list, and the view as JSON should match horizontal alignment of the HARNESS dropdown and t he ID column text - so the text in the sibling elements, not the ui borders
+
+## 18 — 2026-09-29
+
+> just drop index.json and llms.txt from the header menu, they are already in the footer - and you seem incapable of aligning them correctly
+>
+> use the word `generated` instead of `regenerated` in the footer, and have a github icon preceeding the repo link

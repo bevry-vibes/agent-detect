@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Github } from "lucide-react";
 
-import { resolveDimId, type CombosFile, type Registry } from "@/lib/registry";
+import { comboSearchText, resolveDimId, type CombosFile, type Registry } from "@/lib/registry";
 import { AgentPage } from "@/components/agent-page";
 import { FilterBar, type Filters } from "@/components/filter-bar";
 import { Hero } from "@/components/hero";
@@ -11,13 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const DIMS = ["harness", "provider", "model"] as const;
 type Dim = (typeof DIMS)[number];
 
-const NO_FILTERS: Filters = { harness: null, provider: null, model: null, email: null };
+const NO_FILTERS: Filters = { harness: null, provider: null, model: null, search: null };
 
 /**
  * URL params work exactly like the CLI flags: display names and aliases are
  * accepted, the URL is canonicalised to the strict-slug alphanumeric ids
  * (`?harness=Kimi+Code` lands as `?harness=kimicode`). Unresolvable values are
- * dropped with a notice, like an unknown flag.
+ * dropped with a notice, like an unknown flag. `?search=` free-text matches
+ * combo ids and harness/provider/model names and ids.
  */
 function parseURL(search: string, registry: Registry) {
   const q = new URLSearchParams(search);
@@ -37,24 +39,27 @@ function parseURL(search: string, registry: Registry) {
       notices.push(`${dim} "${raw}" did not resolve to a rule — dropped`);
     }
   }
-  const email = q.get("email")?.trim().toLowerCase();
-  if (email) {
-    filters.email = email;
-    canonical.set("email", email);
+  const text = q.get("search")?.trim().toLowerCase();
+  if (text) {
+    filters.search = text;
+    canonical.set("search", text);
   }
   const agent = q.get("agent")?.trim().toLowerCase() || null;
   if (agent) {
     canonical.set("agent", agent);
     if (agent !== q.get("agent")) notices.push(`agent canonicalised to "${agent}"`);
   }
-  return { filters, agent, canonical: canonical.toString(), notices };
+  const platform = q.get("platform")?.trim().toLowerCase() || null;
+  if (platform) canonical.set("platform", platform);
+  return { filters, agent, platform, canonical: canonical.toString(), notices };
 }
 
-function buildSearch(filters: Filters, agent: string | null): string {
+function buildSearch(filters: Filters, agent: string | null, platform: string | null = null): string {
   const q = new URLSearchParams();
   for (const dim of DIMS) if (filters[dim]) q.set(dim, filters[dim]);
-  if (filters.email) q.set("email", filters.email);
+  if (filters.search) q.set("search", filters.search);
   if (agent) q.set("agent", agent);
+  if (platform) q.set("platform", platform);
   return q.toString();
 }
 
@@ -64,6 +69,7 @@ export default function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({ ...NO_FILTERS });
   const [agent, setAgent] = useState<string | null>(null);
+  const [platformParam, setPlatformParam] = useState<string | null>(null);
   const [notices, setNotices] = useState<string[]>([]);
   const registryRef = useRef<Registry | null>(null);
   // full-page agent view: the index's scroll position is remembered per entry
@@ -93,6 +99,7 @@ export default function App() {
       const parsed = parseURL(window.location.search, reg);
       setFilters(parsed.filters);
       setAgent(parsed.agent);
+      setPlatformParam(parsed.platform);
       setNotices(parsed.notices);
       const canonicalSearch = parsed.canonical;
       if (new URLSearchParams(window.location.search).toString() !== canonicalSearch) {
@@ -107,6 +114,7 @@ export default function App() {
     const parsed = parseURL(window.location.search, reg);
     setFilters(parsed.filters);
     setAgent(parsed.agent);
+    setPlatformParam(parsed.platform);
     setNotices(parsed.notices);
   }, []);
 
@@ -115,26 +123,31 @@ export default function App() {
     return () => window.removeEventListener("popstate", syncFromURL);
   }, [syncFromURL]);
 
-  const pushURL = (nextFilters: Filters, nextAgent: string | null) => {
-    const qs = buildSearch(nextFilters, nextAgent);
+  const pushURL = (nextFilters: Filters, nextAgent: string | null, nextPlatform: string | null = platformParam) => {
+    const qs = buildSearch(nextFilters, nextAgent, nextPlatform);
     history.pushState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
   };
 
+  const onPlatformChange = (p: string | null) => {
+    setPlatformParam(p);
+    pushURL(filters, agent, p);
+  };
   const onDim = (dim: Dim, id: string | null) => {
     const next = { ...filters, [dim]: id };
     setFilters(next);
     setAgent(null);
+    setPlatformParam(null);
     setNotices([]);
-    pushURL(next, null);
+    pushURL(next, null, null);
   };
-  const onEmail = (email: string | null) => {
-    const next = { ...filters, email };
+  const onSearch = (text: string | null) => {
+    const next = { ...filters, search: text };
     setFilters(next);
     setAgent(null);
+    setPlatformParam(null);
     setNotices([]);
-    pushURL(next, null);
-  };
-  const onClear = () => {
+    pushURL(next, null, null);
+  };  const onClear = () => {
     setFilters({ ...NO_FILTERS });
     setAgent(null);
     setNotices([]);
@@ -145,7 +158,7 @@ export default function App() {
     scrollMem.current.set(window.location.search, window.scrollY);
     cameFromIndex.current = true;
     setAgent(selected);
-    pushURL(filters, selected);
+    pushURL(filters, selected, platformParam);
   };
 
   /** "close" the agent results — back to the exact index entry when we came
@@ -171,6 +184,12 @@ export default function App() {
     if (next === "index") window.scrollTo(0, scrollMem.current.get(window.location.search) ?? 0);
   }, [agent]);
 
+  const searchIndex = useMemo(() => {
+    const m = new Map<string, string>();
+    if (registry && combosFile) for (const c of combosFile.combos) m.set(c.agent_id, comboSearchText(c, registry));
+    return m;
+  }, [registry, combosFile]);
+
   const rows = useMemo(() => {
     if (!combosFile) return [];
     return combosFile.combos.filter(
@@ -178,11 +197,9 @@ export default function App() {
         (!filters.harness || c.harness === filters.harness) &&
         (!filters.provider || c.provider === filters.provider) &&
         (!filters.model || c.model === filters.model) &&
-        (!filters.email ||
-          c.email === filters.email ||
-          (!filters.email.includes("@") && (c.email.split("@")[0] === filters.email || c.agent_id === filters.email))),
+        (!filters.search || (searchIndex.get(c.agent_id) ?? "").includes(filters.search)),
     );
-  }, [combosFile, filters]);
+  }, [combosFile, filters, searchIndex]);
 
   const counts = useMemo(() => {
     const harnesses: Record<string, number> = {};
@@ -201,13 +218,19 @@ export default function App() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <SiteHeader jsonHref={jsonHref} onHome={agent ? closeAgent : undefined} />
+      <SiteHeader onHome={agent ? closeAgent : undefined} />
       {!agent && registry && (
         <Hero registry={registry} combos={combosFile?.counts.combos ?? 0} fixtures={combosFile?.counts.fixtures ?? 0} />
       )}
 
       {agent ? (
-        <AgentPage row={selectedRow} agentId={agent} onBack={closeAgent} />
+        <AgentPage
+          row={selectedRow}
+          agentId={agent}
+          platform={platformParam}
+          onPlatformChange={onPlatformChange}
+          onBack={closeAgent}
+        />
       ) : (
         <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-8">
           {loadError && (
@@ -233,7 +256,7 @@ export default function App() {
                 totalCount={combosFile.counts.combos}
                 jsonHref={jsonHref}
                 onDim={onDim}
-                onEmail={onEmail}
+                onSearch={onSearch}
                 onClear={onClear}
               />
               <ResultsTable
@@ -250,12 +273,15 @@ export default function App() {
 
       <footer className="text-muted-foreground border-t">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs">
-          <span>
-            data regenerated from{" "}
-            <a className="underline underline-offset-4" href="https://github.com/bevry-vibes/agent-detect" target="_blank" rel="noreferrer">
-              bevry-vibes/agent-detect
-            </a>{" "}
-            {combosFile ? `· generated ${new Date(combosFile.generated_at * 1000).toISOString().slice(0, 10)}` : ""} · RPL-1.5
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Github className="size-3.5" />
+            <span>
+              generated from{" "}
+              <a className="underline underline-offset-4" href="https://github.com/bevry-vibes/agent-detect" target="_blank" rel="noreferrer">
+                bevry-vibes/agent-detect
+              </a>
+            </span>
+            {combosFile ? `· generated ${new Date(combosFile.generated_at * 1000).toISOString().slice(0, 10)} ·` : "·"} RPL-1.5
           </span>
           <span className="flex gap-3">
             <a className="underline underline-offset-4" href="/registry.json">registry.json</a>

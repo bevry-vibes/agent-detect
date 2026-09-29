@@ -19,19 +19,19 @@ import { formatDate } from "@/lib/utils";
  * Below the md breakpoint the grid is replaced by a stacked card list — no
  * horizontal scroll, same rows, same click target.
  */
-const GRID = "grid grid-cols-[minmax(130px,1fr)_minmax(150px,1.1fr)_minmax(150px,1.2fr)_minmax(210px,1.4fr)_150px_150px_110px]";
+const GRID = "grid grid-cols-[minmax(200px,1.3fr)_minmax(130px,1fr)_minmax(150px,1.1fr)_minmax(150px,1.2fr)_150px_150px_110px]";
 const CELL = "px-3 py-2.5 flex flex-col justify-center gap-0.5 leading-snug min-w-0";
 const ROW_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_57px]";
 const CARD_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_150px]";
 
-type SortKey = "harness" | "provider" | "model" | "reciprocal" | "platforms" | "email" | "updated_at";
+type SortKey = "id" | "harness" | "provider" | "model" | "reciprocal" | "platforms" | "updated_at";
 type Sort = { key: SortKey; dir: "asc" | "desc" } | null;
 
 const COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
+  { key: "id", label: "ID" },
   { key: "harness", label: "Harness" },
   { key: "provider", label: "Provider" },
   { key: "model", label: "Model" },
-  { key: "email", label: "Trailer email" },
   { key: "reciprocal", label: "Reciprocal" },
   { key: "platforms", label: "Platforms" },
   { key: "updated_at", label: "Updated", align: "right" },
@@ -88,6 +88,8 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
     const mul = sort.dir === "asc" ? 1 : -1;
     const value = (r: ComboRow): string | number => {
       switch (sort.key) {
+        case "id":
+          return r.agent_id;
         case "harness":
           return labelOf("harnesses", r.harness).toLowerCase();
         case "provider":
@@ -98,8 +100,6 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
           return r.reciprocal ? 1 : 0;
         case "platforms":
           return r.platforms.join(",");
-        case "email":
-          return r.email;
         case "updated_at":
           return r.updated_at;
       }
@@ -150,6 +150,12 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
             className={`${CARD_LAZY} cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
           >
             <div className="flex min-w-0 flex-col gap-1 leading-snug">
+              <div className="flex items-baseline gap-2 min-w-0">
+                <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  id
+                </span>
+                <span className="min-w-0 flex-1 break-all font-mono text-xs">{row.agent_id}</span>
+              </div>
               {([
                 { label: "harness", dim: "harnesses", field: "harness" },
                 { label: "provider", dim: "providers", field: "provider" },
@@ -165,12 +171,6 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                   </span>
                 </div>
               ))}
-              <div className="flex items-baseline gap-2 min-w-0">
-                <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  email
-                </span>
-                <span className="min-w-0 flex-1 break-all font-mono text-[11px] text-muted-foreground">{row.email}</span>
-              </div>
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
               <span className="flex flex-wrap items-center gap-1.5">
@@ -189,7 +189,7 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
 
       {/* desktop: the lazy div-grid table with sortable headers */}
       <div className="hidden md:block rounded-xl border">
-        <div className="max-h-[calc(100svh-11rem)] overflow-auto">
+        <div className="max-h-[calc(100svh-11rem)] overflow-auto [scrollbar-gutter:stable]">
           <div role="table" aria-label="agent combos" className="w-full min-w-[1080px]">
             <div role="row" className={`${GRID} text-muted-foreground sticky top-0 z-20 border-b bg-background text-xs font-medium`}>
               {COLUMNS.map((col) => {
@@ -222,6 +222,11 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                   className={`${GRID} ${ROW_LAZY} cursor-pointer border-b transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
                 >
                   <div role="cell" className={CELL}>
+                    <span className="truncate font-mono text-xs" title={row.agent_id}>
+                      {row.agent_id}
+                    </span>
+                  </div>
+                  <div role="cell" className={CELL}>
                     <span className="truncate">{labelOf("harnesses", row.harness)}</span>
                     <span className="text-muted-foreground truncate font-mono text-xs">{row.harness}</span>
                   </div>
@@ -232,11 +237,6 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                   <div role="cell" className={CELL}>
                     <span className="truncate">{labelOf("models", row.model)}</span>
                     <span className="text-muted-foreground truncate font-mono text-xs">{row.model}</span>
-                  </div>
-                  <div role="cell" className={CELL}>
-                    <span className="text-muted-foreground truncate font-mono text-xs" title={row.email}>
-                      {row.email}
-                    </span>
                   </div>
                   <div role="cell" className={CELL}>
                     <ReciprocalBadge row={row} />

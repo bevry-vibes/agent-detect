@@ -13,7 +13,7 @@
 // (src/lib/registry.ts is shared with the SPA).
 
 import type { AgentFile, CombosFile, Registry } from "../src/lib/registry";
-import { resolveDimId } from "../src/lib/registry";
+import { comboSearchText, resolveDimId } from "../src/lib/registry";
 
 /** full fixture outputs embedded per result row, past this many rows */
 const EXPAND_CAP = 50;
@@ -56,7 +56,7 @@ interface Resolved {
   harness: string | null;
   provider: string | null;
   model: string | null;
-  email: string | null;
+  search: string | null;
   agent: string | null;
 }
 
@@ -68,14 +68,14 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
     harness: q?.get("harness") ?? null,
     provider: q?.get("provider") ?? null,
     model: q?.get("model") ?? null,
-    email: q?.get("email") ?? null,
+    search: q?.get("search") ?? null,
     agent: q?.get("agent") ?? null,
   };
 
-  const resolved: Resolved = { harness: null, provider: null, model: null, email: null, agent: null };
+  const resolved: Resolved = { harness: null, provider: null, model: null, search: null, agent: null };
   const unresolved: { param: string; value: string }[] = [];
 
-  if (raw.harness != null || raw.provider != null || raw.model != null) {
+  if (raw.harness != null || raw.provider != null || raw.model != null || raw.search != null) {
     const registry = await getRegistry(env, origin);
     const tables = { harness: registry.harnesses, provider: registry.providers, model: registry.models } as const;
     for (const dim of ["harness", "provider", "model"] as const) {
@@ -86,7 +86,7 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
       else unresolved.push({ param: dim, value });
     }
   }
-  if (raw.email != null) resolved.email = raw.email.trim().toLowerCase() || null;
+  if (raw.search != null) resolved.search = raw.search.trim().toLowerCase() || null;
   if (raw.agent != null) resolved.agent = raw.agent.trim().toLowerCase() || null;
 
   if (unresolved.length) {
@@ -101,13 +101,12 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
   }
 
   const combos = (await getCombos(env, origin)).combos;
+  const searchRegistry = resolved.search != null ? await getRegistry(env, origin) : null;
   const results = combos.filter((c) =>
     (!resolved.harness || c.harness === resolved.harness) &&
     (!resolved.provider || c.provider === resolved.provider) &&
     (!resolved.model || c.model === resolved.model) &&
-    (!resolved.email ||
-      c.email === resolved.email ||
-      (!resolved.email.includes("@") && (c.email.split("@")[0] === resolved.email || c.agent_id === resolved.email))) &&
+    (!resolved.search || !searchRegistry || comboSearchText(c, searchRegistry).includes(resolved.search)) &&
     (!resolved.agent || c.agent_id === resolved.agent || c.fixtures.some((f) => f.id === resolved.agent))
   );
 
