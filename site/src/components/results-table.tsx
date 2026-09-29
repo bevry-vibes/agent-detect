@@ -157,7 +157,7 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                   { label: "model", dim: "models", field: "model" },
                 ] as const).map(({ label, dim, field }) => (
                   <div key={dim} className="flex items-baseline gap-2 min-w-0">
-                    <span className="w-16 shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                       {label}
                     </span>
                     <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
