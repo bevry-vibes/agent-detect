@@ -122,9 +122,9 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border">
-      <div role="table" aria-label="agent combos" className="min-w-[1080px] overflow-x-auto">
-        <div role="row" className={`${GRID} text-muted-foreground sticky top-14 z-10 border-b bg-background/95 text-xs font-medium backdrop-blur`}>
+    <div className="max-h-[calc(100svh-11rem)] overflow-auto rounded-xl border">
+      <div role="table" aria-label="agent combos" className="w-full min-w-[1080px]">
+        <div role="row" className={`${GRID} text-muted-foreground sticky top-0 z-20 border-b bg-background text-xs font-medium`}>
           {COLUMNS.map((col) => {
             const active = sort?.key === col.key;
             const ariaSort = active ? (sort.dir === "asc" ? "ascending" : "descending") : "none";
