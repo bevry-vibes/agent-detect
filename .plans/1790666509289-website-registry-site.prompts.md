@@ -304,3 +304,16 @@ from the same branch; no prompts were lost.
 > for the homepage snippets, the copy prompt icon is still not left-aligned with the title, so they both start at the same y-axis, perhaps there is a margin or something for the icon you are not factoring in
 >
 > reduce the font-size of the result card id in general, it should only slightly be bigger than the dims below it, and also shrink it if would otherwise overflow to the next line (along with each of the dims, each result card line should shrink if it would otherwise overflow, to maintain the individuated whole lines)
+
+## 32 — 2026-09-29
+
+> okay, this is good
+>
+> do a code quality and tech debt pass for the website
+>
+> update our meta files etc and whatever else needs updating for this website
+>
+> add a `agent-detect web ...` command to our cli that opens the website (if `--no-open` is passed it just outputs the url instead of opening)
+> have it support argument for dims for filtering the registry section for the website, which it should include an `#registry` anchor for to scroll to the results if a dim was provided; if all three dims provided, it should open the result page for the agent instead, with arg option for platform as well to prefeed the platform pill/tab via query string
+>
+> for the `agent-detect web ...` command, write a plan, implement, then push, watch for errors, and cut a release, and do release notes
