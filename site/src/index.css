@@ -78,4 +78,19 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+  /* a clicked section anchor highlights briefly, then fades */
+  @keyframes target-flash {
+    0% {
+      background-color: color-mix(in oklch, var(--ring) 28%, transparent);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+  :target {
+    animation: target-flash 1.8s ease-out 1;
+  }
 }

@@ -24,13 +24,18 @@ function ThemeToggle() {
   );
 }
 
-export function SiteHeader({ onHome }: { onHome?: () => void }) {
+export interface AnchorLink {
+  label: string;
+  href: string;
+}
+
+export function SiteHeader({ onHome, centerNav }: { onHome?: () => void; centerNav?: AnchorLink[] }) {
   const [gh, setGh] = useState(false);
   useEffect(() => setGh(true), []); // lucide's Github is fine client-side; keeps SSR-safe habit out of the way
 
   return (
     <header className="bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
+      <div className="relative mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
         <a
           href="/"
           className="flex shrink-0 items-center gap-2 whitespace-nowrap font-semibold tracking-tight"
@@ -50,6 +55,22 @@ export function SiteHeader({ onHome }: { onHome?: () => void }) {
           </svg>
           <span className="flex items-center">agent-detect</span>
         </a>
+        {centerNav && centerNav.length > 0 && (
+          <nav
+            aria-label="page sections"
+            className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex"
+          >
+            {centerNav.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center rounded-md px-3 text-sm"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        )}
         <nav className="flex items-center gap-1 text-sm">
           <a
             href="https://github.com/bevry-vibes/agent-detect"

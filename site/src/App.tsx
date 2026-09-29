@@ -4,7 +4,7 @@ import { Github } from "lucide-react";
 import { comboSearchText, resolveDimId, type CombosFile, type Registry } from "@/lib/registry";
 import { AgentPage } from "@/components/agent-page";
 import { FilterBar, type Filters } from "@/components/filter-bar";
-import { Hero } from "@/components/hero";
+import { Hero, RegistryIntro } from "@/components/hero";
 import { ResultsTable } from "@/components/results-table";
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,10 +212,20 @@ export default function App() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <SiteHeader onHome={agent ? closeAgent : undefined} />
-      {!agent && registry && (
-        <Hero registry={registry} combos={combosFile?.counts.combos ?? 0} fixtures={combosFile?.counts.fixtures ?? 0} />
-      )}
+      <SiteHeader
+        onHome={agent ? closeAgent : undefined}
+        centerNav={
+          agent
+            ? undefined
+            : [
+                { label: "cli", href: "#cli" },
+                { label: "install", href: "#install" },
+                { label: "use", href: "#use" },
+                { label: "registry", href: "#registry" },
+              ]
+        }
+      />
+      {!agent && registry && <Hero />}
 
       {agent ? (
         <AgentPage
@@ -226,7 +236,14 @@ export default function App() {
           onBack={closeAgent}
         />
       ) : (
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-8">
+        <main id="registry" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 scroll-mt-14 px-4 py-8">
+          {registry && (
+            <RegistryIntro
+              registry={registry}
+              combos={combosFile?.counts.combos ?? 0}
+              fixtures={combosFile?.counts.fixtures ?? 0}
+            />
+          )}
           {loadError && (
             <Card className="border-destructive">
               <CardHeader>
@@ -278,6 +295,14 @@ export default function App() {
             <a className="underline underline-offset-4" href="/registry.json">registry.json</a>
             <a className="underline underline-offset-4" href="/index.json">index.json</a>
             <a className="underline underline-offset-4" href="/llms.txt">llms.txt</a>
+            <a
+              className="underline underline-offset-4"
+              href="https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+              target="_blank"
+              rel="noreferrer"
+            >
+              contributing.md
+            </a>
           </span>
         </div>
       </footer>

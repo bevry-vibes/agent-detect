@@ -124,3 +124,25 @@ from the same branch; no prompts were lost.
 > back to results doesn't go back to results if one has clicked the platform buttons, it should just go back to results, rather than a browser back button
 >
 > Also drop `registry` from the header too, so it is just agent-detect`
+
+## 20 — 2026-09-29
+
+> okay, we will reimangine the header
+>
+> in the center of the header on the hompage will be:
+> cli  install  use  registry
+> as links that temporarily highlight the clicked target anchor
+>
+> the initial header will be
+>
+> # `agent-detect` command-line tool
+> Give your agent self-awareness. [icon] Generate accurate `Co-Authored-By` & `Assisted-By` trailers for agent-made commits and issues. [icon] Scope rules, skills, and policies by agent harness, provider, and/or model. [icon] Detailed training, license, and reciprocity information for policy enforcement. [icon] Offline agent detection without telemetry.
+>
+> then the install and use cards
+>
+> # `agent-detect` registry
+> Past inferences from our test suite. Missing yours, [send a pull request.](link to contributing.md)
+> 17 harnesses 57 providers 104 models 1387 combos 2982 fixtures
+> filters
+>
+> add a link to contributing.md into the footer on the rightmost of the right side
