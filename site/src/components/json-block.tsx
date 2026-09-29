@@ -41,7 +41,7 @@ export function JsonBlock({ title, value, command, className }: { title: string;
           )}
           <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => copy(text, () => setCopied(true))}>
             {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-            {copied ? "copied" : "copy"}
+            {copied ? "copied" : "copy result"}
           </Button>
         </div>
       </header>
