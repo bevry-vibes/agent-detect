@@ -36,6 +36,12 @@ The source is split across four files
 - `src/main.zig` (thin entry + re-exports)
 in a strict no-cycles import DAG.
 
+## website
+
+The browsable registry lives in `site/` — its own deployment (Cloudflare Worker + static assets, `deno task deploy` from `site/`), never part of the zig binary; it consumes the committed rule tables and fixture channels as data.
+Deno is the toolchain: `deno install` (node_modules), `deno task data` (regenerate `site/public/data/` — needs zig on PATH), `deno task build` (data + vite), `deno task check` (tsc + deno check), `deno task dev` (wrangler dev on 127.0.0.1:8787).
+Restart `deno task dev` after every vite build — a stale wrangler asset manifest serves the old bundle as the 942-byte index.html fallback and the page renders blank.
+
 ## harness configuration
 
 Never create, modify, or overwrite a harness's config/auth files or set API keys on the user's machine — this includes anything under `~/.<harness>/`, `~/.config/<harness>/`, `%APPDATA%`, and credential stores.

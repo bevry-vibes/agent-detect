@@ -201,6 +201,13 @@ For those, a maintainer adds the harness/provider/model to the rule tables and `
 All three dims are required (or none); a partial combo exits 4 and an unknown id exits 7.
 `detectable` in recipe mode reflects the recipe (up to all three dims).
 
+### the website (`site/`) — a consumer, never a fork
+
+The browsable registry at `agent-detect.bevry.workers.dev` is its own deployment (a Cloudflare Worker with static assets, living in `site/` and deployed via `deno task deploy` from there) — not part of the zig binary.
+It renders the committed rule tables and fixture channels as data, regenerated at build time: `site/tools/build_data.ts` compiles a temp copy of `src/lib/rules.zig` standalone and dumps the tables, so the site's name resolution can never drift from the CLI's, and mirrors `canonicalIdFor`/`canonicalFilterDim` semantics in `site/src/lib/registry.ts` (shared by the SPA and the worker).
+The site stores nothing and reads nothing from visitors.
+The released CLI opens it — `agent-detect web` deep-links the same filters: any dim lands as `?harness=`/`?provider=`/`?model=` scrolled to the registry section, a complete combo lands on that combo's result page (`?agent=<agent_id>`, `--platform=` pins the platform tab).
+
 ## scope
 
 - **Multi-harness, multi-OS, multi-arch.**

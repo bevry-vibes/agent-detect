@@ -37,8 +37,9 @@ Invoke-WebRequest https://github.com/bevry-vibes/agent-detect/releases/latest/do
 The `-f` flag is load-bearing: without it, a mistyped asset name saves GitHub's "Not Found" page as the binary, which then fails to execute with a baffling error instead of a clear download failure.
 (`Invoke-WebRequest` already fails on HTTP errors.)
 
-**Optional dependency — `sqlite3`.** The binary has no required runtime dependencies.
+**Optional dependencies.** The binary has no required runtime dependencies.
 Live detection inside some harnesses (Kilo Code, OpenCode, GitHub Copilot CLI, Crush, Hermes) reads that harness's local session store via the `sqlite3` CLI; when it is absent from `PATH` there, `identify`/`trailer`/`check-reciprocal` exit `6` (incomplete environment preventing run) instead of guessing — every other code path never spawns it, so a store-less environment needs nothing else installed.
+`web` similarly needs the platform's URL opener (`xdg-open` on linux, `open` on macOS, the shell's `start` on Windows); when it is absent there, `web` exits `6` too — `--no-open` never spawns it.
 
 Once downloaded, the use cases:
 
@@ -135,6 +136,21 @@ git commit --trailer "$(./agent-detect trailer assisted-by)"
 # powershell (windows)
 git commit --trailer "$(.\agent-detect.exe trailer assisted-by)"
 ```
+
+### the registry website
+
+The browsable registry of every known combo — policy fields, reciprocity verdict, and the exact CLI outputs — lives at [agent-detect.bevry.workers.dev](https://agent-detect.bevry.workers.dev).
+Open it from the CLI (the same command on every platform):
+
+```sh
+./agent-detect web                                        # the homepage
+./agent-detect web --harness=kimi-code                    # the registry filtered to a dim, scrolled to the results
+./agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2   # the combo's result page
+./agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2 --platform=linux   # …pinning the platform tab
+./agent-detect web --no-open                              # print the url instead of opening it
+```
+
+Dims resolve exactly like the flags (names, labels, and aliases accepted); the urls carry the canonical strict-slug ids the site uses.
 
 ## contributing
 

@@ -61,3 +61,6 @@ the scroll position restored. All navigation uses the HTML5 history API
   `agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>`.
 - data is regenerated from the upstream repo's committed fixture channels on every deploy; the site
   stores nothing and reads nothing from visitors.
+- the CLI opens this site: `agent-detect web` (add `--harness=`, `--provider=`, `--model=` for the
+  filtered registry — any dim scrolls to the results; all three for a combo's result page, with
+  `--platform=` pinning the tab; `--no-open` prints the url instead of opening it).

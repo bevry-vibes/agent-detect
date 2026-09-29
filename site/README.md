@@ -43,3 +43,11 @@ deno task deploy      # build + wrangler deploy → agent-detect.bevry.workers.d
 - `/index.json` — the filtered view as JSON (see `public/llms.txt`)
 - `/identify/<agent_id>.json` — one combo's merged fixture outputs
 - `/registry.json`, `/llms.txt` — the rule registry; the LLM-facing site map
+
+## opening it from the cli
+
+The released binary's `agent-detect web` command builds these urls and opens them (the platform's
+url opener; `--no-open` prints the url instead): bare dims land as `?harness=`/`?provider=`/`?model=`
+scrolled to the registry section, a complete combo lands on the combo's result page
+(`?agent=<agent_id>`, `--platform=` pins the platform tab), and every value resolves exactly like
+the CLI's own flags.
