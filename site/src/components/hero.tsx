@@ -416,6 +416,9 @@ function SkillSnippet(spec: SnippetSpec) {
             if (stop !== -1) end = stop;
           }
         }
+        // anchors land loosely — trim empty leading/trailing lines
+        while (start < end && all[start].trim() === "") start += 1;
+        while (end > start && all[end - 1].trim() === "") end -= 1;
         const found = { full: all, start, end };
         snippetCache.set(key, found);
         if (alive) setMeta(found);
@@ -493,17 +496,12 @@ function SkillSnippet(spec: SnippetSpec) {
           <Eye className="size-3" />
           {stage === "file" ? "show prompt" : "show file"}
         </Button>
-        <a
-          href={linePermalink}
-          target="_blank"
-          rel="noreferrer"
-          title="view file"
-          aria-label="view file"
-          className="text-muted-foreground hover:text-foreground inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs"
-        >
-          <ExternalLink className="size-3" />
-          view file
-        </a>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" asChild>
+          <a href={linePermalink} target="_blank" rel="noreferrer" title="view file" aria-label="view file">
+            <ExternalLink className="size-3" />
+            view file
+          </a>
+        </Button>
         <CollapseToggle open={open} onToggle={() => setOpen(!open)} />
       </SnippetHeader>
       {open &&

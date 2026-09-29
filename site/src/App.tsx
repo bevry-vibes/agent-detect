@@ -247,8 +247,10 @@ export default function App() {
         <AgentPage
           row={selectedRow}
           agentId={agent}
+          registry={registry}
           platform={platformParam}
           onPlatformChange={onPlatformChange}
+          onDim={onDim}
           onBack={closeAgent}
         />
       ) : (

@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Check, ExternalLink } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
-import { type AgentFile, type ComboRow, type FixtureOutputs } from "@/lib/registry";
+import { type AgentFile, type ComboRow, type FixtureOutputs, type Registry } from "@/lib/registry";
 import { JsonBlock } from "@/components/json-block";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -98,17 +97,69 @@ function ReciprocalTag({ row, dims }: { row: ComboRow; dims: { h: string; p: str
 interface AgentPageProps {
   row: ComboRow | null;
   agentId: string;
+  /** the rule registry — resolves the dims' display titles (null while loading) */
+  registry: Registry | null;
   /** the ?platform= param — selects a fixture; null = the latest one */
   platform: string | null;
   onPlatformChange: (platform: string | null) => void;
+  /** jump back to the index with this dim applied as a filter */
+  onDim: (dim: "harness" | "provider" | "model", id: string) => void;
   onBack: () => void;
+}
+
+// the combo dimensions as rich `type title id` entries linking to the
+// filtered index — the same format the index cards use
+const DIM_ENTRIES = [
+  { label: "harness", dim: "harness", table: "harnesses", field: "harness" },
+  { label: "provider", dim: "provider", table: "providers", field: "provider" },
+  { label: "model", dim: "model", table: "models", field: "model" },
+] as const;
+
+function DimEntries({
+  row,
+  registry,
+  onDim,
+}: {
+  row: ComboRow;
+  registry: Registry | null;
+  onDim: AgentPageProps["onDim"];
+}) {
+  return (
+    <nav aria-label="combo dimensions" className="flex flex-col gap-1">
+      {DIM_ENTRIES.map(({ label, dim, table, field }) => {
+        const id = row[field];
+        const title = registry?.[table].find((r) => r.id === id)?.label ?? id;
+        const href = `/?${dim}=${id}`;
+        return (
+          <a
+            key={dim}
+            href={href}
+            title={`results for ${label} ${id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              onDim(dim, id);
+            }}
+            className="hover:bg-muted/50 -mx-1 flex min-w-0 items-baseline gap-2 rounded-md px-1 py-0.5 transition-colors"
+          >
+            <span className="text-muted-foreground w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide">
+              {label}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
+              <span className="text-sm font-medium underline-offset-4 hover:underline">{title}</span>
+              <span className="text-muted-foreground font-mono text-[11px]">{id}</span>
+            </span>
+          </a>
+        );
+      })}
+    </nav>
+  );
 }
 
 /** the full-page replacement for an agent combo — the result JSON (identify,
  * both trailers, explain, and the rest of the recorded outputs), one tab per
  * platform × channel fixture sorted latest-first. The index stays one
  * back-button away. */
-export function AgentPage({ row, agentId, platform, onPlatformChange, onBack }: AgentPageProps) {
+export function AgentPage({ row, agentId, registry, platform, onPlatformChange, onDim, onBack }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
 
@@ -188,17 +239,7 @@ export function AgentPage({ row, agentId, platform, onPlatformChange, onBack }: 
       {row && (
         <header className="flex flex-col gap-3">
           <h1 className="font-mono text-xl font-semibold tracking-tight">{row.agent_id}</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="font-mono text-[10px]">
-              {row.harness}
-            </Badge>
-            <Badge variant="secondary" className="font-mono text-[10px]">
-              {row.provider}
-            </Badge>
-            <Badge variant="secondary" className="font-mono text-[10px]">
-              {row.model}
-            </Badge>
-          </div>
+          <DimEntries row={row} registry={registry} onDim={onDim} />
         </header>
       )}
 
@@ -226,9 +267,7 @@ export function AgentPage({ row, agentId, platform, onPlatformChange, onBack }: 
             <TabsList className="h-auto flex-wrap">
               {sortedFixtures!.map((f) => (
                 <TabsTrigger key={f.id} value={`${f.platform}:${f.channel}`}>
-                  <span className="font-mono text-xs">
-                    {f.platform} · {f.channel === "capture" ? "captured" : "declared"}
-                  </span>
+                  <span className="font-mono text-xs">{f.platform}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

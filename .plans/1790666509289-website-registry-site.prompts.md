@@ -254,3 +254,13 @@ from the same branch; no prompts were lost.
 >
 > change the prompts card cescription to be, no need for the lbevry-vibes/skills link in the description, it is redundant:
 > Enhance your prompting with these snippets.
+
+## 26 — 2026-09-29
+
+> trim empty leading and trailing lines from the prompt snippets
+>
+> on the result page:
+> - remove the `- declared` part of the platform pills, the platofrm pills should only be the platform name
+> - don't use pills for the harness model provider, instead use the rich `type title id` format of the result cards - when clicking such, it should take one to the results pagae where that filter is applied
+>
+> why is view file looking disabled compared to its sibling links... they should all share the same style
