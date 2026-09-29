@@ -16,6 +16,7 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { Registry } from "@/lib/registry";
+import { useCopied } from "@/lib/use-copied";
 import { CodeLine, JsonBlock } from "@/components/json-block";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -286,6 +287,11 @@ export function RegistryIntro({
 // skill snippets are fetched once per session and shared across renders
 const snippetCache = new Map<string, { full: string[]; start: number; end: number }>();
 
+// the snippet-bar action buttons — the `!` suffixes beat the Button's own
+// `has-[>svg]:px-2.5` (tailwind-merge treats the has-[>svg]-prefixed variant
+// as a separate group, so plain px-1 / max-sm:px-0 never win the cascade)
+const snippetBtn = "h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!";
+
 interface SnippetSpec {
   /** the prompt description doubles as the snippet header */
   description: string;
@@ -384,20 +390,11 @@ function SnippetHeader({
  * and the collapse toggle are all it has */
 function InlinePrompt({ description, text }: { description: string; text: string }) {
   const [open, setOpen] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // clipboard unavailable — the text is still selectable
-    }
-  };
+  const { copied, copy } = useCopied();
   return (
     <section className="overflow-hidden rounded-lg border">
       <SnippetHeader description={description} open={open} onToggle={() => setOpen(!open)}>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" onClick={copy}>
+        <Button variant="ghost" size="sm" className={snippetBtn} onClick={() => copy(text)}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : "copy prompt"}
         </Button>
@@ -422,7 +419,7 @@ function SkillSnippet(spec: SnippetSpec) {
   const [meta, setMeta] = useState<{ full: string[]; start: number; end: number } | null>(
     () => snippetCache.get(key) ?? null,
   );
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopied();
   const [failed, setFailed] = useState(false);
   const preRef = useRef<HTMLPreElement>(null);
 
@@ -483,17 +480,9 @@ function SkillSnippet(spec: SnippetSpec) {
   const linePermalink = meta
     ? `https://github.com/bevry-vibes/skills/blob/main/${spec.file}#L${from}-L${to}`
     : `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`;
-  const copyText = async () => {
+  const copyText = () => {
     if (!meta) return; // nothing fetched yet — expand first
-    try {
-      await navigator.clipboard.writeText(
-        stage === "file" ? meta.full.join("\n") : meta.full.slice(meta.start, meta.end).join("\n"),
-      );
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // clipboard unavailable — the snippet is still selectable
-    }
+    void copy(stage === "file" ? meta.full.join("\n") : meta.full.slice(meta.start, meta.end).join("\n"));
   };
 
   const renderLines = (lines: { text: string; n: number; relevant: boolean }[]) => (
@@ -530,15 +519,15 @@ function SkillSnippet(spec: SnippetSpec) {
   return (
     <section className="overflow-hidden rounded-lg border">
       <SnippetHeader description={spec.description} open={open} onToggle={() => setOpen(!open)}>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" onClick={copyText}>
+        <Button variant="ghost" size="sm" className={snippetBtn} onClick={copyText}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : stage === "file" ? "copy file" : "copy prompt"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" onClick={toggleStage}>
+        <Button variant="ghost" size="sm" className={snippetBtn} onClick={toggleStage}>
           <Eye className="size-3" />
           {stage === "file" ? "show prompt" : "show file"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" asChild>
+        <Button variant="ghost" size="sm" className={snippetBtn} asChild>
           <a href={linePermalink} target="_blank" rel="noreferrer" title="view file" aria-label="view file">
             <ExternalLink className="size-3" />
             view file

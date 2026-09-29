@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Github, Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,9 +40,6 @@ export function SiteHeader({
    * the native anchor jump is suppressed */
   onNavClick?: (href: string) => boolean;
 }) {
-  const [gh, setGh] = useState(false);
-  useEffect(() => setGh(true), []); // lucide's Github is fine client-side; keeps SSR-safe habit out of the way
-
   return (
     <header className="bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
       <div className="relative mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
@@ -91,7 +88,7 @@ export function SiteHeader({
             rel="noreferrer"
             className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center gap-1.5 rounded-md px-2"
           >
-            {gh ? <Github className="size-4" /> : null}
+            <Github className="size-4" />
             <span className="hidden sm:inline">GitHub</span>
           </a>
           <ThemeToggle />

@@ -146,7 +146,8 @@ export default function App() {
     setPlatformParam(null);
     setNotices([]);
     pushURL(next, null, null);
-  };  const onClear = () => {
+  };
+  const onClear = () => {
     setFilters({ ...NO_FILTERS });
     setAgent(null);
     setNotices([]);
@@ -275,37 +276,37 @@ export default function App() {
               />
             )}
             {loadError && (
-            <Card className="border-destructive">
-              <CardHeader>
-                <CardTitle className="text-destructive text-base">the registry failed to load</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm">{loadError}</CardContent>
-            </Card>
-          )}
-          {!registry && !loadError && <p className="text-muted-foreground py-16 text-center text-sm">loading the registry…</p>}
+              <Card className="border-destructive">
+                <CardHeader>
+                  <CardTitle className="text-destructive text-base">the registry failed to load</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">{loadError}</CardContent>
+              </Card>
+            )}
+            {!registry && !loadError && <p className="text-muted-foreground py-16 text-center text-sm">loading the registry…</p>}
 
-          {registry && combosFile && (
-            <>
-              {notices.length > 0 && (
-                <p className="text-muted-foreground rounded-md border px-3 py-2 text-xs">{notices.join(" · ")}</p>
-              )}
-              <FilterBar
-                registry={registry}
-                filters={filters}
-                counts={counts}
-                onDim={onDim}
-                onSearch={onSearch}
-                onClear={onClear}
-              />
-              <ResultsTable
-                rows={rows}
-                totalCount={combosFile.counts.combos}
-                filters={filters}
-                registry={registry}
-                onSelect={onSelect}
-              />
-            </>
-          )}
+            {registry && combosFile && (
+              <>
+                {notices.length > 0 && (
+                  <p className="text-muted-foreground rounded-md border px-3 py-2 text-xs">{notices.join(" · ")}</p>
+                )}
+                <FilterBar
+                  registry={registry}
+                  filters={filters}
+                  counts={counts}
+                  onDim={onDim}
+                  onSearch={onSearch}
+                  onClear={onClear}
+                />
+                <ResultsTable
+                  rows={rows}
+                  totalCount={combosFile.counts.combos}
+                  filters={filters}
+                  registry={registry}
+                  onSelect={onSelect}
+                />
+              </>
+            )}
           </article>
         </main>
       )}

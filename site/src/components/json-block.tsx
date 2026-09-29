@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { Check, Copy, Terminal } from "lucide-react";
 
+import { useCopied } from "@/lib/use-copied";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -20,19 +20,9 @@ export function JsonBlock({
   command?: string;
   className?: string;
 }) {
-  const [copied, setCopied] = useState(false);
-  const [copiedCommand, setCopiedCommand] = useState(false);
+  const { copied, copy: copyText } = useCopied();
+  const { copied: copiedCommand, copy: copyCommand } = useCopied();
   const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
-
-  const copy = async (what: string, done: () => void) => {
-    try {
-      await navigator.clipboard.writeText(what);
-      done();
-      setTimeout(done, 1500);
-    } catch {
-      // clipboard unavailable (insecure context) — the block is still selectable
-    }
-  };
 
   return (
     <section className={cn("overflow-hidden rounded-lg border", className)}>
@@ -53,13 +43,13 @@ export function JsonBlock({
               size="sm"
               className="h-7 gap-1 px-2 text-xs"
               title={command}
-              onClick={() => copy(command, () => setCopiedCommand(true))}
+              onClick={() => copyCommand(command)}
             >
               <Terminal className="size-3" />
               {copiedCommand ? "command copied" : "copy command"}
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => copy(text, () => setCopied(true))}>
+          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={() => copyText(text)}>
             {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
             {copied ? "copied" : "copy result"}
           </Button>
@@ -72,22 +62,12 @@ export function JsonBlock({
 
 /** a copyable one-line command, for the hero */
 export function CodeLine({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // as above
-    }
-  };
+  const { copied, copy } = useCopied();
 
   return (
     <button
       type="button"
-      onClick={copy}
+      onClick={() => copy(code)}
       title="click to copy"
       className="group flex w-full min-w-0 items-start justify-between gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-left font-mono text-xs hover:bg-muted/70"
     >
