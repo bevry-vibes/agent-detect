@@ -4,7 +4,7 @@ on:
   push:
     # Calver tags match `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`, `2026.8.6-2`).
     # Pushing such a tag publishes a release that is marked `latest`.
-    # See DESIGN.md "distribution / versioned releases" for the maintainer runbook.
+    # See commits.md "releases" for the maintainer runbook (calver election, the pre-tag binary check) and the upstream commits.md release-notes flow it points at.
     tags: ['*.*.*-*']
   pull_request:
   workflow_dispatch:
