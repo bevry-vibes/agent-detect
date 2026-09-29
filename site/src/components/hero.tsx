@@ -67,7 +67,7 @@ function ToggleRow({
 
 function Feature({ icon: Icon, children }: { icon: typeof Mail; children: ReactNode }) {
   return (
-    <li className="flex items-start gap-3">
+    <li className="flex items-center gap-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/50">
         <Icon className="size-4" />
       </span>
@@ -113,12 +113,12 @@ export function Hero() {
   ];
 
   return (
-    <section id="cli" className="scroll-mt-14 border-b">
+    <article id="cli" className="scroll-mt-14 border-b">
       <div className="mx-auto max-w-7xl px-4 py-10">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          <code className="rounded-md bg-muted/60 px-2 py-0.5 font-mono text-[0.85em]">agent-detect</code> command-line tool
-        </h1>
-        <p className="mt-3 text-lg font-medium">Give your agent self-awareness.</p>
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">CLI for Agent Detection</h1>
+          <p className="text-lg font-medium">Give your agent self-awareness.</p>
+        </div>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           <Feature icon={Mail}>
             Generate accurate <code className="font-mono text-[0.9em]">Co-Authored-By</code> &amp;{" "}
@@ -193,26 +193,33 @@ export function Hero() {
           </Card>
         </div>
       </div>
-    </section>
+    </article>
   );
 }
 
-/** the registry section intro — heading, contributing line, and the counts */
+/** the registry section intro — heading, byline, contributing line, the
+ * counts, the filtered result count, and the view-as-JSON link */
 export function RegistryIntro({
   registry,
   combos,
   fixtures,
+  results,
+  jsonHref,
 }: {
   registry: Registry;
   combos: number;
   fixtures: number;
+  results: number;
+  jsonHref: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <h2 className="text-2xl font-semibold tracking-tight">
-        <code className="rounded-md bg-muted/60 px-2 py-0.5 font-mono text-[0.85em]">agent-detect</code> registry
-      </h2>
-      <p className="text-muted-foreground text-sm">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Registry of Agent Detections</h1>
+        <p className="text-lg font-medium">Agents now capable of self-awareness.</p>
+      </div>
+      {/* pl-13px lines the text up with the ID column text in the table below */}
+      <p className="text-muted-foreground pl-[13px] text-sm">
         Past inferences from our test suite. Missing yours,{" "}
         <a
           className="underline underline-offset-4"
@@ -223,12 +230,24 @@ export function RegistryIntro({
           send a pull request.
         </a>
       </p>
-      <div className="mt-1 flex flex-wrap gap-2">
+      {/* pr-26px reserves the table's scroll gutter so the link lines up with
+          the Updated column text */}
+      <div className="mt-1 flex flex-wrap items-center gap-2 pr-[26px]">
         <Badge variant="secondary">{registry.counts.harnesses} harnesses</Badge>
         <Badge variant="secondary">{registry.counts.providers} providers</Badge>
         <Badge variant="secondary">{registry.counts.models} models</Badge>
         <Badge variant="secondary">{combos} combos</Badge>
         <Badge variant="secondary">{fixtures} fixtures</Badge>
+        <Badge variant="secondary" className="tabular-nums">
+          {results.toLocaleString()} results
+        </Badge>
+        <a
+          href={jsonHref}
+          className="text-muted-foreground hover:text-foreground ml-auto font-mono text-sm underline underline-offset-4"
+          title="this filtered view as JSON"
+        >
+          view as JSON ↗
+        </a>
       </div>
     </div>
   );

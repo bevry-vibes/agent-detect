@@ -225,8 +225,6 @@ export default function App() {
               ]
         }
       />
-      {!agent && registry && <Hero />}
-
       {agent ? (
         <AgentPage
           row={selectedRow}
@@ -236,15 +234,19 @@ export default function App() {
           onBack={closeAgent}
         />
       ) : (
-        <main id="registry" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 scroll-mt-14 px-4 py-8">
-          {registry && (
-            <RegistryIntro
-              registry={registry}
-              combos={combosFile?.counts.combos ?? 0}
-              fixtures={combosFile?.counts.fixtures ?? 0}
-            />
-          )}
-          {loadError && (
+        <main className="flex flex-col">
+          <Hero />
+          <article id="registry" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 scroll-mt-14 px-4 py-8">
+            {registry && (
+              <RegistryIntro
+                registry={registry}
+                combos={combosFile?.counts.combos ?? 0}
+                fixtures={combosFile?.counts.fixtures ?? 0}
+                results={rows.length}
+                jsonHref={jsonHref}
+              />
+            )}
+            {loadError && (
             <Card className="border-destructive">
               <CardHeader>
                 <CardTitle className="text-destructive text-base">the registry failed to load</CardTitle>
@@ -263,9 +265,6 @@ export default function App() {
                 registry={registry}
                 filters={filters}
                 counts={counts}
-                rowCount={rows.length}
-                totalCount={combosFile.counts.combos}
-                jsonHref={jsonHref}
                 onDim={onDim}
                 onSearch={onSearch}
                 onClear={onClear}
@@ -279,6 +278,7 @@ export default function App() {
               />
             </>
           )}
+          </article>
         </main>
       )}
 

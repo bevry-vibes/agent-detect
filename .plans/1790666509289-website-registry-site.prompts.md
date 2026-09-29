@@ -151,3 +151,21 @@ from the same branch; no prompts were lost.
 
 > the use section should have toggles for platform then arch
 > sh and powershell should be platform sepecific, show powershell only on windows platform
+
+## 22 — 2026-09-29
+
+> Change the headings to be the same size, both h1. Both in their own article element, an article element for the CLI and an article element for the registry.
+>
+> Heading and byline:
+> CLI for Agent Detection    Give your agent self-awareness.
+>
+> Heading and byline:
+> Registry of Agent Detections    Agents now capable of self-awareness.
+>
+> Have the heading and byline on the same line if weidth supports.
+>
+> Fix the icon and vertical line alignment of the features in the CLI section.
+>
+> The registry description has the same text not aligning with the text in the table issue.
+>
+> Move the `1,387 of 1,387 combos` to just be `X results` at the end of the count pills. Move the [view as JSON] to the on the same row as the count pills.

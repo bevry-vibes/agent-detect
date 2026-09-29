@@ -17,9 +17,6 @@ interface FilterBarProps {
   registry: Registry;
   filters: Filters;
   counts: { harnesses: Record<string, number>; providers: Record<string, number>; models: Record<string, number> };
-  rowCount: number;
-  totalCount: number;
-  jsonHref: string;
   onDim: (dim: "harness" | "provider" | "model", id: string | null) => void;
   onSearch: (text: string | null) => void;
   onClear: () => void;
@@ -28,7 +25,7 @@ interface FilterBarProps {
 /** the top row — three searchable dropdowns (harness, provider, model) plus a
  * free-text search over combo ids and dim names/ids; every change lands in the
  * URL via the history API */
-export function FilterBar({ registry, filters, counts, rowCount, totalCount, jsonHref, onDim, onSearch, onClear }: FilterBarProps) {
+export function FilterBar({ registry, filters, counts, onDim, onSearch, onClear }: FilterBarProps) {
   const [searchDraft, setSearchDraft] = useState(filters.search ?? "");
   useEffect(() => setSearchDraft(filters.search ?? ""), [filters.search]);
 
@@ -68,26 +65,13 @@ export function FilterBar({ registry, filters, counts, rowCount, totalCount, jso
           )}
         </div>
       </div>
-      {/* pl-13px lines the text up with the dropdown text above and the ID
-          column text below; pr-26px additionally reserves the table's scroll
-          gutter so "view as JSON" lines up with the Updated column text */}
-      <div className="flex flex-wrap items-center gap-3 pl-[13px] pr-[26px] text-sm">
-        <span className="text-muted-foreground">
-          <strong className="text-foreground tabular-nums">{rowCount.toLocaleString()}</strong> of{" "}
-          {totalCount.toLocaleString()} combos
-        </span>
-        {(filters.harness || filters.provider || filters.model || filters.search) && (
+      {(filters.harness || filters.provider || filters.model || filters.search) && (
+        <div className="flex">
           <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={onClear}>
             <X className="size-3" /> clear filters
           </Button>
-        )}
-        <a
-          href={jsonHref}
-          className="text-muted-foreground hover:text-foreground ml-auto font-mono text-sm underline underline-offset-4"
-          title="this filtered view as JSON"
-        >
-          view as JSON ↗
-        </a>
-      </div>    </div>
+        </div>
+      )}
+    </div>
   );
 }
