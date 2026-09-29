@@ -67,11 +67,14 @@ interface AgentPageProps {
 export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
+  // the active platform × channel tab — the header's date follows it
+  const [activeTab, setActiveTab] = useState<string | null>(null);
 
   useEffect(() => {
     const cached = fileCache.get(agentId);
     setFile(cached ?? null);
     setError(null);
+    setActiveTab(null);
     if (cached) return;
     let alive = true;
     fetch(`/data/agents/${agentId}.json`)
@@ -94,6 +97,12 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  const defaultTab = file?.fixtures[0] ? `${file.fixtures[0].platform}:${file.fixtures[0].channel}` : undefined;
+  const activeTabValue = activeTab ?? defaultTab;
+  const activeFixture = file?.fixtures.find((f) => `${f.platform}:${f.channel}` === activeTabValue);
+  // the header date is the selected platform × channel result's generation time
+  const activeDate = formatDate((activeFixture ?? file?.fixtures[0])?.updated_at ?? row?.updated_at ?? 0);
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
@@ -153,14 +162,18 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
             <Badge variant="secondary" className="font-mono text-[10px]">
               {row.model}
             </Badge>
-            {row.platforms.map((p) => (
-              <Badge key={p} variant="outline" className="font-mono text-[10px]">
-                {p}
-              </Badge>
-            ))}
-            <span className="text-muted-foreground font-mono text-xs">{formatDate(row.updated_at)}</span>
           </div>
           <p className="text-muted-foreground font-mono text-xs">{row.email}</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-1.5">
+              {row.platforms.map((p) => (
+                <Badge key={p} variant="outline" className="font-mono text-[10px]">
+                  {p}
+                </Badge>
+              ))}
+            </div>
+            <span className="text-muted-foreground font-mono text-xs">{activeDate}</span>
+          </div>
         </header>
       )}
 
@@ -171,7 +184,7 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
       )}
       {row && !error && !file && <p className="text-muted-foreground text-sm">loading result JSON…</p>}
       {row && file && (
-        <Tabs defaultValue={file.fixtures[0] ? `${file.fixtures[0].platform}:${file.fixtures[0].channel}` : undefined}>
+        <Tabs value={activeTabValue} onValueChange={(v) => setActiveTab(v)}>
           <TabsList className="flex-wrap">
             {file.fixtures.map((f) => (
               <TabsTrigger key={f.id} value={`${f.platform}:${f.channel}`}>

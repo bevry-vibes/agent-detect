@@ -149,31 +149,36 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
             onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
             className={`${CARD_LAZY} cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex flex-col gap-1 leading-snug">
-                {([
-                  { label: "harness", dim: "harnesses", field: "harness" },
-                  { label: "provider", dim: "providers", field: "provider" },
-                  { label: "model", dim: "models", field: "model" },
-                ] as const).map(({ label, dim, field }) => (
-                  <div key={dim} className="flex items-baseline gap-2 min-w-0">
-                    <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {label}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
-                      <span className="text-sm font-medium">{labelOf(dim, row[field])}</span>
-                      <span className="font-mono text-[11px] text-muted-foreground">{row[field]}</span>
-                    </span>
-                  </div>
-                ))}
+            <div className="flex min-w-0 flex-col gap-1 leading-snug">
+              {([
+                { label: "harness", dim: "harnesses", field: "harness" },
+                { label: "provider", dim: "providers", field: "provider" },
+                { label: "model", dim: "models", field: "model" },
+              ] as const).map(({ label, dim, field }) => (
+                <div key={dim} className="flex items-baseline gap-2 min-w-0">
+                  <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {label}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
+                    <span className="text-sm font-medium">{labelOf(dim, row[field])}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground">{row[field]}</span>
+                  </span>
+                </div>
+              ))}
+              <div className="flex items-baseline gap-2 min-w-0">
+                <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  email
+                </span>
+                <span className="min-w-0 flex-1 break-all font-mono text-[11px] text-muted-foreground">{row.email}</span>
               </div>
-              <ReciprocalBadge row={row} />
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <PlatformBadges row={row} />
+              <span className="flex flex-wrap items-center gap-1.5">
+                <ReciprocalBadge row={row} />
+                <PlatformBadges row={row} />
+              </span>
               <span className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</span>
             </div>
-            <p className="text-muted-foreground mt-1.5 font-mono text-[11px] break-all">{row.email}</p>
           </div>
         ))}
         <p className="text-muted-foreground px-1 text-xs">
