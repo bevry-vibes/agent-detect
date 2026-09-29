@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-qwen37plus",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Qwen3.7-Plus <kilo-openrouter-qwen37plus@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Qwen3.7-Plus <kilo-openrouter-qwen37plus@local>",
     "found": {
       "detectable": [
         "harness",
@@ -131,6 +131,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226752
+    "updated_at": 1790659928
   }
 }

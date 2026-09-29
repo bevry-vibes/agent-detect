@@ -29,8 +29,8 @@
       "agent_id": "omp-huggingface-commanda",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Command A <omp-huggingface-commanda@local>",
+    "trailer assisted-by": "Assisted-by: omp · Command A <omp-huggingface-commanda@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226804
+    "updated_at": 1790659973
   }
 }

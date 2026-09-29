@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-hy3",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Hy3 <omp-openrouter-hy3@local>",
+    "trailer assisted-by": "Assisted-by: omp · Hy3 <omp-openrouter-hy3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226829
+    "updated_at": 1790659996
   }
 }

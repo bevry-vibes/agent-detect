@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-northminicode",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · North Mini Code <pi-openrouter-northminicode@local>",
+    "trailer assisted-by": "Assisted-by: Pi · North Mini Code <pi-openrouter-northminicode@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226907
+    "updated_at": 1790660066
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-lagunas21",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Laguna S 2.1 <kilo-openrouter-lagunas21@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Laguna S 2.1 <kilo-openrouter-lagunas21@local>",
     "found": {
       "detectable": [
         "harness",
@@ -108,6 +108,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226743
+    "updated_at": 1790659919
   }
 }

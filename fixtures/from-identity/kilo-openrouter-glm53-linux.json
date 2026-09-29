@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-glm53",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · GLM 5.3 <kilo-openrouter-glm53@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · GLM 5.3 <kilo-openrouter-glm53@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226733
+    "updated_at": 1790659910
   }
 }

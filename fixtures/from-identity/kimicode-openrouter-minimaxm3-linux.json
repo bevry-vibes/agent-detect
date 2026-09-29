@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-minimaxm3",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · MiniMax M3 <kimicode-openrouter-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · MiniMax M3 <kimicode-openrouter-minimaxm3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -69,6 +69,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226782
+    "updated_at": 1790659953
   }
 }

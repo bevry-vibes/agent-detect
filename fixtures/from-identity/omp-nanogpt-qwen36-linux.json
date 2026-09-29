@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-qwen36",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Qwen3.6 <omp-nanogpt-qwen36@local>",
+    "trailer assisted-by": "Assisted-by: omp · Qwen3.6 <omp-nanogpt-qwen36@local>",
     "found": {
       "detectable": [
         "harness",
@@ -128,6 +128,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226814
+    "updated_at": 1790659983
   }
 }

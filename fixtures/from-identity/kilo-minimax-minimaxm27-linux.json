@@ -29,8 +29,8 @@
       "agent_id": "kilo-minimax-minimaxm27",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · MiniMax M2.7 <kilo-minimax-minimaxm27@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · MiniMax M2.7 <kilo-minimax-minimaxm27@local>",
     "found": {
       "detectable": [
         "harness",
@@ -109,7 +109,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -131,6 +131,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226723
+    "updated_at": 1790659902
   }
 }

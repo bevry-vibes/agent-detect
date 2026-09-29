@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-musespark12",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Muse Spark 1.2 <omp-openrouter-musespark12@local>",
+    "trailer assisted-by": "Assisted-by: omp · Muse Spark 1.2 <omp-openrouter-musespark12@local>",
     "found": {
       "detectable": [
         "harness",
@@ -123,6 +123,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226837
+    "updated_at": 1790660004
   }
 }

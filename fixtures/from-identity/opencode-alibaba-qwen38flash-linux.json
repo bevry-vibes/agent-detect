@@ -29,8 +29,8 @@
       "agent_id": "opencode-alibaba-qwen38flash",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Qwen3.8 Flash <opencode-alibaba-qwen38flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3.8 Flash <opencode-alibaba-qwen38flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -70,6 +70,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226851
+    "updated_at": 1790660016
   }
 }

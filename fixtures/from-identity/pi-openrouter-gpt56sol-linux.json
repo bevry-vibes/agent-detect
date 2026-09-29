@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-gpt56sol",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · GPT-5.6 Sol <pi-openrouter-gpt56sol@local>",
+    "trailer assisted-by": "Assisted-by: Pi · GPT-5.6 Sol <pi-openrouter-gpt56sol@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226892
+    "updated_at": 1790660053
   }
 }

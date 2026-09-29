@@ -29,8 +29,8 @@
       "agent_id": "kilo-kilo-glm53flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · GLM 5.3 Flash <kilo-kilo-glm53flash@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · GLM 5.3 Flash <kilo-kilo-glm53flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -129,6 +129,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226705
+    "updated_at": 1790659885
   }
 }

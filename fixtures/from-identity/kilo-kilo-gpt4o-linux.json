@@ -29,8 +29,8 @@
       "agent_id": "kilo-kilo-gpt4o",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · GPT-4o <kilo-kilo-gpt4o@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · GPT-4o <kilo-kilo-gpt4o@local>",
     "found": {
       "detectable": [
         "harness",
@@ -152,6 +152,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226705
+    "updated_at": 1790659886
   }
 }

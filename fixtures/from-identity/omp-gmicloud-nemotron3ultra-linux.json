@@ -29,8 +29,8 @@
       "agent_id": "omp-gmicloud-nemotron3ultra",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Nemotron 3 Ultra <omp-gmicloud-nemotron3ultra@local>",
+    "trailer assisted-by": "Assisted-by: omp · Nemotron 3 Ultra <omp-gmicloud-nemotron3ultra@local>",
     "found": {
       "detectable": [
         "harness",
@@ -130,6 +130,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226802
+    "updated_at": 1790659972
   }
 }

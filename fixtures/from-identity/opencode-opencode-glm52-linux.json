@@ -29,8 +29,8 @@
       "agent_id": "opencode-opencode-glm52",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · GLM 5.2 <opencode-opencode-glm52@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GLM 5.2 <opencode-opencode-glm52@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226864
+    "updated_at": 1790660028
   }
 }

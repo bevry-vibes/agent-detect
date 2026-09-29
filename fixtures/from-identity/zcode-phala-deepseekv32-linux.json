@@ -29,8 +29,8 @@
       "agent_id": "zcode-phala-deepseekv32",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: ZCode · DeepSeek V3.2 <zcode-phala-deepseekv32@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · DeepSeek V3.2 <zcode-phala-deepseekv32@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226923
+    "updated_at": 1790660081
   }
 }

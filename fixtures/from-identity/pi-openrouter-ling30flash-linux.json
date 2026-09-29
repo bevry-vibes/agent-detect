@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-ling30flash",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Ling 3.0 Flash <pi-openrouter-ling30flash@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Ling 3.0 Flash <pi-openrouter-ling30flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226900
+    "updated_at": 1790660060
   }
 }

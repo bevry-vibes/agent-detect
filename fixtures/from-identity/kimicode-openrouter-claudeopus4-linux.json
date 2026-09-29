@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-claudeopus4",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Claude Opus 4 <kimicode-openrouter-claudeopus4@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Claude Opus 4 <kimicode-openrouter-claudeopus4@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226759
+    "updated_at": 1790659934
   }
 }

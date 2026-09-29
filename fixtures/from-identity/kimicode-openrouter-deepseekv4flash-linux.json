@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-deepseekv4flash",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · DeepSeek V4 Flash <kimicode-openrouter-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · DeepSeek V4 Flash <kimicode-openrouter-deepseekv4flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226762
+    "updated_at": 1790659936
   }
 }

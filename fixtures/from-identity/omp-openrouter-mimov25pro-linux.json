@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-mimov25pro",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · MiMo V2.5 Pro <omp-openrouter-mimov25pro@local>",
+    "trailer assisted-by": "Assisted-by: omp · MiMo V2.5 Pro <omp-openrouter-mimov25pro@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226836
+    "updated_at": 1790660002
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-hunyuant1",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Hunyuan T1 <omp-nanogpt-hunyuant1@local>",
+    "trailer assisted-by": "Assisted-by: omp · Hunyuan T1 <omp-nanogpt-hunyuant1@local>",
     "found": {
       "detectable": [
         "harness",
@@ -128,6 +128,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226811
+    "updated_at": 1790659980
   }
 }

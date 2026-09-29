@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-hy4preview",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Hy4 Preview <kilo-openrouter-hy4preview@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Hy4 Preview <kilo-openrouter-hy4preview@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226739
+    "updated_at": 1790659916
   }
 }

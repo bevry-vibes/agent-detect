@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-inklingsmall",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Inkling Small <kimicode-openrouter-inklingsmall@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Inkling Small <kimicode-openrouter-inklingsmall@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226775
+    "updated_at": 1790659947
   }
 }

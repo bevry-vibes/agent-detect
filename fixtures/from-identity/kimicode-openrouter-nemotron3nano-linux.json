@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-nemotron3nano",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Nemotron 3 Nano <kimicode-openrouter-nemotron3nano@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Nemotron 3 Nano <kimicode-openrouter-nemotron3nano@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226783
+    "updated_at": 1790659955
   }
 }

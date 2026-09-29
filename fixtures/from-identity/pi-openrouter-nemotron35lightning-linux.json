@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-nemotron35lightning",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Nemotron 3.5 Lightning <pi-openrouter-nemotron35lightning@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Nemotron 3.5 Lightning <pi-openrouter-nemotron35lightning@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226904
+    "updated_at": 1790660064
   }
 }

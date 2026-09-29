@@ -29,8 +29,8 @@
       "agent_id": "opencode-groq-gptoss120b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · GPT-OSS 120B <opencode-groq-gptoss120b@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GPT-OSS 120B <opencode-groq-gptoss120b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226854
+    "updated_at": 1790660019
   }
 }

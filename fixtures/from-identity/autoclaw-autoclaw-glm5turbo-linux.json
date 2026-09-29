@@ -107,7 +107,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -156,6 +156,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226484
+    "updated_at": 1790659689
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-nemotron35lightning",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Nemotron 3.5 Lightning <kilo-openrouter-nemotron35lightning@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Nemotron 3.5 Lightning <kilo-openrouter-nemotron35lightning@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226748
+    "updated_at": 1790659924
   }
 }

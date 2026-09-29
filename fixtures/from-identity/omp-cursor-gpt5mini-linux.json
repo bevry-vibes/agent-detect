@@ -29,8 +29,8 @@
       "agent_id": "omp-cursor-gpt5mini",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · GPT-5 mini <omp-cursor-gpt5mini@local>",
+    "trailer assisted-by": "Assisted-by: omp · GPT-5 mini <omp-cursor-gpt5mini@local>",
     "found": {
       "detectable": [
         "harness",
@@ -151,6 +151,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226795
+    "updated_at": 1790659965
   }
 }

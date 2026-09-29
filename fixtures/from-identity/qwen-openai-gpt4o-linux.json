@@ -29,8 +29,8 @@
       "agent_id": "qwen-openai-gpt4o",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code · GPT-4o <qwen-openai-gpt4o@local>",
     "found": {
       "detectable": [
         "harness",
@@ -78,7 +78,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "read-policy",
@@ -126,6 +126,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226914
+    "updated_at": 1790660073
   }
 }

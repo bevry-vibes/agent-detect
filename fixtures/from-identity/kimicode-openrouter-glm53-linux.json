@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-glm53",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · GLM 5.3 <kimicode-openrouter-glm53@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · GLM 5.3 <kimicode-openrouter-glm53@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226767
+    "updated_at": 1790659941
   }
 }

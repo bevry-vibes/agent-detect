@@ -29,8 +29,8 @@
       "agent_id": "zcode-phala-kimik26",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: ZCode · Kimi K2.6 <zcode-phala-kimik26@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · Kimi K2.6 <zcode-phala-kimik26@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226927
+    "updated_at": 1790660084
   }
 }

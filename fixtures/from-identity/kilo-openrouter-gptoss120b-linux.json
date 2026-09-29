@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-gptoss120b",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · GPT-OSS 120B <kilo-openrouter-gptoss120b@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · GPT-OSS 120B <kilo-openrouter-gptoss120b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226737
+    "updated_at": 1790659913
   }
 }

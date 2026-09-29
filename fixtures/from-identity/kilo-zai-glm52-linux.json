@@ -29,8 +29,8 @@
       "agent_id": "kilo-zai-glm52",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · GLM 5.2 <kilo-zai-glm52@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · GLM 5.2 <kilo-zai-glm52@local>",
     "found": {
       "detectable": [
         "harness",
@@ -110,7 +110,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -132,6 +132,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226755
+    "updated_at": 1790659930
   }
 }

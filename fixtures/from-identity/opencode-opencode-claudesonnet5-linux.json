@@ -29,8 +29,8 @@
       "agent_id": "opencode-opencode-claudesonnet5",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Claude Sonnet 5 <opencode-opencode-claudesonnet5@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Claude Sonnet 5 <opencode-opencode-claudesonnet5@local>",
     "found": {
       "detectable": [
         "harness",
@@ -101,6 +101,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226860
+    "updated_at": 1790660024
   }
 }

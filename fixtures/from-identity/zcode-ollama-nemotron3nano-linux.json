@@ -29,8 +29,8 @@
       "agent_id": "zcode-ollama-nemotron3nano",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: ZCode · Nemotron 3 Nano <zcode-ollama-nemotron3nano@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · Nemotron 3 Nano <zcode-ollama-nemotron3nano@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226922
+    "updated_at": 1790660080
   }
 }

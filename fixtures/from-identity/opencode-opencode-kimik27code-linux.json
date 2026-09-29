@@ -29,8 +29,8 @@
       "agent_id": "opencode-opencode-kimik27code",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Kimi K2.7 Code <opencode-opencode-kimik27code@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Kimi K2.7 Code <opencode-opencode-kimik27code@local>",
     "found": {
       "detectable": [
         "harness",
@@ -67,6 +67,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226869
+    "updated_at": 1790660033
   }
 }

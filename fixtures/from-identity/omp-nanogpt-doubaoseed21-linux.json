@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-doubaoseed21",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Doubao Seed 2.1 <omp-nanogpt-doubaoseed21@local>",
+    "trailer assisted-by": "Assisted-by: omp · Doubao Seed 2.1 <omp-nanogpt-doubaoseed21@local>",
     "found": {
       "detectable": [
         "harness",
@@ -145,6 +145,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226808
+    "updated_at": 1790659977
   }
 }

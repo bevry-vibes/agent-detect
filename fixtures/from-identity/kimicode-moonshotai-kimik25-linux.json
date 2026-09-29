@@ -29,8 +29,8 @@
       "agent_id": "kimicode-moonshotai-kimik25",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Kimi K2.5 <kimicode-moonshotai-kimik25@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Kimi K2.5 <kimicode-moonshotai-kimik25@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226757
+    "updated_at": 1790659932
   }
 }

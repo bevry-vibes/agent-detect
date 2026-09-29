@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-ernie45",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · ERNIE 4.5 <omp-nanogpt-ernie45@local>",
+    "trailer assisted-by": "Assisted-by: omp · ERNIE 4.5 <omp-nanogpt-ernie45@local>",
     "found": {
       "detectable": [
         "harness",
@@ -145,6 +145,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226809
+    "updated_at": 1790659978
   }
 }

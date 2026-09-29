@@ -29,8 +29,8 @@
       "agent_id": "opencode-clinepass-deepseekv4flash",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · DeepSeek V4 Flash <opencode-clinepass-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · DeepSeek V4 Flash <opencode-clinepass-deepseekv4flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226854
+    "updated_at": 1790660019
   }
 }

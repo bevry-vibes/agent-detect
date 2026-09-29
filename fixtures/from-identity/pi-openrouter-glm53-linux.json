@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-glm53",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · GLM 5.3 <pi-openrouter-glm53@local>",
+    "trailer assisted-by": "Assisted-by: Pi · GLM 5.3 <pi-openrouter-glm53@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226889
+    "updated_at": 1790660050
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "kilo-kilo-grok420",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Grok 4.20 <kilo-kilo-grok420@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Grok 4.20 <kilo-kilo-grok420@local>",
     "found": {
       "detectable": [
         "harness",
@@ -152,6 +152,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226709
+    "updated_at": 1790659889
   }
 }

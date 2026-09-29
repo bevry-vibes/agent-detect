@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-gemini25pro",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Gemini 2.5 Pro <kimicode-openrouter-gemini25pro@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Gemini 2.5 Pro <kimicode-openrouter-gemini25pro@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226763
+    "updated_at": 1790659937
   }
 }

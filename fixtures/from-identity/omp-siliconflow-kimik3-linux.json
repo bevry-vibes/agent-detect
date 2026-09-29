@@ -29,8 +29,8 @@
       "agent_id": "omp-siliconflow-kimik3",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Kimi K3 <omp-siliconflow-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: omp · Kimi K3 <omp-siliconflow-kimik3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -130,6 +130,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226846
+    "updated_at": 1790660011
   }
 }

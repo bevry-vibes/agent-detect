@@ -29,8 +29,8 @@
       "agent_id": "zcode-ollama-granite332b",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: ZCode · Granite 3.3 2B <zcode-ollama-granite332b@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · Granite 3.3 2B <zcode-ollama-granite332b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226922
+    "updated_at": 1790660079
   }
 }

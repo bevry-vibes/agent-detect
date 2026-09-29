@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-inkling",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Inkling <pi-openrouter-inkling@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Inkling <pi-openrouter-inkling@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226896
+    "updated_at": 1790660056
   }
 }

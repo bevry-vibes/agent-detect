@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-lagunaxs21",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Laguna XS 2.1 <kimicode-openrouter-lagunaxs21@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Laguna XS 2.1 <kimicode-openrouter-lagunaxs21@local>",
     "found": {
       "detectable": [
         "harness",
@@ -69,6 +69,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226778
+    "updated_at": 1790659950
   }
 }

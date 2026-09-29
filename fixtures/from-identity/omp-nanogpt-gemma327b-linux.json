@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-gemma327b",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Gemma 3 27B <omp-nanogpt-gemma327b@local>",
+    "trailer assisted-by": "Assisted-by: omp · Gemma 3 27B <omp-nanogpt-gemma327b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -128,6 +128,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226809
+    "updated_at": 1790659978
   }
 }

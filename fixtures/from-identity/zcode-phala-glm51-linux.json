@@ -29,8 +29,8 @@
       "agent_id": "zcode-phala-glm51",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: ZCode · GLM 5.1 <zcode-phala-glm51@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · GLM 5.1 <zcode-phala-glm51@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226924
+    "updated_at": 1790660081
   }
 }

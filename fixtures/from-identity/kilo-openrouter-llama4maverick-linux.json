@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-llama4maverick",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Llama 4 Maverick <kilo-openrouter-llama4maverick@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Llama 4 Maverick <kilo-openrouter-llama4maverick@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226745
+    "updated_at": 1790659921
   }
 }

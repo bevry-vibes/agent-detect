@@ -29,8 +29,8 @@
       "agent_id": "pi-cerebras-gptoss120b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
+    "trailer assisted-by": "Assisted-by: Pi · GPT-OSS 120B <pi-cerebras-gptoss120b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226873
+    "updated_at": 1790660036
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-claudesonnet5",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Claude Sonnet 5 <kilo-openrouter-claudesonnet5@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Claude Sonnet 5 <kilo-openrouter-claudesonnet5@local>",
     "found": {
       "detectable": [
         "harness",
@@ -131,6 +131,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226726
+    "updated_at": 1790659904
   }
 }

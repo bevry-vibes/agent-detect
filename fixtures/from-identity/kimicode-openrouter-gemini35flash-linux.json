@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-gemini35flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Gemini 3.5 Flash <kimicode-openrouter-gemini35flash@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Gemini 3.5 Flash <kimicode-openrouter-gemini35flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226764
+    "updated_at": 1790659938
   }
 }

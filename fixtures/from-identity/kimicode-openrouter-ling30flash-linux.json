@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-ling30flash",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Ling 3.0 Flash <kimicode-openrouter-ling30flash@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Ling 3.0 Flash <kimicode-openrouter-ling30flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226778
+    "updated_at": 1790659950
   }
 }

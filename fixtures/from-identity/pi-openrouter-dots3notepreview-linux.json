@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-dots3notepreview",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Dots 3 Note Preview <pi-openrouter-dots3notepreview@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Dots 3 Note Preview <pi-openrouter-dots3notepreview@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226885
+    "updated_at": 1790660046
   }
 }

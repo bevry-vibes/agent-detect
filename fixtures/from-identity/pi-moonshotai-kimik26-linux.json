@@ -29,8 +29,8 @@
       "agent_id": "pi-moonshotai-kimik26",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Kimi K2.6 <pi-moonshotai-kimik26@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Kimi K2.6 <pi-moonshotai-kimik26@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226879
+    "updated_at": 1790660042
   }
 }

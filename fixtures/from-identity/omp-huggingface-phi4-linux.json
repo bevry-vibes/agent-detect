@@ -29,8 +29,8 @@
       "agent_id": "omp-huggingface-phi4",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Phi-4 <omp-huggingface-phi4@local>",
+    "trailer assisted-by": "Assisted-by: omp · Phi-4 <omp-huggingface-phi4@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226806
+    "updated_at": 1790659975
   }
 }

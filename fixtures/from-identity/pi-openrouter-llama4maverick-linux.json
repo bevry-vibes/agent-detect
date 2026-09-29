@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-llama4maverick",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Llama 4 Maverick <pi-openrouter-llama4maverick@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Llama 4 Maverick <pi-openrouter-llama4maverick@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226901
+    "updated_at": 1790660061
   }
 }

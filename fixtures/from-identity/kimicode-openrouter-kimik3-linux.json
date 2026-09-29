@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-kimik3",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Kimi K3 <kimicode-openrouter-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Kimi K3 <kimicode-openrouter-kimik3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226777
+    "updated_at": 1790659949
   }
 }

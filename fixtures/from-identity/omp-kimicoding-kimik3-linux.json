@@ -29,8 +29,8 @@
       "agent_id": "omp-kimicoding-kimik3",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Kimi K3 <omp-kimicoding-kimik3@local>",
+    "trailer assisted-by": "Assisted-by: omp · Kimi K3 <omp-kimicoding-kimik3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -136,6 +136,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226807
+    "updated_at": 1790659976
   }
 }

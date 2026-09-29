@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-nexn25mini",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Nex N2.5 Mini <kimicode-openrouter-nexn25mini@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Nex N2.5 Mini <kimicode-openrouter-nexn25mini@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226784
+    "updated_at": 1790659956
   }
 }

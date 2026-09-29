@@ -29,8 +29,8 @@
       "agent_id": "zcode-phala-qwen35397ba17b",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: ZCode · Qwen3.5 397B A17B <zcode-phala-qwen35397ba17b@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · Qwen3.5 397B A17B <zcode-phala-qwen35397ba17b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226929
+    "updated_at": 1790660085
   }
 }

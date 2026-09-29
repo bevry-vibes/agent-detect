@@ -29,8 +29,8 @@
       "agent_id": "opencode-alibaba-qwen3coder",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Qwen3 Coder <opencode-alibaba-qwen3coder@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3 Coder <opencode-alibaba-qwen3coder@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226852
+    "updated_at": 1790660017
   }
 }

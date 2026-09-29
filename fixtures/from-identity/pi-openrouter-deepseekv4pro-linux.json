@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-deepseekv4pro",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · DeepSeek V4 Pro <pi-openrouter-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: Pi · DeepSeek V4 Pro <pi-openrouter-deepseekv4pro@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226884
+    "updated_at": 1790660046
   }
 }

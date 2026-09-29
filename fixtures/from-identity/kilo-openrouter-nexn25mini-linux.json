@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-nexn25mini",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Nex N2.5 Mini <kilo-openrouter-nexn25mini@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Nex N2.5 Mini <kilo-openrouter-nexn25mini@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226750
+    "updated_at": 1790659925
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-nemotron3super",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Nemotron 3 Super <kilo-openrouter-nemotron3super@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Nemotron 3 Super <kilo-openrouter-nemotron3super@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226749
+    "updated_at": 1790659924
   }
 }

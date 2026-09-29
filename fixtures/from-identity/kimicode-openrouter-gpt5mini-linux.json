@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-gpt5mini",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · GPT-5 mini <kimicode-openrouter-gpt5mini@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · GPT-5 mini <kimicode-openrouter-gpt5mini@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226770
+    "updated_at": 1790659944
   }
 }

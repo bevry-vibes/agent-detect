@@ -29,8 +29,8 @@
       "agent_id": "kilo-kilo-kimik27code",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Kimi K2.7 Code <kilo-kilo-kimik27code@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Kimi K2.7 Code <kilo-kilo-kimik27code@local>",
     "found": {
       "detectable": [
         "harness",
@@ -129,6 +129,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226712
+    "updated_at": 1790659892
   }
 }

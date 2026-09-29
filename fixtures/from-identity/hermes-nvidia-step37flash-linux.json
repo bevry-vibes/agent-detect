@@ -21,11 +21,11 @@
       "model_short_title": null,
       "model_name": "step-3.7-flash",
       "model_id": "step37flash",
-      "model_openness": null,
+      "model_openness": "open-weight",
       "model_open_training": null,
       "model_closed_training": null,
-      "model_license": null,
-      "model_reciprocity": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
       "agent_id": "hermes-nvidia-step37flash",
       "reciprocal": false
     },
@@ -50,7 +50,10 @@
         "https://www.nvidia.com/en-us/about-nvidia/privacy-policy/",
         "https://www.nvidia.com/en-us/about-nvidia/terms-of-service/"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://huggingface.co/stepfun-ai/Step-3.7-Flash",
+        "https://huggingface.co/stepfun-ai/Step-3.7-Flash/blob/main/LICENSE"
+      ],
       "scandal-urls": []
     },
     "explain": {
@@ -78,25 +81,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
-            },
-            {
-              "kind": "preflight-combo",
-              "instruction": "verify a candidate combo resolves reciprocal before switching",
-              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
-            }
-          ]
-        },
-        {
-          "entity": "model",
-          "code": "model-openness-unknown",
-          "summary": "the Step 3.7 Flash model is absent from the model rules — its openness is unknown",
-          "actions": [
-            {
-              "kind": "contribute-data",
-              "instruction": "the Step 3.7 Flash model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
-              "command": "agent-detect found",
-              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -113,11 +98,10 @@
     "check-reciprocal": "not reciprocal",
     "check-reciprocal.stderr": [
       "agent (harness, provider, model) data complete and requirement failed",
-      "  - provider: the NVIDIA NIM provider trains on user data by default (closed_training = enforced) (see: agent-detect explain)",
-      "  - model: the Step 3.7 Flash model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - provider: the NVIDIA NIM provider trains on user data by default (closed_training = enforced) (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1790226618
+    "updated_at": 1790659808
   }
 }

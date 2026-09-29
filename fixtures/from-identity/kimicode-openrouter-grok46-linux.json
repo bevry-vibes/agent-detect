@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-grok46",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Grok 4.6 <kimicode-openrouter-grok46@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Grok 4.6 <kimicode-openrouter-grok46@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226773
+    "updated_at": 1790659946
   }
 }

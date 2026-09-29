@@ -29,8 +29,8 @@
       "agent_id": "opencode-cerebras-gemma431b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Gemma 4 31B <opencode-cerebras-gemma431b@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Gemma 4 31B <opencode-cerebras-gemma431b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226853
+    "updated_at": 1790660017
   }
 }

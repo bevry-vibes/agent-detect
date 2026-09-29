@@ -29,8 +29,8 @@
       "agent_id": "opencode-alibaba-qwen3235ba22b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Qwen3 235B A22B <opencode-alibaba-qwen3235ba22b@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3 235B A22B <opencode-alibaba-qwen3235ba22b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226850
+    "updated_at": 1790660015
   }
 }

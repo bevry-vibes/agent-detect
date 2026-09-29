@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-inkling",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Inkling <omp-openrouter-inkling@local>",
+    "trailer assisted-by": "Assisted-by: omp · Inkling <omp-openrouter-inkling@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226830
+    "updated_at": 1790659997
   }
 }

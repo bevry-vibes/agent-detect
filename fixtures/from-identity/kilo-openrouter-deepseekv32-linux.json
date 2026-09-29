@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-deepseekv32",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · DeepSeek V3.2 <kilo-openrouter-deepseekv32@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · DeepSeek V3.2 <kilo-openrouter-deepseekv32@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226727
+    "updated_at": 1790659905
   }
 }

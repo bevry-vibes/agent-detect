@@ -29,8 +29,8 @@
       "agent_id": "reasonix-minimax-minimaxm25",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Reasonix · MiniMax M2.5 <reasonix-minimax-minimaxm25@local>",
+    "trailer assisted-by": "Assisted-by: Reasonix · MiniMax M2.5 <reasonix-minimax-minimaxm25@local>",
     "found": {
       "detectable": [
         "harness",
@@ -108,7 +108,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -130,6 +130,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226918
+    "updated_at": 1790660076
   }
 }

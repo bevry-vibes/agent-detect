@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-northminicode",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · North Mini Code <kimicode-openrouter-northminicode@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · North Mini Code <kimicode-openrouter-northminicode@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226785
+    "updated_at": 1790659957
   }
 }

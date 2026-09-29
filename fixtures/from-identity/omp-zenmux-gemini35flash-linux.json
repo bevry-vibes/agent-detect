@@ -29,8 +29,8 @@
       "agent_id": "omp-zenmux-gemini35flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Gemini 3.5 Flash <omp-zenmux-gemini35flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -151,6 +151,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226847
+    "updated_at": 1790660013
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "omp-siliconflow-deepseekv4flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · DeepSeek V4 Flash <omp-siliconflow-deepseekv4flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · DeepSeek V4 Flash <omp-siliconflow-deepseekv4flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -130,6 +130,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226845
+    "updated_at": 1790660011
   }
 }

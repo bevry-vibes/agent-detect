@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-glm52",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · GLM 5.2 <omp-openrouter-glm52@local>",
+    "trailer assisted-by": "Assisted-by: omp · GLM 5.2 <omp-openrouter-glm52@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226823
+    "updated_at": 1790659990
   }
 }

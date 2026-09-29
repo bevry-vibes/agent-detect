@@ -29,8 +29,8 @@
       "agent_id": "omp-githubcopilot-gemini25pro",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Gemini 2.5 Pro <omp-githubcopilot-gemini25pro@local>",
+    "trailer assisted-by": "Assisted-by: omp · Gemini 2.5 Pro <omp-githubcopilot-gemini25pro@local>",
     "found": {
       "detectable": [
         "harness",
@@ -105,7 +105,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "read-policy",
@@ -154,6 +154,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226796
+    "updated_at": 1790659967
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-lagunaxs21",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Laguna XS 2.1 <omp-openrouter-lagunaxs21@local>",
+    "trailer assisted-by": "Assisted-by: omp · Laguna XS 2.1 <omp-openrouter-lagunaxs21@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226834
+    "updated_at": 1790660000
   }
 }

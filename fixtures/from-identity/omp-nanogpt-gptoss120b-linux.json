@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-gptoss120b",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · GPT-OSS 120B <omp-nanogpt-gptoss120b@local>",
+    "trailer assisted-by": "Assisted-by: omp · GPT-OSS 120B <omp-nanogpt-gptoss120b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -128,6 +128,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226810
+    "updated_at": 1790659979
   }
 }

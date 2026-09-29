@@ -29,8 +29,8 @@
       "agent_id": "pi-groq-llama318b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Llama 3.1 8B <pi-groq-llama318b@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Llama 3.1 8B <pi-groq-llama318b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226875
+    "updated_at": 1790660038
   }
 }

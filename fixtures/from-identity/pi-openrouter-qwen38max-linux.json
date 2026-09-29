@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-qwen38max",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Qwen3.8-Max <pi-openrouter-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Qwen3.8-Max <pi-openrouter-qwen38max@local>",
     "found": {
       "detectable": [
         "harness",
@@ -104,6 +104,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226910
+    "updated_at": 1790660069
   }
 }

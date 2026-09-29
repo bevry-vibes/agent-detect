@@ -29,8 +29,8 @@
       "agent_id": "qwen-qwen-qwen38max",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Qwen Code · Qwen3.8-Max <qwen-qwen-qwen38max@local>",
+    "trailer assisted-by": "Assisted-by: Qwen Code · Qwen3.8-Max <qwen-qwen-qwen38max@local>",
     "found": {
       "detectable": [
         "harness",
@@ -82,7 +82,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -131,6 +131,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226915
+    "updated_at": 1790660074
   }
 }

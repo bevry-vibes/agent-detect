@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-deepseekv4pro",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · DeepSeek V4 Pro <omp-openrouter-deepseekv4pro@local>",
+    "trailer assisted-by": "Assisted-by: omp · DeepSeek V4 Pro <omp-openrouter-deepseekv4pro@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226818
+    "updated_at": 1790659986
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-glm47flash",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Z.ai GLM 4.7 Flash <pi-openrouter-glm47flash@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Z.ai GLM 4.7 Flash <pi-openrouter-glm47flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226887
+    "updated_at": 1790660049
   }
 }

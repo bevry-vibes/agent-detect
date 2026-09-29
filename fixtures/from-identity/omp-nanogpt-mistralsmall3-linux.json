@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-mistralsmall3",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Mistral Small 3 <omp-nanogpt-mistralsmall3@local>",
+    "trailer assisted-by": "Assisted-by: omp · Mistral Small 3 <omp-nanogpt-mistralsmall3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -128,6 +128,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226813
+    "updated_at": 1790659981
   }
 }

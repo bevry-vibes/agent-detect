@@ -29,8 +29,8 @@
       "agent_id": "omp-openrouter-ling30flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Ling 3.0 Flash <omp-openrouter-ling30flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Ling 3.0 Flash <omp-openrouter-ling30flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226834
+    "updated_at": 1790660000
   }
 }

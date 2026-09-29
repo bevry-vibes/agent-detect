@@ -29,8 +29,8 @@
       "agent_id": "opencode-groq-llama4",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Llama 4 <opencode-groq-llama4@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Llama 4 <opencode-groq-llama4@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226856
+    "updated_at": 1790660020
   }
 }

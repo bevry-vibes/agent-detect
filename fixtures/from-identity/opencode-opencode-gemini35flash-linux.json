@@ -29,8 +29,8 @@
       "agent_id": "opencode-opencode-gemini35flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Gemini 3.5 Flash <opencode-opencode-gemini35flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Gemini 3.5 Flash <opencode-opencode-gemini35flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -101,6 +101,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226861
+    "updated_at": 1790660025
   }
 }

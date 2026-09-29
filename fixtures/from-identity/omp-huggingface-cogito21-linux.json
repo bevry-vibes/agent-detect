@@ -29,8 +29,8 @@
       "agent_id": "omp-huggingface-cogito21",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Cogito 2.1 <omp-huggingface-cogito21@local>",
+    "trailer assisted-by": "Assisted-by: omp · Cogito 2.1 <omp-huggingface-cogito21@local>",
     "found": {
       "detectable": [
         "harness",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226803
+    "updated_at": 1790659973
   }
 }

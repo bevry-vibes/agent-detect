@@ -29,8 +29,8 @@
       "agent_id": "omp-nanogpt-ling30flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Ling 3.0 Flash <omp-nanogpt-ling30flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Ling 3.0 Flash <omp-nanogpt-ling30flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -128,6 +128,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226812
+    "updated_at": 1790659981
   }
 }

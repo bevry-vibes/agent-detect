@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-claudesonnet5",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Claude Sonnet 5 <pi-openrouter-claudesonnet5@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Claude Sonnet 5 <pi-openrouter-claudesonnet5@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226882
+    "updated_at": 1790660044
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-dots3notepreview",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Dots 3 Note Preview <kimicode-openrouter-dots3notepreview@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Dots 3 Note Preview <kimicode-openrouter-dots3notepreview@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226763
+    "updated_at": 1790659937
   }
 }

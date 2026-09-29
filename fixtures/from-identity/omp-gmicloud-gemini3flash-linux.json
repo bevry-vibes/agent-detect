@@ -29,8 +29,8 @@
       "agent_id": "omp-gmicloud-gemini3flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · Gemini 3 Flash <omp-gmicloud-gemini3flash@local>",
+    "trailer assisted-by": "Assisted-by: omp · Gemini 3 Flash <omp-gmicloud-gemini3flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -153,6 +153,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226800
+    "updated_at": 1790659970
   }
 }

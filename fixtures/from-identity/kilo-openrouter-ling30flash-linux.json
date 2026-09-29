@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-ling30flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Ling 3.0 Flash <kilo-openrouter-ling30flash@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Ling 3.0 Flash <kilo-openrouter-ling30flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226744
+    "updated_at": 1790659920
   }
 }

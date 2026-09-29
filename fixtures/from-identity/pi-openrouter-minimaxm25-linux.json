@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-minimaxm25",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · MiniMax M2.5 <pi-openrouter-minimaxm25@local>",
+    "trailer assisted-by": "Assisted-by: Pi · MiniMax M2.5 <pi-openrouter-minimaxm25@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226902
+    "updated_at": 1790660062
   }
 }

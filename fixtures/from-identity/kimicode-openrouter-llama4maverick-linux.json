@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-llama4maverick",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Llama 4 Maverick <kimicode-openrouter-llama4maverick@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Llama 4 Maverick <kimicode-openrouter-llama4maverick@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226779
+    "updated_at": 1790659951
   }
 }

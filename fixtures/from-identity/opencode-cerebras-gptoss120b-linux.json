@@ -29,8 +29,8 @@
       "agent_id": "opencode-cerebras-gptoss120b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · GPT-OSS 120B <opencode-cerebras-gptoss120b@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GPT-OSS 120B <opencode-cerebras-gptoss120b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226853
+    "updated_at": 1790660018
   }
 }

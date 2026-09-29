@@ -29,8 +29,8 @@
       "agent_id": "omp-minimaxcode-minimaxm3",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: omp · MiniMax M3 <omp-minimaxcode-minimaxm3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -109,7 +109,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -131,6 +131,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226808
+    "updated_at": 1790659977
   }
 }

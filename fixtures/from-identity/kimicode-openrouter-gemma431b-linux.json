@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-gemma431b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Gemma 4 31B <kimicode-openrouter-gemma431b@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Gemma 4 31B <kimicode-openrouter-gemma431b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226764
+    "updated_at": 1790659938
   }
 }

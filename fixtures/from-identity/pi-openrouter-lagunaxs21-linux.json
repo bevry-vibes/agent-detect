@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-lagunaxs21",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · Laguna XS 2.1 <pi-openrouter-lagunaxs21@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Laguna XS 2.1 <pi-openrouter-lagunaxs21@local>",
     "found": {
       "detectable": [
         "harness",
@@ -69,6 +69,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226900
+    "updated_at": 1790660060
   }
 }

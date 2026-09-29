@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-dots3notepreview",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Dots 3 Note Preview <kilo-openrouter-dots3notepreview@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Dots 3 Note Preview <kilo-openrouter-dots3notepreview@local>",
     "found": {
       "detectable": [
         "harness",
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226729
+    "updated_at": 1790659906
   }
 }

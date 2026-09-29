@@ -29,8 +29,8 @@
       "agent_id": "kilo-openrouter-minimaxm3",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · MiniMax M3 <kilo-openrouter-minimaxm3@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · MiniMax M3 <kilo-openrouter-minimaxm3@local>",
     "found": {
       "detectable": [
         "harness",
@@ -108,6 +108,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226747
+    "updated_at": 1790659923
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "pi-cloudflareworkersai-glm53flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · GLM 5.3 Flash <pi-cloudflareworkersai-glm53flash@local>",
+    "trailer assisted-by": "Assisted-by: Pi · GLM 5.3 Flash <pi-cloudflareworkersai-glm53flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -81,7 +81,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, hyper)"
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
             },
             {
               "kind": "preflight-combo",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226874
+    "updated_at": 1790660037
   }
 }

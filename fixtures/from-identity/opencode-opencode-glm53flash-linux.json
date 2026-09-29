@@ -29,8 +29,8 @@
       "agent_id": "opencode-opencode-glm53flash",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · GLM 5.3 Flash <opencode-opencode-glm53flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · GLM 5.3 Flash <opencode-opencode-glm53flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -67,6 +67,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226865
+    "updated_at": 1790660029
   }
 }

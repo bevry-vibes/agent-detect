@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-claudesonnet4",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Claude Sonnet 4 <kimicode-openrouter-claudesonnet4@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Claude Sonnet 4 <kimicode-openrouter-claudesonnet4@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226760
+    "updated_at": 1790659934
   }
 }

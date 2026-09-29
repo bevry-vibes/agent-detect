@@ -29,8 +29,8 @@
       "agent_id": "opencode-opencode-gemini3pro",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Gemini 3 Pro <opencode-opencode-gemini3pro@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Gemini 3 Pro <opencode-opencode-gemini3pro@local>",
     "found": {
       "detectable": [
         "harness",
@@ -101,6 +101,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226862
+    "updated_at": 1790660026
   }
 }

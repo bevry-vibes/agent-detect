@@ -29,8 +29,8 @@
       "agent_id": "kimicode-openrouter-claudefable5",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kimi Code · Claude Fable 5 <kimicode-openrouter-claudefable5@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · Claude Fable 5 <kimicode-openrouter-claudefable5@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226759
+    "updated_at": 1790659933
   }
 }

@@ -29,8 +29,8 @@
       "agent_id": "opencode-opencode-grok46",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Grok 4.6 <opencode-opencode-grok46@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Grok 4.6 <opencode-opencode-grok46@local>",
     "found": {
       "detectable": [
         "harness",
@@ -101,6 +101,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226868
+    "updated_at": 1790660031
   }
 }

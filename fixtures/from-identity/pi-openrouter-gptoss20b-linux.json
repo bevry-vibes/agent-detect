@@ -29,8 +29,8 @@
       "agent_id": "pi-openrouter-gptoss20b",
       "reciprocal": true
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Pi · GPT-OSS 20B <pi-openrouter-gptoss20b@local>",
+    "trailer assisted-by": "Assisted-by: Pi · GPT-OSS 20B <pi-openrouter-gptoss20b@local>",
     "found": {
       "detectable": [
         "harness",
@@ -68,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1790226893
+    "updated_at": 1790660054
   }
 }

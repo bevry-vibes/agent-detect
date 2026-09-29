@@ -29,8 +29,8 @@
       "agent_id": "kilo-kilo-qwen37flash",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: Kilo Code · Qwen3.7-Flash <kilo-kilo-qwen37flash@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Qwen3.7-Flash <kilo-kilo-qwen37flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -129,6 +129,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226720
+    "updated_at": 1790659899
   }
 }

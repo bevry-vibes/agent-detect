@@ -29,8 +29,8 @@
       "agent_id": "opencode-alibaba-qwen37plus",
       "reciprocal": false
     },
-    "trailer co-author": null,
-    "trailer assisted-by": null,
+    "trailer co-author": "Co-authored-by: OpenCode · Qwen3.7-Plus <opencode-alibaba-qwen37plus@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Qwen3.7-Plus <opencode-alibaba-qwen37plus@local>",
     "found": {
       "detectable": [
         "harness",
@@ -102,6 +102,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1790226851
+    "updated_at": 1790660016
   }
 }
