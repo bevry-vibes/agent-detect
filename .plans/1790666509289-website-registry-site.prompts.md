@@ -186,3 +186,28 @@ from the same branch; no prompts were lost.
 > rate limit reset,
 >
 > move the platform and arch cards for the cli sectipon to be before the install and use cards, so they aren't duplicafted
+
+## 24 — 2026-09-29
+
+> put the platform and arch controls for the cli setion on the same line if supported
+>
+> put the install card before the use card, rename the use card to be commands, add a new card called prompts; that includes these prompts:
+>
+> Make a new project with Bevry's conventions.
+> `Scaffold a new project using github.com/bevry-vibes/skills. The project will ...`
+>
+> Restrict your project to reciprocal agents only.
+> Embedded code snippet of the relevant lines of https://github.com/bevry-vibes/skills/blob/main/policy.md with hyperlink - I believe github may provide a snippet, or we make our own.
+>
+> Restrict a skill to a specific model.
+> Snippet to relevant lines of https://github.com/bevry-vibes/skills/blob/main/minimax.md
+>
+> Instruct the agent to use co-authored-by trailer for commits.
+> Snippet to relevant lines of https://github.com/bevry-vibes/skills/blob/main/commits.md
+>
+> Instruct the agent to use assisted-by trailer for issues.
+> Snippet to relevant lines of https://github.com/bevry-vibes/skills/blob/main/commits.md#github-issues-pull-requests-discussions-and-comments
+>
+> Have the cards be atop of each other.
+>
+> Change the header bylines to be underneatht he header

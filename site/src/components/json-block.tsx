@@ -7,7 +7,19 @@ import { Button } from "@/components/ui/button";
 /** a copyable block of JSON (or any value) — the detail view's building block.
  * `command` adds a second button next to copy that copies the CLI invocation
  * that reproduces this block with the recipe-mode flags. */
-export function JsonBlock({ title, value, command, className }: { title: string; value: unknown; command?: string; className?: string }) {
+export function JsonBlock({
+  title,
+  titleHref,
+  value,
+  command,
+  className,
+}: {
+  title: string;
+  titleHref?: string;
+  value: unknown;
+  command?: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const [copiedCommand, setCopiedCommand] = useState(false);
   const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -25,7 +37,15 @@ export function JsonBlock({ title, value, command, className }: { title: string;
   return (
     <section className={cn("overflow-hidden rounded-lg border", className)}>
       <header className="bg-muted/50 flex items-center justify-between gap-2 border-b px-3 py-1.5">
-        <h4 className="font-mono text-xs font-medium">{title}</h4>
+        <h4 className="font-mono text-xs font-medium">
+          {titleHref ? (
+            <a href={titleHref} target="_blank" rel="noreferrer" className="underline underline-offset-4 hover:text-foreground">
+              {title}
+            </a>
+          ) : (
+            title
+          )}
+        </h4>
         <div className="flex items-center gap-1">
           {command && (
             <Button

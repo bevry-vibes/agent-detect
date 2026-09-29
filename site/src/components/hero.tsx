@@ -1,9 +1,9 @@
 import { Mail, ScrollText, SlidersHorizontal, WifiOff } from "lucide-react";
 import { Terminal } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import type { Registry } from "@/lib/registry";
-import { CodeLine } from "@/components/json-block";
+import { CodeLine, JsonBlock } from "@/components/json-block";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -115,10 +115,8 @@ export function Hero() {
   return (
     <article id="cli" className="scroll-mt-14 border-b">
       <div className="mx-auto max-w-7xl px-4 py-10">
-        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">CLI for Agent Detection</h1>
-          <p className="text-lg font-medium">Give your agent self-awareness.</p>
-        </div>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">CLI for Agent Detection</h1>
+        <p className="mt-2 text-lg font-medium">Give your agent self-awareness.</p>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           <Feature icon={Mail}>
             Generate accurate <code className="font-mono text-[0.9em]">Co-Authored-By</code> &amp;{" "}
@@ -134,29 +132,12 @@ export function Hero() {
         </ul>
 
         {/* one shared platform/arch selection — the cards below never repeat it */}
-        <div className="mt-10 flex flex-col gap-3">
+        <div className="mt-10 flex flex-wrap items-center gap-x-10 gap-y-3">
           <ToggleRow label="platform" options={PLATFORMS} value={platform} onChange={(v) => setPlatform(v as Platform)} />
           <ToggleRow label="arch" options={ARCHES} value={arch} onChange={(v) => setArch(v as Arch)} />
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Card id="use" className="min-w-0 scroll-mt-14">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Terminal className="size-4" /> Use
-              </CardTitle>
-              <CardDescription>click a line to copy it — exactly one trailer per artifact, never both</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              {usage.map((u) => (
-                <div key={u.code} className="flex flex-col gap-1">
-                  <CodeLine code={u.code} />
-                  <p className="text-muted-foreground pl-1 text-xs">{u.what}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
+        <div className="mt-6 flex flex-col gap-4">
           <Card id="install" className="min-w-0 scroll-mt-14">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -192,6 +173,69 @@ export function Hero() {
               </div>
             </CardContent>
           </Card>
+
+          <Card id="commands" className="min-w-0 scroll-mt-14">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Terminal className="size-4" /> Commands
+              </CardTitle>
+              <CardDescription>click a line to copy it — exactly one trailer per artifact, never both</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {usage.map((u) => (
+                <div key={u.code} className="flex flex-col gap-1">
+                  <CodeLine code={u.code} />
+                  <p className="text-muted-foreground pl-1 text-xs">{u.what}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card id="prompts" className="min-w-0 scroll-mt-14">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Terminal className="size-4" /> Prompts
+              </CardTitle>
+              <CardDescription>
+                paste these to your agent — snippets load live from{" "}
+                <a
+                  className="underline underline-offset-4"
+                  href="https://github.com/bevry-vibes/skills"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  bevry-vibes/skills
+                </a>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Make a new project with Bevry's conventions.</p>
+                <CodeLine code="Scaffold a new project using github.com/bevry-vibes/skills. The project will ..." />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Restrict your project to reciprocal agents only.</p>
+                <SkillSnippet file="policy.md" startWith="# AI Policy" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Restrict a skill to a specific model.</p>
+                <SkillSnippet file="minimax.md" startWith="# MiniMax" endBefore="### Never use" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Instruct the agent to use co-authored-by trailer for commits.</p>
+                <SkillSnippet file="commits.md" startWith="### co-author trailer" endBefore="### signing" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium">Instruct the agent to use assisted-by trailer for issues.</p>
+                <SkillSnippet
+                  file="commits.md"
+                  startWith="## github issues"
+                  endBefore="## releases"
+                  anchor="#github-issues-pull-requests-discussions-and-comments"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </article>
@@ -213,10 +257,8 @@ export function RegistryIntro({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Registry of Agent Detections</h1>
-        <p className="text-lg font-medium">Agents now capable of self-awareness.</p>
-      </div>
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Registry of Agent Detections</h1>
+      <p className="text-lg font-medium">Agents now capable of self-awareness.</p>
       <p className="text-muted-foreground text-sm">
         Past inferences from our test suite. Missing yours,{" "}
         <a
@@ -243,5 +285,81 @@ export function RegistryIntro({
         </a>
       </div>
     </div>
+  );
+}
+
+// skill snippets are fetched once per session and shared across renders
+const snippetCache = new Map<string, { lines: string[]; start: number }>();
+
+interface SnippetSpec {
+  file: "policy.md" | "minimax.md" | "commits.md";
+  /** the line the snippet starts at (substring match) */
+  startWith: string;
+  /** the line the snippet stops before (substring match); omitted = to the end */
+  endBefore?: string;
+  /** a github anchor on the blob url, when the section has one */
+  anchor?: string;
+}
+
+/** the relevant lines of a bevry-vibes/skills doc, fetched live and linked to
+ * the github permalink covering exactly the shown lines */
+function SkillSnippet(spec: SnippetSpec) {
+  const key = `${spec.file}:${spec.startWith}`;
+  const [meta, setMeta] = useState<{ lines: string[]; start: number } | null>(() => snippetCache.get(key) ?? null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (meta) return;
+    let alive = true;
+    fetch(`https://raw.githubusercontent.com/bevry-vibes/skills/main/${spec.file}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.text();
+      })
+      .then((text) => {
+        const all = text.split("\n");
+        const start = all.findIndex((l) => l.includes(spec.startWith));
+        if (start === -1) throw new Error("anchor not found");
+        let end = all.length;
+        if (spec.endBefore) {
+          const endBefore = spec.endBefore ?? "";
+          const stop = endBefore ? all.findIndex((l, i) => i > start && l.includes(endBefore)) : -1;
+          if (stop !== -1) end = stop;
+        }
+        const found = { lines: all.slice(start, end).join("\n").trimEnd().split("\n"), start };
+        snippetCache.set(key, found);
+        if (alive) setMeta(found);
+      })
+      .catch(() => {
+        if (alive) setFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spec.file, spec.startWith, spec.endBefore]);
+
+  if (failed) {
+    return (
+      <a
+        className="text-muted-foreground inline-flex items-center gap-1 rounded-lg border border-dashed px-3 py-2 font-mono text-xs underline underline-offset-4"
+        href={`https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        view {spec.file} on GitHub ↗
+      </a>
+    );
+  }
+  if (!meta) {
+    return <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-2 font-mono text-xs">loading {spec.file}…</p>;
+  }
+  const to = meta.start + meta.lines.length;
+  return (
+    <JsonBlock
+      title={`${spec.file} · L${meta.start + 1}–L${to}`}
+      titleHref={`https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}#L${meta.start + 1}-L${to}`}
+      value={meta.lines.join("\n")}
+    />
   );
 }
