@@ -397,7 +397,7 @@ function InlinePrompt({ description, text }: { description: string; text: string
   return (
     <section className="overflow-hidden rounded-lg border">
       <SnippetHeader description={description} open={open} onToggle={() => setOpen(!open)}>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" onClick={copy}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" onClick={copy}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : "copy prompt"}
         </Button>
@@ -530,15 +530,15 @@ function SkillSnippet(spec: SnippetSpec) {
   return (
     <section className="overflow-hidden rounded-lg border">
       <SnippetHeader description={spec.description} open={open} onToggle={() => setOpen(!open)}>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" onClick={copyText}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" onClick={copyText}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : stage === "file" ? "copy file" : "copy prompt"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" onClick={toggleStage}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" onClick={toggleStage}>
           <Eye className="size-3" />
           {stage === "file" ? "show prompt" : "show file"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1 text-xs max-sm:px-0 max-sm:text-[11px]" asChild>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:text-[11px]!" asChild>
           <a href={linePermalink} target="_blank" rel="noreferrer" title="view file" aria-label="view file">
             <ExternalLink className="size-3" />
             view file

@@ -147,26 +147,41 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
             tabIndex={0}
             onClick={() => onSelect(row.agent_id)}
             onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
-            className={`${CARD_LAZY} cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
+            className={`${CARD_LAZY} [container-type:inline-size] cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
           >
             <div className="flex min-w-0 flex-col gap-1 leading-snug">
-              {/* the id heads the card, styled like the result page's title */}
-              <p className="min-w-0 break-all font-mono text-lg font-semibold tracking-tight">{row.agent_id}</p>
+              {/* the id heads the card like the result page title, sized to its
+                container so the line never wraps — every card line shrinks to
+                stay whole (mono ≈ 0.62em/char, sans ≈ 0.56em/char) */}
+              <p
+                className="min-w-0 whitespace-nowrap font-mono font-semibold tracking-tight"
+                style={{ fontSize: `min(16px, max(8px, (100cqw - 8px) / ${(0.62 * row.agent_id.length).toFixed(2)}))` }}
+              >
+                {row.agent_id}
+              </p>
               {([
                 { label: "harness", dim: "harnesses", field: "harness" },
                 { label: "provider", dim: "providers", field: "provider" },
                 { label: "model", dim: "models", field: "model" },
-              ] as const).map(({ label, dim, field }) => (
-                <div key={dim} className="flex items-baseline gap-2 min-w-0">
-                  <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {label}
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
-                    <span className="text-sm font-medium">{labelOf(dim, row[field])}</span>
-                    <span className="font-mono text-[11px] text-muted-foreground">{row[field]}</span>
-                  </span>
-                </div>
-              ))}
+              ] as const).map(({ label, dim, field }) => {
+                const title = labelOf(dim, row[field]);
+                const id = row[field];
+                const k = (0.56 * title.length + 0.51 * id.length).toFixed(2);
+                return (
+                  <div key={dim} className="flex min-w-0 items-baseline gap-2">
+                    <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {label}
+                    </span>
+                    <span
+                      className="flex min-w-0 flex-1 flex-nowrap items-baseline gap-x-2 overflow-hidden whitespace-nowrap"
+                      style={{ fontSize: `min(14px, max(8px, (100cqw - 84px) / ${k}))` }}
+                    >
+                      <span className="font-medium">{title}</span>
+                      <span className="font-mono text-[0.82em] text-muted-foreground">{id}</span>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
             {/* one line like the result page's header row: reciprocal left,
               platforms centered, date right */}

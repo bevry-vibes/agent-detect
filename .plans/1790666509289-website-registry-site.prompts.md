@@ -298,3 +298,9 @@ from the same branch; no prompts were lost.
 > on the homapage, make the result cards look a bit more like the result page, in that sense drop the ID: prefix for the id, and have it a bit larger font size, as per the result page
 >
 > also, reduce the size or whatever of the reciprocal pill, platform pills, and date, as on mobile they don't fit on the same line, they must fit on the same line, with reciprocal left aligned, platforms center aligned, and date right-aligned - to mimic result page too
+
+## 31 — 2026-09-29
+
+> for the homepage snippets, the copy prompt icon is still not left-aligned with the title, so they both start at the same y-axis, perhaps there is a margin or something for the icon you are not factoring in
+>
+> reduce the font-size of the result card id in general, it should only slightly be bigger than the dims below it, and also shrink it if would otherwise overflow to the next line (along with each of the dims, each result card line should shrink if it would otherwise overflow, to maintain the individuated whole lines)
