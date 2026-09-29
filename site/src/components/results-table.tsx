@@ -188,16 +188,17 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
       </div>
 
       {/* desktop: the lazy div-grid table with sortable headers */}
-      <div className="hidden md:block rounded-xl border">
+      <div className="-mx-px hidden md:block rounded-xl border">
         <div className="max-h-[calc(100svh-11rem)] overflow-auto [scrollbar-gutter:stable]">
           <div role="table" aria-label="agent combos" className="w-full min-w-[1080px]">
             <div role="row" className={`${GRID} text-muted-foreground sticky top-0 z-20 border-b bg-background text-xs font-medium`}>
-              {COLUMNS.map((col) => {
+              {COLUMNS.map((col, i) => {
                 const active = sort?.key === col.key;
                 const ariaSort = active ? (sort.dir === "asc" ? "ascending" : "descending") : "none";
                 const Arrow = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+                const inset = i === 0 ? "pl-0" : i === COLUMNS.length - 1 ? "pr-0" : "px-3";
                 return (
-                  <div key={col.key} role="columnheader" aria-sort={ariaSort} className={`px-3 py-2.5 ${col.align === "right" ? "text-right" : ""}`}>
+                  <div key={col.key} role="columnheader" aria-sort={ariaSort} className={`py-2.5 ${inset} ${col.align === "right" ? "text-right" : ""}`}>
                     <button
                       type="button"
                       onClick={() => cycleSort(col.key)}
@@ -221,7 +222,7 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                   onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
                   className={`${GRID} ${ROW_LAZY} cursor-pointer border-b transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
                 >
-                  <div role="cell" className={CELL}>
+                  <div role="cell" className={`${CELL} pl-0`}>
                     <span className="truncate font-mono text-xs" title={row.agent_id}>
                       {row.agent_id}
                     </span>

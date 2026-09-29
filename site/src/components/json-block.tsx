@@ -69,10 +69,11 @@ export function CodeLine({ code }: { code: string }) {
       type="button"
       onClick={copy}
       title="click to copy"
-      className="group flex w-full min-w-0 items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-left font-mono text-xs hover:bg-muted/70"
+      className="group flex w-full min-w-0 items-start justify-between gap-2 rounded-md border bg-muted/40 px-3 py-1.5 text-left font-mono text-xs hover:bg-muted/70"
     >
-      <code className="block min-w-0 truncate">{code}</code>
-      <span className="text-muted-foreground group-hover:text-foreground shrink-0">
+      {/* commands are never truncated — long ones wrap */}
+      <code className="block min-w-0 whitespace-pre-wrap break-all">{code}</code>
+      <span className="text-muted-foreground mt-0.5 shrink-0 group-hover:text-foreground">
         {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5 opacity-60" />}
       </span>
     </button>

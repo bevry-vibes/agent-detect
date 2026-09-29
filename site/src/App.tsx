@@ -219,8 +219,6 @@ export default function App() {
             ? undefined
             : [
                 { label: "cli", href: "#cli" },
-                { label: "install", href: "#install" },
-                { label: "use", href: "#use" },
                 { label: "registry", href: "#registry" },
               ]
         }
@@ -242,7 +240,6 @@ export default function App() {
                 registry={registry}
                 combos={combosFile?.counts.combos ?? 0}
                 fixtures={combosFile?.counts.fixtures ?? 0}
-                results={rows.length}
                 jsonHref={jsonHref}
               />
             )}

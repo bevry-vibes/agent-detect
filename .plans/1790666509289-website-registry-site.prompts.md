@@ -169,3 +169,20 @@ from the same branch; no prompts were lost.
 > The registry description has the same text not aligning with the text in the table issue.
 >
 > Move the `1,387 of 1,387 combos` to just be `X results` at the end of the count pills. Move the [view as JSON] to the on the same row as the count pills.
+
+## 22 — 2026-09-29
+
+> Do not truncate the commands to execute, their full command should always be visible, breaking on multiple lines via css is fine.
+>
+> Solve the text alignment issue for all content, header, footer, paragraphs - so that they all have the same text alignment as the tables. This should simplify the CSS, as there now shouldn't be any per-exception handling.
+>
+> remove `install` and `use` from the header menu
+> move the use card first, then install card
+>
+> in the registry section, move the `combos` pill to be first, and drop `results` pill there as it is already in the table footer
+
+## 23 — 2026-09-29
+
+> rate limit reset,
+>
+> move the platform and arch cards for the cli sectipon to be before the install and use cards, so they aren't duplicafted

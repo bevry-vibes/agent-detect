@@ -133,7 +133,30 @@ export function Hero() {
           <Feature icon={WifiOff}>Offline agent detection without telemetry.</Feature>
         </ul>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* one shared platform/arch selection — the cards below never repeat it */}
+        <div className="mt-10 flex flex-col gap-3">
+          <ToggleRow label="platform" options={PLATFORMS} value={platform} onChange={(v) => setPlatform(v as Platform)} />
+          <ToggleRow label="arch" options={ARCHES} value={arch} onChange={(v) => setArch(v as Arch)} />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card id="use" className="min-w-0 scroll-mt-14">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Terminal className="size-4" /> Use
+              </CardTitle>
+              <CardDescription>click a line to copy it — exactly one trailer per artifact, never both</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {usage.map((u) => (
+                <div key={u.code} className="flex flex-col gap-1">
+                  <CodeLine code={u.code} />
+                  <p className="text-muted-foreground pl-1 text-xs">{u.what}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
           <Card id="install" className="min-w-0 scroll-mt-14">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -154,8 +177,6 @@ export function Hero() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <ToggleRow label="platform" options={PLATFORMS} value={platform} onChange={(v) => setPlatform(v as Platform)} />
-              <ToggleRow label="arch" options={ARCHES} value={arch} onChange={(v) => setArch(v as Arch)} />
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-2">
                   <Badge variant="secondary" className="font-mono text-[10px]">
@@ -171,45 +192,23 @@ export function Hero() {
               </div>
             </CardContent>
           </Card>
-
-          <Card id="use" className="min-w-0 scroll-mt-14">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Terminal className="size-4" /> Use
-              </CardTitle>
-              <CardDescription>click a line to copy it — exactly one trailer per artifact, never both</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <ToggleRow label="platform" options={PLATFORMS} value={platform} onChange={(v) => setPlatform(v as Platform)} />
-              <div className="flex flex-col gap-3">
-                {usage.map((u) => (
-                  <div key={u.code} className="flex flex-col gap-1">
-                    <CodeLine code={u.code} />
-                    <p className="text-muted-foreground pl-1 text-xs">{u.what}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </article>
   );
 }
 
-/** the registry section intro — heading, byline, contributing line, the
- * counts, the filtered result count, and the view-as-JSON link */
+/** the registry section intro — heading, byline, contributing line, and the
+ * counts with the filtered view link */
 export function RegistryIntro({
   registry,
   combos,
   fixtures,
-  results,
   jsonHref,
 }: {
   registry: Registry;
   combos: number;
   fixtures: number;
-  results: number;
   jsonHref: string;
 }) {
   return (
@@ -218,8 +217,7 @@ export function RegistryIntro({
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Registry of Agent Detections</h1>
         <p className="text-lg font-medium">Agents now capable of self-awareness.</p>
       </div>
-      {/* pl-13px lines the text up with the ID column text in the table below */}
-      <p className="text-muted-foreground pl-[13px] text-sm">
+      <p className="text-muted-foreground text-sm">
         Past inferences from our test suite. Missing yours,{" "}
         <a
           className="underline underline-offset-4"
@@ -230,17 +228,12 @@ export function RegistryIntro({
           send a pull request.
         </a>
       </p>
-      {/* pr-26px reserves the table's scroll gutter so the link lines up with
-          the Updated column text */}
-      <div className="mt-1 flex flex-wrap items-center gap-2 pr-[26px]">
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        <Badge variant="secondary">{combos} combos</Badge>
         <Badge variant="secondary">{registry.counts.harnesses} harnesses</Badge>
         <Badge variant="secondary">{registry.counts.providers} providers</Badge>
         <Badge variant="secondary">{registry.counts.models} models</Badge>
-        <Badge variant="secondary">{combos} combos</Badge>
         <Badge variant="secondary">{fixtures} fixtures</Badge>
-        <Badge variant="secondary" className="tabular-nums">
-          {results.toLocaleString()} results
-        </Badge>
         <a
           href={jsonHref}
           className="text-muted-foreground hover:text-foreground ml-auto font-mono text-sm underline underline-offset-4"
