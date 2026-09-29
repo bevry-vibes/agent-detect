@@ -187,7 +187,7 @@ export function AgentPage({ row, agentId, registry, platform, onPlatformChange, 
   }, [agentId]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
   // tabs sorted by generation time, latest first — the default selection is

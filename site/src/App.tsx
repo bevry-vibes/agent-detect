@@ -170,12 +170,14 @@ export default function App() {
   };
 
   // view transitions: returning to the index restores its remembered scroll;
-  // the agent page scrolls itself to the top on mount
+  // the agent page scrolls itself to the top on mount. Both scrolls are
+  // explicit-instant — the html's smooth scroll-behavior turns programmatic
+  // scrolls into animations that other scrolls (and re-renders) cancel.
   useEffect(() => {
     const next = agent ? "agent" : "index";
     if (next === viewRef.current) return;
     viewRef.current = next;
-    if (next === "index") window.scrollTo(0, scrollMem.current.get(window.location.search) ?? 0);
+    if (next === "index") window.scrollTo({ top: scrollMem.current.get(window.location.search) ?? 0, behavior: "instant" });
   }, [agent]);
 
   // a center-nav click on the agent page closes it and jumps to the section
@@ -195,7 +197,7 @@ export default function App() {
     pendingAnchor.current = null;
     const el = document.getElementById(id);
     if (el) {
-      el.scrollIntoView();
+      el.scrollIntoView({ behavior: "instant" });
       el.classList.add("anchor-flash");
       setTimeout(() => el.classList.remove("anchor-flash"), 1800);
     }
@@ -233,6 +235,13 @@ export default function App() {
   const jsonHref = useMemo(() => `/index.json${buildSearch(filters, agent) ? `?${buildSearch(filters, agent)}` : ""}`, [filters, agent]);
   const selectedRow = useMemo(() => combosFile?.combos.find((c) => c.agent_id === agent) ?? null, [combosFile, agent]);
 
+  // a dim click on the result page should land the user at the registry
+  // section so the filtered results are actually in view
+  const onDimFromAgent = (dim: Dim, id: string) => {
+    pendingAnchor.current = "registry";
+    onDim(dim, id);
+  };
+
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader
@@ -250,7 +259,7 @@ export default function App() {
           registry={registry}
           platform={platformParam}
           onPlatformChange={onPlatformChange}
-          onDim={onDim}
+          onDim={onDimFromAgent}
           onBack={closeAgent}
         />
       ) : (

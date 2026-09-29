@@ -325,7 +325,7 @@ function CollapseToggle({ open, onToggle }: { open: boolean; onToggle: () => voi
     <Button
       variant="ghost"
       size="sm"
-      className="h-7 w-7 p-0"
+      className="h-7 w-7 cursor-pointer p-0"
       onClick={onToggle}
       aria-expanded={open}
       aria-label={open ? "collapse" : "expand"}
@@ -336,11 +336,27 @@ function CollapseToggle({ open, onToggle }: { open: boolean; onToggle: () => voi
   );
 }
 
-function SnippetHeader({ description, children }: { description: string; children: ReactNode }) {
+/** the snippet bar — clicking the description or the bar background toggles
+ * the expansion; the actions stop propagation so they keep their own behavior */
+function SnippetHeader({
+  description,
+  onToggle,
+  children,
+}: {
+  description: string;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
   return (
-    <header className="bg-muted/50 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-3 py-1.5">
+    <header
+      className="bg-muted/50 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-3 py-1.5"
+      onClick={onToggle}
+    >
       <span className="text-sm font-medium">{description}</span>
-      <div className="flex items-center gap-1">{children}</div>
+      {/* the actions swallow their clicks so the bar's toggle doesn't fire */}
+      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
     </header>
   );
 }
@@ -361,8 +377,8 @@ function InlinePrompt({ description, text }: { description: string; text: string
   };
   return (
     <section className="overflow-hidden rounded-lg border">
-      <SnippetHeader description={description}>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copy}>
+      <SnippetHeader description={description} onToggle={() => setOpen(!open)}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" onClick={copy}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : "copy prompt"}
         </Button>
@@ -463,7 +479,7 @@ function SkillSnippet(spec: SnippetSpec) {
   };
 
   const renderLines = (lines: { text: string; n: number; relevant: boolean }[]) => (
-    <pre ref={preRef} className="max-h-96 overflow-auto p-0 font-mono text-xs leading-relaxed">
+    <pre ref={preRef} className="max-h-96 overflow-y-auto p-0 font-mono text-xs leading-relaxed">
       {lines.map(({ text, n, relevant }) => (
         <div
           key={n}
@@ -477,7 +493,7 @@ function SkillSnippet(spec: SnippetSpec) {
         >
           <span className="text-muted-foreground/50 w-12 shrink-0 select-none pr-3 text-right">{n}</span>
           <span
-            className="min-w-0 flex-1 pr-3"
+            className="min-w-0 flex-1 whitespace-pre-wrap break-all pr-3"
             dangerouslySetInnerHTML={{ __html: markdownLineHtml(text) || "&nbsp;" }}
           />
         </div>
@@ -487,16 +503,16 @@ function SkillSnippet(spec: SnippetSpec) {
 
   return (
     <section className="overflow-hidden rounded-lg border">
-      <SnippetHeader description={spec.description}>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyText}>
+      <SnippetHeader description={spec.description} onToggle={() => setOpen(!open)}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" onClick={copyText}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           {copied ? "copied" : stage === "file" ? "copy file" : "copy prompt"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={toggleStage}>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" onClick={toggleStage}>
           <Eye className="size-3" />
           {stage === "file" ? "show prompt" : "show file"}
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" asChild>
+        <Button variant="ghost" size="sm" className="h-7 cursor-pointer gap-1 px-2 text-xs" asChild>
           <a href={linePermalink} target="_blank" rel="noreferrer" title="view file" aria-label="view file">
             <ExternalLink className="size-3" />
             view file

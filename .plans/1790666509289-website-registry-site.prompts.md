@@ -264,3 +264,20 @@ from the same branch; no prompts were lost.
 > - don't use pills for the harness model provider, instead use the rich `type title id` format of the result cards - when clicking such, it should take one to the results pagae where that filter is applied
 >
 > why is view file looking disabled compared to its sibling links... they should all share the same style
+
+## 27 — 2026-09-29
+
+> on the homepage:
+> auto wrap the snippets, so we can eliminate the horizontal scrollbar
+>
+> the snippet links on the right should have link cursor/pointer
+>
+> clicking the snippet bar's title and background should also toggle its expansion
+
+## 27 (continued) — 2026-09-29
+
+> do not do the ponitner cursor on the headerbar though, only on the header buttons/links
+>
+> on tehr esult page, clicking the dims should scroll the user to the registry section so they can actually see the filtered results
+>
+> you ran out of memory and crashed, resume
