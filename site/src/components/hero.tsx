@@ -36,7 +36,7 @@ export function Hero({ registry, combos, fixtures }: { registry: Registry; combo
           for commits and issue posts, and failure introspection (<code className="font-mono">explain</code>,{" "}
           <code className="font-mono">found</code>). Every combo below is backed by a declared or live-captured fixture.
         </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2">
           <Badge variant="secondary">{registry.counts.harnesses} harnesses</Badge>
           <Badge variant="secondary">{registry.counts.providers} providers</Badge>
           <Badge variant="secondary">{registry.counts.models} models</Badge>
@@ -45,7 +45,7 @@ export function Hero({ registry, combos, fixtures }: { registry: Registry; combo
           <Badge variant="outline">no network I/O at detection time</Badge>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card className="min-w-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -90,7 +90,7 @@ export function Hero({ registry, combos, fixtures }: { registry: Registry; combo
               </CardTitle>
               <CardDescription>click a line to copy it — exactly one trailer per artifact, never both</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-2">
+            <CardContent className="flex flex-col gap-3">
               {USAGE.map((u) => (
                 <div key={u.code} className="flex flex-col gap-1">
                   <CodeLine code={u.code} />

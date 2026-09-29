@@ -150,16 +150,22 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
             className={`${CARD_LAZY} cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
           >
             <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0 flex flex-col gap-0.5 leading-snug">
-                {(["harnesses", "providers", "models"] as const).map((dim, i) => {
-                  const field = (["harness", "provider", "model"] as const)[i];
-                  return (
-                    <p key={dim} className="flex flex-wrap items-baseline gap-x-2 min-w-0">
+              <div className="min-w-0 flex flex-col gap-1 leading-snug">
+                {([
+                  { label: "harness", dim: "harnesses", field: "harness" },
+                  { label: "provider", dim: "providers", field: "provider" },
+                  { label: "model", dim: "models", field: "model" },
+                ] as const).map(({ label, dim, field }) => (
+                  <div key={dim} className="flex items-baseline gap-2 min-w-0">
+                    <span className="w-16 shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {label}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
                       <span className="text-sm font-medium">{labelOf(dim, row[field])}</span>
-                      <span className="text-muted-foreground font-mono text-[11px]">{row[field]}</span>
-                    </p>
-                  );
-                })}
+                      <span className="font-mono text-[11px] text-muted-foreground">{row[field]}</span>
+                    </span>
+                  </div>
+                ))}
               </div>
               <ReciprocalBadge row={row} />
             </div>

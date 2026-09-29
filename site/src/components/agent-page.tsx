@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
 import { type AgentFile, type ComboRow, type FixtureOutputs } from "@/lib/registry";
+import { CodeLine } from "@/components/json-block";
 import { JsonBlock } from "@/components/json-block";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -145,6 +146,14 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
             <span className="text-muted-foreground font-mono text-xs">{formatDate(row.updated_at)}</span>
           </div>
           <p className="text-muted-foreground font-mono text-xs">{row.email}</p>
+          <div className="mt-1 flex flex-col gap-1">
+            <CodeLine
+              code={`agent-detect check-reciprocal --harness=${row.harness} --provider=${row.provider} --model=${row.model}`}
+            />
+            <p className="text-muted-foreground pl-1 text-xs">
+              reproduce this verdict against the live detection with the recipe-mode flags
+            </p>
+          </div>
         </header>
       )}
 

@@ -154,6 +154,11 @@ async function main() {
 
   const pRank = rank(PLATFORMS);
   const cRank = rank(CHANNELS);
+  // recency order — the combo's row values (reciprocal, email, state) come
+  // from the MOST RECENTLY updated fixture, capture preferred over identity
+  // at equal timestamps; the display/tab order stays platform × channel
+  const byRecency = (x: FixtureEntry, y: FixtureEntry) =>
+    (y.updated_at - x.updated_at) || (cRank(x.channel) - cRank(y.channel)) || (pRank(x.platform) - pRank(y.platform));
   const combos: Combo[] = [];
   const emails = new Set<string>();
 
@@ -165,13 +170,14 @@ async function main() {
     ].sort((x, y) =>
       (pRank(x.platform) - pRank(y.platform)) || (cRank(x.channel) - cRank(y.channel)) || (y.updated_at - x.updated_at)
     );
-    const latest = fixtures[0];
+    const recency = [...fixtures].sort(byRecency);
+    const latest = recency[0];
     const identify = latest.outputs.identify as Record<string, unknown> | undefined;
-    const email = fixtures
+    const email = recency
       .map((f) => trailerEmail((f.outputs["trailer co-author"] as string) ?? (f.outputs["trailer assisted-by"] as string)))
       .find((e): e is string => !!e) ?? `${agent_id}@local`;
     emails.add(email);
-    const explains = fixtures.map((f) => f.outputs.explain as { state?: string } | null | undefined).find((e) => e?.state);
+    const explains = recency.map((f) => f.outputs.explain as { state?: string } | null | undefined).find((e) => e?.state);
     const parts = agent_id.split("-");
     combos.push({
       agent_id,

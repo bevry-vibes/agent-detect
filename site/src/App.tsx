@@ -209,7 +209,7 @@ export default function App() {
       {agent ? (
         <AgentPage row={selectedRow} agentId={agent} onBack={closeAgent} />
       ) : (
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
+        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-8">
           {loadError && (
             <Card className="border-destructive">
               <CardHeader>
