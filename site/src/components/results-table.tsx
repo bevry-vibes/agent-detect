@@ -19,7 +19,7 @@ import { formatDate } from "@/lib/utils";
  * Below the md breakpoint the grid is replaced by a stacked card list — no
  * horizontal scroll, same rows, same click target.
  */
-const GRID = "grid grid-cols-[minmax(130px,1fr)_minmax(150px,1.1fr)_minmax(150px,1.2fr)_150px_150px_minmax(210px,1.4fr)_110px]";
+const GRID = "grid grid-cols-[minmax(130px,1fr)_minmax(150px,1.1fr)_minmax(150px,1.2fr)_minmax(210px,1.4fr)_150px_150px_110px]";
 const CELL = "px-3 py-2.5 flex flex-col justify-center gap-0.5 leading-snug min-w-0";
 const ROW_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_57px]";
 const CARD_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_150px]";
@@ -31,9 +31,9 @@ const COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "harness", label: "Harness" },
   { key: "provider", label: "Provider" },
   { key: "model", label: "Model" },
+  { key: "email", label: "Trailer email" },
   { key: "reciprocal", label: "Reciprocal" },
   { key: "platforms", label: "Platforms" },
-  { key: "email", label: "Trailer email" },
   { key: "updated_at", label: "Updated", align: "right" },
 ];
 
@@ -234,15 +234,15 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                     <span className="text-muted-foreground truncate font-mono text-xs">{row.model}</span>
                   </div>
                   <div role="cell" className={CELL}>
+                    <span className="text-muted-foreground truncate font-mono text-xs" title={row.email}>
+                      {row.email}
+                    </span>
+                  </div>
+                  <div role="cell" className={CELL}>
                     <ReciprocalBadge row={row} />
                   </div>
                   <div role="cell" className={CELL}>
                     <PlatformBadges row={row} wrap />
-                  </div>
-                  <div role="cell" className={CELL}>
-                    <span className="text-muted-foreground truncate font-mono text-xs" title={row.email}>
-                      {row.email}
-                    </span>
                   </div>
                   <div role="cell" className={`${CELL} text-right`}>
                     <span className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</span>

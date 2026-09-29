@@ -48,7 +48,7 @@ export function SiteHeader({ jsonHref, onHome }: { jsonHref: string; onHome?: ()
             <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
             <path d="M12 3v2.5M21 12h-2.5M12 21v-2.5M3 12h2.5" className="opacity-40" />
           </svg>
-          <span className="flex items-baseline gap-1.5">
+          <span className="flex items-center gap-1.5">
             agent-detect
             <span className="text-muted-foreground hidden text-xs font-normal sm:inline">registry</span>
           </span>

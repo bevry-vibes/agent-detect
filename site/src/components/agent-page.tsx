@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
 import { type AgentFile, type ComboRow, type FixtureOutputs } from "@/lib/registry";
@@ -52,6 +52,37 @@ function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][numbe
       ))}
       <JsonBlock title="meta" value={meta} />
     </div>
+  );
+}
+
+/** the reciprocity verdict as a tag matching the fixture tabs — clicking it
+ * copies the check-reciprocal invocation for this combo */
+function ReciprocalTag({ row, dims }: { row: ComboRow; dims: { h: string; p: string; m: string } }) {
+  const [copied, setCopied] = useState(false);
+  const command = `agent-detect check-reciprocal --harness=${dims.h} --provider=${dims.p} --model=${dims.m}`;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard unavailable — the tag still shows the verdict
+    }
+  };
+  return (
+    <button
+      type="button"
+      title={`copy: ${command}`}
+      onClick={copy}
+      className={`inline-flex h-[calc(100%-1px)] items-center gap-1.5 rounded-md border px-2 py-1 text-sm font-medium transition-colors ${
+        row.reciprocal
+          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
+      }`}
+    >
+      {copied && <Check className="size-3.5" />}
+      {copied ? "command copied" : row.reciprocal ? "reciprocal" : "not reciprocal"}
+    </button>
   );
 }
 
@@ -142,17 +173,6 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
         <header className="flex flex-col gap-3">
           <h1 className="font-mono text-xl font-semibold tracking-tight">{row.agent_id}</h1>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant={row.reciprocal ? "outline" : "destructive"}
-              className={row.reciprocal ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : undefined}
-            >
-              {row.reciprocal ? "reciprocal" : "not reciprocal"}
-            </Badge>
-            {row.state && row.state !== "reciprocal" && row.state !== "not-reciprocal" && (
-              <Badge variant="outline" className="text-muted-foreground">
-                {row.state}
-              </Badge>
-            )}
             <Badge variant="secondary" className="font-mono text-[10px]">
               {row.harness}
             </Badge>
@@ -164,16 +184,6 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
             </Badge>
           </div>
           <p className="text-muted-foreground font-mono text-xs">{row.email}</p>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-1.5">
-              {row.platforms.map((p) => (
-                <Badge key={p} variant="outline" className="font-mono text-[10px]">
-                  {p}
-                </Badge>
-              ))}
-            </div>
-            <span className="text-muted-foreground font-mono text-xs">{activeDate}</span>
-          </div>
         </header>
       )}
 
@@ -185,15 +195,24 @@ export function AgentPage({ row, agentId, onBack }: AgentPageProps) {
       {row && !error && !file && <p className="text-muted-foreground text-sm">loading result JSON…</p>}
       {row && file && (
         <Tabs value={activeTabValue} onValueChange={(v) => setActiveTab(v)}>
-          <TabsList className="flex-wrap">
-            {file.fixtures.map((f) => (
-              <TabsTrigger key={f.id} value={`${f.platform}:${f.channel}`}>
-                <span className="font-mono text-xs">
-                  {f.platform} · {f.channel === "capture" ? "captured" : "declared"}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TabsList className="h-auto flex-wrap">
+              <ReciprocalTag row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} />
+              {file.fixtures.map((f) => (
+                <TabsTrigger key={f.id} value={`${f.platform}:${f.channel}`}>
+                  <span className="font-mono text-xs">
+                    {f.platform} · {f.channel === "capture" ? "captured" : "declared"}
+                  </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <span
+              title={`result generated ${new Date((activeFixture ?? file.fixtures[0]).updated_at * 1000).toISOString()}`}
+              className="text-muted-foreground inline-flex h-9 items-center rounded-md border bg-muted/50 px-3 font-mono text-xs"
+            >
+              {activeDate}
+            </span>
+          </div>
           {file.fixtures.map((f) => (
             <TabsContent key={f.id} value={`${f.platform}:${f.channel}`}>
               <FixtureDetail fixture={f} dims={{ h: row.harness, p: row.provider, m: row.model }} />
