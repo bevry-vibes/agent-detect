@@ -456,11 +456,8 @@ The code resolves an axis through the six-rung ladder and computes one `{entity}
 - **The axis rule.** When an axis could not be determined, record `null` (we never researched) or `NOASSERTION` (we researched, and the documents do not agree) — never guess an axis.
   A known training arrangement with an unknown axis records NOASSERTION on the closed axis, with the inference and its gaps in the comment; the axis outcome is then undeterminable, and the exit-9 nudge drives the research.
 - **The billing rule.** If avoiding the training requires billing, the value is `opt-out`: it takes a user action to not train, and the user action is the billing. Record the billing escape in the comment.
-- **The purpose test (scandal judgement).** Judge every scandal finding by its purpose, not only by its act.
-  A taking in service of reciprocal purposes — it feeds weights that ship back — is fair use: let it slide, and note it as a caveat.
-  A taking in service of non-reciprocal purposes — it feeds enclosure — violates fair use: flag it.
-  Fair use is a right that overrides enforcement that would otherwise be draconian, and consent is not needed for fair use. That is the balance.
-  The research method and the full findings live in [research/](../research/); the flag carries its sources in `reciprocity_scandal_sources` (surfaced in raw as `scandal-urls`), one flag per entity, never `false`.
+- **The scandal criterion.** The law ("consent and copyright violations, except takings that feed reciprocal output; violations that feed no model are out of scope"), the taking-by-outcome matrix, and the six redemption gates live in [research/scandals.md](../research/scandals.md) — judge every finding there, never from the rule table alone.
+  The flag carries its sources in `reciprocity_scandal_sources` (surfaced in raw as `scandal-urls`), one flag per entity, never `false`.
 - **The licence is not a gate.** An open licence says nothing about data behaviour — Grok Build is Apache-2.0 and uploaded whole repositories. Source the training values for every harness, whatever its licence.
 
 ## add a new harness rule
