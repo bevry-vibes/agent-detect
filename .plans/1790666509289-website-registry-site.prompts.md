@@ -211,3 +211,14 @@ from the same branch; no prompts were lost.
 > Have the cards be atop of each other.
 >
 > Change the header bylines to be underneatht he header
+
+## 24 (continued) — 2026-09-29
+
+> Move the reciprocal prompt to be the last one.
+>
+> Add this one after the minimax one
+>
+> Instruct your agents to write their plans to a consistent directory.
+> Snippet to https://github.com/bevry-vibes/skills/blob/main/plans.md?plain=1#L1-L5
+>
+> Make the prompts syntax hightlighted, and to show the whole file, but just default to only showing the relevnt lines. Rename their `copy result` to `copy prompt` (copying only the relevant lines), and add a `view source` (hyperlink to the full permeanent)

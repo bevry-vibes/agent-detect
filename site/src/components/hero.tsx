@@ -1,6 +1,6 @@
-import { Check, Copy, Mail, ScrollText, SlidersHorizontal, WifiOff } from "lucide-react";
+import { Check, Copy, ExternalLink, Mail, ScrollText, SlidersHorizontal, WifiOff } from "lucide-react";
 import { Terminal } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { Registry } from "@/lib/registry";
 import { CodeLine, JsonBlock } from "@/components/json-block";
@@ -68,11 +68,12 @@ function ToggleRow({
 
 function Feature({ icon: Icon, children }: { icon: typeof Mail; children: ReactNode }) {
   return (
-    <li className="flex items-center gap-3">
+    <li className="flex items-start gap-3">
       <span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/50">
         <Icon className="size-4" />
       </span>
-      <span className="text-muted-foreground text-sm leading-snug">{children}</span>
+      {/* mt-1.5 puts the first text line on the icon's midline; extra lines flow below */}
+      <span className="text-muted-foreground mt-1.5 text-sm leading-snug">{children}</span>
     </li>
   );
 }
@@ -294,7 +295,7 @@ export function RegistryIntro({
 }
 
 // skill snippets are fetched once per session and shared across renders
-const snippetCache = new Map<string, { relevant: string[]; full: string[]; start: number }>();
+const snippetCache = new Map<string, { full: string[]; start: number; end: number }>();
 
 interface SnippetSpec {
   file: "policy.md" | "minimax.md" | "commits.md" | "plans.md";
@@ -304,7 +305,7 @@ interface SnippetSpec {
   endBefore?: string;
   /** take the first N lines instead of anchor extraction */
   lines?: number;
-  /** a github anchor on the blob url, when the section has one */
+  /** a github anchor on the file url, when the section has one */
   anchor?: string;
 }
 
@@ -328,18 +329,17 @@ function markdownLineHtml(line: string): string {
   return h;
 }
 
-/** the relevant lines of a bevry-vibes/skills doc, fetched live, syntax
- * highlighted, defaulting to the relevant lines with the whole file one
- * toggle away. "copy prompt" always copies the relevant lines; "view source"
- * links the github permalink covering exactly them. */
+/** the whole bevry-vibes/skills doc, line-numbered, syntax highlighted — the
+ * relevant lines are scrolled into view by default while the rest of the file
+ * stays lazily unrendered until scrolled for */
 function SkillSnippet(spec: SnippetSpec) {
   const key = `${spec.file}:${spec.startWith ?? ""}:${spec.lines ?? ""}`;
-  const [meta, setMeta] = useState<{ relevant: string[]; full: string[]; start: number } | null>(
+  const [meta, setMeta] = useState<{ full: string[]; start: number; end: number } | null>(
     () => snippetCache.get(key) ?? null,
   );
-  const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
+  const preRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
     if (meta) return;
@@ -351,23 +351,20 @@ function SkillSnippet(spec: SnippetSpec) {
       })
       .then((text) => {
         const all = text.split("\n");
-        let relevant: string[];
-        let start: number;
+        let start = 0;
+        let end = all.length;
         if (spec.lines) {
-          start = 0;
-          relevant = all.slice(0, spec.lines);
+          end = Math.min(spec.lines, all.length);
         } else {
           start = all.findIndex((l) => l.includes(spec.startWith ?? ""));
           if (start === -1) throw new Error("anchor not found");
-          let end = all.length;
           const endBefore = spec.endBefore ?? "";
           if (endBefore) {
             const stop = all.findIndex((l, i) => i > start && l.includes(endBefore));
             if (stop !== -1) end = stop;
           }
-          relevant = all.slice(start, end);
         }
-        const found = { relevant, full: all, start };
+        const found = { full: all, start, end };
         snippetCache.set(key, found);
         if (alive) setMeta(found);
       })
@@ -379,6 +376,15 @@ function SkillSnippet(spec: SnippetSpec) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spec.file, spec.startWith, spec.endBefore, spec.lines]);
+
+  // the relevant lines are the default view — scroll them to the top of the
+  // block once the file is in
+  useEffect(() => {
+    const pre = preRef.current;
+    if (!meta || !pre) return;
+    const first = pre.querySelector('[data-relevant-start="true"]');
+    if (first) pre.scrollTop = (first as HTMLElement).offsetTop - pre.offsetTop - 4;
+  }, [meta]);
 
   if (failed) {
     return (
@@ -396,16 +402,13 @@ function SkillSnippet(spec: SnippetSpec) {
     return <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-2 font-mono text-xs">loading {spec.file}…</p>;
   }
 
-  const shown = expanded ? meta.full : meta.relevant;
   const from = meta.start + 1;
-  const to = meta.start + meta.relevant.length;
-  // github takes one hash fragment: the title keeps the section anchor (when
-  // the section has one), view source carries the exact line range
-  const titleHref = `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`;
+  const to = meta.end;
+  const fileLink = `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}#L${from}-L${to}`;
   const linePermalink = `https://github.com/bevry-vibes/skills/blob/main/${spec.file}#L${from}-L${to}`;
   const copyPrompt = async () => {
     try {
-      await navigator.clipboard.writeText(meta.relevant.join("\n"));
+      await navigator.clipboard.writeText(meta.full.slice(meta.start, meta.end).join("\n"));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -416,38 +419,54 @@ function SkillSnippet(spec: SnippetSpec) {
   return (
     <section className="overflow-hidden rounded-lg border">
       <header className="bg-muted/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-1.5">
-        <a
-          href={titleHref}
-          target="_blank"
-          rel="noreferrer"
-          title={linePermalink}
-          className="font-mono text-xs font-medium underline underline-offset-4 hover:text-foreground"
-        >
-          {spec.file} · L{from}–L{to}
-        </a>
+        <span className="font-mono text-xs">
+          <a
+            href="https://github.com/bevry-vibes/skills"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            bevry-vibes/skills
+          </a>
+          {" · "}
+          <a href={fileLink} target="_blank" rel="noreferrer" title={fileLink} className="underline underline-offset-4 hover:text-foreground">
+            {spec.file} · L{from}–L{to}
+          </a>
+        </span>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setExpanded(!expanded)}>
-            {expanded ? "show relevant lines" : "show whole file"}
+          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyPrompt}>
+            {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+            {copied ? "copied" : "copy prompt"}
           </Button>
           <a
             href={linePermalink}
             target="_blank"
             rel="noreferrer"
-            className="text-muted-foreground hover:text-foreground inline-flex h-7 items-center rounded-md px-2 text-xs underline underline-offset-4"
-            title={linePermalink}
+            title="view source"
+            aria-label="view source"
+            className="text-muted-foreground hover:text-foreground inline-flex h-7 w-7 items-center justify-center rounded-md"
           >
-            view source
+            <ExternalLink className="size-3.5" />
           </a>
-          <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" onClick={copyPrompt}>
-            {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-            {copied ? "copied" : "copy prompt"}
-          </Button>
         </div>
       </header>
-      <pre className="max-h-96 overflow-auto p-3 font-mono text-xs leading-relaxed">
-        {shown.map((line, i) => (
-          <div key={i} dangerouslySetInnerHTML={{ __html: markdownLineHtml(line) || "&nbsp;" }} />
-        ))}
+      <pre ref={preRef} className="max-h-96 overflow-auto p-0 font-mono text-xs leading-relaxed">
+        {meta.full.map((line, i) => {
+          const relevant = i >= meta.start && i < meta.end;
+          return (
+            <div
+              key={i}
+              data-relevant-start={i === meta.start ? "true" : undefined}
+              className={cn("flex items-start", !relevant && "[content-visibility:auto] [contain-intrinsic-size:auto_20px]")}
+            >
+              <span className="text-muted-foreground/50 w-12 shrink-0 select-none pr-3 text-right">{i + 1}</span>
+              <span
+                className="min-w-0 flex-1 pr-3"
+                dangerouslySetInnerHTML={{ __html: markdownLineHtml(line) || "&nbsp;" }}
+              />
+            </div>
+          );
+        })}
       </pre>
     </section>
   );
