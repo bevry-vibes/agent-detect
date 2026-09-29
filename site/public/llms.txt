@@ -1,0 +1,59 @@
+# agent-detect
+
+> agent-detect infers the current AI agent's harness, provider, and model — multi-harness, multi-OS,
+> multi-arch — so AI agents can identify themselves accurately, as required by various AI policies
+> and skills. This site is the browsable registry of its rule tables and fixture-verified results:
+> which harness × provider × model combos are known, whether each is reciprocal, and the exact
+> identify / trailer / explain outputs the CLI produces for them.
+
+The detection tool itself is a prebuilt zig binary (no npm/crates package) with zero required
+runtime dependencies and no network I/O at detection time:
+https://github.com/bevry-vibes/agent-detect
+
+## how the site is organised
+
+`/` is a single-page app. Three searchable dropdowns (harness, provider, model) plus a trailer-email
+lookup filter a results table; clicking a row opens that combo's full-page results view — `identify`,
+`trailer co-author`, `trailer assisted-by`, and `explain` (plus `found`/`raw`, `check-reciprocal`,
+stderr lines, and capture meta when recorded) — tabbed per platform and channel (`captured` = live
+fixture, `declared` = declared fixture). The results table keeps every row in the DOM with CSS
+`content-visibility: auto`, so native Ctrl/Cmd+F searches the whole list.
+
+URL query params mirror the CLI's `--harness= / --provider= / --model=` flags: display names,
+labels, and aliases are accepted, and the URL is canonicalised to the strict-slug alphanumeric ids
+("Kimi Code" and "kimi-code" land as `kimicode`). `?agent=<agent_id>` is the agent results page —
+a full-page replacement of the index (not a modal); the site header wordmark or its "back to
+results" button returns to the index with the scroll position restored. All navigation uses the
+HTML5 history API (pushState/replaceState/popstate).
+
+## endpoints
+
+- `/` — the app (hero, filters, results table, detail panel)
+- `/index.json` — JSON results. Accepts `?harness=&provider=&model=&email=&agent=` with the same
+  name→id resolution. Unfiltered it returns the compact combo index; with any filter it embeds each
+  matching combo's full fixtures (identify + both trailers + explain + meta), capped at 50 combos
+  before degrading to compact rows with `"truncated": true`.
+- `/identify/<agent_id>.json` — one combo's merged result: every platform × channel fixture with its
+  verbatim outputs and meta. agent_id is the dash-joined strict slugs, e.g.
+  `cline-clinepass-deepseekv4flash`.
+- `/registry.json` — the rule registry: harnesses, providers, models with policy fields (training
+  postures, openness, licenses, scandal flags) and their source URLs.
+- `/data/combos.json` — the compact combo index (the same rows the table renders).
+- `/data/agents/<agent_id>.json` — the same bytes as `/identify/<agent_id>.json`.
+- `/llms.txt` — this file.
+
+## notes for agents
+
+- ids are strict slugs: lowercase alphanumeric with all separators stripped
+  (`kimi-code` → `kimicode`, `qwen3.8-27b` → `qwen3827b`); agent_id joins the three dims with dashes
+  (`cline-clinepass-deepseekv4flash`).
+- trailer emails are `<agent_id@local>` for every combo; `?email=` matches the full email, the local
+  part, or the agent_id.
+- `reciprocal: true` means the combo passes agent-detect's reciprocity requirement (per the policy
+  documented in the upstream repo); `explain.state` is the detailed state
+  (`reciprocal | not-reciprocal | unknown | undetectable`).
+- combos listed in the registry dropdowns but absent from `/index.json` results are registry rules
+  with no fixture yet — verify them live with
+  `agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>`.
+- data is regenerated from the upstream repo's committed fixture channels on every deploy; the site
+  stores nothing and reads nothing from visitors.

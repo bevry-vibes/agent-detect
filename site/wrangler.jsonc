@@ -1,0 +1,18 @@
+{
+  // agent-detect website — the browsable registry of the detection rules and
+  // fixture-verified results. Its own deployment; NOT part of the zig binary.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agent-detect",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+    // no not_found_handling: the worker owns the fallback (SPA index.html) so
+    // its /identify/<id>.json route can tell a missing agent (real 404) from
+    // an SPA route.
+  },
+  "observability": {
+    "enabled": true
+  }
+}

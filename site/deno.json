@@ -1,0 +1,13 @@
+{
+  "lock": false,
+  "nodeModulesDir": "auto",
+  "allowScripts": ["npm:workerd"],
+  "tasks": {
+    "data": "deno run -A tools/build_data.ts",
+    "build": "deno task data && vite build",
+    "spa": "vite",
+    "dev": "wrangler dev",
+    "check": "tsc --noEmit && deno check tools/build_data.ts",
+    "deploy": "vite build && wrangler deploy"
+  }
+}

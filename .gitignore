@@ -31,7 +31,7 @@
 # Build Caches
 build/
 bower_components/
-node_modules/
+site/node_modules/
 .next/
 
 # -------------------------------------
@@ -90,3 +90,9 @@ fixtures/index.sqlite3-*
 .codewhale
 .kilo
 .crush
+
+# the website (site/) — generated artifacts
+site/dist/
+site/node_modules/
+site/public/data/
+site/.wrangler/
