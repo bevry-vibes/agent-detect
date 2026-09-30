@@ -42,10 +42,12 @@ function entryView(e: AnyEntry): EntryView {
   return { id: e.id, name: e.name, label: e.label, variations: e.variations, badges, associations };
 }
 
-/** the index section (#index) — every harness, provider, and model with its
- * canonical alphanumeric id, its properties, and its associations, straight
- * from data/index.json (the committed index file the CLI embeds). A dim
- * filter narrows only its own list; clicking an entry filters the registry. */
+/** the index section (#index) — the same article structure as the registry
+ * section: header, description, count badges, and the data-as-JSON link, then
+ * every harness, provider, and model from data/index.json (the committed index
+ * file the CLI embeds) with its canonical alphanumeric id, properties, and
+ * associations. A dim filter narrows only its own list; clicking an entry
+ * filters the registry. */
 export function IndexSection({ index, filters, onSelect }: IndexSectionProps) {
   const groups = useMemo(() => {
     if (!index) return null;
@@ -75,16 +77,35 @@ export function IndexSection({ index, filters, onSelect }: IndexSectionProps) {
   }, [index, filters.harness, filters.provider, filters.model]);
 
   return (
-    <section id="index" className="mx-auto w-full max-w-7xl scroll-mt-14 px-4 py-8">
-      <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-mono text-sm font-semibold uppercase tracking-wide">index</h2>
-        <p className="text-muted-foreground text-xs">
-          every harness, provider, and model — name/variation to canonical id, properties, and associations ·{" "}
-          <a className="underline underline-offset-4" href="/index.json" target="_blank" rel="noreferrer">
-            data as JSON
-          </a>
+    <article id="index" className="mx-auto flex w-full max-w-7xl flex-col gap-5 scroll-mt-14 px-4 py-8">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Index of Agent Detections</h2>
+        <p className="text-lg font-medium">Every harness, provider, and model.</p>
+        <p className="text-muted-foreground text-sm">
+          The rule index the CLI embeds — map any name or variation to its canonical alphanumeric id, with each entry's
+          properties and its associations. A dim filter narrows only its own list; click an entry to filter the
+          registry.
         </p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          {index && (
+            <>
+              <Badge variant="secondary">{index.harnesses.length} harnesses</Badge>
+              <Badge variant="secondary">{index.providers.length} providers</Badge>
+              <Badge variant="secondary">{index.models.length} models</Badge>
+            </>
+          )}
+          <a
+            href="/data/index.json"
+            target="_blank"
+            rel="noreferrer"
+            className="text-muted-foreground hover:text-foreground ml-auto font-mono text-sm underline underline-offset-4"
+            title="the index file as JSON — the same bytes the released `agent-detect index` embeds"
+          >
+            view as JSON ↗
+          </a>
+        </div>
       </div>
+
       {!index && <p className="text-muted-foreground py-8 text-center text-sm">loading the index…</p>}
       {index && groups && (
         <div className="grid gap-4 md:grid-cols-3">
@@ -96,7 +117,7 @@ export function IndexSection({ index, filters, onSelect }: IndexSectionProps) {
                 </span>
                 <ArrowUpDown className="size-3 opacity-40" aria-hidden />
               </div>
-              <ul className="max-h-96 overflow-auto p-1" aria-label={`${title} index`}>
+              <ul className="max-h-96 overflow-y-auto p-1" aria-label={`${title} index`}>
                 {entries.map((e) => (
                   <li key={e.id}>
                     <button
@@ -127,6 +148,6 @@ export function IndexSection({ index, filters, onSelect }: IndexSectionProps) {
           ))}
         </div>
       )}
-    </section>
+    </article>
   );
 }

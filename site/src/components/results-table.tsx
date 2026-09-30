@@ -139,8 +139,11 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
 
   return (
     <>
-      {/* mobile: stacked cards — no horizontal scroll, same rows in the DOM */}
+      {/* mobile: stacked cards — no horizontal scroll, same rows in the DOM.
+        The list caps at ~5 cards' height and scrolls within itself, so the
+        page stays short enough to reach the next section */}
       <div role="list" aria-label="agent combos" className="md:hidden flex flex-col gap-2">
+        <div className="flex max-h-[857px] flex-col gap-2 overflow-y-auto">
         {sorted.map((row) => (
           <div
             key={row.agent_id}
@@ -189,6 +192,7 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
             <StatusRow row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} className="mt-2" />
           </div>
         ))}
+        </div>
         <p className="text-muted-foreground px-1 text-xs">
           {rows.length.toLocaleString()} of {totalCount.toLocaleString()} fixture-backed combos — tap one for its result
           JSON
