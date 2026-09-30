@@ -27,6 +27,7 @@ Local application of the bevry-vibes skills [zig.md](https://github.com/bevry-vi
 
 - Building the dev binary needs its own `build_options` module with `dev=true` hardcoded (`build.zig`), separate from the CLI `-Ddev` flag plumbing.
 - Tests run in `ReleaseSmall` (see `build.zig`) — keep asserts structural (expect/print), not timing-based.
+- `zig build test` runs test binaries under the build runner's listen protocol, which pipes their stderr — and zig 0.16 re-dumps whatever was captured under a red `failed command:` banner even when every test passes (the banner names the run step, then prints the captured stderr after `+- run test` with no separator). So a test that writes to stderr on a success path manufactures build noise on green runs. The fixture-hygiene reminder prints in `src/known_fixtures.test.zig` gate on `warningsTerminal()` (stderr is a terminal) for this reason — keep new maintainer-reminder prints behind it; failure-path diagnostics can print freely.
 - The `/proc` pseudo-file read rule lives upstream; this repo's implementation is `readProcFile` in `src/lib/core.zig` (buffered reader, `readSliceShort`).
 - The arena-aliasing free rule lives upstream; here it bites `readChannelObject` / `indexLoad` callers — do not free the parsed buffer while derived values live.
 - The json-map `getPtr` mutation rule lives upstream; see `errorsClearPure` in `src/dev/dev.zig` for this repo's use.

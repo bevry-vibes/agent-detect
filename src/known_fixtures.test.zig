@@ -13,6 +13,17 @@ const core = @import("lib/core.zig");
 const identity_dir = "fixtures/from-identity";
 const capture_dir = "fixtures/from-capture";
 
+/// Whether stderr is a live terminal, i.e. whether the suite's WARNING prints have a watcher.
+/// The warnings are maintainer reminders (see the two fixture-hygiene tests below), so they only
+/// print when someone can see them: under `zig build test` the build runner pipes the test binary's
+/// stderr and — even when every test passes — re-dumps whatever was captured under a red
+/// "failed command:" banner (zig 0.16 prints that banner for any step with captured stderr), so
+/// writing the reminders there only manufactures build noise. Terminal runs (`zig test`, the dev
+/// binary's own checks) keep them.
+fn warningsTerminal() bool {
+    return std.Io.File.stderr().supportsAnsiEscapeCodes(testing.io) catch false;
+}
+
 /// Discover every `<stem>.json` fixture file in one channel folder, returning the stems (sorted for deterministic iteration).
 fn discoverFolderStems(a: std.mem.Allocator, folder: []const u8) ![][]u8 {
     var stems: std.ArrayList([]u8) = .empty;
@@ -601,11 +612,13 @@ test "fixtures: warn on null / NOASSERTION harness_license (dev should fill in f
         const is_unverified = hl == null or hl.? == .null or
             (hl.? == .string and std.mem.eql(u8, hl.?.string, "NOASSERTION"));
         if (is_unverified) {
-            std.debug.print("WARNING: fixture {s} has unverified harness_license ({s}) — look up the upstream license and fill it in\n", .{ stem, if (hl == null or hl.? == .null) "null" else hl.?.string });
+            if (warningsTerminal()) {
+                std.debug.print("WARNING: fixture {s} has unverified harness_license ({s}) — look up the upstream license and fill it in\n", .{ stem, if (hl == null or hl.? == .null) "null" else hl.?.string });
+            }
             warnings += 1;
         }
     }
-    if (warnings > 0) {
+    if (warnings > 0 and warningsTerminal()) {
         std.debug.print("WARNING: {d} fixture(s) have an unverified harness_license\n", .{warnings});
     }
 }
@@ -648,7 +661,9 @@ test "fixtures: envelope combo-match — each folder's identify ids equal the fi
                 // The 2026-09-20 ollama individuation rename-transition (.plans/1789895398; DESIGN decision #16 — files are renamed, content refreshes only on regeneration):
                 // a stem whose provider segment is `ollamacloud` may still carry the pre-split `provider_id: "ollama"` until its queue drain rewrites it. Warn, do not fail — drop the mapping when no warning remains.
                 if (std.mem.eql(u8, parts[1], "ollamacloud") and std.mem.eql(u8, p.string, "ollama")) {
-                    std.debug.print("WARNING: fixture {s} still carries the pre-individuation provider_id \"ollama\" — queue it via `fixtures queue --provider=ollamacloud --refresh --from-identity`\n", .{stem});
+                    if (warningsTerminal()) {
+                        std.debug.print("WARNING: fixture {s} still carries the pre-individuation provider_id \"ollama\" — queue it via `fixtures queue --provider=ollamacloud --refresh --from-identity`\n", .{stem});
+                    }
                     continue;
                 }
                 std.debug.print("fixture {s}: identify ids '{s}/{s}/{s}' do not match the filename '{s}/{s}/{s}'\n", .{ stem, h.string, p.string, m.string, parts[0], parts[1], parts[2] });
