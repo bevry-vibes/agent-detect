@@ -245,15 +245,10 @@ export default function App() {
     pushURL(filters, { kind: "agent", id: selected });
   };
 
-  /** an index entry click: the gold (already-selected) entry clears its
-   * filter in place; a new selection applies it and jumps to the registry */
+  /** an index entry click only toggles its filter — no scroll, no anchor;
+   * the gold cue and the pill box show the applied filter in place */
   const onIndexSelect = (dim: Dim, id: string) => {
-    if (filters[dim] === id) {
-      onDim(dim, null);
-      return;
-    }
-    pendingAnchor.current = "registry";
-    onDim(dim, id);
+    onDim(dim, filters[dim] === id ? null : id);
   };
 
   const onOpenEntity = (dim: EntityDim, id: string) => {
