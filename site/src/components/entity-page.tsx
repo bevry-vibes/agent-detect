@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Maximize2 } from "lucide-react";
+import { ArrowLeft, SquareArrowOutUpRight } from "lucide-react";
 
 import { type CombosFile, type IndexFile, type Registry } from "@/lib/registry";
 import { JsonBlock } from "@/components/json-block";
@@ -45,12 +45,41 @@ type AnyEntry = IndexFile["harnesses"][number] | IndexFile["providers"][number] 
 
 function entityBadges(e: AnyEntry): string[] {
   const badges: string[] = [];
-  if ("license" in e && e.license) badges.push(e.license);
-  if ("openness" in e && e.openness) badges.push(e.openness);
+  if ("license" in e && e.license) badges.push(`license: ${e.license}`);
+  if ("openness" in e && e.openness) badges.push(`openness: ${e.openness}`);
   if (e.open_training) badges.push(`open: ${e.open_training}`);
   if (e.closed_training) badges.push(`closed: ${e.closed_training}`);
   if ("reciprocity_scandal" in e && e.reciprocity_scandal) badges.push("scandal");
   return badges;
+}
+
+/** per-value explanations for the policy fields — cursor-help + dotted
+ * underline on each value, the same vocabulary the rule tables use */
+function policyExplain(field: string, value: string | null | boolean): string {
+  if (value == null) return `${field}: not researched — no verified data`;
+  if (field === "license") {
+    if (value === "NONE") return "license: verified none granted (closed source)";
+    if (value === "NOASSERTION") return "license: exists but custom/non-SPDX, or researched without conclusion";
+    return `license: ${value} — the SPDX license id (informational; the licence does not gate reciprocity)`;
+  }
+  if (field === "openness") {
+    if (value === "closed") return "openness: closed — API-only, no weights published";
+    return `openness: ${value} — the weights are published under this tier`;
+  }
+  if (field === "open_training") {
+    if (value === "NOASSERTION") return "open-model training: researched, inconclusive";
+    return `open-model training: ${value} — whether the entity uses your data to train open-weight models (informational; never gates reciprocity)`;
+  }
+  if (field === "closed_training") {
+    if (value === "NOASSERTION") return "closed-model training: researched, inconclusive";
+    return `closed-model training: ${value} — whether the entity uses your data to train closed (API) models: enforced = no opt-out, opt-out = trains by default, opt-in = off by default, never = verified never; this axis gates reciprocity`;
+  }
+  if (field === "reciprocity_scandal") {
+    return value
+      ? "reciprocity scandal: implicated by a court, regulator, official report, or wire-capture finding (the fair-use purpose test)"
+      : "reciprocity scandal: false — no scandal on record (explicit, not inferred from absence)";
+  }
+  return `${field}: ${value}`;
 }
 
 function Table({ title, items }: { title: string; items: CardView[] }) {
@@ -87,9 +116,9 @@ function Table({ title, items }: { title: string; items: CardView[] }) {
                 title={c.expandTitle}
                 aria-label={c.expandTitle}
                 onClick={c.onExpand}
-                className="text-muted-foreground hover:text-foreground flex w-8 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                className="hover:text-foreground flex w-8 shrink-0 cursor-pointer items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
               >
-                <Maximize2 className="size-3.5" />
+                <SquareArrowOutUpRight className="size-3.5" />
               </button>
             </div>
           </li>
@@ -127,20 +156,12 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
     const entityCard = (d: EntityDim, eid: string, selected: boolean): CardView => {
       const e = findEntry(d, eid);
       const elabel = registry ? registry[DIM_TABLES[d]].find((r) => r.id === eid)?.label ?? eid : eid;
-      const meta =
-        e && "providers" in e && "harnesses" in e
-          ? `${e.providers.length} providers · ${e.harnesses.length} harnesses`
-          : e && "harnesses" in e
-          ? `${e.harnesses.length} harnesses · ${e.models.length} models`
-          : e
-          ? `${e.providers.length} providers · ${e.models.length} models`
-          : "";
       return {
         key: `${d}-${eid}`,
         title: elabel,
         mono: eid,
         badges: e ? entityBadges(e as AnyEntry) : [],
-        meta,
+        meta: "",
         selected,
         onCard: () => setSel((s) => ({ ...s, agent: undefined, [d]: s[d] === eid ? undefined : eid })),
         cardTitle: selected ? `clear the ${d} selection` : `narrow the other tables to ${d} ${eid}`,
@@ -272,11 +293,10 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-3">
               <h1 className="text-2xl font-semibold tracking-tight">{label}</h1>
               <span className="text-muted-foreground font-mono text-sm">{entry.id}</span>
-              <Badge variant="secondary" className="font-mono text-[10px]">
-                {dim}
-              </Badge>
             </div>
-            <p className="text-muted-foreground text-sm font-mono">{entry.name}</p>
+            <Badge variant="secondary" className="w-fit font-mono text-[10px]">
+              {dim}
+            </Badge>
           </header>
 
           <section className="flex flex-col gap-2 rounded-xl border p-4">
@@ -285,7 +305,12 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
               {policy.map((row) => (
                 <div key={row.field} className="flex min-w-0 items-baseline gap-2">
                   <dt className="text-muted-foreground w-44 shrink-0 font-mono text-xs">{row.field}</dt>
-                  <dd className="text-sm">{row.value ?? <span className="text-muted-foreground">null</span>}</dd>
+                  <dd
+                    className="cursor-help text-sm underline decoration-dotted underline-offset-2"
+                    title={policyExplain(row.field, row.value)}
+                  >
+                    {row.value ?? <span className="text-muted-foreground">null</span>}
+                  </dd>
                 </div>
               ))}
             </dl>

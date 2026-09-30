@@ -240,7 +240,9 @@ export default function App() {
   };
   const onSelect = (selected: string) => {
     if (view.kind === "agent" && view.id === selected) return;
-    scrollMem.current.set(window.location.pathname + window.location.search, window.scrollY);
+    // remember where the index was, under the key the view-transition effect
+    // reads when returning from this detail page
+    scrollMem.current.set(viewPath({ kind: "agent", id: selected }), window.scrollY);
     setView({ kind: "agent", id: selected });
     pushURL(filters, { kind: "agent", id: selected });
   };
@@ -252,7 +254,7 @@ export default function App() {
   };
 
   const onOpenEntity = (dim: EntityDim, id: string) => {
-    scrollMem.current.set(window.location.pathname + window.location.search, window.scrollY);
+    scrollMem.current.set(viewPath({ kind: "entity", dim, id }), window.scrollY);
     setView({ kind: "entity", dim, id });
     pushURL({ ...NO_FILTERS }, { kind: "entity", dim, id });
   };

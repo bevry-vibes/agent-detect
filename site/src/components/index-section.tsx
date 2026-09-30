@@ -17,11 +17,8 @@ interface IndexSectionProps {
 
 interface EntryView {
   id: string;
-  name: string;
   label: string;
-  variations: string[];
   badges: string[];
-  associations: string;
 }
 
 type AnyEntry = HarnessEntry | ProviderEntry | ModelEntry;
@@ -34,29 +31,25 @@ function badgeTitle(b: string): string {
   if (b.startsWith("open: ")) return `open-model training: ${b.slice(6)} — whether the entity uses your data to train open-weight models (informational; never gates reciprocity)`;
   if (b.startsWith("closed: ")) return `closed-model training: ${b.slice(8)} — whether the entity uses your data to train closed (API) models: enforced = no opt-out, opt-out = trains by default, opt-in = off by default, never = verified never, NOASSERTION = researched, inconclusive; this axis gates reciprocity`;
   if (b === "scandal") return "reciprocity scandal — implicated by a court, regulator, official report, or wire-capture finding (the fair-use purpose test)";
-  if (b === "NONE") return "license: verified none granted (closed source)";
-  if (b === "NOASSERTION") return "license: exists but custom/non-SPDX, or researched without conclusion";
-  if (b === "closed") return "openness: closed — API-only, no weights published";
-  if (b.startsWith("open-")) return `openness: ${b} — the weights are published under this tier`;
-  return `license: ${b}`;
+  if (b === "license: NONE") return "license: verified none granted (closed source)";
+  if (b === "license: NOASSERTION") return "license: exists but custom/non-SPDX, or researched without conclusion";
+  if (b.startsWith("license: ")) return `license: ${b.slice(9)} — the SPDX license id`;
+  if (b === "openness: closed") return "openness: closed — API-only, no weights published";
+  if (b.startsWith("openness: open-")) return `${b} — the weights are published under this tier`;
+  if (b.startsWith("openness: ")) return `${b} — the weights' openness tier`;
+  return b;
 }
 
 function entryView(e: AnyEntry): EntryView {
   const badges: string[] = [];
-  if ("license" in e && e.license) badges.push(e.license);
-  if ("openness" in e && e.openness) badges.push(e.openness);
+  if ("license" in e && e.license) badges.push(`license: ${e.license}`);
+  if ("openness" in e && e.openness) badges.push(`openness: ${e.openness}`);
   if (e.open_training) badges.push(`open: ${e.open_training}`);
   if (e.closed_training) badges.push(`closed: ${e.closed_training}`);
   if ("reciprocity_scandal" in e && e.reciprocity_scandal) badges.push("scandal");
   // the association shape discriminates the entity (the contract carries no
   // provider_short_title/license; harnesses and models both carry license)
-  const associations =
-    "providers" in e && "harnesses" in e
-      ? `${e.providers.length} providers · ${e.harnesses.length} harnesses` // model
-      : "harnesses" in e
-      ? `${e.harnesses.length} harnesses · ${e.models.length} models` // provider
-      : `${e.providers.length} providers · ${e.models.length} models`; // harness
-  return { id: e.id, name: e.name, label: e.label, variations: e.variations, badges, associations };
+  return { id: e.id, label: e.label, badges };
 }
 
 /** the index section (#index) — the same article structure as the registry
@@ -159,18 +152,16 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
                             <span className="text-muted-foreground font-mono text-[11px]">{e.id}</span>
                           </span>
                           <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
-                            <span className="font-mono">{e.name}</span>
                             {e.badges.map((b) => (
                               <Badge
                                 key={b}
                                 variant="outline"
                                 title={badgeTitle(b)}
-                                className={`px-1 py-0 text-[10px] ${selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}
+                                className={`cursor-help px-1 py-0 text-[10px] ${selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}
                               >
                                 {b}
                               </Badge>
                             ))}
-                            <span>· {e.associations}</span>
                           </span>
                         </button>
                         <button
