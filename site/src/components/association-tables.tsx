@@ -244,9 +244,6 @@ export function AssociationTables({ page, self, index, registry, combos, onOpenE
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-        associations — click a card to narrow the tables beside it; a card's expand button opens its page
-      </h2>
       <div className="grid gap-4 md:grid-cols-3">
         {tables
           .filter((t) => t.title !== "Agents")

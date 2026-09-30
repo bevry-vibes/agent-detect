@@ -95,9 +95,6 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
               <h1 className="text-2xl font-semibold tracking-tight">{label}</h1>
               <span className="text-muted-foreground font-mono text-sm">{entry.id}</span>
             </div>
-            <Badge variant="secondary" className="w-fit font-mono text-[10px]">
-              {dim}
-            </Badge>
           </header>
 
           <section className="flex flex-col gap-2 rounded-xl border p-4">

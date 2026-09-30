@@ -154,28 +154,8 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
       )}
 
       {row && (
-        <header className="flex flex-col gap-1">
-          <h1 className="font-mono text-2xl font-bold tracking-tight">
-            <span className="text-muted-foreground">agent:</span> {row.agent_id}
-          </h1>
-          {(["harness", "provider", "model"] as const).map((dim) => {
-            const id = row[dim];
-            return (
-              <a
-                key={dim}
-                href={`/${dim}/${id}`}
-                title={`open the ${dim} detail page (${dim}/${id})`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onOpenEntity(dim, id);
-                }}
-                className="hover:bg-muted/50 -mx-1 flex min-w-0 items-baseline gap-1 rounded-md px-1 py-0.5 text-sm transition-colors"
-              >
-                <span className="text-muted-foreground">{dim}:</span>
-                <span className="font-mono underline-offset-4 hover:underline">{id}</span>
-              </a>
-            );
-          })}
+        <header className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">{row.agent_id}</h1>
         </header>
       )}
 
@@ -195,7 +175,7 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
       {row && index && registry && combos && (
         <AssociationTables
           page={{ harness: row.harness, provider: row.provider, model: row.model }}
-          self={{ harness: row.harness, provider: row.provider, model: row.model, agent: row.agent_id }}
+          self={{ agent: row.agent_id }}
           index={index}
           registry={registry}
           combos={combos}

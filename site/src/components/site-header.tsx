@@ -26,7 +26,8 @@ function ThemeToggle() {
 
 export interface AnchorLink {
   label: string;
-  href: string;
+  /** absent = a plain label, not a link (the result-type indicator) */
+  href?: string;
 }
 
 export function SiteHeader({
@@ -67,18 +68,27 @@ export function SiteHeader({
             aria-label="page sections"
             className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex"
           >
-            {centerNav.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center rounded-md px-3 text-sm"
-                onClick={(e) => {
-                  if (onNavClick?.(link.href)) e.preventDefault();
-                }}
-              >
-                {link.label}
-              </a>
-            ))}
+            {centerNav.map((link) =>
+              link.href ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center rounded-md px-3 text-sm"
+                  onClick={(e) => {
+                    if (link.href && onNavClick?.(link.href)) e.preventDefault();
+                  }}
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <span
+                  key={link.label}
+                  className="text-foreground inline-flex h-9 items-center rounded-md px-3 text-sm font-medium"
+                >
+                  {link.label}
+                </span>
+              ),
+            )}
           </nav>
         )}
         <nav className="flex items-center gap-1 text-sm">

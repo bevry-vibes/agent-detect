@@ -351,11 +351,15 @@ export default function App() {
       <SiteHeader
         onHome={view.kind !== "index" ? closeToIndex : undefined}
         onNavClick={onNavClick}
-        centerNav={[
-          { label: "cli", href: "#cli" },
-          { label: "index", href: "#index" },
-          { label: "registry", href: "#registry" },
-        ]}
+        centerNav={
+          view.kind === "index"
+            ? [
+                { label: "cli", href: "#cli" },
+                { label: "index", href: "#index" },
+                { label: "registry", href: "#registry" },
+              ]
+            : [{ label: view.kind === "agent" ? "agent" : view.dim }]
+        }
       />
       {view.kind === "agent" ? (
         <AgentPage
