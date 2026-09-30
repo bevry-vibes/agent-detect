@@ -1,21 +1,18 @@
 import { useMemo } from "react";
 import { ArrowUpDown, SquareArrowOutUpRight } from "lucide-react";
 
-import { type CombosFile, type HarnessEntry, type IndexFile, type ModelEntry, type Platform, type ProviderEntry } from "@/lib/registry";
+import { type HarnessEntry, type IndexFile, type ModelEntry, type ProviderEntry } from "@/lib/registry";
 import { type Filters } from "@/components/filter-bar";
 import { Badge } from "@/components/ui/badge";
 
 interface IndexSectionProps {
   index: IndexFile | null;
-  combos: CombosFile | null;
   filters: Filters;
   /** clicking an entry toggles its dim filter — no scroll, the gold cue and
    * the pill box show it in place */
   onSelect: (dim: "harness" | "provider" | "model", id: string) => void;
   /** the open/max icon opens the entity's detail page (/model/<id> etc.) */
   onOpenEntity: (dim: "harness" | "provider" | "model", id: string) => void;
-  /** the auto-highlighted agent strip's card opens the result page */
-  onOpenAgent: (agentId: string) => void;
 }
 
 interface EntryView {
@@ -62,18 +59,7 @@ function entryView(e: AnyEntry): EntryView {
  * associations. A dim filter narrows only its own list; the selected entry
  * carries the gold cue, and clicking it again clears the filter. The open/max
  * icon opens the entity's detail page. */
-export function IndexSection({ index, combos, filters, onSelect, onOpenEntity, onOpenAgent }: IndexSectionProps) {
-  // when all three dims are selected, exactly one agent is possible — the
-  // agents strip auto-highlights it (gold, like the three dim entries)
-  const pinnedAgent = useMemo(() => {
-    if (!combos || !filters.harness || !filters.provider || !filters.model) return null;
-    return (
-      combos.combos.find(
-        (c) => c.harness === filters.harness && c.provider === filters.provider && c.model === filters.model,
-      ) ?? null
-    );
-  }, [combos, filters.harness, filters.provider, filters.model]);
-
+export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSectionProps) {
   const groups = useMemo(() => {
     if (!index) return null;
     // dim filters narrow ALL THREE lists to what is available under them —
@@ -156,50 +142,6 @@ export function IndexSection({ index, combos, filters, onSelect, onOpenEntity, o
       </div>
 
       {!index && <p className="text-muted-foreground py-8 text-center text-sm">loading the index…</p>}
-      {index && pinnedAgent && (
-        <div className="rounded-xl border border-amber-500/60 bg-amber-500/10">
-          <div className="text-muted-foreground flex items-center justify-between border-b px-3 py-2 text-xs font-medium">
-            <span>Agents — 1 (pinned by the three dims)</span>
-          </div>
-          <ul className="p-1" aria-label="Agents index">
-            <li>
-              <div className="group flex min-w-0 items-stretch gap-0.5 rounded-md border border-amber-500/60 bg-amber-500/10">
-                <button
-                  type="button"
-                  title={`open the result page (/agent/${pinnedAgent.agent_id})`}
-                  onClick={() => onOpenAgent(pinnedAgent.agent_id)}
-                  className="flex min-w-0 flex-1 cursor-pointer flex-col gap-0.5 px-2 py-1.5 text-left"
-                >
-                  <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                    <span className="text-sm font-medium">{pinnedAgent.agent_id}</span>
-                    <span className="text-muted-foreground font-mono text-[11px]">{pinnedAgent.agent_id}</span>
-                  </span>
-                  <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
-                    <Badge
-                      variant="outline"
-                      className={`cursor-help px-1 py-0 text-[10px] ${
-                        pinnedAgent.reciprocal ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400" : "border-red-500/40 text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {pinnedAgent.reciprocal ? "reciprocal" : "not reciprocal"}
-                    </Badge>
-                    <span>{pinnedAgent.platforms.join(" ")}</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  title={`open the result page (/agent/${pinnedAgent.agent_id})`}
-                  aria-label={`open the result page (/agent/${pinnedAgent.agent_id})`}
-                  onClick={() => onOpenAgent(pinnedAgent.agent_id)}
-                  className="text-muted-foreground hover:text-foreground flex w-8 shrink-0 cursor-pointer items-center justify-center"
-                >
-                  <SquareArrowOutUpRight className="size-3.5" />
-                </button>
-              </div>
-            </li>
-          </ul>
-        </div>
-      )}
       {index && groups && (
         <div className="grid gap-4 md:grid-cols-3">
           {groups.map(({ dim, title, entries, total }) => (

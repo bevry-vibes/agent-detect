@@ -391,14 +391,7 @@ export default function App() {
       ) : (
         <main className="flex flex-col">
           <Hero />
-          <IndexSection
-            index={indexFile}
-            combos={combosFile}
-            filters={filters}
-            onSelect={onIndexSelect}
-            onOpenEntity={onOpenEntity}
-            onOpenAgent={onSelect}
-          />
+          <IndexSection index={indexFile} filters={filters} onSelect={onIndexSelect} onOpenEntity={onOpenEntity} />
           <article id="registry" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 scroll-mt-14 px-4 py-8">
             {registry && (
               <RegistryIntro
