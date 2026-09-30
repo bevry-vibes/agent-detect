@@ -1053,57 +1053,52 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     }
 }
 
-test "map-provider-model-freeprovidermodel.csv: free-grid entries resolve to known rules, stay sparse, and curated capture files carry a free-signal in their launch model spec" {
-    // The grid is the free-axis source of truth: rows only for providers with ≥1 free model, columns only for models free somewhere, cells the provider's free model-id or `-`.
+test "the index file's provider_map_to_free_models: free entries resolve to known rules, and curated capture files carry a free-signal in their launch model spec" {
+    // The free map is the free-axis source of truth (the free-grid CSV's successor): one row per provider with ≥1 free model, values the free model slugs.
     // Every fixtured (provider, model) row that is free-listed must carry a free signal (`:free`, `-free`, `free/`) in its meta.prompt_invocation model spec — files whose launch implies the model via harness config are exempt.
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/map-provider-model-freeprovidermodel.csv", a, @enumFromInt(1 << 20)) catch {
-        std.debug.print("fixtures/map-provider-model-freeprovidermodel.csv is missing — it is the free-axis source of truth\n", .{});
-        return error.MissingFreeGrid;
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index-data.json", a, @enumFromInt(1 << 26)) catch {
+        std.debug.print("fixtures/index-data.json is missing — it is the index's source of truth\n", .{});
+        return error.MissingIndexData;
     };
-    var lines = std.mem.tokenizeScalar(u8, data, '\n');
-    const header = lines.next() orelse return error.InvalidFreeGrid;
-    var cols: std.ArrayList([]const u8) = .empty;
-    var hc = std.mem.tokenizeScalar(u8, header, ',');
-    _ = hc.next(); // the "provider" label cell
-    while (hc.next()) |c| try cols.append(a, std.mem.trim(u8, c, " \r\t"));
-    if (cols.items.len == 0) return error.InvalidFreeGrid;
+    const root = try std.json.parseFromSliceLeaky(std.json.Value, a, data, .{});
+    if (root != .object) return error.InvalidIndexData;
+    const free_v = root.object.get("provider_map_to_free_models") orelse return error.InvalidIndexData;
+    if (free_v != .object) return error.InvalidIndexData;
 
-    for (cols.items) |col| {
-        var m_ok = false;
-        for (main.rulesForModels) |rr| {
-            if (slugifyMatches(rr.name, col)) m_ok = true;
-        }
-        if (!m_ok) {
-            std.debug.print("free grid column {s} resolves to no model rule\n", .{col});
-            return error.UnknownFreeModel;
-        }
-    }
-    while (lines.next()) |line| {
-        var cells = std.mem.tokenizeScalar(u8, line, ',');
-        const provider = std.mem.trim(u8, cells.next() orelse continue, " \r\t");
+    var it = free_v.object.iterator();
+    while (it.next()) |kv| {
+        const provider = kv.key_ptr.*;
+        if (kv.value_ptr.* != .array) return error.InvalidIndexData;
         var p_ok = false;
         for (main.rulesForProviders) |rr| {
             if (slugifyMatches(rr.name, provider)) p_ok = true;
         }
         if (!p_ok) {
-            std.debug.print("free grid provider {s} resolves to no rule\n", .{provider});
+            std.debug.print("free map provider {s} resolves to no rule\n", .{provider});
             return error.UnknownFreeProvider;
         }
-        var any = false;
-        var idx: usize = 0;
-        while (cells.next()) |cell| : (idx += 1) {
-            const v = std.mem.trim(u8, cell, " \r\t");
-            if (v.len == 0 or std.mem.eql(u8, v, "-")) continue;
-            any = true;
-            if (idx >= cols.items.len) continue;
+        if (kv.value_ptr.*.array.items.len == 0) {
+            std.debug.print("free map row {s} has no free model — sparse map violation\n", .{provider});
+            return error.NonSparseFreeRow;
+        }
+        for (kv.value_ptr.*.array.items) |mv| {
+            if (mv != .string) return error.InvalidIndexData;
+            var m_ok = false;
+            for (main.rulesForModels) |rr| {
+                if (slugifyMatches(rr.name, mv.string)) m_ok = true;
+            }
+            if (!m_ok) {
+                std.debug.print("free map model {s} resolves to no model rule\n", .{mv.string});
+                return error.UnknownFreeModel;
+            }
             // free-signal cross-check against the from-capture files' argv
             const stems = try discoverFolderStems(a, capture_dir);
             for (stems) |stem| {
                 const parts = (split4(stem)) orelse continue;
-                if (!std.mem.eql(u8, parts[1], provider) or !std.mem.eql(u8, parts[2], cols.items[idx])) continue;
+                if (!std.mem.eql(u8, parts[1], provider) or !std.mem.eql(u8, parts[2], mv.string)) continue;
                 // the local ollama runtime has no paid tier — every combo is free by construction, and the `:` in its tags (`qwen3:1.7b`) is a size tag, never a tier marker; the free-signal probe does not apply.
                 if (std.mem.eql(u8, provider, "ollama")) continue;
                 const root_v = (try readChannelParsed(a, capture_dir, stem)) orelse continue;
@@ -1133,29 +1128,6 @@ test "map-provider-model-freeprovidermodel.csv: free-grid entries resolve to kno
                     return error.MissingFreeSignal;
                 }
             }
-        }
-        if (!any) {
-            std.debug.print("free grid row {s} has no free model — sparse grid violation\n", .{provider});
-            return error.NonSparseFreeRow;
-        }
-    }
-    for (cols.items, 0..) |col, ci| {
-        var any = false;
-        var lines2 = std.mem.tokenizeScalar(u8, data, '\n');
-        _ = lines2.next();
-        while (lines2.next()) |line| {
-            var cells = std.mem.tokenizeScalar(u8, line, ',');
-            _ = cells.next();
-            var idx: usize = 0;
-            while (cells.next()) |cell| : (idx += 1) {
-                if (idx != ci) continue;
-                const v = std.mem.trim(u8, cell, " \r\t");
-                if (v.len > 0 and !std.mem.eql(u8, v, "-")) any = true;
-            }
-        }
-        if (!any) {
-            std.debug.print("free grid column {s} has no free provider — sparse grid violation\n", .{col});
-            return error.NonSparseFreeColumn;
         }
     }
 }

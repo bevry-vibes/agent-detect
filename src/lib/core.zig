@@ -3398,8 +3398,11 @@ pub const usage =
     \\                   co-author     Co-authored-by: (Bevry commits.md)
     \\                   assisted-by   Assisted-by:   (e.g. GCC AI policy)
     \\  check-reciprocal  check reciprocity compliance with Bevry's AI policy
-    \\  web            open the registry website — dims deep-link the site's
-    \\                 filters (see `web --help`)
+    \\  registry       open the registry website — the filters deep-link the
+    \\                 site's registry section (see `registry --help`)
+    \\  index          print the rule index — every harness, provider, and model
+    \\                 with its canonical id, properties, and associations
+    \\                 (see `index --help`)
     \\  help           this help (also --help, -h, or no arguments)
     \\  version        print the version (also --version, -V)
     \\
@@ -3407,9 +3410,9 @@ pub const usage =
     \\  --harness=H --provider=P --model=M
     \\                 resolve the action from the rule tables instead of live
     \\                 detection (all three together, or none)
-    \\  --platform=PL --no-open
-    \\                 web only: pin the result page's platform tab; print the
-    \\                 url instead of opening it
+    \\  --web / --no-web · --json / --no-json
+    \\                 registry and index only: --web also opens the site
+    \\                 (JSON prints by default; --no-json prints nothing)
     \\
     \\examples:
     \\  agent-detect identify
@@ -3418,7 +3421,8 @@ pub const usage =
     \\  agent-detect trailer co-author
     \\  agent-detect trailer assisted-by
     \\  agent-detect check-reciprocal
-    \\  agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2
+    \\  agent-detect index --harness=cline
+    \\  agent-detect registry --harness=kimi-code --provider=chutes --model=glm-5.2
     \\  agent-detect identify --harness=kilo --provider=deepseek --model=deepseek-v4-flash
     \\
     \\exit codes:
@@ -3451,66 +3455,152 @@ pub const trailerUsage =
     \\
 ;
 
-pub const webUsage =
-    \\agent-detect web — open the registry website (agent-detect.bevry.workers.dev)
+pub const registryUsage =
+    \\agent-detect registry — open the registry website (agent-detect.bevry.workers.dev)
     \\
     \\usage:
-    \\  agent-detect web [--harness=H] [--provider=P] [--model=M] [--platform=PL] [--no-open]
+    \\  agent-detect registry [filters] [--web] [--no-json]
     \\
     \\url forms:
-    \\  no dims      the homepage
-    \\  any dim(s)   the registry filtered to them, scrolled to the results (#registry)
-    \\  all three    the combo's result page (?agent=<harness>-<provider>-<model>)
-    \\               — add --platform=PL to pin the platform tab
+    \\  no filters     the homepage
+    \\  any filter(s)  the registry filtered to them, scrolled to the results
+    \\                 (#registry)
+    \\  all three dims the combo's result page (?agent=<harness>-<provider>-<model>)
+    \\  --agent=ID     the result page for that agent or fixture id (3- or 4-part)
     \\
-    \\options:
+    \\filters:
     \\  --harness=H --provider=P --model=M
-    \\               filter dims; names, labels, and aliases resolve exactly like
-    \\               the recipe flags — an unresolvable dim exits 7
-    \\  --platform=PL  pin the result page's platform tab (complete combo required)
-    \\  --no-open    print the url instead of opening it
+    \\                 names, labels, and aliases resolve exactly like the
+    \\                 recipe flags — an unresolvable dim exits 7
+    \\  --email=E      combos whose trailer email of record matches
+    \\                 (case-insensitive)
+    \\  --platform=PL  combos declared on that platform (darwin/macos, linux,
+    \\                 windows)
+    \\  --free / --no-free
+    \\                 combos whose provider-model cell is free / not free
+    \\  --reciprocal / --no-reciprocal
+    \\                 combos whose reciprocity of record is true / false
+    \\  --agent=ID     exclusive — with any filter it is a conflict (exit 3)
+    \\
+    \\output:
+    \\  JSON ({url, query, opened}) by default; --web also opens the site;
+    \\  --no-json prints nothing — exit status only. --json / --no-web are the
+    \\  explicit defaults; --no-open is gone (opening is opt-in via --web).
     \\
     \\examples:
-    \\  agent-detect web
-    \\  agent-detect web --harness=kimi-code
-    \\  agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2 --platform=linux
-    \\  agent-detect web --no-open
+    \\  agent-detect registry
+    \\  agent-detect registry --harness=kimi-code
+    \\  agent-detect registry --harness=kimi-code --provider=chutes --model=glm-5.2
+    \\  agent-detect registry --reciprocal=false --free --web
+    \\  agent-detect registry --agent=cline-chutes-kimik3 --no-json
     \\
     \\exit codes:
-    \\  0 opened · 2 unrecognised argument (--platform value) · 3 conflicting
-    \\  argument (web-only flags on another action) · 4 --platform without the
-    \\  complete combo · 6 the platform url opener is absent or failed
-    \\  (install it, or re-run with --no-open) · 7 a dim resolved to no rule.
+    \\  0 ok · 2 unrecognised argument (a bad --platform value) · 3 conflicting
+    \\  argument (--agent with a filter; the output flags on another action) ·
+    \\  6 the platform url opener is absent or failed · 7 a dim resolved to no
+    \\  rule, or --agent is malformed.
     \\
 ;
 
-/// the registry website's base url — the sole coupling between the CLI's `web`
-/// action and the `site/` deployment (see DESIGN.md "the website").
+pub const indexUsage =
+    \\agent-detect index — the rule index: every harness, provider, and model with
+    \\its canonical id, its properties, and its associations
+    \\
+    \\usage:
+    \\  agent-detect index [filters] [--web] [--no-json]
+    \\
+    \\shape:
+    \\  {harnesses, providers, models, provider_map_to_free_models,
+    \\   agent_map_to_platforms_reciprocal} — entries carry the from-identity
+    \\  fixture's per-entity identify fields (minus instance state) plus their
+    \\  variations and association id arrays; mapping any name or variation to
+    \\  the canonical alphanumeric id is the point.
+    \\
+    \\filters — each narrows ALL THREE arrays to the entries available for it:
+    \\  --harness=H --provider=P --model=M
+    \\                 names, labels, and aliases resolve like the recipe flags
+    \\  --platform=PL  entries in combos declared on that platform
+    \\  --free / --no-free
+    \\                 entries in free / not-free provider-model cells
+    \\  --reciprocal / --no-reciprocal
+    \\                 entries in combos with that reciprocity of record
+    \\
+    \\output:
+    \\  JSON by default; --web opens siteUrl/?<dims>#index; --no-json prints
+    \\  nothing — exit status only. --json / --no-web are the explicit defaults.
+    \\
+    \\examples:
+    \\  agent-detect index
+    \\  agent-detect index --harness=cline
+    \\  agent-detect index --free
+    \\  agent-detect index --provider=chutes --no-reciprocal
+    \\
+    \\exit codes:
+    \\  0 ok · 2 unrecognised argument (a bad --platform value) · 3 conflicting
+    \\  argument (the output flags on another action) · 6 the platform url
+    \\  opener is absent or failed · 7 a dim resolved to no rule.
+    \\
+;
+
+/// the registry website's base url — the sole coupling between the CLI's
+/// `registry`/`index` actions and the `site/` deployment (see DESIGN.md "the
+/// website").
 pub const siteUrl = "https://agent-detect.bevry.workers.dev";
 
-/// compose a website url from canonical dim ids (empty = not provided).
-/// All three → the combo's result page (`/?agent=<h-p-m>`, `--platform` pinning
-/// the tab); any partial set → the filtered registry at the `#registry` anchor
-/// (the anchor appears iff a dim was given — it is what scrolls the results
-/// into view); none → the bare homepage. `platform` is only meaningful on the
-/// result page, so it is only emitted there.
-pub fn buildWebUrl(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, platform: []const u8) ![]u8 {
-    if (h.len > 0 and p.len > 0 and m.len > 0) {
-        if (platform.len > 0) {
-            return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}-{s}-{s}&platform={s}", .{ h, p, m, platform });
-        }
-        return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}-{s}-{s}", .{ h, p, m });
+/// the registry action's canonicalized query — every value as it lands in the
+/// url and the JSON report (empty/unset for absent filters).
+pub const RegistryQuery = struct {
+    harness: []const u8 = "",
+    provider: []const u8 = "",
+    model: []const u8 = "",
+    email: []const u8 = "",
+    platform: []const u8 = "",
+    free: ?bool = null,
+    reciprocal: ?bool = null,
+    /// direct result-page id (3- or 4-part); exclusive with every filter
+    agent: []const u8 = "",
+};
+
+/// compose the registry url: `--agent` → the result page; any filter → the
+/// filtered registry at the `#registry` anchor (the anchor appears iff a filter
+/// was given — it is what scrolls the results into view); none → the homepage.
+pub fn buildRegistryUrl(a: std.mem.Allocator, q: RegistryQuery) ![]u8 {
+    if (q.agent.len > 0) {
+        return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}", .{q.agent});
     }
-    var q: std.ArrayList(u8) = .empty;
-    for ([_][]const u8{ "harness", "provider", "model" }, [_][]const u8{ h, p, m }) |key, v| {
-        if (v.len == 0) continue;
-        if (q.items.len > 0) try q.append(a, '&');
-        try q.appendSlice(a, key);
-        try q.append(a, '=');
-        try q.appendSlice(a, v);
+    // the complete combo composes the agent id — it IS the result page
+    if (q.harness.len > 0 and q.provider.len > 0 and q.model.len > 0) {
+        return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}-{s}-{s}", .{ q.harness, q.provider, q.model });
     }
-    if (q.items.len == 0) return a.dupe(u8, siteUrl ++ "/");
-    return std.fmt.allocPrint(a, siteUrl ++ "/?{s}#registry", .{q.items});
+    var qs: std.ArrayList(u8) = .empty;
+    try appendParam(a, &qs, "harness", q.harness);
+    try appendParam(a, &qs, "provider", q.provider);
+    try appendParam(a, &qs, "model", q.model);
+    try appendParam(a, &qs, "email", q.email);
+    try appendParam(a, &qs, "platform", q.platform);
+    if (q.free) |b| try appendParam(a, &qs, "free", if (b) "true" else "false");
+    if (q.reciprocal) |b| try appendParam(a, &qs, "reciprocal", if (b) "true" else "false");
+    if (qs.items.len == 0) return a.dupe(u8, siteUrl ++ "/");
+    return std.fmt.allocPrint(a, siteUrl ++ "/?{s}#registry", .{qs.items});
+}
+
+/// compose the index url — the three dim filters (the site's index section
+/// honors exactly these), anchored at #index.
+pub fn buildIndexUrl(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) ![]u8 {
+    var qs: std.ArrayList(u8) = .empty;
+    try appendParam(a, &qs, "harness", h);
+    try appendParam(a, &qs, "provider", p);
+    try appendParam(a, &qs, "model", m);
+    if (qs.items.len == 0) return std.fmt.allocPrint(a, siteUrl ++ "/#index", .{});
+    return std.fmt.allocPrint(a, siteUrl ++ "/?{s}#index", .{qs.items});
+}
+
+fn appendParam(a: std.mem.Allocator, qs: *std.ArrayList(u8), key: []const u8, value: []const u8) !void {
+    if (value.len == 0) return;
+    if (qs.items.len > 0) try qs.append(a, '&');
+    try qs.appendSlice(a, key);
+    try qs.append(a, '=');
+    try qs.appendSlice(a, value);
 }
 
 /// open `url` in the platform's default browser — linux `xdg-open`, macOS

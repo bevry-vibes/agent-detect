@@ -15,6 +15,7 @@ const std = @import("std");
 const build_options = @import("build_options");
 const core = @import("lib/core.zig");
 const rules = @import("lib/rules.zig");
+const index_data = @import("lib/index_data.zig");
 const devmod = @import("dev/dev.zig");
 
 pub const dev_build = build_options.dev;
@@ -24,12 +25,15 @@ const writeOut = core.writeOut;
 const writeErr = core.writeErr;
 const usage = core.usage;
 const trailerUsage = core.trailerUsage;
-const webUsage = core.webUsage;
+const registryUsage = core.registryUsage;
+const indexUsage = core.indexUsage;
 
 const resolveRecipe = core.resolveRecipe;
 const detect = core.detect;
 const buildJson = core.buildJson;
-const buildWebUrl = core.buildWebUrl;
+const buildRegistryUrl = core.buildRegistryUrl;
+const buildIndexUrl = core.buildIndexUrl;
+const RegistryQuery = core.RegistryQuery;
 const openURL = core.openURL;
 
 const EXIT_OK = core.EXIT_OK;
@@ -160,14 +164,16 @@ else
 
 // ============================================================================ main entry
 
-/// is `word` one of the known top-level action words?
+/// is `word` one of the known top-level action words? (`web` — the retired
+/// `registry` spelling — resolves through the help-topic branch above.)
 fn isKnownAction(word: []const u8) bool {
     return std.mem.eql(u8, word, "identify") or
         std.mem.eql(u8, word, "found") or
         std.mem.eql(u8, word, "explain") or
         std.mem.eql(u8, word, "trailer") or
         std.mem.eql(u8, word, "check-reciprocal") or
-        std.mem.eql(u8, word, "web") or
+        std.mem.eql(u8, word, "registry") or
+        std.mem.eql(u8, word, "index") or
         std.mem.eql(u8, word, "help") or
         std.mem.eql(u8, word, "version");
 }
@@ -269,6 +275,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 return dev.runFixturesDequeue(init);
             } else if (std.mem.eql(u8, sub, "status")) {
                 return dev.runFixturesStatus(init);
+            } else if (std.mem.eql(u8, sub, "index")) {
+                return dev.runFixturesIndex(init);
             } else if (std.mem.eql(u8, sub, "prompt")) {
                 return dev.runFixturesPrompt(init);
             } else if (std.mem.eql(u8, sub, "__timeout")) {
@@ -289,7 +297,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     // No arguments prints help.
     // `identify`, `found`, `explain`, `trailer <type>`, and `check-reciprocal` accept an optional complete combo (`--harness=H --provider=P --model=M` — all three or none) for recipe-mode output.
     // help/version win over everything: any help/version flag anywhere at top level short-circuits to the relevant usage/version output (exit 0), never a conflict.
-    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "web", "help", "version"
+    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "registry", "index", "help", "version"
+    var web_alias = false; // the action word was `web` — the retired spelling of `registry`
     var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
     var help_wanted = false;
     var version_wanted = false;
@@ -299,8 +308,16 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     var combo_h: []const u8 = "";
     var combo_p: []const u8 = "";
     var combo_m: []const u8 = "";
-    var web_platform: []const u8 = ""; // the --platform= value (web-only)
-    var no_open = false; // the --no-open flag (web-only)
+    var agent_id: []const u8 = ""; // the --agent= value (registry)
+    var email: []const u8 = ""; // the --email= value (registry)
+    var web_platform: []const u8 = ""; // the --platform= value (registry/index)
+    var free_filter: ?bool = null; // --free / --no-free / --free=true|false
+    var reciprocal_filter: ?bool = null; // --reciprocal / --no-reciprocal / --reciprocal=true|false
+    var want_web = false; // --web (registry/index: also open the site)
+    var no_web = false; // --no-web (explicit default)
+    var want_json = false; // --json (explicit default)
+    var no_json = false; // --no-json (suppress stdout — exit status only)
+    var no_open_gone = false; // --no-open — retired with the web→registry rename
     var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.OutOfMemory;
     defer args_it.deinit();
     _ = args_it.skip(); // argv0
@@ -310,10 +327,13 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             if (action.len == 0) action = "help";
         } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
             version_wanted = true;
-        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal") or std.mem.eql(u8, arg, "web")) {
-            // an action word. After `help` it is the topic (`help trailer`).
+        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal") or std.mem.eql(u8, arg, "registry") or std.mem.eql(u8, arg, "index") or std.mem.eql(u8, arg, "web")) {
+            // an action word (`web` is the retired spelling of `registry`, kept
+            // dispatching quietly for scripts born with 2026.9.30-1). After `help`
+            // it is the topic (`help trailer`).
             if (action.len == 0) {
-                action = arg;
+                web_alias = std.mem.eql(u8, arg, "web");
+                action = if (web_alias) "registry" else arg;
             } else if (std.mem.eql(u8, action, "help") and help_topic == null) {
                 help_topic = arg;
             } else if (!std.mem.eql(u8, action, arg) and conflict == null) {
@@ -336,10 +356,30 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             combo_p = arg["--provider=".len..];
         } else if (std.mem.startsWith(u8, arg, "--model=")) {
             combo_m = arg["--model=".len..];
+        } else if (std.mem.startsWith(u8, arg, "--agent=")) {
+            agent_id = arg["--agent=".len..];
+        } else if (std.mem.startsWith(u8, arg, "--email=")) {
+            email = arg["--email=".len..];
         } else if (std.mem.startsWith(u8, arg, "--platform=")) {
             web_platform = arg["--platform=".len..];
+        } else if (std.mem.eql(u8, arg, "--free") or std.mem.eql(u8, arg, "--free=true")) {
+            free_filter = true;
+        } else if (std.mem.eql(u8, arg, "--no-free") or std.mem.eql(u8, arg, "--free=false")) {
+            free_filter = false;
+        } else if (std.mem.eql(u8, arg, "--reciprocal") or std.mem.eql(u8, arg, "--reciprocal=true")) {
+            reciprocal_filter = true;
+        } else if (std.mem.eql(u8, arg, "--no-reciprocal") or std.mem.eql(u8, arg, "--reciprocal=false")) {
+            reciprocal_filter = false;
+        } else if (std.mem.eql(u8, arg, "--web")) {
+            want_web = true;
+        } else if (std.mem.eql(u8, arg, "--no-web")) {
+            no_web = true;
+        } else if (std.mem.eql(u8, arg, "--json")) {
+            want_json = true;
+        } else if (std.mem.eql(u8, arg, "--no-json")) {
+            no_json = true;
         } else if (std.mem.eql(u8, arg, "--no-open")) {
-            no_open = true;
+            no_open_gone = true;
         } else {
             // unrecognised bare word / flag.
             if (std.mem.eql(u8, action, "help") and help_topic == null) {
@@ -368,8 +408,15 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             writeOut(io, trailerUsage);
             return EXIT_OK;
         }
-        if (std.mem.eql(u8, action, "web")) {
-            writeOut(io, webUsage);
+        if (std.mem.eql(u8, action, "registry")) {
+            if (web_alias) {
+                writeErr(io, "note: `web` was renamed to `registry` — the old spelling still dispatches\n");
+            }
+            writeOut(io, registryUsage);
+            return EXIT_OK;
+        }
+        if (std.mem.eql(u8, action, "index")) {
+            writeOut(io, indexUsage);
             return EXIT_OK;
         }
         if (help_topic) |topic| {
@@ -377,8 +424,15 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 writeOut(io, trailerUsage);
                 return EXIT_OK;
             }
-            if (std.mem.eql(u8, topic, "web")) {
-                writeOut(io, webUsage);
+            if (std.mem.eql(u8, topic, "registry") or std.mem.eql(u8, topic, "web")) {
+                if (std.mem.eql(u8, topic, "web")) {
+                    writeErr(io, "note: `web` was renamed to `registry` — the old spelling still dispatches\n");
+                }
+                writeOut(io, registryUsage);
+                return EXIT_OK;
+            }
+            if (std.mem.eql(u8, topic, "index")) {
+                writeOut(io, indexUsage);
                 return EXIT_OK;
             }
             if (isKnownAction(topic)) {
@@ -417,20 +471,41 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_CONFLICTING_ARG;
     }
 
-    // the web-only flags on any other action (or no action) → conflicting argument:
-    // `--platform=` pins a result-page tab and `--no-open` suppresses the opener;
+    // the registry/index flags on any other action (or no action) → conflicting
+    // argument: the filters deep-link the site, the output flags shape the JSON —
     // neither means anything to identify/trailer/check-reciprocal.
-    if ((web_platform.len > 0 or no_open) and !std.mem.eql(u8, action, "web")) {
+    const registry_index_action = std.mem.eql(u8, action, "registry") or std.mem.eql(u8, action, "index");
+    if ((web_platform.len > 0 or agent_id.len > 0 or email.len > 0 or free_filter != null or reciprocal_filter != null or want_web or no_web or want_json or no_json) and !registry_index_action) {
         writeErr(io, MSG_CONFLICTING_ARG);
         writeOut(io, usage);
         return EXIT_CONFLICTING_ARG;
     }
 
-    // `web` — the site deep-links. Partial combos are the feature here (they
-    // filter the registry), so this dispatches BEFORE recipe mode's
-    // all-three-or-none combo gate below.
-    if (std.mem.eql(u8, action, "web")) {
-        return runWeb(init, combo_h, combo_p, combo_m, web_platform, no_open);
+    // --no-open is gone — registry/index opening is opt-in via --web (elsewhere
+    // it was already a conflict, caught above).
+    if (no_open_gone) {
+        writeErr(io, MSG_UNRECOGNISED_ARG);
+        writeErr(io, "--no-open' — it is gone: registry and index open the site only with --web\n");
+        writeOut(io, if (registry_index_action) (if (std.mem.eql(u8, action, "index")) indexUsage else registryUsage) else usage);
+        return EXIT_UNRECOGNISED_ARG;
+    }
+
+    // `registry` — the site deep-links, JSON-first. Partial combos are the
+    // feature (they filter the registry), so this dispatches BEFORE recipe
+    // mode's all-three-or-none combo gate below.
+    if (std.mem.eql(u8, action, "registry")) {
+        return runRegistry(init, combo_h, combo_p, combo_m, agent_id, email, web_platform, free_filter, reciprocal_filter, .{ .web = want_web, .no_web = no_web, .json = want_json, .no_json = no_json });
+    }
+
+    // `index` — the rule index. The combo-level registry filters are conflicts here.
+    if (std.mem.eql(u8, action, "index")) {
+        if (agent_id.len > 0 or email.len > 0) {
+            writeErr(io, MSG_CONFLICTING_ARG);
+            writeErr(io, "  - --agent=/--email= are registry filters — the index is the rule level\n");
+            writeOut(io, indexUsage);
+            return EXIT_CONFLICTING_ARG;
+        }
+        return runIndex(init, combo_h, combo_p, combo_m, web_platform, free_filter, reciprocal_filter, .{ .web = want_web, .no_web = no_web, .json = want_json, .no_json = no_json });
     }
 
     // bare `trailer` → missing required arguments (subtype absent).
@@ -467,7 +542,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
 
 // ============================================================================ web
 
-/// the `--platform=` value → the fixture platform ids the site's tabs use
+/// the `--platform=` value → the fixture platform ids the site uses
 /// (darwin / linux / windows); the common shell names alias in.
 fn canonicalWebPlatform(v: []const u8) ?[]const u8 {
     const rows = [_]struct { canon: []const u8, aliases: []const []const u8 }{
@@ -484,11 +559,47 @@ fn canonicalWebPlatform(v: []const u8) ?[]const u8 {
     return null;
 }
 
-/// the `web` action — build the website url from the dims and open it
-/// (`--no-open` just prints it). Dims resolve exactly like the recipe flags
-/// (names, labels, aliases); a complete combo deep-links the combo's result
-/// page, any partial set filters the registry at the `#registry` anchor.
-fn runWeb(init: std.process.Init, h: []const u8, p: []const u8, m: []const u8, platform: []const u8, no_open: bool) !u8 {
+/// the shared `--web`/`--json` output options (both sites of the flag family are
+/// accepted so an explicit default reads the same as its absence).
+const OutputOpts = struct {
+    web: bool = false,
+    no_web: bool = false,
+    json: bool = false,
+    no_json: bool = false,
+};
+
+/// open `url` unless suppressed — the shared --web path. The caller has already
+/// printed its JSON, so a failed opener is just the exit-6 note on stderr.
+fn openIfWanted(io: std.Io, a: std.mem.Allocator, url: []const u8, opts: OutputOpts) !u8 {
+    if (!opts.web) return EXIT_OK;
+    openURL(a, io, url) catch |err| switch (err) {
+        error.OutOfMemory => return err,
+        else => {
+            writeErr(io, MSG_ENV_INCOMPLETE);
+            writeErr(io, "  - the platform url opener is absent or failed — install it (xdg-open on linux, open on macos)\n");
+            return EXIT_ENV_INCOMPLETE;
+        },
+    };
+    return EXIT_OK;
+}
+
+/// the `registry` action — build the website url from the filters and (with
+/// --web) open it; the JSON report `{url, query, opened}` prints unless
+/// --no-json. Dims resolve exactly like the recipe flags (names, labels,
+/// aliases); a complete combo deep-links the combo's result page, any partial
+/// set filters the registry at the `#registry` anchor.
+fn runRegistry(
+    init: std.process.Init,
+    h: []const u8,
+    p: []const u8,
+    m: []const u8,
+    agent_id: []const u8,
+    email: []const u8,
+    platform: []const u8,
+    free_filter: ?bool,
+    reciprocal_filter: ?bool,
+    opts: OutputOpts,
+) !u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
@@ -501,39 +612,167 @@ fn runWeb(init: std.process.Init, h: []const u8, p: []const u8, m: []const u8, p
         return EXIT_MISSING_SPECIFIED_AGENT;
     }
 
-    // the platform pin only lands on the result page (?platform= is an
-    // agent-page param; the index ignores it) — so it needs the complete combo.
     const cp: []const u8 = if (platform.len > 0) blk: {
         const canon = canonicalWebPlatform(platform) orelse {
             writeErr(io, MSG_UNRECOGNISED_ARG);
             writeErr(io, "--platform=");
             writeErr(io, platform);
             writeErr(io, "' — one of darwin (macos), linux, windows\n");
-            writeOut(io, webUsage);
+            writeOut(io, registryUsage);
             return EXIT_UNRECOGNISED_ARG;
         };
         break :blk canon;
     } else "";
-    if (cp.len > 0 and (h.len == 0 or p.len == 0 or m.len == 0)) {
+
+    const trimmed_email = std.mem.trim(u8, email, " \t");
+    if (email.len > 0 and trimmed_email.len == 0) {
         writeErr(io, MSG_MISSING_ARG);
-        writeErr(io, "  - --platform pins a result-page tab — it needs the complete combo (--harness= --provider= --model=)\n");
-        writeOut(io, webUsage);
+        writeErr(io, "  - --email= requires the trailer email to filter by\n");
+        writeOut(io, registryUsage);
         return EXIT_MISSING_ARG;
     }
 
-    const url = try buildWebUrl(a, rh orelse "", rp orelse "", rm orelse "", cp);
-    writeOut(io, url);
-    writeOut(io, "\n");
-    if (no_open) return EXIT_OK;
-    openURL(a, io, url) catch |err| switch (err) {
-        error.OutOfMemory => return err,
-        else => {
-            writeErr(io, MSG_ENV_INCOMPLETE);
-            writeErr(io, "  - the platform url opener is absent or failed — install it (xdg-open on linux, open on macos), or re-run with --no-open\n");
-            return EXIT_ENV_INCOMPLETE;
-        },
+    // the three-dims form IS the agent form; every combo-level filter is
+    // exclusive with a result page.
+    const three_dims = rh != null and rp != null and rm != null;
+    const has_filters = trimmed_email.len > 0 or cp.len > 0 or free_filter != null or reciprocal_filter != null;
+    if (agent_id.len > 0 and (has_filters or h.len > 0 or p.len > 0 or m.len > 0)) {
+        writeErr(io, MSG_CONFLICTING_ARG);
+        writeErr(io, "  - --agent= is exclusive — it names the result page; the filters narrow the registry\n");
+        writeOut(io, registryUsage);
+        return EXIT_CONFLICTING_ARG;
+    }
+    if (three_dims and has_filters) {
+        writeErr(io, MSG_CONFLICTING_ARG);
+        writeErr(io, "  - a complete combo is a result page — the email/platform/free/reciprocal filters narrow the registry\n");
+        writeOut(io, registryUsage);
+        return EXIT_CONFLICTING_ARG;
+    }
+
+    var q = RegistryQuery{
+        .harness = rh orelse "",
+        .provider = rp orelse "",
+        .model = rm orelse "",
+        .email = trimmed_email,
+        .platform = cp,
+        .free = free_filter,
+        .reciprocal = reciprocal_filter,
     };
-    return EXIT_OK;
+    if (agent_id.len > 0) {
+        // shape check only — the CLI has no fixture data, so existence is the
+        // site's verdict (its unknown-agent page). 3-part <h>-<p>-<m> or the
+        // 4-part fixture id; lowercase alphanumerics and dashes.
+        var parts: usize = 0;
+        var it = std.mem.splitScalar(u8, agent_id, '-');
+        while (it.next()) |seg| {
+            if (seg.len == 0) {
+                parts = 0;
+                break;
+            }
+            for (seg) |c| {
+                if (!std.ascii.isAlphanumeric(c)) {
+                    parts = 0;
+                    break;
+                }
+            }
+            parts += 1;
+        }
+        if (parts != 3 and parts != 4) {
+            writeErr(io, MSG_UNRECOGNISED_ARG);
+            writeErr(io, "--agent=");
+            writeErr(io, agent_id);
+            writeErr(io, "' — expected the 3-part <harness>-<provider>-<model> id or the 4-part fixture id\n");
+            writeOut(io, registryUsage);
+            return EXIT_UNRECOGNISED_ARG;
+        }
+        q.agent = agent_id;
+    }
+
+    const url = try buildRegistryUrl(a, q);
+    if (!opts.no_json) {
+        const QueryJson = struct {
+            harness: ?[]const u8,
+            provider: ?[]const u8,
+            model: ?[]const u8,
+            email: ?[]const u8,
+            platform: ?[]const u8,
+            free: ?bool,
+            reciprocal: ?bool,
+            agent: ?[]const u8,
+        };
+        const Doc = struct { url: []const u8, query: QueryJson, opened: bool };
+        const doc = Doc{
+            .url = url,
+            .query = .{
+                .harness = if (q.harness.len > 0) q.harness else null,
+                .provider = if (q.provider.len > 0) q.provider else null,
+                .model = if (q.model.len > 0) q.model else null,
+                .email = if (q.email.len > 0) q.email else null,
+                .platform = if (q.platform.len > 0) q.platform else null,
+                .free = q.free,
+                .reciprocal = q.reciprocal,
+                .agent = if (q.agent.len > 0) q.agent else null,
+            },
+            .opened = opts.web,
+        };
+        const bytes = try std.json.Stringify.valueAlloc(a, doc, .{ .whitespace = .indent_2 });
+        writeOut(io, bytes);
+        writeOut(io, "\n");
+    }
+    return openIfWanted(io, a, url, opts);
+}
+
+/// the `index` action — print the rule index (the embedded
+/// fixtures/index-data.json, filtered) as JSON; --web opens the site's index
+/// section deep-linked with the three dim filters.
+fn runIndex(
+    init: std.process.Init,
+    h: []const u8,
+    p: []const u8,
+    m: []const u8,
+    platform: []const u8,
+    free_filter: ?bool,
+    reciprocal_filter: ?bool,
+    opts: OutputOpts,
+) !u8 {
+    const a = init.arena.allocator();
+    const io = init.io;
+
+    const rh: ?[]const u8 = if (h.len > 0) rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, h) else null;
+    const rp: ?[]const u8 = if (p.len > 0) rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, p) else null;
+    const rm: ?[]const u8 = if (m.len > 0) rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, m) else null;
+    if ((h.len > 0 and rh == null) or (p.len > 0 and rp == null) or (m.len > 0 and rm == null)) {
+        core.writeMissingSpecifiedAgent(io, rh, rp, rm);
+        return EXIT_MISSING_SPECIFIED_AGENT;
+    }
+    const cp: []const u8 = if (platform.len > 0) blk: {
+        const canon = canonicalWebPlatform(platform) orelse {
+            writeErr(io, MSG_UNRECOGNISED_ARG);
+            writeErr(io, "--platform=");
+            writeErr(io, platform);
+            writeErr(io, "' — one of darwin (macos), linux, windows\n");
+            writeOut(io, indexUsage);
+            return EXIT_UNRECOGNISED_ARG;
+        };
+        break :blk canon;
+    } else "";
+
+    const idx = index_data.Index.load(a) catch return error.IndexDataInvalid;
+    const value = try idx.buildFiltered(a, .{
+        .harness = rh,
+        .provider = rp,
+        .model = rm,
+        .platform = if (cp.len > 0) cp else null,
+        .free = free_filter,
+        .reciprocal = reciprocal_filter,
+    });
+    if (!opts.no_json) {
+        const bytes = try std.json.Stringify.valueAlloc(a, value, .{ .whitespace = .indent_2 });
+        writeOut(io, bytes);
+        writeOut(io, "\n");
+    }
+    const url = try buildIndexUrl(a, rh orelse "", rp orelse "", rm orelse "");
+    return openIfWanted(io, a, url, opts);
 }
 
 /// dispatch the resolved action on a fully-shaped `Detection`.

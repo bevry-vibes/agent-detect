@@ -35,9 +35,12 @@ pub fn build(b: *std.Build) void {
     // Confusing the two would emit a binary whose dev subcommands exist in the released artifact, which is exactly what we're trying to avoid.
     //
     // Build options are exposed to the source via a `build_options` module; main.zig reads `build_options.dev` and `build_options.version` to gate the blocks / print the version.
+    // `index_data` embeds fixtures/index-data.json — the index's association + property source (src/lib/index_data.zig) — so the released `index` action needs no fixture files at runtime.
+    const index_data_json = @embedFile("fixtures/index-data.json");
     const build_options = b.addOptions();
     build_options.addOption(bool, "dev", dev);
     build_options.addOption([]const u8, "version", version);
+    build_options.addOption([]const u8, "index_data", index_data_json);
 
     // default: native build into zig-out — the released binary
     const native_target = b.standardTargetOptions(.{});
@@ -60,6 +63,7 @@ pub fn build(b: *std.Build) void {
     const dev_options = b.addOptions();
     dev_options.addOption(bool, "dev", true);
     dev_options.addOption([]const u8, "version", version);
+    dev_options.addOption([]const u8, "index_data", index_data_json);
     const dev_exe = b.addExecutable(.{
         .name = "agent-detect-dev",
         .root_module = b.createModule(.{
@@ -85,6 +89,7 @@ pub fn build(b: *std.Build) void {
         "src/exit_statuses.test.zig",
         "src/zcode_rollout.test.zig",
         "src/web.test.zig",
+        "src/index.test.zig",
     };
     inline for (test_files) |file| {
         const test_exe = b.addTest(.{

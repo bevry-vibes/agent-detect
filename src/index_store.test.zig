@@ -457,6 +457,47 @@ test "expandEntry: free axis filters by map-provider-model-freeprovidermodel.csv
     try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", paid_result.host_candidates[0].fixture_id);
 }
 
+test "validateFilters: the platform dim is capture-only — --from-identity rejects it and --fixture=" {
+    // from-identity work is host-platform-bound (expandEntry works only host candidates,
+    // identity files are host-stamped), so a platform filter can never change what any
+    // host mints — an explicit --from-identity rejects the dim (and --fixture=, whose id
+    // bakes a platform in; use --agent=).
+    try testing.expectError(
+        dev.FilterError.ConflictingFilters,
+        dev.validateFilters(.{ .mode = "from-identity", .platform = "linux", .any = true }),
+    );
+    try testing.expectError(
+        dev.FilterError.ConflictingFilters,
+        dev.validateFilters(.{ .mode = "from-identity", .fixture = "a-b-c-linux", .any = true }),
+    );
+    // capture entries keep the dim, and identity entries without it stay fine
+    try dev.validateFilters(.{ .mode = "from-capture", .platform = "linux", .any = true });
+    try dev.validateFilters(.{ .mode = "from-identity", .agent = "a-b-c", .any = true });
+}
+
+test "expandEntry: a stored platform constrains capture entries only — identity entries ignore it" {
+    // a legacy pre-restriction queue entry may still carry a platform on a from-identity
+    // entry; expansion must treat it as unconstrained (the host's candidates stay workable).
+    try Universe.setup();
+    defer Universe.teardown() catch {};
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    try Universe.writeIdentity("pi-openrouter-nemotron3ultra-darwin", 100);
+    var root = try emptyStoreRoot(aa);
+
+    var grids = dev.FeasibilityGrids.empty(aa);
+    var fg = dev.FreeGrid.empty(aa);
+    const identity_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .platform = "windows" }, "darwin", null, null, &.{});
+    try testing.expectEqual(@as(usize, 1), identity_result.host_candidates.len);
+    try testing.expectEqualStrings("pi-openrouter-nemotron3ultra-darwin", identity_result.host_candidates[0].fixture_id);
+    // a capture entry with the same stored platform is constrained as ever — windows has
+    // no invocation universe, so nothing remains on this (darwin) host
+    const capture_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture", .platform = "windows" }, "darwin", null, null, &.{});
+    try testing.expectEqual(@as(usize, 0), capture_result.host_candidates.len);
+}
+
 test "expandEntry: session damping — failed candidates are excluded" {
     try Universe.setup();
     defer Universe.teardown() catch {};

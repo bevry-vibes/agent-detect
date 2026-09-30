@@ -25,6 +25,7 @@ const builtin = @import("builtin");
 const build_options = @import("build_options");
 const core = @import("../lib/core.zig");
 const rules = @import("../lib/rules.zig");
+const index_data = @import("../lib/index_data.zig");
 
 const writeOut = core.writeOut;
 const writeErr = core.writeErr;
@@ -140,9 +141,11 @@ pub const dev = if (build_options.dev) struct {
         \\— written only on success, so a from-capture file always carries
         \\`outputs`; its meta records the invocation it ran under), each a
         \\`{ outputs, meta }` envelope — see fixtures/fixture.d.ts. The free
-        \\axis is sourced from fixtures/map-provider-model-freeprovidermodel.csv; feasibility
-        \\from fixtures/map-harness-provider-harnessprovider.csv and
-        \\fixtures/map-provider-model-providermodel.csv. Store writers take an exclusive lock
+        \\axis and the feasibility grids live in fixtures/index-data.json —
+        \\the committed index file (entry association arrays +
+        \\provider_map_to_free_models), which the released `index` action
+        \\embeds and the website consumes as data; `fixtures index`
+        \\regenerates it. Store writers take an exclusive lock
         \\on fixtures/index.json.lock and write atomically (temp + rename);
         \\each fixture file is owned exclusively by its channel's writer.
         \\
@@ -194,6 +197,10 @@ pub const dev = if (build_options.dev) struct {
         \\                              counts, backlog sets, feasible-unfixtured
         \\                              totals, stale/fresh breakdowns (also
         \\                              maintains the backlog table)
+        \\  index                      regenerate fixtures/index-data.json from
+        \\                              the rule tables + the from-identity
+        \\                              channel, keeping the hand-maintained
+        \\                              direct facts (--check verifies instead)
         \\
         \\exit codes: 0 = ok, 2 = unrecognised argument, 3 = conflicting argument,
         \\4 = missing required arguments, 5 = incompatible environment, 6 = incomplete
@@ -214,9 +221,13 @@ pub const dev = if (build_options.dev) struct {
         \\                    user-confirmed only
         \\
         \\filters (at least one required for queue/dequeue):
-        \\  --fixture=ID  4-part <h>-<p>-<m>-<platform> id (exact)
+        \\  --fixture=ID  4-part <h>-<p>-<m>-<platform> id (exact; capture
+        \\                entries only — --from-identity rejects it)
         \\  --agent=ID    3-part <h>-<p>-<m> id (platform unfiltered)
-        \\  --harness=H   constrain harness to H (any of H/P/M/PLAT)
+        \\  --harness=H   constrain harness to H (any of H/P/M/PLAT; the
+        \\                platform dim is capture-only — --from-identity
+        \\                rejects --platform=, identity work is
+        \\                host-platform-bound)
         \\
         \\staleness (a queue entry carries a SET of criteria; a candidate is
         \\stale iff ANY carried criterion says stale; absent evidence ⇒ stale):
@@ -244,7 +255,7 @@ pub const dev = if (build_options.dev) struct {
         \\                   now-actionable items against the current rule
         \\                   tables and grids; unresolvable /
         \\                   still-invocation-less items stay in the backlog
-        \\  --free / --paid   membership in map-provider-model-freeprovidermodel.csv
+        \\  --free / --paid   membership in provider_map_to_free_models (the index file)
         \\
     ;
 
@@ -626,9 +637,11 @@ pub const dev = if (build_options.dev) struct {
         }
     }
 
-    /// the feasibility grids — the reference CSVs become load-bearing: `map-harness-provider-harnessprovider.csv` (harness → provider cells) and `map-provider-model-providermodel.csv` (provider → model-id cells).
-    /// A pair is feasible iff its cell is present and not `-`; feasible-unfixtured combos are the from-identity backlog universe (impossible combos never become candidates).
-    /// A missing file loads as the empty set.
+    /// the feasibility grids — the committed index file's association arrays are
+    /// the reference: harness `providers` (harness → provider cells) and provider
+    /// `models` (provider → model-id cells).
+    /// A pair is feasible iff its cell is present; feasible-unfixtured combos are the from-identity backlog universe (impossible combos never become candidates).
+    /// A missing/broken file loads as the empty set (the daemon then expands nothing).
     pub const FeasibilityGrids = struct {
         harness_provider: std.StringHashMap(void),
         provider_model: std.StringHashMap(void),
@@ -660,43 +673,40 @@ pub const dev = if (build_options.dev) struct {
             return self.provider_model.contains(key);
         }
 
-        /// load both reference grids.
-        /// Header row = column dims;
-        /// each data row's first cell = the row dim;
-        /// a non-`-` cell marks the pair feasible (the cell value itself is the provider's spelling of the model-id — not read here).
-        pub fn load(io: std.Io, a: std.mem.Allocator) !FeasibilityGrids {
+        /// load both grids from the embedded index file's direct association arrays
+        /// (same structures the CSV loaders built — the file is their successor).
+        pub fn load(a: std.mem.Allocator) !FeasibilityGrids {
             var self = empty(a);
-            const hp_path = try std.fmt.allocPrint(a, "{s}/map-harness-provider-harnessprovider.csv", .{fixtures_root});
-            defer a.free(hp_path);
-            const pm_path = try std.fmt.allocPrint(a, "{s}/map-provider-model-providermodel.csv", .{fixtures_root});
-            defer a.free(pm_path);
-            try loadPairGrid(io, a, hp_path, &self.harness_provider);
-            try loadPairGrid(io, a, pm_path, &self.provider_model);
+            const idx = index_data.Index.load(a) catch return self;
+            for (idx.harnesses) |hv| {
+                if (hv != .object) continue;
+                const h = blk: {
+                    const id = hv.object.get("id") orelse continue;
+                    if (id != .string) continue;
+                    break :blk id.string;
+                };
+                const prov = hv.object.get("providers") orelse continue;
+                if (prov != .array) continue;
+                for (prov.array.items) |pv| {
+                    if (pv == .string) try self.putHarnessProvider(a, h, pv.string);
+                }
+            }
+            for (idx.providers) |pv| {
+                if (pv != .object) continue;
+                const p = blk: {
+                    const id = pv.object.get("id") orelse continue;
+                    if (id != .string) continue;
+                    break :blk id.string;
+                };
+                const mods = pv.object.get("models") orelse continue;
+                if (mods != .array) continue;
+                for (mods.array.items) |mv| {
+                    if (mv == .string) try self.putProviderModel(a, p, mv.string);
+                }
+            }
             return self;
         }
     };
-
-    /// the shared pair-grid reader (row-dim|col-dim keys for every non-`-` cell).
-    fn loadPairGrid(io: std.Io, a: std.mem.Allocator, path: []const u8, set: *std.StringHashMap(void)) !void {
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 22)) catch return;
-        var lines = std.mem.tokenizeScalar(u8, data, '\n');
-        const header = lines.next() orelse return;
-        var cols: std.ArrayList([]const u8) = .empty;
-        var hc = std.mem.tokenizeScalar(u8, header, ',');
-        _ = hc.next(); // the row-dim label cell
-        while (hc.next()) |c| try cols.append(a, std.mem.trim(u8, c, " \r\t"));
-        while (lines.next()) |line| {
-            var cells = std.mem.tokenizeScalar(u8, line, ',');
-            const row_dim = std.mem.trim(u8, cells.next() orelse continue, " \r\t");
-            var idx: usize = 0;
-            while (cells.next()) |cell| : (idx += 1) {
-                if (idx >= cols.items.len) break;
-                const v = std.mem.trim(u8, cell, " \r\t");
-                if (v.len == 0 or std.mem.eql(u8, v, "-")) continue;
-                try set.put(try std.fmt.allocPrint(a, "{s}|{s}", .{ row_dim, cols.items[idx] }), {});
-            }
-        }
-    }
 
     // ------------------------------------------------------------------ backlog (actionable gaps) + known_but_failed (failure memory) ------------------------------------------------------------------
 
@@ -1223,7 +1233,13 @@ pub const dev = if (build_options.dev) struct {
     /// candidates this daemon session already failed are damped out.
     /// Absent evidence ⇒ every carried criterion says stale.
     pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void), skips: ?*const SessionSkips, blocked: []const []const u8) !ExpandResult {
-        const platforms: []const []const u8 = if (entry.platform) |p| &.{p} else &platforms_all;
+        // the platform dim constrains capture entries only — identity work is
+        // host-platform-bound, so a stored platform (a legacy pre-restriction entry)
+        // is ignored there
+        const platforms: []const []const u8 = if (entry.platform) |p| blk: {
+            if (std.mem.eql(u8, entry.mode, "from-identity")) break :blk &platforms_all;
+            break :blk &[_][]const u8{p};
+        } else &platforms_all;
         var host_list: std.ArrayListUnmanaged(Candidate) = .empty;
         var remaining: usize = 0;
         for (platforms) |plat| {
@@ -1469,7 +1485,9 @@ pub const dev = if (build_options.dev) struct {
         return out;
     }
 
-    /// Free-model membership, sourced from `fixtures/map-provider-model-freeprovidermodel.csv` — the source of truth for free models (replacing the legacy `free_provider_to_model` store table, which is dropped at load and never re-serialized). Sparse grid: header `provider,<model-slug>...`, rows only for providers with ≥1 free model, columns only for models free somewhere, cells the provider's free model-id string, `-` where not offered. A missing file loads as the empty set.
+    /// Free-model membership, sourced from the committed index file's
+    /// `provider_map_to_free_models` — the source of truth for free models (the free-grid CSV's
+    /// successor, whose provider→models rows this map mirrors). A broken file loads as the empty set.
     pub const FreeGrid = struct {
         set: std.StringHashMap(void),
 
@@ -1487,26 +1505,15 @@ pub const dev = if (build_options.dev) struct {
             return self.set.contains(key);
         }
 
-        pub fn load(io: std.Io, a: std.mem.Allocator) !FreeGrid {
+        pub fn load(a: std.mem.Allocator) !FreeGrid {
             var self = empty(a);
-            const fp_path = try std.fmt.allocPrint(a, "{s}/map-provider-model-freeprovidermodel.csv", .{fixtures_root});
-            defer a.free(fp_path);
-            const data = std.Io.Dir.cwd().readFileAlloc(io, fp_path, a, @enumFromInt(1 << 20)) catch return self;
-            var lines = std.mem.tokenizeScalar(u8, data, '\n');
-            const header = lines.next() orelse return self;
-            var cols = std.mem.tokenizeScalar(u8, header, ',');
-            _ = cols.next(); // the "provider" label cell
-            var names: std.ArrayList([]const u8) = .empty;
-            while (cols.next()) |c| try names.append(a, std.mem.trim(u8, c, " \r\t"));
-            while (lines.next()) |line| {
-                var cells = std.mem.tokenizeScalar(u8, line, ',');
-                const provider = std.mem.trim(u8, cells.next() orelse continue, " \r\t");
-                var idx: usize = 0;
-                while (cells.next()) |cell| : (idx += 1) {
-                    if (idx >= names.items.len) break;
-                    const v = std.mem.trim(u8, cell, " \r\t");
-                    if (v.len == 0 or std.mem.eql(u8, v, "-")) continue;
-                    try self.put(a, provider, names.items[idx]);
+            const idx = index_data.Index.load(a) catch return self;
+            var it = idx.free.iterator();
+            while (it.next()) |kv| {
+                const provider = kv.key_ptr.*;
+                if (kv.value_ptr.* != .array) continue;
+                for (kv.value_ptr.*.array.items) |mv| {
+                    if (mv == .string) try self.put(a, provider, mv.string);
                 }
             }
             return self;
@@ -1734,6 +1741,14 @@ pub const dev = if (build_options.dev) struct {
             (f.stale_by_minutes orelse 0) < 0) return FilterError.ConflictingFilters;
         if (f.refresh and (f.stale or f.stale_by_output or age_scopes > 0 or
             f.stale_by_harness_version or f.stale_by_invocation)) return FilterError.ConflictingFilters;
+        // the platform dim is capture-only: from-identity work is host-platform-bound
+        // (expandEntry works only host candidates and identity files are host-stamped),
+        // so a platform filter can never change what any host mints. An explicit
+        // --from-identity therefore rejects it — and --fixture=, whose id bakes a
+        // platform in; use --agent=.
+        if (std.mem.eql(u8, f.mode, "from-identity") and (f.platform.len > 0 or f.fixture != null)) {
+            return FilterError.ConflictingFilters;
+        }
     }
 
     /// parse the shared filter flags from argv (expects argv0, "fixtures", <subcommand> already consumed).
@@ -1949,7 +1964,7 @@ pub const dev = if (build_options.dev) struct {
 
         const fixture_id = try fixtureId(a, agent_aid);
 
-        // blocklist gate (paid-only, defense in depth — the daemon's expansion already skips the paid combos, so this only fires on direct invocations): the invoking git user's never-test providers are never captured on this host — unless the combo is free (map-provider-model-freeprovidermodel.csv), because the paid plan expiring never blocks the free models.
+        // blocklist gate (paid-only, defense in depth — the daemon's expansion already skips the paid combos, so this only fires on direct invocations): the invoking git user's never-test providers are never captured on this host — unless the combo is free (provider_map_to_free_models in the index file), because the paid plan expiring never blocks the free models.
         {
             const username = gitConfigUsername(a, io);
             if (username) |u| {
@@ -1957,7 +1972,7 @@ pub const dev = if (build_options.dev) struct {
                 const blocked = try blocklistProvidersFor(a, &blocked_root, u);
                 if (d.provider_id) |pid| {
                     if (d.model_id) |mid| {
-                        var free_grid = try FreeGrid.load(io, a);
+                        var free_grid = try FreeGrid.load(a);
                         if (providerBlocked(blocked, pid) and !free_grid.has(pid, mid)) {
                             var mbuf: [256]u8 = undefined;
                             const m = std.fmt.bufPrint(mbuf[0..], "fixtures capture: {s} is blocklisted for git user {s} (provider \"{s}\") — not tested, no fixture written\n", .{ fixture_id, u, pid }) catch "fixtures capture: combo is blocklisted for this user — no fixture written\n";
@@ -2084,7 +2099,9 @@ pub const dev = if (build_options.dev) struct {
                 .harness = if (f.harness.len > 0) f.harness else null,
                 .provider = if (f.provider.len > 0) f.provider else null,
                 .model = if (f.model.len > 0) f.model else null,
-                .platform = if (f.platform.len > 0) f.platform else null,
+                // the platform dim is capture-only — identity entries never carry it
+                // (from-identity work is host-platform-bound; see parseFilters)
+                .platform = if (f.platform.len > 0 and std.mem.eql(u8, mode, "from-capture")) f.platform else null,
                 .mode = mode,
                 .stale_by_output = crit.output,
                 .stale_by_minutes = crit.minutes,
@@ -2319,8 +2336,8 @@ pub const dev = if (build_options.dev) struct {
 
         const id_stems = try scanFolderStems(io, a, IDENTITY_DIR);
         const cap_stems = try scanFolderStems(io, a, CAPTURE_DIR);
-        const grids = try FeasibilityGrids.load(io, a);
-        const status_free_grid = try FreeGrid.load(io, a);
+        const grids = try FeasibilityGrids.load(a);
+        const status_free_grid = try FreeGrid.load(a);
         // the never-test providers for this host's git user — their PAID combos are excluded from the feasible-unfixtured counts below (they can never be worked; the free combos stay workable) and surfaced as their own line.
         const blocked: []const []const u8 = blk: {
             const u = gitConfigUsername(a, io) orelse break :blk &.{};
@@ -2495,6 +2512,181 @@ pub const dev = if (build_options.dev) struct {
         return std.mem.eql(u8, sjstr(cob, "harness_id"), h) and
             std.mem.eql(u8, sjstr(cob, "provider_id"), p) and
             std.mem.eql(u8, sjstr(cob, "model_id"), m);
+    }
+
+    /// scan the from-identity channel into the `agent_map_to_platforms_reciprocal`
+    /// object: per agent_id, the declared platforms and the reciprocity of record
+    /// (the latest fixture wins; ties break by platform). Shared by `fixtures index`
+    /// and the freshness test.
+    pub fn scanIdentityCombos(a: std.mem.Allocator, io: std.Io) !std.json.ObjectMap {
+        const AgentFacts = struct {
+            platforms: std.StringArrayHashMapUnmanaged(void) = .empty,
+            best_updated: i64,
+            best_platform: []const u8,
+            reciprocal: bool,
+        };
+        var agents: std.StringArrayHashMapUnmanaged(AgentFacts) = .empty;
+        const stems = try scanFolderStems(io, a, IDENTITY_DIR);
+        for (stems) |stem| {
+            const cf = try loadChannelFile(io, a, IDENTITY_DIR, stem);
+            if (!cf.valid_stem or !cf.exists) continue;
+            const agent = try std.fmt.allocPrint(a, "{s}-{s}-{s}", .{ cf.harness, cf.provider, cf.model });
+            const gop = try agents.getOrPut(a, agent);
+            if (!gop.found_existing) {
+                gop.value_ptr.* = .{ .best_updated = -1, .best_platform = "", .reciprocal = false };
+            }
+            try gop.value_ptr.platforms.put(a, cf.platform, {});
+            const updated = cf.updated_at orelse 0;
+            if (updated > gop.value_ptr.best_updated or
+                (updated == gop.value_ptr.best_updated and std.mem.lessThan(u8, gop.value_ptr.best_platform, cf.platform)))
+            {
+                gop.value_ptr.best_updated = updated;
+                gop.value_ptr.best_platform = cf.platform;
+                gop.value_ptr.reciprocal = if (cf.identify) |identify| blk: {
+                    if (identify != .object) break :blk false;
+                    const r = identify.object.get("reciprocal") orelse break :blk false;
+                    break :blk r == .bool and r.bool;
+                } else false;
+            }
+        }
+        var combos: std.json.ObjectMap = .empty;
+        var keys: std.ArrayList([]const u8) = .empty;
+        var kit = agents.iterator();
+        while (kit.next()) |kv| try keys.append(a, kv.key_ptr.*);
+        std.mem.sort([]const u8, keys.items, {}, struct {
+            fn lessThan(_: void, x: []const u8, y: []const u8) bool {
+                return std.mem.lessThan(u8, x, y);
+            }
+        }.lessThan);
+        for (keys.items) |agent| {
+            const facts = agents.get(agent).?;
+            var plats: std.ArrayList([]const u8) = .empty;
+            var pit = facts.platforms.iterator();
+            while (pit.next()) |pkv| try plats.append(a, pkv.key_ptr.*);
+            std.mem.sort([]const u8, plats.items, {}, struct {
+                fn lessThan(_: void, x: []const u8, y: []const u8) bool {
+                    return std.mem.lessThan(u8, x, y);
+                }
+            }.lessThan);
+            var plat_arr = std.json.Array.init(a);
+            for (plats.items) |plat| try plat_arr.append(.{ .string = plat });
+            var entry: std.json.ObjectMap = .empty;
+            try entry.put(a, "platforms", .{ .array = plat_arr });
+            try entry.put(a, "reciprocal", .{ .bool = facts.reciprocal });
+            try combos.put(a, agent, .{ .object = entry });
+        }
+        return combos;
+    }
+
+    /// usage for `fixtures index` — printed by `fixtures index --help` and on argument errors.
+    pub const fixturesIndexUsage =
+        \\agent-detect fixtures index — regenerate fixtures/index-data.json in place
+        \\
+        \\usage: agent-detect fixtures index [--check]
+        \\
+        \\The index file is the association + property source of truth (the map CSVs'
+        \\successor; also the released `index` action's embedded data and the website's
+        \\data/index.json). Regeneration keeps the hand-maintained direct facts — harness
+        \\`providers`, provider `models`, `provider_map_to_free_models` — and rebuilds
+        \\everything else: the entity fields from the rule tables, the mirror + closure
+        \\association directions, and `agent_map_to_platforms_reciprocal` from
+        \\fixtures/from-identity (the declared platforms and reciprocity of record).
+        \\
+        \\  --check  verify freshness instead of writing: the file must equal a
+        \\           regeneration (rule fields current, combos current) — exit 12 when stale
+        \\
+        \\exit codes: 0 = ok, 12 = index store error (stale, corrupt, or unwritable)
+        \\
+    ;
+
+    /// `fixtures index` — regenerate `fixtures/index-data.json` in place (or verify
+    /// it with --check). Reads the store file for the hand-maintained direct facts,
+    /// scans the from-identity channel for the per-combo facts, and derives the rest
+    /// from the rule tables via index_data.regenerate. Written atomically (temp +
+    /// rename) under the index store's exclusive lock.
+    pub fn runFixturesIndex(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        if (subcommandWantsHelp(init)) {
+            writeOut(io, fixturesIndexUsage);
+            return EXIT_OK;
+        }
+        var check = false;
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.IndexStoreError;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "fixtures"
+        _ = args_it.skip(); // "index"
+        while (args_it.next()) |arg| {
+            if (std.mem.eql(u8, arg, "--check")) {
+                check = true;
+            } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "help")) {
+                writeOut(io, fixturesIndexUsage);
+                return EXIT_OK;
+            } else {
+                writeErr(io, "fixtures index: unrecognised argument: '");
+                writeErr(io, arg);
+                writeErr(io, "'\n");
+                writeOut(io, fixturesIndexUsage);
+                return EXIT_UNRECOGNISED_ARG;
+            }
+        }
+
+        // the on-disk file — the direct facts' home. Absent is fine (a fresh
+        // bootstrap derives everything from the rules); corrupt is an error.
+        var idx_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const data_path = fixturesJoin("index-data.json", &idx_buf) orelse return error.IndexStoreError;
+        var current: ?std.json.Value = null;
+        if (std.Io.Dir.cwd().readFileAlloc(io, data_path, a, @enumFromInt(1 << 26)) catch |err| switch (err) {
+            error.FileNotFound => null,
+            else => return error.IndexStoreError,
+        }) |data| {
+            const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return error.IndexStoreError;
+            if (parsed.value != .object) return error.IndexStoreError;
+            current = parsed.value;
+        }
+
+        // the free axis is hand-maintained — carried through verbatim (empty when absent)
+        var free_obj: std.json.ObjectMap = .empty;
+        if (current) |cv| {
+            if (cv.object.get("provider_map_to_free_models")) |fv| {
+                if (fv == .object) free_obj = fv.object;
+            }
+        }
+
+        const combos = try scanIdentityCombos(a, io);
+
+        const regenerated = try index_data.regenerate(a, current, free_obj, combos);
+
+        if (check) {
+            const cur = current orelse {
+                writeErr(io, "fixtures index: fixtures/index-data.json is missing — run `agent-detect-dev fixtures index` to bootstrap it\n");
+                return error.IndexStoreError;
+            };
+            if (index_data.valueEql(cur, regenerated)) {
+                writeOut(io, "fixtures index: fixtures/index-data.json is fresh\n");
+                return EXIT_OK;
+            }
+            writeErr(io, "fixtures index: fixtures/index-data.json is stale — run `agent-detect-dev fixtures index`\n");
+            return error.IndexStoreError;
+        }
+
+        // write atomically (temp + rename) under the index store's exclusive lock
+        const lock = try acquireIndexLock(io);
+        defer lock.close(io);
+        const json_bytes = std.json.Stringify.valueAlloc(a, regenerated, .{ .whitespace = .indent_2 }) catch return error.IndexStoreError;
+        var tmp_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const tmp_path = fixturesJoin("index-data.json.tmp", &tmp_buf) orelse return error.FilesystemIoError;
+        std.Io.Dir.cwd().writeFile(io, .{ .sub_path = tmp_path, .data = json_bytes }) catch return error.FilesystemIoError;
+        std.Io.Dir.rename(std.Io.Dir.cwd(), tmp_path, std.Io.Dir.cwd(), data_path, io) catch return error.FilesystemIoError;
+
+        writeOut(io, "fixtures index: wrote fixtures/index-data.json (");
+        writeCount(io, regenerated.object.get("harnesses").?.array.items.len);
+        writeOut(io, " harnesses, ");
+        writeCount(io, combos.count());
+        writeOut(io, " declared combos)\n");
+        return EXIT_OK;
     }
 
     /// `from-identity` worker: resolve the combo via `resolveRecipe` (recipe-mode, no detection, zero tokens, no harness required), assemble the from-identity file (`outputs` = identify + both trailer variants; `meta` = updated_at), and write it whole (atomically).
@@ -2967,8 +3159,8 @@ pub const dev = if (build_options.dev) struct {
         const backlog_before = try std.json.Stringify.valueAlloc(a, root.object.get("backlog") orelse std.json.Value{ .object = .empty }, .{});
         try refreshBacklogPure(io, a, &root);
         const backlog_after = try std.json.Stringify.valueAlloc(a, root.object.get("backlog") orelse std.json.Value{ .object = .empty }, .{});
-        const free_grid = try FreeGrid.load(io, a);
-        const grids = try FeasibilityGrids.load(io, a);
+        const free_grid = try FreeGrid.load(a);
+        const grids = try FeasibilityGrids.load(a);
         const q = try getOrPutArray(a, &root, "queue");
         const host = core.platformId();
         var dirty = !std.mem.eql(u8, backlog_before, backlog_after);

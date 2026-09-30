@@ -1,37 +1,57 @@
-// URL-builder tests for the `web` action's pure core (`core.buildWebUrl`): the
+// URL-builder tests for the registry/index actions' pure core: the registry's
 // three url shapes (homepage / filtered registry with the `#registry` anchor /
-// the combo result page), the platform pin landing only on the result page,
-// and the strict-slug composition matching the site's `?agent=` ids.
-// The opener spawn (`core.openURL`) is platform I/O — exercised by hand, not here.
+// the `--agent` result page), the new query filters (email, platform,
+// free, reciprocal), and the index's `#index` anchor. The exit-code and
+// conflict behavior lives in exit_statuses.test.zig; the opener spawn
+// (`core.openURL`) is platform I/O — exercised by hand, not here.
 
 const std = @import("std");
 const testing = std.testing;
 const core = @import("lib/core.zig");
 
-fn expectUrl(expected: []const u8, h: []const u8, p: []const u8, m: []const u8, platform: []const u8) !void {
+fn expectRegistryUrl(expected: []const u8, q: core.RegistryQuery) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
-    const url = try core.buildWebUrl(arena.allocator(), h, p, m, platform);
+    const url = try core.buildRegistryUrl(arena.allocator(), q);
     try testing.expectEqualStrings(expected, url);
 }
 
-test "web url: no dims is the bare homepage" {
-    try expectUrl(core.siteUrl ++ "/", "", "", "", "");
+fn expectIndexUrl(expected: []const u8, h: []const u8, p: []const u8, m: []const u8) !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const url = try core.buildIndexUrl(arena.allocator(), h, p, m);
+    try testing.expectEqualStrings(expected, url);
 }
 
-test "web url: any partial set filters the registry at the #registry anchor" {
-    try expectUrl(core.siteUrl ++ "/?harness=kimicode#registry", "kimicode", "", "", "");
-    try expectUrl(core.siteUrl ++ "/?harness=kimicode&model=glm52#registry", "kimicode", "", "glm52", "");
-    try expectUrl(core.siteUrl ++ "/?provider=chutes&model=glm52#registry", "", "chutes", "glm52", "");
+test "registry url: no filters is the bare homepage" {
+    try expectRegistryUrl(core.siteUrl ++ "/", .{});
 }
 
-test "web url: the complete combo is the result page, not a filter" {
-    try expectUrl(core.siteUrl ++ "/?agent=kimicode-chutes-glm52", "kimicode", "chutes", "glm52", "");
+test "registry url: any partial set filters the registry at the #registry anchor" {
+    try expectRegistryUrl(core.siteUrl ++ "/?harness=kimicode#registry", .{ .harness = "kimicode" });
+    try expectRegistryUrl(core.siteUrl ++ "/?harness=kimicode&model=glm52#registry", .{ .harness = "kimicode", .model = "glm52" });
+    try expectRegistryUrl(core.siteUrl ++ "/?provider=chutes&model=glm52#registry", .{ .provider = "chutes", .model = "glm52" });
 }
 
-test "web url: the platform pin lands only on the result page" {
-    try expectUrl(core.siteUrl ++ "/?agent=kimicode-chutes-glm52&platform=linux", "kimicode", "chutes", "glm52", "linux");
-    // on a partial set the pin is meaningless (the index ignores ?platform=) —
-    // runWeb rejects it before building; the builder itself just ignores it
-    try expectUrl(core.siteUrl ++ "/?harness=kimicode#registry", "kimicode", "", "", "linux");
+test "registry url: the complete combo is the agent result page, not a filter" {
+    try expectRegistryUrl(core.siteUrl ++ "/?agent=kimicode-chutes-glm52", .{ .harness = "kimicode", .provider = "chutes", .model = "glm52" });
+    try expectRegistryUrl(core.siteUrl ++ "/?agent=cline-chutes-kimik3", .{ .agent = "cline-chutes-kimik3" });
+    // the platform param is a registry filter now — it never lands on a result page
+    try expectRegistryUrl(core.siteUrl ++ "/?agent=cline-chutes-kimik3", .{ .agent = "cline-chutes-kimik3", .platform = "linux" });
+}
+
+test "registry url: the combo-level filters compose into the query" {
+    try expectRegistryUrl(core.siteUrl ++ "/?email=a@b&platform=linux&free=true&reciprocal=false#registry", .{
+        .email = "a@b",
+        .platform = "linux",
+        .free = true,
+        .reciprocal = false,
+    });
+    try expectRegistryUrl(core.siteUrl ++ "/?harness=kimicode&reciprocal=true#registry", .{ .harness = "kimicode", .reciprocal = true });
+}
+
+test "index url: the dim filters anchor at #index" {
+    try expectIndexUrl(core.siteUrl ++ "/#index", "", "", "");
+    try expectIndexUrl(core.siteUrl ++ "/?harness=cline#index", "cline", "", "");
+    try expectIndexUrl(core.siteUrl ++ "/?provider=chutes&model=glm52#index", "", "chutes", "glm52");
 }
