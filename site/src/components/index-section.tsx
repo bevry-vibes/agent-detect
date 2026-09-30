@@ -62,27 +62,50 @@ function entryView(e: AnyEntry): EntryView {
 export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSectionProps) {
   const groups = useMemo(() => {
     if (!index) return null;
-    // a dim filter narrows ONLY its own list — a provider filter shrinks the
-    // providers column and leaves the harnesses/models lists (and every
-    // association list inside each entry) untouched
+    // dim filters narrow ALL THREE lists to what is available under them —
+    // the same rule `agent-detect index --harness=…` applies: an entry stays
+    // when it participates in a combo with every other set filter (through
+    // its association arrays: direct for the pair it belongs to, closures
+    // for the dims it reaches)
     return [
       {
         dim: "harness" as const,
         title: "Harnesses",
         total: index.harnesses.length,
-        entries: (filters.harness ? index.harnesses.filter((e) => e.id === filters.harness) : index.harnesses).map(entryView),
+        entries: index.harnesses
+          .filter(
+            (e) =>
+              (!filters.harness || e.id === filters.harness) &&
+              (!filters.provider || e.providers.includes(filters.provider)) &&
+              (!filters.model || e.models.includes(filters.model)),
+          )
+          .map(entryView),
       },
       {
         dim: "provider" as const,
         title: "Providers",
         total: index.providers.length,
-        entries: (filters.provider ? index.providers.filter((e) => e.id === filters.provider) : index.providers).map(entryView),
+        entries: index.providers
+          .filter(
+            (e) =>
+              (!filters.provider || e.id === filters.provider) &&
+              (!filters.harness || e.harnesses.includes(filters.harness)) &&
+              (!filters.model || e.models.includes(filters.model)),
+          )
+          .map(entryView),
       },
       {
         dim: "model" as const,
         title: "Models",
         total: index.models.length,
-        entries: (filters.model ? index.models.filter((e) => e.id === filters.model) : index.models).map(entryView),
+        entries: index.models
+          .filter(
+            (e) =>
+              (!filters.model || e.id === filters.model) &&
+              (!filters.harness || e.harnesses.includes(filters.harness)) &&
+              (!filters.provider || e.providers.includes(filters.provider)),
+          )
+          .map(entryView),
       },
     ];
   }, [index, filters.harness, filters.provider, filters.model]);

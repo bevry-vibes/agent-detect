@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
-import { useCopied } from "@/lib/use-copied";
-import { type AgentFile, type ComboRow, type FixtureOutputs, type Registry } from "@/lib/registry";
+import { type AgentFile, type ComboRow, type CombosFile, type FixtureOutputs, type IndexFile, type Registry } from "@/lib/registry";
 import { JsonBlock } from "@/components/json-block";
 import { StatusRow } from "@/components/status-row";
+import { AssociationTables } from "@/components/association-tables";
 import { Button } from "@/components/ui/button";
 
 const SECTION_ORDER = ["identify", "trailer co-author", "trailer assisted-by", "explain", "found", "raw", "check-reciprocal"] as const;
@@ -67,64 +67,21 @@ function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][numbe
 interface AgentPageProps {
   row: ComboRow | null;
   agentId: string;
+  index: IndexFile | null;
+  registry: Registry | null;
+  combos: CombosFile | null;
   /** the dim rows open the entity's detail page (/model/<id> etc.) */
   onOpenEntity: (dim: "harness" | "provider" | "model", id: string) => void;
+  /** a table's search icon: the registry section filtered to that context */
+  onSearch: (filters: { harness: string | null; provider: string | null; model: string | null }) => void;
   onBack: () => void;
 }
 
-// the combo dimensions as rich `type title id` entries linking to the
-// filtered index — the same format the index cards use
-const DIM_ENTRIES = [
-  { label: "harness", dim: "harness", table: "harnesses", field: "harness" },
-  { label: "provider", dim: "provider", table: "providers", field: "provider" },
-  { label: "model", dim: "model", table: "models", field: "model" },
-] as const;
-
-function DimEntries({ row, onOpenEntity }: { row: ComboRow; onOpenEntity: AgentPageProps["onOpenEntity"] }) {
-  const rows: { label: string; id: string; dim?: "harness" | "provider" | "model" }[] = [
-    { label: "harness", id: row.harness, dim: "harness" },
-    { label: "provider", id: row.provider, dim: "provider" },
-    { label: "model", id: row.model, dim: "model" },
-    { label: "agent", id: row.agent_id },
-  ];
-  return (
-    <nav aria-label="combo dimensions" className="flex flex-col gap-1">
-      {rows.map(({ label, id, dim }) => {
-        const value = (
-          <span className="font-mono text-sm underline-offset-4 hover:underline">{id}</span>
-        );
-        return (
-          <div key={label} className="hover:bg-muted/50 -mx-1 flex min-w-0 items-baseline gap-2 rounded-md px-1 py-0.5">
-            {dim ? (
-              <a
-                href={`/${dim}/${id}`}
-                title={`open the ${dim} detail page (${dim}/${id})`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onOpenEntity(dim, id);
-                }}
-                className="flex min-w-0 items-baseline gap-1 text-foreground"
-              >
-                {label}:{value}
-              </a>
-            ) : (
-              <span className="flex min-w-0 items-baseline gap-1">
-                {label}:{value}
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </nav>
-  );
-}
-
-/** the full-page replacement for an agent combo — the from-identity results
- * only, one section per declared platform (pill heading = the platform name,
- * nothing clickable), newest first. The status row reads
- * `reciprocal · platforms · date` on a single shrinking line. The registry
- * stays one back-button away. */
-export function AgentPage({ row, agentId, onOpenEntity, onBack }: AgentPageProps) {
+/** the result page — `agent: {id}` prominent over its three dims, the status
+ * row, the four association tables filtered to the combo (its dims and the
+ * agent are the gold self cards, each with a back arrow), then the declared
+ * fixtures' outputs. */
+export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity, onSearch, onBack }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
 
@@ -155,12 +112,12 @@ export function AgentPage({ row, agentId, onOpenEntity, onBack }: AgentPageProps
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  // one section per declared platform, newest first — the identity channel is
-  // all the site shows (from-capture stays maintainer-side)
   const sortedFixtures = useMemo(
     () => (file ? [...file.fixtures].sort((a, b) => b.updated_at - a.updated_at) : null),
     [file],
   );
+
+  const dims = row ? { h: row.harness, p: row.provider, m: row.model } : { h: "", p: "", m: "" };
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
@@ -197,9 +154,28 @@ export function AgentPage({ row, agentId, onOpenEntity, onBack }: AgentPageProps
       )}
 
       {row && (
-        <header className="flex flex-col gap-3">
-          <h1 className="font-mono text-xl font-semibold tracking-tight">{row.agent_id}</h1>
-          <DimEntries row={row} onOpenEntity={onOpenEntity} />
+        <header className="flex flex-col gap-1">
+          <h1 className="font-mono text-2xl font-bold tracking-tight">
+            <span className="text-muted-foreground">agent:</span> {row.agent_id}
+          </h1>
+          {(["harness", "provider", "model"] as const).map((dim) => {
+            const id = row[dim];
+            return (
+              <a
+                key={dim}
+                href={`/${dim}/${id}`}
+                title={`open the ${dim} detail page (${dim}/${id})`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenEntity(dim, id);
+                }}
+                className="hover:bg-muted/50 -mx-1 flex min-w-0 items-baseline gap-1 rounded-md px-1 py-0.5 text-sm transition-colors"
+              >
+                <span className="text-muted-foreground">{dim}:</span>
+                <span className="font-mono underline-offset-4 hover:underline">{id}</span>
+              </a>
+            );
+          })}
         </header>
       )}
 
@@ -209,26 +185,31 @@ export function AgentPage({ row, agentId, onOpenEntity, onBack }: AgentPageProps
         </p>
       )}
       {row && !error && !file && <p className="text-muted-foreground text-sm">loading result JSON…</p>}
-      {row && !error && file && sortedFixtures && sortedFixtures.length === 0 && (
-        <p className="text-muted-foreground text-sm">no declared fixtures for this combo yet</p>
+
+      {row && (
+        <div className="[container-type:inline-size]">
+          <StatusRow row={row} dims={dims} />
+        </div>
       )}
+
+      {row && index && registry && combos && (
+        <AssociationTables
+          page={{ harness: row.harness, provider: row.provider, model: row.model }}
+          self={{ harness: row.harness, provider: row.provider, model: row.model, agent: row.agent_id }}
+          index={index}
+          registry={registry}
+          combos={combos}
+          onOpenEntity={onOpenEntity}
+          onOpenAgent={onBack}
+          onSearch={onSearch}
+          onBack={onBack}
+        />
+      )}
+
       {row && !error && file && sortedFixtures && sortedFixtures.length > 0 && (
-        <div className="flex flex-col gap-5 [container-type:inline-size]">
-          {/* the status line: reciprocal · platforms · date — always one line,
-            shrinking with the viewport, nothing on it clickable */}
-          <StatusRow row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} />
+        <div className="flex flex-col gap-5">
           {sortedFixtures.map((f) => (
-            <section key={f.id} className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <span
-                  title={`declared ${new Date(f.updated_at * 1000).toISOString()}`}
-                  className="text-muted-foreground rounded-md border bg-muted/50 px-2 py-1 font-mono text-xs"
-                >
-                  {f.platform}
-                </span>
-              </div>
-              <FixtureDetail fixture={f} dims={{ h: row.harness, p: row.provider, m: row.model }} />
-            </section>
+            <FixtureDetail key={f.id} fixture={f} dims={dims} />
           ))}
         </div>
       )}

@@ -335,6 +335,17 @@ export default function App() {
     onDim(dim, id);
   };
 
+  /** an association table's search icon: the registry section filtered to the
+   * table's context */
+  const onSearchRegistry = (f: { harness: string | null; provider: string | null; model: string | null }) => {
+    pendingAnchor.current = "registry";
+    const next = { ...filters, harness: f.harness, provider: f.provider, model: f.model };
+    setFilters(next);
+    setView({ kind: "index" });
+    setNotices([]);
+    pushURL(next, { kind: "index" });
+  };
+
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader
@@ -347,7 +358,16 @@ export default function App() {
         ]}
       />
       {view.kind === "agent" ? (
-        <AgentPage row={selectedRow} agentId={view.id} onOpenEntity={onOpenEntity} onBack={closeToIndex} />
+        <AgentPage
+          row={selectedRow}
+          agentId={view.id}
+          index={indexFile}
+          registry={registry}
+          combos={combosFile}
+          onOpenEntity={onOpenEntity}
+          onSearch={onSearchRegistry}
+          onBack={closeToIndex}
+        />
       ) : view.kind === "entity" ? (
         <EntityPage
           dim={view.dim}
@@ -355,11 +375,7 @@ export default function App() {
           index={indexFile}
           registry={registry}
           combos={combosFile}
-          onDim={onJumpToRegistry}
-          onCombos={() => {
-            pendingAnchor.current = "registry";
-            onDim(view.dim, view.id);
-          }}
+          onSearch={onSearchRegistry}
           onOpenEntity={onOpenEntity}
           onOpenAgent={onSelect}
           onBack={closeToIndex}

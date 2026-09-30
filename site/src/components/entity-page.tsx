@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, SquareArrowOutUpRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { type CombosFile, type IndexFile, type Registry } from "@/lib/registry";
+import { NO_FILTERS } from "@/components/filter-bar";
 import { JsonBlock } from "@/components/json-block";
+import { AssociationTables } from "@/components/association-tables";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -18,128 +20,26 @@ interface EntityPageProps {
   index: IndexFile | null;
   registry: Registry | null;
   combos: CombosFile | null;
-  /** an association chip filters the registry section with it */
-  onDim: (dim: "harness" | "provider" | "model", id: string) => void;
-  /** view the entity's combos in the registry (the dim filter jump) */
-  onCombos: () => void;
   /** the expand buttons: entities open their detail page, agents open their result page */
   onOpenEntity: (dim: EntityDim, id: string) => void;
   onOpenAgent: (agentId: string) => void;
+  /** a table's search icon: the registry section filtered to that context */
+  onSearch: (filters: Filters) => void;
   onBack: () => void;
 }
 
-interface CardView {
-  key: string;
-  title: string;
-  mono: string;
-  badges: string[];
-  meta: string;
-  selected: boolean;
-  onCard: () => void;
-  cardTitle: string;
-  expandTitle: string;
-  onExpand: () => void;
+interface Filters {
+  harness: string | null;
+  provider: string | null;
+  model: string | null;
+  search: string | null;
+  email: string | null;
+  platform: string | null;
+  free: boolean | null;
+  reciprocal: boolean | null;
 }
 
-type AnyEntry = IndexFile["harnesses"][number] | IndexFile["providers"][number] | IndexFile["models"][number];
-
-function entityBadges(e: AnyEntry): string[] {
-  const badges: string[] = [];
-  if ("license" in e && e.license) badges.push(`license: ${e.license}`);
-  if ("openness" in e && e.openness) badges.push(`openness: ${e.openness}`);
-  if (e.open_training) badges.push(`open: ${e.open_training}`);
-  if (e.closed_training) badges.push(`closed: ${e.closed_training}`);
-  if ("reciprocity_scandal" in e && e.reciprocity_scandal) badges.push("scandal");
-  return badges;
-}
-
-/** per-value explanations for the policy fields — cursor-help + dotted
- * underline on each value, the same vocabulary the rule tables use */
-function policyExplain(field: string, value: string | null | boolean): string {
-  if (value == null) return `${field}: not researched — no verified data`;
-  if (field === "license") {
-    if (value === "NONE") return "license: verified none granted (closed source)";
-    if (value === "NOASSERTION") return "license: exists but custom/non-SPDX, or researched without conclusion";
-    return `license: ${value} — the SPDX license id (informational; the licence does not gate reciprocity)`;
-  }
-  if (field === "openness") {
-    if (value === "closed") return "openness: closed — API-only, no weights published";
-    return `openness: ${value} — the weights are published under this tier`;
-  }
-  if (field === "open_training") {
-    if (value === "NOASSERTION") return "open-model training: researched, inconclusive";
-    return `open-model training: ${value} — whether the entity uses your data to train open-weight models (informational; never gates reciprocity)`;
-  }
-  if (field === "closed_training") {
-    if (value === "NOASSERTION") return "closed-model training: researched, inconclusive";
-    return `closed-model training: ${value} — whether the entity uses your data to train closed (API) models: enforced = no opt-out, opt-out = trains by default, opt-in = off by default, never = verified never; this axis gates reciprocity`;
-  }
-  if (field === "reciprocity_scandal") {
-    return value
-      ? "reciprocity scandal: implicated by a court, regulator, official report, or wire-capture finding (the fair-use purpose test)"
-      : "reciprocity scandal: false — no scandal on record (explicit, not inferred from absence)";
-  }
-  return `${field}: ${value}`;
-}
-
-function Table({ title, items }: { title: string; items: CardView[] }) {
-  return (
-    <div className="rounded-xl border">
-      <div className="text-muted-foreground border-b px-3 py-2 text-xs font-medium">
-        {title} — {items.length}
-      </div>
-      <ul className="max-h-96 overflow-y-auto p-1" aria-label={title}>
-        {items.length === 0 && <li className="text-muted-foreground px-2 py-3 text-center text-xs">none match</li>}
-        {items.map((c) => (
-          <li key={c.key}>
-            <div
-              className={`group flex min-w-0 items-stretch gap-0.5 rounded-md border transition-colors ${
-                c.selected ? "border-amber-500/60 bg-amber-500/10" : "border-transparent hover:bg-muted/50"
-              }`}
-            >
-              <button type="button" title={c.cardTitle} onClick={c.onCard} className="flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1.5 text-left">
-                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                  <span className="text-sm font-medium">{c.title}</span>
-                  <span className="text-muted-foreground font-mono text-[11px]">{c.mono}</span>
-                </span>
-                <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
-                  {c.badges.map((b) => (
-                    <Badge key={b} variant="outline" className={`px-1 py-0 text-[10px] ${c.selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}>
-                      {b}
-                    </Badge>
-                  ))}
-                  <span>{c.meta}</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                title={c.expandTitle}
-                aria-label={c.expandTitle}
-                onClick={c.onExpand}
-                className="hover:text-foreground flex w-8 shrink-0 cursor-pointer items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-              >
-                <SquareArrowOutUpRight className="size-3.5" />
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/** the full-page entity detail (the result page's sibling) — the entry's
- * identity and policy fields, then THREE side-by-side card tables (the same
- * design as the index) of everything it associates with: for a harness that
- * is providers, models, and agents; for a provider, harnesses, models, and
- * agents; for a model, harnesses, providers, and agents. Clicking a card
- * narrows the tables beside it (the gold card is the local selection, click
- * again to clear); a card's expand button opens its detail or result page.
- * The JSON block is the entry verbatim — the same object /model/<id>.json
- * serves. */
-export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, onOpenEntity, onOpenAgent, onBack }: EntityPageProps) {
-  const [sel, setSel] = useState<Sel>({});
-  useEffect(() => setSel({}), [dim, id]);
+export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenEntity, onOpenAgent, onBack }: EntityPageProps) {
 
   const entry = useMemo(() => {
     if (!index) return null;
@@ -149,118 +49,15 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
   const label = registry ? registry[DIM_TABLES[dim]].find((r) => r.id === id)?.label ?? id : id;
   const title = dim === "model" ? "Model" : dim === "provider" ? "Provider" : "Harness";
 
-  const findEntry = (d: EntityDim, eid: string) => (index ? index[DIM_TABLES[d]].find((e) => e.id === eid) ?? null : null);
-
-  const tables = useMemo(() => {
-    if (!entry || !index) return [];
-    const entityCard = (d: EntityDim, eid: string, selected: boolean): CardView => {
-      const e = findEntry(d, eid);
-      const elabel = registry ? registry[DIM_TABLES[d]].find((r) => r.id === eid)?.label ?? eid : eid;
-      return {
-        key: `${d}-${eid}`,
-        title: elabel,
-        mono: eid,
-        badges: e ? entityBadges(e as AnyEntry) : [],
-        meta: "",
-        selected,
-        onCard: () => setSel((s) => ({ ...s, agent: undefined, [d]: s[d] === eid ? undefined : eid })),
-        cardTitle: selected ? `clear the ${d} selection` : `narrow the other tables to ${d} ${eid}`,
-        expandTitle: `open the ${d} detail page (${d}/${eid})`,
-        onExpand: () => onOpenEntity(d, eid),
-      };
-    };
-    // the combo rows involving this entity, narrowed by the local selections —
-    // the agents table shows exactly these, and the entity tables narrow by
-    // their own selections through the index's association arrays
-    const rows = (combos?.combos ?? []).filter((c) => c[dim] === id);
-    const narrowed = rows.filter(
-      (c) => (!sel.harness || c.harness === sel.harness) && (!sel.provider || c.provider === sel.provider) && (!sel.model || c.model === sel.model),
-    );
-    const agents: CardView[] = narrowed.map((c) => ({
-      key: c.agent_id,
-      title: c.agent_id,
-      mono: c.agent_id,
-      badges: c.reciprocal ? ["reciprocal"] : ["not reciprocal"],
-      meta: c.platforms.join(" "),
-      selected: sel.agent === c.agent_id,
-      onCard: () =>
-        setSel((s) =>
-          s.agent === c.agent_id ? {} : { harness: c.harness, provider: c.provider, model: c.model, agent: c.agent_id },
-        ),
-      cardTitle: sel.agent === c.agent_id ? "clear the agent selection" : "narrow the other tables to this agent's dims",
-      expandTitle: `open the result page (/agent/${c.agent_id})`,
-      onExpand: () => onOpenAgent(c.agent_id),
-    }));
-
-    const hEntry = (hid: string) => findEntry("harness", hid) as IndexFile["harnesses"][number] | null;
-
-    if (dim === "harness") {
-      const e = entry as IndexFile["harnesses"][number];
-      return [
-        {
-          title: "Providers",
-          items: e.providers
-            .filter((pid) => !sel.model || !!(findEntry("provider", pid) as IndexFile["providers"][number] | null)?.models.includes(sel.model))
-            .map((pid) => entityCard("provider", pid, sel.provider === pid)),
-        },
-        {
-          title: "Models",
-          items: e.models
-            .filter((mid) => !sel.provider || !!(findEntry("provider", sel.provider) as IndexFile["providers"][number] | null)?.models.includes(mid))
-            .map((mid) => entityCard("model", mid, sel.model === mid)),
-        },
-        { title: "Agents", items: agents },
-      ];
-    }
-    if (dim === "provider") {
-      const e = entry as IndexFile["providers"][number];
-      return [
-        {
-          title: "Harnesses",
-          items: e.harnesses
-            .filter((hid) => !sel.model || !!(hEntry(hid))?.models.includes(sel.model))
-            .map((hid) => entityCard("harness", hid, sel.harness === hid)),
-        },
-        {
-          title: "Models",
-          items: e.models
-            .filter((mid) => !sel.harness || !!(hEntry(sel.harness))?.models.includes(mid))
-            .map((mid) => entityCard("model", mid, sel.model === mid)),
-        },
-        { title: "Agents", items: agents },
-      ];
-    }
-    const e = entry as IndexFile["models"][number];
-    return [
-      {
-        title: "Harnesses",
-        items: e.harnesses
-          .filter((hid) => !sel.provider || !!(hEntry(hid))?.providers.includes(sel.provider))
-          .map((hid) => entityCard("harness", hid, sel.harness === hid)),
-      },
-      {
-        title: "Providers",
-        items: e.providers
-          .filter((pid) => !sel.harness || !!(hEntry(sel.harness))?.providers.includes(pid))
-          .map((pid) => entityCard("provider", pid, sel.provider === pid)),
-      },
-      { title: "Agents", items: agents },
-    ];
-  }, [entry, index, dim, sel, combos, registry, id]);
-
-  // two columns: the left stacks license (when the entity carries one),
-  // openness (models), and the scandal flag; the right stacks the training
-  // pair with closed_training below open_training
-  const left: { field: string; value: string | null | boolean }[] = [];
-  const right: { field: string; value: string | null | boolean }[] = [];
+  const policy: { field: string; value: string | null | boolean }[] = [];
   if (entry) {
-    if ("license" in entry) left.push({ field: "license", value: entry.license });
-    if ("openness" in entry) left.push({ field: "openness", value: entry.openness });
+    if ("license" in entry) policy.push({ field: "license", value: entry.license });
+    if ("openness" in entry) policy.push({ field: "openness", value: entry.openness });
     if ("reciprocity_scandal" in entry) {
-      left.push({ field: "reciprocity_scandal", value: entry.reciprocity_scandal ? "true" : "false" });
+      policy.push({ field: "reciprocity_scandal", value: entry.reciprocity_scandal ? "true" : "false" });
     }
-    right.push({ field: "open_training", value: entry.open_training });
-    right.push({ field: "closed_training", value: entry.closed_training });
+    policy.push({ field: "open_training", value: entry.open_training });
+    policy.push({ field: "closed_training", value: entry.closed_training });
   }
 
   return (
@@ -306,7 +103,10 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
           <section className="flex flex-col gap-2 rounded-xl border p-4">
             <h2 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">policy</h2>
             <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
-              {[left, right].map((column: { field: string; value: string | null | boolean }[], ci: number) => (
+              {[
+                policy.filter((row) => row.field !== "open_training" && row.field !== "closed_training"),
+                policy.filter((row) => row.field === "open_training" || row.field === "closed_training"),
+              ].map((column: typeof policy, ci: number) => (
                 <dl key={ci} className="flex flex-col gap-1">
                   {column.map((row) => (
                     <div key={row.field} className="flex min-w-0 items-baseline gap-2">
@@ -324,24 +124,56 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
             </div>
           </section>
 
-          <section className="flex flex-col gap-3">
-            <h2 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-              associations — click a card to narrow the tables beside it; a card's expand button opens its detail page
-            </h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              {tables.map((t) => (
-                <Table key={t.title} title={t.title} items={t.items} />
-              ))}
-            </div>
-          </section>
-
-          <Button variant="outline" size="sm" className="self-start" onClick={onCombos}>
-            view this {dim}'s combos in the registry
-          </Button>
+          <AssociationTables
+            page={{ [dim]: id }}
+            self={{ [dim]: id }}
+            index={index}
+            registry={registry}
+            combos={combos}
+            onOpenEntity={onOpenEntity}
+            onOpenAgent={onOpenAgent}
+            onSearch={(f) => {
+              const next = { ...NO_FILTERS };
+              if (f.harness) next.harness = f.harness;
+              if (f.provider) next.provider = f.provider;
+              if (f.model) next.model = f.model;
+              onSearch(next);
+            }}
+            onBack={onBack}
+          />
 
           <JsonBlock title="index entry" value={entry} />
         </>
       )}
     </main>
   );
+}
+
+/** per-value explanations for the policy fields — cursor-help + dotted
+ * underline on each value, the same vocabulary the rule tables use */
+function policyExplain(field: string, value: string | null | boolean): string {
+  if (value == null) return `${field}: not researched — no verified data`;
+  if (field === "license") {
+    if (value === "NONE") return "license: verified none granted (closed source)";
+    if (value === "NOASSERTION") return "license: exists but custom/non-SPDX, or researched without conclusion";
+    return `license: ${value} — the SPDX license id (informational; the licence does not gate reciprocity)`;
+  }
+  if (field === "openness") {
+    if (value === "closed") return "openness: closed — API-only, no weights published";
+    return `openness: ${value} — the weights are published under this tier`;
+  }
+  if (field === "open_training") {
+    if (value === "NOASSERTION") return "open-model training: researched, inconclusive";
+    return `open-model training: ${value} — whether the entity uses your data to train open-weight models (informational; never gates reciprocity)`;
+  }
+  if (field === "closed_training") {
+    if (value === "NOASSERTION") return "closed-model training: researched, inconclusive";
+    return `closed-model training: ${value} — whether the entity uses your data to train closed (API) models: enforced = no opt-out, opt-out = trains by default, opt-in = off by default, never = verified never; this axis gates reciprocity`;
+  }
+  if (field === "reciprocity_scandal") {
+    return value
+      ? "reciprocity scandal: implicated by a court, regulator, official report, or wire-capture finding (the fair-use purpose test)"
+      : "reciprocity scandal: false — no scandal on record (explicit, not inferred from absence)";
+  }
+  return `${field}: ${value}`;
 }
