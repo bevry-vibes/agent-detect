@@ -49,7 +49,7 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "kimi-k3", .label = "Kimi K3", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K3", "https://huggingface.co/moonshotai/Kimi-K3/blob/main/LICENSE" }, .variations = &.{ "Kimi-K3-TEE", "k3" } },
     // glm-5.2: open-source — zai-org's card tags it "Pure Open: MIT"; MIT is OSI-approved, and the OSAID 1.0 definition is linked as concurrence for the open-source tier.
     // variations: Chutes TEE spelling (observed: chutes/zai-org/GLM-5.2-TEE).
-    .{ .name = "glm-5.2", .label = "GLM 5.2", .openness = "open-source", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.2", "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE", "https://opensource.org/ai/open-source-ai-definition" }, .variations = &.{ "GLM-5.2-TEE" } },
+    .{ .name = "glm-5.2", .label = "GLM 5.2", .openness = "open-source", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.2", "https://huggingface.co/zai-org/GLM-5.2/blob/main/LICENSE", "https://opensource.org/ai/open-source-ai-definition" }, .variations = &.{"GLM-5.2-TEE"} },
     // minimax-m3: open-weight — shipped under the "MINIMAX COMMUNITY LICENSE" (non-commercial grant; commercial use past $20M/yr revenue needs authorization), not OSI;
     // the MiniMax blog post concurs it is an open-weight model.
     .{ .name = "minimax-m3", .label = "MiniMax M3", .short_title = "M3", .openness = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M3", "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE", "https://www.minimax.io/blog/minimax-m3" } },
@@ -67,7 +67,7 @@ pub const rulesForModels = [_]ModelRule{
     // Qwen3.8-Flash-Next is a separate HF collection (`qwen38-flash-next`) = separate family.
     // variations: Chutes stamps secure-enclave serving ids with "-TEE" (same model, TEE mode);
     // the observed id `chutes/Qwen/Qwen3.8-27B-TEE` (kimi-code's `default_model`) canonicalizes to `qwen3.8-27b-tee` — the `chutes/Qwen/` namespace is catalog prefix, shed by `modelIdAfterNamespace`, so only the bare stamped form needs recording here (2026-09-04: the paired `Qwen/Qwen3.8-27B-TEE` entry this rule used to carry is redundant and was dropped).
-    .{ .name = "qwen3.8-27b", .label = "Qwen3.8 27B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.8-27B", "https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.8-27B-TEE" } },
+    .{ .name = "qwen3.8-27b", .label = "Qwen3.8 27B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.8-27B", "https://huggingface.co/Qwen/Qwen3.8-27B/blob/main/LICENSE" }, .variations = &.{"Qwen3.8-27B-TEE"} },
     // deepseek-v4-flash: open-weight — HF card + MIT LICENSE; the weights are downloadable (MIT is OSI, but open-weight is the conservative tier for the hosted API alias).
     // variations: opencode's free-tier alias `deepseek-v4-flash-free` (folded from its own rule 2026-08-29 — same weights, tier spellings are variations per DESIGN #13);
     // Chutes serves the 0731 release stamp with its TEE suffix (observed: chutes/deepseek-ai/DeepSeek-V4-Flash-0731-TEE) — stamp/endpoint spellings coalesce into this model per DESIGN #13.
@@ -76,9 +76,10 @@ pub const rulesForModels = [_]ModelRule{
     // Every catalog namespace in front of the stamp — `deepseek-ai/…`, `siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731` — is shed by `modelIdAfterNamespace`, so the bare stamped form is enough.
     // The tdpsk_ spelling is AutoClaw's channel prefix + the 202605 YYYYMM release stamp (observed in the runtime config catalog, 2026-09-06) — same stamp/prefix folding per DESIGN #13.
     .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash:0731", "deepseek-v4-flash-vision-exp", "deepseek-v4-flash-free", "tdpsk_deepseek-v4-flash-202605" } },
-    // mistral-large-latest: open-weight — Mistral's models overview lists the current "Mistral Large 3" (v25.12) as Apache-2.0 open-weight, and the mistral-large-latest alias resolves to it;
+    // mistral-large-3: open-weight — Mistral's models overview lists the current "Mistral Large 3" (v25.12) as Apache-2.0 open-weight;
     // `closed` was only accurate for the Large 1/2 era.
-    .{ .name = "mistral-large-latest", .label = "Mistral Large (latest)", .openness = "open-weight", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" } },
+    // variations: `mistral-large-latest` — Mistral's floating alias for the current Large (floating aliases fold as variations per CONTRIBUTING "model rule identity & family folding"; move it when the upstream repoints it).
+    .{ .name = "mistral-large-3", .label = "Mistral Large 3", .openness = "open-weight", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" }, .variations = &.{"mistral-large-latest"} },
     // qwen3.7-plus: closed — API-only; no official weights. Same qwen.ai linkage as qwen3.8-max above.
     .{ .name = "qwen3.7-plus", .label = "Qwen3.7-Plus", .openness = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.7-plus" } },
     // deepseek-v4-pro: open-weight — the larger sibling of deepseek-v4-flash; HF card + MIT LICENSE.
@@ -95,8 +96,6 @@ pub const rulesForModels = [_]ModelRule{
     // granite-3.3-2b: open-weight — IBM Granite 3.3 2B; Apache-2.0 (added for the ollama local runtime 2026-09-20 — the maintainer's explicit need, outside the evergreen gate).
     // The ollama local spelling `granite3.3:2b` slugs to this rule's name — no variation needed.
     .{ .name = "granite-3.3-2b", .label = "Granite 3.3 2B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct", "https://huggingface.co/ibm-granite/granite-3.3-2b-instruct/blob/main/LICENSE" } },
-    // mistral-small-latest: open-weight — Mistral Small's alias; Apache-2.0 weights per the models overview, same as mistral-large-latest.
-    .{ .name = "mistral-small-latest", .label = "Mistral Small (latest)", .openness = "open-weight", .sources = &.{ "https://docs.mistral.ai/getting-started/models/models_overview/", "https://docs.mistral.ai/getting-started/models/" } },
     // gemini-3-flash: closed — Google Gemini API-only; no weights.
     .{ .name = "gemini-3-flash", .label = "Gemini 3 Flash", .openness = "closed", .sources = &.{ "https://deepmind.google/technologies/gemini/", "https://ai.google.dev/gemini-api/docs/models" } },
     // gemini-3.1-pro: closed — Google Gemini API-only; no weights.
@@ -131,7 +130,7 @@ pub const rulesForModels = [_]ModelRule{
     // fugu-ultra-v1.1: open-weight — Sakana AI Fugu Ultra v1.1 (Japanese MoE); HF card.
     .{ .name = "fugu-ultra-v1.1", .label = "Fugu Ultra v1.1", .openness = "open-weight", .sources = &.{ "https://huggingface.co/sakana-ai/fugu-ultra-v1.1", "https://huggingface.co/sakana-ai/fugu-ultra-v1.1/blob/main/LICENSE" } },
     // deepseek-v3.2: open-weight — DeepSeek V3.2; HF card + MIT LICENSE. variations: Chutes TEE spelling (observed: chutes/deepseek-ai/DeepSeek-V3.2-TEE).
-    .{ .name = "deepseek-v3.2", .label = "DeepSeek V3.2", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V3.2", "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V3.2-TEE" } },
+    .{ .name = "deepseek-v3.2", .label = "DeepSeek V3.2", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V3.2", "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE" }, .variations = &.{"DeepSeek-V3.2-TEE"} },
     // glm-4.6: open-weight — Z.ai GLM 4.6; HF card + LICENSE.
     .{ .name = "glm-4.6", .label = "Z.ai GLM 4.6", .openness = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.6", "https://huggingface.co/zai-org/GLM-4.6/blob/main/LICENSE" } },
     // kimi-k2.5: open-weight — Moonshot Kimi K2.5; HF card + LICENSE.
@@ -148,11 +147,9 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .openness = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" }, .variations = &.{ "qwen3-coder-480b-a35b-instruct-int4-mixed-ar", "qwen3-coder-480b-a35b-instruct" } },
     // qwen3-32b: open-weight — the 32B dense size of the Qwen3 family; HF card + Apache-2.0 LICENSE.
     // variations: Chutes stamps secure- enclave serving ids with "-TEE" (same model, TEE mode); the observed id `chutes/Qwen/Qwen3-32B-TEE` canonicalizes to `qwen3-32b-tee` / the namespaced form (see qwen3.8-27b).
-    .{ .name = "qwen3-32b", .label = "Qwen3 32B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-32B", "https://huggingface.co/Qwen/Qwen3-32B/blob/main/LICENSE" }, .variations = &.{ "Qwen3-32B-TEE" } },
+    .{ .name = "qwen3-32b", .label = "Qwen3 32B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-32B", "https://huggingface.co/Qwen/Qwen3-32B/blob/main/LICENSE" }, .variations = &.{"Qwen3-32B-TEE"} },
     // cogito-2.1: open-weight — DeepCogito Cogito 2.1 671B; HF card.
     .{ .name = "cogito-2.1", .label = "Cogito 2.1", .openness = "open-weight", .sources = &.{ "https://huggingface.co/deepcogito/cogito-2.1-671b", "https://huggingface.co/deepcogito/cogito-2.1-671b/blob/main/LICENSE" } },
-    // muse-spark-1.2: Meta Muse Spark 1.2; reciprocity unverified.
-    // variations: "-contributor" is OpenRouter's contributor-tier listing of the same model name (observed on OR + opencode-go).
     // big-pickle: Nous Research's Big Pickle, served on OpenCode Zen; openness unverified → null (never-guess).
     // The zen docs name it a free-period exception that DOES train ("collected data may be used to improve the model") — the training is known, but the axis depends on the unverified openness, so the closed axis records NOASSERTION per the deduction guidance (never guess an axis).
     // The openness is null, so the openness check gives exit 9 before the training pair is read. Rule-only for now (the autoclaw-precedent coverage exemption) until a fixture combo exists.
@@ -161,7 +158,7 @@ pub const rulesForModels = [_]ModelRule{
     // The OpenRouter contributor-tier listing ("muse-spark-1.2-contributor") trains on request data — the training is known, but nothing in the tier terms asserts WHAT it trains, and nothing prohibits closed-model training; the open-lab-model reading is an inference only.
     // Per the deduction guidance (never guess an axis), the closed axis records NOASSERTION: the axis could not be determined (researched, the terms do not say). The openness is null, so the openness check gives exit 9 before the training pair is read.
     // variations: "-contributor" is OpenRouter's contributor-tier listing of the same model name (observed on OR + opencode-go).
-    .{ .name = "muse-spark-1.2", .label = "Muse Spark 1.2", .openness = null, .sources = &.{}, .closed_training = "NOASSERTION", .variations = &.{ "muse-spark-1.2-contributor" } },
+    .{ .name = "muse-spark-1.2", .label = "Muse Spark 1.2", .openness = null, .sources = &.{}, .closed_training = "NOASSERTION", .variations = &.{"muse-spark-1.2-contributor"} },
     // claude-fable-5: closed — Anthropic Claude Fable 5; API-only, no weights.
     .{ .name = "claude-fable-5", .label = "Claude Fable 5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude", "https://docs.anthropic.com/en/docs/about-claude/models" } },
     // gpt-4o: closed — OpenAI GPT-4o; API-only, no weights.
@@ -171,7 +168,7 @@ pub const rulesForModels = [_]ModelRule{
     // glm-4.7: open-weight — Z.ai GLM 4.7; HF card + LICENSE.
     // variations: `zai-glm-4.7` (folded from its own rule 2026-08-29 — same zai-org weights on the Cerebras-hosted free trial;
     // the old rule's "Z.ai GLM 4.7" label shares the spelling's slug, so one variation covers both).
-    .{ .name = "glm-4.7", .label = "GLM 4.7", .openness = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.7", "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE" }, .variations = &.{ "zai-glm-4.7" } },
+    .{ .name = "glm-4.7", .label = "GLM 4.7", .openness = "open-weight", .sources = &.{ "https://huggingface.co/zai-org/GLM-4.7", "https://huggingface.co/zai-org/GLM-4.7/blob/main/LICENSE" }, .variations = &.{"zai-glm-4.7"} },
     // deepseek-r1: open-weight — DeepSeek R1; HF card + LICENSE.
     .{ .name = "deepseek-r1", .label = "DeepSeek R1", .openness = "open-weight", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-R1", "https://huggingface.co/deepseek-ai/DeepSeek-R1/blob/main/LICENSE" } },
     // gemini-3-pro: closed — Google Gemini 3 Pro; API-only, no weights.
@@ -210,13 +207,14 @@ pub const rulesForModels = [_]ModelRule{
     // hunyuan-t1: open-weight — Tencent Hunyuan T1; HF card + LICENSE.
     .{ .name = "hunyuan-t1", .label = "Hunyuan T1", .openness = "open-weight", .sources = &.{ "https://huggingface.co/Tencent-Hunyuan/Hunyuan-T1", "https://huggingface.co/Tencent-Hunyuan/Hunyuan-T1/blob/main/LICENSE" } },
     // mistral-small-3: open-weight — Mistral Small 3; HF card + LICENSE.
-    .{ .name = "mistral-small-3", .label = "Mistral Small 3", .openness = "open-weight", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Small-3", "https://huggingface.co/mistralai/Mistral-Small-3/blob/main/LICENSE" } },
+    // variations: `mistral-small-latest` — Mistral's floating alias for the current Small (floating aliases fold as variations per CONTRIBUTING "model rule identity & family folding"; move it when the upstream repoints it).
+    .{ .name = "mistral-small-3", .label = "Mistral Small 3", .openness = "open-weight", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Small-3", "https://huggingface.co/mistralai/Mistral-Small-3/blob/main/LICENSE" }, .variations = &.{"mistral-small-latest"} },
     // qwen3.6: open-weight — Alibaba Qwen3.6; HF card + LICENSE.
     .{ .name = "qwen3.6", .label = "Qwen3.6", .openness = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6", "https://huggingface.co/Qwen/Qwen3.6/blob/main/LICENSE" } },
     // qwen3.6-27b: open-weight — the 27B dense size of the Qwen3.6 family (same size-bearing-rule doctrine as qwen3.8-27b); HF card
     // + Apache-2.0 LICENSE. variations: Chutes TEE serving ids (see
     // qwen3.8-27b).
-    .{ .name = "qwen3.6-27b", .label = "Qwen3.6 27B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6-27B", "https://huggingface.co/Qwen/Qwen3.6-27B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.6-27B-TEE" } },
+    .{ .name = "qwen3.6-27b", .label = "Qwen3.6 27B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.6-27B", "https://huggingface.co/Qwen/Qwen3.6-27B/blob/main/LICENSE" }, .variations = &.{"Qwen3.6-27B-TEE"} },
     // llama-3.1-8b: open-weight — Meta Llama 3.1 8B; HF card + LICENSE.
     .{ .name = "llama-3.1-8b", .label = "Llama 3.1 8B", .openness = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.1-8B", "https://huggingface.co/meta-llama/Llama-3.1-8B/blob/main/LICENSE" } },
     // nemotron-3-super: open-weight — NVIDIA Nemotron 3 Super; HF card
@@ -225,10 +223,10 @@ pub const rulesForModels = [_]ModelRule{
     // nemotron-3-nano: open-weight — NVIDIA Nemotron 3 Nano; HF card + LICENSE.
     .{ .name = "nemotron-3-nano", .label = "Nemotron 3 Nano", .openness = "open-weight", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B", "https://huggingface.co/nvidia/Nemotron-3-Nano-30B-A3B/blob/main/LICENSE" }, .variations = &.{"nemotron-3-nano:4b"} },
     // llama-3.3-70b: open-weight — Meta Llama 3.3 70B; HF card + LICENSE. variations: hyper's serving id spelling (observed: the hyper catalog's `llama-3.3-70b-instruct`).
-    .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .openness = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct", "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE" }, .variations = &.{ "llama-3.3-70b-instruct" } },
+    .{ .name = "llama-3.3-70b", .label = "Llama 3.3 70B", .openness = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct", "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct/blob/main/LICENSE" }, .variations = &.{"llama-3.3-70b-instruct"} },
     // llama-4-maverick: open-weight — Meta Llama 4 Maverick; HF card + LICENSE.
     // variations: hyper's serving id spelling (observed: the hyper catalog's `llama-4-maverick-17b-128e-instruct-fp8`).
-    .{ .name = "llama-4-maverick", .label = "Llama 4 Maverick", .openness = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct", "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE" }, .variations = &.{ "llama-4-maverick-17b-128e-instruct-fp8" } },
+    .{ .name = "llama-4-maverick", .label = "Llama 4 Maverick", .openness = "open-weight", .sources = &.{ "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct", "https://huggingface.co/meta-llama/Llama-4-Maverick-17B-128E-Instruct/blob/main/LICENSE" }, .variations = &.{"llama-4-maverick-17b-128e-instruct-fp8"} },
     // kimi-k2.7-code: open-weight — Moonshot Kimi K2.7 Code; HF card + LICENSE.
     .{ .name = "kimi-k2.7-code", .label = "Kimi K2.7 Code", .openness = "open-weight", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.7-Code", "https://huggingface.co/moonshotai/Kimi-K2.7-Code/blob/main/LICENSE" } },
     // grok-4.20: closed — xAI Grok 4.20; API-only, no weights.
@@ -254,7 +252,7 @@ pub const rulesForModels = [_]ModelRule{
     // qwen3.5-397b-a17b: open-weight — the MoE flagship of the Qwen3.5 open line (Apache-2.0 per HF tag);
     // the official spelling carries the size, and the bare 3.5 name is claimed by `Qwen/Qwen3.5` — held by the `qwen3.5` hosted-alias rule — so this release is its own size-bearing rule.
     // variations: Chutes TEE spelling (observed: chutes/Qwen/Qwen3.5-397B-A17B-TEE).
-    .{ .name = "qwen3.5-397b-a17b", .label = "Qwen3.5 397B A17B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", "https://huggingface.co/Qwen/Qwen3.5-397B-A17B/blob/main/LICENSE" }, .variations = &.{ "Qwen3.5-397B-A17B-TEE" } },
+    .{ .name = "qwen3.5-397b-a17b", .label = "Qwen3.5 397B A17B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3.5-397B-A17B", "https://huggingface.co/Qwen/Qwen3.5-397B-A17B/blob/main/LICENSE" }, .variations = &.{"Qwen3.5-397B-A17B-TEE"} },
     // qwen3-235b-a22b: open-weight — the MoE flagship size of the Qwen3 family;
     // the canonical name bears no release stamp, but the catalogues do: `qwen/qwen3-235b-a22b-2507` (OpenRouter/tracked set) and the HF repo `Qwen/Qwen3-235B-A22B-Instruct-2507`, both the 2507 MMDD stamp on these same 235B-A22B weights (the `Thinking-2507` repo the rule cites is the same stamp)
     // — folded as variations per DESIGN #13, never as a separate dated rule.
@@ -263,14 +261,14 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "qwen3-235b-a22b", .label = "Qwen3 235B A22B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507", "https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507/blob/main/LICENSE" }, .variations = &.{ "Qwen3-235B-A22B-Thinking-2507-TEE", "Qwen3-235B-A22B-Instruct-2507", "qwen3-235b-a22b-2507" } },
     // kimi-k2.6: open-weight — Moonshot Kimi K2.6; LICENSE is a custom "Modified MIT License" (© 2026 Moonshot; not plain MIT, not SPDX → NOASSERTION).
     // variations: Chutes TEE spelling (observed: chutes/moonshotai/Kimi-K2.6-TEE).
-    .{ .name = "kimi-k2.6", .label = "Kimi K2.6", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.6", "https://huggingface.co/moonshotai/Kimi-K2.6/blob/main/LICENSE" }, .variations = &.{ "Kimi-K2.6-TEE" } },
+    .{ .name = "kimi-k2.6", .label = "Kimi K2.6", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/moonshotai/Kimi-K2.6", "https://huggingface.co/moonshotai/Kimi-K2.6/blob/main/LICENSE" }, .variations = &.{"Kimi-K2.6-TEE"} },
     // glm-5.1: open-weight — Z.ai GLM 5.1; LICENSE is plain MIT (© 2026 Zhipu AI) but the card carries no "Pure Open"/OSAID claim (unlike GLM-5.2), so it keeps the conservative open-weight tier.
     // variations: Chutes TEE spelling (observed: chutes/zai-org/GLM-5.1-TEE).
-    .{ .name = "glm-5.1", .label = "GLM 5.1", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.1", "https://huggingface.co/zai-org/GLM-5.1/blob/main/LICENSE" }, .variations = &.{ "GLM-5.1-TEE" } },
+    .{ .name = "glm-5.1", .label = "GLM 5.1", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.1", "https://huggingface.co/zai-org/GLM-5.1/blob/main/LICENSE" }, .variations = &.{"GLM-5.1-TEE"} },
     // mistral-nemo-instruct-2407: open-weight — Mistral Nemo (Apache-2.0 per the HF license tag; the repo ships no LICENSE file, so the license text URL is the second source).
     // Single size, so the id carries the 2407 stamp, not a param size.
     // variations: Chutes TEE spelling (observed: chutes/unsloth/ Mistral-Nemo-Instruct-2407-TEE — unsloth namespace, official weights).
-    .{ .name = "mistral-nemo-instruct-2407", .label = "Mistral Nemo Instruct 2407", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407", "https://www.apache.org/licenses/LICENSE-2.0" }, .variations = &.{ "Mistral-Nemo-Instruct-2407-TEE" } },
+    .{ .name = "mistral-nemo-instruct-2407", .label = "Mistral Nemo Instruct 2407", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407", "https://www.apache.org/licenses/LICENSE-2.0" }, .variations = &.{"Mistral-Nemo-Instruct-2407-TEE"} },
     // nemotron-3-nano-omni: open-weight — NVIDIA Nemotron 3 Nano Omni (multimodal line of the nano tier; official HF repos are the A3B-Reasoning quantizations, single size so the id omits it, per the `nemotron-3-nano` convention).
     // LICENSE: HF tag `other` (custom NVIDIA terms; no LICENSE file in the repos) → NOASSERTION; card is the only independent doc.
     // variations: Chutes TEE spelling (observed bare: chutes/Nemotron-3-Nano- Omni-30B-TEE — no namespace, so the bare form suffices) and the NIM catalog spelling (the 2026-09-20 free-axis refresh — free on OpenRouter and NIM).
@@ -293,8 +291,9 @@ pub const rulesForModels = [_]ModelRule{
     // variations: AutoClaw's channel spelling (observed in the runtime config catalog, 2026-09-06).
     .{ .name = "glm-5-turbo", .label = "GLM-5-Turbo", .openness = "closed", .license = "NONE", .sources = &.{ "https://docs.z.ai/guides/llm/glm-5-turbo", "https://openrouter.ai/z-ai/glm-5-turbo" }, .variations = &.{"zai_glm-5-turbo"} },
     // mimo-v2.5: open-weight — Xiaomi MiMo V2.5; HF card + MIT LICENSE. Single-size version, stamp not a param size. Observed on opencode-go (bare id).
+    // open_training: zen's free-period statement names MiMo-V2.5 Free as training — the model-intrinsic rule routes it here (axis open: the weights are open-weight); escaping the free period's training takes the paid spelling, so the billing rule makes it opt-out (informational — the reciprocity conjunct consumes only the closed axis).
     // The zen "MiMo-V2.5 Free" free-period training exception is SURFACE-SCOPED (it trains only on that one serving): the same weights run on xiaomi's verified-never API, so the exception stays at the provider level (the opencode/opencode-go rule comments) — setting it here would false-fail the xiaomi combos (the model-intrinsic scope rule).
-    .{ .name = "mimo-v2.5", .label = "MiMo V2.5", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/XiaomiMiMo/MiMo-V2.5", "https://huggingface.co/XiaomiMiMo/MiMo-V2.5/blob/main/LICENSE" } },
+    .{ .name = "mimo-v2.5", .label = "MiMo V2.5", .openness = "open-weight", .license = "MIT", .open_training = "opt-out", .sources = &.{ "https://huggingface.co/XiaomiMiMo/MiMo-V2.5", "https://huggingface.co/XiaomiMiMo/MiMo-V2.5/blob/main/LICENSE" } },
     // mimo-v2.5-pro: open-weight — Xiaomi MiMo V2.5 Pro (the pro size-class of the V2.5 line, so it keeps its own rule); HF card
     // + MIT LICENSE. Observed on opencode-go (bare id).
     .{ .name = "mimo-v2.5-pro", .label = "MiMo V2.5 Pro", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro", "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/blob/main/LICENSE" } },
@@ -317,15 +316,15 @@ pub const rulesForModels = [_]ModelRule{
     // HF weights under OpenMDW-1.1 (not yet on the SPDX list — the FAQ says use LicenseRef form — so NOASSERTION per the license table's custom/non-SPDX rule).
     // variations: the `-free` tier spellings (observed: opencode-free `laguna-s-2.1-free`, vercel `poolside/laguna-s-2.1-free`, openrouter `poolside/laguna-s-2.1:free`
     // — namespaces shed by modelIdAfterNamespace, tier suffixes fold).
-    .{ .name = "laguna-s-2.1", .label = "Laguna S 2.1", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-S-2.1", "https://huggingface.co/poolside/Laguna-S-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{ "laguna-s-2.1-free" } },
+    .{ .name = "laguna-s-2.1", .label = "Laguna S 2.1", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-S-2.1", "https://huggingface.co/poolside/Laguna-S-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{"laguna-s-2.1-free"} },
     // laguna-xs-2.1: open-weight — Poolside Laguna XS 2.1 (33B-A3B); same OpenMDW-1.1 weights family as laguna-s-2.1 (NOASSERTION).
     // Evergreen per the top-100 weekly set (`poolside/laguna-xs-2.1:free`).
     // variations: the `-free` tier spelling (observed: openrouter `poolside/laguna-xs-2.1:free`).
-    .{ .name = "laguna-xs-2.1", .label = "Laguna XS 2.1", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-XS-2.1", "https://huggingface.co/poolside/Laguna-XS-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{ "laguna-xs-2.1-free" } },
+    .{ .name = "laguna-xs-2.1", .label = "Laguna XS 2.1", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-XS-2.1", "https://huggingface.co/poolside/Laguna-XS-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{"laguna-xs-2.1-free"} },
 };
 
 /// one provider.
-/// `closed_training` and `open_training` reflect whether the provider trains closed/open models on customer data, per their commercial terms: "enforced" | "opt-in" | "opt-out" | "never" | null (unverified).
+/// `closed_training` and `open_training` reflect whether the provider trains closed/open models on customer data, per their commercial terms: "enforced" | "opt-in" | "opt-out" | "never" | "NOASSERTION" (attempted, inconclusive) | null (unverified).
 /// `sources` is the array of independent cross-references that informed both training values — typically two independent same-provider policy documents (privacy policy + terms of service) linked from the provider's legal page.
 /// Aggregator pages classify rather than assert policy, so they're dropped as second sources.
 /// Surfaced under `raw["provider-urls"]`.
@@ -378,22 +377,20 @@ pub const rulesForProviders = [_]ProviderRule{
     // NOTE — phantom-provider guard: crush's hyper.json routes the user's Charm Hyper subscription, and a provider key there that is actually a model id (observed: "qwen3.7-plus/…") is hyper's internal routing alias, not a provider surface —
     // detectCrush folds such keys to `hyper` (the real identity rows already live as crush-hyper-<model>).
     // A provider rule mirrors a provider SURFACE the user configures (minimax-code, deepseek-flash, kimi-code, cline-pass): never mint provider rules whose name is a model id.
-    // openrouter: never/opt-in — a BYO-key aggregator gateway; it does not host or train models on customer traffic by default (privacy
-    // + terms). But its contributor-tier listings (e.g.
-    // `meta/muse-spark-1.2-contributor`) DO train —
-    // reachable only by selecting those models, so per the opt-in-by-model rule (CONTRIBUTING) open_training is `opt-in`: the contributor tiers observed are open-weight labs' models;
-    // closed_training stays `never` absent a documented closed trainer.
+    // openrouter: never/never — a BYO-key aggregator gateway; it does not host or train models on customer traffic by default (privacy
+    // + terms). Its contributor-tier listings (e.g. `meta/muse-spark-1.2-contributor`) DO train — but that training is model-intrinsic
+    // (reachable only by selecting those models), so it lives on the model rule's training pair per the model-intrinsic rule (CONTRIBUTING,
+    // "the opt-in-by-model successor"): `muse-spark-1.2` carries closed_training NOASSERTION + the `-contributor` variation. The provider
+    // axes record the default surface: never on both (the observed contributor tiers serve open-weight labs' models; no documented closed trainer).
     .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "never", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
-    // opencode: opt-in (closed+open) — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13.
-    // The zen docs carry the same data statement the Go subscription cites: "Our providers follow a zero-retention policy and do not use your data for model training", with named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free) — per the opt-in-by-model rule those reachable tiers make both axes at least opt-in.
+    // opencode: never/never — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13.
+    // The zen docs carry the same data statement the Go subscription cites: "Our providers follow a zero-retention policy and do not use your data for model training" — the provider default surface is zero-training. The named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free) are model-intrinsic (a model's own free period), so they live on the model rules' training pairs per the model-intrinsic rule (CONTRIBUTING, "the opt-in-by-model successor"): `big-pickle` closed NOASSERTION (openness unverified), `mimo-v2.5` open opt-out (the billing rule — escaping the free period's training takes the paid spelling).
     // variation folds the retired `opencode-free` rule (hermes's keyless-tier profile key; the zen spelling also resolves natively through the label).
     // Folded 2026-09-07 per .plans/1788716755355 (D4); values sourced 2026-09-07 (previously null/null — the same docs/zen page already carried the statement).
     // The Go subscription is individuated as `opencode-go`.
     .{ .name = "opencode", .label = "OpenCode Zen", .closed_training = "never", .open_training = "never", .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"opencode-free"} },
-    // opencode-go: opt-in/opt-in — OpenCode Zen's "Go" subscription tier (base https://opencode.ai/zen/go/v1).
-    // Zen docs: "Our providers follow a zero-retention policy and do not use your data for model training" — but with named exceptions whose free periods DO train (Big Pickle; MiMo-V2.5 Free).
-    // Per the opt-in-by-model rule (CONTRIBUTING), training reachable only by selecting specific models/tiers is `opt-in`, never `never`: MiMo-V2.5 is open-weight (MIT) → open_training opt-in;
-    // Big Pickle's openness is unverified → closed_training flips to opt-in too, downgradable to never if a maintainer confirms it open.
+    // opencode-go: never/never — OpenCode Zen's "Go" subscription tier (base https://opencode.ai/zen/go/v1).
+    // Zen docs: "Our providers follow a zero-retention policy and do not use your data for model training" — the tier's default surface is zero-training. The named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free) are model-intrinsic and live on the model rules' training pairs per the model-intrinsic rule (CONTRIBUTING, "the opt-in-by-model successor"): `big-pickle` closed NOASSERTION (openness unverified), `mimo-v2.5` open opt-out.
     // opencode.ai/privacy and /terms return 404, so docs/zen is the only policy doc.
     // catalog (unauth, 33 ids, 2026-08-29) recorded in fixtures/map-provider-model-providermodel.csv.
     .{ .name = "opencode-go", .label = "OpenCode Go", .closed_training = "never", .open_training = "never", .sources = &.{"https://opencode.ai/docs/zen"} },
@@ -496,9 +493,9 @@ pub const rulesForProviders = [_]ProviderRule{
     // fireworks-ai: never/never — Fireworks AI's hosted tier (the `fireworks-ai/...` provider key kilo catalogs).
     // Fireworks is an inference-only cloud; its terms/privacy state customer prompts are not used to train models.
     .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = "never", .open_training = "never", .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" }, .variations = &.{"fireworks"} },
-    // google: tiered — the Gemini API terms: Paid Services data "is not used to improve … machine-learning technologies" (never), but Unpaid Services (AI Studio / free-tier quota) ARE used to "provide, improve, and develop Google products … and machine learning technologies"
-    // — reachable only by choosing the free tier, so opt-in (the opt-in-by-model rule).
-    // Cloud/Vertex commits never via the Service Specific Terms Training Restriction.
+    // google: tiered (opt-out) — the Gemini API terms: Paid Services data "is not used to improve … machine-learning technologies" (never), but Unpaid Services (AI Studio / free-tier quota) ARE used to "provide, improve, and develop Google products … and machine learning technologies".
+    // The free tier spans models, so the strictest REACHABLE surface stays at the provider (the tier-reachable rule, CONTRIBUTING — the google/nvidia precedent); avoiding the training takes the paid tier, and the billing rule makes that opt-out.
+    // Cloud/Vertex commits never via its own rule (the Service Specific Terms Training Restriction).
     .{ .name = "google", .label = "Google", .closed_training = "opt-out", .open_training = "opt-out", .sources = &.{ "https://ai.google.dev/gemini-api/terms", "https://ai.google.dev/gemini-api/docs/pricing" }, .variations = &.{"gemini"} },
     // google-vertex: never/never — Vertex AI's Service Specific Terms Training Restriction: "Google will not use Customer Data to train or fine-tune any AI/ML models without Customer's prior permission or instruction".
     .{ .name = "google-vertex", .label = "Google Vertex", .closed_training = "never", .open_training = "never", .sources = &.{ "https://cloud.google.com/terms/service-terms", "https://cloud.google.com/vertex-ai/generative-ai/docs/data-governance" }, .variations = &.{"vertex"} },
@@ -550,7 +547,6 @@ pub const rulesForProviders = [_]ProviderRule{
     .{ .name = "phala", .label = "Phala", .closed_training = "never", .open_training = "never", .sources = &.{ "https://phala.com/privacy", "https://phala.com/terms" } },
 };
 
-/// static metadata the rule declared to the matcher. Useful for auditing when a rule misfires; not a runtime observation.
 // Static rule metadata (the harness rule's declared binary names and env-marker names) lives in `rulesForHarnesses`;
 // the runtime observation story is carried by `raw.env_vars` (matched env-var observations) and `raw.process_lineage` (process tree at detection time).
 // The raw block intentionally does NOT duplicate that static data (see DESIGN.md "20-field canonical fixture contract").
@@ -607,7 +603,7 @@ const mmx_env = [_][]const u8{ "MMX_CONFIG_DIR", "MINIMAX_API_KEY" };
 const pi_env = [_][]const u8{ "PI_CODING_AGENT", "PI_PROVIDER", "PI_MODEL" };
 const zcode_env = [_][]const u8{ "ZCODE_APP_VERSION", "ZCODE_BASE_URL", "ZCODE_ENV", "ZCODE_PROCESS_LABEL", "ZCODE_RUNTIME_ENV", "ZAI_BUSINESS_BASE_URL", "ZAI_OAUTH_ORIGIN" };
 
-// harnesses listed in the user's machine but not yet fully integrated; each gets a single, plausibly-shaped env marker that the daemon's runner (see CONTRIBUTING.md) sets in the spawned process's env to fire detection.
+// per-harness env-marker arrays, referenced by each `rulesForHarnesses` row's `env_markers` field — a matched name fires the harness dim, and only names on `env_value_allowlist` get their value recorded.
 // Each project's `license`/`license_sources` in rulesForHarnesses is filled in from its upstream repo once verified — a maintainer records the SPDX id + source URLs there, not in the fixtures (fixtures are generated artifacts).
 const qwen_env = [_][]const u8{"QWEN_API_KEY"};
 const kilo_env = [_][]const u8{ "KILO_API_KEY", "KILO", "KILO_MODEL" };
@@ -760,26 +756,27 @@ pub const rulesForHarnesses = [_]HarnessRule{
 /// Names NOT on this list emit an empty string for the value slot — secrets like `KIMI_API_KEY` and `MINIMAX_API_KEY` are redacted by default.
 /// Maintainers add names here when they have decided the value is safe to write to disk.
 const env_value_allowlist = [_][]const u8{
-    "CLINE_BUILD_ENV",         "CLINE_NO_INTERACTIVE",       "CLINE_WRAPPER_PATH",
-    "CLINE_RUN_AS_HUB_DAEMON", "CLINE_CONNECTOR_CLI_LAUNCH", "KIMI_CODE_HOME",
-    "MMX_CONFIG_DIR",          "PI_CODING_AGENT",
+    "CLINE_BUILD_ENV",              "CLINE_NO_INTERACTIVE",                  "CLINE_WRAPPER_PATH",
+    "CLINE_RUN_AS_HUB_DAEMON",      "CLINE_CONNECTOR_CLI_LAUNCH",            "KIMI_CODE_HOME",
+    "MMX_CONFIG_DIR",               "PI_CODING_AGENT",
     // launcher-provided model selectors — the values are model ids / provider ids, not secrets, so fixtures can carry the exact value the detector read (evidence-claim value matching needs it).
-               "KILO_MODEL",
-    "OPENCODE_MODEL",          "VIBE_ACTIVE_MODEL",          "VIBE_ACTIVE_PROVIDER",
-    "PI_PROVIDER",             "PI_MODEL",                   "CURSOR_MODEL",
-    "COPILOT_MODEL",           "GOOSE_WORKING_DIR",          "GOOSE_TERMINAL",
-    "GOOSE_MODE",              "USERPROFILE",                "HOME",
+                          "KILO_MODEL",
+    "OPENCODE_MODEL",               "VIBE_ACTIVE_MODEL",                     "VIBE_ACTIVE_PROVIDER",
+    "PI_PROVIDER",                  "PI_MODEL",                              "CURSOR_MODEL",
+    "COPILOT_MODEL",                "GOOSE_WORKING_DIR",                     "GOOSE_TERMINAL",
+    "GOOSE_MODE",                   "USERPROFILE",                           "HOME",
     "APPDATA",
     // ZCode desktop-app markers — app version/env/label and service URLs only; the values are non-secret operational facts.
-             "ZCODE_APP_VERSION",         "ZCODE_BASE_URL",
-    "ZCODE_ENV",               "ZCODE_PROCESS_LABEL",        "ZCODE_RUNTIME_ENV",
-    "ZAI_BUSINESS_BASE_URL",   "ZAI_OAUTH_ORIGIN",
+                         "ZCODE_APP_VERSION",                     "ZCODE_BASE_URL",
+    "ZCODE_ENV",                    "ZCODE_PROCESS_LABEL",                   "ZCODE_RUNTIME_ENV",
+    "ZAI_BUSINESS_BASE_URL",        "ZAI_OAUTH_ORIGIN",
     // Hermes markers — the values are "true"/profile names, non-secret.
-    "HERMES_AGENT",            "HERMES_PROFILE",
+                         "HERMES_AGENT",
+    "HERMES_PROFILE",
     // AutoClaw markers — fixed non-secret operational facts (enum-ish decision knobs / feature flags); the URL/endpoint markers (AUTOCLAW_MODEL_BROKER_*_BASE_URL, AUTOCLAW_MODEL_TRACE_ENDPOINT) stay off this list.
-    "AUTOCLAW_SAFETY_DEFAULT_DECISION",     "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED",
-    "AUTOCLAW_THINKING_STREAM",             "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER",
-    "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS", "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
+                  "AUTOCLAW_SAFETY_DEFAULT_DECISION",      "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED",
+    "AUTOCLAW_THINKING_STREAM",     "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER", "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS",
+    "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {
@@ -789,12 +786,10 @@ pub fn envValueAllowed(name: []const u8) bool {
     return false;
 }
 
-/// SPDX license keywords with special reciprocity semantics (see the license table in CONTRIBUTING.md "add a new harness rule"):
-/// - `"NONE"` — concluded: no license present (verified proprietary/closed).
-/// The harness-closed-training conjunct decides the harness dim: `never`/`opt-in`/`opt-out` falls through to the model/provider conjuncts; `enforced`/ `NOASSERTION` is `.not_reciprocal`; `null` is `.unknown`.
-/// - `"NOASSERTION"` — attempted, inconclusive. Treated like `null` (`.unknown`).
-pub const license_none = "NONE";
-pub const license_noassertion = "NOASSERTION";
+// SPDX license keywords with special reciprocity semantics (see the license table in CONTRIBUTING.md "add a new harness rule"):
+// - `"NONE"` — concluded: no license present (verified proprietary/closed).
+// The harness-closed-training conjunct decides the harness dim: `never`/`opt-in`/`opt-out` falls through to the model/provider conjuncts; `enforced`/`NOASSERTION` is `.not_reciprocal`; `null` is `.unknown`.
+// - `"NOASSERTION"` — attempted, inconclusive. Treated like `null` (`.unknown`).
 
 /// capitalize the first letter of each dash-separated token, join with spaces
 pub fn titleCase(a: std.mem.Allocator, slug: []const u8) ![]u8 {
@@ -859,7 +854,11 @@ pub fn providerForBaseUrl(base_url: []const u8) ?[]const u8 {
         .{ "cerebras.ai", "cerebras" },
         .{ "z.ai", "zai" },
         .{ "moonshot", "moonshotai" },
-        .{ "dashscope", "qwen" },
+        // alibaba's two dashscope hosts are the Model Studio surfaces — `dashscope.aliyuncs.com/compatible-mode` (the paid API) and
+        // `coding.dashscope.aliyuncs.com` (the Coding Plan) — both never/never per the alibaba / alibaba-coding-plan rules; the qwen.ai
+        // consumer tier (enforced) rides `portal.qwen.ai`, caught by the `qwen.ai` entry below. Never the qwen rule on a dashscope host.
+        .{ "coding.dashscope", "alibaba-coding-plan" },
+        .{ "dashscope", "alibaba" },
         .{ "qwen.ai", "qwen" },
         .{ "mistral.ai", "mistral" },
         .{ "anthropic.com", "anthropic" },

@@ -141,6 +141,16 @@ fn isGrowthExemptKey(key: []const u8) bool {
 }
 
 /// strict-slug equality: is `name`'s lowercase-alphanumeric slug equal to `slug`? Mirrors `main.slugId` without allocating.
+/// does a rule resolve the dim slug — by its name or any of its variation spellings?
+/// Fixture stems are captured spellings, so an alias-captured stem covers the rule the alias folds into.
+fn ruleMatchesDim(rr: anytype, slug: []const u8) bool {
+    if (slugifyMatches(rr.name, slug)) return true;
+    for (rr.variations) |v| {
+        if (slugifyMatches(v, slug)) return true;
+    }
+    return false;
+}
+
 fn slugifyMatches(name: []const u8, slug: []const u8) bool {
     var i: usize = 0;
     for (name) |c| {
@@ -912,15 +922,15 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         };
         var h_ok = false;
         for (main.rulesForHarnesses) |rr| {
-            if (slugifyMatches(rr.name, parts[0])) h_ok = true;
+            if (ruleMatchesDim(rr, parts[0])) h_ok = true;
         }
         var p_ok = false;
         for (main.rulesForProviders) |rr| {
-            if (slugifyMatches(rr.name, parts[1])) p_ok = true;
+            if (ruleMatchesDim(rr, parts[1])) p_ok = true;
         }
         var m_ok = false;
         for (main.rulesForModels) |rr| {
-            if (slugifyMatches(rr.name, parts[2])) m_ok = true;
+            if (ruleMatchesDim(rr, parts[2])) m_ok = true;
         }
         if (!h_ok or !p_ok or !m_ok) {
             // unresolvable dims are backlog items (unknown_* sets), not a failure — but the store scan must have recorded them.
@@ -957,7 +967,6 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     }
 
     for (main.rulesForHarnesses) |rr| {
-        const slug = try main.slugId(aa, rr.name);
         // rule-only harnesses (2026-09-07): autoclaw — the maintainer uninstalled the app after its rule landed; its fixture sweep is contributor scope (the staged entry was dropped).
         const rule_only_harnesses = [_][]const u8{"autoclaw"};
         var h_exempt = false;
@@ -965,7 +974,12 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
             if (std.mem.eql(u8, rr.name, name)) h_exempt = true;
         }
         if (h_exempt) continue;
-        if (!harnesses_seen.contains(slug)) {
+        var h_found = false;
+        var it1 = harnesses_seen.iterator();
+        while (it1.next()) |kv| {
+            if (ruleMatchesDim(rr, kv.key_ptr.*)) h_found = true;
+        }
+        if (!h_found) {
             std.debug.print("harness rule {s} has no fixture stems\n", .{rr.name});
             return error.HarnessWithoutStems;
         }
@@ -1014,7 +1028,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         var found = false;
         var it2 = providers_seen.iterator();
         while (it2.next()) |kv| {
-            if (slugifyMatches(rr.name, kv.key_ptr.*)) found = true;
+            if (ruleMatchesDim(rr, kv.key_ptr.*)) found = true;
         }
         if (!found) {
             std.debug.print("provider rule {s} appears in no fixture stems\n", .{rr.name});
@@ -1030,7 +1044,7 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         var found = false;
         var it2 = models_seen.iterator();
         while (it2.next()) |kv| {
-            if (slugifyMatches(rr.name, kv.key_ptr.*)) found = true;
+            if (ruleMatchesDim(rr, kv.key_ptr.*)) found = true;
         }
         if (!found) {
             std.debug.print("model rule {s} appears in no fixture stems\n", .{rr.name});
@@ -1199,6 +1213,19 @@ test "fixtures: every harness rule's binary_names is non-empty, lowercase, and W
                     return error.MissingExeTwin;
                 }
             }
+        }
+    }
+}
+
+test "models: floating catalog aliases (-latest) fold as variations, never their own rule" {
+    // CONTRIBUTING "model rule identity & family folding": a vendor alias that tracks whatever the upstream currently ships
+    // (`-latest` and friends) is a spelling of the stamped rule it resolves to at that moment. A `-latest` rule strands its
+    // combos on a dead version and churns ids at every upstream repoint — fold it as a variation instead, and move the
+    // variation when the alias repoints (the queue's --repair re-keys the affected combos).
+    for (main.rulesForModels) |rr| {
+        if (std.mem.endsWith(u8, rr.name, "-latest")) {
+            std.debug.print("model rule {s} carries a floating -latest id — fold it as a variation on the stamped rule\n", .{rr.name});
+            return error.FloatingAliasRule;
         }
     }
 }
