@@ -268,9 +268,6 @@ export function RegistryIntro({
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-2">
         <Badge variant="secondary">{combos} combos</Badge>
-        <Badge variant="secondary">{registry.counts.harnesses} harnesses</Badge>
-        <Badge variant="secondary">{registry.counts.providers} providers</Badge>
-        <Badge variant="secondary">{registry.counts.models} models</Badge>
         <Badge variant="secondary">{fixtures} fixtures</Badge>
         <a
           href={jsonHref}

@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Github } from "lucide-react";
 
-import { comboSearchText, resolveDimId, resolvePlatform, type CombosFile, type IndexFile, type Registry } from "@/lib/registry";
+import {
+  comboSearchText,
+  resolveDimId,
+  resolvePlatform,
+  type CombosFile,
+  type IndexFile,
+  type Registry,
+} from "@/lib/registry";
 import { AgentPage } from "@/components/agent-page";
+import { EntityPage, type EntityDim } from "@/components/entity-page";
 import { FilterBar, NO_FILTERS, type Filters } from "@/components/filter-bar";
 import { Hero, RegistryIntro } from "@/components/hero";
 import { IndexSection } from "@/components/index-section";
@@ -13,6 +21,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const DIMS = ["harness", "provider", "model"] as const;
 type Dim = (typeof DIMS)[number];
 
+/** the three views — the index (the default), a combo's result page
+ * (/agent/<id>), and an entity's detail page (/<dim>/<id>). The ids ride in
+ * the path; the index filters ride in the query. */
+type View = { kind: "index" } | { kind: "agent"; id: string } | { kind: "entity"; dim: EntityDim; id: string };
+
 /** a `?free=`/`?reciprocal=` value → its boolean, or null */
 function triBool(raw: string | null): boolean | null {
   const v = raw?.trim().toLowerCase();
@@ -20,6 +33,13 @@ function triBool(raw: string | null): boolean | null {
   if (v === "true" || v === "1" || v === "yes") return true;
   if (v === "false" || v === "0" || v === "no") return false;
   return null;
+}
+
+/** the canonical path for a view (the index is the bare path) */
+function viewPath(view: View): string {
+  if (view.kind === "agent") return `/agent/${view.id}`;
+  if (view.kind === "entity") return `/${view.dim}/${view.id}`;
+  return "/";
 }
 
 /**
@@ -30,13 +50,29 @@ function triBool(raw: string | null): boolean | null {
  * combo ids and harness/provider/model names and ids; `?email=` matches the
  * trailer email of record; `?platform=` (darwin/linux/windows) requires a
  * declared fixture on that platform; `?free=`/`?reciprocal=` take booleans.
- * `?agent=` is the result page — the platform param never reaches it.
+ *
+ * Paths: `/agent/<id>` is a combo's result page (the legacy `?agent=` param
+ * canonicalises to it); `/model/<input>`, `/provider/<input>`, and
+ * `/harness/<input>` are entity detail pages — any input that resolves to a
+ * rule (name, label, alias) canonicalises to the strict-slug id.
  */
-function parseURL(search: string, registry: Registry) {
+function parseView(pathname: string): View {
+  const parts = pathname.split("/").filter((s) => s.length > 0);
+  if (parts[0] === "agent" && parts[1]) {
+    const id = parts.slice(1).join("-").trim().toLowerCase();
+    if (id) return { kind: "agent", id };
+  }
+  if (["harness", "provider", "model"].includes(parts[0]) && parts[1]) {
+    return { kind: "entity", dim: parts[0] as EntityDim, id: decodeURIComponent(parts[1]).trim().toLowerCase() };
+  }
+  return { kind: "index" };
+}
+
+function parseFilters(search: string, registry: Registry): { filters: Filters; notices: string[] } {
   const q = new URLSearchParams(search);
   const filters: Filters = { ...NO_FILTERS };
-  const canonical = new URLSearchParams();
   const notices: string[] = [];
+  const canonical = new URLSearchParams();
   const tables = { harness: registry.harnesses, provider: registry.providers, model: registry.models } as const;
   for (const dim of DIMS) {
     const raw = q.get(dim);
@@ -70,21 +106,18 @@ function parseURL(search: string, registry: Registry) {
     filters.reciprocal = reciprocal;
     canonical.set("reciprocal", String(reciprocal));
   }
-  const agent = q.get("agent")?.trim().toLowerCase() || null;
-  if (agent) {
-    canonical.set("agent", agent);
-    if (agent !== q.get("agent")) notices.push(`agent canonicalised to "${agent}"`);
-  }
   const platformRaw = q.get("platform");
   const platform = resolvePlatform(platformRaw);
   if (platformRaw != null) {
-    if (platform) canonical.set("platform", platform);
-    else notices.push(`platform "${platformRaw}" is not one of darwin, linux, windows — dropped`);
+    if (platform) {
+      filters.platform = platform;
+      canonical.set("platform", platform);
+    } else notices.push(`platform "${platformRaw}" is not one of darwin, linux, windows — dropped`);
   }
-  return { filters, agent, platform, canonical: canonical.toString(), notices };
+  return { filters, notices };
 }
 
-function buildSearch(filters: Filters, agent: string | null): string {
+function buildSearch(filters: Filters): string {
   const q = new URLSearchParams();
   for (const dim of DIMS) if (filters[dim]) q.set(dim, filters[dim]);
   if (filters.search) q.set("search", filters.search);
@@ -92,7 +125,6 @@ function buildSearch(filters: Filters, agent: string | null): string {
   if (filters.platform) q.set("platform", filters.platform);
   if (filters.free != null) q.set("free", String(filters.free));
   if (filters.reciprocal != null) q.set("reciprocal", String(filters.reciprocal));
-  if (agent) q.set("agent", agent);
   return q.toString();
 }
 
@@ -102,17 +134,40 @@ export default function App() {
   const [indexFile, setIndexFile] = useState<IndexFile | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({ ...NO_FILTERS });
-  const [agent, setAgent] = useState<string | null>(null);
+  const [view, setView] = useState<View>({ kind: "index" });
   const [notices, setNotices] = useState<string[]>([]);
   const registryRef = useRef<Registry | null>(null);
-  // full-page agent view: the index's scroll position is remembered per entry
-  // so "back to results" lands where the click happened
+  // the index's scroll position is remembered per url so "back to results"
+  // lands where the click happened
   const scrollMem = useRef(new Map<string, number>());
-  const viewRef = useRef<"index" | "agent">("index");
+  const viewRef = useRef<string>("/");
+  // a center-nav click on a detail page closes it and jumps to the section
+  const pendingAnchor = useRef<string | null>(null);
 
   useEffect(() => {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   }, []);
+
+  const applyParsed = useCallback((parsed: { filters: Filters; view: View; canonical: string; notices: string[] }) => {
+    setFilters(parsed.filters);
+    setView(parsed.view);
+    setNotices(parsed.notices);
+    const target = `${viewPath(parsed.view)}${parsed.canonical ? `?${parsed.canonical}` : ""}`;
+    if (`${window.location.pathname}${window.location.search}` !== target) {
+      history.replaceState(null, "", target + window.location.hash);
+    }
+  }, []);
+
+  const reparse = useCallback(() => {
+    const reg = registryRef.current;
+    if (!reg) return;
+    const view = parseView(window.location.pathname);
+    // the legacy ?agent= param canonicalises to the /agent/<id> path
+    const agentParam = new URLSearchParams(window.location.search).get("agent")?.trim().toLowerCase() || null;
+    const effective: View = view.kind === "index" && agentParam ? { kind: "agent", id: agentParam } : view;
+    const { filters: f, notices } = parseFilters(window.location.search, reg);
+    applyParsed({ filters: f, view: effective, canonical: buildSearch(f), notices });
+  }, [applyParsed]);
 
   useEffect(() => {
     Promise.all([
@@ -133,102 +188,111 @@ export default function App() {
       setRegistry(reg);
       setCombosFile(cf);
       setIndexFile(ix);
-      const parsed = parseURL(window.location.search, reg);
-      setFilters(parsed.filters);
-      setAgent(parsed.agent);
-      setNotices(parsed.notices);
-      const canonicalSearch = parsed.canonical;
-      if (new URLSearchParams(window.location.search).toString() !== canonicalSearch) {
-        history.replaceState(null, "", `${window.location.pathname}${canonicalSearch ? `?${canonicalSearch}` : ""}${window.location.hash}`);
-      }
+      const view = parseView(window.location.pathname);
+      const agentParam = new URLSearchParams(window.location.search).get("agent")?.trim().toLowerCase() || null;
+      const effective: View = view.kind === "index" && agentParam ? { kind: "agent", id: agentParam } : view;
+      const { filters: f, notices } = parseFilters(window.location.search, reg);
+      applyParsed({ filters: f, view: effective, canonical: buildSearch(f), notices });
     }).catch((err) => setLoadError(String(err)));
-  }, []);
-
-  const syncFromURL = useCallback(() => {
-    const reg = registryRef.current;
-    if (!reg) return;
-    const parsed = parseURL(window.location.search, reg);
-    setFilters(parsed.filters);
-    setAgent(parsed.agent);
-    setNotices(parsed.notices);
-  }, []);
+  }, [applyParsed]);
 
   useEffect(() => {
-    window.addEventListener("popstate", syncFromURL);
-    return () => window.removeEventListener("popstate", syncFromURL);
-  }, [syncFromURL]);
+    window.addEventListener("popstate", reparse);
+    return () => window.removeEventListener("popstate", reparse);
+  }, [reparse]);
 
-  const pushURL = (nextFilters: Filters, nextAgent: string | null) => {
-    const qs = buildSearch(nextFilters, nextAgent);
-    history.pushState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
+  // an entity input that resolves to a rule (name, label, alias) canonicalises
+  // to the strict-slug id's path; an unresolved input lands on the unknown page
+  useEffect(() => {
+    if (!registry || view.kind !== "entity") return;
+    const tables = { harness: registry.harnesses, provider: registry.providers, model: registry.models } as const;
+    const canon = resolveDimId(tables[view.dim], view.id);
+    if (canon && canon !== view.id) {
+      const fixed: View = { kind: "entity", dim: view.dim, id: canon };
+      setView(fixed);
+      history.replaceState(null, "", viewPath(fixed) + window.location.hash);
+    }
+  }, [registry, view]);
+
+  const pushURL = (nextFilters: Filters, nextView: View) => {
+    const qs = buildSearch(nextFilters);
+    history.pushState(null, "", `${viewPath(nextView)}${qs ? `?${qs}` : ""}${window.location.hash}`);
   };
 
   const onDim = (dim: Dim, id: string | null) => {
     const next = { ...filters, [dim]: id };
     setFilters(next);
-    setAgent(null);
+    setView({ kind: "index" });
     setNotices([]);
-    pushURL(next, null);
+    pushURL(next, { kind: "index" });
   };
-  const onSearch = (text: string | null) => {
-    const next = { ...filters, search: text };
+  const onFilters = (next: Filters) => {
     setFilters(next);
-    setAgent(null);
+    setView({ kind: "index" });
     setNotices([]);
-    pushURL(next, null);
-  };
-  const onTriFilter = (key: "free" | "reciprocal", value: boolean | null) => {
-    const next = { ...filters, [key]: value };
-    setFilters(next);
-    setAgent(null);
-    setNotices([]);
-    pushURL(next, null);
+    pushURL(next, { kind: "index" });
   };
   const onClear = () => {
     setFilters({ ...NO_FILTERS });
-    setAgent(null);
+    setView({ kind: "index" });
     setNotices([]);
-    pushURL({ ...NO_FILTERS }, null);
+    pushURL({ ...NO_FILTERS }, { kind: "index" });
   };
   const onSelect = (selected: string) => {
-    if (agent === selected) return;
-    scrollMem.current.set(window.location.search, window.scrollY);
-    setAgent(selected);
-    pushURL(filters, selected);
+    if (view.kind === "agent" && view.id === selected) return;
+    scrollMem.current.set(window.location.pathname + window.location.search, window.scrollY);
+    setView({ kind: "agent", id: selected });
+    pushURL(filters, { kind: "agent", id: selected });
   };
 
-  /** "close" the agent results — always lands on the index entry for the
-   * current filters (never a browser back), with the remembered scroll
-   * position restored */
-  const closeAgent = () => {
-    setAgent(null);
+  /** an index entry click: the gold (already-selected) entry clears its
+   * filter in place; a new selection applies it and jumps to the registry */
+  const onIndexSelect = (dim: Dim, id: string) => {
+    if (filters[dim] === id) {
+      onDim(dim, null);
+      return;
+    }
+    pendingAnchor.current = "registry";
+    onDim(dim, id);
+  };
+
+  const onOpenEntity = (dim: EntityDim, id: string) => {
+    scrollMem.current.set(window.location.pathname + window.location.search, window.scrollY);
+    setView({ kind: "entity", dim, id });
+    pushURL({ ...NO_FILTERS }, { kind: "entity", dim, id });
+  };
+
+  /** "back to results" — always lands on the index for the current filters
+   * (never a browser back), with the remembered scroll restored */
+  const closeToIndex = () => {
+    setView({ kind: "index" });
     setNotices([]);
-    pushURL(filters, null);
+    pushURL(filters, { kind: "index" });
   };
 
   // view transitions: returning to the index restores its remembered scroll;
-  // the agent page scrolls itself to the top on mount. Both scrolls are
+  // detail pages scroll themselves to the top on mount. Both scrolls are
   // explicit-instant — the html's smooth scroll-behavior turns programmatic
   // scrolls into animations that other scrolls (and re-renders) cancel.
+  const viewKey = viewPath(view);
   useEffect(() => {
-    const next = agent ? "agent" : "index";
-    if (next === viewRef.current) return;
-    viewRef.current = next;
-    if (next === "index") window.scrollTo({ top: scrollMem.current.get(window.location.search) ?? 0, behavior: "instant" });
-  }, [agent]);
+    if (viewKey === viewRef.current) return;
+    const from = viewRef.current;
+    viewRef.current = viewKey;
+    if (viewKey === "/") window.scrollTo({ top: scrollMem.current.get(from) ?? 0, behavior: "instant" });
+  }, [viewKey]);
 
-  // a center-nav click on the agent page closes it and jumps to the section
-  const pendingAnchor = useRef<string | null>(null);
   const onNavClick = (href: string): boolean => {
-    if (!agent) return false;
-    // carry the anchor into the index url so the closeAgent push keeps it
-    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${href.slice(1)}`);
+    if (view.kind === "index") return false;
+    // carry the anchor into the index url so the closeToIndex push keeps it
+    const qs = buildSearch(filters);
+    history.replaceState(null, "", `${viewPath({ kind: "index" })}${qs ? `?${qs}` : ""}#${href.slice(1)}`);
     pendingAnchor.current = href.slice(1);
-    closeAgent();
+    closeToIndex();
     return true;
   };
   useEffect(() => {
-    if (agent) return;
+    if (view.kind !== "index") return;
     const id = pendingAnchor.current;
     if (!id) return;
     pendingAnchor.current = null;
@@ -238,7 +302,7 @@ export default function App() {
       el.classList.add("anchor-flash");
       setTimeout(() => el.classList.remove("anchor-flash"), 1800);
     }
-  }, [agent]);
+  }, [view.kind, filters]);
 
   const searchIndex = useMemo(() => {
     const m = new Map<string, string>();
@@ -261,23 +325,14 @@ export default function App() {
     );
   }, [combosFile, filters, searchIndex]);
 
-  const counts = useMemo(() => {
-    const harnesses: Record<string, number> = {};
-    const providers: Record<string, number> = {};
-    const models: Record<string, number> = {};
-    for (const c of combosFile?.combos ?? []) {
-      harnesses[c.harness] = (harnesses[c.harness] ?? 0) + 1;
-      providers[c.provider] = (providers[c.provider] ?? 0) + 1;
-      models[c.model] = (models[c.model] ?? 0) + 1;
-    }
-    return { harnesses, providers, models };
-  }, [combosFile]);
+  const jsonHref = useMemo(() => `/index.json${buildSearch(filters) ? `?${buildSearch(filters)}` : ""}`, [filters]);
+  const selectedRow = useMemo(
+    () => (view.kind === "agent" ? combosFile?.combos.find((c) => c.agent_id === view.id) ?? null : null),
+    [combosFile, view],
+  );
 
-  const jsonHref = useMemo(() => `/index.json${buildSearch(filters, agent) ? `?${buildSearch(filters, agent)}` : ""}`, [filters, agent]);
-  // a dim click on the result page or the index section lands at the registry
+  // a dim click on a detail page should land the user at the registry
   // section so the filtered results are actually in view
-  const selectedRow = useMemo(() => combosFile?.combos.find((c) => c.agent_id === agent) ?? null, [combosFile, agent]);
-
   const onJumpToRegistry = (dim: Dim, id: string) => {
     pendingAnchor.current = "registry";
     onDim(dim, id);
@@ -286,25 +341,33 @@ export default function App() {
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader
-        onHome={agent ? closeAgent : undefined}
+        onHome={view.kind !== "index" ? closeToIndex : undefined}
         onNavClick={onNavClick}
         centerNav={[
           { label: "cli", href: "#cli" },
-          { label: "registry", href: "#registry" },
           { label: "index", href: "#index" },
+          { label: "registry", href: "#registry" },
         ]}
       />
-      {agent ? (
-        <AgentPage
-          row={selectedRow}
-          agentId={agent}
+      {view.kind === "agent" ? (
+        <AgentPage row={selectedRow} agentId={view.id} registry={registry} onDim={onJumpToRegistry} onBack={closeToIndex} />
+      ) : view.kind === "entity" ? (
+        <EntityPage
+          dim={view.dim}
+          id={view.id}
+          index={indexFile}
           registry={registry}
           onDim={onJumpToRegistry}
-          onBack={closeAgent}
+          onCombos={() => {
+            pendingAnchor.current = "registry";
+            onDim(view.dim, view.id);
+          }}
+          onBack={closeToIndex}
         />
       ) : (
         <main className="flex flex-col">
           <Hero />
+          <IndexSection index={indexFile} filters={filters} onSelect={onIndexSelect} onOpenEntity={onOpenEntity} />
           <article id="registry" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 scroll-mt-14 px-4 py-8">
             {registry && (
               <RegistryIntro
@@ -329,15 +392,7 @@ export default function App() {
                 {notices.length > 0 && (
                   <p className="text-muted-foreground rounded-md border px-3 py-2 text-xs">{notices.join(" · ")}</p>
                 )}
-                <FilterBar
-                  registry={registry}
-                  filters={filters}
-                  counts={counts}
-                  onDim={onDim}
-                  onSearch={onSearch}
-                  onTriFilter={onTriFilter}
-                  onClear={onClear}
-                />
+                <FilterBar registry={registry} filters={filters} onDim={onDim} onFilters={onFilters} onClear={onClear} />
                 <ResultsTable
                   rows={rows}
                   totalCount={combosFile.counts.combos}
@@ -348,7 +403,6 @@ export default function App() {
               </>
             )}
           </article>
-          <IndexSection index={indexFile} filters={filters} onSelect={onJumpToRegistry} />
         </main>
       )}
 
@@ -363,7 +417,7 @@ export default function App() {
           </span>
           <span className="flex gap-3">
             <a className="underline underline-offset-4" href="/registry.json">registry.json</a>
-            <a className="underline underline-offset-4" href="/index.json">index.json</a>
+            <a className="underline underline-offset-4" href="/data/index.json">index.json</a>
             <a className="underline underline-offset-4" href="/llms.txt">llms.txt</a>
             <a
               className="underline underline-offset-4"

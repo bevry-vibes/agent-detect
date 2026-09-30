@@ -12,7 +12,7 @@
 // Name resolution mirrors the zig CLI's `canonicalIdFor`/`canonicalFilterDim`
 // (src/lib/registry.ts is shared with the SPA).
 
-import type { AgentFile, CombosFile, Platform, Registry } from "../src/lib/registry";
+import type { AgentFile, CombosFile, IndexFile, Platform, Registry } from "../src/lib/registry";
 import { comboSearchText, resolveDimId, resolvePlatform } from "../src/lib/registry";
 
 /** full fixture outputs embedded per result row, past this many rows */
@@ -35,6 +35,7 @@ function json(body: unknown, status = 200): Response {
 // the generated data files are parsed once per isolate and memoized
 let registryPromise: Promise<Registry> | null = null;
 let combosPromise: Promise<CombosFile> | null = null;
+let indexPromise: Promise<IndexFile> | null = null;
 
 async function assetJSON<T>(env: Env, origin: string, p: string): Promise<T> {
   const res = await env.ASSETS.fetch(new URL(p, origin));
@@ -50,6 +51,30 @@ function getRegistry(env: Env, origin: string): Promise<Registry> {
 function getCombos(env: Env, origin: string): Promise<CombosFile> {
   combosPromise ??= assetJSON<CombosFile>(env, origin, "/data/combos.json");
   return combosPromise;
+}
+
+function getIndex(env: Env, origin: string): Promise<IndexFile> {
+  indexPromise ??= assetJSON<IndexFile>(env, origin, "/data/index.json");
+  return indexPromise;
+}
+
+/** `/harness|provider|model/<input>.json` — one index entry as JSON. The input
+ * resolves exactly like the CLI flags (names, labels, aliases); a resolvable
+ * non-canonical input 308-redirects to the strict-slug id's path. */
+async function handleEntity(dim: "harness" | "provider" | "model", input: string, env: Env, origin: string): Promise<Response> {
+  const registry = await getRegistry(env, origin);
+  const tables = { harness: registry.harnesses, provider: registry.providers, model: registry.models } as const;
+  const id = resolveDimId(tables[dim], input);
+  if (!id) {
+    return json({ error: `unknown ${dim}: ${input}`, hint: "see /registry.json for the resolvable names" }, 404);
+  }
+  if (id !== input) {
+    return new Response(null, { status: 308, headers: { location: `/${dim}/${id}.json`, ...JSON_HEADERS } });
+  }
+  const index = await getIndex(env, origin);
+  const entry = index[dim === "harness" ? "harnesses" : dim === "provider" ? "providers" : "models"].find((e) => e.id === id);
+  if (!entry) return json({ error: `unknown ${dim}: ${input}` }, 404);
+  return json(entry);
 }
 
 interface Resolved {
@@ -177,6 +202,11 @@ export default {
     }
 
     if (url.pathname === "/index.json") return await handleIndex(request, env);
+
+    const entity = url.pathname.match(/^\/(harness|provider|model)\/([^/]+)\.json$/);
+    if (entity) {
+      return await handleEntity(entity[1] as "harness" | "provider" | "model", decodeURIComponent(entity[2]).toLowerCase(), env, url.origin);
+    }
 
     const identify = url.pathname.match(/^\/identify\/([a-z0-9-]+)\.json$/);
     if (identify) {

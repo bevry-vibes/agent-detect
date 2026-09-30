@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Maximize2 } from "lucide-react";
 
 import { type HarnessEntry, type IndexFile, type ModelEntry, type ProviderEntry } from "@/lib/registry";
 import { type Filters } from "@/components/filter-bar";
@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 interface IndexSectionProps {
   index: IndexFile | null;
   filters: Filters;
-  /** clicking an entry filters the registry section with that dim (the same
-   * jump the result page's dim entries use) */
+  /** clicking an entry toggles its dim filter; a NEW selection also jumps to
+   * the registry section (the same jump the result page's dim entries use) */
   onSelect: (dim: "harness" | "provider" | "model", id: string) => void;
+  /** the open/max icon opens the entity's detail page (/model/<id> etc.) */
+  onOpenEntity: (dim: "harness" | "provider" | "model", id: string) => void;
 }
 
 interface EntryView {
@@ -46,9 +48,10 @@ function entryView(e: AnyEntry): EntryView {
  * section: header, description, count badges, and the data-as-JSON link, then
  * every harness, provider, and model from data/index.json (the committed index
  * file the CLI embeds) with its canonical alphanumeric id, properties, and
- * associations. A dim filter narrows only its own list; clicking an entry
- * filters the registry. */
-export function IndexSection({ index, filters, onSelect }: IndexSectionProps) {
+ * associations. A dim filter narrows only its own list; the selected entry
+ * carries the gold cue, and clicking it again clears the filter. The open/max
+ * icon opens the entity's detail page. */
+export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSectionProps) {
   const groups = useMemo(() => {
     if (!index) return null;
     // a dim filter narrows ONLY its own list — a provider filter shrinks the
@@ -83,8 +86,9 @@ export function IndexSection({ index, filters, onSelect }: IndexSectionProps) {
         <p className="text-lg font-medium">Every harness, provider, and model.</p>
         <p className="text-muted-foreground text-sm">
           The rule index the CLI embeds — map any name or variation to its canonical alphanumeric id, with each entry's
-          properties and its associations. A dim filter narrows only its own list; click an entry to filter the
-          registry.
+          properties and its associations. A dim filter narrows only its own list; the gold entry is selected — click it
+          again to clear, or open it with the <Maximize2 className="inline size-3" aria-hidden /> icon for its detail
+          page.
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {index && (
@@ -118,31 +122,55 @@ export function IndexSection({ index, filters, onSelect }: IndexSectionProps) {
                 <ArrowUpDown className="size-3 opacity-40" aria-hidden />
               </div>
               <ul className="max-h-96 overflow-y-auto p-1" aria-label={`${title} index`}>
-                {entries.map((e) => (
-                  <li key={e.id}>
-                    <button
-                      type="button"
-                      title={`registry results for ${dim} ${e.id}`}
-                      onClick={() => onSelect(dim, e.id)}
-                      className="hover:bg-muted/50 flex w-full min-w-0 flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors"
-                    >
-                      <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                        <span className="text-sm font-medium">{e.label}</span>
-                        <span className="text-muted-foreground font-mono text-[11px]">{e.id}</span>
-                      </span>
-                      <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
-                        <span className="font-mono">{e.name}</span>
-                        {e.variations.length > 0 && <span className="font-mono">aka {e.variations.join(", ")}</span>}
-                        {e.badges.map((b) => (
-                          <Badge key={b} variant="outline" className="px-1 py-0 text-[10px]">
-                            {b}
-                          </Badge>
-                        ))}
-                        <span>· {e.associations}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {entries.map((e) => {
+                  const selected = filters[dim] === e.id;
+                  return (
+                    <li key={e.id}>
+                      <div
+                        className={`group flex min-w-0 items-stretch gap-0.5 rounded-md transition-colors ${
+                          selected
+                            ? "border border-amber-500/60 bg-amber-500/10"
+                            : "border border-transparent hover:bg-muted/50"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          title={selected ? `clear the ${dim} filter` : `registry results for ${dim} ${e.id}`}
+                          onClick={() => onSelect(dim, e.id)}
+                          className="flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1.5 text-left"
+                        >
+                          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                            <span className="text-sm font-medium">{e.label}</span>
+                            <span className="text-muted-foreground font-mono text-[11px]">{e.id}</span>
+                          </span>
+                          <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
+                            <span className="font-mono">{e.name}</span>
+                            {e.variations.length > 0 && <span className="font-mono">aka {e.variations.join(", ")}</span>}
+                            {e.badges.map((b) => (
+                              <Badge
+                                key={b}
+                                variant="outline"
+                                className={`px-1 py-0 text-[10px] ${selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}
+                              >
+                                {b}
+                              </Badge>
+                            ))}
+                            <span>· {e.associations}</span>
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          title={`open the ${dim} detail page (${dim}/${e.id})`}
+                          aria-label={`open ${dim} ${e.id} details`}
+                          onClick={() => onOpenEntity(dim, e.id)}
+                          className="text-muted-foreground hover:text-foreground flex w-8 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                        >
+                          <Maximize2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
