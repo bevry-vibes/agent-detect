@@ -248,15 +248,19 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
     ];
   }, [entry, index, dim, sel, combos, registry, id]);
 
-  const policy: { field: string; value: string | null }[] = [];
+  // two columns: the left stacks license (when the entity carries one),
+  // openness (models), and the scandal flag; the right stacks the training
+  // pair with closed_training below open_training
+  const left: { field: string; value: string | null | boolean }[] = [];
+  const right: { field: string; value: string | null | boolean }[] = [];
   if (entry) {
-    policy.push({ field: "license", value: "license" in entry ? entry.license : null });
-    if ("openness" in entry) policy.push({ field: "openness", value: entry.openness });
-    policy.push({ field: "open_training", value: entry.open_training });
-    policy.push({ field: "closed_training", value: entry.closed_training });
+    if ("license" in entry) left.push({ field: "license", value: entry.license });
+    if ("openness" in entry) left.push({ field: "openness", value: entry.openness });
     if ("reciprocity_scandal" in entry) {
-      policy.push({ field: "reciprocity_scandal", value: entry.reciprocity_scandal ? "true" : "false" });
+      left.push({ field: "reciprocity_scandal", value: entry.reciprocity_scandal ? "true" : "false" });
     }
+    right.push({ field: "open_training", value: entry.open_training });
+    right.push({ field: "closed_training", value: entry.closed_training });
   }
 
   return (
@@ -301,19 +305,23 @@ export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, 
 
           <section className="flex flex-col gap-2 rounded-xl border p-4">
             <h2 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">policy</h2>
-            <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
-              {policy.map((row) => (
-                <div key={row.field} className="flex min-w-0 items-baseline gap-2">
-                  <dt className="text-muted-foreground w-44 shrink-0 font-mono text-xs">{row.field}</dt>
-                  <dd
-                    className="cursor-help text-sm underline decoration-dotted underline-offset-2"
-                    title={policyExplain(row.field, row.value)}
-                  >
-                    {row.value ?? <span className="text-muted-foreground">null</span>}
-                  </dd>
-                </div>
+            <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+              {[left, right].map((column: { field: string; value: string | null | boolean }[], ci: number) => (
+                <dl key={ci} className="flex flex-col gap-1">
+                  {column.map((row) => (
+                    <div key={row.field} className="flex min-w-0 items-baseline gap-2">
+                      <dt className="text-muted-foreground w-44 shrink-0 font-mono text-xs">{row.field}</dt>
+                      <dd
+                        className="cursor-help text-sm underline decoration-dotted underline-offset-2"
+                        title={policyExplain(row.field, row.value)}
+                      >
+                        {row.value ?? <span className="text-muted-foreground">null</span>}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               ))}
-            </dl>
+            </div>
           </section>
 
           <section className="flex flex-col gap-3">

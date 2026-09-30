@@ -335,19 +335,6 @@ export default function App() {
     onDim(dim, id);
   };
 
-  /** the result page's filter-agents pill: persist the carried filters, apply
-   * the combo's three dims on top, and land on the index anchor where the
-   * applied filters are visible */
-  const onFilterAgents = (h: string, p: string, m: string) => {
-    history.replaceState(null, "", `${window.location.pathname}${window.location.search}#index`);
-    pendingAnchor.current = "index";
-    const next = { ...filters, harness: h, provider: p, model: m };
-    setFilters(next);
-    setView({ kind: "index" });
-    setNotices([]);
-    pushURL(next, { kind: "index" });
-  };
-
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader
@@ -360,14 +347,7 @@ export default function App() {
         ]}
       />
       {view.kind === "agent" ? (
-        <AgentPage
-          row={selectedRow}
-          agentId={view.id}
-          registry={registry}
-          onOpenEntity={onOpenEntity}
-          onFilterAgents={onFilterAgents}
-          onBack={closeToIndex}
-        />
+        <AgentPage row={selectedRow} agentId={view.id} onOpenEntity={onOpenEntity} onBack={closeToIndex} />
       ) : view.kind === "entity" ? (
         <EntityPage
           dim={view.dim}

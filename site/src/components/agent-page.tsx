@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink, Filter } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
 import { useCopied } from "@/lib/use-copied";
@@ -67,13 +67,8 @@ function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][numbe
 interface AgentPageProps {
   row: ComboRow | null;
   agentId: string;
-  /** the rule registry — resolves the dims' display titles (null while loading) */
-  registry: Registry | null;
   /** the dim rows open the entity's detail page (/model/<id> etc.) */
   onOpenEntity: (dim: "harness" | "provider" | "model", id: string) => void;
-  /** the filter-agents pill applies the combo's three dims as index filters
-   * and lands on the index anchor, where the applied filters are visible */
-  onFilterAgents: (h: string, p: string, m: string) => void;
   onBack: () => void;
 }
 
@@ -85,40 +80,39 @@ const DIM_ENTRIES = [
   { label: "model", dim: "model", table: "models", field: "model" },
 ] as const;
 
-function DimEntries({
-  row,
-  registry,
-  onOpenEntity,
-}: {
-  row: ComboRow;
-  registry: Registry | null;
-  onOpenEntity: AgentPageProps["onOpenEntity"];
-}) {
+function DimEntries({ row, onOpenEntity }: { row: ComboRow; onOpenEntity: AgentPageProps["onOpenEntity"] }) {
+  const rows: { label: string; id: string; dim?: "harness" | "provider" | "model" }[] = [
+    { label: "harness", id: row.harness, dim: "harness" },
+    { label: "provider", id: row.provider, dim: "provider" },
+    { label: "model", id: row.model, dim: "model" },
+    { label: "agent", id: row.agent_id },
+  ];
   return (
     <nav aria-label="combo dimensions" className="flex flex-col gap-1">
-      {DIM_ENTRIES.map(({ label, dim, table, field }) => {
-        const id = row[field];
-        const title = registry?.[table].find((r) => r.id === id)?.label ?? id;
-        const href = `/${dim}/${id}`;
+      {rows.map(({ label, id, dim }) => {
+        const value = (
+          <span className="font-mono text-sm underline-offset-4 hover:underline">{id}</span>
+        );
         return (
-          <a
-            key={dim}
-            href={href}
-            title={`open the ${dim} detail page (${dim}/${id})`}
-            onClick={(e) => {
-              e.preventDefault();
-              onOpenEntity(dim, id);
-            }}
-            className="hover:bg-muted/50 -mx-1 flex min-w-0 items-baseline gap-2 rounded-md px-1 py-0.5 transition-colors"
-          >
-            <span className="text-muted-foreground w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide">
-              {label}
-            </span>
-            <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2">
-              <span className="text-sm font-medium underline-offset-4 hover:underline">{title}</span>
-              <span className="text-muted-foreground font-mono text-[11px]">{id}</span>
-            </span>
-          </a>
+          <div key={label} className="hover:bg-muted/50 -mx-1 flex min-w-0 items-baseline gap-2 rounded-md px-1 py-0.5">
+            {dim ? (
+              <a
+                href={`/${dim}/${id}`}
+                title={`open the ${dim} detail page (${dim}/${id})`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpenEntity(dim, id);
+                }}
+                className="flex min-w-0 items-baseline gap-1 text-foreground"
+              >
+                {label}:{value}
+              </a>
+            ) : (
+              <span className="flex min-w-0 items-baseline gap-1">
+                {label}:{value}
+              </span>
+            )}
+          </div>
         );
       })}
     </nav>
@@ -130,7 +124,7 @@ function DimEntries({
  * nothing clickable), newest first. The status row reads
  * `reciprocal · platforms · date` on a single shrinking line. The registry
  * stays one back-button away. */
-export function AgentPage({ row, agentId, registry, onOpenEntity, onFilterAgents, onBack }: AgentPageProps) {
+export function AgentPage({ row, agentId, onOpenEntity, onBack }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
 
@@ -205,17 +199,7 @@ export function AgentPage({ row, agentId, registry, onOpenEntity, onFilterAgents
       {row && (
         <header className="flex flex-col gap-3">
           <h1 className="font-mono text-xl font-semibold tracking-tight">{row.agent_id}</h1>
-          <DimEntries row={row} registry={registry} onOpenEntity={onOpenEntity} />
-          <div>
-            <button
-              type="button"
-              title="apply this combo's harness, provider, and model as index filters"
-              onClick={() => onFilterAgents(row.harness, row.provider, row.model)}
-              className="hover:bg-muted/50 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            >
-              <Filter className="size-3" /> filter agents
-            </button>
-          </div>
+          <DimEntries row={row} onOpenEntity={onOpenEntity} />
         </header>
       )}
 
