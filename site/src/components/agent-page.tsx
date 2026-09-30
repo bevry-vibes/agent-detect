@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, Filter } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
 import { useCopied } from "@/lib/use-copied";
@@ -69,8 +69,11 @@ interface AgentPageProps {
   agentId: string;
   /** the rule registry — resolves the dims' display titles (null while loading) */
   registry: Registry | null;
-  /** jump back to the index with this dim applied as a filter */
-  onDim: (dim: "harness" | "provider" | "model", id: string) => void;
+  /** the dim rows open the entity's detail page (/model/<id> etc.) */
+  onOpenEntity: (dim: "harness" | "provider" | "model", id: string) => void;
+  /** the filter-agents pill applies the combo's three dims as index filters
+   * and lands on the index anchor, where the applied filters are visible */
+  onFilterAgents: (h: string, p: string, m: string) => void;
   onBack: () => void;
 }
 
@@ -85,26 +88,26 @@ const DIM_ENTRIES = [
 function DimEntries({
   row,
   registry,
-  onDim,
+  onOpenEntity,
 }: {
   row: ComboRow;
   registry: Registry | null;
-  onDim: AgentPageProps["onDim"];
+  onOpenEntity: AgentPageProps["onOpenEntity"];
 }) {
   return (
     <nav aria-label="combo dimensions" className="flex flex-col gap-1">
       {DIM_ENTRIES.map(({ label, dim, table, field }) => {
         const id = row[field];
         const title = registry?.[table].find((r) => r.id === id)?.label ?? id;
-        const href = `/?${dim}=${id}`;
+        const href = `/${dim}/${id}`;
         return (
           <a
             key={dim}
             href={href}
-            title={`results for ${label} ${id}`}
+            title={`open the ${dim} detail page (${dim}/${id})`}
             onClick={(e) => {
               e.preventDefault();
-              onDim(dim, id);
+              onOpenEntity(dim, id);
             }}
             className="hover:bg-muted/50 -mx-1 flex min-w-0 items-baseline gap-2 rounded-md px-1 py-0.5 transition-colors"
           >
@@ -127,7 +130,7 @@ function DimEntries({
  * nothing clickable), newest first. The status row reads
  * `reciprocal · platforms · date` on a single shrinking line. The registry
  * stays one back-button away. */
-export function AgentPage({ row, agentId, registry, onDim, onBack }: AgentPageProps) {
+export function AgentPage({ row, agentId, registry, onOpenEntity, onFilterAgents, onBack }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
 
@@ -202,7 +205,17 @@ export function AgentPage({ row, agentId, registry, onDim, onBack }: AgentPagePr
       {row && (
         <header className="flex flex-col gap-3">
           <h1 className="font-mono text-xl font-semibold tracking-tight">{row.agent_id}</h1>
-          <DimEntries row={row} registry={registry} onDim={onDim} />
+          <DimEntries row={row} registry={registry} onOpenEntity={onOpenEntity} />
+          <div>
+            <button
+              type="button"
+              title="apply this combo's harness, provider, and model as index filters"
+              onClick={() => onFilterAgents(row.harness, row.provider, row.model)}
+              className="hover:bg-muted/50 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+            >
+              <Filter className="size-3" /> filter agents
+            </button>
+          </div>
         </header>
       )}
 
