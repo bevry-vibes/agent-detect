@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ArrowUpDown, Maximize2 } from "lucide-react";
+import { ArrowUpDown, SquareArrowOutUpRight } from "lucide-react";
 
 import { type HarnessEntry, type IndexFile, type ModelEntry, type ProviderEntry } from "@/lib/registry";
 import { type Filters } from "@/components/filter-bar";
@@ -95,7 +95,7 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
         <p className="text-muted-foreground text-sm">
           The rule index the CLI embeds — map any name or variation to its canonical alphanumeric id, with each entry's
           properties and its associations. A dim filter narrows only its own list; the gold entry is selected — click it
-          again to clear, or open it with the <Maximize2 className="inline size-3" aria-hidden /> icon for its detail
+          again to clear, or open it with the <SquareArrowOutUpRight className="inline size-3" aria-hidden /> icon for its detail
           page.
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -169,9 +169,9 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
                           title={`open the ${dim} detail page (${dim}/${e.id})`}
                           aria-label={`open ${dim} ${e.id} details`}
                           onClick={() => onOpenEntity(dim, e.id)}
-                          className="text-muted-foreground hover:text-foreground flex w-8 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                          className="hover:text-foreground flex w-8 shrink-0 cursor-pointer items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                         >
-                          <Maximize2 className="size-3.5" />
+                          <SquareArrowOutUpRight className="size-3.5" />
                         </button>
                       </div>
                     </li>
