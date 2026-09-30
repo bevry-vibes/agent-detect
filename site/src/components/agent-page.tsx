@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
 import { useCopied } from "@/lib/use-copied";
 import { type AgentFile, type ComboRow, type FixtureOutputs, type Registry } from "@/lib/registry";
 import { JsonBlock } from "@/components/json-block";
+import { StatusRow } from "@/components/status-row";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const SECTION_ORDER = ["identify", "trailer co-author", "trailer assisted-by", "explain", "found", "raw", "check-reciprocal"] as const;
 
@@ -56,33 +56,11 @@ function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][numbe
       ))}
       {!fixture.outputs.explain && (
         <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-2 text-xs">
-          no explain recorded for this fixture — the newer tabs carry it
+          no explain recorded for this fixture
         </p>
       )}
       <JsonBlock title="meta" value={meta} />
     </div>
-  );
-}
-
-/** the reciprocity verdict as a tag matching the fixture tabs — clicking it
- * copies the check-reciprocal invocation for this combo */
-function ReciprocalTag({ row, dims }: { row: ComboRow; dims: { h: string; p: string; m: string } }) {
-  const { copied, copy } = useCopied();
-  const command = `agent-detect check-reciprocal --harness=${dims.h} --provider=${dims.p} --model=${dims.m}`;
-  return (
-    <button
-      type="button"
-      title={`copy: ${command}`}
-      onClick={() => copy(command)}
-      className={`inline-flex h-[calc(100%-1px)] items-center gap-1.5 rounded-md border px-2 py-1 text-sm font-medium transition-colors ${
-        row.reciprocal
-          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-          : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
-      }`}
-    >
-      {copied && <Check className="size-3.5" />}
-      {copied ? "command copied" : row.reciprocal ? "reciprocal" : "not reciprocal"}
-    </button>
   );
 }
 
@@ -91,9 +69,6 @@ interface AgentPageProps {
   agentId: string;
   /** the rule registry — resolves the dims' display titles (null while loading) */
   registry: Registry | null;
-  /** the ?platform= param — selects a fixture; null = the latest one */
-  platform: string | null;
-  onPlatformChange: (platform: string | null) => void;
   /** jump back to the index with this dim applied as a filter */
   onDim: (dim: "harness" | "provider" | "model", id: string) => void;
   onBack: () => void;
@@ -147,11 +122,12 @@ function DimEntries({
   );
 }
 
-/** the full-page replacement for an agent combo — the result JSON (identify,
- * both trailers, explain, and the rest of the recorded outputs), one tab per
- * platform × channel fixture sorted latest-first. The index stays one
- * back-button away. */
-export function AgentPage({ row, agentId, registry, platform, onPlatformChange, onDim, onBack }: AgentPageProps) {
+/** the full-page replacement for an agent combo — the from-identity results
+ * only, one section per declared platform (pill heading = the platform name,
+ * nothing clickable), newest first. The status row reads
+ * `reciprocal · platforms · date` on a single shrinking line. The registry
+ * stays one back-button away. */
+export function AgentPage({ row, agentId, registry, onDim, onBack }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
 
@@ -182,17 +158,12 @@ export function AgentPage({ row, agentId, registry, platform, onPlatformChange, 
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  // tabs sorted by generation time, latest first — the default selection is
-  // the newest fixture; ?platform= pins a platform (its latest fixture)
+  // one section per declared platform, newest first — the identity channel is
+  // all the site shows (from-capture stays maintainer-side)
   const sortedFixtures = useMemo(
     () => (file ? [...file.fixtures].sort((a, b) => b.updated_at - a.updated_at) : null),
     [file],
   );
-  const defaultFixture = sortedFixtures?.[0] ?? null;
-  const activeFixture = (platform && sortedFixtures?.find((f) => f.platform === platform)) || defaultFixture;
-  const activeTabValue = activeFixture ? `${activeFixture.platform}:${activeFixture.channel}` : undefined;
-  // the header date is the selected platform × channel result's generation time
-  const activeDate = formatDate(activeFixture?.updated_at ?? 0);
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
@@ -241,41 +212,28 @@ export function AgentPage({ row, agentId, registry, platform, onPlatformChange, 
         </p>
       )}
       {row && !error && !file && <p className="text-muted-foreground text-sm">loading result JSON…</p>}
-      {row && file && sortedFixtures && (
-        <Tabs
-          value={activeTabValue}
-          onValueChange={(v) => {
-            const f = file.fixtures.find((x) => `${x.platform}:${x.channel}` === v);
-            if (f)
-              onPlatformChange(
-                defaultFixture && f.platform === defaultFixture.platform && f.channel === defaultFixture.channel
-                  ? null
-                  : f.platform,
-              );
-          }}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <ReciprocalTag row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} />
-            <TabsList className="h-auto flex-wrap">
-              {sortedFixtures.map((f) => (
-                <TabsTrigger key={f.id} value={`${f.platform}:${f.channel}`}>
-                  <span className="font-mono text-xs">{f.platform}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <span
-              title={`result generated ${new Date(((activeFixture ?? defaultFixture)?.updated_at ?? 0) * 1000).toISOString()}`}
-              className="text-muted-foreground inline-flex h-9 items-center rounded-md border bg-muted/50 px-3 font-mono text-xs"
-            >
-              {activeDate}
-            </span>
-          </div>
+      {row && !error && file && sortedFixtures && sortedFixtures.length === 0 && (
+        <p className="text-muted-foreground text-sm">no declared fixtures for this combo yet</p>
+      )}
+      {row && !error && file && sortedFixtures && sortedFixtures.length > 0 && (
+        <div className="flex flex-col gap-5 [container-type:inline-size]">
+          {/* the status line: reciprocal · platforms · date — always one line,
+            shrinking with the viewport, nothing on it clickable */}
+          <StatusRow row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} />
           {sortedFixtures.map((f) => (
-            <TabsContent key={f.id} value={`${f.platform}:${f.channel}`}>
+            <section key={f.id} className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span
+                  title={`declared ${new Date(f.updated_at * 1000).toISOString()}`}
+                  className="text-muted-foreground rounded-md border bg-muted/50 px-2 py-1 font-mono text-xs"
+                >
+                  {f.platform}
+                </span>
+              </div>
               <FixtureDetail fixture={f} dims={{ h: row.harness, p: row.provider, m: row.model }} />
-            </TabsContent>
+            </section>
           ))}
-        </Tabs>
+        </div>
       )}
     </main>
   );

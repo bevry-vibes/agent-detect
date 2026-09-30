@@ -39,7 +39,7 @@ The `-f` flag is load-bearing: without it, a mistyped asset name saves GitHub's 
 
 **Optional dependencies.** The binary has no required runtime dependencies.
 Live detection inside some harnesses (Kilo Code, OpenCode, GitHub Copilot CLI, Crush, Hermes) reads that harness's local session store via the `sqlite3` CLI; when it is absent from `PATH` there, `identify`/`trailer`/`check-reciprocal` exit `6` (incomplete environment preventing run) instead of guessing — every other code path never spawns it, so a store-less environment needs nothing else installed.
-`web` similarly needs the platform's URL opener (`xdg-open` on linux, `open` on macOS, the shell's `start` on Windows); when it is absent there, `web` exits `6` too — `--no-open` never spawns it.
+`registry`/`index` similarly need the platform's URL opener (`xdg-open` on linux, `open` on macOS, the shell's `start` on Windows) — only when `--web` is given; when it is absent or fails there, they exit `6` too. Every action is offline and prints its JSON by default, so nothing spawns unless asked.
 
 Once downloaded, the use cases:
 
@@ -143,14 +143,16 @@ The browsable registry of every known combo — policy fields, reciprocity verdi
 Open it from the CLI (the same command on every platform):
 
 ```sh
-./agent-detect web                                        # the homepage
-./agent-detect web --harness=kimi-code                    # the registry filtered to a dim, scrolled to the results
-./agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2   # the combo's result page
-./agent-detect web --harness=kimi-code --provider=chutes --model=glm-5.2 --platform=linux   # …pinning the platform tab
-./agent-detect web --no-open                              # print the url instead of opening it
+./agent-detect registry                                   # print {url, query, opened} — the homepage
+./agent-detect registry --harness=kimi-code               # print + open the registry filtered to a dim
+./agent-detect registry --harness=kimi-code --provider=chutes --model=glm-5.2   # the combo's result page
+./agent-detect registry --reciprocal=false --free --platform=linux --web        # filters + open
+./agent-detect registry --agent=cline-chutes-kimik3 --no-json                   # open, exit status only
+./agent-detect index --harness=cline                      # the rule index: everything available for cline
+./agent-detect index --free                               # only the entries with a free cell
 ```
 
-Dims resolve exactly like the flags (names, labels, and aliases accepted); the urls carry the canonical strict-slug ids the site uses.
+`registry`'s dims resolve exactly like the flags (names, labels, and aliases accepted); the urls carry the canonical strict-slug ids the site uses. `index` narrows all three arrays to what is available for the given filters — `--harness=cline` keeps `harnesses` at cline and keeps only the providers and models whose associations include cline.
 
 ## contributing
 

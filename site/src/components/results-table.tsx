@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { type ComboRow, type Registry } from "@/lib/registry";
 import type { Filters } from "@/components/filter-bar";
 import { CodeLine } from "@/components/json-block";
+import { StatusRow } from "@/components/status-row";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/utils";
@@ -183,17 +184,9 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
                 );
               })}
             </div>
-            {/* one line like the result page's header row: reciprocal left,
-              platforms centered, date right */}
-            <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1 whitespace-nowrap">
-              <span className="justify-self-start">
-                <ReciprocalBadge row={row} />
-              </span>
-              <span className="justify-self-center">
-                <PlatformBadges row={row} />
-              </span>
-              <span className="text-muted-foreground justify-self-end text-[11px]">{formatDate(row.updated_at)}</span>
-            </div>
+            {/* the shared status line — reciprocal · platforms · date, one
+              shrinking line like the result page's header row */}
+            <StatusRow row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} className="mt-2" />
           </div>
         ))}
         <p className="text-muted-foreground px-1 text-xs">

@@ -12,8 +12,8 @@
 // Name resolution mirrors the zig CLI's `canonicalIdFor`/`canonicalFilterDim`
 // (src/lib/registry.ts is shared with the SPA).
 
-import type { AgentFile, CombosFile, Registry } from "../src/lib/registry";
-import { comboSearchText, resolveDimId } from "../src/lib/registry";
+import type { AgentFile, CombosFile, Platform, Registry } from "../src/lib/registry";
+import { comboSearchText, resolveDimId, resolvePlatform } from "../src/lib/registry";
 
 /** full fixture outputs embedded per result row, past this many rows */
 const EXPAND_CAP = 50;
@@ -58,6 +58,19 @@ interface Resolved {
   model: string | null;
   search: string | null;
   agent: string | null;
+  email: string | null;
+  platform: Platform | null;
+  free: boolean | null;
+  reciprocal: boolean | null;
+}
+
+/** a `?free=`/`?reciprocal=` value → its boolean (`false`/`no` accepted), or null */
+function triBool(raw: string | null): boolean | null {
+  const v = raw?.trim().toLowerCase();
+  if (v == null || v === "") return null;
+  if (v === "true" || v === "1" || v === "yes") return true;
+  if (v === "false" || v === "0" || v === "no") return false;
+  return null;
 }
 
 async function handleIndex(request: Request, env: Env): Promise<Response> {
@@ -70,9 +83,13 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
     model: q?.get("model") ?? null,
     search: q?.get("search") ?? null,
     agent: q?.get("agent") ?? null,
+    email: q?.get("email") ?? null,
+    platform: q?.get("platform") ?? null,
+    free: q?.get("free") ?? null,
+    reciprocal: q?.get("reciprocal") ?? null,
   };
 
-  const resolved: Resolved = { harness: null, provider: null, model: null, search: null, agent: null };
+  const resolved: Resolved = { harness: null, provider: null, model: null, search: null, agent: null, email: null, platform: null, free: null, reciprocal: null };
   const unresolved: { param: string; value: string }[] = [];
 
   if (raw.harness != null || raw.provider != null || raw.model != null || raw.search != null) {
@@ -88,6 +105,14 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
   }
   if (raw.search != null) resolved.search = raw.search.trim().toLowerCase() || null;
   if (raw.agent != null) resolved.agent = raw.agent.trim().toLowerCase() || null;
+  if (raw.email != null) resolved.email = raw.email.trim().toLowerCase() || null;
+  if (raw.platform != null) {
+    const plat = resolvePlatform(raw.platform);
+    if (plat) resolved.platform = plat;
+    else unresolved.push({ param: "platform", value: raw.platform });
+  }
+  resolved.free = triBool(raw.free);
+  resolved.reciprocal = triBool(raw.reciprocal);
 
   if (unresolved.length) {
     return json(
@@ -107,7 +132,11 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
     (!resolved.provider || c.provider === resolved.provider) &&
     (!resolved.model || c.model === resolved.model) &&
     (!resolved.search || !searchRegistry || comboSearchText(c, searchRegistry).includes(resolved.search)) &&
-    (!resolved.agent || c.agent_id === resolved.agent || c.fixtures.some((f) => f.id === resolved.agent))
+    (!resolved.agent || c.agent_id === resolved.agent || c.fixtures.some((f) => f.id === resolved.agent)) &&
+    (!resolved.email || c.email.toLowerCase() === resolved.email) &&
+    (!resolved.platform || c.platforms.includes(resolved.platform)) &&
+    (resolved.free == null || c.free === resolved.free) &&
+    (resolved.reciprocal == null || c.reciprocal === resolved.reciprocal)
   );
 
   const hasFilter = Object.values(resolved).some((v) => v != null);

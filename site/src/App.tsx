@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Github } from "lucide-react";
 
-import { comboSearchText, resolveDimId, type CombosFile, type Registry } from "@/lib/registry";
+import { comboSearchText, resolveDimId, resolvePlatform, type CombosFile, type IndexFile, type Registry } from "@/lib/registry";
 import { AgentPage } from "@/components/agent-page";
-import { FilterBar, type Filters } from "@/components/filter-bar";
+import { FilterBar, NO_FILTERS, type Filters } from "@/components/filter-bar";
 import { Hero, RegistryIntro } from "@/components/hero";
+import { IndexSection } from "@/components/index-section";
 import { ResultsTable } from "@/components/results-table";
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,14 +13,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 const DIMS = ["harness", "provider", "model"] as const;
 type Dim = (typeof DIMS)[number];
 
-const NO_FILTERS: Filters = { harness: null, provider: null, model: null, search: null };
+/** a `?free=`/`?reciprocal=` value → its boolean, or null */
+function triBool(raw: string | null): boolean | null {
+  const v = raw?.trim().toLowerCase();
+  if (v == null || v === "") return null;
+  if (v === "true" || v === "1" || v === "yes") return true;
+  if (v === "false" || v === "0" || v === "no") return false;
+  return null;
+}
 
 /**
  * URL params work exactly like the CLI flags: display names and aliases are
  * accepted, the URL is canonicalised to the strict-slug alphanumeric ids
  * (`?harness=Kimi+Code` lands as `?harness=kimicode`). Unresolvable values are
  * dropped with a notice, like an unknown flag. `?search=` free-text matches
- * combo ids and harness/provider/model names and ids.
+ * combo ids and harness/provider/model names and ids; `?email=` matches the
+ * trailer email of record; `?platform=` (darwin/linux/windows) requires a
+ * declared fixture on that platform; `?free=`/`?reciprocal=` take booleans.
+ * `?agent=` is the result page — the platform param never reaches it.
  */
 function parseURL(search: string, registry: Registry) {
   const q = new URLSearchParams(search);
@@ -44,32 +55,54 @@ function parseURL(search: string, registry: Registry) {
     filters.search = text;
     canonical.set("search", text);
   }
+  const email = q.get("email")?.trim().toLowerCase();
+  if (email) {
+    filters.email = email;
+    canonical.set("email", email);
+  }
+  const free = triBool(q.get("free"));
+  if (free != null) {
+    filters.free = free;
+    canonical.set("free", String(free));
+  }
+  const reciprocal = triBool(q.get("reciprocal"));
+  if (reciprocal != null) {
+    filters.reciprocal = reciprocal;
+    canonical.set("reciprocal", String(reciprocal));
+  }
   const agent = q.get("agent")?.trim().toLowerCase() || null;
   if (agent) {
     canonical.set("agent", agent);
     if (agent !== q.get("agent")) notices.push(`agent canonicalised to "${agent}"`);
   }
-  const platform = q.get("platform")?.trim().toLowerCase() || null;
-  if (platform) canonical.set("platform", platform);
+  const platformRaw = q.get("platform");
+  const platform = resolvePlatform(platformRaw);
+  if (platformRaw != null) {
+    if (platform) canonical.set("platform", platform);
+    else notices.push(`platform "${platformRaw}" is not one of darwin, linux, windows — dropped`);
+  }
   return { filters, agent, platform, canonical: canonical.toString(), notices };
 }
 
-function buildSearch(filters: Filters, agent: string | null, platform: string | null = null): string {
+function buildSearch(filters: Filters, agent: string | null): string {
   const q = new URLSearchParams();
   for (const dim of DIMS) if (filters[dim]) q.set(dim, filters[dim]);
   if (filters.search) q.set("search", filters.search);
+  if (filters.email) q.set("email", filters.email);
+  if (filters.platform) q.set("platform", filters.platform);
+  if (filters.free != null) q.set("free", String(filters.free));
+  if (filters.reciprocal != null) q.set("reciprocal", String(filters.reciprocal));
   if (agent) q.set("agent", agent);
-  if (platform) q.set("platform", platform);
   return q.toString();
 }
 
 export default function App() {
   const [registry, setRegistry] = useState<Registry | null>(null);
   const [combosFile, setCombosFile] = useState<CombosFile | null>(null);
+  const [indexFile, setIndexFile] = useState<IndexFile | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({ ...NO_FILTERS });
   const [agent, setAgent] = useState<string | null>(null);
-  const [platformParam, setPlatformParam] = useState<string | null>(null);
   const [notices, setNotices] = useState<string[]>([]);
   const registryRef = useRef<Registry | null>(null);
   // full-page agent view: the index's scroll position is remembered per entry
@@ -91,14 +124,18 @@ export default function App() {
         if (!r.ok) throw new Error(`combos: HTTP ${r.status}`);
         return r.json() as Promise<CombosFile>;
       }),
-    ]).then(([reg, cf]) => {
+      fetch("/data/index.json").then((r) => {
+        if (!r.ok) throw new Error(`index: HTTP ${r.status}`);
+        return r.json() as Promise<IndexFile>;
+      }),
+    ]).then(([reg, cf, ix]) => {
       registryRef.current = reg;
       setRegistry(reg);
       setCombosFile(cf);
+      setIndexFile(ix);
       const parsed = parseURL(window.location.search, reg);
       setFilters(parsed.filters);
       setAgent(parsed.agent);
-      setPlatformParam(parsed.platform);
       setNotices(parsed.notices);
       const canonicalSearch = parsed.canonical;
       if (new URLSearchParams(window.location.search).toString() !== canonicalSearch) {
@@ -113,7 +150,6 @@ export default function App() {
     const parsed = parseURL(window.location.search, reg);
     setFilters(parsed.filters);
     setAgent(parsed.agent);
-    setPlatformParam(parsed.platform);
     setNotices(parsed.notices);
   }, []);
 
@@ -122,30 +158,31 @@ export default function App() {
     return () => window.removeEventListener("popstate", syncFromURL);
   }, [syncFromURL]);
 
-  const pushURL = (nextFilters: Filters, nextAgent: string | null, nextPlatform: string | null = platformParam) => {
-    const qs = buildSearch(nextFilters, nextAgent, nextPlatform);
+  const pushURL = (nextFilters: Filters, nextAgent: string | null) => {
+    const qs = buildSearch(nextFilters, nextAgent);
     history.pushState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
   };
 
-  const onPlatformChange = (p: string | null) => {
-    setPlatformParam(p);
-    pushURL(filters, agent, p);
-  };
   const onDim = (dim: Dim, id: string | null) => {
     const next = { ...filters, [dim]: id };
     setFilters(next);
     setAgent(null);
-    setPlatformParam(null);
     setNotices([]);
-    pushURL(next, null, null);
+    pushURL(next, null);
   };
   const onSearch = (text: string | null) => {
     const next = { ...filters, search: text };
     setFilters(next);
     setAgent(null);
-    setPlatformParam(null);
     setNotices([]);
-    pushURL(next, null, null);
+    pushURL(next, null);
+  };
+  const onTriFilter = (key: "free" | "reciprocal", value: boolean | null) => {
+    const next = { ...filters, [key]: value };
+    setFilters(next);
+    setAgent(null);
+    setNotices([]);
+    pushURL(next, null);
   };
   const onClear = () => {
     setFilters({ ...NO_FILTERS });
@@ -157,17 +194,16 @@ export default function App() {
     if (agent === selected) return;
     scrollMem.current.set(window.location.search, window.scrollY);
     setAgent(selected);
-    pushURL(filters, selected, platformParam);
+    pushURL(filters, selected);
   };
 
   /** "close" the agent results — always lands on the index entry for the
-   * current filters (never a browser back, which platform-tab clicks would
-   * send sideways), with the remembered scroll position restored */
+   * current filters (never a browser back), with the remembered scroll
+   * position restored */
   const closeAgent = () => {
     setAgent(null);
-    setPlatformParam(null);
     setNotices([]);
-    pushURL(filters, null, null);
+    pushURL(filters, null);
   };
 
   // view transitions: returning to the index restores its remembered scroll;
@@ -217,7 +253,11 @@ export default function App() {
         (!filters.harness || c.harness === filters.harness) &&
         (!filters.provider || c.provider === filters.provider) &&
         (!filters.model || c.model === filters.model) &&
-        (!filters.search || (searchIndex.get(c.agent_id) ?? "").includes(filters.search)),
+        (!filters.search || (searchIndex.get(c.agent_id) ?? "").includes(filters.search)) &&
+        (!filters.email || c.email.toLowerCase() === filters.email) &&
+        (!filters.platform || c.platforms.includes(filters.platform as never)) &&
+        (filters.free == null || c.free === filters.free) &&
+        (filters.reciprocal == null || c.reciprocal === filters.reciprocal),
     );
   }, [combosFile, filters, searchIndex]);
 
@@ -234,11 +274,11 @@ export default function App() {
   }, [combosFile]);
 
   const jsonHref = useMemo(() => `/index.json${buildSearch(filters, agent) ? `?${buildSearch(filters, agent)}` : ""}`, [filters, agent]);
+  // a dim click on the result page or the index section lands at the registry
+  // section so the filtered results are actually in view
   const selectedRow = useMemo(() => combosFile?.combos.find((c) => c.agent_id === agent) ?? null, [combosFile, agent]);
 
-  // a dim click on the result page should land the user at the registry
-  // section so the filtered results are actually in view
-  const onDimFromAgent = (dim: Dim, id: string) => {
+  const onJumpToRegistry = (dim: Dim, id: string) => {
     pendingAnchor.current = "registry";
     onDim(dim, id);
   };
@@ -251,6 +291,7 @@ export default function App() {
         centerNav={[
           { label: "cli", href: "#cli" },
           { label: "registry", href: "#registry" },
+          { label: "index", href: "#index" },
         ]}
       />
       {agent ? (
@@ -258,9 +299,7 @@ export default function App() {
           row={selectedRow}
           agentId={agent}
           registry={registry}
-          platform={platformParam}
-          onPlatformChange={onPlatformChange}
-          onDim={onDimFromAgent}
+          onDim={onJumpToRegistry}
           onBack={closeAgent}
         />
       ) : (
@@ -296,6 +335,7 @@ export default function App() {
                   counts={counts}
                   onDim={onDim}
                   onSearch={onSearch}
+                  onTriFilter={onTriFilter}
                   onClear={onClear}
                 />
                 <ResultsTable
@@ -308,6 +348,7 @@ export default function App() {
               </>
             )}
           </article>
+          <IndexSection index={indexFile} filters={filters} onSelect={onJumpToRegistry} />
         </main>
       )}
 

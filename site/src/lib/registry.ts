@@ -33,9 +33,16 @@ export interface Registry {
 }
 
 export type Platform = "darwin" | "linux" | "windows";
-export type Channel = "identity" | "capture";
+export const PLATFORMS: Platform[] = ["darwin", "linux", "windows"];
 
-/** compact row in data/combos.json — one per h×p×m combo */
+/** a known platform id (the ?platform= filter accepts exactly these) */
+export function resolvePlatform(raw: string | null | undefined): Platform | null {
+  const v = raw?.trim().toLowerCase();
+  return (PLATFORMS as string[]).includes(v ?? "") ? (v as Platform) : null;
+}
+
+/** compact row in data/combos.json — one per h×p×m combo, from the
+ * from-identity channel alone (the site shows declared identifications only) */
 export interface ComboRow {
   agent_id: string;
   harness: string; // strict slug
@@ -47,10 +54,64 @@ export interface ComboRow {
   reciprocal: boolean;
   /** explain.state of the most recent fixture that carries one */
   state: string | null;
+  /** the free axis — the combo's provider-model cell is in
+   * provider_map_to_free_models */
+  free: boolean;
   platforms: Platform[];
-  channels: Channel[];
   updated_at: number;
-  fixtures: { id: string; platform: Platform; channel: Channel }[];
+  fixtures: { id: string; platform: Platform; updated_at: number }[];
+}
+
+/** the index — fixtures/index-data.json verbatim (also the released `index`
+ * action's embedded data and data/index.json). Entries carry the from-identity
+ * fixture's per-entity identify fields (unprefixed, minus instance state) plus
+ * variations and their association id arrays. */
+export interface HarnessEntry {
+  label: string;
+  short_title: string | null;
+  name: string;
+  id: string;
+  license: string | null;
+  open_training: string | null;
+  closed_training: string | null;
+  reciprocity_scandal: boolean;
+  variations: string[];
+  providers: string[];
+  models: string[];
+}
+
+export interface ProviderEntry {
+  label: string;
+  name: string;
+  id: string;
+  open_training: string | null;
+  closed_training: string | null;
+  reciprocity_scandal: boolean;
+  variations: string[];
+  harnesses: string[];
+  models: string[];
+}
+
+export interface ModelEntry {
+  label: string;
+  short_title: string | null;
+  name: string;
+  id: string;
+  openness: string | null;
+  open_training: string | null;
+  closed_training: string | null;
+  license: string | null;
+  variations: string[];
+  providers: string[];
+  harnesses: string[];
+}
+
+export interface IndexFile {
+  harnesses: HarnessEntry[];
+  providers: ProviderEntry[];
+  models: ModelEntry[];
+  provider_map_to_free_models: Record<string, string[]>;
+  agent_map_to_platforms_reciprocal: Record<string, { platforms: Platform[]; reciprocal: boolean }>;
 }
 
 export interface CombosFile {
@@ -71,7 +132,7 @@ export interface FixtureOutputs {
   [key: string]: unknown;
 }
 
-/** data/agents/<agent_id>.json — all fixtures of one combo, merged */
+/** data/agents/<agent_id>.json — the combo's from-identity fixtures, merged */
 export interface AgentFile {
   agent_id: string;
   harness: string;
@@ -80,7 +141,6 @@ export interface AgentFile {
   fixtures: {
     id: string;
     platform: Platform;
-    channel: Channel;
     updated_at: number;
     meta: Record<string, unknown>;
     outputs: FixtureOutputs;

@@ -4,15 +4,19 @@
 //   1. the rule tables are dumped from src/lib/rules.zig via `zig run` on a
 //      temp copy (the tables are data-only and compile standalone), so alias
 //      sets + policy fields can never drift from the CLI's;
-//   2. the fixture channels (fixtures/from-identity, fixtures/from-capture)
-//      are grouped per combo and emitted verbatim.
+//   2. fixtures/index-data.json — the committed index — is copied verbatim to
+//      data/index.json (the site's rule index / #index section);
+//   3. the from-identity channel (fixtures/from-identity) is grouped per combo
+//      and emitted verbatim — the site shows declared identifications only;
+//      the from-capture channel stays maintainer-side and never renders.
 // Outputs (site/public/data/, gitignored — regenerate before deploy):
 //   registry.json           — the rule registry (harnesses/providers/models)
-//   combos.json             — one compact row per h×p×m combo
-//   agents/<agent_id>.json  — all fixtures of one combo (both channels, verbatim outputs)
+//   index.json              — the committed index file, verbatim
+//   combos.json             — one compact row per h×p×m combo (identity only)
+//   agents/<agent_id>.json  — one combo's identity fixtures, verbatim outputs
 
 import { slugId, trailerEmail } from "../src/lib/registry.ts";
-import type { Channel, Platform } from "../src/lib/registry.ts";
+import type { IndexFile, Platform } from "../src/lib/registry.ts";
 
 const siteDir = new URL("../", import.meta.url);
 const repoDir = new URL("../../", import.meta.url);
@@ -40,7 +44,6 @@ pub fn main(init: std.process.Init) u8 {
 `;
 
 const PLATFORMS: Platform[] = ["darwin", "linux", "windows"];
-const CHANNELS: Channel[] = ["capture", "identity"]; // richer channel first
 
 function path(url: URL): string {
   return url.pathname;
@@ -72,7 +75,6 @@ async function dumpRules(): Promise<
 interface FixtureEntry {
   id: string;
   platform: Platform;
-  channel: Channel;
   updated_at: number;
   meta: Record<string, unknown>;
   outputs: Record<string, unknown>;
@@ -86,26 +88,26 @@ interface Combo {
   email: string;
   reciprocal: boolean;
   state: string | null;
+  free: boolean;
   platforms: Platform[];
-  channels: Channel[];
   updated_at: number;
-  fixtures: { id: string; platform: Platform; channel: Channel }[];
+  fixtures: { id: string; platform: Platform }[];
 }
 
-const rank = (arr: readonly string[]) => (v: string) => {
+const pRank = (arr: readonly Platform[]) => (v: Platform) => {
   const i = arr.indexOf(v);
   return i === -1 ? arr.length : i;
 };
 
-async function readChannel(channel: Channel, warnings: string[]): Promise<Map<string, FixtureEntry[]>> {
-  const dir = path(repoDir) + `fixtures/from-${channel}`;
+async function readIdentity(warnings: string[]): Promise<Map<string, FixtureEntry[]>> {
+  const dir = path(repoDir) + "fixtures/from-identity";
   const groups = new Map<string, FixtureEntry[]>();
   for await (const ent of Deno.readDir(dir)) {
     if (!ent.isFile || !ent.name.endsWith(".json")) continue;
     const stem = ent.name.slice(0, -".json".length);
     const parts = stem.split("-");
     if (parts.length !== 4 || !PLATFORMS.includes(parts[3] as Platform)) {
-      warnings.push(`skipping ${channel}/${ent.name}: stem does not split 4-way`);
+      warnings.push(`skipping identity/${ent.name}: stem does not split 4-way`);
       continue;
     }
     const [h, p, m, platform] = parts;
@@ -114,14 +116,13 @@ async function readChannel(channel: Channel, warnings: string[]): Promise<Map<st
     try {
       file = JSON.parse(await Deno.readTextFile(`${dir}/${ent.name}`));
     } catch (err) {
-      warnings.push(`skipping ${channel}/${ent.name}: ${err}`);
+      warnings.push(`skipping identity/${ent.name}: ${err}`);
       continue;
     }
     if (!file.outputs) continue; // defensive: the writers never emit stubs
     const entry: FixtureEntry = {
       id: stem,
       platform: platform as Platform,
-      channel,
       updated_at: typeof file.meta?.updated_at === "number" ? file.meta.updated_at : 0,
       meta: file.meta ?? {},
       outputs: file.outputs,
@@ -147,28 +148,25 @@ async function main() {
   const providers = withId(dump.providers);
   const models = withId(dump.models);
 
-  console.log("reading fixture channels…");
-  const identity = await readChannel("identity", warnings);
-  const capture = await readChannel("capture", warnings);
-  const agentIds = [...new Set([...identity.keys(), ...capture.keys()])].sort();
+  console.log("reading the from-identity channel…");
+  const identity = await readIdentity(warnings);
+  const agentIds = [...identity.keys()].sort();
 
-  const pRank = rank(PLATFORMS);
-  const cRank = rank(CHANNELS);
+  const pRanker = pRank(PLATFORMS);
   // recency order — the combo's row values (reciprocal, email, state) come
-  // from the MOST RECENTLY updated fixture, capture preferred over identity
-  // at equal timestamps; the display/tab order stays platform × channel
+  // from the MOST RECENTLY updated fixture; the display order stays platform
   const byRecency = (x: FixtureEntry, y: FixtureEntry) =>
-    (y.updated_at - x.updated_at) || (cRank(x.channel) - cRank(y.channel)) || (pRank(x.platform) - pRank(y.platform));
+    (y.updated_at - x.updated_at) || (pRanker(x.platform) - pRanker(y.platform));
   const combos: Combo[] = [];
   const emails = new Set<string>();
 
+  console.log("reading the committed index…");
+  const indexFile = JSON.parse(await Deno.readTextFile(path(repoDir) + "fixtures/index-data.json")) as IndexFile;
+
   await Deno.mkdir(path(siteDir) + "public/data/agents", { recursive: true });
   for (const agent_id of agentIds) {
-    const fixtures = [
-      ...(identity.get(agent_id) ?? []),
-      ...(capture.get(agent_id) ?? []),
-    ].sort((x, y) =>
-      (pRank(x.platform) - pRank(y.platform)) || (cRank(x.channel) - cRank(y.channel)) || (y.updated_at - x.updated_at)
+    const fixtures = [...(identity.get(agent_id) ?? [])].sort((x, y) =>
+      (pRanker(x.platform) - pRanker(y.platform)) || (y.updated_at - x.updated_at)
     );
     const recency = [...fixtures].sort(byRecency);
     const latest = recency[0];
@@ -187,10 +185,10 @@ async function main() {
       email,
       reciprocal: identify?.reciprocal === true,
       state: (explains?.state as string) ?? null,
-      platforms: [...new Set(fixtures.map((f) => f.platform))].sort((x, y) => pRank(x) - pRank(y)),
-      channels: [...new Set(fixtures.map((f) => f.channel))].sort((x, y) => cRank(x) - cRank(y)),
+      free: (indexFile.provider_map_to_free_models[parts[1]] ?? []).includes(parts.slice(2).join("-")),
+      platforms: [...new Set(fixtures.map((f) => f.platform))].sort((x, y) => pRanker(x) - pRanker(y)),
       updated_at: Math.max(...fixtures.map((f) => f.updated_at)),
-      fixtures: fixtures.map((f) => ({ id: f.id, platform: f.platform, channel: f.channel })),
+      fixtures: fixtures.map((f) => ({ id: f.id, platform: f.platform })),
     });
 
     const agentFile = {
@@ -201,7 +199,6 @@ async function main() {
       fixtures: fixtures.map((f) => ({
         id: f.id,
         platform: f.platform,
-        channel: f.channel,
         updated_at: f.updated_at,
         meta: f.meta,
         outputs: f.outputs,
@@ -210,6 +207,8 @@ async function main() {
     await Deno.writeTextFile(path(siteDir) + `public/data/agents/${agent_id}.json`, JSON.stringify(agentFile));
   }
 
+  await Deno.writeTextFile(path(siteDir) + "public/data/index.json", JSON.stringify(indexFile));
+
   const registry = {
     generated_at,
     counts: { harnesses: harnesses.length, providers: providers.length, models: models.length },
@@ -217,7 +216,7 @@ async function main() {
     providers,
     models,
   };
-  const combosFile = { generated_at, counts: { combos: combos.length, fixtures: agentIds.reduce((n, id) => n + (identity.get(id)?.length ?? 0) + (capture.get(id)?.length ?? 0), 0) }, combos };
+  const combosFile = { generated_at, counts: { combos: combos.length, fixtures: agentIds.reduce((n, id) => n + (identity.get(id)?.length ?? 0), 0) }, combos };
 
   await Deno.writeTextFile(path(siteDir) + "public/data/registry.json", JSON.stringify(registry));
   await Deno.writeTextFile(path(siteDir) + "public/data/combos.json", JSON.stringify(combosFile));
@@ -226,7 +225,7 @@ async function main() {
   const domains = new Set([...emails].map((e) => e.split("@")[1] ?? ""));
   console.log(
     `registry: ${harnesses.length} harnesses, ${providers.length} providers, ${models.length} models\n` +
-      `combos: ${combos.length} (reciprocal ${combos.filter((c) => c.reciprocal).length})\n` +
+      `combos: ${combos.length} (reciprocal ${combos.filter((c) => c.reciprocal).length}, free ${combos.filter((c) => c.free).length})\n` +
       `emails: ${emails.size} distinct, domains: ${[...domains].join(", ")}\n` +
       `written to site/public/data/`,
   );
