@@ -8,7 +8,7 @@
 // basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
 // agent-detect — thin entry point + re-exports.
-// The released CLI surface (identify / trailer / check-reciprocal / help / version) dispatches into lib/core.zig; the dev binary additionally exposes dev/dev.zig's `fixtures` namespace + `raw` action when built with `-Ddev=true`.
+// The released CLI surface (identify / trailer / check-reciprocal / help / version) dispatches into lib/core.zig; the dev binary additionally exposes dev/dev.zig's `fixtures` namespace when built with `-Ddev=true`.
 // The re-exported aliases below keep the test files compiling through `main.*` unchanged.
 
 const std = @import("std");
@@ -154,7 +154,6 @@ const devUsage = if (dev_build)
         \\  fixtures prompt   print the capture prompt (what a harness session
         \\                    is asked to run)
         \\  fixtures help     the fixtures namespace's full help
-        \\  raw               print only the raw observations block
         \\
 else
     usage;
@@ -180,7 +179,11 @@ pub fn main(init: std.process.Init) u8 {
         _ = core.SetConsoleCP(65001);
     }
     return mainInner(init) catch |err| switch (err) {
-        error.OutOfMemory => EXIT_OUT_OF_MEMORY,
+        error.OutOfMemory => blk: {
+            // writeErr's static write does not allocate, so this stays safe mid-OOM.
+            writeErr(init.io, MSG_OUT_OF_MEMORY);
+            break :blk EXIT_OUT_OF_MEMORY;
+        },
         else => blk: {
             // the optional `sqlite3` CLI is absent while a live session-store read needed it (kilo/opencode/copilot/crush/hermes) — the harness is known, detection cannot finish: exit 6, not a misleading exit 8.
             if (err == error.SqliteUnavailable) {
@@ -587,7 +590,7 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
     // The compact reason lines follow the registry line — which dim stalled and where to look next (`agent-detect explain` carries the full remediation).
     if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
         core.writeUnableToDetect(io, d.harness_id, d.provider_id, d.model_id);
-        core.writeReasonsCompact(io, try core.reasonsFor(a, d));
+        try core.writeReasonsCompact(a, io, try core.reasonsFor(a, d));
         return EXIT_UNABLE_TO_DETECT;
     }
 
@@ -612,13 +615,13 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
             .not_reciprocal => {
                 writeOut(io, "not reciprocal\n");
                 writeErr(io, MSG_REQUIREMENT_FAILED);
-                core.writeReasonsCompact(io, try core.reasonsFor(a, d));
+                try core.writeReasonsCompact(a, io, try core.reasonsFor(a, d));
                 return EXIT_REQUIREMENT_FAILED;
             },
             .unknown => {
                 // identity resolved, policy data missing: stderr only.
                 writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
-                core.writeReasonsCompact(io, try core.reasonsFor(a, d));
+                try core.writeReasonsCompact(a, io, try core.reasonsFor(a, d));
                 return EXIT_AGENT_DATA_INCOMPLETE;
             },
         }
@@ -627,11 +630,11 @@ fn runAction(init: std.process.Init, d: *const Detection, action: []const u8, tr
     // identify — the detection report (canonical at root).
     // Data-output action: full report on 0; identity complete but policy data incomplete → the report (with null policy fields) still goes to stdout + a stderr explainer, exit 9.
     var buf: std.ArrayList(u8) = .empty;
-    try buildJson(a, d, init.environ_map, null, .{}, &buf);
+    try buildJson(a, d, &buf);
     writeOut(io, buf.items);
     if (reciprocityOf(d) == .unknown) {
         writeErr(io, MSG_AGENT_DATA_INCOMPLETE);
-        core.writeReasonsCompact(io, try core.reasonsFor(a, d));
+        try core.writeReasonsCompact(a, io, try core.reasonsFor(a, d));
         return EXIT_AGENT_DATA_INCOMPLETE;
     }
     return EXIT_OK;

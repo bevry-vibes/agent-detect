@@ -1001,7 +1001,8 @@ test "check-reciprocal channels: verdict on 0/10, stderr on 8/9/10" {
     try testing.expect(main.checkReciprocalVerdict(&d8) == null);
     const lines8 = (try core.stderrLinesFor(a, &d8, .check_reciprocal)).?;
     try testing.expect(lines8.len == 2);
-    try testing.expectEqualStrings(std.mem.trimEnd(u8, core.MSG_UNABLE_TO_DETECT_PREFIX, "\n"), lines8[0]);
+    // the registry line is the full `unable to detect … (harness = …, provider = …, model = …)` form the CLI prints — not the bare prefix.
+    try testing.expectEqualStrings("unable to detect unspecified agent (harness = null, provider = null, model = null)", lines8[0]);
     try testing.expect(std.mem.indexOf(u8, lines8[1], "- harness:") != null);
 }
 

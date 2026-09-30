@@ -36,8 +36,6 @@ const slugId = rules.slugId;
 const canonicalIdFor = rules.canonicalIdFor;
 const harnessRuleForName = rules.harnessRuleForName;
 const envValueAllowed = rules.envValueAllowed;
-const license_none = rules.license_none;
-const license_noassertion = rules.license_noassertion;
 
 // Exit status registry — canonical numbers, one per distinct kind of outcome.
 // `1` is NOT a fallback for everything; it is reserved for genuinely unexpected/unclassified failures (uncaught zig errors, bugs).
@@ -251,7 +249,7 @@ fn addEvidenceClaim(a: std.mem.Allocator, d: *Detection, claim: EvidenceClaim) !
 
 /// apply a model slug to the detection.
 /// `slug` is the bare model id (e.g. "kimi-k3"); it becomes `d.model_name` unchanged.
-/// `raw_input` is the original string from the config file (e.g. "cline-pass/kimi-k3" or "minimax/kimi-k3") and is preserved in the corresponding config-file FileObservation under `d.raw.config_files` for the audit trail.
+/// `raw_input` is the original string from the config file (e.g. "cline-pass/kimi-k3" or "minimax/kimi-k3"); this function does not use it — the caller records it in the corresponding config-file FileObservation under `d.raw.config_files` for the audit trail.
 /// The provider prefix on the config value stays out of the canonical model identity.
 pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_input: []const u8) !void {
     const lower = try std.ascii.allocLowerString(a, name);
@@ -283,7 +281,7 @@ pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_inp
     d.model_closed_training = mi.closed_training;
     if (mi.sources.len > 0) d.raw.model_urls = mi.sources;
     _ = raw_input; // caller is responsible for recording it in a config_file observation
-    // recompute the agent id now that model_id is fixtures — this depends on harness_id and provider_id being set first, which the calling detector is responsible for.
+    // recompute the agent id now that model_id is set — this depends on harness_id and provider_id being set first, which the calling detector is responsible for.
     try setAgentId(a, d);
 }
 
@@ -394,10 +392,7 @@ const PROCESSENTRY32W = extern struct {
 extern "kernel32" fn CreateToolhelp32Snapshot(dwFlags: u32, th32ProcessID: u32) callconv(.winapi) std.os.windows.HANDLE;
 extern "kernel32" fn Process32FirstW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
 extern "kernel32" fn Process32NextW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
-// Windows process termination — used by the dev from-capture timeout watchdog (`fixtures __timeout`). PROCESS_TERMINATE = 0x0001.
-pub extern "kernel32" fn OpenProcess(dwDesiredAccess: u32, bInheritHandle: c_int, dwProcessId: u32) callconv(.winapi) ?std.os.windows.HANDLE;
-pub extern "kernel32" fn TerminateProcess(hProcess: std.os.windows.HANDLE, uExitCode: u32) callconv(.winapi) c_int;
-pub extern "kernel32" fn CloseHandle(hObject: std.os.windows.HANDLE) callconv(.winapi) c_int;
+// Windows process id — dev's capture timeout watchdog reads the spawned worker's pid (GetProcessId fills in for Windows' missing libc getpid on the child handle).
 pub extern "kernel32" fn GetProcessId(hProcess: std.os.windows.HANDLE) callconv(.winapi) u32;
 // Windows console code page — the default OEM page (cp437/850/1252) mangles UTF-8 output (em dash, middle dot);
 // the binary sets both directions to CP_UTF8 at startup so terminals render it as-is.
@@ -577,9 +572,7 @@ fn kimiArgvOverride(a: std.mem.Allocator, pid: i32) !bool {
     return std.mem.indexOf(u8, buf[0..read_size], "kimi-code") != null;
 }
 
-/// `extern "c"` decl for `proc_pidpath` (libproc).
-/// Declared at file scope for `ancestorsMacos` above;
-/// pulled out as a comment so future readers don't reach for `libproc.h` and drag in `<mach/*.h>` opaque types that trip zig's generated static asserts.
+/// `extern "c"` decl for `proc_pidpath` (libproc), declared at file scope above — see the `<libproc.h>` note at the top of the macOS section for why it is an extern rather than a `@cImport`.
 
 // ============================================================================ cline session discovery
 
@@ -773,17 +766,19 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
 
 fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, appdata: []const u8, home: []const u8, d: *Detection) !void {
     const cwd_dir = std.Io.Dir.cwd();
-    // goose: env vars override the config file
+    // goose: env vars override the config file. Per-dim source tracking (decision #11) — with one shared
+    // stamp, GOOSE_PROVIDER + config-resolved model (or the reverse) misattributed which channel resolved which dim.
     var provider: ?[]const u8 = null;
     var model: ?[]const u8 = null;
-    var src: []const u8 = "none";
+    var provider_src: []const u8 = "none";
+    var model_src: []const u8 = "none";
     if (env.get("GOOSE_PROVIDER")) |v| {
         provider = v;
-        src = "env";
+        provider_src = "env";
     }
     if (env.get("GOOSE_MODEL")) |v| {
         model = v;
-        src = "env";
+        model_src = "env";
     }
     const path = if (builtin.os.tag == .windows and appdata.len > 0)
         try std.fmt.allocPrint(a, "{s}/Block/goose/config/config.yaml", .{appdata})
@@ -828,7 +823,7 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
                         const v = std.mem.trim(u8, t["model:".len..], " ");
                         if (v.len > 0) {
                             model = v;
-                            src = "config.yaml";
+                            model_src = "config.yaml";
                         }
                     }
                     break;
@@ -837,7 +832,7 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
         }
         if (provider == null and active != null) {
             provider = active;
-            if (std.mem.eql(u8, src, "none")) src = "config.yaml";
+            provider_src = "config.yaml";
         }
     }
     if (provider) |p| {
@@ -851,22 +846,22 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     }
     // decision #11: claims against the source that actually resolved each dim (env vars override the config file).
     if (provider) |p| {
-        if (std.mem.eql(u8, src, "env")) {
+        if (std.mem.eql(u8, provider_src, "env")) {
             try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "GOOSE_PROVIDER", .value = p });
         } else if (active) |act| {
             try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "active_provider", .value = act });
         }
     }
     if (model) |m| {
-        if (std.mem.eql(u8, src, "env")) {
+        if (std.mem.eql(u8, model_src, "env")) {
             try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "GOOSE_MODEL", .value = m });
         } else if (active) |act| {
             const dotted = try std.fmt.allocPrint(a, "providers.{s}.model", .{act});
             try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = dotted, .value = m });
         }
     }
-    // build config_files FileObservation if a file was read
-    if (!std.mem.eql(u8, src, "none") and !std.mem.eql(u8, src, "env")) {
+    // build config_files FileObservation if the config file contributed a dim
+    if (std.mem.eql(u8, provider_src, "config.yaml") or std.mem.eql(u8, model_src, "config.yaml")) {
         var fields = std.ArrayList(FieldObservation).empty;
         defer fields.deinit(a);
         if (active) |act| {
@@ -1002,10 +997,12 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     // parse top-level JSON: { "model": { "name": "MiniMax-M3" }, "security": { "auth": { "selectedType": "openai" } } }
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
     defer parsed.deinit();
+    if (parsed.value != .object) return;
     const root = parsed.value.object;
 
     const model_obj = root.get("model") orelse return;
-    const model_name = (model_obj.object.get("name") orelse return).string;
+    if (model_obj != .object) return;
+    const model_name = jstr(model_obj.object, "name") orelse return;
     if (model_name.len == 0) return;
 
     // qwen's auth.selectedType is the route key, not the underlying provider.
@@ -1014,12 +1011,17 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     var provider_name: ?[]const u8 = null;
     var provider_base_url: []const u8 = "";
     if (root.get("modelProviders")) |mps| {
-        if (mps.object.get("openai")) |entries| {
-            for (entries.array.items) |entry| {
-                if (entry.object.get("baseUrl")) |bu| {
-                    provider_base_url = bu.string;
-                    provider_name = providerForBaseUrl(bu.string);
-                    break;
+        if (mps == .object) {
+            if (mps.object.get("openai")) |entries| {
+                if (entries == .array) {
+                    for (entries.array.items) |entry| {
+                        if (entry != .object) continue;
+                        if (jstr(entry.object, "baseUrl")) |bu| {
+                            provider_base_url = bu;
+                            provider_name = providerForBaseUrl(bu);
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -1039,9 +1041,13 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
         try fields.append(a, .{ .dotted_path = "modelProviders.openai[].baseUrl", .value = provider_base_url });
     }
     if (root.get("security")) |sec| {
-        if (sec.object.get("auth")) |auth| {
-            if (auth.object.get("selectedType")) |st| {
-                try fields.append(a, .{ .dotted_path = "security.auth.selectedType", .value = st.string });
+        if (sec == .object) {
+            if (sec.object.get("auth")) |auth| {
+                if (auth == .object) {
+                    if (jstr(auth.object, "selectedType")) |st| {
+                        try fields.append(a, .{ .dotted_path = "security.auth.selectedType", .value = st });
+                    }
+                }
             }
         }
     }
@@ -1275,13 +1281,16 @@ fn detectCrushFromCrushJson(a: std.mem.Allocator, io: std.Io, base: []const u8, 
     defer a.free(data);
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return false;
     defer parsed.deinit();
+    if (parsed.value != .object) return false;
     const models = parsed.value.object.get("models") orelse return false;
-    const large = (models.object.get("large") orelse return false).object;
-    const model = (large.get("model") orelse return false).string;
+    if (models != .object) return false;
+    const large = models.object.get("large") orelse return false;
+    if (large != .object) return false;
+    const model = jstr(large.object, "model") orelse return false;
     if (model.len == 0) return false;
     var prov: ?[]const u8 = null;
-    if (large.get("provider")) |pv| {
-        if (pv.string.len > 0) prov = pv.string;
+    if (jstr(large.object, "provider")) |pv| {
+        if (pv.len > 0) prov = pv;
     }
     // a provider field (or a "provider/model" spelling) names the provider the user engages with; without one, neither dim can be read without guessing — detection ends undetected.
     if (prov) |p| {
@@ -1379,7 +1388,7 @@ pub const ActiveSessionModel = struct {
     model_full: []const u8,
 };
 
-/// Resolve the *active* session's model from a kilo/opencode-format session store (`~/.local/share/kilo/kilo.db` / `~/.local/share/ opencode/opencode.db`).
+/// Resolve the *active* session's model from a kilo/opencode-format session store (`~/.local/share/kilo/kilo.db` / `~/.local/share/opencode/opencode.db`).
 /// Both harnesses use the same schema: a `session` table (with `directory`, `time_archived`, and a lazily-written `model` JSON column) plus a `message` table whose `data` JSON carries the model at message-creation time.
 ///
 /// The active session is the non-archived session in `dir` whose newest `message.time_created` is most recent —
@@ -1510,7 +1519,11 @@ fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const
         error.FileNotFound => return error.SqliteUnavailable,
         else => return error.SqliteSpawnFailed,
     };
-    const out = readChildOutput(a, io, child, false) catch return error.SqliteSpawnFailed;
+    const out = readChildOutput(a, io, child, false) catch {
+        // reap the child even when the drain fails — an un-waited child lingers as a zombie.
+        _ = child.wait(io) catch {};
+        return error.SqliteSpawnFailed;
+    };
     const term = child.wait(io) catch return error.SqliteSpawnFailed;
     switch (term) {
         .exited => |code| if (code != 0) return error.SqliteError,
@@ -1607,15 +1620,19 @@ fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
             if (slash) |i| {
                 try setProvider(a, d, model_full[0..i]);
                 try applyModel(a, d, model_full[i + 1 ..], model_full);
+                // both dims read out of the single provider/model value.
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "HERMES_MODEL", .value = model_full });
+                try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "HERMES_MODEL", .value = model_full });
             } else blk: {
                 const prov = env.get("HERMES_PROVIDER") orelse "";
                 if (prov.len == 0) return;
                 try setProvider(a, d, prov);
                 try applyModel(a, d, model_full, model_full);
+                // bare model id: the model dim reads HERMES_MODEL, the provider dim the pinning HERMES_PROVIDER.
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "HERMES_PROVIDER", .value = prov });
+                try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "HERMES_MODEL", .value = model_full });
                 break :blk;
             }
-            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "HERMES_MODEL", .value = model_full });
-            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "HERMES_MODEL", .value = model_full });
             return;
         }
     }
@@ -1802,6 +1819,7 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
 
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
     defer parsed.deinit();
+    if (parsed.value != .object) return;
     const root = parsed.value.object;
     const provider = switch (root.get("defaultProvider") orelse return) {
         .string => |s| s,
@@ -2863,13 +2881,11 @@ fn reasonCompactLine(a: std.mem.Allocator, r: Reason) ![]u8 {
 
 /// render the compact stderr layer — one line per reason, appended AFTER the byte-stable registry first line (never before it; the registry messages are the contract).
 /// No action prose, no URLs here — the full remediation lives in `agent-detect explain`.
-pub fn writeReasonsCompact(io: std.Io, reasons: []const Reason) void {
+pub fn writeReasonsCompact(a: std.mem.Allocator, io: std.Io, reasons: []const Reason) !void {
     for (reasons) |r| {
-        writeErr(io, "  - ");
-        writeErr(io, @tagName(r.entity));
-        writeErr(io, ": ");
-        writeErr(io, r.summary);
-        writeErr(io, " (see: agent-detect explain)\n");
+        const line = try reasonCompactLine(a, r);
+        writeErr(io, line);
+        writeErr(io, "\n");
     }
 }
 
@@ -2882,7 +2898,7 @@ pub fn stderrLinesFor(a: std.mem.Allocator, d: *const Detection, comptime which:
         .identify => {
             if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
                 // the data action's exit-8 shape: registry line + compact reasons (the gate order in runAction).
-                try lines.append(a, std.mem.trimEnd(u8, MSG_UNABLE_TO_DETECT_PREFIX, "\n"));
+                try lines.append(a, try unableToDetectLine(a, d.harness_id, d.provider_id, d.model_id));
                 for (try reasonsFor(a, d)) |r| try lines.append(a, try reasonCompactLine(a, r));
             } else if (reciprocityOf(d) == .unknown) {
                 try lines.append(a, std.mem.trimEnd(u8, MSG_AGENT_DATA_INCOMPLETE, "\n"));
@@ -2902,7 +2918,7 @@ pub fn stderrLinesFor(a: std.mem.Allocator, d: *const Detection, comptime which:
         .check_reciprocal => {
             if (d.harness_label == null or d.provider_label == null or d.model_label == null) {
                 // the shared identity gate fires before the verdict (runAction's gate order) — the exit-8 shape: registry line + compact reasons.
-                try lines.append(a, std.mem.trimEnd(u8, MSG_UNABLE_TO_DETECT_PREFIX, "\n"));
+                try lines.append(a, try unableToDetectLine(a, d.harness_id, d.provider_id, d.model_id));
                 for (try reasonsFor(a, d)) |r| try lines.append(a, try reasonCompactLine(a, r));
             } else switch (reciprocityOf(d)) {
                 .reciprocal => return null,
@@ -3025,7 +3041,7 @@ pub fn buildExplain(a: std.mem.Allocator, d: *const Detection, reasons: []const 
 }
 
 /// The detection report is a JSON object assembled from:
-/// - `buildCooked` — the shape-stable 20-field canonical object, grouped by entity (harness / provider / model / agent).
+/// - `buildCooked` — the shape-stable 29-field canonical object, grouped by entity (harness / provider / model / agent).
 /// The `trailer` field was removed so the identify output no longer carries it (fixture channels persist both trailer variants as separate keys).
 /// - `buildRaw` — the shapeless raw observations object (dev binary only), whose top-level keys identify source evidence.
 /// The released binary's `identify` action serializes `buildCooked` at the root; the dev binary's fixture files embed it as `outputs.identify` alongside the trailer variants and (for captures) the raw block.
@@ -3081,11 +3097,6 @@ pub fn buildCooked(a: std.mem.Allocator, d: *const Detection) !std.json.Value {
     return canonical;
 }
 
-/// the trailer string for `d`, if one was computed. Delegates to the stored `d.trailer` (set by `detect` / recipe resolution).
-pub fn buildTrailer(d: *const Detection) ?[]const u8 {
-    return d.trailer;
-}
-
 /// Build a commit-trailer line for `d` with the given keyword (e.g. `Co-authored-by` / `Assisted-by`), or `null` when the identity is incomplete (any of harness_label / model_label / agent_id null).
 /// Output format: `{keyword}: {harness_label} · {model_label} <{agent_id}@local>` — the `·` is a middle-dot separator, not a hyphen; the email local (machine-readable side) uses `-`.
 pub fn buildTrailerLine(a: std.mem.Allocator, d: *const Detection, keyword: []const u8) !?[]u8 {
@@ -3098,10 +3109,7 @@ pub fn buildTrailerLine(a: std.mem.Allocator, d: *const Detection, keyword: []co
 }
 
 /// emit the slim released JSON report (canonical fields at the root, no `raw` block) into `buf`. The `identify` action uses this directly.
-pub fn buildJson(a: std.mem.Allocator, d: *const Detection, env: *const std.process.Environ.Map, rule: ?HarnessRule, anc: Ancestry, buf: *std.ArrayList(u8)) !void {
-    _ = env;
-    _ = rule;
-    _ = anc;
+pub fn buildJson(a: std.mem.Allocator, d: *const Detection, buf: *std.ArrayList(u8)) !void {
     const cooked = try buildCooked(a, d);
     const json_bytes = try std.json.Stringify.valueAlloc(a, cooked, .{ .whitespace = .indent_2 });
     defer a.free(json_bytes);

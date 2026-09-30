@@ -7,7 +7,7 @@
 // All software distributed under the RPL is provided strictly on an "AS IS"
 // basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
-// agent-detect-dev — the maintainer-only fixtures surface: the `fixtures` namespace (daemon, capture, queue, dequeue, status) plus the standalone `raw` action.
+// agent-detect-dev — the maintainer-only fixtures surface: the `fixtures` namespace (daemon, capture, queue, dequeue, status).
 // Compiled into the binary only when built with `-Ddev=true`; `pub const dev` below is the comptime-gated struct, so the released binary never links this surface.
 //
 // The fixtures state is split two ways.
@@ -41,19 +41,12 @@ const jstr = core.jstr;
 const jint = core.jint;
 const reciprocityOf = core.reciprocityOf;
 const readChildOutput = core.readChildOutput;
-const OpenProcess = core.OpenProcess;
-const TerminateProcess = core.TerminateProcess;
-const CloseHandle = core.CloseHandle;
 const GetProcessId = core.GetProcessId;
 
 const EXIT_OK = core.EXIT_OK;
-const EXIT_UNRECOGNISED_ERROR = core.EXIT_UNRECOGNISED_ERROR;
 const EXIT_UNRECOGNISED_ARG = core.EXIT_UNRECOGNISED_ARG;
 const EXIT_CONFLICTING_ARG = core.EXIT_CONFLICTING_ARG;
 const EXIT_MISSING_ARG = core.EXIT_MISSING_ARG;
-const EXIT_ENV_INCOMPATIBLE = core.EXIT_ENV_INCOMPATIBLE;
-const EXIT_ENV_INCOMPLETE = core.EXIT_ENV_INCOMPLETE;
-const EXIT_MISSING_SPECIFIED_AGENT = core.EXIT_MISSING_SPECIFIED_AGENT;
 const EXIT_UNABLE_TO_DETECT = core.EXIT_UNABLE_TO_DETECT;
 const EXIT_AGENT_DATA_INCOMPLETE = core.EXIT_AGENT_DATA_INCOMPLETE;
 const EXIT_REQUIREMENT_FAILED = core.EXIT_REQUIREMENT_FAILED;
@@ -63,11 +56,7 @@ const EXIT_IO = core.EXIT_IO;
 
 const MSG_UNRECOGNISED_ARG = core.MSG_UNRECOGNISED_ARG;
 const MSG_CONFLICTING_ARG = core.MSG_CONFLICTING_ARG;
-const MSG_MISSING_ARG_COMBO = core.MSG_MISSING_ARG_COMBO;
-const MSG_MISSING_ARG_TRAILER_SUBTYPE = core.MSG_MISSING_ARG_TRAILER_SUBTYPE;
 const MSG_MISSING_ARG = core.MSG_MISSING_ARG;
-const MSG_ENV_INCOMPATIBLE = core.MSG_ENV_INCOMPATIBLE;
-const MSG_ENV_INCOMPLETE = core.MSG_ENV_INCOMPLETE;
 const MSG_AGENT_DATA_INCOMPLETE = core.MSG_AGENT_DATA_INCOMPLETE;
 const MSG_REQUIREMENT_FAILED = core.MSG_REQUIREMENT_FAILED;
 const MSG_OUT_OF_MEMORY = core.MSG_OUT_OF_MEMORY;
@@ -208,8 +197,8 @@ pub const dev = if (build_options.dev) struct {
         \\
         \\exit codes: 0 = ok, 2 = unrecognised argument, 3 = conflicting argument,
         \\4 = missing required arguments, 5 = incompatible environment, 6 = incomplete
-        \\environment, 8 = unable to detect, 11 = out of memory, 12 = index store error,
-        \\13 = filesystem I/O error
+        \\environment, 8 = unable to detect, 9 = agent data incomplete, 10 = capture
+        \\refused, 11 = out of memory, 12 = index store error, 13 = filesystem I/O error
         \\
     ;
 
@@ -608,7 +597,7 @@ pub const dev = if (build_options.dev) struct {
         std.Io.Dir.rename(std.Io.Dir.cwd(), tmp_path, std.Io.Dir.cwd(), path, io) catch return error.FilesystemIoError;
     }
 
-    /// deep equality of two `outputs.identify` objects — the `--stale-by-output-drift` criterion.
+    /// deep equality of two `outputs.identify` objects — the `--stale-by-output` criterion.
     /// Order-independent structural comparison: the two channels are written by different workers, so key order is not meaningful.
     pub fn identifyEqual(x: std.json.Value, y: std.json.Value) bool {
         switch (x) {
@@ -855,7 +844,11 @@ pub const dev = if (build_options.dev) struct {
                 .stdout = .pipe,
                 .stderr = .ignore,
             }) catch return null;
-            const out = readChildOutput(a, io, child, false) catch return null;
+            const out = readChildOutput(a, io, child, false) catch {
+                // reap the child even when the drain fails — an un-waited child lingers as a zombie.
+                _ = child.wait(io) catch {};
+                return null;
+            };
             const term = child.wait(io) catch return null;
             if (term != .exited or term.exited != 0) continue;
             const trimmed = std.mem.trim(u8, out, " \t\r\n");
@@ -1719,7 +1712,7 @@ pub const dev = if (build_options.dev) struct {
         InvalidFixtureId,
         /// `--agent=` not a valid 3-part id
         InvalidAgentId,
-        /// `--stale-by-days=`/`--stale-by-minutes=` not an integer ≥ 0
+        /// `--stale-by-days=`/`--stale-by-hours=`/`--stale-by-minutes=` not an integer ≥ 0
         InvalidThreshold,
         /// contradictory or disallowed combination
         ConflictingFilters,
@@ -2523,10 +2516,19 @@ pub const dev = if (build_options.dev) struct {
 
     /// classify a failed capture's output tails (case-insensitive substring probes over the combined stdout+stderr text).
     /// Pure on purpose — the unit tests pin the patterns; the harness-side strings drift, so the probes stay broad and the classifier never guesses beyond the named classes.
+    /// case-insensitive substring search — the markers are lowercase, the haystack is probed as-is over its full length
+    /// (the harness's error text usually sits after the worker's own stdout preamble, so a bounded probe misses it).
+    fn containsIgnoreCase(haystack: []const u8, needle: []const u8) bool {
+        if (needle.len == 0) return true;
+        if (haystack.len < needle.len) return false;
+        var i: usize = 0;
+        while (i + needle.len <= haystack.len) : (i += 1) {
+            if (std.ascii.eqlIgnoreCase(haystack[i .. i + needle.len], needle)) return true;
+        }
+        return false;
+    }
+
     pub fn classifyCaptureFailure(text: []const u8) CaptureOutcome {
-        var lower_buf: [512]u8 = undefined;
-        const n = @min(text.len, lower_buf.len);
-        const lower = std.ascii.lowerString(lower_buf[0..n], text[0..n]);
         const provider_markers = [_][]const u8{
             "unauthorized",  "forbidden",      "payment required", "invalid api key", "incorrect api key",
             "api key",       "authentication", "not authed",       "quota",           "credit",
@@ -2538,10 +2540,10 @@ pub const dev = if (build_options.dev) struct {
             "does not exist",  "no longer available", "deprecated",
         };
         for (model_markers) |marker| {
-            if (std.mem.indexOf(u8, lower, marker) != null) return .model_unavailable;
+            if (containsIgnoreCase(text, marker)) return .model_unavailable;
         }
         for (provider_markers) |marker| {
-            if (std.mem.indexOf(u8, lower, marker) != null) return .provider_auth;
+            if (containsIgnoreCase(text, marker)) return .provider_auth;
         }
         return .other;
     }
@@ -2578,9 +2580,7 @@ pub const dev = if (build_options.dev) struct {
 
         /// is this combo covered by any skip level? Stack buffers — no allocation on the hot expansion path.
         fn skipped(self: *const SessionSkips, h: []const u8, p: []const u8, m: []const u8) bool {
-            var hb: [64]u8 = undefined;
-            const hz = std.fmt.bufPrint(&hb, "{s}", .{h}) catch return false;
-            if (self.harnesses.contains(hz)) return true;
+            if (self.harnesses.contains(h)) return true;
             var pb: [160]u8 = undefined;
             const pz = std.fmt.bufPrint(&pb, "{s}|{s}", .{ h, p }) catch return false;
             if (self.providers.contains(pz)) return true;
@@ -2740,6 +2740,8 @@ pub const dev = if (build_options.dev) struct {
                 return .other;
             },
         };
+        // best-effort removal on every return path from here on (the OS temp-dir cleanup is the backstop).
+        defer std.Io.Dir.cwd().deleteTree(io, workdir.?) catch {};
         var self_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const self_path = selfPath(io, &self_path_buf);
         const launch_prompt = if (self_path) |sp|
@@ -2830,10 +2832,9 @@ pub const dev = if (build_options.dev) struct {
             daemonWriteErr(io, "\n");
             try recordKnownButFailed(io, a, fixture_id, "capture failed — spawn error", init.environ_map);
             damped.put(fixture_id, {}) catch {};
+            log_file.close(io);
             return .other;
         };
-        // best-effort removal after the wait (every return path below hits this); the OS temp-dir cleanup is the backstop.
-        defer std.Io.Dir.cwd().deleteTree(io, workdir.?) catch {};
         // the child inherited its own handle; the parent's copy is done.
         log_file.close(io);
 
@@ -2903,11 +2904,8 @@ pub const dev = if (build_options.dev) struct {
                     // detection-partial (exit 8) lands here too — valid ids, failed attempt → damped this session, retried next.
                     var msg: std.ArrayList(u8) = .empty;
                     try msg.appendSlice(a, "capture failed");
-                    if (code != 0) {
-                        var nbuf: [32]u8 = undefined;
-                        const cs = std.fmt.bufPrint(&nbuf, " (exit {d})", .{code}) catch "";
-                        try msg.appendSlice(a, cs);
-                    }
+                    var nbuf: [32]u8 = undefined;
+                    try msg.appendSlice(a, std.fmt.bufPrint(&nbuf, " (exit {d})", .{code}) catch "");
                     if (out_capture.items.len > 0) {
                         try msg.appendSlice(a, ": stdout ");
                         const tail_start = if (out_capture.items.len > 200) out_capture.items.len - 200 else 0;

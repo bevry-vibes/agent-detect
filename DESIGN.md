@@ -18,7 +18,7 @@ The implementation lives in `pub fn detect` in `src/lib/core.zig`, with each ste
 
 The released binary must stay minimal — no raw dump, no subcommands, no fixtures — so it ships as a single static file with no surprises.
 Its CLI surface is `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `web`, `help`, `version`.
-The dev binary (`agent-detect-dev`) carries the maintainer's full toolkit: the standalone `raw` action (raw observations block) and the `fixtures` subcommand namespace (capture / daemon / queue / dequeue / status / prompt — the last prints the capture prompt a harness session is asked to run; the internal `__timeout` watchdog the daemon spawns is not part of the user surface).
+The dev binary (`agent-detect-dev`) carries the maintainer's full toolkit: the `fixtures` subcommand namespace (capture / daemon / queue / dequeue / status / prompt — the last prints the capture prompt a harness session is asked to run; the internal `__timeout` watchdog the daemon spawns is not part of the user surface).
 The split is enforced at compile time via the `dev` flag in `build.zig` and the `pub const dev = if (build_options.dev) struct { ... } else struct {};` block in `src/dev/dev.zig`.
 The released binary cannot accidentally include dev code paths.
 

@@ -74,7 +74,7 @@ const Universe = struct {
     }
 };
 
-/// build an in-memory store root with the v2 tables.
+/// build an in-memory store root for the expansion tests — `store_version` is inert here (these roots never reach `indexLoad`; the on-disk version contract is pinned in known_fixtures.test).
 fn emptyStoreRoot(a: std.mem.Allocator) !std.json.Value {
     var root: std.json.Value = .{ .object = .empty };
     try root.object.put(a, "store_version", .{ .integer = 3 });

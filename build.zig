@@ -21,10 +21,10 @@ const targets = [_]struct { name: []const u8, query: std.Target.Query }{
 pub fn build(b: *std.Build) void {
     const optimize = b.option(std.builtin.OptimizeMode, "optimize", "optimization mode") orelse .ReleaseSmall;
 
-    // `--dev` enables the dev-only subcommands (the `fixtures` namespace: daemon, capture, queue, dequeue, plus the standalone `raw` action) and the larger code path that gathers raw observations.
+    // `--dev` enables the dev-only subcommands (the `fixtures` namespace: daemon, capture, queue, dequeue, status) and the larger code path that gathers raw observations.
     // Default is `false` for the released binary; `zig build dev` flips it to `true` for the maintainer-only `agent-detect-dev` binary.
     // The dev binary is NOT cross-compiled; `zig build dist` only emits the released binary.
-    const dev = b.option(bool, "dev", "include dev-only subcommands (fixtures namespace, raw, etc.)") orelse false;
+    const dev = b.option(bool, "dev", "include dev-only subcommands (the fixtures namespace)") orelse false;
 
     // Read the project version out of `build.zig.zon` so the binary's `--version` output reflects the actual release tag.
     // The format is calver: `<year>.<month>.<day>-<revision>` (e.g. `2026.8.11-1`).
@@ -53,8 +53,7 @@ pub fn build(b: *std.Build) void {
     native_exe.root_module.addImport("build_options", build_options.createModule());
     b.installArtifact(native_exe);
 
-    // `zig build dev` — builds the maintainer-only dev binary with `-Ddev=true`. Same source as the released binary, but the dev-only subcommands (the `fixtures` namespace
-    // + the standalone `raw` action)
+    // `zig build dev` — builds the maintainer-only dev binary. Same source as the released binary, but the dev-only `fixtures` namespace
     // and the RecipesForFixtures table are linked in. The released binary is unaffected (built with dev=false).
     //
     // The dev binary needs its own `build_options` with `dev=true`, so we build a fresh options module here rather than reusing the `dev` bool (which is the value of the option flag, not a hardcoded `true`).
@@ -71,9 +70,9 @@ pub fn build(b: *std.Build) void {
         }),
     });
     dev_exe.root_module.addImport("build_options", dev_options.createModule());
-    b.installArtifact(dev_exe);
 
     // `zig build dev` step — install the dev binary into zig-out/bin (so it's available alongside the released binary).
+    // Not part of the default install (the released `zig build` ships agent-detect only).
     // Doesn't RUN the binary: the maintainer invokes it from their own terminal to avoid process-tree pollution from this dev environment.
     const dev_step = b.step("dev", "install agent-detect-dev (maintainer-only, with dev subcommands)");
     dev_step.dependOn(&b.addInstallArtifact(dev_exe, .{}).step);
@@ -126,7 +125,10 @@ pub fn build(b: *std.Build) void {
 fn readVersionFromZon(b: *std.Build) []const u8 {
     const allocator = b.allocator;
     const zon_text = b.build_root.handle.readFileAlloc(
-        b.graph.io, "build.zig.zon", allocator, .limited(4096),
+        b.graph.io,
+        "build.zig.zon",
+        allocator,
+        .limited(4096),
     ) catch {
         std.log.err("could not read build.zig.zon", .{});
         std.process.exit(1);
