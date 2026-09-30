@@ -43,6 +43,9 @@ interface Filters {
 }
 
 export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenEntity, onOpenAgent, onBackSelf, onHome }: EntityPageProps) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
 
   const entry = useMemo(() => {
     if (!index) return null;

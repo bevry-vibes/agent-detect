@@ -137,9 +137,6 @@ export default function App() {
   const [view, setView] = useState<View>({ kind: "index" });
   const [notices, setNotices] = useState<string[]>([]);
   const registryRef = useRef<Registry | null>(null);
-  // the index's scroll position is remembered per url so "back to results"
-  // lands where the click happened
-  const scrollMem = useRef(new Map<string, number>());
   const viewRef = useRef<string>("/");
   // a center-nav click on a detail page closes it and jumps to the section
   const pendingAnchor = useRef<string | null>(null);
@@ -246,9 +243,6 @@ export default function App() {
   };
   const onSelect = (selected: string) => {
     if (view.kind === "agent" && view.id === selected) return;
-    // remember where the index was, under the key the view-transition effect
-    // reads when returning from this detail page
-    scrollMem.current.set(viewPath({ kind: "agent", id: selected }), window.scrollY);
     setView({ kind: "agent", id: selected });
     pushURL(filters, { kind: "agent", id: selected });
   };
@@ -260,7 +254,6 @@ export default function App() {
   };
 
   const onOpenEntity = (dim: EntityDim, id: string) => {
-    scrollMem.current.set(viewPath({ kind: "entity", dim, id }), window.scrollY);
     setView({ kind: "entity", dim, id });
     pushURL({ ...NO_FILTERS }, { kind: "entity", dim, id });
   };
@@ -275,16 +268,17 @@ export default function App() {
     pushURL(next, { kind: "index" }, "push");
   };
 
-  // view transitions: returning to the index restores its remembered scroll;
-  // detail pages scroll themselves to the top on mount. Both scrolls are
-  // explicit-instant — the html's smooth scroll-behavior turns programmatic
-  // scrolls into animations that other scrolls (and re-renders) cancel.
+  // view transitions: a result or detail page opens at scroll 0 (its own
+  // mount effect); returning to the homepage lands instantly on the index
+  // section. Explicit-instant — the html's smooth scroll-behavior turns
+  // programmatic scrolls into animations that other scrolls cancel.
   const viewKey = viewPath(view);
   useEffect(() => {
     if (viewKey === viewRef.current) return;
-    const from = viewRef.current;
     viewRef.current = viewKey;
-    if (viewKey === "/") window.scrollTo({ top: scrollMem.current.get(from) ?? 0, behavior: "instant" });
+    if (viewKey === "/") {
+      document.getElementById("index")?.scrollIntoView({ block: "start", behavior: "instant" });
+    }
   }, [viewKey]);
 
   const onNavClick = (href: string): boolean => {
@@ -397,7 +391,14 @@ export default function App() {
       ) : (
         <main className="flex flex-col">
           <Hero />
-          <IndexSection index={indexFile} filters={filters} onSelect={onIndexSelect} onOpenEntity={onOpenEntity} />
+          <IndexSection
+            index={indexFile}
+            combos={combosFile}
+            filters={filters}
+            onSelect={onIndexSelect}
+            onOpenEntity={onOpenEntity}
+            onOpenAgent={onSelect}
+          />
           <article id="registry" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 scroll-mt-14 px-4 py-8">
             {registry && (
               <RegistryIntro

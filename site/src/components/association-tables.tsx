@@ -94,7 +94,13 @@ function Table(
                 onClick={c.onCard}
                 disabled={c.kind === "self-back" || c.kind === "self-open"}
                 className={`flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1.5 text-left ${
-                  c.kind === "self-back" || c.kind === "self-open" ? "cursor-not-allowed" : "cursor-pointer"
+                  c.kind === "self-back"
+                    ? "cursor-no-drop"
+                    : c.kind === "self-open"
+                    ? "cursor-no-drop"
+                    : c.selected
+                    ? "cursor-zoom-out"
+                    : "cursor-copy"
                 }`}
               >
                 <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">

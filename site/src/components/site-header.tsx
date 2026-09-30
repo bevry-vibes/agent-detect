@@ -61,19 +61,19 @@ export function SiteHeader({
             <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
             <path d="M12 3v2.5M21 12h-2.5M12 21v-2.5M3 12h2.5" className="opacity-40" />
           </svg>
-          <span className="flex items-center">agent-detect</span>
+          <span className="hidden min-[420px]:flex items-center">agent-detect</span>
         </a>
         {centerNav && centerNav.length > 0 && (
           <nav
             aria-label="page sections"
-            className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-1 md:flex"
+            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 md:gap-1"
           >
             {centerNav.map((link) =>
               link.href ? (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center rounded-md px-3 text-sm"
+                  className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center rounded-md px-1.5 text-xs md:px-3 md:text-sm"
                   onClick={(e) => {
                     if (link.href && onNavClick?.(link.href)) e.preventDefault();
                   }}
@@ -83,7 +83,7 @@ export function SiteHeader({
               ) : (
                 <span
                   key={link.label}
-                  className="text-foreground inline-flex h-9 items-center rounded-md px-3 text-sm font-medium"
+                  className="text-foreground inline-flex h-9 items-center rounded-md px-1.5 text-xs font-medium md:px-3 md:text-sm"
                 >
                   {link.label}
                 </span>
