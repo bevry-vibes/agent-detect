@@ -32,9 +32,9 @@ export function StatusRow(
     >
       <button
         type="button"
-        title={`copy: ${command}`}
+        title={`${row.reciprocal ? "passes" : "fails"} the reciprocity requirement — click to copy: ${command}`}
         onClick={() => copy(command)}
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors ${
+        className={`inline-flex shrink-0 cursor-help items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors ${
           row.reciprocal
             ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400"
@@ -45,12 +45,20 @@ export function StatusRow(
       </button>
       <span className="flex min-w-0 items-center gap-1">
         {row.platforms.map((p) => (
-          <Badge key={p} variant="secondary" className="px-1.5 py-0 font-mono">
+          <Badge
+            key={p}
+            variant="secondary"
+            title={`declared on ${p} — the combo has a from-identity fixture captured on this platform`}
+            className="cursor-help px-1.5 py-0 font-mono"
+          >
             {p}
           </Badge>
         ))}
       </span>
-      <span title={`result generated ${new Date(row.updated_at * 1000).toISOString()}`} className="shrink-0 font-mono text-muted-foreground">
+      <span
+        title={`result generated ${new Date(row.updated_at * 1000).toISOString()}`}
+        className="cursor-help shrink-0 font-mono text-muted-foreground"
+      >
         {date}
       </span>
     </div>

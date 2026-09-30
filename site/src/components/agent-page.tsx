@@ -74,14 +74,16 @@ interface AgentPageProps {
   onOpenEntity: (dim: "harness" | "provider" | "model", id: string) => void;
   /** a table's search icon: the registry section filtered to that context */
   onSearch: (filters: { harness: string | null; provider: string | null; model: string | null }) => void;
-  onBack: () => void;
+  /** the top-left button: to the homepage (the locked cards' own buttons go
+   * back to the prior page instead) */
+  onHome: () => void;
 }
 
 /** the result page — `agent: {id}` prominent over its three dims, the status
  * row, the four association tables filtered to the combo (its dims and the
  * agent are the gold self cards, each with a back arrow), then the declared
  * fixtures' outputs. */
-export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity, onSearch, onBack }: AgentPageProps) {
+export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity, onSearch, onHome }: AgentPageProps) {
   const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,8 +124,8 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={onBack}>
-          <ArrowLeft className="size-4" /> back to results
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={onHome}>
+          <ArrowLeft className="size-4" /> back to homepage
         </Button>
         {row && (
           <a
@@ -147,8 +149,8 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
             </a>{" "}
             for the valid agent_ids.
           </p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={onBack}>
-            <ArrowLeft className="size-4" /> back to results
+          <Button variant="outline" size="sm" className="mt-4" onClick={onHome}>
+            <ArrowLeft className="size-4" /> back to homepage
           </Button>
         </div>
       )}
@@ -175,14 +177,15 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
       {row && index && registry && combos && (
         <AssociationTables
           page={{ harness: row.harness, provider: row.provider, model: row.model }}
-          self={{ agent: row.agent_id }}
+          highlight={{ harness: row.harness, provider: row.provider, model: row.model }}
+          selfBack={{ agent: row.agent_id }}
           index={index}
           registry={registry}
           combos={combos}
           onOpenEntity={onOpenEntity}
-          onOpenAgent={onBack}
+          onOpenAgent={onHome}
           onSearch={onSearch}
-          onBack={onBack}
+          onBackSelf={() => window.history.back()}
         />
       )}
 

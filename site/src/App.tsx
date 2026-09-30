@@ -214,9 +214,15 @@ export default function App() {
     }
   }, [registry, view]);
 
-  const pushURL = (nextFilters: Filters, nextView: View) => {
+  /** a homepage modification (filter changes) updates the entry in place —
+   * replaceState — so back/forward only cross page boundaries, and returning
+   * to the homepage always carries the latest filters. Opening a different
+   * page pushes. */
+  const pushURL = (nextFilters: Filters, nextView: View, mode: "push" | "replace" = "push") => {
     const qs = buildSearch(nextFilters);
-    history.pushState(null, "", `${viewPath(nextView)}${qs ? `?${qs}` : ""}${window.location.hash}`);
+    const url = `${viewPath(nextView)}${qs ? `?${qs}` : ""}${window.location.hash}`;
+    if (mode === "push") history.pushState(null, "", url);
+    else history.replaceState(null, "", url);
   };
 
   const onDim = (dim: Dim, id: string | null) => {
@@ -224,19 +230,19 @@ export default function App() {
     setFilters(next);
     setView({ kind: "index" });
     setNotices([]);
-    pushURL(next, { kind: "index" });
+    pushURL(next, { kind: "index" }, "replace");
   };
   const onFilters = (next: Filters) => {
     setFilters(next);
     setView({ kind: "index" });
     setNotices([]);
-    pushURL(next, { kind: "index" });
+    pushURL(next, { kind: "index" }, "replace");
   };
   const onClear = () => {
     setFilters({ ...NO_FILTERS });
     setView({ kind: "index" });
     setNotices([]);
-    pushURL({ ...NO_FILTERS }, { kind: "index" });
+    pushURL({ ...NO_FILTERS }, { kind: "index" }, "replace");
   };
   const onSelect = (selected: string) => {
     if (view.kind === "agent" && view.id === selected) return;
@@ -259,12 +265,14 @@ export default function App() {
     pushURL({ ...NO_FILTERS }, { kind: "entity", dim, id });
   };
 
-  /** "back to results" — always lands on the index for the current filters
-   * (never a browser back), with the remembered scroll restored */
-  const closeToIndex = () => {
+  /** "back to homepage" — lands on the index persisting the dims that were
+   * active on the result page (its highlights become the homepage filters) */
+  const onHome = (dims?: { harness?: string; provider?: string; model?: string }) => {
+    const next = { ...filters, ...(dims?.harness ? { harness: dims.harness } : {}), ...(dims?.provider ? { provider: dims.provider } : {}), ...(dims?.model ? { model: dims.model } : {}) };
+    setFilters(next);
     setView({ kind: "index" });
     setNotices([]);
-    pushURL(filters, { kind: "index" });
+    pushURL(next, { kind: "index" }, "push");
   };
 
   // view transitions: returning to the index restores its remembered scroll;
@@ -281,11 +289,11 @@ export default function App() {
 
   const onNavClick = (href: string): boolean => {
     if (view.kind === "index") return false;
-    // carry the anchor into the index url so the closeToIndex push keeps it
+    // carry the anchor into the index url so the onHome push keeps it
     const qs = buildSearch(filters);
     history.replaceState(null, "", `${viewPath({ kind: "index" })}${qs ? `?${qs}` : ""}#${href.slice(1)}`);
     pendingAnchor.current = href.slice(1);
-    closeToIndex();
+    onHome();
     return true;
   };
   useEffect(() => {
@@ -343,13 +351,14 @@ export default function App() {
     setFilters(next);
     setView({ kind: "index" });
     setNotices([]);
-    pushURL(next, { kind: "index" });
+    // the registry section lives on this page — a filter modification, not a page change
+    pushURL(next, { kind: "index" }, "replace");
   };
 
   return (
     <div className="flex min-h-svh flex-col">
       <SiteHeader
-        onHome={view.kind !== "index" ? closeToIndex : undefined}
+        onHome={view.kind !== "index" ? () => onHome() : undefined}
         onNavClick={onNavClick}
         centerNav={
           view.kind === "index"
@@ -370,7 +379,7 @@ export default function App() {
           combos={combosFile}
           onOpenEntity={onOpenEntity}
           onSearch={onSearchRegistry}
-          onBack={closeToIndex}
+          onHome={() => onHome(selectedRow ? { harness: selectedRow.harness, provider: selectedRow.provider, model: selectedRow.model } : undefined)}
         />
       ) : view.kind === "entity" ? (
         <EntityPage
@@ -382,7 +391,8 @@ export default function App() {
           onSearch={onSearchRegistry}
           onOpenEntity={onOpenEntity}
           onOpenAgent={onSelect}
-          onBack={closeToIndex}
+          onBackSelf={() => window.history.back()}
+          onHome={() => onHome({ [view.dim]: view.id })}
         />
       ) : (
         <main className="flex flex-col">

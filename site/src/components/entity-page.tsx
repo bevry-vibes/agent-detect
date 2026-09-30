@@ -25,7 +25,10 @@ interface EntityPageProps {
   onOpenAgent: (agentId: string) => void;
   /** a table's search icon: the registry section filtered to that context */
   onSearch: (filters: Filters) => void;
-  onBack: () => void;
+  /** the locked card's right-side button: back to the prior page */
+  onBackSelf: () => void;
+  /** the top-left button: to the homepage */
+  onHome: () => void;
 }
 
 interface Filters {
@@ -39,7 +42,7 @@ interface Filters {
   reciprocal: boolean | null;
 }
 
-export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenEntity, onOpenAgent, onBack }: EntityPageProps) {
+export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenEntity, onOpenAgent, onBackSelf, onHome }: EntityPageProps) {
 
   const entry = useMemo(() => {
     if (!index) return null;
@@ -63,8 +66,8 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={onBack}>
-          <ArrowLeft className="size-4" /> back to the index
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={onHome}>
+          <ArrowLeft className="size-4" /> back to homepage
         </Button>
         <a
           href={`/${dim}/${id}.json`}
@@ -82,8 +85,8 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
             {title} {id}
           </h1>
           <p className="text-muted-foreground mt-2 text-sm">unknown {dim} — it resolves to no rule in the index.</p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={onBack}>
-            <ArrowLeft className="size-4" /> back to the index
+          <Button variant="outline" size="sm" className="mt-4" onClick={onHome}>
+            <ArrowLeft className="size-4" /> back to homepage
           </Button>
         </div>
       )}
@@ -123,7 +126,8 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
 
           <AssociationTables
             page={{ [dim]: id }}
-            self={{ [dim]: id }}
+            highlight={{}}
+            selfBack={{ [dim]: id }}
             index={index}
             registry={registry}
             combos={combos}
@@ -136,7 +140,7 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
               if (f.model) next.model = f.model;
               onSearch(next);
             }}
-            onBack={onBack}
+            onBackSelf={onBackSelf}
           />
 
           <JsonBlock title="index entry" value={entry} />

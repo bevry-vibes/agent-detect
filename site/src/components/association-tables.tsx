@@ -13,9 +13,12 @@ export interface AssociationTablesProps {
   /** the page's identity filter — the entity's dim id, or the combo's three
    * dims on a result page */
   page: { harness?: string; provider?: string; model?: string };
-  /** the highlighted self cards: the entity itself, or the combo's three dims
-   * and the agent */
-  self: Sel;
+  /** the locked cards: gold, not-allowed, their button always visible and
+   * opening the card's page — on a result page the combo's three dims */
+  highlight: Sel;
+  /** the locked cards whose button goes back to the prior page — the entity
+   * itself on an entity page, the agent card on a result page */
+  selfBack: Sel;
   index: IndexFile | null;
   registry: Registry | null;
   combos: CombosFile | null;
@@ -23,8 +26,8 @@ export interface AssociationTablesProps {
   onOpenAgent: (agentId: string) => void;
   /** a table's search icon: jump to the registry with this table's context */
   onSearch: (filters: { harness: string | null; provider: string | null; model: string | null }) => void;
-  /** the self cards' right-side button: back to the homepage */
-  onBack: () => void;
+  /** the locked agent card's right-side button: back to the prior page */
+  onBackSelf: () => void;
 }
 
 interface CardView {
@@ -33,7 +36,9 @@ interface CardView {
   mono: string;
   badges: string[];
   meta: string;
-  kind: "self" | "entity" | "agent";
+  /** locked = the page's own identity (gold, not-allowed, always-visible
+   * button); its button either opens the entity page or goes back */
+  kind: "self-back" | "self-open" | "entity" | "agent";
   selected: boolean;
   onCard?: () => void;
   cardTitle: string;
@@ -78,7 +83,7 @@ function Table(
           <li key={c.key}>
             <div
               className={`group flex min-w-0 items-stretch gap-0.5 rounded-md border transition-colors ${
-                c.kind === "self" || c.selected
+                c.kind === "self-back" || c.kind === "self-open" || c.selected
                   ? "border-amber-500/60 bg-amber-500/10"
                   : "border-transparent hover:bg-muted/50"
               }`}
@@ -87,9 +92,9 @@ function Table(
                 type="button"
                 title={c.cardTitle}
                 onClick={c.onCard}
-                disabled={c.kind === "self"}
+                disabled={c.kind === "self-back" || c.kind === "self-open"}
                 className={`flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1.5 text-left ${
-                  c.kind === "self" ? "cursor-not-allowed" : "cursor-pointer"
+                  c.kind === "self-back" || c.kind === "self-open" ? "cursor-not-allowed" : "cursor-pointer"
                 }`}
               >
                 <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
@@ -101,7 +106,7 @@ function Table(
                     <Badge
                       key={b}
                       variant="outline"
-                      className={`cursor-help px-1 py-0 text-[10px] ${c.kind === "self" || c.selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}
+                      className={`cursor-help px-1 py-0 text-[10px] ${c.kind === "self-back" || c.kind === "self-open" || c.selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}
                     >
                       {b}
                     </Badge>
@@ -118,7 +123,7 @@ function Table(
                   c.kind === "entity" || c.kind === "agent" ? "opacity-0 group-hover:opacity-100 focus-visible:opacity-100" : ""
                 }`}
               >
-                {c.kind === "self" ? <ArrowLeft className="size-3.5" /> : <SquareArrowOutUpRight className="size-3.5" />}
+                {c.kind === "self-back" ? <ArrowLeft className="size-3.5" /> : <SquareArrowOutUpRight className="size-3.5" />}
               </button>
             </div>
           </li>
@@ -140,9 +145,9 @@ function titleOf(d: EntityDim): string {
  * re-filter itself), and the other cards narrow the tables beside them when
  * clicked. Each header's search icon opens the registry with the table's
  * context. */
-export function AssociationTables({ page, self, index, registry, combos, onOpenEntity, onOpenAgent, onSearch, onBack }: AssociationTablesProps) {
+export function AssociationTables({ page, highlight, selfBack, index, registry, combos, onOpenEntity, onOpenAgent, onSearch, onBackSelf }: AssociationTablesProps) {
   const [sel, setSel] = useState<Sel>({});
-  useEffect(() => setSel({}), [page.harness, page.provider, page.model, self.agent]);
+  useEffect(() => setSel({}), [page.harness, page.provider, page.model, selfBack.harness, selfBack.provider, selfBack.model, selfBack.agent]);
 
   const tables = useMemo(() => {
     if (!index) return [];
@@ -171,45 +176,48 @@ export function AssociationTables({ page, self, index, registry, combos, onOpenE
       const key = d === "harness" ? "harness" : d === "provider" ? "provider" : "model";
       return triples.some((t) => t[key as "harness" | "provider" | "model"] === eid);
     };
-    const isSelf = (d: EntityDim, eid: string) => self[d] === eid;
 
     const entityCard = (d: EntityDim, eid: string): CardView => {
       const e = find(d, eid);
       const elabel = registry ? registry[DIM_TABLES[d]].find((r) => r.id === eid)?.label ?? eid : eid;
-      const selfCard = isSelf(d, eid);
-      const selected = sel[d] === eid && !selfCard;
+      // a locked card is the page's own identity: gold, not-allowed, its
+      // button (the open icon, always visible) opens the entity's page
+      const lockedOpen = highlight[d] === eid;
+      const lockedBack = selfBack[d] === eid;
+      const locked = lockedOpen || lockedBack;
+      const selected = sel[d] === eid && !locked;
       return {
         key: `${d}-${eid}`,
         title: elabel,
         mono: eid,
         badges: e ? entityBadges(e) : [],
         meta: "",
-        kind: selfCard ? "self" : "entity",
+        kind: lockedBack ? "self-back" : lockedOpen ? "self-open" : "entity",
         selected,
-        onCard: selfCard
+        onCard: locked
           ? undefined
           : () => setSel((s) => ({ ...s, agent: undefined, [d]: s[d] === eid ? undefined : eid })),
-        cardTitle: selfCard
+        cardTitle: locked
           ? `this page's ${d} — the table is filtered to it`
           : selected
           ? `clear the ${d} selection`
           : `narrow the other tables to ${d} ${eid}`,
-        expandTitle: selfCard ? "back to the homepage" : `open the ${d} detail page (${d}/${eid})`,
-        onExpand: selfCard ? onBack : () => onOpenEntity(d, eid),
+        expandTitle: lockedBack ? "back to the prior page" : `open the ${d} detail page (${d}/${eid})`,
+        onExpand: lockedBack ? onBackSelf : () => onOpenEntity(d, eid),
       };
     };
 
     const agentCards: CardView[] = (combos?.combos ?? [])
       .filter((c) => has("harness", c.harness) && has("provider", c.provider) && has("model", c.model))
       .map((c) => {
-        const selfCard = self.agent != null && self.agent === c.agent_id;
+        const selfCard = selfBack.agent != null && selfBack.agent === c.agent_id;
         return {
           key: c.agent_id,
           title: c.agent_id,
           mono: c.agent_id,
           badges: c.reciprocal ? ["reciprocal"] : ["not reciprocal"],
           meta: c.platforms.join(" "),
-          kind: (selfCard ? "self" : "agent") as "self" | "agent",
+          kind: (selfCard ? "self-back" : "agent") as "self-back" | "agent",
           selected: sel.agent === c.agent_id && !selfCard,
           onCard: selfCard
             ? undefined
@@ -222,15 +230,15 @@ export function AssociationTables({ page, self, index, registry, combos, onOpenE
             : sel.agent === c.agent_id
             ? "clear the agent selection"
             : "narrow the other tables to this agent's dims",
-          expandTitle: selfCard ? "back to the homepage" : `open the result page (/agent/${c.agent_id})`,
-          onExpand: selfCard ? onBack : () => onOpenAgent(c.agent_id),
+          expandTitle: selfCard ? "back to the prior page" : `open the result page (/agent/${c.agent_id})`,
+          onExpand: selfCard ? onBackSelf : () => onOpenAgent(c.agent_id),
         };
       });
 
     const mk = (d: EntityDim): { title: string; count: number; total: number; items: CardView[] } => {
       const total = index[DIM_TABLES[d]].length;
       const items = index[DIM_TABLES[d]]
-        .filter((e) => has(d, e.id) || isSelf(d, e.id))
+        .filter((e) => has(d, e.id) || highlight[d] === e.id || selfBack[d] === e.id)
         .map((e) => entityCard(d, e.id));
       return { title: titleOf(d), count: items.length, total, items };
     };
@@ -240,7 +248,7 @@ export function AssociationTables({ page, self, index, registry, combos, onOpenE
       mk("model"),
       { title: "Agents", count: agentCards.length, total: combos?.counts.combos ?? 0, items: agentCards },
     ];
-  }, [index, page.harness, page.provider, page.model, self.harness, self.provider, self.model, self.agent, sel, combos, registry, onBack, onOpenAgent, onOpenEntity]);
+  }, [index, page.harness, page.provider, page.model, highlight.harness, highlight.provider, highlight.model, selfBack.harness, selfBack.provider, selfBack.model, selfBack.agent, sel, combos, registry, onBackSelf, onOpenAgent, onOpenEntity]);
 
   return (
     <section className="flex flex-col gap-3">
