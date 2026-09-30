@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 
-import { resolveDimId, resolvePlatform, type Registry } from "@/lib/registry";
+import { resolveDimId, resolvePlatform, slugId, type Registry } from "@/lib/registry";
 
 export interface Filters {
   harness: string | null;
@@ -53,6 +53,18 @@ export function FilterBar({ registry, filters, onDim, onFilters, onClear }: Filt
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => setDraft(filters.search ?? ""), [filters.search]);
 
+  const applyKind = (kind: string, value: string | boolean) => {
+    const next = { ...filters };
+    if (kind === "harness") next.harness = typeof value === "string" ? resolveDimId(registry.harnesses, value) : null;
+    else if (kind === "provider") next.provider = typeof value === "string" ? resolveDimId(registry.providers, value) : null;
+    else if (kind === "model") next.model = typeof value === "string" ? resolveDimId(registry.models, value) : null;
+    else if (kind === "email") next.email = typeof value === "string" ? value.toLowerCase() : null;
+    else if (kind === "platform") next.platform = typeof value === "string" ? resolvePlatform(value) : null;
+    else if (kind === "free") next.free = typeof value === "boolean" ? value : null;
+    else if (kind === "reciprocal") next.reciprocal = typeof value === "boolean" ? value : null;
+    onFilters(next);
+  };
+
   const commitToken = (raw: string) => {
     const t = raw.trim();
     if (!t) return;
@@ -61,11 +73,17 @@ export function FilterBar({ registry, filters, onDim, onFilters, onClear }: Filt
     const rest = bar === -1 ? "" : t.slice(bar + 1).trim();
     const next = { ...filters };
     if (["harness", "h"].includes(kind) && rest) {
-      next.harness = resolveDimId(registry.harnesses, rest);
+      const id = resolveDimId(registry.harnesses, rest);
+      if (id) next.harness = id;
+      else next.search = t.toLowerCase();
     } else if (["provider", "p"].includes(kind) && rest) {
-      next.provider = resolveDimId(registry.providers, rest);
+      const id = resolveDimId(registry.providers, rest);
+      if (id) next.provider = id;
+      else next.search = t.toLowerCase();
     } else if (["model", "m"].includes(kind) && rest) {
-      next.model = resolveDimId(registry.models, rest);
+      const id = resolveDimId(registry.models, rest);
+      if (id) next.model = id;
+      else next.search = t.toLowerCase();
     } else if (kind === "email" && rest) {
       next.email = rest.toLowerCase();
     } else if (kind === "platform" && rest) {
@@ -117,6 +135,43 @@ export function FilterBar({ registry, filters, onDim, onFilters, onClear }: Filt
       : null,
   ].filter((p): p is { text: string; onRemove: () => void } => p != null);
 
+  // autocomplete — the draft's `kind:` prefix narrows the suggestions to that
+  // kind's values (dims matching by name/label/alias slug prefix, exactly the
+  // resolution the flags use); the bare keywords suggest themselves
+  const suggestions = useMemo(() => {
+    const t = draft.trim().toLowerCase();
+    if (!t) return [];
+    const bar = t.indexOf(":");
+    const kind = bar > 0 ? t.slice(0, bar) : "";
+    const value = bar > 0 ? t.slice(bar + 1) : "";
+    const needle = slugId(value);
+    const matchDim = (rules: Registry["harnesses"], r: (typeof rules)[number]) =>
+      !needle ||
+      [r.name, r.label, r.id, r.short_title ?? "", ...r.variations].some((v) => slugId(v).startsWith(needle) || slugId(v).includes(needle));
+    if (["harness", "h"].includes(kind)) return registry.harnesses.filter((r) => matchDim(registry.harnesses, r)).slice(0, 8).map((r) => ({ label: `harness: ${r.label}`, apply: () => applyKind("harness", r.name) }));
+    if (["provider", "p"].includes(kind)) return registry.providers.filter((r) => matchDim(registry.providers, r)).slice(0, 8).map((r) => ({ label: `provider: ${r.label}`, apply: () => applyKind("provider", r.name) }));
+    if (["model", "m"].includes(kind)) return registry.models.filter((r) => matchDim(registry.models, r)).slice(0, 8).map((r) => ({ label: `model: ${r.label}`, apply: () => applyKind("model", r.name) }));
+    if (kind === "platform") return ["darwin", "macos", "linux", "windows"].filter((v) => v.startsWith(value)).map((v) => ({ label: `platform: ${v}`, apply: () => applyKind("platform", v) }));
+    if (bar === -1) {
+      const words: [string, () => void][] = [
+        ["free", () => applyKind("free", true)],
+        ["paid", () => applyKind("free", false)],
+        ["reciprocal", () => applyKind("reciprocal", true)],
+        ["not reciprocal", () => applyKind("reciprocal", false)],
+      ];
+      return words.filter(([w]) => slugId(w).startsWith(needle)).map(([w, apply]) => ({ label: w, apply }));
+    }
+    return [];
+  }, [draft, registry, filters]);
+
+  const [active, setActive] = useState(-1);
+  useEffect(() => setActive(-1), [draft]);
+  const commitSuggestion = (i: number) => {
+    suggestions[i]?.apply();
+    setDraft("");
+    inputRef.current?.focus();
+  };
+
   return (
     <div
       className={`flex w-full flex-wrap items-center gap-1.5 rounded-lg border bg-transparent px-2 py-1.5 transition-colors ${
@@ -137,22 +192,52 @@ export function FilterBar({ registry, filters, onDim, onFilters, onClear }: Filt
           </button>
         </span>
       ))}
-      <input
-        ref={inputRef}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            commitDraft();
-          } else if (e.key === "Backspace" && !draft && pills.length > 0) {
-            pills[pills.length - 1].onRemove();
-          }
-        }}
-        onBlur={commitDraft}
-        placeholder={pills.length ? "add filter — harness: provider: model: email: platform: free paid reciprocal" : "search or filter — harness: provider: model: email: platform: free paid reciprocal"}
-        aria-label="search or filter"
-        className="min-w-32 flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground"
-      />
+      <span className="relative flex min-w-32 flex-1 items-center">
+        <input
+          ref={inputRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown" && suggestions.length) {
+              e.preventDefault();
+              setActive((a) => (a + 1) % suggestions.length);
+            } else if (e.key === "ArrowUp" && suggestions.length) {
+              e.preventDefault();
+              setActive((a) => (a <= 0 ? suggestions.length - 1 : a - 1));
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              if (suggestions.length > 0) commitSuggestion(active >= 0 ? active : 0);
+              else commitDraft();
+            } else if (e.key === "Escape") {
+              setActive(-1);
+            } else if (e.key === "Backspace" && !draft && pills.length > 0) {
+              pills[pills.length - 1].onRemove();
+            }
+          }}
+          onBlur={commitDraft}
+          placeholder={pills.length ? "add filter — harness: provider: model: email: platform: free paid reciprocal" : "search or filter — harness: provider: model: email: platform: free paid reciprocal"}
+          aria-label="search or filter"
+          className="w-full bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground"
+        />
+        {suggestions.length > 0 &&(
+          <span className="absolute top-full left-0 z-30 mt-1 flex w-64 flex-col rounded-lg border bg-background shadow-md">
+            {suggestions.map((s2, i) => (
+              <button
+                key={s2.label}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault(); // keep the input's focus
+                  commitSuggestion(i);
+                }}
+                onMouseEnter={() => setActive(i)}
+                className={`px-3 py-1.5 text-left text-sm ${i === active ? "bg-muted" : ""}`}
+              >
+                {s2.label}
+              </button>
+            ))}
+          </span>
+        )}
+      </span>
       {anyFilter(filters) && (
         <button
           type="button"

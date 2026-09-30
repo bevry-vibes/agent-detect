@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Maximize2 } from "lucide-react";
 
-import { type IndexFile, type Registry } from "@/lib/registry";
+import { type CombosFile, type IndexFile, type Registry } from "@/lib/registry";
 import { JsonBlock } from "@/components/json-block";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,71 +10,222 @@ export type EntityDim = "harness" | "provider" | "model";
 
 const DIM_TABLES = { harness: "harnesses", provider: "providers", model: "models" } as const;
 
+type Sel = { harness?: string; provider?: string; model?: string; agent?: string };
+
 interface EntityPageProps {
   dim: EntityDim;
   id: string;
   index: IndexFile | null;
   registry: Registry | null;
+  combos: CombosFile | null;
   /** an association chip filters the registry section with it */
   onDim: (dim: "harness" | "provider" | "model", id: string) => void;
   /** view the entity's combos in the registry (the dim filter jump) */
   onCombos: () => void;
+  /** the expand buttons: entities open their detail page, agents open their result page */
+  onOpenEntity: (dim: EntityDim, id: string) => void;
+  onOpenAgent: (agentId: string) => void;
   onBack: () => void;
 }
 
-function AssociationChips(
-  { ids, dim, registry, onDim }: { ids: string[]; dim: "harness" | "provider" | "model"; registry: Registry | null; onDim: EntityPageProps["onDim"] },
-) {
-  const table = DIM_TABLES[dim];
+interface CardView {
+  key: string;
+  title: string;
+  mono: string;
+  badges: string[];
+  meta: string;
+  selected: boolean;
+  onCard: () => void;
+  cardTitle: string;
+  expandTitle: string;
+  onExpand: () => void;
+}
+
+type AnyEntry = IndexFile["harnesses"][number] | IndexFile["providers"][number] | IndexFile["models"][number];
+
+function entityBadges(e: AnyEntry): string[] {
+  const badges: string[] = [];
+  if ("license" in e && e.license) badges.push(e.license);
+  if ("openness" in e && e.openness) badges.push(e.openness);
+  if (e.open_training) badges.push(`open: ${e.open_training}`);
+  if (e.closed_training) badges.push(`closed: ${e.closed_training}`);
+  if ("reciprocity_scandal" in e && e.reciprocity_scandal) badges.push("scandal");
+  return badges;
+}
+
+function Table({ title, items }: { title: string; items: CardView[] }) {
   return (
-    <span className="flex flex-wrap gap-1">
-      {ids.length === 0 && <span className="text-muted-foreground text-xs">none</span>}
-      {ids.map((id) => {
-        const label = registry?.[table].find((r) => r.id === id)?.label ?? id;
-        return (
-          <button
-            key={id}
-            type="button"
-            title={`registry results for ${dim} ${id}`}
-            onClick={() => onDim(dim, id)}
-            className="hover:bg-muted/50 inline-flex items-baseline gap-1 rounded-md border px-1.5 py-0.5 text-xs transition-colors"
-          >
-            <span className="font-medium">{label}</span>
-            <span className="text-muted-foreground font-mono text-[10px]">{id}</span>
-          </button>
-        );
-      })}
-    </span>
+    <div className="rounded-xl border">
+      <div className="text-muted-foreground border-b px-3 py-2 text-xs font-medium">
+        {title} — {items.length}
+      </div>
+      <ul className="max-h-96 overflow-y-auto p-1" aria-label={title}>
+        {items.length === 0 && <li className="text-muted-foreground px-2 py-3 text-center text-xs">none match</li>}
+        {items.map((c) => (
+          <li key={c.key}>
+            <div
+              className={`group flex min-w-0 items-stretch gap-0.5 rounded-md border transition-colors ${
+                c.selected ? "border-amber-500/60 bg-amber-500/10" : "border-transparent hover:bg-muted/50"
+              }`}
+            >
+              <button type="button" title={c.cardTitle} onClick={c.onCard} className="flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1.5 text-left">
+                <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                  <span className="text-sm font-medium">{c.title}</span>
+                  <span className="text-muted-foreground font-mono text-[11px]">{c.mono}</span>
+                </span>
+                <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
+                  {c.badges.map((b) => (
+                    <Badge key={b} variant="outline" className={`px-1 py-0 text-[10px] ${c.selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}>
+                      {b}
+                    </Badge>
+                  ))}
+                  <span>{c.meta}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                title={c.expandTitle}
+                aria-label={c.expandTitle}
+                onClick={c.onExpand}
+                className="text-muted-foreground hover:text-foreground flex w-8 shrink-0 items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+              >
+                <Maximize2 className="size-3.5" />
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
-/** the full-page entity detail (the result page's sibling) — every field the
- * index carries for one harness/provider/model: its identity, policy fields,
- * and its associations (chips filter the registry). The JSON block is the
- * entry verbatim — the same object /model/<id>.json serves. */
-export function EntityPage({ dim, id, index, registry, onDim, onCombos, onBack }: EntityPageProps) {
+/** the full-page entity detail (the result page's sibling) — the entry's
+ * identity and policy fields, then THREE side-by-side card tables (the same
+ * design as the index) of everything it associates with: for a harness that
+ * is providers, models, and agents; for a provider, harnesses, models, and
+ * agents; for a model, harnesses, providers, and agents. Clicking a card
+ * narrows the tables beside it (the gold card is the local selection, click
+ * again to clear); a card's expand button opens its detail or result page.
+ * The JSON block is the entry verbatim — the same object /model/<id>.json
+ * serves. */
+export function EntityPage({ dim, id, index, registry, combos, onDim, onCombos, onOpenEntity, onOpenAgent, onBack }: EntityPageProps) {
+  const [sel, setSel] = useState<Sel>({});
+  useEffect(() => setSel({}), [dim, id]);
+
   const entry = useMemo(() => {
     if (!index) return null;
-    const table = index[DIM_TABLES[dim]];
-    return table.find((e) => e.id === id) ?? null;
+    return index[DIM_TABLES[dim]].find((e) => e.id === id) ?? null;
   }, [index, dim, id]);
 
   const label = registry ? registry[DIM_TABLES[dim]].find((r) => r.id === id)?.label ?? id : id;
   const title = dim === "model" ? "Model" : dim === "provider" ? "Provider" : "Harness";
 
-  const assoc: { label: string; dim: EntityDim; ids: string[] }[] = [];
-  if (entry) {
-    if ("harnesses" in entry && "providers" in entry) {
-      assoc.push({ label: "providers", dim: "provider", ids: entry.providers }); // model
-      assoc.push({ label: "harnesses", dim: "harness", ids: entry.harnesses });
-    } else if ("harnesses" in entry) {
-      assoc.push({ label: "harnesses", dim: "harness", ids: entry.harnesses }); // provider
-      assoc.push({ label: "models", dim: "model", ids: entry.models });
-    } else {
-      assoc.push({ label: "providers", dim: "provider", ids: entry.providers }); // harness
-      assoc.push({ label: "models", dim: "model", ids: entry.models });
+  const findEntry = (d: EntityDim, eid: string) => (index ? index[DIM_TABLES[d]].find((e) => e.id === eid) ?? null : null);
+
+  const tables = useMemo(() => {
+    if (!entry || !index) return [];
+    const entityCard = (d: EntityDim, eid: string, selected: boolean): CardView => {
+      const e = findEntry(d, eid);
+      const elabel = registry ? registry[DIM_TABLES[d]].find((r) => r.id === eid)?.label ?? eid : eid;
+      const meta =
+        e && "providers" in e && "harnesses" in e
+          ? `${e.providers.length} providers · ${e.harnesses.length} harnesses`
+          : e && "harnesses" in e
+          ? `${e.harnesses.length} harnesses · ${e.models.length} models`
+          : e
+          ? `${e.providers.length} providers · ${e.models.length} models`
+          : "";
+      return {
+        key: `${d}-${eid}`,
+        title: elabel,
+        mono: eid,
+        badges: e ? entityBadges(e as AnyEntry) : [],
+        meta,
+        selected,
+        onCard: () => setSel((s) => ({ ...s, agent: undefined, [d]: s[d] === eid ? undefined : eid })),
+        cardTitle: selected ? `clear the ${d} selection` : `narrow the other tables to ${d} ${eid}`,
+        expandTitle: `open the ${d} detail page (${d}/${eid})`,
+        onExpand: () => onOpenEntity(d, eid),
+      };
+    };
+    // the combo rows involving this entity, narrowed by the local selections —
+    // the agents table shows exactly these, and the entity tables narrow by
+    // their own selections through the index's association arrays
+    const rows = (combos?.combos ?? []).filter((c) => c[dim] === id);
+    const narrowed = rows.filter(
+      (c) => (!sel.harness || c.harness === sel.harness) && (!sel.provider || c.provider === sel.provider) && (!sel.model || c.model === sel.model),
+    );
+    const agents: CardView[] = narrowed.map((c) => ({
+      key: c.agent_id,
+      title: c.agent_id,
+      mono: c.agent_id,
+      badges: c.reciprocal ? ["reciprocal"] : ["not reciprocal"],
+      meta: c.platforms.join(" "),
+      selected: sel.agent === c.agent_id,
+      onCard: () =>
+        setSel((s) =>
+          s.agent === c.agent_id ? {} : { harness: c.harness, provider: c.provider, model: c.model, agent: c.agent_id },
+        ),
+      cardTitle: sel.agent === c.agent_id ? "clear the agent selection" : "narrow the other tables to this agent's dims",
+      expandTitle: `open the result page (/agent/${c.agent_id})`,
+      onExpand: () => onOpenAgent(c.agent_id),
+    }));
+
+    const hEntry = (hid: string) => findEntry("harness", hid) as IndexFile["harnesses"][number] | null;
+
+    if (dim === "harness") {
+      const e = entry as IndexFile["harnesses"][number];
+      return [
+        {
+          title: "Providers",
+          items: e.providers
+            .filter((pid) => !sel.model || !!(findEntry("provider", pid) as IndexFile["providers"][number] | null)?.models.includes(sel.model))
+            .map((pid) => entityCard("provider", pid, sel.provider === pid)),
+        },
+        {
+          title: "Models",
+          items: e.models
+            .filter((mid) => !sel.provider || !!(findEntry("provider", sel.provider) as IndexFile["providers"][number] | null)?.models.includes(mid))
+            .map((mid) => entityCard("model", mid, sel.model === mid)),
+        },
+        { title: "Agents", items: agents },
+      ];
     }
-  }
+    if (dim === "provider") {
+      const e = entry as IndexFile["providers"][number];
+      return [
+        {
+          title: "Harnesses",
+          items: e.harnesses
+            .filter((hid) => !sel.model || !!(hEntry(hid))?.models.includes(sel.model))
+            .map((hid) => entityCard("harness", hid, sel.harness === hid)),
+        },
+        {
+          title: "Models",
+          items: e.models
+            .filter((mid) => !sel.harness || !!(hEntry(sel.harness))?.models.includes(mid))
+            .map((mid) => entityCard("model", mid, sel.model === mid)),
+        },
+        { title: "Agents", items: agents },
+      ];
+    }
+    const e = entry as IndexFile["models"][number];
+    return [
+      {
+        title: "Harnesses",
+        items: e.harnesses
+          .filter((hid) => !sel.provider || !!(hEntry(hid))?.providers.includes(sel.provider))
+          .map((hid) => entityCard("harness", hid, sel.harness === hid)),
+      },
+      {
+        title: "Providers",
+        items: e.providers
+          .filter((pid) => !sel.harness || !!(hEntry(sel.harness))?.providers.includes(pid))
+          .map((pid) => entityCard("provider", pid, sel.provider === pid)),
+      },
+      { title: "Agents", items: agents },
+    ];
+  }, [entry, index, dim, sel, combos, registry, id]);
 
   const policy: { field: string; value: string | null }[] = [];
   if (entry) {
@@ -125,10 +276,7 @@ export function EntityPage({ dim, id, index, registry, onDim, onCombos, onBack }
                 {dim}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-sm">
-              <span className="font-mono">{entry.name}</span>
-              {entry.variations.length > 0 && <> — also answers to {entry.variations.join(", ")}</>}
-            </p>
+            <p className="text-muted-foreground text-sm font-mono">{entry.name}</p>
           </header>
 
           <section className="flex flex-col gap-2 rounded-xl border p-4">
@@ -143,14 +291,15 @@ export function EntityPage({ dim, id, index, registry, onDim, onCombos, onBack }
             </dl>
           </section>
 
-          <section className="flex flex-col gap-3 rounded-xl border p-4">
-            <h2 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">associations</h2>
-            {assoc.map((group) => (
-              <div key={group.label} className="flex min-w-0 flex-col gap-1">
-                <span className="text-muted-foreground font-mono text-xs">{group.label}</span>
-                <AssociationChips ids={group.ids} dim={group.dim} registry={registry} onDim={onDim} />
-              </div>
-            ))}
+          <section className="flex flex-col gap-3">
+            <h2 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+              associations — click a card to narrow the tables beside it; a card's expand button opens its detail page
+            </h2>
+            <div className="grid gap-4 md:grid-cols-3">
+              {tables.map((t) => (
+                <Table key={t.title} title={t.title} items={t.items} />
+              ))}
+            </div>
           </section>
 
           <Button variant="outline" size="sm" className="self-start" onClick={onCombos}>

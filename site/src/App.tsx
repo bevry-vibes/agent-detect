@@ -377,11 +377,14 @@ export default function App() {
           id={view.id}
           index={indexFile}
           registry={registry}
+          combos={combosFile}
           onDim={onJumpToRegistry}
           onCombos={() => {
             pendingAnchor.current = "registry";
             onDim(view.dim, view.id);
           }}
+          onOpenEntity={onOpenEntity}
+          onOpenAgent={onSelect}
           onBack={closeToIndex}
         />
       ) : (
