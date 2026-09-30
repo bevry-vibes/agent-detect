@@ -392,7 +392,7 @@ pub const rulesForProviders = [_]ProviderRule{
     // opencode-go: never/never — OpenCode Zen's "Go" subscription tier (base https://opencode.ai/zen/go/v1).
     // Zen docs: "Our providers follow a zero-retention policy and do not use your data for model training" — the tier's default surface is zero-training. The named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free) are model-intrinsic and live on the model rules' training pairs per the model-intrinsic rule (CONTRIBUTING, "the opt-in-by-model successor"): `big-pickle` closed NOASSERTION (openness unverified), `mimo-v2.5` open opt-out.
     // opencode.ai/privacy and /terms return 404, so docs/zen is the only policy doc.
-    // catalog (unauth, 33 ids, 2026-08-29) recorded in fixtures/map-provider-model-providermodel.csv.
+    // catalog (unauth, 33 ids, 2026-08-29) recorded in the former map CSV (deleted 2026-09-30 — the pair lives on in fixtures/index-data.json; the cells' provider-side spellings only in git history).
     .{ .name = "opencode-go", .label = "OpenCode Go", .closed_training = "never", .open_training = "never", .sources = &.{"https://opencode.ai/docs/zen"} },
     // groq: never/never — Groq is an inference-only LPU cloud; its terms/privacy state customer data is not used for model training.
     .{ .name = "groq", .label = "Groq", .closed_training = "never", .open_training = "never", .sources = &.{ "https://groq.com/privacy", "https://groq.com/terms" } },
@@ -400,7 +400,7 @@ pub const rulesForProviders = [_]ProviderRule{
     .{ .name = "cerebras", .label = "Cerebras", .closed_training = "never", .open_training = "never", .sources = &.{ "https://www.cerebras.ai/privacy-policy", "https://www.cerebras.ai/terms-of-service" } },
     // chutes: never/never — Chutes ToS states "We do not use your API requests, responses, or application content to train AI models";
     // the privacy policy states public-API content is never logged, stored, or persisted (zero content logging; TEE/E2E modes), and app content "is not used for model training".
-    // Catalog: 14 TEE- stamped models via GET https://llm.chutes.ai/v1/models (unauthenticated, 2026-08-29) — full spellings in fixtures/map-provider-model-providermodel.csv;
+    // Catalog: 14 TEE- stamped models via GET https://llm.chutes.ai/v1/models (unauthenticated, 2026-08-29) — full spellings in the former map CSV (deleted; git history has them);
     // non-evergreen ids (Qwen/Qwen3-32B-TEE, Qwen/Qwen3.6-27B-TEE) intentionally unruled.
     .{ .name = "chutes", .label = "Chutes", .closed_training = "never", .open_training = "never", .sources = &.{ "https://chutes.ai/privacy", "https://chutes.ai/tos" } },
     // zai: opt-in (closed+open) — Z.AI's API terms: "We will not use End User Content to develop or improve Services, unless you explicitly agree to such use" — training is off by default, enabled only by explicit agreement (docs.z.ai is the authoritative source; www.z.ai legal pages render no text without JS).

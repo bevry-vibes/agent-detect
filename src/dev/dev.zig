@@ -3578,8 +3578,15 @@ pub const dev = if (build_options.dev) struct {
 
     /// the current executable's path in a fixed buffer, or null on failure (`std.process.executablePath` returns the length).
     fn selfPath(io: std.Io, buf: *[std.fs.max_path_bytes]u8) ?[]const u8 {
-        const len = std.process.executablePath(io, buf) catch return null;
+        var len = std.process.executablePath(io, buf) catch return null;
         if (len == 0) return null;
+        // a replaced-on-disk binary reads "/proc/self/exe" with the kernel's
+        // " (deleted)" suffix — the restart flow's whole point is execing after
+        // `zig build dev` renamed over the running file, so strip it
+        const deleted = " (deleted)";
+        if (len >= deleted.len and std.mem.eql(u8, buf[len - deleted.len .. len], deleted)) {
+            len -= deleted.len;
+        }
         return buf[0..len];
     }
 
