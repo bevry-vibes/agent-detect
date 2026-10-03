@@ -11,6 +11,7 @@ this process is documented in the upstream repo's [local tweaks pattern](https:/
 - https://github.com/bevry-vibes/skills/blob/main/conventions.md — **applies** (the bevry/base config files stay verbatim above their CUSTOM segments, with this repo's overrides underneath;
   the splat-naming and wrapping rules live upstream in it).
 - https://github.com/bevry-vibes/skills/blob/main/minimax.md — **applies** when the running agent is a MiniMax M3 model (its rules gate themselves on model and harness).
+- [cloudflare.md](./cloudflare.md) — **applies**, with this project's tweaks (site/ registry deployment, wrangler dev restart after vite builds).
 - [plans.md](./plans.md) — **applies to every harness** that writes a plan for this project (plans + `.prompts.md` companions in `.plans/`; supersedes the `kilo.md` skill, now retired upstream, whose plan tweaks it absorbed).
 
 
