@@ -134,3 +134,78 @@ Prompts verbatim, untruncated, in order. Timestamps only where genuinely observa
 ## post-steering
 
 The website was deployed to https://agent-detect.bevry.workers.dev before the plan research began. The plan (prompt 14) incorporates the json-format research done across the session: the site's `site/src/lib/registry.ts` types, `tools/build_data.ts`, the worker routes, the cli's `registry`/`index` actions in `src/main.zig`, and the normative `fixtures/*.d.ts` declarations.
+
+## prompt 15 — the plan revision
+
+> We are revising this plan: .plans/1790792125916-website-cli-json-consistency-schemas.md
+>
+> Drop platform from the from-identity fixtures, as platform has no impact on them. Platform should just signfify platforms we have captures from, so from-capture still needs platform.
+>
+> macos and mac should normalise into darwin
+>
+> why are agents being called combos, and agent being called combo? And agent is a combination of harness, provider, model.
+>
+> why are there `counts` fields in everything?
+>
+> what is the deal with the report, file, and output schemas?
+
+Revision notes: the plan was rewritten in place (prompt 15). The from-identity platform split was verified against the shipped bytes before absorbing it: 2,794 files over 1,390 agents, 520 agents' platform copies disagree on identify content, and the disagreements correlate with `meta.updated_at` (per-platform rule sweeps), never with platform — recorded as inconsistency #10, resolved by decision D6. The combo/agent question became D7, the counts question D8, and the report/file/outputs question the new naming-taxonomy section. Revision also caught the first draft's `check-reciprocal` enum being wrong against the shipped bytes (`"is reciprocal" | "not reciprocal"`, 753 occurrences — inconsistency #9 rewritten).
+
+## prompt 16 — the second plan revision
+
+> For dropping platform from from-identity, just delete the folder, and regenerate it once platform is dropped from its code. That will ensure it is clean.
+>
+> Why are the file schemas? can't they just be dervied from teh identity fixtures
+>
+> Also, we do not care at all about serving from-capture fixtures to the website or cli, they should only be in the git repo. The only thing we care about for the website/cli is knowing the captured  platforms for an agent. Consider this decisions ramifications.
+
+Revision notes: D6's migration sweep became the delete-the-folder-and-regenerate reset (nothing is lost: declarations are rule-derived, capture platforms live in untouched from-capture, and the fresh `updated_at`s are honest). The file-schema question eliminated the site's per-agent envelope: `data/agents/<agent_id>.json` is now the from-identity fixture copied verbatim (`IdentityFileSchema` restates fixture.d.ts for runtime use, cross-checked envelope-wide per D5) — which also fixes the newly-recorded inconsistency #13, the envelope restating dims that fixture.d.ts says live only in the filename; `AgentsFileSchema` stays as the site's one genuine projection (identity outputs + capture stems + the free axis), and registry/index file schemas stay because they mirror zig-owned bytes, not fixture-derived ones. The capture-boundary statement became D9: from-capture never leaves the repo; the only capture fact on the wire is the captured-platform set per agent, taken from stems that are scanned and never parsed.
+
+## prompt 17 — the dhi spike
+
+> Do a spike to test for if we can use https://github.com/justrach/dhi instead of zod, which if successful, allows zig and typescript to use the same schema.
+
+Revision notes: the spike ran the plan's full schema draft on `npm:dhi@1.7.0` under Deno against the shipped bytes. dhi works as a zod replacement (first-class `deno`/`workerd`/`browser` conditions serving a pure-JS ESM core; `z.infer` parity under `deno check`; every construct the plan uses behaved) — but the success criterion fails: dhi shares a validation core across languages, not a schema artifact (the zig side is a parallel hand-written comptime `dhi.Model` API; `ts-to-dhi` emits TS, never zig), and the wasm/SIMD core never executes on our runtimes. Verdict: zod stays; recorded in the plan's approach section. The spike still caught two bugs in the plan's own schema draft — model entries never carry `reciprocity_scandal` (moved out of `IndexEntryBase` onto harness/provider entries), and the agent map's record keys are dash-joined agent ids, not strict slugs (new `AgentId` primitive, also applied to `agent_id` fields) — and quantified the shipped fixtures that violate the frozen contract (1,767: 1,700 pre-`model_openness`-rename generations, 67 with null trailers), all repaired by the M1 reset. Spike artifacts: `/tmp/dhi-spike/` (schemas.ts, run.ts, classify.ts, the npm tarball).
+
+## prompt 18 — the index/registry collapse
+
+> drop `agent-detect registry`, just have `agent-detect index`, which works like so, so we are collapsing the idea of registry/index:
+>
+> ```
+> agent-detect index --... # equiv to `/` for searching the index/registry
+> agent-detect index agent <agent-id>/--agent=<agent-id>. # equiv to /agent/<agent-id>
+> agent-detect index harness <harness-id>/--harness=<harness-id> # equiv to /harness/<harness-id>
+> agent-detect index provider <provider-id>--provider=<provider-id> # equiv to /provider/<provider-id>
+> agent-detect index model <model-id>--model=<model-id> # equiv to /model/<model-id>
+> ```
+>
+> Note <*-id> is inputs that are normalised into the id.
+>
+> `--web/--json` still work as defined
+>
+> As well as allowing filters  (free, reciprocal, platform, etc.) on `index --...`, also allow filters on `index {agent/harness/provider/model}` but if it doesn't match, then give an exit status with a stderr that ID matches but matches or doesn't match which filters. Same would apply for the web, failure http status, and a page explaining the lack of the match (matching vs unmatching), with a hyperlink to view the identity without the violating filters.
+
+Revision notes: recorded as inconsistency #14 and decision D10, milestone M3. Design points encoded, including the judgment calls: dim flags are entity addressing (per the prompt's own lines — `index --harness=X` ≡ `/harness/X`), which retires today's "narrow all three arrays" semantics for the search view (the entity views' associations are that narrowed view); the search view keeps free/reciprocal/platform/email/search (with `--search=` newly added to mirror `?search=`); one dim flag names that entity, all three name the agent, two conflict (exit 3). Entity filters are predicates, never slices — the payload is unchanged; failures give the new exit 14 with per-filter match state on stderr (unknown ids stay exit 7) and, on the web, 422 with an html/`EntityMatchReportSchema` explanation and a link stripping only the violating filters. The registry report `{url, query, opened}` retires with the command (the old "params/resolved cli mirror" work item dies with it); `/identify/<id>.json` 308s to `/agent/<id>.json`; `?agent=` stays as an alias. The usage-text/README/DESIGN.md doc pass from the docs discussion is folded into M3's commit set.
+
+## prompt 19 — the reset's git staging
+
+> we can do a git mv, but still fs delete, then regen, all in the same commit, such that git hopefully detects the renames
+>
+> # userselect:
+> ```userselect
+> [{"path":"/home/balupton/Projects/vibes/agent-detect/.plans/1790792125916-website-cli-json-consistency-schemas.md","text":"the from-identity reset is delete-the-folder-and-regenerate, not a renaming sweep"}]
+> ```
+
+Revision notes: D6's reset keeps its delete-and-regenerate semantics but is now staged for rename detection, in one commit: `git mv` each agent's surviving platform copy (the most-recently-`updated_at` one — the content the site last rendered) to its 3-segment name, fs-delete the other platform copies, then regen and `fixtures index`. The moved files' contents change only by the regen (the platform lived in the filename — the dims are never inside the file), so similarity stays high and git pairs old→new; the plan states plainly that "hopefully" is honest — rename detection is similarity-based at diff time, never recorded by `git mv` itself. M1's impact row and milestone text updated to the staged form; the prompt-16 header line reworded ("not a content-merging sweep") so the changelog doesn't contradict the new mechanics.
+
+## prompt 20 — the agent input accepts the email form
+
+> <agent-id> should also accept the <agent-email> format, so it should strip `@local` when passing
+
+Revision notes: folded into D10's entity-view input normalisation: the agent input accepts the trailer-email form — a trailing `@local` is stripped before resolution, so a pasted `Co-authored-by: … <cline-chutes-glm51@local>` addresses the agent directly. The site's `/agent/<id>` and `?agent=` accept it identically (the 1:1 mapping holds); M3's zig and worker rows note the strip. Only the trailing `@local` form strips — the emails of record are all `<agent_id>@local`.
+
+## prompt 21 — the missing stderr keys
+
+> "FixtureOutputsSchema" is missing identity.stderr, there should be .stderr for all commands that output stderr
+
+Revision notes: verified against the shipped bytes and the writer before fixing: the recorded stderr surface is exactly three keys — `identify.stderr` (246 from-identity occurrences), `explain.stderr` (621), `check-reciprocal.stderr` (621, already in the schema) — all written via `core.stderrLinesFor`'s comptime enum, which covers exactly the three actions that print stderr; the trailers and `found` print none, so they correctly carry no keys. `FixtureOutputsSchema` gained the two missing keys plus a shared `StderrLines` primitive (`z.array(z.string())`, matching fixture.d.ts's `StderrLines` alias); the schema comment states the complete-surface principle, and the post-schema paragraph notes that D5's envelope cross-check (schema outputs key set ≡ the d.ts's) would have caught this omission at build time — it existed in fixture.d.ts all along.
