@@ -433,7 +433,22 @@ export default function App() {
             <a className="underline underline-offset-4" href="https://github.com/bevry-vibes/agent-detect" target="_blank" rel="noreferrer">
               bevry-vibes/agent-detect
             </a>
-            {combosFile ? "·" : ""} RPL-1.5{combosFile ? ` · ${new Date(combosFile.generated_at * 1000).toISOString().slice(0, 10)}` : ""}
+            {combosFile ? "·" : ""} RPL-1.5
+            {/* the latest calver release, baked in at vite build time from git */}
+            {__RELEASE_TAG__ && (
+              <>
+                {" · "}
+                <a
+                  className="underline underline-offset-4"
+                  href={`https://github.com/bevry-vibes/agent-detect/releases/tag/${__RELEASE_TAG__}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`the latest release (${__RELEASE_DATE__})`}
+                >
+                  {__RELEASE_TAG__}
+                </a>
+              </>
+            )}
           </span>
           <span className="flex gap-3">
             <a className="underline underline-offset-4" href="/registry.json">registry.json</a>
