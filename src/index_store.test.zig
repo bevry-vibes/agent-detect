@@ -262,17 +262,17 @@ test "expandEntry: fixtured universe — the from-identity folder's files, dims-
     defer arena.deinit();
     const aa = arena.allocator();
     var root = try emptyStoreRoot(aa);
-    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 100);
-    try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 200);
+    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro", 100);
+    try Universe.writeIdentity("cline-clinepass-kimik3", 200);
 
     // no criteria = --refresh entry: every fixtured candidate is worked
     const result = try expand(aa, &root, .{ .mode = "from-identity" }, "darwin");
     try testing.expectEqual(@as(usize, 2), result.host_candidates.len);
-    try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("cline-clinepass-kimik3", result.host_candidates[0].fixture_id);
 
     const filtered = try expand(aa, &root, .{ .harness = "kilo", .mode = "from-identity" }, "darwin");
     try testing.expectEqual(@as(usize, 1), filtered.host_candidates.len);
-    try testing.expectEqualStrings("kilo-deepseek-deepseekv4pro-darwin", filtered.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("kilo-deepseek-deepseekv4pro", filtered.host_candidates[0].fixture_id);
 }
 
 test "expandEntry: done rule — meta.updated_at >= started_at drops out" {
@@ -283,13 +283,13 @@ test "expandEntry: done rule — meta.updated_at >= started_at drops out" {
     defer arena.deinit();
     const aa = arena.allocator();
     var root = try emptyStoreRoot(aa);
-    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 300); // fresh — done
-    try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 100); // old — remaining
+    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro", 300); // fresh — done
+    try Universe.writeIdentity("cline-clinepass-kimik3", 100); // old — remaining
 
     const entry: QueueEntry = .{ .mode = "from-identity", .started_at = 200 };
     const result = try expand(aa, &root, entry, "darwin");
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
-    try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("cline-clinepass-kimik3", result.host_candidates[0].fixture_id);
 }
 
 test "expandEntry: keep vs delete — another host's portion keeps the entry" {
@@ -300,9 +300,10 @@ test "expandEntry: keep vs delete — another host's portion keeps the entry" {
     defer arena.deinit();
     const aa = arena.allocator();
     var root = try emptyStoreRoot(aa);
-    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-windows", 100);
+    // identity candidates are agent ids — host-agnostic (the platform dim is capture-only), so the keep-vs-delete split is a from-capture property
+    try Universe.writeCapture("kilo-kilo-glm52-windows", null, true);
 
-    const entry: QueueEntry = .{ .mode = "from-identity" };
+    const entry: QueueEntry = .{ .mode = "from-capture" };
     const darwin = try expand(aa, &root, entry, "darwin");
     try testing.expectEqual(@as(usize, 0), darwin.host_candidates.len);
     try testing.expectEqual(@as(usize, 1), darwin.remaining_anywhere);
@@ -321,8 +322,8 @@ test "expandEntry: staleness — age-fresh skips, age-stale lists; absent eviden
     const io = testing.io;
     var root = try emptyStoreRoot(aa);
     const now: i64 = std.Io.Clock.Timestamp.now(io, .real).raw.toSeconds();
-    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", now - 60); // 1 min old
-    try Universe.writeIdentity("cline-clinepass-kimik3-darwin", now - 10 * 60); // 10 min old
+    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro", now - 60); // 1 min old
+    try Universe.writeIdentity("cline-clinepass-kimik3", now - 10 * 60); // 10 min old
 
     // 30-min age criterion: both fresh → no candidates
     const fresh = try expand(aa, &root, .{ .mode = "from-identity", .stale_by_minutes = 30 }, "darwin");
@@ -330,7 +331,7 @@ test "expandEntry: staleness — age-fresh skips, age-stale lists; absent eviden
     // 5-min age criterion: only the 10-min-old file is stale
     const stale = try expand(aa, &root, .{ .mode = "from-identity", .stale_by_minutes = 5 }, "darwin");
     try testing.expectEqual(@as(usize, 1), stale.host_candidates.len);
-    try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", stale.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("cline-clinepass-kimik3", stale.host_candidates[0].fixture_id);
     // minutes=0: everything age-stale
     const zero = try expand(aa, &root, .{ .mode = "from-identity", .stale_by_minutes = 0 }, "darwin");
     try testing.expectEqual(@as(usize, 2), zero.host_candidates.len);
@@ -348,16 +349,16 @@ test "expandEntry: --stale-by-output — both channels present and equal ⇒ fre
     defer arena.deinit();
     const aa = arena.allocator();
     var root = try emptyStoreRoot(aa);
-    // identity + capture with identical identify objects → fresh
-    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 100);
+    // identity + capture with identical identify objects → fresh (the trio join: the identity file `h-p-m` vs the capture file `h-p-m-darwin`)
+    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro", 100);
     try Universe.writeCapture("kilo-deepseek-deepseekv4pro-darwin", 100, true);
-    // identity only → the missing capture channel counts stale
-    try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 100);
+    // identity only → no capture of the trio counts stale
+    try Universe.writeIdentity("cline-clinepass-kimik3", 100);
 
     const entry: QueueEntry = .{ .mode = "from-identity", .stale_by_output = true };
     const result = try expand(aa, &root, entry, "darwin");
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
-    try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("cline-clinepass-kimik3", result.host_candidates[0].fixture_id);
     // the drift criterion also applies to from-capture entries
     const cap_entry: QueueEntry = .{ .mode = "from-capture", .stale_by_output = true };
     const cap_result = try expand(aa, &root, cap_entry, "darwin");
@@ -414,7 +415,7 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     defer arena.deinit();
     const aa = arena.allocator();
     var root = try emptyStoreRoot(aa);
-    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 300);
+    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro", 300);
 
     var grids = dev.FeasibilityGrids.empty(aa);
     try grids.putHarnessProvider(aa, "kilo", "deepseek");
@@ -422,11 +423,11 @@ test "expandEntry: feasible-unfixtured — grid pairs minus the fixtured stems (
     try grids.putProviderModel(aa, "deepseek", "deepseekv4flash");
     var fg = dev.FreeGrid.empty(aa);
 
-    // two feasible pairs for (kilo, deepseek) on darwin; one is fixtured (and done under this started_at — a no-criteria entry works everything, so the done rule must retire the fixtured one)
+    // two feasible pairs for (kilo, deepseek); one is fixtured (and done under this started_at — a no-criteria entry works everything, so the done rule must retire the fixtured one)
     const entry: QueueEntry = .{ .mode = "from-identity", .started_at = 200 };
     const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, entry, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
-    try testing.expectEqualStrings("kilo-deepseek-deepseekv4flash-darwin", result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("kilo-deepseek-deepseekv4flash", result.host_candidates[0].fixture_id);
     // dims filter applies
     const filtered = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .model = "deepseekv4pro", .started_at = 200 }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 0), filtered.host_candidates.len);
@@ -442,8 +443,8 @@ test "expandEntry: free axis filters by provider_map_to_free_models membership (
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    try Universe.writeIdentity("pi-openrouter-nemotron3ultra-darwin", 100);
-    try Universe.writeIdentity("pi-openrouter-deepseekv4flash-darwin", 100);
+    try Universe.writeIdentity("pi-openrouter-nemotron3ultra", 100);
+    try Universe.writeIdentity("pi-openrouter-deepseekv4flash", 100);
     var root = try emptyStoreRoot(aa);
 
     var fg = dev.FreeGrid.empty(aa);
@@ -451,17 +452,16 @@ test "expandEntry: free axis filters by provider_map_to_free_models membership (
     var grids = dev.FeasibilityGrids.empty(aa);
     const free_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = true }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), free_result.host_candidates.len);
-    try testing.expectEqualStrings("pi-openrouter-nemotron3ultra-darwin", free_result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("pi-openrouter-nemotron3ultra", free_result.host_candidates[0].fixture_id);
     const paid_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .free = false }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), paid_result.host_candidates.len);
-    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", paid_result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash", paid_result.host_candidates[0].fixture_id);
 }
 
 test "validateFilters: the platform dim is capture-only — --from-identity rejects it and --fixture=" {
-    // from-identity work is host-platform-bound (expandEntry works only host candidates,
-    // identity files are host-stamped), so a platform filter can never change what any
-    // host mints — an explicit --from-identity rejects the dim (and --fixture=, whose id
-    // bakes a platform in; use --agent=).
+    // the from-identity channel carries no platform dim at all (the filename is the agent id),
+    // so a platform filter can never apply to it — an explicit --from-identity rejects the dim
+    // (and --fixture=, whose id bakes a platform in; use --agent=).
     try testing.expectError(
         dev.FilterError.ConflictingFilters,
         dev.validateFilters(.{ .mode = "from-identity", .platform = "linux", .any = true }),
@@ -477,21 +477,22 @@ test "validateFilters: the platform dim is capture-only — --from-identity reje
 
 test "expandEntry: a stored platform constrains capture entries only — identity entries ignore it" {
     // a legacy pre-restriction queue entry may still carry a platform on a from-identity
-    // entry; expansion must treat it as unconstrained (the host's candidates stay workable).
+    // entry; expansion must treat it as unconstrained (identity candidates are agent ids,
+    // host-agnostic).
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    try Universe.writeIdentity("pi-openrouter-nemotron3ultra-darwin", 100);
+    try Universe.writeIdentity("pi-openrouter-nemotron3ultra", 100);
     var root = try emptyStoreRoot(aa);
 
     var grids = dev.FeasibilityGrids.empty(aa);
     var fg = dev.FreeGrid.empty(aa);
     const identity_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .platform = "windows" }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), identity_result.host_candidates.len);
-    try testing.expectEqualStrings("pi-openrouter-nemotron3ultra-darwin", identity_result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("pi-openrouter-nemotron3ultra", identity_result.host_candidates[0].fixture_id);
     // a capture entry with the same stored platform is constrained as ever — windows has
     // no invocation universe, so nothing remains on this (darwin) host
     const capture_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture", .platform = "windows" }, "darwin", null, null, &.{});
@@ -505,17 +506,17 @@ test "expandEntry: session damping — failed candidates are excluded" {
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro-darwin", 100);
-    try Universe.writeIdentity("cline-clinepass-kimik3-darwin", 100);
+    try Universe.writeIdentity("kilo-deepseek-deepseekv4pro", 100);
+    try Universe.writeIdentity("cline-clinepass-kimik3", 100);
     var damped = std.StringHashMap(void).init(aa);
-    try damped.put("kilo-deepseek-deepseekv4pro-darwin", {});
+    try damped.put("kilo-deepseek-deepseekv4pro", {});
     var root = try emptyStoreRoot(aa);
 
     var fg = dev.FreeGrid.empty(aa);
     var grids = dev.FeasibilityGrids.empty(aa);
     const result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", &damped, null, &.{});
     try testing.expectEqual(@as(usize, 1), result.host_candidates.len);
-    try testing.expectEqualStrings("cline-clinepass-kimik3-darwin", result.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("cline-clinepass-kimik3", result.host_candidates[0].fixture_id);
 }
 
 test "expandEntry: blocklisted providers are excluded from both modes — paid combos only, the free combos pass" {
@@ -525,9 +526,9 @@ test "expandEntry: blocklisted providers are excluded from both modes — paid c
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    try Universe.writeIdentity("pi-deepseek-deepseekv4flash-darwin", 100);
-    try Universe.writeIdentity("pi-deepseek-kimik3-darwin", 100);
-    try Universe.writeIdentity("pi-openrouter-deepseekv4flash-darwin", 100);
+    try Universe.writeIdentity("pi-deepseek-deepseekv4flash", 100);
+    try Universe.writeIdentity("pi-deepseek-kimik3", 100);
+    try Universe.writeIdentity("pi-openrouter-deepseekv4flash", 100);
     var root = try emptyStoreRoot(aa);
     try putInvocation(aa, &root, "pi-deepseek-deepseekv4flash-darwin");
     try putInvocation(aa, &root, "pi-deepseek-kimik3-darwin");
@@ -549,8 +550,8 @@ test "expandEntry: blocklisted providers are excluded from both modes — paid c
     // from-identity: the fixtured universe minus the blocked provider's paid combos
     const ident = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity" }, "darwin", null, null, &blocked);
     try testing.expectEqual(@as(usize, 2), ident.host_candidates.len);
-    try testing.expectEqualStrings("pi-deepseek-kimik3-darwin", ident.host_candidates[0].fixture_id);
-    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash-darwin", ident.host_candidates[1].fixture_id);
+    try testing.expectEqualStrings("pi-deepseek-kimik3", ident.host_candidates[0].fixture_id);
+    try testing.expectEqualStrings("pi-openrouter-deepseekv4flash", ident.host_candidates[1].fixture_id);
 }
 
 test "blocklistProvidersFor: resolves the user's providers; unknown user → empty" {
@@ -610,9 +611,9 @@ test "expandEntry: the session-skip hierarchy — harness covers all, provider p
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    try Universe.writeIdentity("pi-deepseek-kimik3-darwin", 100);
-    try Universe.writeIdentity("cline-deepseek-kimik3-darwin", 100);
-    try Universe.writeIdentity("cline-deepseek-deepseekv4flash-darwin", 100);
+    try Universe.writeIdentity("pi-deepseek-kimik3", 100);
+    try Universe.writeIdentity("cline-deepseek-kimik3", 100);
+    try Universe.writeIdentity("cline-deepseek-deepseekv4flash", 100);
     var root = try emptyStoreRoot(aa);
     try putInvocation(aa, &root, "pi-deepseek-kimik3-darwin");
     try putInvocation(aa, &root, "cline-deepseek-kimik3-darwin");
@@ -684,7 +685,7 @@ test "refreshBacklogPure: unknown dims union in; resolved dims removed; unknown_
     var arena = std.heap.ArenaAllocator.init(a);
     defer arena.deinit();
     const aa = arena.allocator();
-    try Universe.writeIdentity("zzz-unknownh-unknownp-darwin", 100); // unknown harness + provider
+    try Universe.writeIdentity("zzz-unknownh-unknownp", 100); // unknown harness + provider (a 3-part identity stem)
     try Universe.writeCapture("kilo-kilo-glm52-darwin", null, false); // no invocation of record
     try Universe.writeCapture("kilo-kilo-kimik3-darwin", null, true); // invocation in file meta
 

@@ -9,6 +9,7 @@ const std = @import("std");
 const testing = std.testing;
 const main = @import("main.zig");
 const core = @import("lib/core.zig");
+const rules = @import("lib/rules.zig");
 
 const identity_dir = "fixtures/from-identity";
 const capture_dir = "fixtures/from-capture";
@@ -174,6 +175,30 @@ fn split4(stem: []const u8) ?[4][]const u8 {
     return .{ h, p, m, plat };
 }
 
+/// the from-identity channel's stem shape — the 3-part agent id.
+fn split3(stem: []const u8) ?[3][]const u8 {
+    var it = std.mem.tokenizeScalar(u8, stem, '-');
+    const h = it.next() orelse return null;
+    const p = it.next() orelse return null;
+    const m = it.next() orelse return null;
+    if (it.next() != null) return null;
+    if (h.len == 0 or p.len == 0 or m.len == 0) return null;
+    return .{ h, p, m };
+}
+
+/// the three dims of either channel's stem — 3-part (identity) or 4-part (capture), with the platform when present.
+fn splitDims(stem: []const u8) ?struct { dims: [3][]const u8, platform: ?[]const u8 } {
+    var it = std.mem.tokenizeScalar(u8, stem, '-');
+    const h = it.next() orelse return null;
+    const p = it.next() orelse return null;
+    const m = it.next() orelse return null;
+    if (h.len == 0 or p.len == 0 or m.len == 0) return null;
+    const plat = it.next() orelse return .{ .dims = .{ h, p, m }, .platform = null };
+    if (it.next() != null) return null;
+    if (plat.len == 0) return null;
+    return .{ .dims = .{ h, p, m }, .platform = plat };
+}
+
 test "fixtures: at least one fixture is committed" {
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
@@ -308,7 +333,10 @@ fn isLegacyCrossChannel(stem: []const u8) bool {
 }
 
 test "fixtures: every from-capture stem carries a from-identity channel" {
-    // The declared channel is the baseline record for a combo — a capture-only stem means the declaration was never made.
+    // The declared channel is the baseline record for an agent — a capture-only trio means the declaration was never made.
+    // The channels join on the shared trio, CANONICALLY: the capture stem's dims resolve through the rule tables
+    // (rename transitions keep the old slug in the stem until the file's next re-capture), and the canonical agent's
+    // identity file must exist (the identity filename IS the 3-part agent id).
     // The missing declaration is queued (never hand-written — fixture files are regenerated, not edited); the grandfather list holds the gap until the queue drains it.
     const a = testing.allocator;
     var arena = std.heap.ArenaAllocator.init(a);
@@ -317,9 +345,24 @@ test "fixtures: every from-capture stem carries a from-identity channel" {
     const capture_stems = try discoverFolderStems(aa, capture_dir);
     for (capture_stems) |stem| {
         if (isLegacyCrossChannel(stem)) continue;
-        const id_path = try std.fmt.allocPrint(aa, "{s}/{s}.json", .{ identity_dir, stem });
+        // the trio prefix of the capture stem — everything before the final (platform) segment
+        const last_dash = std.mem.lastIndexOfScalar(u8, stem, '-') orelse return error.InvalidFixtureId;
+        const trio = stem[0..last_dash];
+        var it = std.mem.tokenizeScalar(u8, trio, '-');
+        const h_raw = it.next() orelse return error.InvalidFixtureId;
+        const p_raw = it.next() orelse return error.InvalidFixtureId;
+        const m_raw = it.next() orelse return error.InvalidFixtureId;
+        const h_name = main.canonicalIdFor(aa, main.HarnessRule, &main.rulesForHarnesses, h_raw) orelse h_raw;
+        const p_name = main.canonicalIdFor(aa, rules.ProviderRule, &main.rulesForProviders, p_raw) orelse p_raw;
+        const m_name = main.canonicalIdFor(aa, rules.ModelRule, &main.rulesForModels, m_raw) orelse m_raw;
+        // the agent id's segments are strict slugs of the canonical names
+        const h = try rules.slugId(aa, h_name);
+        const p = try rules.slugId(aa, p_name);
+        const m = try rules.slugId(aa, m_name);
+        const agent = try std.fmt.allocPrint(aa, "{s}-{s}-{s}", .{ h, p, m });
+        const id_path = try std.fmt.allocPrint(aa, "{s}/{s}.json", .{ identity_dir, agent });
         std.Io.Dir.cwd().access(testing.io, id_path, .{}) catch {
-            std.debug.print("from-capture fixture {s}.json has no from-identity channel — queue it via `fixtures queue --fixture={s} --from-identity`\n", .{ stem, stem });
+            std.debug.print("from-capture fixture {s}.json has no from-identity channel — queue it via `fixtures queue --agent={s} --from-identity`\n", .{ stem, agent });
             return error.MissingIdentityChannel;
         };
     }
@@ -641,9 +684,18 @@ test "fixtures: envelope combo-match — each folder's identify ids equal the fi
     for ([_][]const u8{ identity_dir, capture_dir }) |folder| {
         const stems = try discoverFolderStems(aa, folder);
         for (stems) |stem| {
-            const parts = (split4(stem)) orelse {
-                std.debug.print("fixture stem {s}/{s} is not a 4-part <h>-<p>-<m>-<platform> id\n", .{ folder, stem });
-                return error.MalformedStem;
+            // channel-shape: from-identity stems are the 3-part agent id, from-capture stay the 4-part fixture id
+            const parts: [3][]const u8 = if (std.mem.eql(u8, folder, identity_dir))
+                (split3(stem)) orelse {
+                    std.debug.print("fixture stem {s}/{s} is not a 3-part <h>-<p>-<m> agent id\n", .{ folder, stem });
+                    return error.MalformedStem;
+                }
+            else blk: {
+                const p4 = (split4(stem)) orelse {
+                    std.debug.print("fixture stem {s}/{s} is not a 4-part <h>-<p>-<m>-<platform> id\n", .{ folder, stem });
+                    return error.MalformedStem;
+                };
+                break :blk .{ p4[0], p4[1], p4[2] };
             };
             const root = (try readChannelParsed(aa, folder, stem)) orelse continue;
             const outputs = root.object.get("outputs") orelse continue;
@@ -862,7 +914,8 @@ test "index.json: backlog.known_but_failed is a flat id → message string map" 
     if (kb != .object) return error.InvalidKnownButFailed;
     var it = kb.object.iterator();
     while (it.next()) |kv| {
-        _ = (split4(kv.key_ptr.*)) orelse return error.InvalidKnownButFailedKey;
+        // keys are channel-shaped ids — the 4-part capture fixture id or the 3-part identity agent id
+        _ = (splitDims(kv.key_ptr.*)) orelse return error.InvalidKnownButFailedKey;
         if (kv.value_ptr.* != .string or kv.value_ptr.string.len == 0) return error.InvalidKnownButFailedMessage;
         // messages are home-path redacted
         if (std.mem.indexOf(u8, kv.value_ptr.string, "/Users/") != null or
@@ -916,10 +969,11 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     var models_seen = std.StringHashMap(void).init(aa);
 
     for (stems) |stem| {
-        const parts = (split4(stem)) orelse {
-            std.debug.print("fixture stem {s} is not a 4-part <h>-<p>-<m>-<platform> id\n", .{stem});
+        const split = (splitDims(stem)) orelse {
+            std.debug.print("fixture stem {s} is neither a 3-part <h>-<p>-<m> agent id nor a 4-part <h>-<p>-<m>-<platform> id\n", .{stem});
             return error.MalformedStem;
         };
+        const parts = split.dims;
         var h_ok = false;
         for (main.rulesForHarnesses) |rr| {
             if (ruleMatchesDim(rr, parts[0])) h_ok = true;
@@ -953,13 +1007,15 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
             std.debug.print("NOTE: fixture stem {s} references an unknown {s} dim '{s}' — recorded in backlog.{s} (add a rule to resolve)\n", .{ stem, set, dim, set });
             continue;
         }
-        var plat_ok = false;
-        for ([_][]const u8{ "darwin", "linux", "windows" }) |plat| {
-            if (std.mem.eql(u8, plat, parts[3])) plat_ok = true;
-        }
-        if (!plat_ok) {
-            std.debug.print("fixture stem {s} has an unknown platform {s}\n", .{ stem, parts[3] });
-            return error.UnknownPlatform;
+        if (split.platform) |plat| {
+            var plat_ok = false;
+            for ([_][]const u8{ "darwin", "linux", "windows" }) |want| {
+                if (std.mem.eql(u8, want, plat)) plat_ok = true;
+            }
+            if (!plat_ok) {
+                std.debug.print("fixture stem {s} has an unknown platform {s}\n", .{ stem, plat });
+                return error.UnknownPlatform;
+            }
         }
         try harnesses_seen.put(parts[0], {});
         try providers_seen.put(parts[1], {});

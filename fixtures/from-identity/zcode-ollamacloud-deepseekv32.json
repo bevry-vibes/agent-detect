@@ -1,0 +1,107 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "ZCode",
+      "harness_short_title": null,
+      "harness_name": "zcode",
+      "harness_id": "zcode",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": false,
+      "provider_label": "Ollama Cloud",
+      "provider_name": "ollama-cloud",
+      "provider_id": "ollamacloud",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "DeepSeek V3.2",
+      "model_short_title": null,
+      "model_name": "deepseek-v3.2",
+      "model_id": "deepseekv32",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "zcode-ollamacloud-deepseekv32",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: ZCode · DeepSeek V3.2 <zcode-ollamacloud-deepseekv32@local>",
+    "trailer assisted-by": "Assisted-by: ZCode · DeepSeek V3.2 <zcode-ollamacloud-deepseekv32@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/zai-org/ZCode",
+        "https://github.com/zai-org/ZCode/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://ollama.com/privacy",
+        "https://ollama.com/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V3.2",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V3.2/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "zcode",
+        "provider": "ollamacloud",
+        "model": "deepseekv32"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-in"
+            }
+          ],
+          "summary": "the ZCode harness may train on user data (closed_training = opt-in) with no readable opt-out",
+          "sources": [
+            "https://zcode.z.ai/privacy",
+            "https://zcode.z.ai/terms"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the harness to a reciprocal one to comply with the policy (e.g. cline, goose, kimi-code, mmx, pi)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the ZCode harness may train on user data (closed_training = opt-in) with no readable opt-out (see: agent-detect explain)"
+    ]
+  },
+  "meta": {
+    "updated_at": 1791254418
+  }
+}

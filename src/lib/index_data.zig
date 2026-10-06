@@ -20,8 +20,9 @@
 //! `providers`, provider `models`), every other direction is derived.
 //! `provider_map_to_free_models` is the free axis;
 //! `agent_map_to_platforms_reciprocal` carries the per-combo fixture facts the
-//! released binary cannot know at runtime (declared platforms + reciprocity of
-//! record, refreshed by the dev `fixtures index` action).
+//! released binary cannot know at runtime (captured platforms from the
+//! from-capture stems + the declared reciprocity of record from the
+//! from-identity channel, refreshed by the dev `fixtures index` action).
 
 const std = @import("std");
 const build_options = @import("build_options");
@@ -33,7 +34,7 @@ pub const Filters = struct {
     harness: ?[]const u8 = null,
     provider: ?[]const u8 = null,
     model: ?[]const u8 = null,
-    /// declared platform the combo must carry
+    /// captured platform the combo must carry (platforms with captures)
     platform: ?[]const u8 = null,
     /// membership in `provider_map_to_free_models`
     free: ?bool = null,

@@ -1,0 +1,73 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Chutes",
+      "provider_name": "chutes",
+      "provider_id": "chutes",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Mistral Nemo Instruct 2407",
+      "model_short_title": null,
+      "model_name": "mistral-nemo-instruct-2407",
+      "model_id": "mistralnemoinstruct2407",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "cline-chutes-mistralnemoinstruct2407",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Mistral Nemo Instruct 2407 <cline-chutes-mistralnemoinstruct2407@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Mistral Nemo Instruct 2407 <cline-chutes-mistralnemoinstruct2407@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://chutes.ai/privacy",
+        "https://chutes.ai/tos"
+      ],
+      "model-urls": [
+        "https://huggingface.co/mistralai/Mistral-Nemo-Instruct-2407",
+        "https://www.apache.org/licenses/LICENSE-2.0"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "cline",
+        "provider": "chutes",
+        "model": "mistralnemoinstruct2407"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1791254333
+  }
+}

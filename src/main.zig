@@ -277,6 +277,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 return dev.runFixturesStatus(init);
             } else if (std.mem.eql(u8, sub, "index")) {
                 return dev.runFixturesIndex(init);
+            } else if (std.mem.eql(u8, sub, "identity")) {
+                return dev.runFixturesIdentity(init);
             } else if (std.mem.eql(u8, sub, "prompt")) {
                 return dev.runFixturesPrompt(init);
             } else if (std.mem.eql(u8, sub, "__timeout")) {

@@ -1,0 +1,135 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "omp",
+      "harness_short_title": null,
+      "harness_name": "omp",
+      "harness_id": "omp",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "GMI Cloud",
+      "provider_name": "gmi-cloud",
+      "provider_id": "gmicloud",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "DeepSeek R1",
+      "model_short_title": null,
+      "model_name": "deepseek-r1",
+      "model_id": "deepseekr1",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "omp-gmicloud-deepseekr1",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: omp · DeepSeek R1 <omp-gmicloud-deepseekr1@local>",
+    "trailer assisted-by": "Assisted-by: omp · DeepSeek R1 <omp-gmicloud-deepseekr1@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/can1357/oh-my-pi",
+        "https://github.com/can1357/oh-my-pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://gmicloud.ai/en/legal/privacy",
+        "https://www.gmicloud.ai/en/legal/console-terms-of-service"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+        "https://huggingface.co/deepseek-ai/DeepSeek-R1/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "omp",
+        "provider": "gmicloud",
+        "model": "deepseekr1"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the omp harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/can1357/oh-my-pi"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the omp harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the GMI Cloud provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://gmicloud.ai/en/legal/privacy",
+            "https://www.gmicloud.ai/en/legal/console-terms-of-service"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the GMI Cloud provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the GMI Cloud provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the GMI Cloud provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ]
+  },
+  "meta": {
+    "updated_at": 1791254471
+  }
+}

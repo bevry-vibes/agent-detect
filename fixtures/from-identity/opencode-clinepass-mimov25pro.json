@@ -1,0 +1,73 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Cline Pass",
+      "provider_name": "cline-pass",
+      "provider_id": "clinepass",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "MiMo V2.5 Pro",
+      "model_short_title": null,
+      "model_name": "mimo-v2.5-pro",
+      "model_id": "mimov25pro",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "opencode-clinepass-mimov25pro",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · MiMo V2.5 Pro <opencode-clinepass-mimov25pro@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · MiMo V2.5 Pro <opencode-clinepass-mimov25pro@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://cline.bot/privacy",
+        "https://cline.bot/tos"
+      ],
+      "model-urls": [
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro",
+        "https://huggingface.co/XiaomiMiMo/MiMo-V2.5-Pro/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "clinepass",
+        "model": "mimov25pro"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1791254335
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "GitHub Copilot CLI",
+      "harness_short_title": null,
+      "harness_name": "copilot",
+      "harness_id": "copilot",
+      "harness_license": "NONE",
+      "harness_open_training": null,
+      "harness_closed_training": "opt-out",
+      "harness_reciprocity_scandal": true,
+      "harness_reciprocity": false,
+      "provider_label": "GitHub Copilot",
+      "provider_name": "github-copilot",
+      "provider_id": "githubcopilot",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": true,
+      "provider_reciprocity": false,
+      "model_label": "Grok 4.5",
+      "model_short_title": null,
+      "model_name": "grok-4.5",
+      "model_id": "grok45",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "copilot-githubcopilot-grok45",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: GitHub Copilot CLI · Grok 4.5 <copilot-githubcopilot-grok45@local>",
+    "trailer assisted-by": "Assisted-by: GitHub Copilot CLI · Grok 4.5 <copilot-githubcopilot-grok45@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/features/copilot",
+        "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+      ],
+      "provider-urls": [
+        "https://copilot.github.trust.page/faq",
+        "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+      ],
+      "model-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "scandal-urls": [
+        "https://news.ycombinator.com/item?id=33468849",
+        "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber",
+        "https://news.ycombinator.com/item?id=33468849",
+        "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+      ]
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "copilot",
+        "provider": "githubcopilot",
+        "model": "grok45"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-scandal",
+          "summary": "the GitHub Copilot CLI harness is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the harness to a reciprocal one to comply with the policy (e.g. cline, goose, kimi-code, mmx, pi)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-scandal",
+          "summary": "the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber",
+            "https://news.ycombinator.com/item?id=33468849",
+            "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Grok 4.5 model has closed weights (openness = closed)",
+          "sources": [
+            "https://x.ai/grok",
+            "https://docs.x.ai/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the GitHub Copilot CLI harness is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - provider: the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - model: the Grok 4.5 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
+  },
+  "meta": {
+    "updated_at": 1791254395
+  }
+}

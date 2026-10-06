@@ -4,21 +4,23 @@
  * A from-capture file is written ONLY on a successful capture — it always carries `outputs` (no meta-only stubs exist).
  * The directory IS the channel — no channel key prefixes inside files.
  *
- * `<id>` is the dash-joined fixture id `<harness>-<provider>-<model>-<platform>`, all strict slugs — the filename is the only channel key, and the dims are never repeated inside the file.
+ * `<id>` is channel-shaped, all strict slugs — the filename is the only channel key, and the dims are never repeated inside the file:
+ * from-identity ids are the 3-part agent id `<harness>-<provider>-<model>` (one file per agent — the platform dim is capture-only, a declared identification never observes a host);
+ * from-capture ids are the 4-part fixture id `<harness>-<provider>-<model>-<platform>`.
+ * The channels join on the shared trio: the identity file `<h>-<p>-<m>.json` and the capture files `<h>-<p>-<m>-<platform>.json` are the same agent.
  *
  * Every file has exactly two top-level objects:
  * - `outputs` — the saved outputs of the channel;
  * - `meta` — everything else: ledger dates, writer version, and the invocation of record (from-capture only).
  *
  * Channel presence = file existence — no JSON parse needed to know whether a channel ran.
- * A stem present in both folders has both channels.
  * See fixtures/index.d.ts for the store and DESIGN.md for the semantics.
  */
 
-/** Platforms a daemon can capture on. */
+/** Platforms a daemon can capture on — the from-capture channel's stem segment; the from-identity channel carries no platform. */
 export type Platform = "darwin" | "linux" | "windows";
 
-/** `<harness>-<provider>-<model>-<platform>`, all strict slugs. */
+/** The from-capture channel's key: `<harness>-<provider>-<model>-<platform>`, all strict slugs. The from-identity channel's key is the 3-part agent id `<harness>-<provider>-<model>`. */
 export type FixtureId = string;
 
 /**
@@ -125,6 +127,7 @@ export interface Explain {
 export type StderrLines = string[];
 
 /** Declared-identification file (from-identity worker; zero tokens).
+ *  One file per agent — the filename IS the 3-part agent id; there is no platform anywhere in the channel.
  *  Always carries `outputs` — there is no meta-only identity stub.
  *  Pre-declared-raw files lack `outputs.raw` until their next regeneration (decision #16). */
 export interface IdentityFile {

@@ -907,7 +907,7 @@ test "buildDeclaredRaw: byte-stable against a committed from-identity fixture" {
     const raw = try core.buildDeclaredRaw(a, &d);
     const mine = try std.json.Stringify.valueAlloc(a, raw, .{ .whitespace = .indent_2 });
 
-    const fixture_bytes = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/from-identity/hermes-nvidia-gptoss20b-linux.json", a, @enumFromInt(1 << 20)) catch |err| {
+    const fixture_bytes = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/from-identity/hermes-nvidia-gptoss20b.json", a, @enumFromInt(1 << 20)) catch |err| {
         // the corpus file is a build input, not a runtime dependency — a missing/unreadable one is a broken checkout, not a pass.
         return err;
     };

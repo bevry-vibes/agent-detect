@@ -11,10 +11,10 @@
  * Null-as-absent: unset optional fields are OMITTED from the store entirely (never serialized as `null`).
  * In this schema, `?:` means exactly "null, expressed as absence"; the reader treats a missing optional as null.
  *
- * Note: the free axis is NOT a store table —
- * membership is declared by `fixtures/map-provider-model-freeprovidermodel.csv` (sparse provider×model grid of free model-ids), which the zig program reads at expansion time.
- * Feasibility comes from `fixtures/map-harness-provider-harnessprovider.csv` and `fixtures/map-provider-model-providermodel.csv` (the reference grids —
- * a pair is feasible iff its cell is present and not `-`).
+ * The free axis is NOT a store table —
+ * membership is embedded in `fixtures/index-data.json` (the committed index file's `provider_map_to_free_models`, a sparse provider×model grid of free model-ids, maintained by the dev `fixtures index` action).
+ * Feasibility comes from the same file's association arrays (harness `providers`, provider `models` —
+ * a pair is feasible iff its cell is present).
  *
  * All slug keys below are strict slugs: lowercase alphanumeric with no separators ("kimi-code" → "kimicode", "qwen3.8-27b" → "qwen3827b"). Timestamps are Unix epoch seconds.
  */
@@ -29,7 +29,7 @@ export type HarnessSlug = string;
 export type ProviderSlug = string;
 export type ModelSlug = string;
 
-/** `<harness>-<provider>-<model>-<platform>`, all strict slugs. */
+/** The from-capture channel's key: `<harness>-<provider>-<model>-<platform>`, all strict slugs. From-identity files are keyed by the 3-part agent id (the platform dim is capture-only). */
 export type FixtureId = string;
 
 /**
@@ -39,7 +39,7 @@ export type FixtureId = string;
  * The CLI `--stale` flag stamps the composite: output OR age 27 days OR harness-version OR invocation.
  */
 export interface StaleCriteria {
-  /** the two channel files' outputs.identify not both present and deep-equal. */
+  /** the channels' outputs.identify not both present and deep-equal — the trio join: the identity file `h-p-m` vs the capture files `h-p-m-<platform>`. */
   stale_by_output?: boolean;
   /** Age threshold on the mode file's meta.updated_at, in MINUTES. */
   stale_by_minutes?: number;
@@ -59,16 +59,16 @@ export interface StaleCriteria {
  * an explicit `--stale-*` forms the criteria set alone;
  * `--stale` plus an explicit `--stale-*` overwrites just that component of the composite;
  * with no staleness flag the full composite is stamped.
- * `free` membership comes from `fixtures/map-provider-model-freeprovidermodel.csv`.
+ * `free` membership comes from the index file's `provider_map_to_free_models`.
  */
 export interface QueueEntry extends StaleCriteria {
   harness?: HarnessSlug;
   provider?: ProviderSlug;
   model?: ModelSlug;
-  /** Unset = every platform's daemon expands its own candidate. */
+  /** The platform dim is capture-only: from-identity entries carry none (the identity channel has no platform — the filename is the agent id), and a stored platform on a legacy identity entry is ignored at expansion. */
   platform?: Platform;
   mode: Mode;
-  /** true = members of map-provider-model-freeprovidermodel.csv; false = non-members. */
+  /** true = a free-axis cell (index-data.json's provider_map_to_free_models); false = not a member. */
   free?: boolean;
   /** Stamped on this entry's first expansion work; null until then. */
   started_at?: number;
@@ -81,7 +81,7 @@ export interface QueueEntry extends StaleCriteria {
  * The three unknown_* dim sets hold unique dim slugs from unresolvable stems (folder stems and invocations-table ids alike — a fix, adding a rule, is addressable per dim);
  * `unknown_invocations` holds fixture ids of from-capture files with no invocation of record anywhere (the signal to the dev agent that rules/argv are still needed for a successful re-capture).
  * `known_but_failed` is the retryable failure memory.
- * Never null/empty strings; a stem that can't split 4-way attributes no dim and lands in no set (the envelope test flags the file).
+ * Never null/empty strings; a stem that can't split channel-shape (3-part in from-identity, 4-part in from-capture) attributes no dim and lands in no set (the envelope test flags the file).
  */
 export interface Backlog {
   unknown_harnesses?: HarnessSlug[];
@@ -119,7 +119,7 @@ export interface Invocations {
 /**
  * The blocklist — per-git-user providers whose PAID combos must never be tested on the hosts running as that user (paid plan expired, credits exhausted, ...).
  * Keyed by `git config --global github.username`; the provider entries are strict provider slugs — the same alphanumeric ids the fixture dims use (`opencode-go` → `opencodego`).
- * Paid-only (ruling 2026-09-20): a blocked provider's paid combos never become daemon candidates (either mode) and `fixtures capture` refuses them (exit 10); its free combos (members of map-provider-model-freeprovidermodel.csv) stay workable.
+ * Paid-only (ruling 2026-09-20): a blocked provider's paid combos never become daemon candidates (either mode) and `fixtures capture` refuses them (exit 10); its free combos (free-axis members in the index file) stay workable.
  * An unset git identity blocks nothing; a `{}` entry blocks nothing.
  */
 export interface Blocklist {

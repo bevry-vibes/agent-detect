@@ -1,0 +1,73 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Inkling Small",
+      "model_short_title": null,
+      "model_name": "inkling-small",
+      "model_id": "inklingsmall",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "cline-openrouter-inklingsmall",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · Inkling Small <cline-openrouter-inklingsmall@local>",
+    "trailer assisted-by": "Assisted-by: Cline · Inkling Small <cline-openrouter-inklingsmall@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/thinkingmachines/Inkling-Small",
+        "https://huggingface.co/thinkingmachines/Inkling-Small/blob/main/LICENSE"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "cline",
+        "provider": "openrouter",
+        "model": "inklingsmall"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1791254406
+  }
+}

@@ -136,16 +136,20 @@ pub const dev = if (build_options.dev) struct {
         \\handle pop and --repair), and `backlog` (actionable gaps:
         \\unknown_harnesses / unknown_providers / unknown_models /
         \\unknown_invocations / known_but_failed). The fixtures themselves
-        \\are self-contained files: fixtures/from-identity/<id>.json (declared
-        \\identifications) and fixtures/from-capture/<id>.json (live captures
-        \\— written only on success, so a from-capture file always carries
-        \\`outputs`; its meta records the invocation it ran under), each a
-        \\`{ outputs, meta }` envelope — see fixtures/fixture.d.ts. The free
-        \\axis and the feasibility grids live in fixtures/index-data.json —
-        \\the committed index file (entry association arrays +
-        \\provider_map_to_free_models), which the released `index` action
-        \\embeds and the website consumes as data; `fixtures index`
-        \\regenerates it. Store writers take an exclusive lock
+        \\are self-contained files: fixtures/from-identity/<agent_id>.json
+        \\(declared identifications — one per agent; the filename IS the
+        \\3-part <h>-<p>-<m> agent id, and the platform dim is capture-only)
+        \\and fixtures/from-capture/<fixture_id>.json (live captures — the
+        \\4-part <h>-<p>-<m>-<platform> fixture id; written only on success,
+        \\so a from-capture file always carries `outputs`; its meta records
+        \\the invocation it ran under), each a `{ outputs, meta }` envelope —
+        \\see fixtures/fixture.d.ts. The free axis lives in
+        \\fixtures/index-data.json — the committed index file (entry
+        \\association arrays + provider_map_to_free_models +
+        \\agent_map_to_platforms_reciprocal), which the released `index`
+        \\action embeds and the website consumes as data; `fixtures index`
+        \\regenerates it (the feasibility reference is the association
+        \\arrays themselves). Store writers take an exclusive lock
         \\on fixtures/index.json.lock and write atomically (temp + rename);
         \\each fixture file is owned exclusively by its channel's writer.
         \\
@@ -201,6 +205,9 @@ pub const dev = if (build_options.dev) struct {
         \\                              the rule tables + the from-identity
         \\                              channel, keeping the hand-maintained
         \\                              direct facts (--check verifies instead)
+        \\  identity                   regenerate the from-identity declarations
+        \\                              over the feasible universe (zero tokens;
+        \\                              the channel's reset/refresh tool)
         \\
         \\exit codes: 0 = ok, 2 = unrecognised argument, 3 = conflicting argument,
         \\4 = missing required arguments, 5 = incompatible environment, 6 = incomplete
@@ -223,11 +230,11 @@ pub const dev = if (build_options.dev) struct {
         \\filters (at least one required for queue/dequeue):
         \\  --fixture=ID  4-part <h>-<p>-<m>-<platform> id (exact; capture
         \\                entries only — --from-identity rejects it)
-        \\  --agent=ID    3-part <h>-<p>-<m> id (platform unfiltered)
+        \\  --agent=ID    3-part <h>-<p>-<m> id
         \\  --harness=H   constrain harness to H (any of H/P/M/PLAT; the
         \\                platform dim is capture-only — --from-identity
-        \\                rejects --platform=, identity work is
-        \\                host-platform-bound)
+        \\                rejects --platform=, the from-identity channel
+        \\                carries no platform dim)
         \\
         \\staleness (a queue entry carries a SET of criteria; a candidate is
         \\stale iff ANY carried criterion says stale; absent evidence ⇒ stale):
@@ -543,6 +550,7 @@ pub const dev = if (build_options.dev) struct {
     /// one channel file loaded from `fixtures/<folder>/<stem>.json` — the dims come from the stem (the filename is the only channel key);
     /// `identify` is `outputs.identify`;
     /// the meta fields are the ledger + curation stamps.
+    /// `platform` is capture-only — from-identity files carry no platform (the filename is the agent id).
     /// `exists == false` for absent/unparseable files (the caller treats absent evidence as stale).
     pub const ChannelFile = struct {
         stem: []const u8 = "",
@@ -560,9 +568,17 @@ pub const dev = if (build_options.dev) struct {
     };
 
     /// load `fixtures/<folder>/<stem>.json` into a `ChannelFile`. Missing or unparseable → the zero file with `exists = false` (no error — absence is a staleness input, not a fault).
+    /// The stem split is channel-aware: from-identity stems are the 3-part agent id (the filename IS the agent id — the platform dim is capture-only), from-capture stems stay the 4-part fixture id.
     pub fn loadChannelFile(io: std.Io, a: std.mem.Allocator, folder: []const u8, stem: []const u8) !ChannelFile {
         var cf = ChannelFile{ .stem = stem };
-        if (splitFixtureId(a, stem)) |parts| {
+        if (std.mem.eql(u8, folder, IDENTITY_DIR)) {
+            if (splitId(a, stem, 3)) |parts| {
+                cf.harness = parts[0];
+                cf.provider = parts[1];
+                cf.model = parts[2];
+                cf.valid_stem = true;
+            } else |_| {}
+        } else if (splitFixtureId(a, stem)) |parts| {
             cf.harness = parts[0];
             cf.provider = parts[1];
             cf.model = parts[2];
@@ -978,7 +994,15 @@ pub const dev = if (build_options.dev) struct {
         for ([_][]const u8{ IDENTITY_DIR, CAPTURE_DIR }) |folder| {
             const stems = try scanFolderStems(io, a, folder);
             for (stems) |stem| {
-                const parts = splitFixtureId(a, stem) catch continue; // malformed stems flag in the envelope test
+                // channel-aware split — from-identity stems are the 3-part agent id
+                var parts: [4][]const u8 = undefined;
+                if (std.mem.eql(u8, folder, IDENTITY_DIR)) {
+                    const p3 = splitId(a, stem, 3) catch continue; // malformed stems flag in the envelope test
+                    parts = .{ p3[0], p3[1], p3[2], "" };
+                } else {
+                    const p4 = splitFixtureId(a, stem) catch continue; // malformed stems flag in the envelope test
+                    parts = .{ p4[0], p4[1], p4[2], p4[3] };
+                }
                 const h_ok = canonicalIdFor(a, HarnessRule, &rulesForHarnesses, parts[0]) != null;
                 const p_ok = canonicalIdFor(a, ProviderRule, &rulesForProviders, parts[1]) != null;
                 const m_ok = canonicalIdFor(a, ModelRule, &rulesForModels, parts[2]) != null;
@@ -1228,24 +1252,21 @@ pub const dev = if (build_options.dev) struct {
     /// expand one queue entry into its remaining candidate set.
     /// The universe is one — resolvable dims ∧ (fixtured ∨ feasible-unfixtured per the reference grids for from-identity;
     /// invocations known to the store — its `invocations` table ∪ capture files carrying `meta.prompt_invocation` — for from-capture)
-    /// — filtered by the entry's dims, platform, staleness criteria, and the free flag.
+    /// — filtered by the entry's dims, platform (from-capture only), staleness criteria, and the free flag.
     /// A candidate is DONE when the mode's success `meta.updated_at` is present AND ≥ the entry's `started_at` (a never-worked entry has no done candidates);
     /// candidates this daemon session already failed are damped out.
     /// Absent evidence ⇒ every carried criterion says stale.
+    /// from-identity candidates are agent ids — one per agent, host-agnostic (the platform dim is capture-only), so the identity expansion runs once, never per platform.
     pub fn expandEntry(io: std.Io, a: std.mem.Allocator, root: *const std.json.Value, free: *const FreeGrid, grids: *const FeasibilityGrids, entry: QueueEntry, host: []const u8, damped: ?*const std.StringHashMap(void), skips: ?*const SessionSkips, blocked: []const []const u8) !ExpandResult {
-        // the platform dim constrains capture entries only — identity work is
-        // host-platform-bound, so a stored platform (a legacy pre-restriction entry)
-        // is ignored there
-        const platforms: []const []const u8 = if (entry.platform) |p| blk: {
-            if (std.mem.eql(u8, entry.mode, "from-identity")) break :blk &platforms_all;
-            break :blk &[_][]const u8{p};
-        } else &platforms_all;
+        if (std.mem.eql(u8, entry.mode, "from-identity")) {
+            const list = try expandForPlatform(io, a, root, free, grids, entry, "", damped, null, blocked);
+            return .{ .host_candidates = list, .remaining_anywhere = list.len };
+        }
+        const platforms: []const []const u8 = if (entry.platform) |p| &[_][]const u8{p} else &platforms_all;
         var host_list: std.ArrayListUnmanaged(Candidate) = .empty;
         var remaining: usize = 0;
         for (platforms) |plat| {
-            // the skips gate the capture universe only — from-identity work never launches a harness binary, so a harness skipped for being uninstalled still declares its identity fixtures.
-            const plat_skips: ?*const SessionSkips = if (std.mem.eql(u8, entry.mode, "from-capture")) skips else null;
-            const list = try expandForPlatform(io, a, root, free, grids, entry, plat, damped, plat_skips, blocked);
+            const list = try expandForPlatform(io, a, root, free, grids, entry, plat, damped, skips, blocked);
             remaining += list.len;
             if (std.mem.eql(u8, plat, host)) {
                 for (list) |c| try host_list.append(a, c);
@@ -1288,7 +1309,14 @@ pub const dev = if (build_options.dev) struct {
             try ids.append(a, stem);
         }
         for (ids.items) |id| {
-            const parts = splitFixtureId(a, id) catch continue; // unresolvable ids land in the backlog, never expand
+            // channel-aware split — from-identity candidates are the 3-part agent ids (plat is ""), from-capture stay 4-part fixture ids
+            const parts: [4][]const u8 = blk: {
+                if (std.mem.eql(u8, entry.mode, "from-identity")) {
+                    const p3 = splitId(a, id, 3) catch continue; // unresolvable ids land in the backlog, never expand
+                    break :blk .{ p3[0], p3[1], p3[2], "" };
+                }
+                break :blk splitFixtureId(a, id) catch continue; // unresolvable ids land in the backlog, never expand
+            };
             if (!std.mem.eql(u8, parts[3], plat)) continue;
             if (entry.harness) |v| {
                 if (!std.mem.eql(u8, parts[0], v)) continue;
@@ -1325,6 +1353,7 @@ pub const dev = if (build_options.dev) struct {
         }
         // feasible-unfixtured universe — from-identity only: the grid-filtered cross-product minus the fixtured stems, so impossible combos never become candidates and from-identity can never mint them.
         // (From-capture candidates come only from the invocation universe — authoring the invocation is the dev agent's signal that a capture is wanted.)
+        // The stems are agent ids (3-part) — the platform dim is capture-only.
         if (std.mem.eql(u8, entry.mode, "from-identity")) {
             var hit = grids.harness_provider.keyIterator();
             while (hit.next()) |hk| {
@@ -1348,10 +1377,10 @@ pub const dev = if (build_options.dev) struct {
                     if (entry.model) |v| {
                         if (!std.mem.eql(u8, m, v)) continue;
                     }
-                    const stem = (try fixtureIdFrom(a, h, p, m, plat)) orelse continue;
+                    const stem = (try agentIdFrom(a, h, p, m)) orelse continue;
                     if (fixtured.contains(stem)) continue;
                     if (seen.contains(stem)) continue; // table-only invocations already queued above
-                    if (!dimsResolvable(a, .{ h, p, m, plat })) continue;
+                    if (!dimsResolvable(a, .{ h, p, m, "" })) continue;
                     if (providerBlocked(blocked, p) and !free.has(p, m)) continue;
                     if (entry.free) |fr| {
                         if (fr != free.has(p, m)) continue;
@@ -1360,7 +1389,7 @@ pub const dev = if (build_options.dev) struct {
                         if (dm.contains(stem)) continue;
                     }
                     // no file ⇒ absent evidence ⇒ any carried criterion (and a criteria-less --refresh entry) says stale.
-                    try out.append(a, .{ .fixture_id = stem, .harness = h, .provider = p, .model = m, .platform = plat });
+                    try out.append(a, .{ .fixture_id = stem, .harness = h, .provider = p, .model = m });
                 }
             }
         }
@@ -1383,12 +1412,27 @@ pub const dev = if (build_options.dev) struct {
         if (!carried) return true; // --refresh: everything is worked
         const file = cf orelse return true; // absent evidence ⇒ stale
         if (entry.stale_by_output) {
-            // stale iff the two channel files' outputs.identify are not both present and deep-equal (a missing channel counts stale).
+            // stale iff the channels' outputs.identify are not both present and deep-equal (a missing channel counts stale).
+            // The join is trio-shaped: the identity file `h-p-m` compares against EVERY capture file of its trio (one is enough);
+            // a capture file `h-p-m-<platform>` compares against its trio's one identity file.
             var drift = true;
             if (file.identify != null) {
-                const other_folder: []const u8 = if (std.mem.eql(u8, entry.mode, "from-identity")) CAPTURE_DIR else IDENTITY_DIR;
-                const other = try loadChannelFile(io, a, other_folder, file.stem);
-                if (other.identify != null and identifyEqual(file.identify.?, other.identify.?)) drift = false;
+                if (std.mem.eql(u8, entry.mode, "from-identity")) {
+                    const cap_stems = try scanFolderStems(io, a, CAPTURE_DIR);
+                    for (cap_stems) |cs| {
+                        if (cs.len <= file.stem.len or !std.mem.startsWith(u8, cs, file.stem) or cs[file.stem.len] != '-') continue;
+                        const other = try loadChannelFile(io, a, CAPTURE_DIR, cs);
+                        if (other.identify != null and identifyEqual(file.identify.?, other.identify.?)) {
+                            drift = false;
+                            break;
+                        }
+                    }
+                } else {
+                    const p4 = splitFixtureId(a, file.stem) catch return true;
+                    const id_stem = (try agentIdFrom(a, p4[0], p4[1], p4[2])) orelse return true;
+                    const other = try loadChannelFile(io, a, IDENTITY_DIR, id_stem);
+                    if (other.identify != null and identifyEqual(file.identify.?, other.identify.?)) drift = false;
+                }
             }
             if (drift) return true;
         }
@@ -1422,7 +1466,7 @@ pub const dev = if (build_options.dev) struct {
         return false;
     }
 
-    /// one expanded candidate for a queue entry (a concrete 4-tuple).
+    /// one expanded candidate for a queue entry — a from-capture fixture id (the 4-part fixture id) or a from-identity agent id (the 3-part `h-p-m`, `platform` empty: the platform dim is capture-only).
     pub const Candidate = struct {
         fixture_id: []const u8,
         harness: []const u8 = "",
@@ -1564,6 +1608,13 @@ pub const dev = if (build_options.dev) struct {
     fn fixtureIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?[]u8 {
         if (h.len == 0 or p.len == 0 or m.len == 0 or plat.len == 0) return null;
         return @as(?[]u8, try joinId(a, "-", &.{ h, p, m, plat }));
+    }
+
+    /// Compose an `agent_id` (h-p-m) from the three dims — the from-identity channel's key (the filename IS the agent id).
+    /// Returns null when any dim is missing (never a fabricated partial id).
+    fn agentIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) !?[]u8 {
+        if (h.len == 0 or p.len == 0 or m.len == 0) return null;
+        return @as(?[]u8, try joinId(a, "-", &.{ h, p, m }));
     }
 
     /// spawn the current executable's `trailer <subtype>` action and return its stdout, trimmed (single-line string).
@@ -1741,11 +1792,11 @@ pub const dev = if (build_options.dev) struct {
             (f.stale_by_minutes orelse 0) < 0) return FilterError.ConflictingFilters;
         if (f.refresh and (f.stale or f.stale_by_output or age_scopes > 0 or
             f.stale_by_harness_version or f.stale_by_invocation)) return FilterError.ConflictingFilters;
-        // the platform dim is capture-only: from-identity work is host-platform-bound
-        // (expandEntry works only host candidates and identity files are host-stamped),
-        // so a platform filter can never change what any host mints. An explicit
-        // --from-identity therefore rejects it — and --fixture=, whose id bakes a
-        // platform in; use --agent=.
+        // the platform dim is capture-only: the from-identity channel carries no
+        // platform at all (identity files are keyed by the 3-part agent id), so a
+        // platform filter can never apply to it. An explicit --from-identity
+        // therefore rejects it — and --fixture=, whose id bakes a platform in;
+        // use --agent=.
         if (std.mem.eql(u8, f.mode, "from-identity") and (f.platform.len > 0 or f.fixture != null)) {
             return FilterError.ConflictingFilters;
         }
@@ -2100,7 +2151,7 @@ pub const dev = if (build_options.dev) struct {
                 .provider = if (f.provider.len > 0) f.provider else null,
                 .model = if (f.model.len > 0) f.model else null,
                 // the platform dim is capture-only — identity entries never carry it
-                // (from-identity work is host-platform-bound; see parseFilters)
+                // (the from-identity channel has no platform dim; see parseFilters)
                 .platform = if (f.platform.len > 0 and std.mem.eql(u8, mode, "from-capture")) f.platform else null,
                 .mode = mode,
                 .stale_by_output = crit.output,
@@ -2344,12 +2395,12 @@ pub const dev = if (build_options.dev) struct {
             break :blk blocklistProvidersFor(a, &root, u) catch &.{};
         };
 
-        // feasible-unfixtured (from-identity): the grid-filtered cross-product minus the fixtured identity stems, over all platforms and on this host.
+        // feasible-unfixtured (from-identity): the grid-filtered cross-product minus the fixtured identity stems.
+        // The stems are agent ids — the identity universe is platform-independent, so there is no per-platform (host) split anymore.
         var fixtured_ids: std.StringHashMap(void) = .init(a);
         for (id_stems) |stem| try fixtured_ids.put(stem, {});
         var feasible_unfixtured: usize = 0;
-        var feasible_unfixtured_host: usize = 0;
-        for (platforms_all) |plat| {
+        {
             var hit = grids.harness_provider.keyIterator();
             while (hit.next()) |hk| {
                 const hp = hk.*;
@@ -2361,12 +2412,11 @@ pub const dev = if (build_options.dev) struct {
                     const pm = mk.*;
                     const bar2 = std.mem.indexOfScalar(u8, pm, '|') orelse continue;
                     if (!std.mem.eql(u8, pm[0..bar2], p)) continue;
-                    const stem = (try fixtureIdFrom(a, h, p, pm[bar2 + 1 ..], plat)) orelse continue;
+                    const stem = (try agentIdFrom(a, h, p, pm[bar2 + 1 ..])) orelse continue;
                     if (fixtured_ids.contains(stem)) continue;
-                    if (!dimsResolvable(a, .{ h, p, pm[bar2 + 1 ..], plat })) continue;
+                    if (!dimsResolvable(a, .{ h, p, pm[bar2 + 1 ..], "" })) continue;
                     if (providerBlocked(blocked, p) and !status_free_grid.has(p, pm[bar2 + 1 ..])) continue;
                     feasible_unfixtured += 1;
-                    if (std.mem.eql(u8, plat, core.platformId())) feasible_unfixtured_host += 1;
                 }
             }
         }
@@ -2445,9 +2495,7 @@ pub const dev = if (build_options.dev) struct {
         }
         writeOut(io, "  feasible-unfixtured (from-identity): ");
         writeCount(io, feasible_unfixtured);
-        writeOut(io, " total, ");
-        writeCount(io, feasible_unfixtured_host);
-        writeOut(io, " on this platform\n");
+        writeOut(io, "\n");
         writeOut(io, "  staleness (--stale composite): from-identity ");
         writeCount(io, stale_id);
         writeOut(io, "/");
@@ -2504,8 +2552,8 @@ pub const dev = if (build_options.dev) struct {
 
     /// `from-identity` post-check: parse the declared fixture and confirm `outputs.identify`'s dims match the queue entry.
     /// Declared fixtures carry no evidence, so no evidence check applies.
-    fn postCheckDeclaredFixture(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !bool {
-        const f_id = (try fixtureIdFrom(a, h, p, m, plat)) orelse return false;
+    fn postCheckDeclaredFixture(a: std.mem.Allocator, io: std.Io, h: []const u8, p: []const u8, m: []const u8) !bool {
+        const f_id = (try agentIdFrom(a, h, p, m)) orelse return false;
         const cf = try loadChannelFile(io, a, IDENTITY_DIR, f_id);
         const identify = cf.identify orelse return false;
         const cob = identify.object;
@@ -2514,45 +2562,49 @@ pub const dev = if (build_options.dev) struct {
             std.mem.eql(u8, sjstr(cob, "model_id"), m);
     }
 
-    /// scan the from-identity channel into the `agent_map_to_platforms_reciprocal`
-    /// object: per agent_id, the declared platforms and the reciprocity of record
-    /// (the latest fixture wins; ties break by platform). Shared by `fixtures index`
-    /// and the freshness test.
+    /// scan the fixture channels into the `agent_map_to_platforms_reciprocal`
+    /// object: per agent_id, the captured platforms (the from-capture stems —
+    /// platform presence = a successful capture on that platform; the stems are
+    /// scanned, never parsed) and the reciprocity of record (the agent's single
+    /// from-identity declaration — the filename IS the agent id). Shared by
+    /// `fixtures index` and the freshness test.
     pub fn scanIdentityCombos(a: std.mem.Allocator, io: std.Io) !std.json.ObjectMap {
         const AgentFacts = struct {
             platforms: std.StringArrayHashMapUnmanaged(void) = .empty,
-            best_updated: i64,
-            best_platform: []const u8,
-            reciprocal: bool,
+            known: bool = false,
+            reciprocal: bool = false,
         };
         var agents: std.StringArrayHashMapUnmanaged(AgentFacts) = .empty;
-        const stems = try scanFolderStems(io, a, IDENTITY_DIR);
-        for (stems) |stem| {
+        // platforms — the from-capture stems, trio-keyed. Parsed never: the stem's last segment is the platform.
+        const cap_stems = try scanFolderStems(io, a, CAPTURE_DIR);
+        for (cap_stems) |stem| {
+            const parts = splitFixtureId(a, stem) catch continue;
+            const agent = (try agentIdFrom(a, parts[0], parts[1], parts[2])) orelse continue;
+            const gop = try agents.getOrPut(a, agent);
+            if (!gop.found_existing) gop.value_ptr.* = .{};
+            try gop.value_ptr.platforms.put(a, parts[3], {});
+        }
+        // reciprocity of record — the single from-identity file per agent.
+        const id_stems = try scanFolderStems(io, a, IDENTITY_DIR);
+        for (id_stems) |stem| {
             const cf = try loadChannelFile(io, a, IDENTITY_DIR, stem);
             if (!cf.valid_stem or !cf.exists) continue;
-            const agent = try std.fmt.allocPrint(a, "{s}-{s}-{s}", .{ cf.harness, cf.provider, cf.model });
-            const gop = try agents.getOrPut(a, agent);
-            if (!gop.found_existing) {
-                gop.value_ptr.* = .{ .best_updated = -1, .best_platform = "", .reciprocal = false };
-            }
-            try gop.value_ptr.platforms.put(a, cf.platform, {});
-            const updated = cf.updated_at orelse 0;
-            if (updated > gop.value_ptr.best_updated or
-                (updated == gop.value_ptr.best_updated and std.mem.lessThan(u8, gop.value_ptr.best_platform, cf.platform)))
-            {
-                gop.value_ptr.best_updated = updated;
-                gop.value_ptr.best_platform = cf.platform;
-                gop.value_ptr.reciprocal = if (cf.identify) |identify| blk: {
-                    if (identify != .object) break :blk false;
-                    const r = identify.object.get("reciprocal") orelse break :blk false;
-                    break :blk r == .bool and r.bool;
-                } else false;
-            }
+            const gop = try agents.getOrPut(a, cf.stem);
+            if (!gop.found_existing) gop.value_ptr.* = .{};
+            gop.value_ptr.known = true;
+            gop.value_ptr.reciprocal = if (cf.identify) |identify| blk: {
+                if (identify != .object) break :blk false;
+                const r = identify.object.get("reciprocal") orelse break :blk false;
+                break :blk r == .bool and r.bool;
+            } else false;
         }
         var combos: std.json.ObjectMap = .empty;
         var keys: std.ArrayList([]const u8) = .empty;
         var kit = agents.iterator();
-        while (kit.next()) |kv| try keys.append(a, kv.key_ptr.*);
+        while (kit.next()) |kv| {
+            if (!kv.value_ptr.known) continue; // the agent universe on the wire is the declared identifications (captures only annotate platforms)
+            try keys.append(a, kv.key_ptr.*);
+        }
         std.mem.sort([]const u8, keys.items, {}, struct {
             fn lessThan(_: void, x: []const u8, y: []const u8) bool {
                 return std.mem.lessThan(u8, x, y);
@@ -2589,8 +2641,9 @@ pub const dev = if (build_options.dev) struct {
         \\data/index.json). Regeneration keeps the hand-maintained direct facts — harness
         \\`providers`, provider `models`, `provider_map_to_free_models` — and rebuilds
         \\everything else: the entity fields from the rule tables, the mirror + closure
-        \\association directions, and `agent_map_to_platforms_reciprocal` from
-        \\fixtures/from-identity (the declared platforms and reciprocity of record).
+        \\association directions, and `agent_map_to_platforms_reciprocal` (the captured
+        \\platforms from the from-capture stems + the declared reciprocity of record
+        \\from the from-identity channel).
         \\
         \\  --check  verify freshness instead of writing: the file must equal a
         \\           regeneration (rule fields current, combos current) — exit 12 when stale
@@ -2689,6 +2742,102 @@ pub const dev = if (build_options.dev) struct {
         return EXIT_OK;
     }
 
+    /// usage for `fixtures identity` — printed by `fixtures identity --help` and on argument errors.
+    pub const fixturesIdentityUsage =
+        \\agent-detect-dev fixtures identity — regenerate the from-identity declarations (zero tokens)
+        \\
+        \\usage: agent-detect-dev fixtures identity [--harness=H --provider=P --model=M]
+        \\
+        \\Regenerates the from-identity channel over the feasible universe (the committed
+        \\index file's association arrays) — one declaration per agent, the 3-part
+        \\<h>-<p>-<m> filename. Every matched declaration is rewritten against the current
+        \\rule tables (content out of sync is regenerated, never edited) — this is the
+        \\channel's reset/refresh tool. Zero tokens, no harness launches: everything
+        \\derives from the rule tables, the same derivation the daemon's from-identity
+        \\worker performs per candidate (the daemon itself refuses to run inside an agent
+        \\session; this action is plain maintenance, like `fixtures index`).
+        \\
+        \\Dim filters narrow the universe to the matching agents.
+        \\
+        \\exit codes: 0 = ok (per-combo failures are listed and recorded in
+        \\known_but_failed), 2 = unrecognised argument, 12 = index store error
+        \\
+    ;
+
+    /// `fixtures identity` — regenerate from-identity declarations directly: the
+    /// daemon-less maintenance path (the daemon refuses to run inside an agent
+    /// session; this action never launches anything, so it needs no guard).
+    pub fn runFixturesIdentity(init: std.process.Init) !u8 {
+        const a = init.arena.allocator();
+        const io = init.io;
+
+        var f_h: []const u8 = "";
+        var f_p: []const u8 = "";
+        var f_m: []const u8 = "";
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.IndexStoreError;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "fixtures"
+        _ = args_it.skip(); // "identity"
+        while (args_it.next()) |arg| {
+            if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h") or std.mem.eql(u8, arg, "help")) {
+                writeOut(io, fixturesIdentityUsage);
+                return EXIT_OK;
+            } else if (std.mem.startsWith(u8, arg, "--harness=")) {
+                f_h = arg["--harness=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--provider=")) {
+                f_p = arg["--provider=".len..];
+            } else if (std.mem.startsWith(u8, arg, "--model=")) {
+                f_m = arg["--model=".len..];
+            } else {
+                writeErr(io, "fixtures identity: unrecognised argument: '");
+                writeErr(io, arg);
+                writeErr(io, "'\n");
+                writeOut(io, fixturesIdentityUsage);
+                return EXIT_UNRECOGNISED_ARG;
+            }
+        }
+
+        const grids = try FeasibilityGrids.load(a);
+        var damped = std.StringHashMap(void).init(a);
+        var declared: usize = 0;
+        var failed: usize = 0;
+        var hit = grids.harness_provider.keyIterator();
+        while (hit.next()) |hk| {
+            const hp = hk.*;
+            const bar = std.mem.indexOfScalar(u8, hp, '|') orelse continue;
+            const h = hp[0..bar];
+            const p = hp[bar + 1 ..];
+            if (f_h.len > 0 and !std.mem.eql(u8, h, f_h)) continue;
+            if (f_p.len > 0 and !std.mem.eql(u8, p, f_p)) continue;
+            var mit = grids.provider_model.keyIterator();
+            while (mit.next()) |mk| {
+                const pm = mk.*;
+                const bar2 = std.mem.indexOfScalar(u8, pm, '|') orelse continue;
+                if (!std.mem.eql(u8, pm[0..bar2], p)) continue;
+                const m = pm[bar2 + 1 ..];
+                if (f_m.len > 0 and !std.mem.eql(u8, m, f_m)) continue;
+                if (!dimsResolvable(a, .{ h, p, m, "" })) continue;
+                const agent = (try agentIdFrom(a, h, p, m)) orelse continue;
+                const ok = runOneComboIdentity(a, io, init, &damped, agent) catch |err| blk: {
+                    writeErr(io, "fixtures identity: worker error for ");
+                    writeErr(io, agent);
+                    writeErr(io, ": ");
+                    writeErr(io, @errorName(err));
+                    writeErr(io, "\n");
+                    break :blk false;
+                };
+                if (ok) declared += 1 else failed += 1;
+            }
+        }
+        writeOut(io, "fixtures identity: declared ");
+        writeCount(io, declared);
+        writeOut(io, ", failed ");
+        writeCount(io, failed);
+        writeOut(io, "\n");
+        return EXIT_OK;
+    }
+
     /// `from-identity` worker: resolve the combo via `resolveRecipe` (recipe-mode, no detection, zero tokens, no harness required), assemble the from-identity file (`outputs` = identify + both trailer variants; `meta` = updated_at), and write it whole (atomically).
     /// Declared, not observed.
     /// Failures land in known_but_failed and damp this daemon session; a success clears the combo's known_but_failed entry.
@@ -2782,16 +2931,15 @@ pub const dev = if (build_options.dev) struct {
         }
     };
 
-    fn runOneComboIdentity(a: std.mem.Allocator, io: std.Io, init: std.process.Init, damped: *std.StringHashMap(void), fixture_id: []const u8) !bool {
-        const parts = try splitFixtureId(a, fixture_id);
+    fn runOneComboIdentity(a: std.mem.Allocator, io: std.Io, init: std.process.Init, damped: *std.StringHashMap(void), agent_id: []const u8) !bool {
+        const parts = try splitAgentId(a, agent_id);
         const h = parts[0];
         const p = parts[1];
         const m_d = parts[2];
-        const plat = parts[3];
         const d = (try resolveRecipe(a, h, p, m_d)) orelse {
             daemonWriteErr(io, "daemon: from-identity: combo not in the rule tables — cannot declare a fixture\n");
-            try recordKnownButFailed(io, a, fixture_id, "combo not in the rule tables — cannot declare a fixture", init.environ_map);
-            damped.put(fixture_id, {}) catch {};
+            try recordKnownButFailed(io, a, agent_id, "combo not in the rule tables — cannot declare a fixture", init.environ_map);
+            damped.put(agent_id, {}) catch {};
             return false;
         };
         // Declared, not observed — but the declaration carries its own evidence (ruling, 2026-09-21): the declared raw ships the rule-derived source arrays (harness/provider/model/scandal urls) plus detectable/detected, so an identity fixture is self-verifying without an instance. The instance-only fields (lineage, env, evidence claims) stay absent — nothing was observed; the capture channel is the only place they appear.
@@ -2820,16 +2968,16 @@ pub const dev = if (build_options.dev) struct {
         var root: std.json.Value = .{ .object = .empty };
         try root.object.put(a, "outputs", outputs);
         try root.object.put(a, "meta", meta);
-        try writeChannelFile(a, io, IDENTITY_DIR, fixture_id, root);
+        try writeChannelFile(a, io, IDENTITY_DIR, agent_id, root);
 
-        if (!(try postCheckDeclaredFixture(a, io, h, p, m_d, plat))) {
+        if (!(try postCheckDeclaredFixture(a, io, h, p, m_d))) {
             daemonWriteErr(io, "daemon: from-identity: post-check failed — recording failure\n");
-            try recordKnownButFailed(io, a, fixture_id, "post-check mismatch", init.environ_map);
-            damped.put(fixture_id, {}) catch {};
+            try recordKnownButFailed(io, a, agent_id, "post-check mismatch", init.environ_map);
+            damped.put(agent_id, {}) catch {};
             return false;
         }
 
-        try clearKnownButFailed(io, a, fixture_id);
+        try clearKnownButFailed(io, a, agent_id);
         return true;
     }
 
