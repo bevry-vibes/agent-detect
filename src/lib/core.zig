@@ -54,6 +54,9 @@ pub const EXIT_REQUIREMENT_FAILED: u8 = 10;
 pub const EXIT_OUT_OF_MEMORY: u8 = 11;
 pub const EXIT_INDEX_STORE: u8 = 12;
 pub const EXIT_IO: u8 = 13;
+/// the entity view resolved, but a filter excluded it — the match report went
+/// to stdout (unless --no-json) and the explanation to stderr.
+pub const EXIT_FOUND_FILTERED: u8 = 14;
 
 // Error-message strings = the exit-status registry names, verbatim.
 // STDERR carries the full registry-name message; STDOUT carries the concise verdict (determination / data).
@@ -3398,11 +3401,9 @@ pub const usage =
     \\                   co-author     Co-authored-by: (Bevry commits.md)
     \\                   assisted-by   Assisted-by:   (e.g. GCC AI policy)
     \\  check-reciprocal  check reciprocity compliance with Bevry's AI policy
-    \\  registry       open the registry website — the filters deep-link the
-    \\                 site's registry section (see `registry --help`)
-    \\  index          print the rule index — every harness, provider, and model
-    \\                 with its canonical id, properties, and associations
-    \\                 (see `index --help`)
+    \\  index          the rule index and the entity views — the search view,
+    \\                 agent/harness/provider/model views, and the --web deep
+    \\                 links (see `index --help`)
     \\  help           this help (also --help, -h, or no arguments)
     \\  version        print the version (also --version, -V)
     \\
@@ -3411,8 +3412,8 @@ pub const usage =
     \\                 resolve the action from the rule tables instead of live
     \\                 detection (all three together, or none)
     \\  --web / --no-web · --json / --no-json
-    \\                 registry and index only: --web also opens the site
-    \\                 (JSON prints by default; --no-json prints nothing)
+    \\                 index only: --web also opens the site (JSON prints by
+    \\                 default; --no-json prints nothing)
     \\
     \\examples:
     \\  agent-detect identify
@@ -3421,13 +3422,15 @@ pub const usage =
     \\  agent-detect trailer co-author
     \\  agent-detect trailer assisted-by
     \\  agent-detect check-reciprocal
-    \\  agent-detect index --harness=cline
-    \\  agent-detect registry --harness=kimi-code --provider=chutes --model=glm-5.2
+    \\  agent-detect index
+    \\  agent-detect index agent cline-chutes-glm51
+    \\  agent-detect index harness cline --free
     \\  agent-detect identify --harness=kilo --provider=deepseek --model=deepseek-v4-flash
     \\
     \\exit codes:
     \\  check-reciprocal: 0 is reciprocal · 10 not reciprocal · 9 undeterminable ·
-    \\  8 undetectable · 7 unknown combo; others: 0 ok · 2 unrecognised argument ·
+    \\  8 undetectable · 7 unknown agent; index: 0 ok · 7 unknown agent or dim ·
+    \\  14 found, filtered out; others: 0 ok · 2 unrecognised argument ·
     \\  3 conflicting argument · 4 missing required arguments · 8 undetectable.
     \\  Full registry: DESIGN.md "exit status registry".
     \\
@@ -3455,90 +3458,73 @@ pub const trailerUsage =
     \\
 ;
 
-pub const registryUsage =
-    \\agent-detect registry — open the registry website (agent-detect.bevry.workers.dev)
-    \\
-    \\usage:
-    \\  agent-detect registry [filters] [--web] [--no-json]
-    \\
-    \\url forms:
-    \\  no filters     the homepage
-    \\  any filter(s)  the registry filtered to them, scrolled to the results
-    \\                 (#registry)
-    \\  all three dims the combo's result page (?agent=<harness>-<provider>-<model>)
-    \\  --agent=ID     the result page for that agent or fixture id (3- or 4-part)
-    \\
-    \\filters:
-    \\  --harness=H --provider=P --model=M
-    \\                 names, labels, and aliases resolve exactly like the
-    \\                 recipe flags — an unresolvable dim exits 7
-    \\  --email=E      combos whose trailer email of record matches
-    \\                 (case-insensitive)
-    \\  --platform=PL  combos declared on that platform (darwin/macos, linux,
-    \\                 windows)
-    \\  --free / --no-free
-    \\                 combos whose provider-model cell is free / not free
-    \\  --reciprocal / --no-reciprocal
-    \\                 combos whose reciprocity of record is true / false
-    \\  --agent=ID     exclusive — with any filter it is a conflict (exit 3)
-    \\
-    \\output:
-    \\  JSON ({url, query, opened}) by default; --web also opens the site;
-    \\  --no-json prints nothing — exit status only. --json / --no-web are the
-    \\  explicit defaults; --no-open is gone (opening is opt-in via --web).
-    \\
-    \\examples:
-    \\  agent-detect registry
-    \\  agent-detect registry --harness=kimi-code
-    \\  agent-detect registry --harness=kimi-code --provider=chutes --model=glm-5.2
-    \\  agent-detect registry --reciprocal=false --free --web
-    \\  agent-detect registry --agent=cline-chutes-kimik3 --no-json
-    \\
-    \\exit codes:
-    \\  0 ok · 2 unrecognised argument (a bad --platform value) · 3 conflicting
-    \\  argument (--agent with a filter; the output flags on another action) ·
-    \\  6 the platform url opener is absent or failed · 7 a dim resolved to no
-    \\  rule, or --agent is malformed.
-    \\
-;
-
 pub const indexUsage =
-    \\agent-detect index — the rule index: every harness, provider, and model with
-    \\its canonical id, its properties, and its associations
+    \\agent-detect index — the rule index and the entity views: the search view
+    \\maps onto the site's `/`, the entity views onto its /agent, /harness,
+    \\provider, and /model routes. Facts come from the embedded index —
+    \\regenerated by `agent-detect-dev fixtures index`; a stale index is stale
+    \\facts.
     \\
     \\usage:
     \\  agent-detect index [filters] [--web] [--no-json]
+    \\  agent-detect index {agent|harness|provider|model} <id> [filters] [--web] [--no-json]
     \\
-    \\shape:
-    \\  {harnesses, providers, models, provider_map_to_free_models,
-    \\   agent_map_to_platforms_reciprocal} — entries carry the from-identity
-    \\  fixture's per-entity identify fields (minus instance state) plus their
-    \\  variations and association id arrays; mapping any name or variation to
-    \\  the canonical alphanumeric id is the point.
+    \\views:
+    \\  no entity      the search view (≡ `/?<filters>`): prints the filtered
+    \\                 rule index — every harness, provider, and model with its
+    \\                 canonical id, properties, and associations
+    \\  agent <id>     the agent view (≡ /agent/<id>): an agent IS the resolved
+    \\                 harness×provider×model triple; the id accepts the trailer
+    \\                 email form (`<id>@local` — the @local strips)
+    \\  harness <id> · provider <id> · model <id>
+    \\                 the dim entity views (≡ /harness/<id> et al)
+    \\  --agent=ID     the agent view by flag; --harness=/--provider=/--model=
+    \\                 likewise name their entity — one dim flag names that
+    \\                 entity, all three name the agent, two conflict (exit 3)
     \\
-    \\filters — each narrows ALL THREE arrays to the entries available for it:
-    \\  --harness=H --provider=P --model=M
-    \\                 names, labels, and aliases resolve like the recipe flags
-    \\  --platform=PL  entries in combos declared on that platform
+    \\<id> is an INPUT, normalised into the canonical id exactly like the site's
+    \\routes: names, labels, and aliases resolve (Kimi Code → kimicode); agent
+    \\ids are matched exactly after trim + lowercase + the @local strip.
+    \\
+    \\filters — on the search view they narrow; on an entity view they are
+    \\PREDICATES, never slices: the data is unchanged, the entity either passes
+    \\them all or the command fails listing each filter's match state
+    \\(exit 14; the match report still prints unless --no-json):
     \\  --free / --no-free
-    \\                 entries in free / not-free provider-model cells
+    \\                 membership in the free axis (provider_map_to_free_models)
     \\  --reciprocal / --no-reciprocal
-    \\                 entries in combos with that reciprocity of record
+    \\                 the reciprocity of record
+    \\  --platform=PL  captured on that platform (darwin/macos, linux, windows —
+    \\                 the aliases normalise exactly like the site's ?platform=);
+    \\                 a platforms array always means platforms with captures
+    \\  --email=E      the trailer email of record (an agent's is its id @local)
+    \\  --search=S     site-side free-text — passed through to the deep link
+    \\  --harness=H --provider=P --model=M
+    \\                 on an agent view, dim equality; on a dim view,
+    \\                 participation in ≥1 combo with that dim
     \\
     \\output:
-    \\  JSON by default; --web opens siteUrl/?<dims>#index; --no-json prints
-    \\  nothing — exit status only. --json / --no-web are the explicit defaults.
+    \\  JSON by default: the search view prints the filtered index
+    \\  {harnesses, providers, models, provider_map_to_free_models,
+    \\  agent_map_to_platforms_reciprocal}; an agent view prints that agent's
+    \\  facts; a dim view prints the entity's index entry. --web opens the
+    \\  equivalent site route; --no-json prints nothing — exit status only
+    \\  (a filtered-out entity's stderr explanation always prints).
     \\
     \\examples:
     \\  agent-detect index
-    \\  agent-detect index --harness=cline
-    \\  agent-detect index --free
-    \\  agent-detect index --provider=chutes --no-reciprocal
+    \\  agent-detect index --free --platform=linux
+    \\  agent-detect index agent cline-chutes-glm51
+    \\  agent-detect index agent cline-chutes-glm51@local --reciprocal
+    \\  agent-detect index harness cline --free
+    \\  agent-detect index --harness=kimi-code --provider=chutes --model=glm-5.2 --web
     \\
     \\exit codes:
-    \\  0 ok · 2 unrecognised argument (a bad --platform value) · 3 conflicting
-    \\  argument (the output flags on another action) · 6 the platform url
-    \\  opener is absent or failed · 7 a dim resolved to no rule.
+    \\  0 ok · 2 unrecognised argument (a bad --platform= value) · 3 conflicting
+    \\  argument (two dim flags; --agent= with a positional entity) · 4 missing
+    \\  required arguments (an entity kind with no id) · 6 the platform url
+    \\  opener is absent or failed · 7 unknown agent or dim · 14 the entity
+    \\  resolved but a filter excluded it.
     \\
 ;
 
@@ -3549,50 +3535,48 @@ pub const siteUrl = "https://agent-detect.bevry.workers.dev";
 
 /// the registry action's canonicalized query — every value as it lands in the
 /// url and the JSON report (empty/unset for absent filters).
-pub const RegistryQuery = struct {
+/// the filters both index views carry in their deep links — the site evaluates
+/// the same set (on entity routes they gate: a mismatching entity 422s with the
+/// per-filter match states and a link to the view without the violating ones).
+pub const IndexQuery = struct {
     harness: []const u8 = "",
     provider: []const u8 = "",
     model: []const u8 = "",
     email: []const u8 = "",
     platform: []const u8 = "",
+    search: []const u8 = "",
     free: ?bool = null,
     reciprocal: ?bool = null,
-    /// direct result-page id (3- or 4-part); exclusive with every filter
-    agent: []const u8 = "",
 };
 
-/// compose the registry url: `--agent` → the result page; any filter → the
-/// filtered registry at the `#registry` anchor (the anchor appears iff a filter
-/// was given — it is what scrolls the results into view); none → the homepage.
-pub fn buildRegistryUrl(a: std.mem.Allocator, q: RegistryQuery) ![]u8 {
-    if (q.agent.len > 0) {
-        return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}", .{q.agent});
-    }
-    // the complete combo composes the agent id — it IS the result page
-    if (q.harness.len > 0 and q.provider.len > 0 and q.model.len > 0) {
-        return std.fmt.allocPrint(a, siteUrl ++ "/?agent={s}-{s}-{s}", .{ q.harness, q.provider, q.model });
-    }
+/// compose the search view's url: any filter → the filtered registry at the
+/// `#registry` anchor (it is what scrolls the results into view); none → the
+/// homepage.
+pub fn buildIndexSearchUrl(a: std.mem.Allocator, q: IndexQuery) ![]u8 {
     var qs: std.ArrayList(u8) = .empty;
-    try appendParam(a, &qs, "harness", q.harness);
-    try appendParam(a, &qs, "provider", q.provider);
-    try appendParam(a, &qs, "model", q.model);
     try appendParam(a, &qs, "email", q.email);
     try appendParam(a, &qs, "platform", q.platform);
+    try appendParam(a, &qs, "search", q.search);
     if (q.free) |b| try appendParam(a, &qs, "free", if (b) "true" else "false");
     if (q.reciprocal) |b| try appendParam(a, &qs, "reciprocal", if (b) "true" else "false");
     if (qs.items.len == 0) return a.dupe(u8, siteUrl ++ "/");
     return std.fmt.allocPrint(a, siteUrl ++ "/?{s}#registry", .{qs.items});
 }
 
-/// compose the index url — the three dim filters (the site's index section
-/// honors exactly these), anchored at #index.
-pub fn buildIndexUrl(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8) ![]u8 {
+/// compose an entity view's url — the site route the view maps onto
+/// (`/{kind}/{id}`), carrying the filters that gate it.
+pub fn buildEntityUrl(a: std.mem.Allocator, kind: []const u8, id: []const u8, q: IndexQuery) ![]u8 {
     var qs: std.ArrayList(u8) = .empty;
-    try appendParam(a, &qs, "harness", h);
-    try appendParam(a, &qs, "provider", p);
-    try appendParam(a, &qs, "model", m);
-    if (qs.items.len == 0) return std.fmt.allocPrint(a, siteUrl ++ "/#index", .{});
-    return std.fmt.allocPrint(a, siteUrl ++ "/?{s}#index", .{qs.items});
+    try appendParam(a, &qs, "harness", q.harness);
+    try appendParam(a, &qs, "provider", q.provider);
+    try appendParam(a, &qs, "model", q.model);
+    try appendParam(a, &qs, "email", q.email);
+    try appendParam(a, &qs, "platform", q.platform);
+    try appendParam(a, &qs, "search", q.search);
+    if (q.free) |b| try appendParam(a, &qs, "free", if (b) "true" else "false");
+    if (q.reciprocal) |b| try appendParam(a, &qs, "reciprocal", if (b) "true" else "false");
+    if (qs.items.len == 0) return std.fmt.allocPrint(a, siteUrl ++ "/{s}/{s}", .{ kind, id });
+    return std.fmt.allocPrint(a, siteUrl ++ "/{s}/{s}?{s}", .{ kind, id, qs.items });
 }
 
 fn appendParam(a: std.mem.Allocator, qs: *std.ArrayList(u8), key: []const u8, value: []const u8) !void {

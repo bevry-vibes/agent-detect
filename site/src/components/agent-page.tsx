@@ -118,7 +118,7 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
-      {row && <ResultHeader id={row.agent_id} rawHref={`/identify/${row.agent_id}.json`} onHome={onHome} />}
+      {row && <ResultHeader id={row.agent_id} rawHref={`/agent/${row.agent_id}.json`} onHome={onHome} />}
 
       {!row && (
         <div className="rounded-xl border p-6">

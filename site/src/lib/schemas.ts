@@ -6,8 +6,9 @@
 //                     verbatim (registry.json, index.json, agents.json, and
 //                     the per-agent identity fixture copies).
 //   *ReportSchema   — an ephemeral query response, never stored (the worker's
-//                     /index.json envelope). A report's `count` is a property
-//                     of the query, not of any document.
+//                     /index.json envelope; the filtered-entity 422 body).
+//                     A report's `count` is a property of the query, not of
+//                     any document.
 //   FixtureOutputs  — the `outputs` object embedded in the fixture channels
 //                     (the saved CLI outputs, verbatim); Identify is its one
 //                     fully-typed payload — the 29-field contract.
@@ -238,25 +239,33 @@ export const IndexQueryReportSchema = z.object({
   results: z.array(AgentRowSchema.extend({ detail: IdentityFileSchema.optional() })),
 });
 
-// ── 6. cli `registry` action report ─────────────────────────────────────────
-// (until the index/registry collapse retires it; `query` here is the RESOLVED
-// query — the cli refuses to emit unresolved values — where /index.json's
-// `params` is the raw echo)
+// ── 6. the filtered-entity report — the cli's exit-14 stderr twin and the
+//       web's 422 body (the id resolved, the filters did not) ────────────────
 
-export const RegistryActionReportSchema = z.object({
-  url: z.string(),
-  query: z.object({
-    harness: Slug.nullable(),
-    provider: Slug.nullable(),
-    model: Slug.nullable(),
-    email: z.string().nullable(),
-    platform: Platform.nullable(),
-    free: z.boolean().nullable(),
-    reciprocal: z.boolean().nullable(),
-    agent: z.string().nullable(),
-  }),
-  opened: z.boolean(),
+export const FilterMatchSchema = z.object({
+  /** the filter as given — "--platform" */
+  filter: z.string(),
+  /** the value as given — "darwin" (normalised into the canonical id for the test) */
+  value: z.string(),
+  matched: z.boolean(),
+  /** the fact that decided it — e.g. "captured on: linux, windows" */
+  fact: z.string().optional(),
 });
+export const EntityMatchReportSchema = z.object({
+  error: z.literal("filtered-out"),
+  entity: z.enum(["agent", "harness", "provider", "model"]),
+  /** the input as given ("Kimi Code") */
+  input: z.string(),
+  /** the canonical id the input resolved to — one strict-slug segment for dim
+   * entities, dash-joined for agents (AgentId's pattern covers both) */
+  id: AgentId,
+  /** every given filter, each with its match state */
+  filters: z.array(FilterMatchSchema).min(1),
+  /** the same view without the violating filters — the web returns the path,
+   * the cli prints the absolute deep link */
+  unfiltered_url: z.string(),
+});
+
 
 // ── inferred types — the site imports these, never hand-writes interfaces ───
 
@@ -264,6 +273,7 @@ export type Slug = z.infer<typeof Slug>;
 export type AgentId = z.infer<typeof AgentId>;
 export type Platform = z.infer<typeof Platform>;
 export type TrainingAxis = z.infer<typeof TrainingAxis>;
+export type StderrLines = z.infer<typeof StderrLines>;
 export type Rule = z.infer<typeof RuleSchema>;
 export type RegistryFile = z.infer<typeof RegistryFileSchema>;
 export type HarnessEntry = z.infer<typeof HarnessEntrySchema>;
@@ -276,4 +286,5 @@ export type Identify = z.infer<typeof IdentifySchema>;
 export type FixtureOutputs = z.infer<typeof FixtureOutputsSchema>;
 export type IdentityFile = z.infer<typeof IdentityFileSchema>;
 export type IndexQueryReport = z.infer<typeof IndexQueryReportSchema>;
-export type RegistryActionReport = z.infer<typeof RegistryActionReportSchema>;
+export type FilterMatch = z.infer<typeof FilterMatchSchema>;
+export type EntityMatchReport = z.infer<typeof EntityMatchReportSchema>;

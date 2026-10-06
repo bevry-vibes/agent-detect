@@ -18,7 +18,7 @@ import {
   type ProviderEntry,
   type RegistryFile,
   type Rule,
-} from "./schemas";
+} from "./schemas.ts";
 
 export type {
   AgentRow,

@@ -139,20 +139,19 @@ git commit --trailer "$(.\agent-detect.exe trailer assisted-by)"
 
 ### the registry website
 
-The browsable registry of every known combo — policy fields, reciprocity verdict, and the exact CLI outputs — lives at [agent-detect.bevry.workers.dev](https://agent-detect.bevry.workers.dev).
+The browsable registry of every known agent (a harness × provider × model combination) — policy fields, reciprocity verdict, and the exact CLI outputs — lives at [agent-detect.bevry.workers.dev](https://agent-detect.bevry.workers.dev).
 Open it from the CLI (the same command on every platform):
 
 ```sh
-./agent-detect registry                                   # print {url, query, opened} — the homepage
-./agent-detect registry --harness=kimi-code               # print + open the registry filtered to a dim
-./agent-detect registry --harness=kimi-code --provider=chutes --model=glm-5.2   # the combo's result page
-./agent-detect registry --reciprocal=false --free --platform=linux --web        # filters + open
-./agent-detect registry --agent=cline-chutes-kimik3 --no-json                   # open, exit status only
-./agent-detect index --harness=cline                      # the rule index: everything available for cline
-./agent-detect index --free                               # only the entries with a free cell
+./agent-detect index                                      # the search view — the filtered rule index
+./agent-detect index --reciprocal=false --free --platform=linux --web   # filters + open the site
+./agent-detect index agent cline-chutes-kimik3            # the agent's view — the result page's facts
+./agent-detect index agent cline-chutes-kimik3@local      # the trailer-email form works too
+./agent-detect index harness cline --free                 # a dim entity view, gated on the free axis
+./agent-detect index --harness=kimi-code --provider=chutes --model=glm-5.2 --web   # all three dims = the agent, opened
 ```
 
-`registry`'s dims resolve exactly like the flags (names, labels, and aliases accepted); the urls carry the canonical strict-slug ids the site uses. `index` narrows all three arrays to what is available for the given filters — `--harness=cline` keeps `harnesses` at cline and keeps only the providers and models whose associations include cline.
+`index` maps onto the site's routes: no entity is the search view (`/?<filters>`), `index agent|provider|model <id>` the entity views (`/agent/<id>` et al). Dims resolve exactly like the flags (names, labels, and aliases accepted); the urls carry the canonical strict-slug ids the site uses. On an entity view the filters are predicates, never slices — a filter the entity fails exits 14 with each filter's match state on stderr and the structured match report on stdout (unknown agents/dims exit 7).
 
 ## contributing
 

@@ -25,15 +25,14 @@ const writeOut = core.writeOut;
 const writeErr = core.writeErr;
 const usage = core.usage;
 const trailerUsage = core.trailerUsage;
-const registryUsage = core.registryUsage;
 const indexUsage = core.indexUsage;
 
 const resolveRecipe = core.resolveRecipe;
 const detect = core.detect;
 const buildJson = core.buildJson;
-const buildRegistryUrl = core.buildRegistryUrl;
-const buildIndexUrl = core.buildIndexUrl;
-const RegistryQuery = core.RegistryQuery;
+const buildIndexSearchUrl = core.buildIndexSearchUrl;
+const buildEntityUrl = core.buildEntityUrl;
+const IndexQuery = core.IndexQuery;
 const openURL = core.openURL;
 
 const EXIT_OK = core.EXIT_OK;
@@ -50,6 +49,7 @@ const EXIT_REQUIREMENT_FAILED = core.EXIT_REQUIREMENT_FAILED;
 const EXIT_OUT_OF_MEMORY = core.EXIT_OUT_OF_MEMORY;
 const EXIT_INDEX_STORE = core.EXIT_INDEX_STORE;
 const EXIT_IO = core.EXIT_IO;
+const EXIT_FOUND_FILTERED = core.EXIT_FOUND_FILTERED;
 
 const MSG_UNRECOGNISED_ARG = core.MSG_UNRECOGNISED_ARG;
 const MSG_CONFLICTING_ARG = core.MSG_CONFLICTING_ARG;
@@ -172,7 +172,6 @@ fn isKnownAction(word: []const u8) bool {
         std.mem.eql(u8, word, "explain") or
         std.mem.eql(u8, word, "trailer") or
         std.mem.eql(u8, word, "check-reciprocal") or
-        std.mem.eql(u8, word, "registry") or
         std.mem.eql(u8, word, "index") or
         std.mem.eql(u8, word, "help") or
         std.mem.eql(u8, word, "version");
@@ -299,8 +298,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     // No arguments prints help.
     // `identify`, `found`, `explain`, `trailer <type>`, and `check-reciprocal` accept an optional complete combo (`--harness=H --provider=P --model=M` — all three or none) for recipe-mode output.
     // help/version win over everything: any help/version flag anywhere at top level short-circuits to the relevant usage/version output (exit 0), never a conflict.
-    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "registry", "index", "help", "version"
-    var web_alias = false; // the action word was `web` — the retired spelling of `registry`
+    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "index", "registry" (retired), "help", "version"
+    var web_alias = false; // the action word was `web` — the twice-retired spelling (`web` → `registry` → `index`)
     var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
     var help_wanted = false;
     var version_wanted = false;
@@ -310,9 +309,12 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     var combo_h: []const u8 = "";
     var combo_p: []const u8 = "";
     var combo_m: []const u8 = "";
-    var agent_id: []const u8 = ""; // the --agent= value (registry)
-    var email: []const u8 = ""; // the --email= value (registry)
-    var web_platform: []const u8 = ""; // the --platform= value (registry/index)
+    var agent_id: []const u8 = ""; // the --agent= value (index: the agent entity form)
+    var email: []const u8 = ""; // the --email= value (index filter)
+    var search_filter: []const u8 = ""; // the --search= value (index: site-side free-text)
+    var web_platform: []const u8 = ""; // the --platform= value (index filter)
+    var entity_kind: []const u8 = ""; // the positional entity word after `index`: agent|harness|provider|model
+    var entity_id: []const u8 = ""; // the positional id after the entity word
     var free_filter: ?bool = null; // --free / --no-free / --free=true|false
     var reciprocal_filter: ?bool = null; // --reciprocal / --no-reciprocal / --reciprocal=true|false
     var want_web = false; // --web (registry/index: also open the site)
@@ -341,6 +343,15 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             } else if (!std.mem.eql(u8, action, arg) and conflict == null) {
                 conflict = arg;
             }
+        } else if (std.mem.eql(u8, action, "index") and (std.mem.eql(u8, arg, "agent") or std.mem.eql(u8, arg, "harness") or std.mem.eql(u8, arg, "provider") or std.mem.eql(u8, arg, "model"))) {
+            // the positional entity view: `index agent <id>` — the kind word, then the id
+            if (entity_kind.len == 0) {
+                entity_kind = arg;
+            } else if (entity_id.len == 0) {
+                entity_id = arg;
+            } else if (conflict == null) {
+                conflict = arg;
+            }
         } else if (std.mem.eql(u8, arg, "co-author") or std.mem.eql(u8, arg, "assisted-by")) {
             // trailer subtypes; after any other action a bare word is a conflict.
             if (std.mem.eql(u8, action, "trailer") and trailer_type.len == 0) {
@@ -364,6 +375,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             email = arg["--email=".len..];
         } else if (std.mem.startsWith(u8, arg, "--platform=")) {
             web_platform = arg["--platform=".len..];
+        } else if (std.mem.startsWith(u8, arg, "--search=")) {
+            search_filter = arg["--search=".len..];
         } else if (std.mem.eql(u8, arg, "--free") or std.mem.eql(u8, arg, "--free=true")) {
             free_filter = true;
         } else if (std.mem.eql(u8, arg, "--no-free") or std.mem.eql(u8, arg, "--free=false")) {
@@ -386,6 +399,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             // unrecognised bare word / flag.
             if (std.mem.eql(u8, action, "help") and help_topic == null) {
                 help_topic = arg; // `help <topic>`
+            } else if (std.mem.eql(u8, action, "index") and entity_kind.len > 0 and entity_id.len == 0 and arg.len > 0 and arg[0] != '-') {
+                entity_id = arg; // `index agent <id>` — the id
             } else if (action.len == 0) {
                 if (unknown == null) unknown = arg;
             } else if (conflict == null) {
@@ -410,13 +425,6 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             writeOut(io, trailerUsage);
             return EXIT_OK;
         }
-        if (std.mem.eql(u8, action, "registry")) {
-            if (web_alias) {
-                writeErr(io, "note: `web` was renamed to `registry` — the old spelling still dispatches\n");
-            }
-            writeOut(io, registryUsage);
-            return EXIT_OK;
-        }
         if (std.mem.eql(u8, action, "index")) {
             writeOut(io, indexUsage);
             return EXIT_OK;
@@ -427,11 +435,9 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 return EXIT_OK;
             }
             if (std.mem.eql(u8, topic, "registry") or std.mem.eql(u8, topic, "web")) {
-                if (std.mem.eql(u8, topic, "web")) {
-                    writeErr(io, "note: `web` was renamed to `registry` — the old spelling still dispatches\n");
-                }
-                writeOut(io, registryUsage);
-                return EXIT_OK;
+                writeErr(io, "registry is gone — one command: agent-detect index (see `index --help`)\n");
+                writeOut(io, indexUsage);
+                return EXIT_UNRECOGNISED_ARG;
             }
             if (std.mem.eql(u8, topic, "index")) {
                 writeOut(io, indexUsage);
@@ -473,41 +479,37 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_CONFLICTING_ARG;
     }
 
-    // the registry/index flags on any other action (or no action) → conflicting
+    // the index flags on any other action (or no action) → conflicting
     // argument: the filters deep-link the site, the output flags shape the JSON —
     // neither means anything to identify/trailer/check-reciprocal.
-    const registry_index_action = std.mem.eql(u8, action, "registry") or std.mem.eql(u8, action, "index");
-    if ((web_platform.len > 0 or agent_id.len > 0 or email.len > 0 or free_filter != null or reciprocal_filter != null or want_web or no_web or want_json or no_json) and !registry_index_action) {
+    const index_action = std.mem.eql(u8, action, "index");
+    if ((web_platform.len > 0 or agent_id.len > 0 or email.len > 0 or search_filter.len > 0 or free_filter != null or reciprocal_filter != null or want_web or no_web or want_json or no_json) and !index_action) {
         writeErr(io, MSG_CONFLICTING_ARG);
         writeOut(io, usage);
         return EXIT_CONFLICTING_ARG;
     }
 
-    // --no-open is gone — registry/index opening is opt-in via --web (elsewhere
-    // it was already a conflict, caught above).
+    // --no-open is gone — index opening is opt-in via --web (elsewhere it was
+    // already a conflict, caught above).
     if (no_open_gone) {
         writeErr(io, MSG_UNRECOGNISED_ARG);
-        writeErr(io, "--no-open' — it is gone: registry and index open the site only with --web\n");
-        writeOut(io, if (registry_index_action) (if (std.mem.eql(u8, action, "index")) indexUsage else registryUsage) else usage);
+        writeErr(io, "--no-open' — it is gone: index opens the site only with --web\n");
+        writeOut(io, if (index_action) indexUsage else usage);
         return EXIT_UNRECOGNISED_ARG;
     }
 
-    // `registry` — the site deep-links, JSON-first. Partial combos are the
-    // feature (they filter the registry), so this dispatches BEFORE recipe
-    // mode's all-three-or-none combo gate below.
+    // `registry` (and its own retired spelling `web`) — dropped: one command.
     if (std.mem.eql(u8, action, "registry")) {
-        return runRegistry(init, combo_h, combo_p, combo_m, agent_id, email, web_platform, free_filter, reciprocal_filter, .{ .web = want_web, .no_web = no_web, .json = want_json, .no_json = no_json });
+        writeErr(io, "registry is gone — one command: agent-detect index\n");
+        writeErr(io, "  - `index` (no entity) is the search view; `index agent|harness|provider|model <id>` the entity views\n");
+        writeErr(io, "  - the filters work exactly as before, and --web still opens the site\n");
+        writeOut(io, indexUsage);
+        return EXIT_UNRECOGNISED_ARG;
     }
 
-    // `index` — the rule index. The combo-level registry filters are conflicts here.
+    // `index` — the search view and the entity views.
     if (std.mem.eql(u8, action, "index")) {
-        if (agent_id.len > 0 or email.len > 0) {
-            writeErr(io, MSG_CONFLICTING_ARG);
-            writeErr(io, "  - --agent=/--email= are registry filters — the index is the rule level\n");
-            writeOut(io, indexUsage);
-            return EXIT_CONFLICTING_ARG;
-        }
-        return runIndex(init, combo_h, combo_p, combo_m, web_platform, free_filter, reciprocal_filter, .{ .web = want_web, .no_web = no_web, .json = want_json, .no_json = no_json });
+        return runIndex(init, .{ .web = want_web, .no_web = no_web, .json = want_json, .no_json = no_json }, entity_kind, entity_id, combo_h, combo_p, combo_m, agent_id, email, search_filter, web_platform, free_filter, reciprocal_filter);
     }
 
     // bare `trailer` → missing required arguments (subtype absent).
@@ -585,168 +587,33 @@ fn openIfWanted(io: std.Io, a: std.mem.Allocator, url: []const u8, opts: OutputO
     return EXIT_OK;
 }
 
-/// the `registry` action — build the website url from the filters and (with
-/// --web) open it; the JSON report `{url, query, opened}` prints unless
-/// --no-json. Dims resolve exactly like the recipe flags (names, labels,
-/// aliases); a complete combo deep-links the combo's result page, any partial
-/// set filters the registry at the `#registry` anchor.
-fn runRegistry(
-    init: std.process.Init,
-    h: []const u8,
-    p: []const u8,
-    m: []const u8,
-    agent_id: []const u8,
-    email: []const u8,
-    platform: []const u8,
-    free_filter: ?bool,
-    reciprocal_filter: ?bool,
-    opts: OutputOpts,
-) !u8 {
-    const a = init.arena.allocator();
-    const io = init.io;
-
-    // strict CLI-side resolution — a dead url is knowable before any browser is involved.
-    const rh: ?[]const u8 = if (h.len > 0) rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, h) else null;
-    const rp: ?[]const u8 = if (p.len > 0) rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, p) else null;
-    const rm: ?[]const u8 = if (m.len > 0) rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, m) else null;
-    if ((h.len > 0 and rh == null) or (p.len > 0 and rp == null) or (m.len > 0 and rm == null)) {
-        core.writeMissingSpecifiedAgent(io, rh, rp, rm);
-        return EXIT_MISSING_SPECIFIED_AGENT;
-    }
-
-    const cp: []const u8 = if (platform.len > 0) blk: {
-        const canon = canonicalWebPlatform(platform) orelse {
-            writeErr(io, MSG_UNRECOGNISED_ARG);
-            writeErr(io, "--platform=");
-            writeErr(io, platform);
-            writeErr(io, "' — one of darwin (macos), linux, windows\n");
-            writeOut(io, registryUsage);
-            return EXIT_UNRECOGNISED_ARG;
-        };
-        break :blk canon;
-    } else "";
-
-    const trimmed_email = std.mem.trim(u8, email, " \t");
-    if (email.len > 0 and trimmed_email.len == 0) {
-        writeErr(io, MSG_MISSING_ARG);
-        writeErr(io, "  - --email= requires the trailer email to filter by\n");
-        writeOut(io, registryUsage);
-        return EXIT_MISSING_ARG;
-    }
-
-    // the three-dims form IS the agent form; every combo-level filter is
-    // exclusive with a result page.
-    const three_dims = rh != null and rp != null and rm != null;
-    const has_filters = trimmed_email.len > 0 or cp.len > 0 or free_filter != null or reciprocal_filter != null;
-    if (agent_id.len > 0 and (has_filters or h.len > 0 or p.len > 0 or m.len > 0)) {
-        writeErr(io, MSG_CONFLICTING_ARG);
-        writeErr(io, "  - --agent= is exclusive — it names the result page; the filters narrow the registry\n");
-        writeOut(io, registryUsage);
-        return EXIT_CONFLICTING_ARG;
-    }
-    if (three_dims and has_filters) {
-        writeErr(io, MSG_CONFLICTING_ARG);
-        writeErr(io, "  - a complete combo is a result page — the email/platform/free/reciprocal filters narrow the registry\n");
-        writeOut(io, registryUsage);
-        return EXIT_CONFLICTING_ARG;
-    }
-
-    var q = RegistryQuery{
-        .harness = rh orelse "",
-        .provider = rp orelse "",
-        .model = rm orelse "",
-        .email = trimmed_email,
-        .platform = cp,
-        .free = free_filter,
-        .reciprocal = reciprocal_filter,
-    };
-    if (agent_id.len > 0) {
-        // shape check only — the CLI has no fixture data, so existence is the
-        // site's verdict (its unknown-agent page). 3-part <h>-<p>-<m> or the
-        // 4-part fixture id; lowercase alphanumerics and dashes.
-        var parts: usize = 0;
-        var it = std.mem.splitScalar(u8, agent_id, '-');
-        while (it.next()) |seg| {
-            if (seg.len == 0) {
-                parts = 0;
-                break;
-            }
-            for (seg) |c| {
-                if (!std.ascii.isAlphanumeric(c)) {
-                    parts = 0;
-                    break;
-                }
-            }
-            parts += 1;
-        }
-        if (parts != 3 and parts != 4) {
-            writeErr(io, MSG_UNRECOGNISED_ARG);
-            writeErr(io, "--agent=");
-            writeErr(io, agent_id);
-            writeErr(io, "' — expected the 3-part <harness>-<provider>-<model> id or the 4-part fixture id\n");
-            writeOut(io, registryUsage);
-            return EXIT_UNRECOGNISED_ARG;
-        }
-        q.agent = agent_id;
-    }
-
-    const url = try buildRegistryUrl(a, q);
-    if (!opts.no_json) {
-        const QueryJson = struct {
-            harness: ?[]const u8,
-            provider: ?[]const u8,
-            model: ?[]const u8,
-            email: ?[]const u8,
-            platform: ?[]const u8,
-            free: ?bool,
-            reciprocal: ?bool,
-            agent: ?[]const u8,
-        };
-        const Doc = struct { url: []const u8, query: QueryJson, opened: bool };
-        const doc = Doc{
-            .url = url,
-            .query = .{
-                .harness = if (q.harness.len > 0) q.harness else null,
-                .provider = if (q.provider.len > 0) q.provider else null,
-                .model = if (q.model.len > 0) q.model else null,
-                .email = if (q.email.len > 0) q.email else null,
-                .platform = if (q.platform.len > 0) q.platform else null,
-                .free = q.free,
-                .reciprocal = q.reciprocal,
-                .agent = if (q.agent.len > 0) q.agent else null,
-            },
-            .opened = opts.web,
-        };
-        const bytes = try std.json.Stringify.valueAlloc(a, doc, .{ .whitespace = .indent_2 });
-        writeOut(io, bytes);
-        writeOut(io, "\n");
-    }
-    return openIfWanted(io, a, url, opts);
-}
-
-/// the `index` action — print the rule index (the embedded
-/// fixtures/index-data.json, filtered) as JSON; --web opens the site's index
-/// section deep-linked with the three dim filters.
+/// the `index` action — the search view and the entity views (D10's collapse):
+/// no entity → the filtered rule index (the embedded fixtures/index-data.json);
+/// `agent|harness|provider|model <id>` → that entity's view, mapping onto the
+/// site's routes. Dim flags address entities (one flag names that entity, all
+/// three name the agent, two conflict); on an entity view every filter is a
+/// PREDICATE, never a slice — the payload is unchanged, and a filter that
+/// excludes the entity fails with exit 14, the per-filter match states on
+/// stderr (the human report) and the structured match report on stdout (unless
+/// --no-json). Unknown agents/dims exit 7.
 fn runIndex(
     init: std.process.Init,
+    opts: OutputOpts,
+    entity_kind: []const u8,
+    entity_id: []const u8,
     h: []const u8,
     p: []const u8,
     m: []const u8,
+    agent_flag: []const u8,
+    email: []const u8,
+    search: []const u8,
     platform: []const u8,
     free_filter: ?bool,
     reciprocal_filter: ?bool,
-    opts: OutputOpts,
 ) !u8 {
     const a = init.arena.allocator();
     const io = init.io;
 
-    const rh: ?[]const u8 = if (h.len > 0) rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, h) else null;
-    const rp: ?[]const u8 = if (p.len > 0) rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, p) else null;
-    const rm: ?[]const u8 = if (m.len > 0) rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, m) else null;
-    if ((h.len > 0 and rh == null) or (p.len > 0 and rp == null) or (m.len > 0 and rm == null)) {
-        core.writeMissingSpecifiedAgent(io, rh, rp, rm);
-        return EXIT_MISSING_SPECIFIED_AGENT;
-    }
     const cp: []const u8 = if (platform.len > 0) blk: {
         const canon = canonicalWebPlatform(platform) orelse {
             writeErr(io, MSG_UNRECOGNISED_ARG);
@@ -759,22 +626,459 @@ fn runIndex(
         break :blk canon;
     } else "";
 
-    const idx = index_data.Index.load(a) catch return error.IndexDataInvalid;
-    const value = try idx.buildFiltered(a, .{
-        .harness = rh,
-        .provider = rp,
-        .model = rm,
-        .platform = if (cp.len > 0) cp else null,
-        .free = free_filter,
-        .reciprocal = reciprocal_filter,
-    });
-    if (!opts.no_json) {
-        const bytes = try std.json.Stringify.valueAlloc(a, value, .{ .whitespace = .indent_2 });
-        writeOut(io, bytes);
-        writeOut(io, "\n");
+    const trimmed_email_raw = std.mem.trim(u8, email, " \t");
+    if (email.len > 0 and trimmed_email_raw.len == 0) {
+        writeErr(io, MSG_MISSING_ARG);
+        writeErr(io, "  - --email= requires the trailer email to filter by\n");
+        writeOut(io, indexUsage);
+        return EXIT_MISSING_ARG;
     }
-    const url = try buildIndexUrl(a, rh orelse "", rp orelse "", rm orelse "");
-    return openIfWanted(io, a, url, opts);
+    const trimmed_email = try std.ascii.allocLowerString(a, trimmed_email_raw);
+    const trimmed_search = std.mem.trim(u8, search, " \t");
+
+    // resolve the view: the positional entity word wins, then the flag forms.
+    const EntityKind = enum { none, agent, harness, provider, model };
+    var kind: EntityKind = .none;
+    var id_input: []const u8 = "";
+    if (entity_kind.len > 0) {
+        kind = blk: {
+            if (std.mem.eql(u8, entity_kind, "agent")) break :blk EntityKind.agent;
+            if (std.mem.eql(u8, entity_kind, "harness")) break :blk EntityKind.harness;
+            if (std.mem.eql(u8, entity_kind, "provider")) break :blk EntityKind.provider;
+            break :blk EntityKind.model;
+        };
+        if (entity_id.len == 0) {
+            writeErr(io, MSG_MISSING_ARG);
+            writeErr(io, "  - index ");
+            writeErr(io, entity_kind);
+            writeErr(io, " requires the <id> — `index ");
+            writeErr(io, entity_kind);
+            writeErr(io, " <id>`\n");
+            writeOut(io, indexUsage);
+            return EXIT_MISSING_ARG;
+        }
+        // double-naming: the positional kind and its own flag are a conflict
+        // (they may disagree); the OTHER dims are predicates on the view.
+        const own_flag = switch (kind) {
+            .agent => agent_flag.len > 0,
+            .harness => h.len > 0,
+            .provider => p.len > 0,
+            .model => m.len > 0,
+            .none => false,
+        };
+        if (own_flag) {
+            writeErr(io, MSG_CONFLICTING_ARG);
+            writeErr(io, "  - the entity is named twice — pass the id once (positional or flag)\n");
+            writeOut(io, indexUsage);
+            return EXIT_CONFLICTING_ARG;
+        }
+        id_input = entity_id;
+    } else if (agent_flag.len > 0) {
+        kind = .agent;
+        id_input = agent_flag;
+    } else {
+        const dims: usize = (if (h.len > 0) @as(usize, 1) else 0) +
+            (if (p.len > 0) @as(usize, 1) else 0) + (if (m.len > 0) @as(usize, 1) else 0);
+        if (dims == 3) {
+            // all three dim flags name the AGENT — the resolved slugs compose the id
+            const rh = rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, h) orelse {
+                core.writeMissingSpecifiedAgent(io, null, null, null);
+                return EXIT_MISSING_SPECIFIED_AGENT;
+            };
+            const rp = rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, p) orelse {
+                core.writeMissingSpecifiedAgent(io, null, null, null);
+                return EXIT_MISSING_SPECIFIED_AGENT;
+            };
+            const rm = rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, m) orelse {
+                core.writeMissingSpecifiedAgent(io, null, null, null);
+                return EXIT_MISSING_SPECIFIED_AGENT;
+            };
+            kind = .agent;
+            id_input = try std.fmt.allocPrint(a, "{s}-{s}-{s}", .{ rh, rp, rm });
+        } else if (dims == 1) {
+            kind = if (h.len > 0) EntityKind.harness else if (p.len > 0) EntityKind.provider else EntityKind.model;
+            id_input = if (h.len > 0) h else if (p.len > 0) p else m;
+        } else if (dims == 2) {
+            writeErr(io, MSG_CONFLICTING_ARG);
+            writeErr(io, "  - one dim flag names that entity; all three name the agent; two name nothing\n");
+            writeOut(io, indexUsage);
+            return EXIT_CONFLICTING_ARG;
+        }
+    }
+
+    const idx = index_data.Index.load(a) catch return error.IndexDataInvalid;
+
+    // ------------------------- the search view -------------------------
+    if (kind == .none) {
+        const value = try idx.buildFiltered(a, .{
+            .platform = if (cp.len > 0) cp else null,
+            .free = free_filter,
+            .reciprocal = reciprocal_filter,
+        });
+        if (!opts.no_json) {
+            const bytes = try std.json.Stringify.valueAlloc(a, value, .{ .whitespace = .indent_2 });
+            writeOut(io, bytes);
+            writeOut(io, "\n");
+        }
+        const url = try buildIndexSearchUrl(a, .{
+            .email = trimmed_email,
+            .platform = cp,
+            .search = trimmed_search,
+            .free = free_filter,
+            .reciprocal = reciprocal_filter,
+        });
+        return openIfWanted(io, a, url, opts);
+    }
+
+    // ------------------------- the entity views -------------------------
+    // resolve the canonical id — dims resolve like the recipe flags; the agent
+    // id matches exactly after trim + lowercase + the @local strip.
+    const kind_name: []const u8 = switch (kind) {
+        .agent => "agent",
+        .harness => "harness",
+        .provider => "provider",
+        .model => "model",
+        .none => unreachable,
+    };
+    var canonical: []const u8 = "";
+    if (kind == .agent) {
+        const lowered = try std.ascii.allocLowerString(a, std.mem.trim(u8, id_input, " \t"));
+        const stripped = if (std.mem.endsWith(u8, lowered, "@local")) lowered[0 .. lowered.len - "@local".len] else lowered;
+        // shape: exactly 3 dash-separated alphanumeric segments (the 4-part
+        // fixture id is gone with the platform dim)
+        var segs: usize = 0;
+        var ok = stripped.len > 0;
+        var sit = std.mem.splitScalar(u8, stripped, '-');
+        while (sit.next()) |seg| {
+            if (seg.len == 0) {
+                ok = false;
+                break;
+            }
+            for (seg) |c| {
+                if (!std.ascii.isAlphanumeric(c)) ok = false;
+            }
+            segs += 1;
+        }
+        if (!ok or segs != 3) {
+            writeErr(io, "unknown agent: ");
+            writeErr(io, id_input);
+            writeErr(io, "' — expected the 3-part <harness>-<provider>-<model> id (or its <id>@local email form)\n");
+            return EXIT_MISSING_SPECIFIED_AGENT;
+        }
+        if (idx.agentFacts(a, stripped) == null) {
+            writeErr(io, "unknown agent: ");
+            writeErr(io, stripped);
+            writeErr(io, " — see the site's /index.json for the valid agent_ids\n");
+            return EXIT_MISSING_SPECIFIED_AGENT;
+        }
+        canonical = stripped;
+    } else {
+        const resolver = switch (kind) {
+            .harness => rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, id_input),
+            .provider => rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, id_input),
+            .model => rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, id_input),
+            else => unreachable,
+        };
+        canonical = resolver orelse {
+            writeErr(io, "unknown ");
+            writeErr(io, kind_name);
+            writeErr(io, ": ");
+            writeErr(io, id_input);
+            writeErr(io, "' — names, labels, and aliases resolve (see /registry.json)\n");
+            return EXIT_MISSING_SPECIFIED_AGENT;
+        };
+    }
+
+    // the dim predicate values resolve up front (an unresolvable dim input is
+    // exit 7 — the registry convention, knowable before any evaluation)
+    const rh: ?[]const u8 = if (h.len > 0) rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, h) else null;
+    const rp: ?[]const u8 = if (p.len > 0) rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, p) else null;
+    const rm: ?[]const u8 = if (m.len > 0) rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, m) else null;
+    if ((h.len > 0 and rh == null) or (p.len > 0 and rp == null) or (m.len > 0 and rm == null)) {
+        core.writeMissingSpecifiedAgent(io, rh, rp, rm);
+        return EXIT_MISSING_SPECIFIED_AGENT;
+    }
+
+    // one filter's verdict against the entity
+    const FilterMatch = struct {
+        flag: []const u8,
+        value: []const u8,
+        matched: bool,
+        /// the fact that decided it — printed on the stderr explanation
+        fact: []const u8 = "",
+        /// the RESOLVED value the deep link carries (the canonical slug, the
+        /// true/false form) — the violating filters stay out of the link
+        qvalue: []const u8 = "",
+        qname: []const u8 = "",
+    };
+    var checks: std.ArrayList(FilterMatch) = .empty;
+
+    // the agent id's dash-separated segment (0 = harness, 1 = provider, 2 = model)
+    const agentSegment = struct {
+        fn get(agent: []const u8, seg: usize) []const u8 {
+            var it = std.mem.splitScalar(u8, agent, '-');
+            var i: usize = 0;
+            while (it.next()) |s| : (i += 1) {
+                if (i == seg) return s;
+            }
+            return "";
+        }
+    }.get;
+
+    // the view's own segment (the dim the entity names)
+    const view_seg: usize = switch (kind) {
+        .harness => 0,
+        .provider => 1,
+        .model => 2,
+        else => unreachable,
+    };
+
+    var all_matched = true;
+
+    if (kind == .agent) {
+        const facts = idx.agentFacts(a, canonical).?;
+        const seg_h = agentSegment(canonical, 0);
+        const seg_p = agentSegment(canonical, 1);
+        const seg_m = agentSegment(canonical, 2);
+        if (h.len > 0) checks.append(a, .{ .flag = "--harness", .value = h, .matched = std.mem.eql(u8, rh.?, seg_h), .qname = "harness", .qvalue = rh.? }) catch return error.OutOfMemory;
+        if (p.len > 0) checks.append(a, .{ .flag = "--provider", .value = p, .matched = std.mem.eql(u8, rp.?, seg_p), .qname = "provider", .qvalue = rp.? }) catch return error.OutOfMemory;
+        if (m.len > 0) checks.append(a, .{ .flag = "--model", .value = m, .matched = std.mem.eql(u8, rm.?, seg_m), .qname = "model", .qvalue = rm.? }) catch return error.OutOfMemory;
+        if (free_filter) |want| {
+            const has = idx.freeHas(seg_p, seg_m);
+            checks.append(a, .{ .flag = if (want) "--free" else "--no-free", .value = "", .matched = has == want, .fact = if (has) "the cell is free" else "the cell is not free", .qname = "free", .qvalue = if (want) "true" else "false" }) catch return error.OutOfMemory;
+        }
+        if (reciprocal_filter) |want| {
+            checks.append(a, .{ .flag = if (want) "--reciprocal" else "--no-reciprocal", .value = "", .matched = facts.reciprocal == want, .fact = if (facts.reciprocal) "the reciprocity of record is true" else "the reciprocity of record is false", .qname = "reciprocal", .qvalue = if (want) "true" else "false" }) catch return error.OutOfMemory;
+        }
+        if (cp.len > 0) {
+            var has = false;
+            var plats: std.ArrayList(u8) = .empty;
+            for (facts.platforms) |plat| {
+                if (plats.items.len > 0) plats.appendSlice(a, ", ") catch return error.OutOfMemory;
+                plats.appendSlice(a, plat) catch return error.OutOfMemory;
+                if (std.mem.eql(u8, plat, cp)) has = true;
+            }
+            checks.append(a, .{ .flag = "--platform", .value = cp, .matched = has, .fact = if (plats.items.len > 0) try std.fmt.allocPrint(a, "captured on: {s}", .{plats.items}) else "no captures", .qname = "platform", .qvalue = cp }) catch return error.OutOfMemory;
+        }
+        if (trimmed_email.len > 0) {
+            const record = try std.fmt.allocPrint(a, "{s}@local", .{canonical});
+            checks.append(a, .{ .flag = "--email", .value = trimmed_email, .matched = std.mem.eql(u8, trimmed_email, record), .fact = try std.fmt.allocPrint(a, "the email of record is {s}", .{record}), .qname = "email", .qvalue = record }) catch return error.OutOfMemory;
+        }
+    } else {
+        // dim entity views — participation: each filter is matched iff the
+        // entity participates in ≥1 combo (agent) satisfying it
+        if (free_filter) |want| {
+            var found = false;
+            var it = idx.agents.iterator();
+            while (it.next()) |kv| {
+                if (!std.mem.eql(u8, agentSegment(kv.key_ptr.*, view_seg), canonical)) continue;
+                if (idx.freeHas(agentSegment(kv.key_ptr.*, 1), agentSegment(kv.key_ptr.*, 2))) found = true;
+            }
+            checks.append(a, .{ .flag = if (want) "--free" else "--no-free", .value = "", .matched = found, .fact = if (found) "a combo's cell matches" else "no combo's cell matches", .qname = "free", .qvalue = if (want) "true" else "false" }) catch return error.OutOfMemory;
+        }
+        if (reciprocal_filter) |want| {
+            var found = false;
+            var it = idx.agents.iterator();
+            while (it.next()) |kv| {
+                if (!std.mem.eql(u8, agentSegment(kv.key_ptr.*, view_seg), canonical)) continue;
+                const entry_v = kv.value_ptr.*;
+                if (entry_v != .object) continue;
+                const recip = if (entry_v.object.get("reciprocal")) |r| (r == .bool and r.bool) else false;
+                if (recip == want) found = true;
+            }
+            checks.append(a, .{ .flag = if (want) "--reciprocal" else "--no-reciprocal", .value = "", .matched = found, .fact = if (found) "a combo's reciprocity of record matches" else "no combo's reciprocity of record matches", .qname = "reciprocal", .qvalue = if (want) "true" else "false" }) catch return error.OutOfMemory;
+        }
+        if (cp.len > 0) {
+            var found = false;
+            var it = idx.agents.iterator();
+            while (it.next()) |kv| {
+                if (!std.mem.eql(u8, agentSegment(kv.key_ptr.*, view_seg), canonical)) continue;
+                const entry_v = kv.value_ptr.*;
+                if (entry_v != .object) continue;
+                const plats_v = entry_v.object.get("platforms") orelse continue;
+                if (plats_v != .array) continue;
+                for (plats_v.array.items) |plat| {
+                    if (plat == .string and std.mem.eql(u8, plat.string, cp)) found = true;
+                }
+            }
+            checks.append(a, .{ .flag = "--platform", .value = cp, .matched = found, .fact = if (found) "a combo was captured on it" else "no combo was captured on it", .qname = "platform", .qvalue = cp }) catch return error.OutOfMemory;
+        }
+        if (trimmed_email.len > 0) {
+            // an email names ONE agent — its local part is the agent id
+            var stripped = trimmed_email;
+            if (std.mem.endsWith(u8, stripped, "@local")) stripped = stripped[0 .. stripped.len - "@local".len];
+            const entry = idx.agents.get(stripped);
+            const has = entry != null and std.mem.eql(u8, agentSegment(stripped, view_seg), canonical);
+            checks.append(a, .{ .flag = "--email", .value = trimmed_email, .matched = has, .fact = if (has) "the email's agent carries this dim" else "the email's agent does not carry this dim", .qname = "email", .qvalue = stripped }) catch return error.OutOfMemory;
+        }
+        // the cross-dim flags: participation in ≥1 combo with that dim
+        if (h.len > 0 and kind != .harness) {
+            var found = false;
+            var it = idx.agents.iterator();
+            while (it.next()) |kv| {
+                if (!std.mem.eql(u8, agentSegment(kv.key_ptr.*, view_seg), canonical)) continue;
+                if (std.mem.eql(u8, agentSegment(kv.key_ptr.*, 0), rh.?)) found = true;
+            }
+            checks.append(a, .{ .flag = "--harness", .value = h, .matched = found, .fact = if (found) "a combo carries it" else "no combo carries it", .qname = "harness", .qvalue = rh.? }) catch return error.OutOfMemory;
+        }
+        if (p.len > 0 and kind != .provider) {
+            var found = false;
+            var it = idx.agents.iterator();
+            while (it.next()) |kv| {
+                if (!std.mem.eql(u8, agentSegment(kv.key_ptr.*, view_seg), canonical)) continue;
+                if (std.mem.eql(u8, agentSegment(kv.key_ptr.*, 1), rp.?)) found = true;
+            }
+            checks.append(a, .{ .flag = "--provider", .value = p, .matched = found, .fact = if (found) "a combo carries it" else "no combo carries it", .qname = "provider", .qvalue = rp.? }) catch return error.OutOfMemory;
+        }
+        if (m.len > 0 and kind != .model) {
+            var found = false;
+            var it = idx.agents.iterator();
+            while (it.next()) |kv| {
+                if (!std.mem.eql(u8, agentSegment(kv.key_ptr.*, view_seg), canonical)) continue;
+                if (std.mem.eql(u8, agentSegment(kv.key_ptr.*, 2), rm.?)) found = true;
+            }
+            checks.append(a, .{ .flag = "--model", .value = m, .matched = found, .fact = if (found) "a combo carries it" else "no combo carries it", .qname = "model", .qvalue = rm.? }) catch return error.OutOfMemory;
+        }
+        // the view's own dim flag on a positional view is already a conflict —
+        // a matching dim flag here is the flag FORM of the same view, handled above
+    }
+
+    for (checks.items) |c| {
+        if (!c.matched) all_matched = false;
+    }
+
+    if (!all_matched) {
+        // stderr — the human report: the resolution, then every filter's state
+        writeErr(io, "index: ");
+        writeErr(io, id_input);
+        writeErr(io, " resolved to ");
+        writeErr(io, kind_name);
+        writeErr(io, " ");
+        writeErr(io, canonical);
+        writeErr(io, " — but:\n");
+        for (checks.items) |c| {
+            writeErr(io, if (c.matched) "  matched " else "  did not match ");
+            writeErr(io, c.flag);
+            if (c.value.len > 0) {
+                writeErr(io, "=");
+                writeErr(io, c.value);
+            }
+            if (c.fact.len > 0) {
+                writeErr(io, " (");
+                writeErr(io, c.fact);
+                writeErr(io, ")");
+            }
+            writeErr(io, "\n");
+        }
+        // stdout — the structured match report (the web's 422 body), unless --no-json
+        if (!opts.no_json) {
+            const q = try entityQueryUrl(a, kind_name, canonical, checks.items);
+            const report_root: std.json.Value = .{ .object = blk: {
+                var o: std.json.ObjectMap = .empty;
+                try o.put(a, "error", .{ .string = "filtered-out" });
+                try o.put(a, "entity", .{ .string = kind_name });
+                try o.put(a, "input", .{ .string = id_input });
+                try o.put(a, "id", .{ .string = canonical });
+                var filters: std.json.Array = .init(a);
+                for (checks.items) |c| {
+                    var f: std.json.ObjectMap = .empty;
+                    try f.put(a, "filter", .{ .string = c.flag });
+                    try f.put(a, "value", .{ .string = c.value });
+                    try f.put(a, "matched", .{ .bool = c.matched });
+                    if (c.fact.len > 0) try f.put(a, "fact", .{ .string = c.fact });
+                    try filters.append(.{ .object = f });
+                }
+                try o.put(a, "filters", .{ .array = filters });
+                try o.put(a, "unfiltered_url", .{ .string = q });
+                break :blk o;
+            } };
+            const bytes = try std.json.Stringify.valueAlloc(a, report_root, .{ .whitespace = .indent_2 });
+            writeOut(io, bytes);
+            writeOut(io, "\n");
+        }
+        return EXIT_FOUND_FILTERED;
+    }
+
+    // success — the payload: an agent view prints the agent's facts (the
+    // embedded index's projection); a dim view prints the entity's index entry.
+    if (!opts.no_json) {
+        switch (kind) {
+            .agent => {
+                const facts = idx.agentFacts(a, canonical).?;
+                const seg_h = agentSegment(canonical, 0);
+                const seg_p = agentSegment(canonical, 1);
+                const seg_m = agentSegment(canonical, 2);
+                var o: std.json.ObjectMap = .empty;
+                try o.put(a, "agent_id", .{ .string = canonical });
+                try o.put(a, "harness", .{ .string = seg_h });
+                try o.put(a, "provider", .{ .string = seg_p });
+                try o.put(a, "model", .{ .string = seg_m });
+                try o.put(a, "email", .{ .string = try std.fmt.allocPrint(a, "{s}@local", .{canonical}) });
+                var plats: std.json.Array = .init(a);
+                for (facts.platforms) |plat| try plats.append(.{ .string = plat });
+                try o.put(a, "platforms", .{ .array = plats });
+                try o.put(a, "reciprocal", .{ .bool = facts.reciprocal });
+                try o.put(a, "free", .{ .bool = idx.freeHas(seg_p, seg_m) });
+                const root: std.json.Value = .{ .object = o };
+                const bytes = try std.json.Stringify.valueAlloc(a, root, .{ .whitespace = .indent_2 });
+                writeOut(io, bytes);
+                writeOut(io, "\n");
+            },
+            else => {
+                const arr = switch (kind) {
+                    .harness => idx.harnesses,
+                    .provider => idx.providers,
+                    .model => idx.models,
+                    else => unreachable,
+                };
+                const entry = index_data.Index.findEntry(arr, canonical) orelse {
+                    writeErr(io, "unknown ");
+                    writeErr(io, kind_name);
+                    writeErr(io, ": ");
+                    writeErr(io, canonical);
+                    writeErr(io, "\n");
+                    return EXIT_MISSING_SPECIFIED_AGENT;
+                };
+                const bytes = try std.json.Stringify.valueAlloc(a, entry, .{ .whitespace = .indent_2 });
+                writeOut(io, bytes);
+                writeOut(io, "\n");
+            },
+        }
+    }
+
+    const q = try entityQueryUrl(a, kind_name, canonical, checks.items);
+    return openIfWanted(io, a, q, opts);
+}
+
+/// the entity view's deep link — the site route `/{kind}/{id}` carrying the
+/// MATCHED filters' resolved values (the violating filters stay out: it is the
+/// view without them); on success every given filter matched, so all appear.
+fn entityQueryUrl(
+    a: std.mem.Allocator,
+    kind_name: []const u8,
+    canonical: []const u8,
+    checks: anytype,
+) ![]const u8 {
+    var q: core.IndexQuery = .{};
+    for (checks) |c| {
+        if (!c.matched or c.qname.len == 0) continue;
+        if (std.mem.eql(u8, c.qname, "harness")) {
+            q.harness = c.qvalue;
+        } else if (std.mem.eql(u8, c.qname, "provider")) {
+            q.provider = c.qvalue;
+        } else if (std.mem.eql(u8, c.qname, "model")) {
+            q.model = c.qvalue;
+        } else if (std.mem.eql(u8, c.qname, "email")) {
+            q.email = c.qvalue;
+        } else if (std.mem.eql(u8, c.qname, "platform")) {
+            q.platform = c.qvalue;
+        } else if (std.mem.eql(u8, c.qname, "free")) {
+            q.free = std.mem.eql(u8, c.qvalue, "true");
+        } else if (std.mem.eql(u8, c.qname, "reciprocal")) {
+            q.reciprocal = std.mem.eql(u8, c.qvalue, "true");
+        }
+    }
+    return buildEntityUrl(a, kind_name, canonical, q);
 }
 
 /// dispatch the resolved action on a fully-shaped `Detection`.
