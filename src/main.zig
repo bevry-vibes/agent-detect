@@ -164,8 +164,9 @@ else
 
 // ============================================================================ main entry
 
-/// is `word` one of the known top-level action words? (`web` — the retired
-/// `registry` spelling — resolves through the help-topic branch above.)
+/// is `word` one of the known top-level action words? (`registry` and `web`
+/// are not listed — the parser aliases them onto `index`, and as help topics
+/// they resolve to the index usage in the help-topic branch.)
 fn isKnownAction(word: []const u8) bool {
     return std.mem.eql(u8, word, "identify") or
         std.mem.eql(u8, word, "found") or
@@ -298,8 +299,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     // No arguments prints help.
     // `identify`, `found`, `explain`, `trailer <type>`, and `check-reciprocal` accept an optional complete combo (`--harness=H --provider=P --model=M` — all three or none) for recipe-mode output.
     // help/version win over everything: any help/version flag anywhere at top level short-circuits to the relevant usage/version output (exit 0), never a conflict.
-    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "index", "registry" (retired), "help", "version"
-    var web_alias = false; // the action word was `web` — the twice-retired spelling (`web` → `registry` → `index`)
+    var action: []const u8 = ""; // "", "identify", "found", "explain", "trailer", "check-reciprocal", "index" (the `registry`/`web` aliases land here too), "help", "version"
     var trailer_type: []const u8 = ""; // "", "co-author", "assisted-by"
     var help_wanted = false;
     var version_wanted = false;
@@ -317,7 +317,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
     var entity_id: []const u8 = ""; // the positional id after the entity word
     var free_filter: ?bool = null; // --free / --no-free / --free=true|false
     var reciprocal_filter: ?bool = null; // --reciprocal / --no-reciprocal / --reciprocal=true|false
-    var want_web = false; // --web (registry/index: also open the site)
+    var want_web = false; // --web (index and its registry/web aliases: also open the site)
     var no_web = false; // --no-web (explicit default)
     var want_json = false; // --json (explicit default)
     var no_json = false; // --no-json (suppress stdout — exit status only)
@@ -331,13 +331,14 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
             if (action.len == 0) action = "help";
         } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
             version_wanted = true;
-        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal") or std.mem.eql(u8, arg, "registry") or std.mem.eql(u8, arg, "index") or std.mem.eql(u8, arg, "web")) {
-            // an action word (`web` is the retired spelling of `registry`, kept
-            // dispatching quietly for scripts born with 2026.9.30-1). After `help`
-            // it is the topic (`help trailer`).
+        } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal") or std.mem.eql(u8, arg, "index") or std.mem.eql(u8, arg, "registry") or std.mem.eql(u8, arg, "web")) {
+            // an action word. `registry` — and its own retired spelling `web` —
+            // is an alias of `index`: one command, three spellings (born `web`,
+            // renamed `registry`, collapsed into `index`), every spelling
+            // dispatching to the one index implementation. After `help` the
+            // word is the topic (`help trailer`).
             if (action.len == 0) {
-                web_alias = std.mem.eql(u8, arg, "web");
-                action = if (web_alias) "registry" else arg;
+                action = if (std.mem.eql(u8, arg, "registry") or std.mem.eql(u8, arg, "web")) "index" else arg;
             } else if (std.mem.eql(u8, action, "help") and help_topic == null) {
                 help_topic = arg;
             } else if (!std.mem.eql(u8, action, arg) and conflict == null) {
@@ -434,12 +435,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
                 writeOut(io, trailerUsage);
                 return EXIT_OK;
             }
-            if (std.mem.eql(u8, topic, "registry") or std.mem.eql(u8, topic, "web")) {
-                writeErr(io, "registry is gone — one command: agent-detect index (see `index --help`)\n");
-                writeOut(io, indexUsage);
-                return EXIT_UNRECOGNISED_ARG;
-            }
-            if (std.mem.eql(u8, topic, "index")) {
+            if (std.mem.eql(u8, topic, "index") or std.mem.eql(u8, topic, "registry") or std.mem.eql(u8, topic, "web")) {
                 writeOut(io, indexUsage);
                 return EXIT_OK;
             }
@@ -498,16 +494,8 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_UNRECOGNISED_ARG;
     }
 
-    // `registry` (and its own retired spelling `web`) — dropped: one command.
-    if (std.mem.eql(u8, action, "registry")) {
-        writeErr(io, "registry is gone — one command: agent-detect index\n");
-        writeErr(io, "  - `index` (no entity) is the search view; `index agent|harness|provider|model <id>` the entity views\n");
-        writeErr(io, "  - the filters work exactly as before, and --web still opens the site\n");
-        writeOut(io, indexUsage);
-        return EXIT_UNRECOGNISED_ARG;
-    }
-
-    // `index` — the search view and the entity views.
+    // `index` — the search view and the entity views (`registry`/`web` dispatch
+    // here as aliases).
     if (std.mem.eql(u8, action, "index")) {
         return runIndex(init, .{ .web = want_web, .no_web = no_web, .json = want_json, .no_json = no_json }, entity_kind, entity_id, combo_h, combo_p, combo_m, agent_id, email, search_filter, web_platform, free_filter, reciprocal_filter);
     }

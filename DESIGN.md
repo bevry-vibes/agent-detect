@@ -17,7 +17,7 @@ The implementation lives in `pub fn detect` in `src/lib/core.zig`, with each ste
 ### two-binary split (released + dev-only)
 
 The released binary must stay minimal — no raw dump, no subcommands, no fixtures — so it ships as a single static file with no surprises.
-Its CLI surface is `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `index` (the search view + the entity views; `registry` and `web` are dropped — one command), `help`, `version`.
+Its CLI surface is `identify`, `found`, `explain`, `trailer co-author`, `trailer assisted-by`, `check-reciprocal`, `index` (the search view + the entity views; `registry` and `web` are its aliases — one command, three spellings), `help`, `version`.
 The dev binary (`agent-detect-dev`) carries the maintainer's full toolkit: the `fixtures` subcommand namespace (capture / daemon / queue / dequeue / status / prompt — the last prints the capture prompt a harness session is asked to run; the internal `__timeout` watchdog the daemon spawns is not part of the user surface).
 The split is enforced at compile time via the `dev` flag in `build.zig` and the `pub const dev = if (build_options.dev) struct { ... } else struct {};` block in `src/dev/dev.zig`.
 The released binary cannot accidentally include dev code paths.
@@ -253,7 +253,7 @@ Examples per group:
 
 - **0** — `identify` (identified) → JSON; `found` → the observations JSON; `explain` (reciprocal) → the reasons JSON with an empty `reasons` array; `trailer co-author` → `Co-authored-by: ...`; `trailer assisted-by` → `Assisted-by: ...`; `check-reciprocal` → `is reciprocal`; `index` → the view's JSON (the search view: the filtered index file; an agent view: the agent's facts; a dim view: the entity's index entry); `version` → `agent-detect <version>`; `help`/`--help`/`-h`/no args/`trailer help`/`help trailer`/`index --help`/`help index` → usage.
 - **1** — uncaught error → `error: <name>` + trace.
-- **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` + usage; `--bogus`; `index --platform=macosx` (no platform by that name — darwin/linux/windows, with macos→darwin and win→windows aliasing in); `index --no-open` (retired — opening is opt-in via `--web`); `agent-detect registry` and `agent-detect web` (dropped — one command: `index`); dev `fixtures frobnicate`.
+- **2** — `agent-detect foobar` → `unrecognised argument: 'foobar'` + usage; `--bogus`; `index --platform=macosx` (no platform by that name — darwin/linux/windows, with macos→darwin and win→windows aliasing in); `index --no-open` (retired — opening is opt-in via `--web`); dev `fixtures frobnicate`.
 - **3** — `agent-detect identify trailer` → `conflicting argument` + usage; `index --web identify` and `--agent=`/`--email=`/`--platform=`/`--free`/`--reciprocal` on any other action (they mean nothing to identify/trailer/check-reciprocal); `index --harness=A --provider=B` (two dim flags name nothing — one names that entity, all three name the agent); `index agent X --agent=Y` (the entity named twice); dev `fixtures queue --refresh --stale-by-minutes=30` and `fixtures queue --from-identity --platform=linux` (the platform dim is capture-only — the from-identity channel has no platform; `--fixture=` under `--from-identity` likewise).
 - **4** — `identify --harness=cline` (partial combo); bare `agent-detect trailer`; `index --email=` with no value; `index agent` (an entity kind with no id); dev `fixtures queue` without filter.
 - **5** — dev `fixtures daemon` inside an agent → `incompatible environment refusing run`.
