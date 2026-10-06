@@ -3,8 +3,10 @@ name: build
 on:
   push:
     # Calver tags match `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`, `2026.8.6-2`).
-    # Pushing such a tag publishes a release that is marked `latest`.
-    # See commits.md "releases" for the maintainer runbook (calver election, the pre-tag binary check) and the upstream commits.md release-notes flow it points at.
+    # Pushing such a tag publishes a release whose body IS the annotated tag's
+    # message (marked `latest`) — a tag carrying no release notes fails the job.
+    # See commits.md "releases" for the maintainer runbook (calver election, the
+    # pre-tag binary check, annotating the tag with the notes).
     tags: ['*.*.*-*']
   pull_request:
   workflow_dispatch:
@@ -58,7 +60,7 @@ jobs:
           test "$OUT" = "not reciprocal"
           test "$RC" -eq 10
 
-  # Pushing a calver-shaped tag (`<year>.<month>.<day>-<revision>`) publishes the release and marks it `latest: true`, which is what `releases/latest/download/<asset>` resolves to.
+  # Pushing a calver-shaped tag (`<year>.<month>.<day>-<revision>`) publishes the release and marks it `latest` (`releases/latest/download/<asset>` resolves there), with the annotated tag's message as the body.
   # The tag name matches the version embedded in `build.zig.zon` exactly (no `v` prefix).
   release:
     if: github.event_name == 'push' && github.ref_type == 'tag'
@@ -105,11 +107,26 @@ jobs:
           test "$OUT" = "not reciprocal"
           test "$RC" -eq 10
 
+      # the annotated tag's message IS the release notes — a naked tag fails
+      # the job instead of publishing a bodyless release. git cat-file emits
+      # the raw tag object: header, then message, then the SSH/PGP signature
+      # armor — the first sed drops the header, the second the armor.
+      - name: the release notes come from the tag — a naked tag fails here
+        run: |
+          notes="$(git cat-file tag "$GITHUB_REF_NAME" | sed '1,/^$/d' | sed '/^-----BEGIN [A-Z ]*SIGNATURE-----$/,$d')"
+          if [ "$(printf '%s' "$notes" | wc -c)" -lt 200 ] || ! printf '%s' "$notes" | grep -q "What's changed since"; then
+            echo "the tag carries no release notes — nothing was published, so re-cut the tag with them and push again:" >&2
+            echo "  git tag -d \"$GITHUB_REF_NAME\" && git push origin :refs/tags/\"$GITHUB_REF_NAME\"" >&2
+            echo "  git tag -a \"$GITHUB_REF_NAME\" --cleanup=verbatim -F .release-notes-<version>.md && git push origin \"$GITHUB_REF_NAME\"" >&2
+            exit 1
+          fi
+          printf '%s\n' "$notes" > "$RUNNER_TEMP/release-notes.md"
+
       - name: publish tagged release as latest
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          prerelease: false
-          make_latest: true
-          files: bin/*
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" bin/* \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --latest
