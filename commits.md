@@ -9,6 +9,7 @@ Local application of the bevry-vibes skills [commits.md](https://github.com/bevr
   Never guess or cache the trailer; if generation fails, fix it rather than commit without it.
   The build-first is not optional: the binary reads local session stores that drift across app updates (the zcode 3.14 rollout rename left stale binaries resolving nothing), so a stale build can report a different agent than the session committing.
 - The issue-tracker assisted-by rule now lives upstream (commits.md §"github issues, pull requests, discussions, and comments") — the local tweak carried it until it landed there, and is retired.
+- **Agent-made commits are never signed** — commit with `git commit --no-gpg-sign`. This overrides the upstream signing line (commits sign through the 1Password SSH agent) for agent work: the host's global `commit.gpgsign` signs with the maintainer's key through 1Password, so every signed agent commit both costs the 1Password round-trip and asserts a human made it. Neither is true — the trailer already names the agent. Signing stays the human's act on the human's own commits, which keeps a signature meaning something: human commits signed, agent commits not.
 
 ## releases
 

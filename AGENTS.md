@@ -7,7 +7,7 @@ this process is documented in the upstream repo's [local tweaks pattern](https:/
 
 - https://github.com/bevry-vibes/skills/blob/main/policy.md — **not applied to this project.**
   agent-detect is the enforcement mechanism that policy.md delegates to, so this project must run on all agents, including those that violate that policy; it cannot apply the policy to itself.
-- [commits.md](./commits.md) — **applies**, with this project's tweaks (zig build, generated co-author trailer).
+- [commits.md](./commits.md) — **applies**, with this project's tweaks (zig build, generated co-author trailer, agent commits are never signed).
 - https://github.com/bevry-vibes/skills/blob/main/conventions.md — **applies** (the bevry/base config files stay verbatim above their CUSTOM segments, with this repo's overrides underneath;
   the splat-naming and wrapping rules live upstream in it).
 - https://github.com/bevry-vibes/skills/blob/main/minimax.md — **applies** when the running agent is a MiniMax M3 model (its rules gate themselves on model and harness).
