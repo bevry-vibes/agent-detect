@@ -74,7 +74,7 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
           <h1 className="font-mono text-lg font-semibold">
             {title} {id}
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">unknown {dim} — it resolves to no rule in the index.</p>
+          <p className="text-muted-foreground mt-2 text-sm">unknown {dim} — it resolves to no rule in the registry.</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={onHome}>
             <ArrowLeft className="size-4" /> back to homepage
           </Button>
@@ -128,7 +128,7 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
             onBackSelf={onBackSelf}
           />
 
-          <JsonBlock title="index entry" value={entry} />
+          <JsonBlock title="registry entry" value={entry} />
         </>
       )}
     </main>

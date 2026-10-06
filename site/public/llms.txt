@@ -19,7 +19,7 @@ identifications; live captures stay maintainer-side), one section carrying the r
 `identify`, `trailer co-author`, `trailer assisted-by`, and `explain` (plus `found`,
 `check-reciprocal`, stderr lines, and meta when recorded) — with copy + copy-command
 buttons for the CLI invocation behind each block. A status line reads
-`reciprocal · captured platforms · date` on a single line. An `#index` section lists every
+`reciprocal · captured platforms · date` on a single line. A `#registry` section lists every
 harness, provider, and model with its canonical alphanumeric id, its properties, and its
 associations (name/variation → id is the point). The results table keeps every row in the DOM
 with CSS `content-visibility: auto`, so native Ctrl/Cmd+F searches the whole list.
@@ -31,15 +31,15 @@ labels, and aliases and are canonicalised to the strict-slug alphanumeric ids ("
 (darwin/linux/windows, with `macos`/`mac` → `darwin` and `win` → `windows` accepted exactly like
 the CLI's `--platform=`) requires a capture on that platform — a platforms array on this site
 always means **platforms with captures**; `?free=`/`?reciprocal=` take true/false.
-`?agent=<agent_id>` is the agent results page — a full-page replacement of the index (not a
+`?agent=<agent_id>` is the agent results page — a full-page replacement of the registry (not a
 modal); the platform param never reaches it (the page's platform pills are static). The site
-header wordmark or the page's "back to results" button returns to the index with the scroll
+header wordmark or the page's "back to results" button returns to the registry with the scroll
 position restored. All navigation uses the HTML5 history API
 (pushState/replaceState/popstate).
 
 ## endpoints
 
-- `/` — the app (hero, filters, results table, result pages, the #index section)
+- `/` — the app (hero, filters, results table, result pages, the #registry section)
 - `/index.json` — JSON results. Accepts
   `?harness=&provider=&model=&search=&agent=&email=&platform=&free=&reciprocal=` with the same
   name→id resolution on the dims. `params` echoes the raw query; `resolved` carries the canonical
@@ -78,7 +78,7 @@ position restored. All navigation uses the HTML5 history API
   is the captured-platform set per agent.
 - data is regenerated from the upstream repo's committed index file and from-identity channel on
   every deploy; the site stores nothing and reads nothing from visitors.
-- the CLI opens this site with one command: `agent-detect index` — no entity is the search view
+- the CLI opens this site with one command: `agent-detect index` (`registry` and `web` alias it) — no entity is the search view
   (the filtered rule index; the filters mirror the url params and `--web` opens), and
   `index agent|harness|provider|model <id>` are the entity views (≡ the routes above; the id input
   normalises — names/labels/aliases for the dims, trim+lowercase+`@local`-strip for agents). On an

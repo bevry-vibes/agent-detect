@@ -53,7 +53,7 @@ export function SiteHeader({
               onHome();
             }
           }}
-          title={onHome ? "back to the results index" : undefined}
+          title={onHome ? "back to the registry" : undefined}
         >
           <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
             <circle cx="12" cy="12" r="9" className="opacity-40" />

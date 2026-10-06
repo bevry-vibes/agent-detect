@@ -359,7 +359,7 @@ export default function App() {
           view.kind === "index"
             ? [
                 { label: "cli", href: "#cli" },
-                { label: "index", href: "#registry" },
+                { label: "registry", href: "#registry" },
               ]
             : [{ label: view.kind === "agent" ? "agent" : view.dim }]
         }

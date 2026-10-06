@@ -95,7 +95,7 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
 
   return (
     <>
-      {!index && <p className="text-muted-foreground py-8 text-center text-sm">loading the index…</p>}
+      {!index && <p className="text-muted-foreground py-8 text-center text-sm">loading the registry…</p>}
       {index && groups && (
         <div className="grid gap-4 md:grid-cols-3">
           {groups.map(({ dim, title, entries, total }) => (
@@ -106,7 +106,7 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
                 </span>
                 <ArrowUpDown className="size-3 opacity-40" aria-hidden />
               </div>
-              <ul className="max-h-96 overflow-y-auto p-1" aria-label={`${title} index`}>
+              <ul className="max-h-96 overflow-y-auto p-1" aria-label={`${title} registry`}>
                 {entries.map((e) => {
                   const selected = filters[dim] === e.id;
                   return (

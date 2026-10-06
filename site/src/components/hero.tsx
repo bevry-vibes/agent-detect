@@ -241,7 +241,7 @@ export function Hero() {
 export function RegistryIntro({ updated }: { updated: number | null }) {
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">RegistryFile of Agent Detections</h1>
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Registry of Agent Detections</h1>
       <p className="text-lg font-medium">Agents now capable of self-awareness.</p>
       <p className="text-muted-foreground text-sm">
         Past inferences from our test suite{updated ? `. Updated ${formatDate(updated)}.` : "."} Missing yours?{" "}
