@@ -5,8 +5,8 @@ on:
     # Calver tags match `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`, `2026.8.6-2`).
     # Pushing such a tag publishes a release whose body IS the annotated tag's
     # message (marked `latest`) — a tag carrying no release notes fails the job.
-    # See commits.md "releases" for the maintainer runbook (calver election, the
-    # pre-tag binary check, annotating the tag with the notes).
+    # See commits.md "releases" for this project's runbook (calver election, the
+    # pre-tag binary check) and the skills' commits.md "releases" for the flow.
     tags: ['*.*.*-*']
   pull_request:
   workflow_dispatch:
