@@ -6,17 +6,33 @@
 //      sets + policy fields can never drift from the CLI's;
 //   2. fixtures/index-data.json — the committed index — is copied verbatim to
 //      data/index.json (the site's rule index / #index section);
-//   3. the from-identity channel (fixtures/from-identity) is grouped per combo
-//      and emitted verbatim — the site shows declared identifications only;
-//      the from-capture channel stays maintainer-side and never renders.
+//   3. the from-identity channel (fixtures/from-identity, one 3-part
+//      <h>-<p>-<m>.json per agent — the filename IS the agent id) is copied
+//      VERBATIM to data/agents/<agent_id>.json — the site invents no envelope;
+//      the from-capture channel's outputs never leave the repo: its STEMS are
+//      scanned (never parsed) for the captured platforms, the only capture
+//      fact on the wire;
+//   4. data/agents.json projects the declarations (reciprocity of record,
+//      state, email), the capture stems (platforms), and the index's free
+//      axis into one row per agent.
+// Every written file is validated through site/src/lib/schemas.ts before it
+// lands — a zig dump change that breaks a shape fails this build, not a
+// browser session.
 // Outputs (site/public/data/, gitignored — regenerate before deploy):
 //   registry.json           — the rule registry (harnesses/providers/models)
 //   index.json              — the committed index file, verbatim
-//   combos.json             — one compact row per h×p×m combo (identity only)
-//   agents/<agent_id>.json  — one combo's identity fixtures, verbatim outputs
+//   agents.json             — one row per agent
+//   agents/<agent_id>.json  — the agent's from-identity fixture, verbatim
 
 import { slugId, trailerEmail } from "../src/lib/registry.ts";
-import type { IndexFile, Platform } from "../src/lib/registry.ts";
+import {
+  AgentsFileSchema,
+  IdentityFileSchema,
+  IndexDataFileSchema,
+  RegistryFileSchema,
+  type AgentRow,
+  type Platform,
+} from "../src/lib/schemas.ts";
 
 const siteDir = new URL("../", import.meta.url);
 const repoDir = new URL("../../", import.meta.url);
@@ -72,26 +88,13 @@ async function dumpRules(): Promise<
   }
 }
 
-interface FixtureEntry {
-  id: string;
-  platform: Platform;
-  updated_at: number;
-  meta: Record<string, unknown>;
-  outputs: Record<string, unknown>;
-}
-
-interface Combo {
-  agent_id: string;
-  harness: string;
-  provider: string;
-  model: string;
-  email: string;
-  reciprocal: boolean;
-  state: string | null;
-  free: boolean;
-  platforms: Platform[];
-  updated_at: number;
-  fixtures: { id: string; platform: Platform }[];
+interface IdentityFile {
+  /** the 3-part agent id — the filename IS the agent id */
+  agentId: string;
+  /** the file's raw bytes — copied verbatim, no envelope */
+  bytes: Uint8Array;
+  updatedAt: number;
+  parsed: Record<string, unknown>;
 }
 
 const pRank = (arr: readonly Platform[]) => (v: Platform) => {
@@ -99,39 +102,58 @@ const pRank = (arr: readonly Platform[]) => (v: Platform) => {
   return i === -1 ? arr.length : i;
 };
 
-async function readIdentity(warnings: string[]): Promise<Map<string, FixtureEntry[]>> {
+/** scan the from-identity channel — one 3-part <h>-<p>-<m>.json per agent. */
+async function readIdentity(warnings: string[]): Promise<Map<string, IdentityFile>> {
   const dir = path(repoDir) + "fixtures/from-identity";
-  const groups = new Map<string, FixtureEntry[]>();
+  const files = new Map<string, IdentityFile>();
   for await (const ent of Deno.readDir(dir)) {
     if (!ent.isFile || !ent.name.endsWith(".json")) continue;
     const stem = ent.name.slice(0, -".json".length);
-    const parts = stem.split("-");
-    if (parts.length !== 4 || !PLATFORMS.includes(parts[3] as Platform)) {
-      warnings.push(`skipping identity/${ent.name}: stem does not split 4-way`);
+    if (stem.split("-").length !== 3) {
+      warnings.push(`skipping identity/${ent.name}: stem is not a 3-part <h>-<p>-<m> agent id`);
       continue;
     }
-    const [h, p, m, platform] = parts;
-    const agent_id = `${h}-${p}-${m}`;
-    let file: { meta?: Record<string, unknown>; outputs?: Record<string, unknown> };
+    const bytes = await Deno.readFile(`${dir}/${ent.name}`);
+    let parsed: Record<string, unknown>;
     try {
-      file = JSON.parse(await Deno.readTextFile(`${dir}/${ent.name}`));
+      parsed = JSON.parse(new TextDecoder().decode(bytes));
     } catch (err) {
       warnings.push(`skipping identity/${ent.name}: ${err}`);
       continue;
     }
-    if (!file.outputs) continue; // defensive: the writers never emit stubs
-    const entry: FixtureEntry = {
-      id: stem,
-      platform: platform as Platform,
-      updated_at: typeof file.meta?.updated_at === "number" ? file.meta.updated_at : 0,
-      meta: file.meta ?? {},
-      outputs: file.outputs,
-    };
-    const list = groups.get(agent_id) ?? [];
-    list.push(entry);
-    groups.set(agent_id, list);
+    if (!parsed.outputs) continue; // defensive: the writers never emit stubs
+    const meta = (parsed.meta ?? {}) as Record<string, unknown>;
+    files.set(stem, {
+      agentId: stem,
+      bytes,
+      updatedAt: typeof meta.updated_at === "number" ? meta.updated_at : 0,
+      parsed,
+    });
   }
-  return groups;
+  return files;
+}
+
+/** scan the from-capture STEMS only — a capture file is written only on
+ * success, so stem presence means a successful capture on that platform.
+ * The outputs are never read: from-capture content never leaves the repo. */
+async function readCapturePlatforms(warnings: string[]): Promise<Map<string, Platform[]>> {
+  const dir = path(repoDir) + "fixtures/from-capture";
+  const platforms = new Map<string, Platform[]>();
+  for await (const ent of Deno.readDir(dir)) {
+    if (!ent.isFile || !ent.name.endsWith(".json")) continue;
+    const stem = ent.name.slice(0, -".json".length);
+    const parts = stem.split("-");
+    const plat = parts.pop();
+    if (parts.length < 3 || !PLATFORMS.includes(plat as Platform)) {
+      warnings.push(`skipping capture/${ent.name}: stem is not a 4-part <h>-<p>-<m>-<platform> id`);
+      continue;
+    }
+    const agentId = parts.join("-");
+    const list = platforms.get(agentId) ?? [];
+    if (!list.includes(plat as Platform)) list.push(plat as Platform);
+    platforms.set(agentId, list);
+  }
+  return platforms;
 }
 
 async function main() {
@@ -150,82 +172,64 @@ async function main() {
 
   console.log("reading the from-identity channel…");
   const identity = await readIdentity(warnings);
-  const agentIds = [...identity.keys()].sort();
+  console.log("scanning the from-capture stems…");
+  const captures = await readCapturePlatforms(warnings);
 
   const pRanker = pRank(PLATFORMS);
-  // recency order — the combo's row values (reciprocal, email, state) come
-  // from the MOST RECENTLY updated fixture; the display order stays platform
-  const byRecency = (x: FixtureEntry, y: FixtureEntry) =>
-    (y.updated_at - x.updated_at) || (pRanker(x.platform) - pRanker(y.platform));
-  const combos: Combo[] = [];
-  const emails = new Set<string>();
+  const agentIds = [...identity.keys()].sort();
 
   console.log("reading the committed index…");
-  const indexFile = JSON.parse(await Deno.readTextFile(path(repoDir) + "fixtures/index-data.json")) as IndexFile;
+  const indexData = JSON.parse(await Deno.readTextFile(path(repoDir) + "fixtures/index-data.json"));
 
   await Deno.mkdir(path(siteDir) + "public/data/agents", { recursive: true });
-  for (const agent_id of agentIds) {
-    const fixtures = [...(identity.get(agent_id) ?? [])].sort((x, y) =>
-      (pRanker(x.platform) - pRanker(y.platform)) || (y.updated_at - x.updated_at)
-    );
-    const recency = [...fixtures].sort(byRecency);
-    const latest = recency[0];
-    const identify = latest.outputs.identify as Record<string, unknown> | undefined;
-    const email = recency
-      .map((f) => trailerEmail((f.outputs["trailer co-author"] as string) ?? (f.outputs["trailer assisted-by"] as string)))
-      .find((e): e is string => !!e) ?? `${agent_id}@local`;
+  const rows: AgentRow[] = [];
+  const emails = new Set<string>();
+  for (const agentId of agentIds) {
+    const file = identity.get(agentId)!;
+    const outputs = file.parsed.outputs as Record<string, unknown>;
+    const identify = outputs.identify as Record<string, unknown>;
+    const email = trailerEmail(
+      (outputs["trailer co-author"] as string) ?? (outputs["trailer assisted-by"] as string),
+    ) ?? `${agentId}@local`;
     emails.add(email);
-    const explains = recency.map((f) => f.outputs.explain as { state?: string } | null | undefined).find((e) => e?.state);
-    const parts = agent_id.split("-");
-    combos.push({
-      agent_id,
-      harness: parts[0],
-      provider: parts[1],
-      model: parts.slice(2).join("-"),
+    const explain = outputs.explain as { state?: string } | null | undefined;
+    const [h, p] = agentId.split("-");
+    const m = agentId.slice(h.length + p.length + 2);
+    rows.push({
+      agent_id: agentId,
+      harness: h,
+      provider: p,
+      model: m,
       email,
-      reciprocal: identify?.reciprocal === true,
-      state: (explains?.state as string) ?? null,
-      free: (indexFile.provider_map_to_free_models[parts[1]] ?? []).includes(parts.slice(2).join("-")),
-      platforms: [...new Set(fixtures.map((f) => f.platform))].sort((x, y) => pRanker(x) - pRanker(y)),
-      updated_at: Math.max(...fixtures.map((f) => f.updated_at)),
-      fixtures: fixtures.map((f) => ({ id: f.id, platform: f.platform })),
+      reciprocal: identify.reciprocal === true,
+      state: (explain?.state as AgentRow["state"]) ?? null,
+      free: ((indexData.provider_map_to_free_models as Record<string, string[]>)[p] ?? []).includes(m),
+      platforms: (captures.get(agentId) ?? []).sort((x, y) => pRanker(x) - pRanker(y)),
+      updated_at: file.updatedAt,
     });
-
-    const agentFile = {
-      agent_id,
-      harness: parts[0],
-      provider: parts[1],
-      model: parts.slice(2).join("-"),
-      fixtures: fixtures.map((f) => ({
-        id: f.id,
-        platform: f.platform,
-        updated_at: f.updated_at,
-        meta: f.meta,
-        outputs: f.outputs,
-      })),
-    };
-    await Deno.writeTextFile(path(siteDir) + `public/data/agents/${agent_id}.json`, JSON.stringify(agentFile));
+    // the agent's document is the from-identity fixture itself — verbatim bytes
+    IdentityFileSchema.parse(file.parsed);
+    await Deno.writeFile(path(siteDir) + `public/data/agents/${agentId}.json`, file.bytes);
   }
 
-  await Deno.writeTextFile(path(siteDir) + "public/data/index.json", JSON.stringify(indexFile));
+  const registry = { generated_at, harnesses, providers, models };
+  const agentsFile = { generated_at, agents: rows };
 
-  const registry = {
-    generated_at,
-    counts: { harnesses: harnesses.length, providers: providers.length, models: models.length },
-    harnesses,
-    providers,
-    models,
-  };
-  const combosFile = { generated_at, counts: { combos: combos.length, fixtures: agentIds.reduce((n, id) => n + (identity.get(id)?.length ?? 0), 0) }, combos };
+  // pre-write validation — the schemas are the boundary
+  RegistryFileSchema.parse(registry);
+  AgentsFileSchema.parse(agentsFile);
+  IndexDataFileSchema.parse(indexData);
 
+  await Deno.writeTextFile(path(siteDir) + "public/data/index.json", JSON.stringify(indexData));
   await Deno.writeTextFile(path(siteDir) + "public/data/registry.json", JSON.stringify(registry));
-  await Deno.writeTextFile(path(siteDir) + "public/data/combos.json", JSON.stringify(combosFile));
+  await Deno.writeTextFile(path(siteDir) + "public/data/agents.json", JSON.stringify(agentsFile));
 
   for (const w of warnings) console.warn("warn:", w);
   const domains = new Set([...emails].map((e) => e.split("@")[1] ?? ""));
   console.log(
     `registry: ${harnesses.length} harnesses, ${providers.length} providers, ${models.length} models\n` +
-      `combos: ${combos.length} (reciprocal ${combos.filter((c) => c.reciprocal).length}, free ${combos.filter((c) => c.free).length})\n` +
+      `agents: ${rows.length} (reciprocal ${rows.filter((r) => r.reciprocal).length}, free ${rows.filter((r) => r.free).length}, ` +
+      `with captures ${rows.filter((r) => r.platforms.length > 0).length})\n` +
       `emails: ${emails.size} distinct, domains: ${[...domains].join(", ")}\n` +
       `written to site/public/data/`,
   );

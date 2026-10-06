@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
-import { type CombosFile, type IndexFile, type Registry } from "@/lib/registry";
+import { type AgentsFile, type IndexDataFile, type RegistryFile } from "@/lib/registry";
 import { NO_FILTERS } from "@/components/filter-bar";
 import { JsonBlock } from "@/components/json-block";
+import { ResultHeader } from "@/components/result-header";
 import { AssociationTables } from "@/components/association-tables";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,9 +18,9 @@ type Sel = { harness?: string; provider?: string; model?: string; agent?: string
 interface EntityPageProps {
   dim: EntityDim;
   id: string;
-  index: IndexFile | null;
-  registry: Registry | null;
-  combos: CombosFile | null;
+  index: IndexDataFile | null;
+  registry: RegistryFile | null;
+  combos: AgentsFile | null;
   /** the expand buttons: entities open their detail page, agents open their result page */
   onOpenEntity: (dim: EntityDim, id: string) => void;
   onOpenAgent: (agentId: string) => void;
@@ -68,20 +69,6 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={onHome}>
-          <ArrowLeft className="size-4" /> back to homepage
-        </Button>
-        <a
-          href={`/${dim}/${id}.json`}
-          target="_blank"
-          rel="noreferrer"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs underline underline-offset-4"
-        >
-          raw JSON
-        </a>
-      </div>
-
       {!entry && (
         <div className="rounded-xl border p-6">
           <h1 className="font-mono text-lg font-semibold">
@@ -96,12 +83,7 @@ export function EntityPage({ dim, id, index, registry, combos, onSearch, onOpenE
 
       {entry && (
         <>
-          <header className="flex flex-col gap-2">
-            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3">
-              <h1 className="text-2xl font-semibold tracking-tight">{label}</h1>
-              <span className="text-muted-foreground font-mono text-sm">{entry.id}</span>
-            </div>
-          </header>
+          <ResultHeader id={label} mono={entry.id} rawHref={`/${dim}/${id}.json`} onHome={onHome} />
 
           <section className="flex flex-col gap-2 rounded-xl border p-4">
             <h2 className="text-muted-foreground text-xs font-medium uppercase tracking-wide">policy</h2>

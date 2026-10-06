@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X } from "lucide-react";
 
-import { resolveDimId, resolvePlatform, slugId, type Registry } from "@/lib/registry";
+import { resolveDimId, resolvePlatform, slugId, type RegistryFile } from "@/lib/registry";
 
 export interface Filters {
   harness: string | null;
@@ -35,7 +35,7 @@ export function anyFilter(filters: Filters): boolean {
 }
 
 interface FilterBarProps {
-  registry: Registry;
+  registry: RegistryFile;
   filters: Filters;
   onDim: (dim: "harness" | "provider" | "model", id: string | null) => void;
   onFilters: (next: Filters) => void;
@@ -145,7 +145,7 @@ export function FilterBar({ registry, filters, onDim, onFilters, onClear }: Filt
     const kind = bar > 0 ? t.slice(0, bar) : "";
     const value = bar > 0 ? t.slice(bar + 1) : "";
     const needle = slugId(value);
-    const matchDim = (rules: Registry["harnesses"], r: (typeof rules)[number]) =>
+    const matchDim = (rules: RegistryFile["harnesses"], r: (typeof rules)[number]) =>
       !needle ||
       [r.name, r.label, r.id, r.short_title ?? "", ...r.variations].some((v) => slugId(v).startsWith(needle) || slugId(v).includes(needle));
     if (["harness", "h"].includes(kind)) return registry.harnesses.filter((r) => matchDim(registry.harnesses, r)).slice(0, 8).map((r) => ({ label: `harness: ${r.label}`, apply: () => applyKind("harness", r.name) }));

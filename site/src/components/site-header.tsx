@@ -26,7 +26,7 @@ function ThemeToggle() {
 
 export interface AnchorLink {
   label: string;
-  /** absent = a plain label, not a link (the result-type indicator) */
+  /** absent = a plain label, not a link (the page-type indicator) */
   href?: string;
 }
 

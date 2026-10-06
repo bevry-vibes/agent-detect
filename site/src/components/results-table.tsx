@@ -1,118 +1,32 @@
-import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { SquareArrowOutUpRight } from "lucide-react";
 
-import { type ComboRow, type Registry } from "@/lib/registry";
+import { type AgentRow } from "@/lib/registry";
 import type { Filters } from "@/components/filter-bar";
+import { AgentCardBody } from "@/components/agent-card";
 import { CodeLine } from "@/components/json-block";
-import { StatusRow } from "@/components/status-row";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate } from "@/lib/utils";
 
 /**
- * The results "table" is a div grid rather than a real <table> on purpose:
- * every row stays in the DOM (native Ctrl/Cmd+F finds them all) while
- * `content-visibility: auto` lets the browser skip layout/paint of off-screen
- * rows — JS virtualization would drop rows from the DOM and kill find-in-page,
- * and content-visibility does not apply to <tr> internals.
- *
- * Columns sort client-side on header click: ascending → descending → default.
- * Below the md breakpoint the grid is replaced by a stacked card list — no
- * horizontal scroll, same rows, same click target.
+ * The agents table is one card list on every breakpoint — the same card the
+ * result page's agents table renders: the agent id in white over the status
+ * line (reciprocal verdict · platform pills · updated date), no columns and
+ * no sorting — the dim tables beside it and the search bar do that narrowing.
+ * Every card stays in the DOM (native Ctrl/Cmd+F finds them all) while
+ * `content-visibility: auto` lets the browser skip off-screen cards.
  */
-const GRID = "grid grid-cols-[minmax(200px,1.3fr)_minmax(130px,1fr)_minmax(150px,1.1fr)_minmax(150px,1.2fr)_150px_150px_110px]";
-const CELL = "px-3 py-2.5 flex flex-col justify-center gap-0.5 leading-snug min-w-0";
-const ROW_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_57px]";
-const CARD_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_165px]";
-
-type SortKey = "id" | "harness" | "provider" | "model" | "reciprocal" | "platforms" | "updated_at";
-type Sort = { key: SortKey; dir: "asc" | "desc" } | null;
-
-const COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
-  { key: "id", label: "ID" },
-  { key: "harness", label: "Harness" },
-  { key: "provider", label: "Provider" },
-  { key: "model", label: "Model" },
-  { key: "reciprocal", label: "Reciprocal" },
-  { key: "platforms", label: "Platforms" },
-  { key: "updated_at", label: "Updated", align: "right" },
-];
-
-function ReciprocalBadge({ row }: { row: ComboRow }) {
-  const className = row.reciprocal
-    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-    : "border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400";
-  return (
-    <span className="flex shrink-0 items-center gap-1" title={row.state ?? undefined}>
-      <Badge variant="outline" className={`px-1.5 py-0 text-[10px] ${className}`}>
-        {row.reciprocal ? "reciprocal" : "not reciprocal"}
-      </Badge>
-      {row.state && row.state !== "reciprocal" && row.state !== "not-reciprocal" && (
-        <Badge variant="outline" className="text-muted-foreground px-1.5 py-0 text-[10px]">
-          {row.state}
-        </Badge>
-      )}
-    </span>
-  );
-}
-
-function PlatformBadges({ row, wrap }: { row: ComboRow; wrap?: boolean }) {
-  return (
-    <span className={`gap-1 ${wrap ? "flex flex-wrap" : "flex"}`}>
-      {row.platforms.map((p) => (
-        <Badge key={p} variant="secondary" className="px-1.5 py-0 font-mono text-[10px]">
-          {p}
-        </Badge>
-      ))}
-    </span>
-  );
-}
+const CARD_LAZY = "[content-visibility:auto] [contain-intrinsic-size:auto_64px]";
 
 interface ResultsTableProps {
-  rows: ComboRow[];
+  rows: AgentRow[];
   totalCount: number;
   filters: Filters;
-  registry: Registry;
   onSelect: (agentId: string) => void;
 }
 
-export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: ResultsTableProps) {
-  const labelOf = (dim: "harnesses" | "providers" | "models", id: string) =>
-    registry[dim].find((r) => r.id === id)?.label ?? id;
-
-  const [sort, setSort] = useState<Sort>(null);
-  const cycleSort = (key: SortKey) =>
-    setSort((s) => (s?.key !== key ? { key, dir: "asc" } : s.dir === "asc" ? { key, dir: "desc" } : null));
-
-  const sorted = useMemo(() => {
-    if (!sort) return rows;
-    const mul = sort.dir === "asc" ? 1 : -1;
-    const value = (r: ComboRow): string | number => {
-      switch (sort.key) {
-        case "id":
-          return r.agent_id;
-        case "harness":
-          return labelOf("harnesses", r.harness).toLowerCase();
-        case "provider":
-          return labelOf("providers", r.provider).toLowerCase();
-        case "model":
-          return labelOf("models", r.model).toLowerCase();
-        case "reciprocal":
-          return r.reciprocal ? 1 : 0;
-        case "platforms":
-          return r.platforms.join(",");
-        case "updated_at":
-          return r.updated_at;
-      }
-    };
-    return [...rows].sort((a, b) => {
-      const va = value(a);
-      const vb = value(b);
-      const cmp = typeof va === "number" && typeof vb === "number" ? va - vb : String(va).localeCompare(String(vb));
-      return (cmp || a.agent_id.localeCompare(b.agent_id)) * mul;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, sort, registry]);
+export function ResultsTable({ rows, totalCount, filters, onSelect }: ResultsTableProps) {
+  // all three dims selected → the triple pins exactly one combo; its card
+  // carries the gold cue (the list is already narrowed to it alone)
+  const pinned = !!(filters.harness && filters.provider && filters.model);
 
   if (rows.length === 0) {
     const allThree = filters.harness && filters.provider && filters.model;
@@ -137,139 +51,54 @@ export function ResultsTable({ rows, totalCount, filters, registry, onSelect }: 
     );
   }
 
+  // the total header the other tables share — `N` when unfiltered, `n of N`
+  // under filters (toLocaleString: the raw counts clear four digits)
+  const countLabel = `Agents — ${
+    rows.length === totalCount ? totalCount.toLocaleString() : `${rows.length.toLocaleString()} of ${totalCount.toLocaleString()}`
+  }`;
+
   return (
-    <>
-      {/* mobile: stacked cards — no horizontal scroll, same rows in the DOM.
-        The list caps at ~5 cards' height and scrolls within itself, so the
-        page stays short enough to reach the next section */}
-      <div role="list" aria-label="agent combos" className="md:hidden flex flex-col gap-2">
-        <div className="flex max-h-[857px] flex-col gap-2 overflow-y-auto">
-        {sorted.map((row) => (
+    <div role="list" aria-label="agent combos" className="rounded-xl border">
+      <div className="text-muted-foreground border-b px-3 py-2 text-xs font-medium">{countLabel}</div>
+      {/* the same 7.5-rows cap the dim tables use — all four tables share one height */}
+      <div className="max-h-96 overflow-y-auto p-1">
+        {rows.map((row) => (
           <div
             key={row.agent_id}
             role="listitem"
             tabIndex={0}
+            title={pinned ? "pinned by the three dim filters — click for its result JSON" : undefined}
             onClick={() => onSelect(row.agent_id)}
             onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
-            className={`${CARD_LAZY} [container-type:inline-size] cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
+            className={`${CARD_LAZY} group flex min-w-0 cursor-pointer items-stretch gap-0.5 rounded-md border transition-colors focus-visible:bg-muted focus-visible:outline-none ${
+              pinned ? "border-amber-500/60 bg-amber-500/10" : "border-transparent hover:bg-muted/50"
+            }`}
           >
-            <div className="flex min-w-0 flex-col gap-1 leading-snug">
-              {/* the id heads the card like the result page title, sized to its
-                container so the line never wraps — every card line shrinks to
-                stay whole (mono ≈ 0.62em/char, sans ≈ 0.56em/char) */}
-              <p
-                className="min-w-0 whitespace-nowrap font-mono font-semibold tracking-tight"
-                style={{ fontSize: `min(16px, max(8px, (100cqw - 8px) / ${(0.62 * row.agent_id.length).toFixed(2)}))` }}
-              >
-                {row.agent_id}
-              </p>
-              {([
-                { label: "harness", dim: "harnesses", field: "harness" },
-                { label: "provider", dim: "providers", field: "provider" },
-                { label: "model", dim: "models", field: "model" },
-              ] as const).map(({ label, dim, field }) => {
-                const title = labelOf(dim, row[field]);
-                const id = row[field];
-                const k = (0.56 * title.length + 0.51 * id.length).toFixed(2);
-                return (
-                  <div key={dim} className="flex min-w-0 items-baseline gap-2">
-                    <span className="w-16 shrink-0 text-right text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {label}
-                    </span>
-                    <span
-                      className="flex min-w-0 flex-1 flex-nowrap items-baseline gap-x-2 overflow-hidden whitespace-nowrap"
-                      style={{ fontSize: `min(14px, max(8px, (100cqw - 84px) / ${k}))` }}
-                    >
-                      <span className="font-medium">{title}</span>
-                      <span className="font-mono text-[0.82em] text-muted-foreground">{id}</span>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            {/* the shared status line — reciprocal · platforms · date, one
-              shrinking line like the result page's header row */}
-            <StatusRow row={row} dims={{ h: row.harness, p: row.provider, m: row.model }} className="mt-2" />
+            <AgentCardBody agentId={row.agent_id} row={row} />
+            {/* the open icon — top right like the dim cards', hover-revealed,
+              always visible on the pinned card */}
+            <button
+              type="button"
+              title={`open the result page (/agent/${row.agent_id})`}
+              aria-label={`open the result page (/agent/${row.agent_id})`}
+              onClick={(e) => {
+                e.stopPropagation(); // the card body opens too — one navigation
+                onSelect(row.agent_id);
+              }}
+              className={`hover:text-foreground flex w-8 shrink-0 cursor-pointer flex-col items-center pt-1.5 transition-opacity ${
+                pinned ? "" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+              }`}
+            >
+              <span className="flex h-5 w-full items-center justify-center">
+                <SquareArrowOutUpRight className="size-3.5" />
+              </span>
+            </button>
           </div>
         ))}
-        </div>
-        <p className="text-muted-foreground px-1 text-xs">
-          {rows.length.toLocaleString()} of {totalCount.toLocaleString()} fixture-backed combos — tap one for its result
-          JSON
-        </p>
       </div>
-
-      {/* desktop: the lazy div-grid table with sortable headers */}
-      <div className="-mx-px hidden md:block rounded-xl border">
-        <div className="max-h-[calc(100svh-11rem)] overflow-auto [scrollbar-gutter:stable]">
-          <div role="table" aria-label="agent combos" className="w-full min-w-[1080px]">
-            <div role="row" className={`${GRID} text-muted-foreground sticky top-0 z-20 border-b bg-background text-xs font-medium`}>
-              {COLUMNS.map((col, i) => {
-                const active = sort?.key === col.key;
-                const ariaSort = active ? (sort.dir === "asc" ? "ascending" : "descending") : "none";
-                const Arrow = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
-                const inset = i === 0 ? "pl-0" : i === COLUMNS.length - 1 ? "pr-0" : "px-3";
-                return (
-                  <div key={col.key} role="columnheader" aria-sort={ariaSort} className={`py-2.5 ${inset} ${col.align === "right" ? "text-right" : ""}`}>
-                    <button
-                      type="button"
-                      onClick={() => cycleSort(col.key)}
-                      title={`sort by ${col.label.toLowerCase()}${active ? (sort.dir === "asc" ? " — descending next" : " — default order next") : ""}`}
-                      className={`inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground ${active ? "text-foreground" : ""}`}
-                    >
-                      {col.label}
-                      <Arrow className={`size-3 shrink-0 ${active ? "" : "opacity-40"}`} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            <div role="rowgroup">
-              {sorted.map((row) => (
-                <div
-                  key={row.agent_id}
-                  role="row"
-                  tabIndex={0}
-                  onClick={() => onSelect(row.agent_id)}
-                  onKeyDown={(e) => e.key === "Enter" && onSelect(row.agent_id)}
-                  className={`${GRID} ${ROW_LAZY} cursor-pointer border-b transition-colors hover:bg-muted/50 focus-visible:bg-muted focus-visible:outline-none`}
-                >
-                  <div role="cell" className={`${CELL} pl-0`}>
-                    <span className="truncate font-mono text-xs" title={row.agent_id}>
-                      {row.agent_id}
-                    </span>
-                  </div>
-                  <div role="cell" className={CELL}>
-                    <span className="truncate">{labelOf("harnesses", row.harness)}</span>
-                    <span className="text-muted-foreground truncate font-mono text-xs">{row.harness}</span>
-                  </div>
-                  <div role="cell" className={CELL}>
-                    <span className="truncate">{labelOf("providers", row.provider)}</span>
-                    <span className="text-muted-foreground truncate font-mono text-xs">{row.provider}</span>
-                  </div>
-                  <div role="cell" className={CELL}>
-                    <span className="truncate">{labelOf("models", row.model)}</span>
-                    <span className="text-muted-foreground truncate font-mono text-xs">{row.model}</span>
-                  </div>
-                  <div role="cell" className={CELL}>
-                    <ReciprocalBadge row={row} />
-                  </div>
-                  <div role="cell" className={CELL}>
-                    <PlatformBadges row={row} wrap />
-                  </div>
-                  <div role="cell" className={`${CELL} text-right`}>
-                    <span className="text-muted-foreground text-xs">{formatDate(row.updated_at)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="text-muted-foreground border-t px-3 py-2 text-xs">
-          {rows.length.toLocaleString()} of {totalCount.toLocaleString()} fixture-backed combos — click a row for its
-          result JSON, a column header to sort, or Ctrl/Cmd+F to search the whole list
-        </div>
+      <div className="text-muted-foreground border-t px-3 py-2 text-xs">
+        click a card for its result JSON — Ctrl/Cmd+F searches the whole list
       </div>
-    </>
+    </div>
   );
 }

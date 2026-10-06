@@ -15,13 +15,11 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import type { Registry } from "@/lib/registry";
 import { useCopied } from "@/lib/use-copied";
 import { CodeLine, JsonBlock } from "@/components/json-block";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 type Platform = "linux" | "macos" | "windows";
 type Arch = "x86_64" | "aarch64";
@@ -238,45 +236,24 @@ export function Hero() {
   );
 }
 
-/** the registry section intro — heading, byline, contributing line, and the
- * counts with the filtered view link */
-export function RegistryIntro({
-  registry,
-  combos,
-  fixtures,
-  jsonHref,
-}: {
-  registry: Registry;
-  combos: number;
-  fixtures: number;
-  jsonHref: string;
-}) {
+/** the registry section intro — heading, byline, and the updated + contributing
+ * line (the counts live in the tables' own headers) */
+export function RegistryIntro({ updated }: { updated: number | null }) {
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Registry of Agent Detections</h1>
+      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">RegistryFile of Agent Detections</h1>
       <p className="text-lg font-medium">Agents now capable of self-awareness.</p>
       <p className="text-muted-foreground text-sm">
-        Past inferences from our test suite. Missing yours,{" "}
+        Past inferences from our test suite{updated ? `. Updated ${formatDate(updated)}.` : "."} Missing yours?{" "}
         <a
           className="underline underline-offset-4"
           href="https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
           target="_blank"
           rel="noreferrer"
         >
-          send a pull request.
+          Send a pull request.
         </a>
       </p>
-      <div className="mt-1 flex flex-wrap items-center gap-2">
-        <Badge variant="secondary">{combos} combos</Badge>
-        <Badge variant="secondary">{fixtures} fixtures</Badge>
-        <a
-          href={jsonHref}
-          className="text-muted-foreground hover:text-foreground ml-auto font-mono text-sm underline underline-offset-4"
-          title="this filtered view as JSON"
-        >
-          view as JSON ↗
-        </a>
-      </div>
     </div>
   );
 }

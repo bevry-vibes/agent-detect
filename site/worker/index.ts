@@ -12,8 +12,8 @@
 // Name resolution mirrors the zig CLI's `canonicalIdFor`/`canonicalFilterDim`
 // (src/lib/registry.ts is shared with the SPA).
 
-import type { AgentFile, CombosFile, IndexFile, Platform, Registry } from "../src/lib/registry";
-import { comboSearchText, resolveDimId, resolvePlatform } from "../src/lib/registry";
+import type { IdentityFile, AgentsFile, IndexDataFile, Platform, RegistryFile } from "../src/lib/registry";
+import { agentSearchText, resolveDimId, resolvePlatform } from "../src/lib/registry";
 
 /** full fixture outputs embedded per result row, past this many rows */
 const EXPAND_CAP = 50;
@@ -33,9 +33,9 @@ function json(body: unknown, status = 200): Response {
 }
 
 // the generated data files are parsed once per isolate and memoized
-let registryPromise: Promise<Registry> | null = null;
-let combosPromise: Promise<CombosFile> | null = null;
-let indexPromise: Promise<IndexFile> | null = null;
+let registryPromise: Promise<RegistryFile> | null = null;
+let combosPromise: Promise<AgentsFile> | null = null;
+let indexPromise: Promise<IndexDataFile> | null = null;
 
 async function assetJSON<T>(env: Env, origin: string, p: string): Promise<T> {
   const res = await env.ASSETS.fetch(new URL(p, origin));
@@ -43,18 +43,18 @@ async function assetJSON<T>(env: Env, origin: string, p: string): Promise<T> {
   return await res.json() as T;
 }
 
-function getRegistry(env: Env, origin: string): Promise<Registry> {
-  registryPromise ??= assetJSON<Registry>(env, origin, "/data/registry.json");
+function getRegistry(env: Env, origin: string): Promise<RegistryFile> {
+  registryPromise ??= assetJSON<RegistryFile>(env, origin, "/data/registry.json");
   return registryPromise;
 }
 
-function getCombos(env: Env, origin: string): Promise<CombosFile> {
-  combosPromise ??= assetJSON<CombosFile>(env, origin, "/data/combos.json");
+function getAgents(env: Env, origin: string): Promise<AgentsFile> {
+  combosPromise ??= assetJSON<AgentsFile>(env, origin, "/data/agents.json");
   return combosPromise;
 }
 
-function getIndex(env: Env, origin: string): Promise<IndexFile> {
-  indexPromise ??= assetJSON<IndexFile>(env, origin, "/data/index.json");
+function getIndex(env: Env, origin: string): Promise<IndexDataFile> {
+  indexPromise ??= assetJSON<IndexDataFile>(env, origin, "/data/index.json");
   return indexPromise;
 }
 
@@ -150,14 +150,14 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
     );
   }
 
-  const combos = (await getCombos(env, origin)).combos;
+  const agents = (await getAgents(env, origin)).agents;
   const searchRegistry = resolved.search != null ? await getRegistry(env, origin) : null;
-  const results = combos.filter((c) =>
+  const results = agents.filter((c) =>
     (!resolved.harness || c.harness === resolved.harness) &&
     (!resolved.provider || c.provider === resolved.provider) &&
     (!resolved.model || c.model === resolved.model) &&
-    (!resolved.search || !searchRegistry || comboSearchText(c, searchRegistry).includes(resolved.search)) &&
-    (!resolved.agent || c.agent_id === resolved.agent || c.fixtures.some((f) => f.id === resolved.agent)) &&
+    (!resolved.search || !searchRegistry || agentSearchText(c, searchRegistry).includes(resolved.search)) &&
+    (!resolved.agent || c.agent_id === resolved.agent) &&
     (!resolved.email || c.email.toLowerCase() === resolved.email) &&
     (!resolved.platform || c.platforms.includes(resolved.platform)) &&
     (resolved.free == null || c.free === resolved.free) &&
@@ -169,15 +169,15 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
   const expand = hasFilter && !truncated;
 
   const body = {
-    query: raw,
+    params: raw,
     resolved,
     count: results.length,
     truncated,
-    ...(truncated ? { note: `more than ${EXPAND_CAP} combos matched — compact rows only; narrow the filter for embedded fixture outputs` } : {}),
+    ...(truncated ? { note: `more than ${EXPAND_CAP} agents matched — compact rows only; narrow the filter for embedded fixture outputs` } : {}),
     results: expand
       ? await Promise.all(results.map(async (row) => ({
           ...row,
-          detail: await assetJSON<AgentFile>(env, origin, `/data/agents/${row.agent_id}.json`),
+          detail: await assetJSON<IdentityFile>(env, origin, `/data/agents/${row.agent_id}.json`),
         })))
       : results,
   };

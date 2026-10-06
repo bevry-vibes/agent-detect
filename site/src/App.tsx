@@ -2,12 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Github } from "lucide-react";
 
 import {
-  comboSearchText,
+  agentSearchText,
   resolveDimId,
   resolvePlatform,
-  type CombosFile,
-  type IndexFile,
-  type Registry,
+  type AgentsFile,
+  type IndexDataFile,
+  type RegistryFile,
 } from "@/lib/registry";
 import { AgentPage } from "@/components/agent-page";
 import { EntityPage, type EntityDim } from "@/components/entity-page";
@@ -68,7 +68,7 @@ function parseView(pathname: string): View {
   return { kind: "index" };
 }
 
-function parseFilters(search: string, registry: Registry): { filters: Filters; notices: string[] } {
+function parseFilters(search: string, registry: RegistryFile): { filters: Filters; notices: string[] } {
   const q = new URLSearchParams(search);
   const filters: Filters = { ...NO_FILTERS };
   const notices: string[] = [];
@@ -129,14 +129,14 @@ function buildSearch(filters: Filters): string {
 }
 
 export default function App() {
-  const [registry, setRegistry] = useState<Registry | null>(null);
-  const [combosFile, setCombosFile] = useState<CombosFile | null>(null);
-  const [indexFile, setIndexFile] = useState<IndexFile | null>(null);
+  const [registry, setRegistry] = useState<RegistryFile | null>(null);
+  const [combosFile, setCombosFile] = useState<AgentsFile | null>(null);
+  const [indexFile, setIndexFile] = useState<IndexDataFile | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({ ...NO_FILTERS });
   const [view, setView] = useState<View>({ kind: "index" });
   const [notices, setNotices] = useState<string[]>([]);
-  const registryRef = useRef<Registry | null>(null);
+  const registryRef = useRef<RegistryFile | null>(null);
   const viewRef = useRef<string>("/");
   // a center-nav click on a detail page closes it and jumps to the section
   const pendingAnchor = useRef<string | null>(null);
@@ -170,15 +170,15 @@ export default function App() {
     Promise.all([
       fetch("/data/registry.json").then((r) => {
         if (!r.ok) throw new Error(`registry: HTTP ${r.status}`);
-        return r.json() as Promise<Registry>;
+        return r.json() as Promise<RegistryFile>;
       }),
-      fetch("/data/combos.json").then((r) => {
-        if (!r.ok) throw new Error(`combos: HTTP ${r.status}`);
-        return r.json() as Promise<CombosFile>;
+      fetch("/data/agents.json").then((r) => {
+        if (!r.ok) throw new Error(`agents: HTTP ${r.status}`);
+        return r.json() as Promise<AgentsFile>;
       }),
       fetch("/data/index.json").then((r) => {
         if (!r.ok) throw new Error(`index: HTTP ${r.status}`);
-        return r.json() as Promise<IndexFile>;
+        return r.json() as Promise<IndexDataFile>;
       }),
     ]).then(([reg, cf, ix]) => {
       registryRef.current = reg;
@@ -269,15 +269,16 @@ export default function App() {
   };
 
   // view transitions: a result or detail page opens at scroll 0 (its own
-  // mount effect); returning to the homepage lands instantly on the index
-  // section. Explicit-instant — the html's smooth scroll-behavior turns
-  // programmatic scrolls into animations that other scrolls cancel.
+  // mount effect); returning to the homepage lands instantly on the registry
+  // section (the index tables live inside it now). Explicit-instant — the
+  // html's smooth scroll-behavior turns programmatic scrolls into animations
+  // that other scrolls cancel.
   const viewKey = viewPath(view);
   useEffect(() => {
     if (viewKey === viewRef.current) return;
     viewRef.current = viewKey;
     if (viewKey === "/") {
-      document.getElementById("index")?.scrollIntoView({ block: "start", behavior: "instant" });
+      document.getElementById("registry")?.scrollIntoView({ block: "start", behavior: "instant" });
     }
   }, [viewKey]);
 
@@ -305,13 +306,13 @@ export default function App() {
 
   const searchIndex = useMemo(() => {
     const m = new Map<string, string>();
-    if (registry && combosFile) for (const c of combosFile.combos) m.set(c.agent_id, comboSearchText(c, registry));
+    if (registry && combosFile) for (const a of combosFile.agents) m.set(a.agent_id, agentSearchText(a, registry));
     return m;
   }, [registry, combosFile]);
 
   const rows = useMemo(() => {
     if (!combosFile) return [];
-    return combosFile.combos.filter(
+    return combosFile.agents.filter(
       (c) =>
         (!filters.harness || c.harness === filters.harness) &&
         (!filters.provider || c.provider === filters.provider) &&
@@ -326,7 +327,7 @@ export default function App() {
 
   const jsonHref = useMemo(() => `/index.json${buildSearch(filters) ? `?${buildSearch(filters)}` : ""}`, [filters]);
   const selectedRow = useMemo(
-    () => (view.kind === "agent" ? combosFile?.combos.find((c) => c.agent_id === view.id) ?? null : null),
+    () => (view.kind === "agent" ? combosFile?.agents.find((c) => c.agent_id === view.id) ?? null : null),
     [combosFile, view],
   );
 
@@ -358,7 +359,6 @@ export default function App() {
           view.kind === "index"
             ? [
                 { label: "cli", href: "#cli" },
-                { label: "index", href: "#index" },
                 { label: "registry", href: "#registry" },
               ]
             : [{ label: view.kind === "agent" ? "agent" : view.dim }]
@@ -391,16 +391,8 @@ export default function App() {
       ) : (
         <main className="flex flex-col">
           <Hero />
-          <IndexSection index={indexFile} filters={filters} onSelect={onIndexSelect} onOpenEntity={onOpenEntity} />
           <article id="registry" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 scroll-mt-14 px-4 py-8">
-            {registry && (
-              <RegistryIntro
-                registry={registry}
-                combos={combosFile?.counts.combos ?? 0}
-                fixtures={combosFile?.counts.fixtures ?? 0}
-                jsonHref={jsonHref}
-              />
-            )}
+            {registry && <RegistryIntro updated={combosFile?.generated_at ?? null} />}
             {loadError && (
               <Card className="border-destructive">
                 <CardHeader>
@@ -416,14 +408,18 @@ export default function App() {
                 {notices.length > 0 && (
                   <p className="text-muted-foreground rounded-md border px-3 py-2 text-xs">{notices.join(" · ")}</p>
                 )}
-                <FilterBar registry={registry} filters={filters} onDim={onDim} onFilters={onFilters} onClear={onClear} />
-                <ResultsTable
-                  rows={rows}
-                  totalCount={combosFile.counts.combos}
-                  filters={filters}
-                  registry={registry}
-                  onSelect={onSelect}
-                />
+                <div className="flex items-center gap-3">
+                  <FilterBar registry={registry} filters={filters} onDim={onDim} onFilters={onFilters} onClear={onClear} />
+                  <a
+                    href={jsonHref}
+                    className="text-muted-foreground hover:text-foreground whitespace-nowrap font-mono text-sm underline underline-offset-4"
+                    title="this filtered view as JSON"
+                  >
+                    view as JSON ↗
+                  </a>
+                </div>
+                <IndexSection index={indexFile} filters={filters} onSelect={onIndexSelect} onOpenEntity={onOpenEntity} />
+                <ResultsTable rows={rows} totalCount={combosFile.agents.length} filters={filters} onSelect={onSelect} />
               </>
             )}
           </article>
@@ -437,7 +433,7 @@ export default function App() {
             <a className="underline underline-offset-4" href="https://github.com/bevry-vibes/agent-detect" target="_blank" rel="noreferrer">
               bevry-vibes/agent-detect
             </a>
-            {combosFile ? `· ${new Date(combosFile.generated_at * 1000).toISOString().slice(0, 10)} ·` : "·"} RPL-1.5
+            {combosFile ? "·" : ""} RPL-1.5{combosFile ? ` · ${new Date(combosFile.generated_at * 1000).toISOString().slice(0, 10)}` : ""}
           </span>
           <span className="flex gap-3">
             <a className="underline underline-offset-4" href="/registry.json">registry.json</a>

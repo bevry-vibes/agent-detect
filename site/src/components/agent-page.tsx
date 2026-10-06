@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { formatDate } from "@/lib/utils";
-import { type AgentFile, type ComboRow, type CombosFile, type FixtureOutputs, type IndexFile, type Registry } from "@/lib/registry";
+import { type IdentityFile, type AgentRow, type AgentsFile, type FixtureOutputs, type IndexDataFile, type RegistryFile } from "@/lib/registry";
 import { JsonBlock } from "@/components/json-block";
-import { StatusRow } from "@/components/status-row";
+import { ResultHeader } from "@/components/result-header";
 import { AssociationTables } from "@/components/association-tables";
 import { Button } from "@/components/ui/button";
 
@@ -24,7 +24,7 @@ function sectionsFor(outputs: FixtureOutputs): { title: string; value: unknown }
 }
 
 /** per-session cache — revisiting an agent (back/forward) renders instantly */
-const fileCache = new Map<string, AgentFile>();
+const fileCache = new Map<string, IdentityFile>();
 
 /** the CLI invocations each result block corresponds to — recipe actions take
  * the combo flags, the trailers take none */
@@ -39,10 +39,10 @@ const TRAILER_ACTIONS: Record<string, string> = {
   "trailer assisted-by": "trailer assisted-by",
 };
 
-function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][number]; dims: { h: string; p: string; m: string } }) {
-  const sections = useMemo(() => sectionsFor(fixture.outputs), [fixture]);
-  const meta: Record<string, unknown> = { ...fixture.meta, updated_at: formatDate(fixture.updated_at) };
-  const bin = fixture.platform === "windows" ? ".\\agent-detect.exe" : "./agent-detect";
+function FixtureDetail({ file, dims }: { file: IdentityFile; dims: { h: string; p: string; m: string } }) {
+  const sections = useMemo(() => sectionsFor(file.outputs), [file]);
+  const meta: Record<string, unknown> = { ...file.meta, updated_at: formatDate(file.meta.updated_at) };
+  const bin = "./agent-detect";
   const commandFor = (title: string) => {
     if (RECIPE_ACTIONS[title])
       return `${bin} ${RECIPE_ACTIONS[title]} --harness=${dims.h} --provider=${dims.p} --model=${dims.m}`;
@@ -54,7 +54,7 @@ function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][numbe
       {sections.map((s) => (
         <JsonBlock key={s.title} title={s.title} value={s.value} command={commandFor(s.title)} />
       ))}
-      {!fixture.outputs.explain && (
+      {!file.outputs.explain && (
         <p className="text-muted-foreground rounded-lg border border-dashed px-3 py-2 text-xs">
           no explain recorded for this fixture
         </p>
@@ -65,11 +65,11 @@ function FixtureDetail({ fixture, dims }: { fixture: AgentFile["fixtures"][numbe
 }
 
 interface AgentPageProps {
-  row: ComboRow | null;
+  row: AgentRow | null;
   agentId: string;
-  index: IndexFile | null;
-  registry: Registry | null;
-  combos: CombosFile | null;
+  index: IndexDataFile | null;
+  registry: RegistryFile | null;
+  combos: AgentsFile | null;
   /** the dim rows open the entity's detail page (/model/<id> etc.) */
   onOpenEntity: (dim: "harness" | "provider" | "model", id: string) => void;
   /** a table's search icon: the registry section filtered to that context */
@@ -79,12 +79,12 @@ interface AgentPageProps {
   onHome: () => void;
 }
 
-/** the result page — `agent: {id}` prominent over its three dims, the status
- * row, the four association tables filtered to the combo (its dims and the
- * agent are the gold self cards, each with a back arrow), then the declared
+/** the result page — `agent: {id}` prominent over its three dims, the four
+ * association tables filtered to the combo (its dims and the agent are the
+ * gold self cards, each body acting like its action icon), then the declared
  * fixtures' outputs. */
 export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity, onSearch, onHome }: AgentPageProps) {
-  const [file, setFile] = useState<AgentFile | null>(() => fileCache.get(agentId) ?? null);
+  const [file, setFile] = useState<IdentityFile | null>(() => fileCache.get(agentId) ?? null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
     fetch(`/data/agents/${agentId}.json`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return (await res.json()) as AgentFile;
+        return (await res.json()) as IdentityFile;
       })
       .then((f) => {
         fileCache.set(agentId, f);
@@ -114,30 +114,11 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  const sortedFixtures = useMemo(
-    () => (file ? [...file.fixtures].sort((a, b) => b.updated_at - a.updated_at) : null),
-    [file],
-  );
-
   const dims = row ? { h: row.harness, p: row.provider, m: row.model } : { h: "", p: "", m: "" };
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-5 px-4 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={onHome}>
-          <ArrowLeft className="size-4" /> back to homepage
-        </Button>
-        {row && (
-          <a
-            href={`/identify/${row.agent_id}.json`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs underline underline-offset-4"
-          >
-            <ExternalLink className="size-3" /> raw JSON
-          </a>
-        )}
-      </div>
+      {row && <ResultHeader id={row.agent_id} rawHref={`/identify/${row.agent_id}.json`} onHome={onHome} />}
 
       {!row && (
         <div className="rounded-xl border p-6">
@@ -155,24 +136,12 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
         </div>
       )}
 
-      {row && (
-        <header className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold tracking-tight">{row.agent_id}</h1>
-        </header>
-      )}
-
       {row && error && (
         <p className="text-destructive text-sm">
           failed to load the result JSON: {error} — the fixture may not be deployed yet
         </p>
       )}
       {row && !error && !file && <p className="text-muted-foreground text-sm">loading result JSON…</p>}
-
-      {row && (
-        <div className="[container-type:inline-size]">
-          <StatusRow row={row} dims={dims} />
-        </div>
-      )}
 
       {row && index && registry && combos && (
         <AssociationTables
@@ -189,13 +158,7 @@ export function AgentPage({ row, agentId, index, registry, combos, onOpenEntity,
         />
       )}
 
-      {row && !error && file && sortedFixtures && sortedFixtures.length > 0 && (
-        <div className="flex flex-col gap-5">
-          {sortedFixtures.map((f) => (
-            <FixtureDetail key={f.id} fixture={f} dims={dims} />
-          ))}
-        </div>
-      )}
+      {row && !error && file && <FixtureDetail file={file} dims={dims} />}
     </main>
   );
 }

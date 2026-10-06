@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { ArrowUpDown, SquareArrowOutUpRight } from "lucide-react";
 
-import { type HarnessEntry, type IndexFile, type ModelEntry, type ProviderEntry } from "@/lib/registry";
+import { type HarnessEntry, type IndexDataFile, type ModelEntry, type ProviderEntry } from "@/lib/registry";
 import { type Filters } from "@/components/filter-bar";
-import { Badge } from "@/components/ui/badge";
+import { PolicyBadge } from "@/components/policy-badge";
 
 interface IndexSectionProps {
-  index: IndexFile | null;
+  index: IndexDataFile | null;
   filters: Filters;
   /** clicking an entry toggles its dim filter — no scroll, the gold cue and
    * the pill box show it in place */
@@ -23,23 +23,6 @@ interface EntryView {
 
 type AnyEntry = HarnessEntry | ProviderEntry | ModelEntry;
 
-/** what each index-card badge means — the training axes are the two sides of
- * the reciprocity question: does the entity use your data to train OPEN-weight
- * models (informational) or CLOSED API models (the axis that gates
- * reciprocity); a license/openness badge states its value's own meaning */
-function badgeTitle(b: string): string {
-  if (b.startsWith("open: ")) return `open-model training: ${b.slice(6)} — whether the entity uses your data to train open-weight models (informational; never gates reciprocity)`;
-  if (b.startsWith("closed: ")) return `closed-model training: ${b.slice(8)} — whether the entity uses your data to train closed (API) models: enforced = no opt-out, opt-out = trains by default, opt-in = off by default, never = verified never, NOASSERTION = researched, inconclusive; this axis gates reciprocity`;
-  if (b === "scandal") return "reciprocity scandal — implicated by a court, regulator, official report, or wire-capture finding (the fair-use purpose test)";
-  if (b === "license: NONE") return "license: verified none granted (closed source)";
-  if (b === "license: NOASSERTION") return "license: exists but custom/non-SPDX, or researched without conclusion";
-  if (b.startsWith("license: ")) return `license: ${b.slice(9)} — the SPDX license id`;
-  if (b === "openness: closed") return "openness: closed — API-only, no weights published";
-  if (b.startsWith("openness: open-")) return `${b} — the weights are published under this tier`;
-  if (b.startsWith("openness: ")) return `${b} — the weights' openness tier`;
-  return b;
-}
-
 function entryView(e: AnyEntry): EntryView {
   const badges: string[] = [];
   if ("license" in e && e.license) badges.push(`license: ${e.license}`);
@@ -52,13 +35,13 @@ function entryView(e: AnyEntry): EntryView {
   return { id: e.id, label: e.label, badges };
 }
 
-/** the index section (#index) — the same article structure as the registry
- * section: header, description, count badges, and the data-as-JSON link, then
- * every harness, provider, and model from data/index.json (the committed index
- * file the CLI embeds) with its canonical alphanumeric id, properties, and
- * associations. A dim filter narrows only its own list; the selected entry
- * carries the gold cue, and clicking it again clears the filter. The open/max
- * icon opens the entity's detail page. */
+/** the three index tables — every harness, provider, and model from
+ * data/index.json (the committed index file the CLI embeds), in the
+ * agent-card format with its canonical alphanumeric id, properties, and
+ * associations. A dim filter narrows only its own list; the gold entry is
+ * selected — click it again to clear, or open it with the
+ * <SquareArrowOutUpRight /> icon (always visible on the gold cards) for its
+ * detail page. Rendered inside the registry section, under its search bar. */
 export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSectionProps) {
   const groups = useMemo(() => {
     if (!index) return null;
@@ -111,36 +94,7 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
   }, [index, filters.harness, filters.provider, filters.model]);
 
   return (
-    <article id="index" className="mx-auto flex w-full max-w-7xl flex-col gap-5 scroll-mt-14 px-4 py-8">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Index of Agent Detections</h2>
-        <p className="text-lg font-medium">Every harness, provider, and model.</p>
-        <p className="text-muted-foreground text-sm">
-          The rule index the CLI embeds — map any name or variation to its canonical alphanumeric id, with each entry's
-          properties and its associations. A dim filter narrows only its own list; the gold entry is selected — click it
-          again to clear, or open it with the <SquareArrowOutUpRight className="inline size-3" aria-hidden /> icon for its detail
-          page.
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          {index && (
-            <>
-              <Badge variant="secondary">{index.harnesses.length} harnesses</Badge>
-              <Badge variant="secondary">{index.providers.length} providers</Badge>
-              <Badge variant="secondary">{index.models.length} models</Badge>
-            </>
-          )}
-          <a
-            href="/data/index.json"
-            target="_blank"
-            rel="noreferrer"
-            className="text-muted-foreground hover:text-foreground ml-auto font-mono text-sm underline underline-offset-4"
-            title="the index file as JSON — the same bytes the released `agent-detect index` embeds"
-          >
-            view as JSON ↗
-          </a>
-        </div>
-      </div>
-
+    <>
       {!index && <p className="text-muted-foreground py-8 text-center text-sm">loading the index…</p>}
       {index && groups && (
         <div className="grid gap-4 md:grid-cols-3">
@@ -168,24 +122,28 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
                           type="button"
                           title={selected ? `clear the ${dim} filter` : `registry results for ${dim} ${e.id}`}
                           onClick={() => onSelect(dim, e.id)}
-                          className={`flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1.5 text-left ${
+                          className={`flex min-w-0 flex-1 flex-col gap-0.5 px-2 py-1.5 text-left [container-type:inline-size] ${
                             selected ? "cursor-zoom-out" : "cursor-copy"
                           }`}
                         >
-                          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                            <span className="text-sm font-medium">{e.label}</span>
-                            <span className="text-muted-foreground font-mono text-[11px]">{e.id}</span>
+                          {/* the title keeps its natural size (so card heights
+                            stay naturally constant) and the id — its own
+                            container — shrinks into the leftover space,
+                            never truncating (mono ≈ 0.62em/char) */}
+                          <span className="flex min-w-0 items-baseline gap-x-2 whitespace-nowrap">
+                            <span className="shrink-0 text-sm font-medium">{e.label}</span>
+                            <span className="min-w-0 flex-1 [container-type:inline-size]">
+                              <span
+                                className="block text-muted-foreground font-mono"
+                                style={{ fontSize: `min(11px, max(8px, 100cqw / ${(0.62 * e.id.length).toFixed(2)}))` }}
+                              >
+                                {e.id}
+                              </span>
+                            </span>
                           </span>
                           <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[10px]">
                             {e.badges.map((b) => (
-                              <Badge
-                                key={b}
-                                variant="outline"
-                                title={badgeTitle(b)}
-                                className={`cursor-help px-1 py-0 text-[10px] ${selected ? "border-amber-500/40 text-amber-600 dark:text-amber-300" : ""}`}
-                              >
-                                {b}
-                              </Badge>
+                              <PolicyBadge key={b} badge={b} />
                             ))}
                           </span>
                         </button>
@@ -194,9 +152,13 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
                           title={`open the ${dim} detail page (${dim}/${e.id})`}
                           aria-label={`open ${dim} ${e.id} details`}
                           onClick={() => onOpenEntity(dim, e.id)}
-                          className="hover:text-foreground flex w-8 shrink-0 cursor-pointer items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                          className={`hover:text-foreground flex w-8 shrink-0 cursor-pointer flex-col items-center pt-1.5 transition-opacity ${
+                            selected ? "" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                          }`}
                         >
-                          <SquareArrowOutUpRight className="size-3.5" />
+                          <span className="flex h-5 w-full items-center justify-center">
+                            <SquareArrowOutUpRight className="size-3.5" />
+                          </span>
                         </button>
                       </div>
                     </li>
@@ -207,6 +169,6 @@ export function IndexSection({ index, filters, onSelect, onOpenEntity }: IndexSe
           ))}
         </div>
       )}
-    </article>
+    </>
   );
 }
