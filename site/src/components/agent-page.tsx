@@ -8,17 +8,35 @@ import { ResultHeader } from "@/components/result-header";
 import { AssociationTables } from "@/components/association-tables";
 import { Button } from "@/components/ui/button";
 
-const SECTION_ORDER = ["identify", "trailer co-author", "trailer assisted-by", "explain", "found", "raw", "check-reciprocal"] as const;
+/** the stderr keys and the command whose block they render under — each
+ * stderr travels with the output it belongs to, not in whatever spot the
+ * capture recorded it */
+const STDERR_PARENT: Record<string, string> = {
+  "identify.stderr": "identify",
+  "explain.stderr": "explain",
+  "check-reciprocal.stderr": "check-reciprocal",
+};
 
+/** the outputs in the fixture file's own order, each stderr block directly
+ * after the command that prints it. (A few exit-9 captures recorded
+ * identify.stderr after explain — identify printed no stdout, so the capture
+ * order drifted; attaching fixes those.) A stderr whose command printed no
+ * stdout at all (check-reciprocal on the stderr-only states) keeps its
+ * fixture-file position. */
 function sectionsFor(outputs: FixtureOutputs): { title: string; value: unknown }[] {
+  const entries = Object.entries(outputs).filter(([, v]) => v !== undefined);
   const sections: { title: string; value: unknown }[] = [];
-  for (const key of SECTION_ORDER) {
-    if (key === "raw" && outputs.found) continue; // the found rename — show only the current key
-    if (key in outputs && outputs[key] !== undefined) sections.push({ title: key, value: outputs[key] });
-  }
-  for (const [key, value] of Object.entries(outputs)) {
-    if ((SECTION_ORDER as readonly string[]).includes(key)) continue;
+  for (const [key, value] of entries) {
+    if (key === "raw" && outputs.found !== undefined) continue; // the found rename — show only the current key
+    if (STDERR_PARENT[key]) continue; // emitted below, attached to its command
     sections.push({ title: key, value });
+    for (const [stderrKey, stderrValue] of entries) {
+      if (STDERR_PARENT[stderrKey] === key) sections.push({ title: stderrKey, value: stderrValue });
+    }
+  }
+  for (const [key, value] of entries) {
+    const parent = STDERR_PARENT[key];
+    if (parent && outputs[parent] === undefined) sections.push({ title: key, value });
   }
   return sections;
 }
