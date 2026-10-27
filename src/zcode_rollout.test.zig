@@ -112,6 +112,29 @@ test "a record before the tail window cannot win (bounded read, by design)" {
     try testing.expectEqualStrings("GLM-5.3-Flash", got.?.model);
 }
 
+test "a newest record larger than the tail window widens the window and parses" {
+    try setup();
+    defer teardown();
+    // zcode 3.16 writes full model-IO records: one record can exceed the 256 KiB starting window,
+    // so the window opens inside the newest record with no separator newline. The scan must widen
+    // rather than discard the only record it needs.
+    const padding: usize = 300 * 1024;
+    var body: std.ArrayList(u8) = .empty;
+    defer body.deinit(testing.allocator);
+    var older_buf: [256]u8 = undefined;
+    try body.appendSlice(testing.allocator, try std.fmt.bufPrint(&older_buf, record_fmt, .{ "2026-10-27T12:00:00.000Z", "GLM-5.3", "main" }));
+    try body.appendSlice(testing.allocator, "{\"completedAt\":\"2026-10-27T12:14:27.931Z\",\"padding\":\"");
+    try body.appendNTimes(testing.allocator, 'x', padding);
+    try body.appendSlice(testing.allocator, "\",\"model\":{\"providerId\":\"deepseek\",\"modelId\":\"deepseek-flash\"}}\n");
+    try writeSessionFile("model-io-session_large.jsonl", body.items);
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const got = try main.zcodeRolloutNewestMainRecord(arena.allocator(), testing.io, ROLLOUT);
+    try testing.expect(got != null);
+    try testing.expectEqualStrings("deepseek-flash", got.?.model);
+    try testing.expectEqualStrings("deepseek", got.?.provider);
+}
+
 test "subagent files, foreign names, and non-main records stay out of the race" {
     try setup();
     defer teardown();

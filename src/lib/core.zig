@@ -1930,10 +1930,12 @@ fn providerHostFold(base_url: []const u8) ?[]const u8 {
 /// the newest main-role record across a rollout directory's `model-io-sess_*.jsonl` (3.16: `model-io-session_*.jsonl`) files, or null when none parses.
 /// zcode 3.16 renamed the files to `model-io-session_*.jsonl` — both spellings stay in the race (DESIGN decision #17: a drift repair extends parsing, never drops an in-window format).
 /// Records append chronologically per file, so each file is read from its tail only — a bounded window that keeps a huge or still-growing session file in the race (the whole-file read it replaces died with StreamTooLong at the 64 MiB cap, silently dropping exactly the longest — often the current — session).
+/// The window must contain the newline before the newest record. A record larger than the starting window (zcode 3.16 writes full model-IO records, around 270 KiB in a short session, so this is the normal case) has no separator in that window, so the window widens in steps until the record's start is included; a record past the ceiling is unparseable and the file drops out.
 /// A window that starts mid-line discards the partial head record; the rest parses as before (the caller-owned parse semantics are unchanged).
-/// The cumulative read budget is a circuit breaker for pathological stores: with 256 KiB windows it only bites past ~256 session files, where directory order would decide which files get read (accepted — the winner is still whichever read record carries the newest completedAt).
+/// The cumulative read budget is a circuit breaker for pathological stores: with 256 KiB starting windows it only bites past ~256 session files, where directory order would decide which files get read (accepted — the winner is still whichever read record carries the newest completedAt).
 pub fn zcodeRolloutNewestMainRecord(a: std.mem.Allocator, io: std.Io, rollout_dir_path: []const u8) !?struct { completed_at: []const u8, provider: []const u8, model: []const u8, path: []const u8 } {
-    const tail_window: u64 = 1 << 18; // 256 KiB — dozens of records
+    const tail_window: u64 = 1 << 18; // 256 KiB — the starting window, not the ceiling
+    const max_tail_window: u64 = 1 << 24; // 16 MiB — a single record beyond this is outside any live context
     const cwd_dir = std.Io.Dir.cwd();
     var dir = cwd_dir.openDir(io, rollout_dir_path, .{ .iterate = true }) catch return null;
     defer dir.close(io);
@@ -1955,16 +1957,34 @@ pub fn zcodeRolloutNewestMainRecord(a: std.mem.Allocator, io: std.Io, rollout_di
         var read_buf: [4096]u8 = undefined;
         var file_reader = file.reader(io, &read_buf);
         const size = file_reader.getSize() catch continue;
-        const window = @min(size, tail_window);
-        file_reader.seekTo(size - window) catch continue;
-        // the limit must exceed the bytes that remain (window) — a reached-or-exceeded limit fails the read with StreamTooLong
-        const data = file_reader.interface.allocRemaining(a, .limited64(window + 1)) catch continue;
-        total_read += data.len;
-        // the window may open mid-record — everything before its first newline is a partial line, not parseable
-        var view: []const u8 = data;
-        if (window < size) {
-            view = if (std.mem.indexOfScalar(u8, data, '\n')) |nl| data[nl + 1 ..] else "";
+        var window: u64 = @min(size, tail_window);
+        var data: []u8 = &.{};
+        var view: []const u8 = "";
+        while (true) {
+            file_reader.seekTo(size - window) catch break;
+            // the limit must exceed the bytes that remain (window) — a reached-or-exceeded limit fails the read with StreamTooLong
+            data = file_reader.interface.allocRemaining(a, .limited64(window + 1)) catch break;
+            total_read += data.len;
+            if (window >= size) {
+                view = data;
+                break;
+            }
+            // the window may open mid-record — everything before its first newline is a partial line, not parseable.
+            // If it has no separator newline at all, it sits wholly inside the newest record: widen and read again.
+            const trimmed_len = std.mem.trimEnd(u8, data, "\r\n").len;
+            if (std.mem.indexOfScalar(u8, data[0..trimmed_len], '\n')) |nl| {
+                view = data[nl + 1 ..];
+                break;
+            }
+            if (window >= max_tail_window) {
+                view = data;
+                break;
+            }
+            a.free(data);
+            data = &.{};
+            window = @min(size, window * 2);
         }
+        if (data.len == 0) continue;
         var lines = std.mem.splitBackwardsScalar(u8, view, '\n');
         var scanned: usize = 0;
         while (lines.next()) |line| {
