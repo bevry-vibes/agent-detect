@@ -102,6 +102,7 @@
         "mistralsmall3",
         "musespark12",
         "nemotron35lightning",
+        "nemotron35supervl",
         "nemotron3nano",
         "nemotron3nanoomni",
         "nemotron3super",
@@ -121,6 +122,8 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "reflectionbeam",
+        "solarmini4",
         "step37flash"
       ]
     },
@@ -470,6 +473,7 @@
         "minimaxm3",
         "musespark12",
         "nemotron35lightning",
+        "nemotron35supervl",
         "nemotron3nano",
         "nemotron3super",
         "nemotron3ultra",
@@ -488,6 +492,8 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "reflectionbeam",
+        "solarmini4",
         "step37flash"
       ]
     },
@@ -778,6 +784,7 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "lagunas21",
         "llama318b",
         "llama3370b",
         "llama4",
@@ -791,6 +798,8 @@
         "mistralnemoinstruct2407",
         "mistralsmall3",
         "musespark12",
+        "nemotron35lightning",
+        "nemotron35supervl",
         "nemotron3nanoomni",
         "nemotron3super",
         "nemotron3ultra",
@@ -806,6 +815,8 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "reflectionbeam",
+        "solarmini4",
         "step37flash"
       ]
     },
@@ -1272,11 +1283,16 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "lagunas21",
         "mimov25",
         "mimov25pro",
         "minimaxm3",
+        "nemotron35lightning",
+        "nemotron35supervl",
         "qwen37plus",
         "qwen38max",
+        "reflectionbeam",
+        "solarmini4",
         "step37flash"
       ],
       "harnesses": [
@@ -4168,6 +4184,7 @@
         "laguna-s-2.1-free"
       ],
       "providers": [
+        "clinepass",
         "kilo",
         "openrouter",
         "vercel"
@@ -4178,6 +4195,7 @@
         "kilo",
         "kimicode",
         "omp",
+        "opencode",
         "pi"
       ]
     },
@@ -4657,6 +4675,25 @@
       ]
     },
     {
+      "label": "Nemotron 3.5 Super VL",
+      "short_title": null,
+      "name": "nemotron-3-5-super-vl",
+      "id": "nemotron35supervl",
+      "openness": "open-weight",
+      "license": "NOASSERTION",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "clinepass"
+      ],
+      "harnesses": [
+        "cline",
+        "kilo",
+        "opencode"
+      ]
+    },
+    {
       "label": "Nemotron 3 Nano",
       "short_title": null,
       "name": "nemotron-3-nano",
@@ -4774,6 +4811,7 @@
         "nemotron-3.5-lightning-30b-a3b"
       ],
       "providers": [
+        "clinepass",
         "nvidia",
         "openrouter"
       ],
@@ -4783,6 +4821,7 @@
         "kilo",
         "kimicode",
         "omp",
+        "opencode",
         "pi"
       ]
     },
@@ -5293,6 +5332,47 @@
       ]
     },
     {
+      "label": "Reflection Beam",
+      "short_title": null,
+      "name": "reflection-beam",
+      "id": "reflectionbeam",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "beam-free",
+        "reflection-beam-free"
+      ],
+      "providers": [
+        "clinepass"
+      ],
+      "harnesses": [
+        "cline",
+        "kilo",
+        "opencode"
+      ]
+    },
+    {
+      "label": "Solar Mini 4",
+      "short_title": null,
+      "name": "solar-mini-4",
+      "id": "solarmini4",
+      "openness": "closed",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "clinepass"
+      ],
+      "harnesses": [
+        "cline",
+        "kilo",
+        "opencode"
+      ]
+    },
+    {
       "label": "Step 3.7 Flash",
       "short_title": null,
       "name": "step-3.7-flash",
@@ -5325,7 +5405,11 @@
   ],
   "provider_map_to_free_models": {
     "clinepass": [
-      "deepseekv4flash"
+      "nemotron35supervl",
+      "reflectionbeam",
+      "solarmini4",
+      "lagunas21",
+      "nemotron35lightning"
     ],
     "nvidia": [
       "gptoss20b",
@@ -5515,6 +5599,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "cline-clinepass-nemotron35supervl": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "cline-clinepass-qwen37plus": {
       "platforms": [],
       "reciprocal": false
@@ -5522,6 +5610,14 @@
     "cline-clinepass-qwen38max": {
       "platforms": [],
       "reciprocal": false
+    },
+    "cline-clinepass-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "cline-clinepass-solarmini4": {
+      "platforms": [],
+      "reciprocal": true
     },
     "cline-clinepass-step37flash": {
       "platforms": [

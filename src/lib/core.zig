@@ -764,6 +764,32 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
             try session_files_list.append(a, .{ .path = mp, .fields = msg_fields_slice });
         }
         d.raw.session_files = try session_files_list.toOwnedSlice(a);
+
+        // step 3 override: the session snapshot carries the live provider/model,
+        // which may differ from the stale config (step 2). Apply when present.
+        if (s.provider) |sp| {
+            try applyProviderMeta(a, d, sp);
+            d.provider_name = sp;
+            d.provider_label = providerForName(sp) orelse try titleCase(a, sp);
+            d.provider_id = try slugId(a, sp);
+        }
+        if (s.model) |sm| {
+            try applyModel(a, d, sm, sm);
+        }
+
+        // step 4: generation truth (last assistant modelInfo in messages.json) overrides session.
+        if (s.messages_path) |mp| {
+            const lm = lastModelInfo(a, io, mp);
+            if (lm.provider) |lp| {
+                try applyProviderMeta(a, d, lp);
+                d.provider_name = lp;
+                d.provider_label = providerForName(lp) orelse try titleCase(a, lp);
+                d.provider_id = try slugId(a, lp);
+            }
+            if (lm.id) |li| {
+                try applyModel(a, d, li, li);
+            }
+        }
     }
 }
 

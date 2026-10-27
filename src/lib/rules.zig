@@ -328,6 +328,12 @@ pub const rulesForModels = [_]ModelRule{
     // Evergreen per the top-100 weekly set (`poolside/laguna-xs-2.1:free`).
     // variations: the `-free` tier spelling (observed: openrouter `poolside/laguna-xs-2.1:free`).
     .{ .name = "laguna-xs-2.1", .label = "Laguna XS 2.1", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-XS-2.1", "https://huggingface.co/poolside/Laguna-XS-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{"laguna-xs-2.1-free"} },
+    // nemotron-3-5-super-vl: open-weight — NVIDIA Nemotron 3.5 Super VL (120B A12B); vision-language model; HF card + LICENSE under NVIDIA Open Model License (custom, not SPDX → NOASSERTION). Free on Cline Pass (2026-10).
+    .{ .name = "nemotron-3-5-super-vl", .label = "Nemotron 3.5 Super VL", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3.5-Super-VL-120B-A12B", "https://huggingface.co/nvidia/Nemotron-3.5-Super-VL-120B-A12B/blob/main/LICENSE" } },
+    // reflection-beam: openness unverified — Reflection AI Beam (501B A23B); no public license data available yet. Free on Cline Pass (2026-10).
+    .{ .name = "reflection-beam", .label = "Reflection Beam", .openness = null, .license = null, .sources = &.{ "https://huggingface.co/reflection/Beam-1.0-501B-A23B" }, .variations = &.{ "beam-free", "reflection-beam-free" } },
+    // solar-mini-4: closed — Upstage Solar Mini 4 (35B/3B active); API-only, no public weights → NONE. Free on Cline Pass (2026-10).
+    .{ .name = "solar-mini-4", .label = "Solar Mini 4", .openness = "closed", .license = "NONE", .sources = &.{ "https://console.upstage.ai/docs/models/solar-mini-4" } },
 };
 
 /// one provider.
