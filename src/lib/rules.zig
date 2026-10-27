@@ -75,7 +75,14 @@ pub const rulesForModels = [_]ModelRule{
     // the strict slug (non-alphanumerics stripped) makes the two spellings one alias, so a single entry covers both, and the bare `deepseekv4flash0731` fixture/backlog dim with it.
     // Every catalog namespace in front of the stamp — `deepseek-ai/…`, `siliconflow/deepseek-ai/DeepSeek-V4-Flash-0731` — is shed by `modelIdAfterNamespace`, so the bare stamped form is enough.
     // The tdpsk_ spelling is AutoClaw's channel prefix + the 202605 YYYYMM release stamp (observed in the runtime config catalog, 2026-09-06) — same stamp/prefix folding per DESIGN #13.
+    // The V4.1 successor (below) is its own rule: DeepSeek's `deepseek-flash` API alias now points at its 1017 checkpoint, while this V4 rule keeps the catalogs that still serve the V4 weights.
     .{ .name = "deepseek-v4-flash", .label = "DeepSeek V4 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE" }, .variations = &.{ "DeepSeek-V4-Flash-0731-TEE", "deepseek-v4-flash:0731", "deepseek-v4-flash-vision-exp", "deepseek-v4-flash-free", "tdpsk_deepseek-v4-flash-202605" } },
+    // deepseek-v4.1-flash: open-weight — the V4.1 refresh of the Flash line; HF card + MIT LICENSE.
+    // variations: `deepseek-flash` is DeepSeek's current API alias (the pricing page names DeepSeek-V4.1-Flash-1017 as the checkpoint serving it) and ZCode's built-in DeepSeek model id (observed 2026-10-27 in the app's bundled provider config and its rollout stores) —
+    // a floating alias, so the spelling folds here and moves when upstream repoints it (CONTRIBUTING "model rule identity & family folding");
+    // the 1017 MMDD release stamp folds per DESIGN #13 (slug-equal to DeepSeek-V4.1-Flash-1017, so one spelling covers both separators).
+    // The retired `deepseek-v4-flash`/`-vision-exp` ids stay on the V4 rule: other provider catalogs still serve those weights, and the alias-to-checkpoint move is followed through `deepseek-flash`.
+    .{ .name = "deepseek-v4.1-flash", .label = "DeepSeek V4.1 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/LICENSE", "https://api-docs.deepseek.com/quick_start/pricing" }, .variations = &.{ "deepseek-flash", "DeepSeek-V4.1-Flash-1017" } },
     // mistral-large-3: open-weight — Mistral's models overview lists the current "Mistral Large 3" (v25.12) as Apache-2.0 open-weight;
     // `closed` was only accurate for the Large 1/2 era.
     // variations: `mistral-large-latest` — Mistral's floating alias for the current Large (floating aliases fold as variations per CONTRIBUTING "model rule identity & family folding"; move it when the upstream repoints it).

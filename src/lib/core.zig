@@ -1901,7 +1901,8 @@ fn providerHostFold(base_url: []const u8) ?[]const u8 {
     return null;
 }
 
-/// the newest main-role record across a rollout directory's `model-io-sess_*.jsonl` files, or null when none parses.
+/// the newest main-role record across a rollout directory's `model-io-sess_*.jsonl` (3.16: `model-io-session_*.jsonl`) files, or null when none parses.
+/// zcode 3.16 renamed the files to `model-io-session_*.jsonl` — both spellings stay in the race (DESIGN decision #17: a drift repair extends parsing, never drops an in-window format).
 /// Records append chronologically per file, so each file is read from its tail only — a bounded window that keeps a huge or still-growing session file in the race (the whole-file read it replaces died with StreamTooLong at the 64 MiB cap, silently dropping exactly the longest — often the current — session).
 /// A window that starts mid-line discards the partial head record; the rest parses as before (the caller-owned parse semantics are unchanged).
 /// The cumulative read budget is a circuit breaker for pathological stores: with 256 KiB windows it only bites past ~256 session files, where directory order would decide which files get read (accepted — the winner is still whichever read record carries the newest completedAt).
@@ -1918,7 +1919,7 @@ pub fn zcodeRolloutNewestMainRecord(a: std.mem.Allocator, io: std.Io, rollout_di
     var best_path: []const u8 = "";
     while (it.next(io) catch null) |ent| {
         if (ent.kind != .file) continue;
-        if (!std.mem.startsWith(u8, ent.name, "model-io-sess_")) continue;
+        if (!std.mem.startsWith(u8, ent.name, "model-io-sess_") and !std.mem.startsWith(u8, ent.name, "model-io-session_")) continue;
         if (!std.mem.endsWith(u8, ent.name, ".jsonl")) continue;
         if (std.mem.indexOf(u8, ent.name, "_subagent_") != null) continue; // subagent sessions get their own files — outside the main session's scope
         if (total_read > (1 << 26)) break; // 64 MiB cumulative tail budget
@@ -1985,7 +1986,7 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     if (home.len == 0) return;
     const cwd_dir = std.Io.Dir.cwd();
 
-    // session side: ~/.zcode/cli/rollout/model-io-sess_*.jsonl — one append-only JSONL per session; records carry completedAt (ISO-8601, lexicographic order = chronological) and model {providerId, modelId, role}.
+    // session side: ~/.zcode/cli/rollout/model-io-sess*.jsonl (3.16: `model-io-session_*`) — one append-only JSONL per session; records carry completedAt (ISO-8601, lexicographic order = chronological) and model {providerId, modelId, role}.
     // The global winner is the main-role record with the newest completedAt across files (read tail-only per file — see the helper).
     const rollout_dir_path = try std.fmt.allocPrint(a, "{s}/.zcode/cli/rollout", .{home});
     const best = try zcodeRolloutNewestMainRecord(a, io, rollout_dir_path);

@@ -1,5 +1,6 @@
 // Tail-read tests for the zcode rollout scan (`zcodeRolloutNewestMainRecord`): a session file past the old whole-file 64 MiB cap stays in the newest-record race (the long-session regression the tail read exists for), the winner is the newest completedAt across files regardless of directory order, a window opened mid-record discards the partial head line, and subagent/foreign-named files and non-main records stay out of the race.
 // A second block pins both sides of the zcode 3.14 format drift (DESIGN decision #17 — parsing support spans every version released within the staleness window): records before 3.14 carry `model.role` and the `builtin:zai-start-plan` providerId; records since 3.14 carry no role and the renamed coding-plan keys. The provider-key canonicalization (`zcodeProviderCanonical`) is pinned for all three spellings plus the never-guess pass-through.
+// The 3.16 drift is pinned the same way: the rollout files were renamed `model-io-sess_*` → `model-io-session_*`, and both shapes stay in the race.
 // Each test owns the arena its scan allocates from and asserts before the deferred deinit — the returned record aliases arena memory.
 
 const std = @import("std");
@@ -149,6 +150,22 @@ test "both record shapes across the 3.14 drift parse; the newer (role-absent) re
     try testing.expect(got != null);
     try testing.expectEqualStrings("GLM-5.3-Flash", got.?.model);
     try testing.expectEqualStrings("account:zai-individual-coding-plan", got.?.provider);
+}
+
+test "both filename shapes across the 3.16 drift parse; the newer session-named record wins" {
+    try setup();
+    defer teardown();
+    // pre-3.16 file spelling — must still parse (decision #17)
+    try writeSessionFile("model-io-sess_old.jsonl", "{\"completedAt\":\"2026-10-27T12:00:00.000Z\",\"model\":{\"providerId\":\"builtin:zai-start-plan\",\"modelId\":\"GLM-5.3-Flash\"}}\n");
+    // 3.16+ `model-io-session_` spelling — must parse too, and its newer completedAt wins
+    try writeSessionFile("model-io-session_new.jsonl", "{\"completedAt\":\"2026-10-27T12:14:27.931Z\",\"model\":{\"providerId\":\"deepseek\",\"modelId\":\"deepseek-flash\"}}\n");
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const got = try main.zcodeRolloutNewestMainRecord(arena.allocator(), testing.io, ROLLOUT);
+    try testing.expect(got != null);
+    try testing.expectEqualStrings("deepseek-flash", got.?.model);
+    try testing.expectEqualStrings("deepseek", got.?.provider);
+    try testing.expect(std.mem.indexOf(u8, got.?.path, "model-io-session_new.jsonl") != null);
 }
 
 test "zcodeProviderCanonical maps every in-window provider-key spelling; unknown keys pass through" {

@@ -543,6 +543,12 @@ test "canonicalIdFor: catalog spellings fold to their canonical rules" {
         .{ "deepseek/deepseek-v4-pro-0813", "deepseek-v4-pro" },
         .{ "deepseek-v4-pro:0813", "deepseek-v4-pro" },
         .{ "deepseek-ai/DeepSeek-V4-Pro-0813", "deepseek-v4-pro" },
+        // DeepSeek's `deepseek-flash` API alias (ZCode's built-in DeepSeek model id) serves the V4.1 Flash 1017 checkpoint — the floating alias and the MMDD stamp both fold onto the V4.1 rule.
+        .{ "deepseek-flash", "deepseek-v4.1-flash" },
+        .{ "deepseek/deepseek-flash", "deepseek-v4.1-flash" },
+        .{ "DeepSeek-V4.1-Flash-1017", "deepseek-v4.1-flash" },
+        .{ "deepseek-v4.1-flash-1017", "deepseek-v4.1-flash" },
+        .{ "deepseek-v4.1-flash", "deepseek-v4.1-flash" },
         // 2407 is part of Mistral Nemo's official HF name, not a stamp on an undated sibling — it stays in the canonical id.
         .{ "unsloth/Mistral-Nemo-Instruct-2407", "mistral-nemo-instruct-2407" },
         .{ "qwen/qwen3-235b-a22b-2507", "qwen3-235b-a22b" },
@@ -588,6 +594,24 @@ test "applyModel: chutes TEE-stamped id folds to the canonical model" {
     try main.applyModel(a, &d2, "chutes/Qwen/Qwen3.8-27B-TEE", "chutes/Qwen/Qwen3.8-27B-TEE");
     try testing.expectEqualStrings("qwen3.8-27b", d2.model_name.?);
     try testing.expectEqualStrings("qwen3827b", d2.model_id.?);
+}
+
+test "applyModel: DeepSeek's deepseek-flash alias folds to DeepSeek V4.1 Flash" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // ZCode's built-in DeepSeek template serves `deepseek-flash` (the rollout store records it verbatim).
+    var d = main.Detection{};
+    try main.applyModel(a, &d, "deepseek-flash", "deepseek-flash");
+    try testing.expectEqualStrings("deepseek-v4.1-flash", d.model_name.?);
+    try testing.expectEqualStrings("DeepSeek V4.1 Flash", d.model_label.?);
+    try testing.expectEqualStrings("deepseekv41flash", d.model_id.?);
+    try testing.expectEqualStrings("open-weight", d.model_openness.?);
+    try testing.expectEqualStrings("MIT", d.model_license.?);
+    // the HTTP body's version stamp names the same checkpoint.
+    var d2 = main.Detection{};
+    try main.applyModel(a, &d2, "DeepSeek-V4.1-Flash-1017", "DeepSeek-V4.1-Flash-1017");
+    try testing.expectEqualStrings("deepseek-v4.1-flash", d2.model_name.?);
 }
 
 test "applyModel: unknown id keeps raw passthrough (never-guess)" {

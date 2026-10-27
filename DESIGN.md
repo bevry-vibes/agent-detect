@@ -378,8 +378,8 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
      Out-of-sync fixtures are fine to have in the meantime: the file's `meta.updated_at` acknowledges its age, and the staleness model re-works it on the next sweep.
 17. **A drift repair extends parsing; it never drops a format still inside the version window.**
      Session-store, config-file, and env parsing must keep working for every format emitted by any harness version released within the staleness window (the 27-day default ≈ four weeks — the span of versions a user's running binary or a live capture can still come from).
-     Concretely: when a harness renames or drops a field, the parser gains a second accepted shape — the zcode 3.14 repair accepts both role-bearing and role-absent rollout records and maps both the retired `builtin:zai-start-plan` and the renamed coding-plan provider keys; it never switches to the new shape alone.
-     An old shape may be retired only once no in-window release emits it, and until then the retired shape stays pinned by a test so a cleanup cannot silently strand it (the zcode rollout tests pin both sides of the 3.14 drift, and `zcodeProviderCanonical` is pinned for every in-window key spelling plus the never-guess pass-through).
+     Concretely: when a harness renames or drops a field, the parser gains a second accepted shape — the zcode 3.14 repair accepts both role-bearing and role-absent rollout records and maps both the retired `builtin:zai-start-plan` and the renamed coding-plan provider keys; the 3.16 file rename (`model-io-sess_*` → `model-io-session_*`) keeps both filename shapes in the scan; it never switches to the new shape alone.
+     An old shape may be retired only once no in-window release emits it, and until then the retired shape stays pinned by a test so a cleanup cannot silently strand it (the zcode rollout tests pin both sides of the 3.14 and 3.16 drift, and `zcodeProviderCanonical` is pinned for every in-window key spelling plus the never-guess pass-through).
 
 ## test matrix: harnesses, providers, models
 
