@@ -5622,6 +5622,10 @@
       ],
       "reciprocal": true
     },
+    "cline-clinepass-lagunas21": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "cline-clinepass-mimov25": {
       "platforms": [],
       "reciprocal": true
@@ -5631,6 +5635,10 @@
       "reciprocal": true
     },
     "cline-clinepass-minimaxm3": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "cline-clinepass-nemotron35lightning": {
       "platforms": [],
       "reciprocal": true
     },
@@ -8189,6 +8197,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-clinepass-lagunas21": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-clinepass-mimov25": {
       "platforms": [],
       "reciprocal": false
@@ -8201,11 +8213,27 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-clinepass-nemotron35lightning": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-clinepass-nemotron35supervl": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-clinepass-qwen37plus": {
       "platforms": [],
       "reciprocal": false
     },
     "kilo-clinepass-qwen38max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-clinepass-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-clinepass-solarmini4": {
       "platforms": [],
       "reciprocal": false
     },
