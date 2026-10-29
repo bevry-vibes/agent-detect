@@ -108,11 +108,16 @@ jobs:
           test "$RC" -eq 10
 
       # the annotated tag's message IS the release notes — a naked tag fails
-      # the job instead of publishing a bodyless release. git cat-file emits
-      # the raw tag object: header, then message, then the SSH/PGP signature
-      # armor — the first sed drops the header, the second the armor.
+      # the job instead of publishing a bodyless release. actions/checkout
+      # peels the annotated tag to its target commit and records that as a
+      # lightweight `refs/tags/<name>`, so re-fetch the tag ref itself first
+      # (forced: it replaces checkout's peeled lightweight ref) — otherwise
+      # `git cat-file tag` reports "bad file". git cat-file then emits the raw
+      # tag object: header, then message, then the SSH/PGP signature armor —
+      # the first sed drops the header, the second the armor.
       - name: the release notes come from the tag — a naked tag fails here
         run: |
+          git fetch --force --depth=1 origin "+refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
           notes="$(git cat-file tag "$GITHUB_REF_NAME" | sed '1,/^$/d' | sed '/^-----BEGIN [A-Z ]*SIGNATURE-----$/,$d')"
           if [ "$(printf '%s' "$notes" | wc -c)" -lt 200 ] || ! printf '%s' "$notes" | grep -q "What's changed since"; then
             echo "the tag carries no release notes — nothing was published, so re-cut the tag with them and push again:" >&2
