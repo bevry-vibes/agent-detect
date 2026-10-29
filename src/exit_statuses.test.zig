@@ -454,6 +454,17 @@ test "modelFromMessageData: user nested form resolves" {
     try testing.expectEqualStrings("deepseek", mm.provider_id);
 }
 
+test "modelFromMessageData: opencode v2 session_message nested id form resolves" {
+    // opencode ≥ 2.2's session_message data nests `{id, providerID, variant}` (no `modelID`).
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const data = "{\"time\":{\"created\":1793239463890},\"agent\":\"build\",\"model\":{\"id\":\"deepseek-flash\",\"providerID\":\"deepseek\",\"variant\":\"max\"},\"content\":[]}";
+    const mm = (try main.modelFromMessageData(a, data)) orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("deepseek-flash", mm.model_full);
+    try testing.expectEqualStrings("deepseek", mm.provider_id);
+}
+
 test "modelFromMessageData: no model info resolves null" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();

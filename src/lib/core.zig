@@ -1418,12 +1418,13 @@ pub const ActiveSessionModel = struct {
 };
 
 /// Resolve the *active* session's model from a kilo/opencode-format session store (`~/.local/share/kilo/kilo.db` / `~/.local/share/opencode/opencode.db`).
-/// Both harnesses use the same schema: a `session` table (with `directory`, `time_archived`, and a lazily-written `model` JSON column) plus a `message` table whose `data` JSON carries the model at message-creation time.
+/// Two shapes: the legacy `session` + `message` pair (kilo; opencode < 2.2), and opencode ≥ 2.2's `session_v2` + `session_message` pair (the legacy pair stays in the file, empty).
+/// Both carry `directory` + `time_archived` on the session row and a lazily-written `model` JSON column, and a message table whose `data` JSON carries the model at message-creation time.
 ///
-/// The active session is the non-archived session in `dir` whose newest `message.time_created` is most recent —
+/// The active session is the non-archived session in `dir` whose newest message is most recent —
 /// real conversational activity, not the session row's `time_updated` (which background syncs, title generation, and compaction bump for any session in the directory, including other windows').
-/// The message data is preferred over `session.model` because it is written at creation time (assistant messages carry flat `modelID`/`providerID`; user messages nest them under `model`), whereas `session.model` can be null for minutes after a session starts.
-/// Falls back to `session.model` only when the newest message lacks model info.
+/// The message data is preferred over the session model because it is written at creation time (legacy assistant messages carry flat `modelID`/`providerID`; legacy user and v2 messages nest them under `model`), whereas the session model can be null for minutes after a session starts.
+/// Falls back to the session row's `model` only when the newest message lacks model info.
 /// Partial/absent → null (caller leaves detection unresolved).
 fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, dir: []const u8) !?ActiveSessionModel {
     if (db.len == 0 or dir.len == 0) return null;
@@ -1444,18 +1445,26 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
     }
     try dir_lit.append(a, '\'');
 
-    // newest message in a non-archived session for `dir` — the session that owns it is the active one.
-    // Read its data JSON and the session row's model JSON in one row so the message path can fall back to the (lazily-written) session column.
+    // v2 store first (opencode ≥ 2.2), then the legacy pair (kilo; the same file keeps the empty legacy tables).
+    // A missing table pair surfaces as a local SqliteError → the next shape is tried (never a hard failure).
+    if (try activeSessionModelFrom(a, io, db, dir_lit.items, "session_message", "session_v2")) |mm| return mm;
+    if (try activeSessionModelFrom(a, io, db, dir_lit.items, "message", "session")) |mm| return mm;
+    return null;
+}
+
+/// newest message in a non-archived session for the quoted `dir_lit`, reading the message `data` JSON and the session row's `model` JSON in one row.
+/// `msg_table` / `sess_table` select the store shape (`session_message`/`session_v2` or `message`/`session`) — both share the `session_id` join and column names.
+fn activeSessionModelFrom(a: std.mem.Allocator, io: std.Io, db: []const u8, dir_lit: []const u8, msg_table: []const u8, sess_table: []const u8) !?ActiveSessionModel {
     const sql = try std.fmt.allocPrint(a,
-        \\SELECT m.data, s.model FROM message m JOIN session s ON s.id = m.session_id
+        \\SELECT m.data, s.model FROM {s} m JOIN {s} s ON s.id = m.session_id
         \\WHERE s.directory={s} AND s.time_archived IS NULL
         \\ORDER BY m.time_created DESC LIMIT 1
-    , .{dir_lit.items});
+    , .{ msg_table, sess_table, dir_lit });
     defer a.free(sql);
 
     const out = kiloSqliteJson(a, io, db, sql) catch |err| {
         if (err == error.SqliteUnavailable) return err; // optional dep missing — surface exit 6, don't misreport exit 8
-        return null;
+        return null; // missing table pair / unreadable store — the caller tries the next shape
     };
     if (out.len == 0) return null;
     const outer = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
@@ -1464,8 +1473,9 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
     if (row != .object) return null;
 
     // message data carries the model at creation time — prefer it.
-    // assistant: {"role":"assistant", ..., "modelID":"...", "providerID":"..."}
-    // user:      {"role":"user", ..., "model":{"providerID":"...","modelID":"..."}}
+    // legacy assistant: {"role":"assistant", ..., "modelID":"...", "providerID":"..."}
+    // legacy user:      {"role":"user", ..., "model":{"providerID":"...","modelID":"..."}}
+    // v2:               {"agent":"build", "model":{"id":"...","providerID":"...","variant":"..."}, ...}
     if (row.object.get("data")) |md| {
         if (md == .string and md.string.len > 0) {
             if (try modelFromMessageData(a, md.string)) |mm| return mm;
@@ -1489,12 +1499,13 @@ pub fn modelFromMessageData(a: std.mem.Allocator, data: []const u8) !?ActiveSess
     };
     var provider_id: ?[]const u8 = jstr(o, "providerID");
     var model_full: ?[]const u8 = jstr(o, "modelID");
-    // user messages nest the model under `model`
+    // user messages nest the model under `model`; opencode ≥ 2.2's session_message nests `{id, providerID, variant}`
+    // (the legacy/user spelling is `{providerID, modelID}`) — accept both within the nested object.
     if (provider_id == null or model_full == null) {
         if (o.get("model")) |mv| {
             if (mv == .object) {
                 if (provider_id == null) provider_id = jstr(mv.object, "providerID");
-                if (model_full == null) model_full = jstr(mv.object, "modelID");
+                if (model_full == null) model_full = jstr(mv.object, "modelID") orelse jstr(mv.object, "id");
             }
         }
     }
