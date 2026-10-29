@@ -1074,6 +1074,9 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "ling-3.0-flash-vl",      "dots-3-note-preview",        "nex-n2.5-mini",
         "nex-n2.5-pro",           "inkling",                    "inkling-small",
         "nemotron-3.5-lightning",
+        // the 2026-10-29 opencode-zen free-period sweep — the new free-period exception rules (flint-40b; mimo-v2.6-flash) land rule-only until the free sweeps fixture them (the free-grid combos are derivable; the sweep is user-run via the daemon).
+        "flint-40b",
+        "mimo-v2.6-flash",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

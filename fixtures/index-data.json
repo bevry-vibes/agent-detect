@@ -2883,7 +2883,8 @@
       "closed_training": null,
       "variations": [
         "deepseek-flash",
-        "DeepSeek-V4.1-Flash-1017"
+        "DeepSeek-V4.1-Flash-1017",
+        "deepseek-v4.1-flash-free"
       ],
       "providers": [
         "deepseek"
@@ -2972,6 +2973,21 @@
       "harnesses": [
         "omp"
       ]
+    },
+    {
+      "label": "Flint 40B",
+      "short_title": null,
+      "name": "flint-40b",
+      "id": "flint40b",
+      "openness": "open-weight",
+      "license": null,
+      "open_training": "opt-out",
+      "closed_training": null,
+      "variations": [
+        "flint-40b-free"
+      ],
+      "providers": [],
+      "harnesses": []
     },
     {
       "label": "Fugu Ultra v1.1",
@@ -3426,7 +3442,8 @@
       "closed_training": null,
       "variations": [
         "glm-5.3-flash:cloud",
-        "zai_glm-5.3-flash"
+        "zai_glm-5.3-flash",
+        "glm-5.3-flash-free"
       ],
       "providers": [
         "autoclaw",
@@ -4454,6 +4471,21 @@
       ]
     },
     {
+      "label": "MiMo V2.6 Flash",
+      "short_title": null,
+      "name": "mimo-v2.6-flash",
+      "id": "mimov26flash",
+      "openness": "open-weight",
+      "license": null,
+      "open_training": "opt-out",
+      "closed_training": null,
+      "variations": [
+        "mimo-v2.6-flash-free"
+      ],
+      "providers": [],
+      "harnesses": []
+    },
+    {
       "label": "MiniMax M2.5",
       "short_title": null,
       "name": "minimax-m2.5",
@@ -4683,7 +4715,9 @@
       "license": "NOASSERTION",
       "open_training": null,
       "closed_training": null,
-      "variations": [],
+      "variations": [
+        "nemotron-3.5-super-vl-free"
+      ],
       "providers": [
         "clinepass"
       ],
@@ -4808,7 +4842,8 @@
       "open_training": null,
       "closed_training": null,
       "variations": [
-        "nemotron-3.5-lightning-30b-a3b"
+        "nemotron-3.5-lightning-30b-a3b",
+        "nemotron-3.5-lightning-free"
       ],
       "providers": [
         "clinepass",
@@ -10286,6 +10321,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "opencode-clinepass-lagunas21": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "opencode-clinepass-mimov25": {
       "platforms": [],
       "reciprocal": true
@@ -10301,6 +10340,14 @@
       ],
       "reciprocal": true
     },
+    "opencode-clinepass-nemotron35lightning": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "opencode-clinepass-nemotron35supervl": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "opencode-clinepass-qwen37plus": {
       "platforms": [],
       "reciprocal": false
@@ -10309,7 +10356,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-clinepass-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-clinepass-solarmini4": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-clinepass-step37flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "opencode-deepseek-deepseekv41flash": {
       "platforms": [],
       "reciprocal": true
     },

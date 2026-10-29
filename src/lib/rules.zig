@@ -82,7 +82,8 @@ pub const rulesForModels = [_]ModelRule{
     // a floating alias, so the spelling folds here and moves when upstream repoints it (CONTRIBUTING "model rule identity & family folding");
     // the 1017 MMDD release stamp folds per DESIGN #13 (slug-equal to DeepSeek-V4.1-Flash-1017, so one spelling covers both separators).
     // The retired `deepseek-v4-flash`/`-vision-exp` ids stay on the V4 rule: other provider catalogs still serve those weights, and the alias-to-checkpoint move is followed through `deepseek-flash`.
-    .{ .name = "deepseek-v4.1-flash", .label = "DeepSeek V4.1 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/LICENSE", "https://api-docs.deepseek.com/quick_start/pricing" }, .variations = &.{ "deepseek-flash", "DeepSeek-V4.1-Flash-1017" } },
+    // The opencode zen free-tier alias `deepseek-v4.1-flash-free` folds here per DESIGN #13 (tier spellings are variations — same weights as the paid alias it rides).
+    .{ .name = "deepseek-v4.1-flash", .label = "DeepSeek V4.1 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash", "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/LICENSE", "https://api-docs.deepseek.com/quick_start/pricing" }, .variations = &.{ "deepseek-flash", "DeepSeek-V4.1-Flash-1017", "deepseek-v4.1-flash-free" } },
     // mistral-large-3: open-weight — Mistral's models overview lists the current "Mistral Large 3" (v25.12) as Apache-2.0 open-weight;
     // `closed` was only accurate for the Large 1/2 era.
     // variations: `mistral-large-latest` — Mistral's floating alias for the current Large (floating aliases fold as variations per CONTRIBUTING "model rule identity & family folding"; move it when the upstream repoints it).
@@ -281,7 +282,8 @@ pub const rulesForModels = [_]ModelRule{
     // variations: Chutes TEE spelling (observed bare: chutes/Nemotron-3-Nano- Omni-30B-TEE — no namespace, so the bare form suffices) and the NIM catalog spelling (the 2026-09-20 free-axis refresh — free on OpenRouter and NIM).
     .{ .name = "nemotron-3-nano-omni", .label = "Nemotron 3 Nano Omni", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{"https://huggingface.co/nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning-BF16"}, .variations = &.{ "Nemotron-3-Nano-Omni-30B-TEE", "nemotron-3-nano-omni-30b-a3b-reasoning" } },
     // nemotron-3.5-lightning: open-weight — NVIDIA Nemotron 3.5 Lightning 30B A3B; the NVIDIA Open Model License is custom (not SPDX) → NOASSERTION (added by the 2026-09-20 free-axis refresh — free on OpenRouter and NIM, clears the evergreen set).
-    .{ .name = "nemotron-3.5-lightning", .label = "Nemotron 3.5 Lightning", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/blob/main/LICENSE" }, .variations = &.{"nemotron-3.5-lightning-30b-a3b"} },
+    // variations: the opencode zen free-tier spelling `nemotron-3.5-lightning-free` folds here per DESIGN #13 (tier spellings are variations — same weights as the paid lane it rides).
+    .{ .name = "nemotron-3.5-lightning", .label = "Nemotron 3.5 Lightning", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/blob/main/LICENSE" }, .variations = &.{"nemotron-3.5-lightning-30b-a3b", "nemotron-3.5-lightning-free"} },
     // glm-5: open-weight — Z.ai GLM 5; HF card + MIT LICENSE.
     // No "Pure Open" claim on the card (like glm-5.1), so the conservative open-weight tier.
     // Observed on opencode-go (bare id, evergreen z-ai/glm-5) — no serving-variant spellings yet.
@@ -293,7 +295,8 @@ pub const rulesForModels = [_]ModelRule{
     // glm-5.3-flash: open-weight — Z.ai GLM 5.3 Flash; HF card + MIT LICENSE.
     // Observed on opencode-go (bare id).
     // variations: AutoClaw's channel spelling (also the app's configured imageModel; observed 2026-09-06).
-    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" }, .variations = &.{ "glm-5.3-flash:cloud", "zai_glm-5.3-flash" } },
+    // variations: the opencode zen free-tier spelling `glm-5.3-flash-free` folds here per DESIGN #13 (tier spellings are variations — same weights as the paid alias it rides).
+    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" }, .variations = &.{ "glm-5.3-flash:cloud", "zai_glm-5.3-flash", "glm-5.3-flash-free" } },
     // glm-5-turbo: closed — Z.ai's "Faster GLM-5 lane" (released 2026-03-16); a distinct official API id (docs.z.ai model page, OpenRouter z-ai/glm-5-turbo) with no public weights (HF zai-org/GLM-5-Turbo does not exist; models.dev records open_weights: false) → closed, license NONE.
     // variations: AutoClaw's channel spelling (observed in the runtime config catalog, 2026-09-06).
     .{ .name = "glm-5-turbo", .label = "GLM-5-Turbo", .openness = "closed", .license = "NONE", .sources = &.{ "https://docs.z.ai/guides/llm/glm-5-turbo", "https://openrouter.ai/z-ai/glm-5-turbo" }, .variations = &.{"zai_glm-5-turbo"} },
@@ -329,11 +332,20 @@ pub const rulesForModels = [_]ModelRule{
     // variations: the `-free` tier spelling (observed: openrouter `poolside/laguna-xs-2.1:free`).
     .{ .name = "laguna-xs-2.1", .label = "Laguna XS 2.1", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/poolside/Laguna-XS-2.1", "https://huggingface.co/poolside/Laguna-XS-2.1/blob/main/LICENSE.md", "https://openmdw.ai/faq/" }, .variations = &.{"laguna-xs-2.1-free"} },
     // nemotron-3-5-super-vl: open-weight — NVIDIA Nemotron 3.5 Super VL (120B A12B); vision-language model; HF card + LICENSE under NVIDIA Open Model License (custom, not SPDX → NOASSERTION). Free on Cline Pass (2026-10).
-    .{ .name = "nemotron-3-5-super-vl", .label = "Nemotron 3.5 Super VL", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3.5-Super-VL-120B-A12B", "https://huggingface.co/nvidia/Nemotron-3.5-Super-VL-120B-A12B/blob/main/LICENSE" } },
+    // variations: the opencode zen free-tier spelling `nemotron-3.5-super-vl-free` folds per DESIGN #13 (tier spellings are variations — same weights as the paid lane it rides).
+    .{ .name = "nemotron-3-5-super-vl", .label = "Nemotron 3.5 Super VL", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3.5-Super-VL-120B-A12B", "https://huggingface.co/nvidia/Nemotron-3.5-Super-VL-120B-A12B/blob/main/LICENSE" }, .variations = &.{"nemotron-3.5-super-vl-free"} },
     // reflection-beam: openness unverified — Reflection AI Beam (501B A23B); no public license data available yet. Free on Cline Pass (2026-10).
     .{ .name = "reflection-beam", .label = "Reflection Beam", .openness = null, .license = null, .sources = &.{ "https://huggingface.co/reflection/Beam-1.0-501B-A23B" }, .variations = &.{ "beam-free", "reflection-beam-free" } },
     // solar-mini-4: closed — Upstage Solar Mini 4 (35B/3B active); API-only, no public weights → NONE. Free on Cline Pass (2026-10).
     .{ .name = "solar-mini-4", .label = "Solar Mini 4", .openness = "closed", .license = "NONE", .sources = &.{ "https://console.upstage.ai/docs/models/solar-mini-4" } },
+    // mimo-v2.6-flash: open-weight — Xiaomi MiMo V2.6 Flash; the weights are downloadable (open-weight per the conservative hosted-API tier).
+    // The opencode zen free period trains: "MiMo-V2.6-Flash Free: During its free period, collected data may be used to improve the model." (https://opencode.ai/docs/zen) — the billing rule routes the escape (the paid spelling) to opt-out, like the MiMo-V2.5 Free exception (informational — the reciprocity conjunct consumes only the closed axis).
+    // The license is unverified (no public weights-license doc sourced for the V2.6 card yet) → null; the openness is sourced from the catalog's open_weights + the zen model page.
+    .{ .name = "mimo-v2.6-flash", .label = "MiMo V2.6 Flash", .openness = "open-weight", .sources = &.{"https://opencode.ai/docs/zen"}, .open_training = "opt-out", .variations = &.{"mimo-v2.6-flash-free"} },
+    // flint-40b: open-weight — Recursive's Flint 40B (MoE, ~2.5B active params); the weights are downloadable (open-weight per the conservative hosted-API tier).
+    // The opencode zen free period trains: "Flint 40B Free: During its free period, collected data may be used to improve the model. Data is retained for 30 days." (https://opencode.ai/docs/zen) — the billing rule routes the escape (the paid spelling) to opt-out, like the MiMo-V2.5 Free exception (informational — the reciprocity conjunct consumes only the closed axis).
+    // The license is unverified (no public weights-license doc sourced yet) → null; the openness is sourced from the catalog's open_weights + the zen model page.
+    .{ .name = "flint-40b", .label = "Flint 40B", .openness = "open-weight", .sources = &.{"https://opencode.ai/docs/zen"}, .open_training = "opt-out", .variations = &.{"flint-40b-free"} },
 };
 
 /// one provider.
@@ -397,7 +409,7 @@ pub const rulesForProviders = [_]ProviderRule{
     // axes record the default surface: never on both (the observed contributor tiers serve open-weight labs' models; no documented closed trainer).
     .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "never", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
     // opencode: never/never — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13.
-    // The zen docs carry the same data statement the Go subscription cites: "Our providers follow a zero-retention policy and do not use your data for model training" — the provider default surface is zero-training. The named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free) are model-intrinsic (a model's own free period), so they live on the model rules' training pairs per the model-intrinsic rule (CONTRIBUTING, "the opt-in-by-model successor"): `big-pickle` closed NOASSERTION (openness unverified), `mimo-v2.5` open opt-out (the billing rule — escaping the free period's training takes the paid spelling).
+    // The zen docs carry the same data statement the Go subscription cites: "Our providers follow a zero-retention policy and do not use your data for model training" — the provider default surface is zero-training. The named free-period exceptions that DO train (Big Pickle; MiMo-V2.5 Free; MiMo-V2.6-Flash Free; Flint 40B Free) are model-intrinsic (a model's own free period), so they live on the model rules' training pairs per the model-intrinsic rule (CONTRIBUTING, "the opt-in-by-model successor"): `big-pickle` closed NOASSERTION (openness unverified), `mimo-v2.5` / `mimo-v2.6-flash` / `flint-40b` open opt-out (the billing rule — escaping the free period's training takes the paid spelling).
     // variation folds the retired `opencode-free` rule (hermes's keyless-tier profile key; the zen spelling also resolves natively through the label).
     // Folded 2026-09-07 per .plans/1788716755355 (D4); values sourced 2026-09-07 (previously null/null — the same docs/zen page already carried the statement).
     // The Go subscription is individuated as `opencode-go`.
