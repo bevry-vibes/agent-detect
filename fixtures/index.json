@@ -91,12 +91,6 @@
       "mode": "from-identity",
       "started_at": 1790659687,
       "runner": 2479709
-    },
-    {
-      "harness": "opencode",
-      "mode": "from-identity",
-      "stale": true,
-      "runner": 204620
     }
   ],
   "backlog": {
