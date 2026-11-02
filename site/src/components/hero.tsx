@@ -480,11 +480,13 @@ function SkillSnippet(spec: SnippetSpec) {
   }, [open, stage, meta]);
 
   const toggleStage = () => {
+    if (wholeFile) return;
     setStage(stage === "prompt" ? "file" : "prompt");
     setOpen(true);
   };
   const from = meta ? meta.start + 1 : 0;
   const to = meta ? meta.end : 0;
+  const wholeFile = !spec.startWith && !spec.lines;
   const linePermalink = meta
     ? `https://github.com/bevry-vibes/skills/blob/main/${spec.file}#L${from}-L${to}`
     : `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`;
@@ -494,7 +496,7 @@ function SkillSnippet(spec: SnippetSpec) {
       stage === "file"
         ? meta.full.join("\n")
         : [
-            ...(meta.headerEnd > 0 ? [meta.full.slice(0, meta.headerEnd).join("\n"), "..."] : []),
+            ...(meta.headerEnd > 0 ? [meta.full.slice(0, meta.headerEnd).join("\n")] : []),
             meta.full.slice(meta.start, meta.end).join("\n"),
           ].join("\n\n");
     void copy(body);
@@ -513,9 +515,9 @@ function SkillSnippet(spec: SnippetSpec) {
       {lines.map((line) => {
         if ("gap" in line) {
           return (
-            <div key="gap" className="text-muted-foreground/60 flex items-start select-none">
-              <span className="w-12 shrink-0 pr-3 text-right" />
-              <span className="min-w-0 flex-1 pr-3">...</span>
+            <div key="gap" role="separator" aria-hidden="true" className="flex items-center py-1.5">
+              <span className="w-12 shrink-0 pr-3" />
+              <span className="border-border/70 min-w-0 flex-1 border-t" />
             </div>
           );
         }
@@ -547,11 +549,18 @@ function SkillSnippet(spec: SnippetSpec) {
       <SnippetHeader description={spec.description} open={open} onToggle={() => setOpen(!open)}>
         <Button variant="ghost" size="sm" className={snippetBtn} onClick={copyText}>
           {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-          {copied ? "copied" : stage === "file" ? "copy file" : "copy prompt"}
+          {copied ? "copied" : stage === "file" || wholeFile ? "copy file" : "copy prompt"}
         </Button>
-        <Button variant="ghost" size="sm" className={snippetBtn} onClick={toggleStage}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={snippetBtn}
+          onClick={toggleStage}
+          disabled={wholeFile}
+          title={wholeFile ? "this snippet is the whole file" : undefined}
+        >
           <Eye className="size-3" />
-          {stage === "file" ? "show prompt" : "show file"}
+          {wholeFile ? "whole file" : stage === "file" ? "show snippet" : "show file"}
         </Button>
         <Button variant="ghost" size="sm" className={snippetBtn} asChild>
           <a href={linePermalink} target="_blank" rel="noreferrer" title="view file" aria-label="view file">
