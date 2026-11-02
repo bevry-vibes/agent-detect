@@ -515,9 +515,8 @@ function SkillSnippet(spec: SnippetSpec) {
       {lines.map((line) => {
         if ("gap" in line) {
           return (
-            <div key="gap" role="separator" aria-hidden="true" className="flex items-center py-1.5">
-              <span className="w-12 shrink-0 pr-3" />
-              <span className="border-border/70 min-w-0 flex-1 border-t" />
+            <div key="gap" role="separator" aria-hidden="true" className="py-1.5">
+              <span className="border-border/70 block w-full border-t" />
             </div>
           );
         }
