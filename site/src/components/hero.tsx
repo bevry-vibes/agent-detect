@@ -212,20 +212,28 @@ export function Hero() {
                 description="Make a new project with Bevry's conventions."
                 text="Scaffold a new project using github.com/bevry-vibes/skills. The project will ..."
               />
-              <SkillSnippet description="Restrict a skill to a specific model." file="minimax.md" startWith="# MiniMax" endBefore="### Never use" />
-              <SkillSnippet description="Instruct your agents to write their plans to a consistent directory." file="plans.md" lines={5} />
+              <SkillSnippet description="Restrict a skill to a specific model." file="minimax.md" startWith="## MiniMax M3" endBefore="### Never use" />
+              <SkillSnippet description="Instruct your agents to write their plans to a consistent directory." file="plans.md" startWith="## where plans live" endBefore="## provenance companion" />
               <SkillSnippet
                 description="Instruct the agent to use co-authored-by trailer for commits."
-                file="commits.md"
+                file="author.md"
                 startWith="### co-author trailer"
-                endBefore="### signing"
+                endBefore="### assisted-by trailer"
+                anchor="#co-author-trailer--commits"
               />
               <SkillSnippet
-                description="Instruct the agent to use assisted-by trailer for issues."
-                file="commits.md"
-                startWith="## github issues"
-                endBefore="## releases"
-                anchor="#github-issues-pull-requests-discussions-and-comments"
+                description="Instruct the agent to use assisted-by trailer for posts, plans, and summaries."
+                file="author.md"
+                startWith="### assisted-by trailer"
+                endBefore="## signing"
+                anchor="#assisted-by-trailer--posts-plans-summaries"
+              />
+              <SkillSnippet
+                description="Keep agent-made commits unsigned."
+                file="author.md"
+                startWith="## signing"
+                endBefore="## post-commit verification"
+                anchor="#signing"
               />
               <SkillSnippet description="Restrict your project to reciprocal agents only." file="policy.md" startWith="# AI Policy" />
             </CardContent>
@@ -269,7 +277,7 @@ const snippetBtn = "h-7 cursor-pointer gap-1 px-1! text-xs max-sm:px-0! max-sm:t
 interface SnippetSpec {
   /** the prompt description doubles as the snippet header */
   description: string;
-  file: "policy.md" | "minimax.md" | "commits.md" | "plans.md";
+  file: "policy.md" | "minimax.md" | "commits.md" | "plans.md" | "author.md";
   /** the line the snippet starts at (substring match) */
   startWith?: string;
   /** the line the snippet stops before (substring match); omitted = to the end */
