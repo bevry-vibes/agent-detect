@@ -30,7 +30,8 @@ Never round-trip a bulk rewrite through `Set-Content`.
 ## zig
 
 Build with `zig build` (released), `zig build dev` (maintainer `fixtures` binary), and `zig build test`.
-The bevry-vibes [zig.md](https://github.com/bevry-vibes/skills/blob/main/zig.md) skill carries the Zig 0.16 API notes and general gotchas; this repo's patterns and gotchas live in [zig.md](./zig.md).
+The bevry-vibes [zig.md](https://github.com/bevry-vibes/skills/blob/main/zig.md) skill carries the Zig API notes and general gotchas; this repo's patterns and gotchas live in [zig.md](./zig.md).
+The project tracks the latest Zig release (currently 0.17.x); CI pins the same version.
 The source is split across five files
 — `src/lib/rules.zig` (rule tables + pure name resolution)
 - `src/lib/index_data.zig` (the embedded index file: parse, filters, regeneration)

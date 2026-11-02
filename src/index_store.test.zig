@@ -241,8 +241,8 @@ test "knownButFailedPutPure: redacts home paths + key-shaped strings, truncates;
     try dev.knownButFailedPutPure(aa, &root, "proj-darwin", "crash in /Users/balupton/proj/.crush/crush.db", "/Users/balupton", "/Users/balupton/proj");
     try testing.expectEqualStrings("crash in <project>/.crush/crush.db", dev.knownButFailedFor(&root, "proj-darwin").?);
     // a very long message truncates to a bounded size
-    const long = "x" ** 5000;
-    try dev.knownButFailedPutPure(aa, &root, "a-b-c-darwin", long, "", "");
+    const long: [5000]u8 = @splat('x');
+    try dev.knownButFailedPutPure(aa, &root, "a-b-c-darwin", &long, "", "");
     const short = dev.knownButFailedFor(&root, "a-b-c-darwin").?;
     try testing.expect(short.len <= 403); // 400 chars + ellipsis
     // last failure wins

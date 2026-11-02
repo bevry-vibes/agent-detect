@@ -24,7 +24,7 @@ jobs:
 
       - uses: step-security/setup-zig@v2
         with:
-          version: 0.16.0
+          version: 0.17.0
 
       - name: cross-compile all targets
         run: zig build dist --prefix .
@@ -72,7 +72,7 @@ jobs:
 
       - uses: step-security/setup-zig@v2
         with:
-          version: 0.16.0
+          version: 0.17.0
 
       - name: cross-compile all targets
         run: zig build dist --prefix .

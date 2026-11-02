@@ -3784,11 +3784,11 @@ pub const dev = if (build_options.dev) struct {
         // the relaunched daemon keeps its flags: argv0 comes from executablePath (more reliable than argv[0]); the rest verbatim from the launch.
         var argv_list = std.ArrayList(?[*:0]const u8).empty;
         defer argv_list.deinit(a);
-        try argv_list.append(a, try a.dupeZ(u8, self_path));
+        try argv_list.append(a, try a.dupeSentinel(u8, self_path, 0));
         var it = try std.process.Args.Iterator.initAllocator(init.minimal.args, a);
         defer it.deinit();
         _ = it.skip(); // argv0 — replaced above
-        while (it.next()) |arg| try argv_list.append(a, try a.dupeZ(u8, arg));
+        while (it.next()) |arg| try argv_list.append(a, try a.dupeSentinel(u8, arg, 0));
 
         if (builtin.os.tag == .windows) {
             const argv_slices = try a.alloc([]const u8, argv_list.items.len);
@@ -3813,7 +3813,7 @@ pub const dev = if (build_options.dev) struct {
         while (eit.next()) |kv| {
             const pair = try std.fmt.allocPrint(a, "{s}={s}", .{ kv.key_ptr.*, kv.value_ptr.* });
             defer a.free(pair);
-            try envp_list.append(a, try a.dupeZ(u8, pair));
+            try envp_list.append(a, try a.dupeSentinel(u8, pair, 0));
         }
         const envp = try a.allocSentinel(?[*:0]const u8, envp_list.items.len, null);
         @memcpy(envp[0..envp_list.items.len], envp_list.items);

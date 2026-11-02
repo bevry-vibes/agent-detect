@@ -19,7 +19,7 @@ const targets = [_]struct { name: []const u8, query: std.Target.Query }{
 };
 
 pub fn build(b: *std.Build) void {
-    const optimize = b.option(std.builtin.OptimizeMode, "optimize", "optimization mode") orelse .ReleaseSmall;
+    const optimize = b.option(std.builtin.OptimizeMode, "optimize", "optimization mode") orelse .small;
 
     // `--dev` enables the dev-only subcommands (the `fixtures` namespace: daemon, capture, queue, dequeue, status) and the larger code path that gathers raw observations.
     // Default is `false` for the released binary; `zig build dev` flips it to `true` for the maintainer-only `agent-detect-dev` binary.
@@ -129,7 +129,7 @@ pub fn build(b: *std.Build) void {
 /// A minimal string-slice loader is enough — we only need the substring between the first `.version = "` and the closing `"`.
 fn readVersionFromZon(b: *std.Build) []const u8 {
     const allocator = b.allocator;
-    const zon_text = b.build_root.handle.readFileAlloc(
+    const zon_text = b.root.root_dir.handle.readFileAlloc(
         b.graph.io,
         "build.zig.zon",
         allocator,

@@ -113,14 +113,12 @@ fn writeErrIdOrNull(io: std.Io, id: ?[]const u8) void {
 }
 
 // macOS process walking (libproc + sysctl).
-// zig 0.16 std has no darwin.zig, so the headers are pulled in directly.
-// `<libproc.h>` is *not* imported via @cInclude because it transitively drags in `<mach/*.h>` opaque types that trip zig's generated static size asserts — those two functions are declared as externs below instead.
+// zig 0.17 removed @cImport, so the two libc declarations used below are externs.
+// `<libproc.h>` functions are declared as externs for the same reason.
 // Available on native macOS builds (which link libSystem by default).
 // Cross-builds still fall through to the empty-ancestry path because the cross-built executable cannot call libc.
-const os = @cImport({
-    @cInclude("sys/sysctl.h");
-    @cInclude("unistd.h");
-});
+extern "c" fn getpid() c_int;
+extern "c" fn sysctl(name: [*]c_int, namelen: c_uint, oldp: ?*anyopaque, oldlenp: ?*usize, newp: ?*anyopaque, newlen: usize) c_int;
 extern "c" fn proc_pidpath(pid: c_int, buffer: [*]u8, buffersize: c_uint) c_int;
 extern "c" fn proc_pidinfo(pid: c_int, flavor: c_int, arg: c_ulong, buffer: [*]u8, buffersize: c_int) c_int;
 
@@ -390,7 +388,7 @@ const PROCESSENTRY32W = extern struct {
     th32ParentProcessID: u32 = 0,
     pcPriClassBase: i32 = 0,
     dwFlags: u32 = 0,
-    szExeFile: [260]u16 = [_]u16{0} ** 260,
+    szExeFile: [260]u16 = @splat(0),
 };
 extern "kernel32" fn CreateToolhelp32Snapshot(dwFlags: u32, th32ProcessID: u32) callconv(.winapi) std.os.windows.HANDLE;
 extern "kernel32" fn Process32FirstW(hSnapshot: std.os.windows.HANDLE, lppe: *PROCESSENTRY32W) callconv(.winapi) c_int;
@@ -409,7 +407,7 @@ pub const Ancestry = struct { pids: []const u32 = &.{}, names: []const []const u
 pub fn selfPid() u32 {
     if (builtin.os.tag == .windows) return std.os.windows.GetCurrentProcessId();
     if (builtin.os.tag == .linux) return @intCast(std.os.linux.getpid());
-    if (builtin.os.tag == .macos) return @intCast(os.getpid());
+    if (builtin.os.tag == .macos) return @intCast(getpid());
     return 0;
 }
 
@@ -520,7 +518,7 @@ fn ancestorsMacos(a: std.mem.Allocator) !Ancestry {
     var pids: std.ArrayList(u32) = .empty;
     var names: std.ArrayList([]const u8) = .empty;
 
-    var pid: i32 = os.getpid();
+    var pid: i32 = getpid();
     var safety: u8 = 0;
     while (pid > 1 and safety < 32) : (safety += 1) {
         var info: [4096]u8 = undefined;
@@ -566,12 +564,12 @@ fn kimiArgvOverride(a: std.mem.Allocator, pid: i32) !bool {
     // CTL_KERN = 1, KERN_PROCARGS = 38 on darwin
     var mib: [3]c_int = .{ 1, 38, pid };
     var size: usize = 0;
-    if (os.sysctl(&mib, mib.len, null, &size, null, 0) != 0) return false;
+    if (sysctl(&mib, mib.len, null, &size, null, 0) != 0) return false;
     if (size == 0) return false;
     var buf = try a.alloc(u8, size);
     defer a.free(buf);
     var read_size: usize = size;
-    if (os.sysctl(&mib, mib.len, buf.ptr, &read_size, null, 0) != 0) return false;
+    if (sysctl(&mib, mib.len, buf.ptr, &read_size, null, 0) != 0) return false;
     return std.mem.indexOf(u8, buf[0..read_size], "kimi-code") != null;
 }
 
@@ -1548,7 +1546,7 @@ pub fn readChildOutput(a: std.mem.Allocator, io: std.Io, child: std.process.Chil
 /// The dev fixtures store no longer shells out to sqlite — the released binary's read-only session-store reads (kilo/opencode/ copilot DBs) are the only sqlite use left.
 /// `sqlite3` is an OPTIONAL dependency (documented in README.md): a spawn `FileNotFound` (the CLI absent from PATH) returns `error.SqliteUnavailable`, which callers propagate so the binary can exit 6 (incomplete environment) instead of a misleading exit 8 — every other failure stays a local "unreadable store" (detection ends unresolved).
 fn kiloSqliteJson(a: std.mem.Allocator, io: std.Io, db: []const u8, sql: []const u8) ![]u8 {
-    const db_z = try a.dupeZ(u8, db);
+    const db_z = try a.dupeSentinel(u8, db, 0);
     defer a.free(db_z);
     var argv_buf = [_][]const u8{ "sqlite3", "-json", "-batch", db_z, sql };
     var child = std.process.spawn(io, .{
@@ -3651,7 +3649,7 @@ fn appendParam(a: std.mem.Allocator, qs: *std.ArrayList(u8), key: []const u8, va
 /// maps every failure (the opener absent from PATH, or a failed exit) to the
 /// exit-6 "incomplete environment" case with the `--no-open` hint.
 pub fn openURL(a: std.mem.Allocator, io: std.Io, url: []const u8) !void {
-    const url_z = try a.dupeZ(u8, url);
+    const url_z = try a.dupeSentinel(u8, url, 0);
     defer a.free(url_z);
     var argv_buf: [5][]const u8 = undefined;
     const argv: []const []const u8 = switch (@import("builtin").os.tag) {
