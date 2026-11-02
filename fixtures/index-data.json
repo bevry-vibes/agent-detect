@@ -366,6 +366,7 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "dots3notepreview",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
         "gemini3flash",
@@ -410,12 +411,14 @@
         "llama4maverick",
         "mimov25",
         "mimov25pro",
+        "mimov26flash",
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
         "minimaxm31flash",
         "musespark12",
         "nemotron35lightning",
+        "nemotron35supervl",
         "nemotron3nano",
         "nemotron3nanoomni",
         "nemotron3super",
@@ -435,6 +438,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "reflectionbeam",
         "step37flash"
       ]
     },
@@ -830,6 +834,7 @@
         "deepseekv41flash",
         "deepseekv4flash",
         "deepseekv4pro",
+        "flint40b",
         "gemini35flash",
         "gemini3flash",
         "gemini3pro",
@@ -862,6 +867,7 @@
         "llama4maverick",
         "mimov25",
         "mimov25pro",
+        "mimov26flash",
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
@@ -2145,8 +2151,10 @@
         "claudeopus5",
         "claudesonnet4",
         "claudesonnet5",
+        "deepseekv41flash",
         "deepseekv4flash",
         "deepseekv4pro",
+        "flint40b",
         "gemini35flash",
         "gemini3flash",
         "gemini3pro",
@@ -2168,12 +2176,16 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "mimov26flash",
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
         "musespark12",
+        "nemotron35lightning",
+        "nemotron35supervl",
         "nemotron3ultra",
-        "qwen3coder"
+        "qwen3coder",
+        "reflectionbeam"
       ],
       "harnesses": [
         "hermes",
@@ -2973,7 +2985,8 @@
         "deepseek-v4.1-flash-free"
       ],
       "providers": [
-        "deepseek"
+        "deepseek",
+        "opencode"
       ],
       "harnesses": [
         "cline",
@@ -3074,8 +3087,13 @@
       "variations": [
         "flint-40b-free"
       ],
-      "providers": [],
-      "harnesses": []
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
     },
     {
       "label": "Fugu Ultra v1.1",
@@ -4570,8 +4588,13 @@
       "variations": [
         "mimo-v2.6-flash-free"
       ],
-      "providers": [],
-      "harnesses": []
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
     },
     {
       "label": "MiniMax M2.5",
@@ -4838,10 +4861,12 @@
         "nemotron-3.5-super-vl-free"
       ],
       "providers": [
-        "clinepass"
+        "clinepass",
+        "opencode"
       ],
       "harnesses": [
         "cline",
+        "hermes",
         "kilo",
         "opencode"
       ]
@@ -4967,6 +4992,7 @@
       "providers": [
         "clinepass",
         "nvidia",
+        "opencode",
         "openrouter"
       ],
       "harnesses": [
@@ -5499,10 +5525,12 @@
         "reflection-beam-free"
       ],
       "providers": [
-        "clinepass"
+        "clinepass",
+        "opencode"
       ],
       "harnesses": [
         "cline",
+        "hermes",
         "kilo",
         "opencode"
       ]
@@ -5579,9 +5607,13 @@
       "qwen3"
     ],
     "opencode": [
-      "deepseekv4flash",
-      "lagunas21",
-      "nemotron3ultra"
+      "deepseekv41flash",
+      "flint40b",
+      "glm53flash",
+      "mimov26flash",
+      "nemotron35lightning",
+      "nemotron35supervl",
+      "reflectionbeam"
     ],
     "openrouter": [
       "dots3notepreview",
@@ -10795,12 +10827,22 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencode-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "opencode-opencode-deepseekv4flash": {
       "platforms": [],
       "reciprocal": true
     },
     "opencode-opencode-deepseekv4pro": {
       "platforms": [],
+      "reciprocal": true
+    },
+    "opencode-opencode-flint40b": {
+      "platforms": [
+        "darwin"
+      ],
       "reciprocal": true
     },
     "opencode-opencode-gemini35flash": {
@@ -10887,6 +10929,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "opencode-opencode-mimov26flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "opencode-opencode-minimaxm25": {
       "platforms": [],
       "reciprocal": true
@@ -10903,6 +10949,14 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencode-nemotron35lightning": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "opencode-opencode-nemotron35supervl": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "opencode-opencode-nemotron3ultra": {
       "platforms": [
         "darwin"
@@ -10912,6 +10966,10 @@
     "opencode-opencode-qwen3coder": {
       "platforms": [],
       "reciprocal": true
+    },
+    "opencode-opencode-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": false
     },
     "opencode-opencodego-deepseekv4flash": {
       "platforms": [],

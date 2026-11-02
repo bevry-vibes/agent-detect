@@ -1,0 +1,129 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenCode Zen",
+      "provider_name": "opencode",
+      "provider_id": "opencode",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Flint 40B",
+      "model_short_title": null,
+      "model_name": "flint-40b",
+      "model_id": "flint40b",
+      "model_openness": "open-weight",
+      "model_open_training": "opt-out",
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": true,
+      "agent_id": "opencode-opencode-flint40b",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Flint 40B <opencode-opencode-flint40b@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Flint 40B <opencode-opencode-flint40b@local>",
+    "found": {
+      "platform_id": "darwin",
+      "harness_version": "2.2.5",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 46788,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 6775,
+          "name": "opencode"
+        },
+        {
+          "pid": 6759,
+          "name": "opencode"
+        },
+        {
+          "pid": 2020,
+          "name": "bash"
+        },
+        {
+          "pid": 2012,
+          "name": "sshd-session"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://opencode.ai/docs/zen"
+      ],
+      "model-urls": [
+        "https://opencode.ai/docs/zen"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "opencode",
+          "value": "opencode"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "opencode"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "flint-40b-free"
+        }
+      ]
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "opencode",
+        "model": "flint40b"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1793595629,
+    "harness_version": "2.2.5",
+    "prompt_invocation": [
+      "opencode",
+      "run",
+      "--model",
+      "opencode/flint-40b-free",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "opencode",
+      "--version"
+    ]
+  }
+}

@@ -59,7 +59,7 @@
       "kimicode-minimax-minimaxm27-darwin": "capture failed (exit 1); stderr kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
       "kimicode-minimax-minimaxm3-darwin": "capture failed (exit 1); stderr kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
       "kimicode-opencodego-qwen38flash-darwin": "capture failed (exit 1): kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
-      "kimicode-openrouter-gemma431b-darwin": "capture failed (exit 1); stderr kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "kimicode-openrouter-gemma431b-darwin": "capture failed (exit 1); stderr kimi version 2.4.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
       "kimicode-openrouter-nemotron3nano-darwin": "capture failed (exit 1); stderr kimi version 0.39.1\nerror: failed to run prompt: provider.auth_error: 401 \"Unauthorized: Please make sure you're using the latest version of Cline and re-authenticate your Cline account.\"\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
       "cline-clinepass-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
       "cline-clinepass-kimik3-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m cline-pass requires re-authentication.\n",
@@ -273,7 +273,7 @@
       "omp-siliconflow-minimaxm3-darwin": "capture failed (exit 1); stderr Working...\n402 Sorry, your account balance is insufficient\n",
       "omp-zenmux-deepseekv4flash-darwin": "capture failed (exit 1); stderr Working...\n404 Requested model is not valid (request_id: 95c4608806374dafb31488a9337dc6fd)\nRequested model is not valid (request_id: 95c4608806374dafb31488a9337dc6fd) (type=invalid_model param=404)\n",
       "omp-zenmux-gemini35flash-darwin": "capture failed (exit 1); stderr Working...\n404 Requested model is not valid (request_id: d795972d532e4573a540c1f0e6578e71)\nRequested model is not valid (request_id: d795972d532e4573a540c1f0e6578e71) (type=invalid_model param=404)\n",
-      "omp-zenmux-glm47flash-darwin": "post-check mismatch",
+      "omp-zenmux-glm47flash-darwin": "capture failed (exit 1); stderr Working...\nWarning: Kimi Code account d9cjftf0rfm99mfl31r0 was signed out automatically. Run /login to sign in again.\nWarning: A Cursor (Claude, GPT, etc.) account was signed out automatically. Run /login to sign in again.\n403 You have no permission to access this resource (api_key_source: payg) (request_id: 189cd0cbfbba44a4b4fd0bf9f8cc3e27) (type=access_denied para…",
       "omp-zenmux-grok45-darwin": "capture failed (exit 1); stderr Working...\n404 Requested model is not valid (request_id: 953a449eaaf9447abfefc0a670a78ca0)\nRequested model is not valid (request_id: 953a449eaaf9447abfefc0a670a78ca0) (type=invalid_model param=404)\n",
       "omp-zenmux-kimik3-darwin": "capture failed (exit 1); stderr Working...\n404 Requested model is not valid (request_id: 867ef72dd78046d5a6ab9e26d86c108c)\nRequested model is not valid (request_id: 867ef72dd78046d5a6ab9e26d86c108c) (type=invalid_model param=404)\n",
       "omp-zenmux-step37flash-darwin": "capture failed (exit 1); stderr Working...\n404 Requested model is not valid (request_id: 58179edded40419c9996f7ac0fad1bf9)\nRequested model is not valid (request_id: 58179edded40419c9996f7ac0fad1bf9) (type=invalid_model param=404)\n",
@@ -283,7 +283,7 @@
       "opencode-minimax-minimaxm25-darwin": "capture failed (exit 1); stderr \u001b[0m\n> build · MiniMax-M2.5\n\u001b[0m\n\u001b[91m\u001b[1mError: \u001b[0mToken Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
       "opencode-minimax-minimaxm27-darwin": "capture failed (exit 1); stderr \u001b[0m\n> build · MiniMax-M2.7\n\u001b[0m\n\u001b[91m\u001b[1mError: \u001b[0mToken Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
       "opencode-minimax-minimaxm3-darwin": "capture failed (exit 1); stderr \u001b[0m\n> build · MiniMax-M3\n\u001b[0m\n\u001b[91m\u001b[1mError: \u001b[0mToken Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
-      "opencode-opencode-nemotron3ultra-darwin": "post-check mismatch",
+      "opencode-opencode-nemotron3ultra-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mModel unavailable: opencode/nemotron-3-ultra-free\n",
       "pi-anthropic-claudesonnet4-darwin": "capture failed (exit 1); stderr No API key found for anthropic.\n\nUse /login to log into a provider via OAuth or API key. See:\n  /opt/homebrew/Cellar/pi-coding-agent/0.84.4/libexec/lib/node_modules/@earendil-works/pi-coding-agent/docs/providers.md\n  /opt/homebrew/Cellar/pi-coding-agent/0.84.4/libexec/lib/node_modules/@earendil-works/pi-coding-agent/docs/models.md\n",
       "pi-groq-llama318b-darwin": "capture failed (exit 1); stderr 404: {\"message\":\"The model `llama-3.1-8b-instant` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}\n",
       "pi-groq-llama3370b-darwin": "capture failed (exit 1); stderr 404: {\"message\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}\n",
@@ -295,7 +295,7 @@
       "pi-openrouter-deepseekv4flash-darwin": "capture failed (exit 1); stderr  max_tokens. You requested up to 384000 tokens, but can only afford 86247. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account\"},{\"code\":402,\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 384000 tokens, but can only afford 68998. To increase, visit https://openrouter.ai/settings/credits and…",
       "pi-openrouter-gemma431b-darwin": "capture failed (exit 1); stderr ndpoint_count\":1,\"ineligibility_reasons\":[{\"reason\":\"zdr-violation-by-account\",\"endpoint_count\":1,\"configure_url\":\"https://openrouter.ai/settings/privacy\"},{\"reason\":\"zdr-violation-by-guardrail\",\"endpoint_count\":1,\"configure_url\":\"https://openrouter.ai/workspaces/default/guardrails\"}],\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing…",
       "pi-openrouter-nemotron3nano-darwin": "capture failed (exit 1); stderr Warning: Model \"nvidia/nemotron-3-nano-30b-a3b:free\" not found for provider \"openrouter\". Using custom model id.\n404: {\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: nvidia/nemotron-3-nano-30b-a3b\",\"code\":404}\n",
-      "pi-openrouter-nemotron3super-darwin": "capture failed (exit 1); stderr router.ai/workspaces/default/guardrails\"},{\"reason\":\"zdr-violation-by-account\",\"endpoint_count\":1,\"configure_url\":\"https://openrouter.ai/settings/privacy\"},{\"reason\":\"zdr-violation-by-guardrail\",\"endpoint_count\":1,\"configure_url\":\"https://openrouter.ai/workspaces/default/guardrails\"}],\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing…",
+      "pi-openrouter-nemotron3super-darwin": "capture failed (exit 1); stderr 404: {\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: nvidia/nemotron-3-super-120b-a12b\",\"code\":404}\n",
       "pi-openrouter-nemotron3ultra-darwin": "capture failed (exit 1); stderr router.ai/workspaces/default/guardrails\"},{\"reason\":\"zdr-violation-by-account\",\"endpoint_count\":1,\"configure_url\":\"https://openrouter.ai/settings/privacy\"},{\"reason\":\"zdr-violation-by-guardrail\",\"endpoint_count\":1,\"configure_url\":\"https://openrouter.ai/workspaces/default/guardrails\"}],\"routing_funnel\":[{\"step\":\"Initial Endpoints\",\"endpoint_count\":1}],\"failed_routing…",
       "pi-xai-grok4-darwin": "capture failed (exit 1); stderr OpenAI API error (403): 403 \"Your newly created team doesn't have any credits or licenses yet. You can purchase those on https://console.x.ai/team/b0f75bbf-dd04-4f02-96d1-fa3255fec9cb.\"\n",
       "qwen-minimax-minimaxm25-darwin": "post-check mismatch",
@@ -314,7 +314,10 @@
       "cline-deepseek-deepseekv4flash-linux": "harness unavailable — version probe failed",
       "cline-clinepass-glm53flash-linux": "harness unavailable — version probe failed",
       "cline-clinepass-kimik3-linux": "harness unavailable — version probe failed",
-      "cline-clinepass-step37flash-linux": "harness unavailable — version probe failed"
+      "cline-clinepass-step37flash-linux": "harness unavailable — version probe failed",
+      "opencode-opencode-deepseekv41flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n",
+      "opencode-opencode-glm53flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n",
+      "opencode-opencode-mimov26flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n"
     }
   },
   "invocations": {
@@ -5793,45 +5796,6 @@
         "--version"
       ]
     },
-    "opencode-opencode-nemotron3ultra-darwin": {
-      "prompt_invocation": [
-        "opencode",
-        "run",
-        "--model",
-        "opencode/nemotron-3-ultra-free",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "opencode",
-        "--version"
-      ]
-    },
-    "opencode-opencode-nemotron3ultra-linux": {
-      "prompt_invocation": [
-        "opencode",
-        "run",
-        "--model",
-        "opencode/nemotron-3-ultra-free",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "opencode",
-        "--version"
-      ]
-    },
-    "opencode-opencode-nemotron3ultra-windows": {
-      "prompt_invocation": [
-        "opencode.exe",
-        "run",
-        "--model",
-        "opencode/nemotron-3-ultra-free",
-        "<prompt>"
-      ],
-      "version_invocation": [
-        "opencode.exe",
-        "--version"
-      ]
-    },
     "pi-anthropic-claudesonnet4-darwin": {
       "prompt_invocation": [
         "pi",
@@ -7099,17 +7063,303 @@
         "mcode.cmd",
         "--version"
       ]
+    },
+    "opencode-opencode-deepseekv41flash-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/deepseek-v4.1-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-flint40b-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/flint-40b-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-glm53flash-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/glm-5.3-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-mimov26flash-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/mimo-v2.6-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-nemotron35lightning-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/nemotron-3.5-lightning-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-nemotron35supervl-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/nemotron-3.5-super-vl-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-reflectionbeam-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/beam-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-deepseekv41flash-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/deepseek-v4.1-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-flint40b-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/flint-40b-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-glm53flash-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/glm-5.3-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-mimov26flash-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/mimo-v2.6-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-nemotron35lightning-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/nemotron-3.5-lightning-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-nemotron35supervl-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/nemotron-3.5-super-vl-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-reflectionbeam-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/beam-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-deepseekv41flash-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/deepseek-v4.1-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-flint40b-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/flint-40b-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-glm53flash-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/glm-5.3-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-mimov26flash-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/mimo-v2.6-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-nemotron35lightning-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/nemotron-3.5-lightning-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-nemotron35supervl-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/nemotron-3.5-super-vl-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-reflectionbeam-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/beam-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
     }
   },
   "blocklist": {
     "balupton": {
       "providers": [
+        "alibaba",
         "chutes",
-        "opencodego",
-        "deepseek",
-        "hyper",
         "clinepass",
-        "ollamacloud"
+        "cursor",
+        "deepseek",
+        "gmicloud",
+        "huggingface",
+        "hyper",
+        "minimax",
+        "mistral",
+        "nanogpt",
+        "ollamacloud",
+        "opencode",
+        "opencodego",
+        "openrouter",
+        "sakana",
+        "siliconflow",
+        "xai",
+        "zenmux"
       ]
     }
   }
