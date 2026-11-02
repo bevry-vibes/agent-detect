@@ -160,6 +160,9 @@ The method order is policy:
 `-Check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
 The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands.
 
+The registry is CLI-only. The Cline, Kilo, and MiniMax Code desktop clients are separate products: Cline Desktop is the `cline-app` cask, MiniMax Code Desktop is `minimax-ai/tap/minimax-code` (pass `--language=en` for the overseas build), and Kilo Desktop has no cask (install its official DMG only with an explicit decision). The desktop apps do not join detection until their own rules, detectors, and fixtures land.
+`minimax-code`'s npm install carries an explicit two-package `--allow-scripts=@minimax-ai/code,better-sqlite3` allow-list because the optional native SQLite dependency needs its build script; no other harness gets lifecycle scripts.
+
 ### per-harness config locations
 
 Where each harness keeps the config and session state that `identify` reads (read-only), that a capture exercises, and that `scripts/sync-harness-configs.ps1` ships between hosts.
@@ -168,12 +171,15 @@ Paths are `$HOME`-relative; the Windows variants follow each harness's own platf
 | harness    | config                                                                       | session store / data                                                                 |
 | ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | cline      | `~/.cline/data/settings/providers.json`                                       | —                                                                                     |
+| codewhale  | `~/.codewhale/config.toml` (`CODEWHALE_CONFIG_PATH` overrides)                 | `~/.codewhale/sessions/<id>.json` (`metadata.model` / `metadata.model_provider`)        |
 | copilot    | —                                                                             | `~/.copilot/data.db`                                                                   |
 | crush      | `~/.local/share/crush/crush.json` (Windows: `%LOCALAPPDATA%\Crush\crush.json`) | `<project>/.crush/crush.db` (project-local)                                            |
+| dsh        | `$DSH_HOME/settings.yaml` (default `~/.dsh`)                                   | `$DSH_HOME/sessions/--<cwd>--/<id>/session.vN.jsonl.zstd` (`request/header` → provider/model) |
 | goose      | `~/.config/goose/config.yaml` (Windows: `%APPDATA%\Block\goose\config\config.yaml`) | —                                                                                 |
 | hermes     | `$HERMES_HOME` (default `~/.hermes`): `config.yaml`                            | `$HERMES_HOME/state.db` (`profiles/<profile>/state.db` under a non-default `HERMES_PROFILE`) |
 | kilo       | —                                                                             | `~/.local/share/kilo/kilo.db`                                                          |
 | kimi-code  | `~/.kimi-code/config.toml` (binary `~/.kimi-code/bin/kimi`)                    | —                                                                                      |
+| minimax-code | `~/.minimax/config.yaml` (`$MINIMAX_DATA_DIR`/`$MAVIS_DATA_DIR` override)     | `~/.minimax/v2/sqlite/runtime-state.sqlite` (`local_runtime_sessions.record_json`)      |
 | mmx        | `~/.mmx/config.json`                                                           | —                                                                                      |
 | omp        | `~/.omp/agent/config.yml`                                                      | —                                                                                      |
 | opencode   | —                                                                             | `~/.local/share/opencode/opencode.db`                                                  |
@@ -656,6 +662,13 @@ The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11) and sco
   the per-agent session store (agents/<agentId>/sessions/sessions.json → .jsonl transcripts whose assistant records carry message.provider/message.model) is the same surface the autoclaw detector reads).
   When it lands it goes AFTER autoclaw in rulesForHarnesses: the env scan is first-match and AutoClaw sessions carry both marker families, so the more specific product rule must scan first.
   Rules + from-identity when a contributor picks it up.
+
+**dsh / codewhale / minimax-code** (2026-11-02, macOS harness refresh): the three rules landed with live detectors, not defaults.
+`dsh` reads `$DSH_HOME/sessions/--<cwd>--/<id>/session.vN.jsonl.zstd` (highest generation, Zig std Zstandard), taking `request/header` → `header.config.provider/model`; `DSH_API_KEY` is a marker only.
+`codewhale` reads the newest `~/.codewhale/sessions/<id>.json` whose `metadata.workspace` matches the cwd (else newest overall) for `metadata.model` / `metadata.model_provider`, then `config.toml` `provider` / `default_text_model`; `CODEWHALE_PROVIDER` / `CODEWHALE_MODEL` win first.
+`minimax-code` reads `~/.minimax/config.yaml` `defaultModel` (provider/model) and falls back to the newest `local_runtime_sessions.record_json` in `v2/sqlite/runtime-state.sqlite`; `MINIMAX_DATA_DIR` / `MAVIS_DATA_DIR` select the data dir, and `DO_NOT_TRACK` is deliberately not a marker because it is the cross-tool convention.
+`dsh` and `minimax-code` keep `NOASSERTION` training postures (the docs are silent); `codewhale` is never/never on its content-free telemetry schema.
+Invocations: `dsh --profile headless <prompt>`, `codewhale exec --auto <prompt>`, `mcode exec --mode standard <prompt>`; the desktop clients are install-only (`cline-app`, `minimax-ai/tap/minimax-code --language=en`), and Kilo Desktop has no cask yet.
 
 ### catalog-inference verdicts (recorded so they aren't re-litigated)
 

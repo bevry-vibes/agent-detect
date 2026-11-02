@@ -102,11 +102,16 @@ $Registry = @(
 	[pscustomobject]@{ Id = 'qwen'; Label = 'Qwen Code'; Probe = 'qwen'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'kilo'; Label = 'Kilo Code'; Probe = 'kilo'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'omp'; Label = 'oh-my-pi (omp)'; Probe = 'omp'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
-	[pscustomobject]@{ Id = 'reasonix'; Label = 'Reasonix'; Probe = 'reasonix'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
+	# reasonix 2.x: the Homebrew cask is unreadable on Homebrew 7.0.11-148
+	# (undefined local variable staged_path), so npm is the only scripted method
+	[pscustomobject]@{ Id = 'reasonix'; Label = 'Reasonix'; Probe = 'reasonix'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('scoop', 'npm') } }
 	[pscustomobject]@{ Id = 'crush'; Label = 'Crush'; Probe = 'crush'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('winget', 'npm') } }
-	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
-	[pscustomobject]@{ Id = 'opencode2'; Label = 'OpenCode v2 (opencode2)'; Probe = 'opencode2'; Methods = @{ Darwin = @('npm', 'custom'); Linux = @('npm', 'custom'); Windows = @('npm', 'custom') } }
+	# OpenCode is v2-only. The Scoop manifest still ships v1 (1.19.5), so
+	# Windows uses the v2 npm package (@opencode/cli) rather than scoop.
+	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'dsh'; Label = 'DeepSeek Harness — dsh (developer preview)'; Probe = 'dsh'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'codewhale'; Label = 'CodeWhale'; Probe = 'codewhale'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('brew', 'npm'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'minimax-code'; Label = 'MiniMax Code (mcode)'; Probe = 'mcode'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'vibe'; Label = 'Mistral Vibe'; Probe = 'vibe'; Methods = @{ Darwin = @('uv'); Linux = @('uv'); Windows = @('uv') } }
 	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @{ Darwin = @('brew', 'custom'); Linux = @('custom'); Windows = @('custom') } }
 	[pscustomobject]@{ Id = 'copilot'; Label = 'GitHub Copilot CLI'; Probe = 'copilot'; Methods = @{ Darwin = @('brew'); Linux = @(); Windows = @('scoop') } }
@@ -125,25 +130,34 @@ $NpmPackage = @{
 	omp = '@oh-my-pi/pi-coding-agent'
 	reasonix = 'reasonix'
 	crush = '@charmland/crush'
-	opencode = 'opencode-ai'
-	opencode2 = '@opencode-ai/cli'
+	opencode = '@opencode/cli'
 	dsh = '@deepseek-ai/dsh'
+	codewhale = 'codewhale'
+	'minimax-code' = '@minimax-ai/code'
 }
 $BrewPackage = @{
 	qwen = 'qwen-code'
 	kilo = 'Kilo-Org/tap/kilo'
 	omp = 'can1357/tap/omp'
-	reasonix = 'esengine/reasonix/reasonix'
 	crush = 'charmbracelet/tap/crush'
-	opencode = 'anomalyco/tap/opencode'
+	opencode = 'opencode'
+	codewhale = 'Hmbown/deepseek-tui/codewhale'
 	cursor = 'cursor-cli'
 	copilot = 'copilot-cli'
+}
+$BrewCask = @{
+	cursor = $true
+	copilot = $true
+}
+# extra npm args per package: only the native-SQLite harness needs lifecycle
+# scripts, and they stay an explicit two-package allow-list
+$NpmExtraArgs = @{
+	'minimax-code' = @('--include=optional', '--ignore-scripts=false', '--allow-scripts=@minimax-ai/code,better-sqlite3')
 }
 $ScoopPackage = @{
 	pi = 'pi-coding-agent'
 	omp = 'oh-my-pi'
 	reasonix = 'reasonix'
-	opencode = 'opencode'
 	copilot = 'copilot-cli'
 	goose = 'goose-cli'
 }
@@ -215,13 +229,15 @@ function Get-MethodCommand {
 		[Parameter(Mandatory)] [string]$Method,
 		[ValidateSet('install', 'upgrade', 'uninstall')] [string]$Action = 'install'
 	)
+	$npmExtra = if ($NpmExtraArgs.ContainsKey($Id)) { ' ' + ($NpmExtraArgs[$Id] -join ' ') } else { '' }
+	$brewCask = if ($BrewCask.ContainsKey($Id)) { '--cask ' } else { '' }
 	switch ("$Method/$Action") {
-		'npm/install' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])" }
-		'npm/upgrade' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])@latest" }
+		'npm/install' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])$npmExtra" }
+		'npm/upgrade' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])$npmExtra" }
 		'npm/uninstall' { return "$($NpmCommand -join ' ') rm -g $($NpmPackage[$Id])" }
-		'brew/install' { return "brew install $($BrewPackage[$Id])" }
-		'brew/upgrade' { return "brew upgrade $($BrewPackage[$Id])" }
-		'brew/uninstall' { return "brew uninstall $($BrewPackage[$Id])" }
+		'brew/install' { return "brew install $brewCask$($BrewPackage[$Id])" }
+		'brew/upgrade' { return "brew upgrade $brewCask$($BrewPackage[$Id])" }
+		'brew/uninstall' { return "brew uninstall $brewCask$($BrewPackage[$Id])" }
 		'scoop/install' { return "scoop install $($ScoopPackage[$Id])" }
 		'scoop/upgrade' { return "scoop update $($ScoopPackage[$Id])" }
 		'scoop/uninstall' { return "scoop uninstall $($ScoopPackage[$Id])" }
@@ -249,9 +265,6 @@ function Get-MethodCommand {
 				'Darwin/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
 				'Linux/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
 				'Windows/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash  (needs a POSIX shell: Git Bash or WSL)' }
-				'Darwin/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash' }
-				'Linux/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash' }
-				'Windows/opencode2' { return 'curl -fsSL https://opencode.ai/v2/install | bash  (needs a POSIX shell: Git Bash or WSL)' }
 				default {
 					switch ($Id) {
 						autoclaw { return 'download the desktop installer from https://autoclaw.z.ai' }
@@ -270,12 +283,29 @@ function Invoke-Method {
 		[ValidateSet('install', 'upgrade', 'uninstall')] [string]$Action = 'install'
 	)
 	switch ("$Method/$Action") {
-		'npm/install' { & $NpmCommand i -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		'npm/upgrade' { & $NpmCommand i -g "$($NpmPackage[$Id])@latest"; return ($LASTEXITCODE -eq 0) }
+		'npm/install' {
+			$extra = if ($NpmExtraArgs.ContainsKey($Id)) { @($NpmExtraArgs[$Id]) } else { @() }
+			& $NpmCommand i -g $NpmPackage[$Id] @extra
+			return ($LASTEXITCODE -eq 0)
+		}
+		'npm/upgrade' {
+			$extra = if ($NpmExtraArgs.ContainsKey($Id)) { @($NpmExtraArgs[$Id]) } else { @() }
+			& $NpmCommand i -g $NpmPackage[$Id] @extra
+			return ($LASTEXITCODE -eq 0)
+		}
 		'npm/uninstall' { & $NpmCommand rm -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		'brew/install' { brew install $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		'brew/upgrade' { brew upgrade $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
-		'brew/uninstall' { brew uninstall $BrewPackage[$Id]; return ($LASTEXITCODE -eq 0) }
+		'brew/install' {
+			if ($BrewCask.ContainsKey($Id)) { brew install --cask $BrewPackage[$Id] } else { brew install $BrewPackage[$Id] }
+			return ($LASTEXITCODE -eq 0)
+		}
+		'brew/upgrade' {
+			if ($BrewCask.ContainsKey($Id)) { brew upgrade --cask $BrewPackage[$Id] } else { brew upgrade $BrewPackage[$Id] }
+			return ($LASTEXITCODE -eq 0)
+		}
+		'brew/uninstall' {
+			if ($BrewCask.ContainsKey($Id)) { brew uninstall --cask $BrewPackage[$Id] } else { brew uninstall $BrewPackage[$Id] }
+			return ($LASTEXITCODE -eq 0)
+		}
 		'scoop/install' { scoop install $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		'scoop/upgrade' { scoop update $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
 		'scoop/uninstall' { scoop uninstall $ScoopPackage[$Id]; return ($LASTEXITCODE -eq 0) }
@@ -310,9 +340,6 @@ function Invoke-Method {
 				'Darwin/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
 				'Linux/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
 				'Windows/hermes' { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
-				'Darwin/opencode2' { & bash -c 'curl -fsSL https://opencode.ai/v2/install | bash'; return ($LASTEXITCODE -eq 0) }
-				'Linux/opencode2' { & bash -c 'curl -fsSL https://opencode.ai/v2/install | bash'; return ($LASTEXITCODE -eq 0) }
-				'Windows/opencode2' { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
 				default {
 					switch ($Id) {
 						autoclaw { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }

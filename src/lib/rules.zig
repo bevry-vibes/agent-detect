@@ -53,6 +53,9 @@ pub const rulesForModels = [_]ModelRule{
     // minimax-m3: open-weight — shipped under the "MINIMAX COMMUNITY LICENSE" (non-commercial grant; commercial use past $20M/yr revenue needs authorization), not OSI;
     // the MiniMax blog post concurs it is an open-weight model.
     .{ .name = "minimax-m3", .label = "MiniMax M3", .short_title = "M3", .openness = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M3", "https://huggingface.co/MiniMaxAI/MiniMax-M3/blob/main/LICENSE", "https://www.minimax.io/blog/minimax-m3" } },
+    // minimax-m3.1-flash: open-weight — the HF card declares `license: other` / `license_name: minimax-community` with a LICENSE file (not an SPDX id, so NOASSERTION);
+    // observed as the MiniMax Code CLI's default (`defaultModel: minimax/MiniMax-M3.1-Flash`).
+    .{ .name = "minimax-m3.1-flash", .label = "MiniMax M3.1 Flash", .short_title = "M3.1 Flash", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash", "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash/blob/main/LICENSE" } },
     // minimax-m2.7: open-weight — NON-COMMERCIAL LICENSE; the weights are downloadable but commercial use requires written authorization, so it is not OSI open-source.
     .{ .name = "minimax-m2.7", .label = "MiniMax M2.7", .short_title = "M2.7", .openness = "open-weight", .sources = &.{ "https://huggingface.co/MiniMaxAI/MiniMax-M2.7", "https://huggingface.co/MiniMaxAI/MiniMax-M2.7/blob/main/LICENSE" } },
     // claude-sonnet-4: closed — API-only (Claude API / Bedrock / Vertex / Foundry); no weights are published anywhere.
@@ -388,7 +391,8 @@ pub const rulesForProviders = [_]ProviderRule{
     // deepseek: never/never — the direct DeepSeek platform provider (api.deepseek.com, the upstream the openai/anthropic-compatible transport fronts).
     // Same data-handling policy as `deepseek-flash`; mirrors it so the direct provider id resolves the same policies.
     // Unflagged 2026-09-28 (the scandal doctrine overhaul, research/scandals.md): the flag's legs all dissolved under the matrix — the PIPC Korea transfer fed no model (a serving-layer flow, out of scope) and was redeemed (PIPC noted lack of intent; transfers blocked, the Korea annex shipped, the app restored); the Garante ban attaches to the same lane; the disclosure misdirection redeemed with it; and the distillation findings were always liberation (R1/V3 ship MIT).
-    .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" } },
+    // deepseek-official is dsh's route key for the first-party DeepSeek API (observed in its request/header events); it is the `deepseek` surface, not a separate provider.
+    .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" }, .variations = &.{"deepseek-official"} },
     // anthropic: never/null — Anthropic's Commercial Terms state "Anthropic may not train models on Customer Content from the Services" (API tier); no open-weight Anthropic models exist, so open_training stays null.
     // reciprocity_scandal (D10, the fair-use purpose test — every taking fed closed Claude, not weights that ship back): (a) the LibGen/PiLiMi ~7M pirated books behind the $1.5B settlement (approved Jul 2026); (b) the Reddit scrape suit; (b) the 2025 consumer default-training window; (b) the Bedrock `provider_data_share` 30-day mandatory-retention episode (Aug–Sep 2026, walked back Sep 1). The compilation: research/scandals.md.
     .{ .name = "anthropic", .label = "Anthropic", .closed_training = "never", .open_training = null, .sources = &.{ "https://www.anthropic.com/legal/commercial-terms", "https://trust.anthropic.com/" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://authorsguild.org/advocacy/artificial-intelligence/what-authors-need-to-know-about-the-anthropic-settlement/", "https://www.reuters.com/world/us/judge-approves-anthropics-15-billion-settlement-copyright-lawsuit-2026-07-20/", "https://www.cnbc.com/2026/09/01/anthropic-data-retention.html" } },
@@ -636,6 +640,12 @@ const omp_env = [_][]const u8{"OMP_API_KEY"};
 const reasonix_env = [_][]const u8{"REASONIX_API_KEY"};
 const crush_env = [_][]const u8{"CRUSH_API_KEY"};
 const opencode_env = [_][]const u8{ "OPENCODE_API_KEY", "OPENCODE_MODEL" };
+// dsh: DSH_HOME/DSH_PROFILE are the profile-aware home selectors; DSH_API_KEY is a marker only (never allowlisted, so its value stays redacted).
+const dsh_env = [_][]const u8{ "DSH_HOME", "DSH_PROFILE", "DSH_API_KEY" };
+// codewhale: the documented runtime overrides (docs/CONFIGURATION.md "Environment variables").
+const codewhale_env = [_][]const u8{ "CODEWHALE_HOME", "CODEWHALE_CONFIG_PATH", "CODEWHALE_PROVIDER", "CODEWHALE_MODEL", "CODEWHALE_TELEMETRY" };
+// minimax-code: DO_NOT_TRACK is deliberately NOT a marker — it is the cross-tool convention and cannot identify this harness.
+const minimax_code_env = [_][]const u8{ "MINIMAX_DATA_DIR", "MAVIS_DATA_DIR", "MCODE_DISABLE_TELEMETRY" };
 const vibe_env = [_][]const u8{ "VIBE_API_KEY", "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER" };
 const cursor_env = [_][]const u8{ "CURSOR_API_KEY", "CURSOR_API_ENDPOINT", "CURSOR_MODEL" };
 const copilot_env = [_][]const u8{ "COPILOT_ALLOW_ALL", "COPILOT_MODEL" };
@@ -716,6 +726,24 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "opencode", "opencode.exe" }
     else
         &[_][]const u8{"opencode"} },
+    // dsh: MIT — https://github.com/deepseek-ai/deepseek-harness (default branch `master`) ships a MIT LICENSE (Copyright 2026 DeepSeek).
+    // training: NOASSERTION/NOASSERTION — the repo ships SAFETY.md but no statement about training on user conversations; never guess. DeepSeek's API policy is the provider dim.
+    .{ .name = "dsh", .label = "DeepSeek Harness", .license = "MIT", .license_sources = &.{ "https://github.com/deepseek-ai/deepseek-harness", "https://github.com/deepseek-ai/deepseek-harness/blob/master/LICENSE" }, .open_training = "NOASSERTION", .closed_training = "NOASSERTION", .training_sources = &.{ "https://github.com/deepseek-ai/deepseek-harness", "https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md" }, .env_markers = &dsh_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "dsh", "dsh.exe", "dsh.cmd", "dsh.ps1" }
+    else
+        &[_][]const u8{"dsh"}, .variations = &.{"DeepSeek Harness CLI"} },
+    // codewhale: MIT — https://github.com/codewhale-hq/CodeWhale ships a MIT LICENSE (Copyright 2024-2025 DeepSeek-TUI Contributors).
+    // training: never/never — the telemetry schema is aggregate and explicitly excludes conversations, code, prompts, files, and credentials (docs/TELEMETRY.md); the harness ships no model of its own.
+    .{ .name = "codewhale", .label = "CodeWhale", .license = "MIT", .license_sources = &.{ "https://github.com/codewhale-hq/CodeWhale", "https://github.com/codewhale-hq/CodeWhale/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{ "https://github.com/codewhale-hq/CodeWhale/blob/main/docs/TELEMETRY.md", "https://github.com/codewhale-hq/CodeWhale/blob/main/README.md" }, .env_markers = &codewhale_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "codewhale", "codew", "codewhale.exe", "codew.exe", "codewhale.cmd", "codew.cmd", "codewhale.ps1", "codew.ps1" }
+    else
+        &[_][]const u8{ "codewhale", "codew" }, .variations = &.{ "codew", "CodeWhale CLI" } },
+    // minimax-code: MIT — https://github.com/MiniMax-AI/minimax-code ships a MIT LICENSE (Copyright 2026 MiniMax Code).
+    // training: NOASSERTION/NOASSERTION — telemetry is opt-in and content-free (docs/telemetry.md), but the default config exposes `dataContribution.enabled` and no public doc states what it feeds; never guess.
+    .{ .name = "minimax-code", .label = "MiniMax Code", .license = "MIT", .license_sources = &.{ "https://github.com/MiniMax-AI/minimax-code", "https://github.com/MiniMax-AI/minimax-code/blob/main/LICENSE" }, .open_training = "NOASSERTION", .closed_training = "NOASSERTION", .training_sources = &.{ "https://github.com/MiniMax-AI/minimax-code/blob/main/docs/telemetry.md", "https://github.com/MiniMax-AI/minimax-code" }, .env_markers = &minimax_code_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "mcode", "mcode.exe", "mcode.cmd", "mcode.ps1" }
+    else
+        &[_][]const u8{"mcode"}, .variations = &.{"mcode"} },
     // vibe: Apache-2.0 — https://github.com/mistralai/mistral-vibe ships an Apache-2.0 LICENSE (the Vibe CLI for Mistral models).
     // training (the D4 sweep, 2026-09-12): never/never — the CLI telemetry is content-free by construction (the code comments forbid prompts, paths, and error messages in events); Mistral's API training is the mistral provider dim.
     .{ .name = "vibe", .label = "Vibe", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://github.com/mistralai/mistral-vibe/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{ "https://github.com/mistralai/mistral-vibe", "https://legal.mistral.ai/terms/privacy-policy" }, .env_markers = &vibe_env, .binary_names = if (builtin.os.tag == .windows)
@@ -791,6 +819,12 @@ const env_value_allowlist = [_][]const u8{
     "COPILOT_MODEL",                "GOOSE_WORKING_DIR",                     "GOOSE_TERMINAL",
     "GOOSE_MODE",                   "USERPROFILE",                           "HOME",
     "APPDATA",
+    // dsh / CodeWhale / MiniMax Code — home selectors, model selectors, and telemetry switches;
+    // the API-key markers (DSH_API_KEY, CODEWHALE_API_KEY) stay off this list, so their values are redacted.
+    "DSH_HOME", "DSH_PROFILE",
+    "CODEWHALE_HOME", "CODEWHALE_CONFIG_PATH", "CODEWHALE_PROVIDER",
+    "CODEWHALE_MODEL", "CODEWHALE_TELEMETRY",
+    "MINIMAX_DATA_DIR", "MAVIS_DATA_DIR", "MCODE_DISABLE_TELEMETRY",
     // ZCode desktop-app markers — app version/env/label and service URLs only; the values are non-secret operational facts.
                          "ZCODE_APP_VERSION",                     "ZCODE_BASE_URL",
     "ZCODE_ENV",                    "ZCODE_PROCESS_LABEL",                   "ZCODE_RUNTIME_ENV",

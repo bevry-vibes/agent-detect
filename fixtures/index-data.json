@@ -97,6 +97,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "mistrallarge3",
         "mistralnemoinstruct2407",
         "mistralsmall3",
@@ -125,6 +126,28 @@
         "reflectionbeam",
         "solarmini4",
         "step37flash"
+      ]
+    },
+    {
+      "label": "CodeWhale",
+      "short_title": null,
+      "name": "codewhale",
+      "id": "codewhale",
+      "license": "MIT",
+      "open_training": "never",
+      "closed_training": "never",
+      "reciprocity_scandal": false,
+      "variations": [
+        "codew",
+        "CodeWhale CLI"
+      ],
+      "providers": [
+        "deepseek"
+      ],
+      "models": [
+        "deepseekv41flash",
+        "deepseekv4flash",
+        "deepseekv4pro"
       ]
     },
     {
@@ -182,6 +205,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "qwen36max",
         "qwen37flash",
         "qwen37plus",
@@ -216,6 +240,27 @@
         "gpt5mini",
         "grok45",
         "kimik25"
+      ]
+    },
+    {
+      "label": "DeepSeek Harness",
+      "short_title": null,
+      "name": "dsh",
+      "id": "dsh",
+      "license": "MIT",
+      "open_training": "NOASSERTION",
+      "closed_training": "NOASSERTION",
+      "reciprocity_scandal": false,
+      "variations": [
+        "DeepSeek Harness CLI"
+      ],
+      "providers": [
+        "deepseek"
+      ],
+      "models": [
+        "deepseekv41flash",
+        "deepseekv4flash",
+        "deepseekv4pro"
       ]
     },
     {
@@ -368,6 +413,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "musespark12",
         "nemotron35lightning",
         "nemotron3nano",
@@ -471,6 +517,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "musespark12",
         "nemotron35lightning",
         "nemotron35supervl",
@@ -568,6 +615,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "mistralnemoinstruct2407",
         "musespark12",
         "nemotron35lightning",
@@ -592,6 +640,28 @@
       ]
     },
     {
+      "label": "MiniMax Code",
+      "short_title": null,
+      "name": "minimax-code",
+      "id": "minimaxcode",
+      "license": "MIT",
+      "open_training": "NOASSERTION",
+      "closed_training": "NOASSERTION",
+      "reciprocity_scandal": false,
+      "variations": [
+        "mcode"
+      ],
+      "providers": [
+        "minimax"
+      ],
+      "models": [
+        "minimaxm25",
+        "minimaxm27",
+        "minimaxm3",
+        "minimaxm31flash"
+      ]
+    },
+    {
       "label": "MiniMax CLI",
       "short_title": null,
       "name": "mmx",
@@ -607,7 +677,8 @@
       "models": [
         "minimaxm25",
         "minimaxm27",
-        "minimaxm3"
+        "minimaxm3",
+        "minimaxm31flash"
       ]
     },
     {
@@ -794,6 +865,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "mistrallarge3",
         "mistralnemoinstruct2407",
         "mistralsmall3",
@@ -901,6 +973,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "mistrallarge3",
         "mistralnemoinstruct2407",
         "mistralsmall3",
@@ -956,6 +1029,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "qwen38max"
       ]
     },
@@ -980,7 +1054,8 @@
         "deepseekv4pro",
         "minimaxm25",
         "minimaxm27",
-        "minimaxm3"
+        "minimaxm3",
+        "minimaxm31flash"
       ]
     },
     {
@@ -1001,6 +1076,7 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "mistrallarge3",
         "mistralsmall3"
       ]
@@ -1392,7 +1468,9 @@
       "open_training": "never",
       "closed_training": "never",
       "reciprocity_scandal": false,
-      "variations": [],
+      "variations": [
+        "deepseek-official"
+      ],
       "models": [
         "deepseekv41flash",
         "deepseekv4flash",
@@ -1400,7 +1478,9 @@
       ],
       "harnesses": [
         "cline",
+        "codewhale",
         "crush",
+        "dsh",
         "hermes",
         "kilo",
         "kimicode",
@@ -1766,7 +1846,8 @@
       "models": [
         "minimaxm25",
         "minimaxm27",
-        "minimaxm3"
+        "minimaxm3",
+        "minimaxm31flash"
       ],
       "harnesses": [
         "cline",
@@ -1774,6 +1855,7 @@
         "hermes",
         "kilo",
         "kimicode",
+        "minimaxcode",
         "mmx",
         "opencode",
         "pi",
@@ -2812,7 +2894,9 @@
       "harnesses": [
         "autoclaw",
         "cline",
+        "codewhale",
         "crush",
+        "dsh",
         "goose",
         "hermes",
         "kilo",
@@ -2859,7 +2943,9 @@
       "harnesses": [
         "autoclaw",
         "cline",
+        "codewhale",
         "crush",
+        "dsh",
         "goose",
         "hermes",
         "kilo",
@@ -2891,7 +2977,9 @@
       ],
       "harnesses": [
         "cline",
+        "codewhale",
         "crush",
+        "dsh",
         "hermes",
         "kilo",
         "kimicode",
@@ -4514,6 +4602,7 @@
         "hermes",
         "kilo",
         "kimicode",
+        "minimaxcode",
         "mmx",
         "omp",
         "opencode",
@@ -4554,6 +4643,7 @@
         "hermes",
         "kilo",
         "kimicode",
+        "minimaxcode",
         "mmx",
         "omp",
         "opencode",
@@ -4597,6 +4687,7 @@
         "hermes",
         "kilo",
         "kimicode",
+        "minimaxcode",
         "mmx",
         "omp",
         "opencode",
@@ -4605,6 +4696,34 @@
         "reasonix",
         "vibe",
         "zcode"
+      ]
+    },
+    {
+      "label": "MiniMax M3.1 Flash",
+      "short_title": "M3.1 Flash",
+      "name": "minimax-m3.1-flash",
+      "id": "minimaxm31flash",
+      "openness": "open-weight",
+      "license": "NOASSERTION",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "minimax"
+      ],
+      "harnesses": [
+        "cline",
+        "crush",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "minimaxcode",
+        "mmx",
+        "opencode",
+        "pi",
+        "qwen",
+        "reasonix",
+        "vibe"
       ]
     },
     {
@@ -6158,6 +6277,18 @@
       "platforms": [],
       "reciprocal": true
     },
+    "codewhale-deepseek-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "codewhale-deepseek-deepseekv4flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "codewhale-deepseek-deepseekv4pro": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "copilot-githubcopilot-claudesonnet5": {
       "platforms": [
         "darwin"
@@ -6386,6 +6517,18 @@
       "reciprocal": false
     },
     "cursor-cursor-kimik25": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "dsh-deepseek-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "dsh-deepseek-deepseekv4flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "dsh-deepseek-deepseekv4pro": {
       "platforms": [],
       "reciprocal": false
     },
@@ -9453,6 +9596,22 @@
     "kimicode-openrouter-step37flash": {
       "platforms": [],
       "reciprocal": true
+    },
+    "minimaxcode-minimax-minimaxm25": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "minimaxcode-minimax-minimaxm27": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "minimaxcode-minimax-minimaxm3": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "minimaxcode-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
     },
     "mmx-minimax-minimaxm25": {
       "platforms": [],

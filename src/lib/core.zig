@@ -1003,6 +1003,433 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     }
 }
 
+// ---------------------------------------------------------------------------- DeepSeek Harness / CodeWhale / MiniMax Code
+
+/// One authored TOML scalar (`key = "value"`), matched only at the line's start so
+/// section tables cannot spoof the top-level key.
+fn tomlStringValue(line: []const u8, key: []const u8) ?[]const u8 {
+    const t = std.mem.trim(u8, line, " \t\r");
+    if (!std.mem.startsWith(u8, t, key)) return null;
+    var rest = std.mem.trimStart(u8, t[key.len..], " \t");
+    if (rest.len == 0 or rest[0] != '=') return null;
+    rest = std.mem.trimStart(u8, rest[1..], " \t");
+    if (rest.len < 2 or rest[0] != '"') return null;
+    const end = std.mem.findScalarPos(u8, rest, 1, '"') orelse return null;
+    return rest[1..end];
+}
+
+const CodewhaleSession = struct {
+    path: []const u8,
+    updated_at: []const u8,
+    workspace: []const u8,
+    provider: ?[]const u8,
+    model: []const u8,
+};
+
+/// newest CodeWhale session with a model — prefer one whose `metadata.workspace`
+/// matches the current cwd, then fall back to the newest session overall.
+fn codewhaleNewestSession(a: std.mem.Allocator, io: std.Io, sessions_root: []const u8, cwd: []const u8) ?CodewhaleSession {
+    const cwd_dir = std.Io.Dir.cwd();
+    var dir = cwd_dir.openDir(io, sessions_root, .{ .iterate = true }) catch return null;
+    defer dir.close(io);
+    var it = dir.iterate();
+    var best: ?CodewhaleSession = null;
+    var best_matches_cwd = false;
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .file) continue;
+        if (!std.mem.endsWith(u8, ent.name, ".json")) continue;
+        if (std.mem.eql(u8, ent.name, "session_boot_owners.json")) continue;
+        const path = std.fmt.allocPrint(a, "{s}/{s}", .{ sessions_root, ent.name }) catch continue;
+        const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch continue;
+        const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch continue;
+        if (parsed.value != .object) continue;
+        const meta = parsed.value.object.get("metadata") orelse continue;
+        if (meta != .object) continue;
+        const mo = meta.object;
+        const model = jstr(mo, "model") orelse continue;
+        if (model.len == 0) continue;
+        const workspace = jstr(mo, "workspace") orelse "";
+        const updated_at = jstr(mo, "updated_at") orelse "";
+        const matches_cwd = workspace.len > 0 and cwd.len > 0 and std.mem.eql(u8, workspace, cwd);
+        const newer = if (best) |b| std.mem.order(u8, updated_at, b.updated_at) == .gt else true;
+        if (best == null or (matches_cwd and !best_matches_cwd) or (matches_cwd == best_matches_cwd and newer)) {
+            best = .{ .path = path, .updated_at = updated_at, .workspace = workspace, .provider = jstr(mo, "model_provider"), .model = model };
+            best_matches_cwd = matches_cwd;
+        }
+    }
+    return best;
+}
+
+fn detectCodewhale(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    var root: []const u8 = "";
+    if (env.get("CODEWHALE_HOME")) |h| {
+        if (h.len > 0) root = h;
+    }
+    if (root.len == 0 and home.len > 0) root = try std.fmt.allocPrint(a, "{s}/.codewhale", .{home});
+    if (root.len == 0) return;
+
+    // env overrides first (docs/CONFIGURATION.md "Environment variables"); each dim is claimed only when present.
+    if (env.get("CODEWHALE_PROVIDER")) |raw| {
+        const p = std.mem.trim(u8, raw, " \t\r\n");
+        if (p.len > 0) {
+            const canon = canonicalIdFor(a, ProviderRule, &rulesForProviders, p) orelse p;
+            try setProvider(a, d, canon);
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "CODEWHALE_PROVIDER", .value = p });
+        }
+    }
+    if (env.get("CODEWHALE_MODEL")) |raw| {
+        const m = std.mem.trim(u8, raw, " \t\r\n");
+        if (m.len > 0) {
+            try applyModel(a, d, m, m);
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "CODEWHALE_MODEL", .value = m });
+        }
+    }
+
+    const cwd = std.process.currentPathAlloc(io, a) catch "";
+    const sessions_root = try std.fmt.allocPrint(a, "{s}/sessions", .{root});
+    if (codewhaleNewestSession(a, io, sessions_root, cwd)) |s| {
+        if (d.provider_name == null) {
+            if (s.provider) |p| {
+                if (p.len > 0) {
+                    const canon = canonicalIdFor(a, ProviderRule, &rulesForProviders, p) orelse p;
+                    try setProvider(a, d, canon);
+                    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = s.path, .field = "metadata.model_provider", .value = p });
+                }
+            }
+        }
+        if (d.model_name == null) {
+            try applyModel(a, d, s.model, s.model);
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = s.path, .field = "metadata.model", .value = s.model });
+        }
+        var fields = std.ArrayList(FieldObservation).empty;
+        defer fields.deinit(a);
+        try fields.append(a, .{ .dotted_path = "metadata.model", .value = s.model });
+        if (s.provider) |p| try fields.append(a, .{ .dotted_path = "metadata.model_provider", .value = p });
+        if (s.workspace.len > 0) try fields.append(a, .{ .dotted_path = "metadata.workspace", .value = s.workspace });
+        if (s.updated_at.len > 0) try fields.append(a, .{ .dotted_path = "metadata.updated_at", .value = s.updated_at });
+        const obs = try a.alloc(FileObservation, 1);
+        obs[0] = .{ .path = s.path, .fields = try fields.toOwnedSlice(a) };
+        d.raw.session_files = try appendFileObservation(a, d.raw.session_files, obs[0]);
+    }
+
+    // committed default: the config file, read only for dims the session/env did not supply.
+    if (d.provider_name == null or d.model_name == null) {
+        const config_path = if (env.get("CODEWHALE_CONFIG_PATH")) |p| p else try std.fmt.allocPrint(a, "{s}/config.toml", .{root});
+        const cwd_dir = std.Io.Dir.cwd();
+        if (cwd_dir.readFileAlloc(io, config_path, a, @enumFromInt(1 << 20)) catch null) |data| {
+            var fields = std.ArrayList(FieldObservation).empty;
+            defer fields.deinit(a);
+            var lines = std.mem.splitScalar(u8, data, '\n');
+            while (lines.next()) |line| {
+                if (d.provider_name == null) {
+                    if (tomlStringValue(line, "provider")) |p| {
+                        const canon = canonicalIdFor(a, ProviderRule, &rulesForProviders, p) orelse p;
+                        try setProvider(a, d, canon);
+                        try fields.append(a, .{ .dotted_path = "provider", .value = p });
+                        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = config_path, .field = "provider", .value = p });
+                    }
+                }
+                if (d.model_name == null) {
+                    if (tomlStringValue(line, "default_text_model")) |m| {
+                        try applyModel(a, d, m, m);
+                        try fields.append(a, .{ .dotted_path = "default_text_model", .value = m });
+                        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = config_path, .field = "default_text_model", .value = m });
+                    }
+                }
+            }
+            if (fields.items.len > 0) {
+                const obs = FileObservation{ .path = config_path, .fields = try fields.toOwnedSlice(a) };
+                d.raw.config_files = try appendFileObservation(a, d.raw.config_files, obs);
+            }
+        }
+    }
+}
+
+fn appendFileObservation(a: std.mem.Allocator, existing: []const FileObservation, obs: FileObservation) ![]const FileObservation {
+    const out = try a.alloc(FileObservation, existing.len + 1);
+    @memcpy(out[0..existing.len], existing);
+    out[existing.len] = obs;
+    return out;
+}
+
+const DshSessionFile = struct { path: []const u8, gen: u32 };
+
+/// `session.jsonl` (v0) / `session.vN.jsonl` with an optional `.zstd` suffix.
+fn dshGeneration(name: []const u8) ?u32 {
+    var base = name;
+    if (std.mem.endsWith(u8, base, ".zstd")) base = base[0 .. base.len - ".zstd".len];
+    if (std.mem.eql(u8, base, "session.jsonl")) return 0;
+    if (!std.mem.startsWith(u8, base, "session.v")) return null;
+    var rest = base["session.v".len..];
+    if (!std.mem.endsWith(u8, rest, ".jsonl")) return null;
+    rest = rest[0 .. rest.len - ".jsonl".len];
+    if (rest.len == 0) return null;
+    return std.fmt.parseInt(u32, rest, 10) catch null;
+}
+
+fn dshBestInSessionDir(a: std.mem.Allocator, io: std.Io, dir_path: []const u8) ?DshSessionFile {
+    const cwd_dir = std.Io.Dir.cwd();
+    var dir = cwd_dir.openDir(io, dir_path, .{ .iterate = true }) catch return null;
+    defer dir.close(io);
+    var it = dir.iterate();
+    var best: ?DshSessionFile = null;
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .file) continue;
+        const gen = dshGeneration(ent.name) orelse continue;
+        if (best == null or gen > best.?.gen) {
+            const path = std.fmt.allocPrint(a, "{s}/{s}", .{ dir_path, ent.name }) catch continue;
+            best = .{ .path = path, .gen = gen };
+        }
+    }
+    return best;
+}
+
+const DshProjectBest = struct { file: DshSessionFile, mtime: i96 };
+
+fn dshBestInProjectDir(a: std.mem.Allocator, io: std.Io, project_path: []const u8) ?DshProjectBest {
+    const cwd_dir = std.Io.Dir.cwd();
+    var dir = cwd_dir.openDir(io, project_path, .{ .iterate = true }) catch return null;
+    defer dir.close(io);
+    var it = dir.iterate();
+    var best: ?DshProjectBest = null;
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .directory) continue;
+        const session_dir = std.fmt.allocPrint(a, "{s}/{s}", .{ project_path, ent.name }) catch continue;
+        const file = dshBestInSessionDir(a, io, session_dir) orelse continue;
+        const st = cwd_dir.statFile(io, file.path, .{}) catch continue;
+        if (best == null or st.mtime.nanoseconds > best.?.mtime) best = .{ .file = file, .mtime = st.mtime.nanoseconds };
+    }
+    return best;
+}
+
+/// Resolve the newest dsh session: the cwd-matching project directory first, then
+/// every project directory. Sessions live at `$DSH_HOME/sessions/--<cwd>--/<id>/`.
+fn dshNewestSession(a: std.mem.Allocator, io: std.Io, root: []const u8, cwd: []const u8) ?DshSessionFile {
+    const sessions_root = std.fmt.allocPrint(a, "{s}/sessions", .{root}) catch return null;
+    if (cwd.len > 0) {
+        var project_name: std.ArrayList(u8) = .empty;
+        project_name.appendSlice(a, "--") catch return null;
+        const trimmed = std.mem.trimStart(u8, cwd, "/\\");
+        for (trimmed) |c| {
+            project_name.append(a, if (c == '/' or c == '\\') '-' else c) catch return null;
+        }
+        project_name.appendSlice(a, "--") catch return null;
+        const project_path = std.fmt.allocPrint(a, "{s}/{s}", .{ sessions_root, project_name.items }) catch return null;
+        if (dshBestInProjectDir(a, io, project_path)) |b| return b.file;
+    }
+    const cwd_dir = std.Io.Dir.cwd();
+    var dir = cwd_dir.openDir(io, sessions_root, .{ .iterate = true }) catch return null;
+    defer dir.close(io);
+    var it = dir.iterate();
+    var best: ?DshProjectBest = null;
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .directory) continue;
+        const project_path = std.fmt.allocPrint(a, "{s}/{s}", .{ sessions_root, ent.name }) catch continue;
+        const b = dshBestInProjectDir(a, io, project_path) orelse continue;
+        if (best == null or b.mtime > best.?.mtime) best = b;
+    }
+    return if (best) |b| b.file else null;
+}
+
+fn dshReadSession(a: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
+    const data = try std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(64 << 20));
+    if (!std.mem.endsWith(u8, path, ".zstd")) return data;
+    var in: std.Io.Reader = .fixed(data);
+    var z = std.compress.zstd.Decompress.init(&in, &.{}, .{});
+    return z.reader.allocRemaining(a, .limited64(64 << 20));
+}
+
+fn detectDsh(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    var root: []const u8 = "";
+    if (env.get("DSH_HOME")) |h| {
+        if (h.len > 0) root = h;
+    }
+    if (root.len == 0 and home.len > 0) root = try std.fmt.allocPrint(a, "{s}/.dsh", .{home});
+    if (root.len == 0) return;
+
+    const cwd = std.process.currentPathAlloc(io, a) catch "";
+    const file = dshNewestSession(a, io, root, cwd) orelse return;
+    const data = dshReadSession(a, io, file.path) catch return;
+
+    var provider: ?[]const u8 = null;
+    var provider_field: []const u8 = "data.header.config.provider";
+    var model: ?[]const u8 = null;
+    var model_field: []const u8 = "data.header.config.model";
+    var lines = std.mem.splitScalar(u8, data, '\n');
+    while (lines.next()) |line| {
+        const t = std.mem.trim(u8, line, " \t\r");
+        if (t.len == 0) continue;
+        const parsed = std.json.parseFromSlice(std.json.Value, a, t, .{}) catch continue;
+        if (parsed.value != .object) continue;
+        const typ = jstr(parsed.value.object, "type") orelse continue;
+        const payload = parsed.value.object.get("data") orelse continue;
+        if (payload != .object) continue;
+        if (std.mem.eql(u8, typ, "request/header")) {
+            const header = payload.object.get("header") orelse continue;
+            if (header != .object) continue;
+            const config = header.object.get("config") orelse continue;
+            if (config != .object) continue;
+            if (jstr(config.object, "provider")) |p| {
+                provider = p;
+                provider_field = "data.header.config.provider";
+            }
+            if (jstr(config.object, "model")) |m| {
+                model = m;
+                model_field = "data.header.config.model";
+            }
+        } else if (std.mem.eql(u8, typ, "assistant/message")) {
+            const message = payload.object.get("message") orelse continue;
+            if (message != .object) continue;
+            const source = message.object.get("source") orelse continue;
+            if (source != .object) continue;
+            if (jstr(source.object, "provider")) |p| {
+                provider = p;
+                provider_field = "data.message.source.provider";
+            }
+            if (jstr(source.object, "model")) |m| {
+                model = m;
+                model_field = "data.message.source.model";
+            }
+        }
+    }
+
+    if (provider) |p| {
+        if (p.len > 0) {
+            const canon = canonicalIdFor(a, ProviderRule, &rulesForProviders, p) orelse p;
+            try setProvider(a, d, canon);
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = file.path, .field = provider_field, .value = p });
+        }
+    }
+    if (model) |m| {
+        if (m.len > 0) {
+            try applyModel(a, d, m, m);
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = file.path, .field = model_field, .value = m });
+        }
+    }
+    if (provider != null or model != null) {
+        var fields = std.ArrayList(FieldObservation).empty;
+        defer fields.deinit(a);
+        if (provider) |p| try fields.append(a, .{ .dotted_path = provider_field, .value = p });
+        if (model) |m| try fields.append(a, .{ .dotted_path = model_field, .value = m });
+        const obs = try a.alloc(FileObservation, 1);
+        obs[0] = .{ .path = file.path, .fields = try fields.toOwnedSlice(a) };
+        d.raw.session_files = try appendFileObservation(a, d.raw.session_files, obs[0]);
+    }
+}
+
+/// Read the first `model {providerId/modelId}` or `defaultModel` value out of a
+/// MiniMax Code session record. The record shape is the runtime's LocalSessionRecord;
+/// unknown shapes return null rather than guessing.
+fn minimaxRecordModel(record: std.json.Value) ?struct { provider: ?[]const u8, model: []const u8, field: []const u8 } {
+    if (record != .object) return null;
+    const o = record.object;
+    if (o.get("model")) |mv| {
+        if (mv == .object) {
+            const provider = jstr(mv.object, "providerId") orelse jstr(mv.object, "provider");
+            const model = jstr(mv.object, "modelId") orelse jstr(mv.object, "model") orelse jstr(mv.object, "id");
+            if (model) |m| {
+                if (m.len > 0) return .{ .provider = provider, .model = m, .field = "model.modelId" };
+            }
+        } else if (mv == .string and mv.string.len > 0) {
+            return .{ .provider = null, .model = mv.string, .field = "model" };
+        }
+    }
+    if (jstr(o, "defaultModel")) |dm| {
+        if (dm.len > 0) {
+            const slash = std.mem.findScalar(u8, dm, '/');
+            return .{
+                .provider = if (slash) |i| dm[0..i] else null,
+                .model = if (slash) |i| dm[i + 1 ..] else dm,
+                .field = "defaultModel",
+            };
+        }
+    }
+    return null;
+}
+
+fn detectMinimaxCode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    var data_dir: []const u8 = "";
+    if (env.get("MINIMAX_DATA_DIR")) |v| {
+        if (v.len > 0) data_dir = v;
+    }
+    if (data_dir.len == 0) {
+        if (env.get("MAVIS_DATA_DIR")) |v| {
+            if (v.len > 0) data_dir = v;
+        }
+    }
+    if (data_dir.len == 0 and home.len > 0) data_dir = try std.fmt.allocPrint(a, "{s}/.minimax", .{home});
+    if (data_dir.len == 0) return;
+
+    const config_path = try std.fmt.allocPrint(a, "{s}/config.yaml", .{data_dir});
+    const cwd_dir = std.Io.Dir.cwd();
+    if (cwd_dir.readFileAlloc(io, config_path, a, @enumFromInt(1 << 20)) catch null) |data| {
+        var fields = std.ArrayList(FieldObservation).empty;
+        defer fields.deinit(a);
+        var lines = std.mem.splitScalar(u8, data, '\n');
+        while (lines.next()) |line| {
+            const t = std.mem.trim(u8, line, " \t\r");
+            if (!std.mem.startsWith(u8, t, "defaultModel")) continue;
+            var rest = std.mem.trimStart(u8, t["defaultModel".len..], " \t");
+            if (rest.len == 0 or rest[0] != ':') continue;
+            rest = std.mem.trimStart(u8, rest[1..], " \t\"'");
+            rest = std.mem.trimEnd(u8, rest, " \t\r\"'");
+            if (rest.len == 0) break;
+            const slash = std.mem.findScalar(u8, rest, '/');
+            const provider = if (slash) |i| rest[0..i] else "minimax";
+            const model = if (slash) |i| rest[i + 1 ..] else rest;
+            const canon = canonicalIdFor(a, ProviderRule, &rulesForProviders, provider) orelse provider;
+            try setProvider(a, d, canon);
+            try applyModel(a, d, model, rest);
+            try fields.append(a, .{ .dotted_path = "defaultModel", .value = rest });
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = config_path, .field = "defaultModel", .value = rest });
+            try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = config_path, .field = "defaultModel", .value = rest });
+            break;
+        }
+        if (fields.items.len > 0) {
+            const obs = try a.alloc(FileObservation, 1);
+            obs[0] = .{ .path = config_path, .fields = try fields.toOwnedSlice(a) };
+            d.raw.config_files = try appendFileObservation(a, d.raw.config_files, obs[0]);
+        }
+    }
+
+    // session fallback: v2 runtime-state first, then the legacy local-runtime shape.
+    if (d.provider_name == null or d.model_name == null) {
+        const db_paths = [_][]const u8{
+            try std.fmt.allocPrint(a, "{s}/v2/sqlite/runtime-state.sqlite", .{data_dir}),
+            try std.fmt.allocPrint(a, "{s}/v2/chats/local-runtime.sqlite", .{data_dir}),
+        };
+        for (db_paths) |db| {
+            if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| continue;
+            const out = kiloSqliteJson(a, io, db, "SELECT record_json FROM local_runtime_sessions ORDER BY updated_at_ms DESC LIMIT 1;") catch continue;
+            const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch continue;
+            if (parsed.value != .array or parsed.value.array.items.len == 0) continue;
+            const row = parsed.value.array.items[0];
+            if (row != .object) continue;
+            const rec_json = jstr(row.object, "record_json") orelse continue;
+            const rec = std.json.parseFromSlice(std.json.Value, a, rec_json, .{}) catch continue;
+            const mm = minimaxRecordModel(rec.value) orelse continue;
+            if (d.provider_name == null) {
+                if (mm.provider) |p| {
+                    const canon = canonicalIdFor(a, ProviderRule, &rulesForProviders, p) orelse p;
+                    try setProvider(a, d, canon);
+                    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "record_json.model.providerId", .value = p });
+                }
+            }
+            if (d.model_name == null) {
+                try applyModel(a, d, mm.model, mm.model);
+                try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = mm.field, .value = mm.model });
+            }
+            var fields = std.ArrayList(FieldObservation).empty;
+            defer fields.deinit(a);
+            try fields.append(a, .{ .dotted_path = mm.field, .value = mm.model });
+            const obs = try a.alloc(FileObservation, 1);
+            obs[0] = .{ .path = db, .fields = try fields.toOwnedSlice(a) };
+            d.raw.session_files = try appendFileObservation(a, d.raw.session_files, obs[0]);
+            break;
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------- partial-coverage harness detectors — the harnesses in the row of the DESIGN.md harness table that don't have a `detectHarness_<Harness>` function in this file are not real detectors;
 // their entries below are deliberately minimal so a fixture can still be captured, but the model detection is a "best effort read of whatever the harness happens to keep on disk", and the capture relies on the daemon's runner (see CONTRIBUTING.md) to have written plausible config files into the harness's data dir when the binary isn't actually running inside that harness.
 // Without that bootstrap, these detectors fall through to a documented default and the fixture says so in the raw block (provider-urls empty + model-urls from rulesForModels).
@@ -3864,6 +4291,12 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectCrush(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "opencode")) {
             try detectOpencode(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "dsh")) {
+            try detectDsh(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "codewhale")) {
+            try detectCodewhale(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "minimax-code")) {
+            try detectMinimaxCode(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "vibe")) {
             try detectVibe(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "cursor")) {
@@ -3875,6 +4308,10 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         } else if (std.mem.eql(u8, r.name, "autoclaw")) {
             try detectAutoClaw(a, io, env, home, d);
         }
+        // detectors may set provider after model (e.g. a config file whose
+        // default_text_model line precedes its provider line), so compose the
+        // agent id once both dims are known rather than only inside applyModel.
+        try setAgentId(a, d);
         // the rule's static training postures fill each dim only when the per-harness instance read above didn't; the instance read wins because it was written first.
         applyHarnessTraining(d, r);
     }
@@ -3895,4 +4332,46 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
     if (d.model_id != null) try detectable.append(a, "model");
     d.detectable = try detectable.toOwnedSlice(a);
     return d.harness_label != null and d.provider_label != null and d.model_label != null;
+}
+
+test "tomlStringValue: top-level scalar only" {
+    try std.testing.expectEqualStrings("deepseek", tomlStringValue("provider = \"deepseek\"", "provider").?);
+    try std.testing.expectEqualStrings("deepseek-v4-pro", tomlStringValue("  default_text_model = \"deepseek-v4-pro\"", "default_text_model").?);
+    try std.testing.expect(tomlStringValue("# provider = \"commented\"", "provider") == null);
+    try std.testing.expect(tomlStringValue("default_text_model = \"deepseek-v4-pro\"", "provider") == null);
+    try std.testing.expect(tomlStringValue("provider = bare", "provider") == null);
+}
+
+test "dshGeneration: session file generations" {
+    try std.testing.expectEqual(@as(?u32, 0), dshGeneration("session.jsonl"));
+    try std.testing.expectEqual(@as(?u32, 0), dshGeneration("session.jsonl.zstd"));
+    try std.testing.expectEqual(@as(?u32, 4), dshGeneration("session.v4.jsonl.zstd"));
+    try std.testing.expectEqual(@as(?u32, 12), dshGeneration("session.v12.jsonl"));
+    try std.testing.expect(dshGeneration("session.lock") == null);
+    try std.testing.expect(dshGeneration("session.v.jsonl") == null);
+}
+
+test "minimaxRecordModel: model object, string, and defaultModel" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const object = try std.json.parseFromSlice(std.json.Value, a, "{\"model\":{\"providerId\":\"minimax\",\"modelId\":\"MiniMax-M3.1-Flash\"}}", .{});
+    const mm = minimaxRecordModel(object.value).?;
+    try std.testing.expectEqualStrings("minimax", mm.provider.?);
+    try std.testing.expectEqualStrings("MiniMax-M3.1-Flash", mm.model);
+    try std.testing.expectEqualStrings("model.modelId", mm.field);
+
+    const bare = try std.json.parseFromSlice(std.json.Value, a, "{\"model\":\"MiniMax-M3\"}", .{});
+    const bm = minimaxRecordModel(bare.value).?;
+    try std.testing.expect(bm.provider == null);
+    try std.testing.expectEqualStrings("MiniMax-M3", bm.model);
+
+    const default_model = try std.json.parseFromSlice(std.json.Value, a, "{\"defaultModel\":\"minimax/MiniMax-M3.1-Flash\"}", .{});
+    const dm = minimaxRecordModel(default_model.value).?;
+    try std.testing.expectEqualStrings("minimax", dm.provider.?);
+    try std.testing.expectEqualStrings("MiniMax-M3.1-Flash", dm.model);
+
+    const unknown = try std.json.parseFromSlice(std.json.Value, a, "{\"foo\":\"bar\"}", .{});
+    try std.testing.expect(minimaxRecordModel(unknown.value) == null);
 }

@@ -6988,6 +6988,117 @@
         "hermes",
         "--version"
       ]
+    },
+    "dsh-deepseek-deepseekv41flash-darwin": {
+      "prompt_invocation": [
+        "dsh",
+        "--profile",
+        "headless",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "dsh",
+        "--version"
+      ]
+    },
+    "dsh-deepseek-deepseekv41flash-linux": {
+      "prompt_invocation": [
+        "dsh",
+        "--profile",
+        "headless",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "dsh",
+        "--version"
+      ]
+    },
+    "dsh-deepseek-deepseekv41flash-windows": {
+      "prompt_invocation": [
+        "dsh.cmd",
+        "--profile",
+        "headless",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "dsh.cmd",
+        "--version"
+      ]
+    },
+    "codewhale-deepseek-deepseekv4pro-darwin": {
+      "prompt_invocation": [
+        "codewhale",
+        "exec",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "codewhale",
+        "--version"
+      ]
+    },
+    "codewhale-deepseek-deepseekv4pro-linux": {
+      "prompt_invocation": [
+        "codewhale",
+        "exec",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "codewhale",
+        "--version"
+      ]
+    },
+    "codewhale-deepseek-deepseekv4pro-windows": {
+      "prompt_invocation": [
+        "codewhale.cmd",
+        "exec",
+        "--auto",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "codewhale.cmd",
+        "--version"
+      ]
+    },
+    "minimax-code-minimax-minimaxm31flash-darwin": {
+      "prompt_invocation": [
+        "mcode",
+        "exec",
+        "--mode",
+        "standard",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "mcode",
+        "--version"
+      ]
+    },
+    "minimax-code-minimax-minimaxm31flash-linux": {
+      "prompt_invocation": [
+        "mcode",
+        "exec",
+        "--mode",
+        "standard",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "mcode",
+        "--version"
+      ]
+    },
+    "minimax-code-minimax-minimaxm31flash-windows": {
+      "prompt_invocation": [
+        "mcode.cmd",
+        "exec",
+        "--mode",
+        "standard",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "mcode.cmd",
+        "--version"
+      ]
     }
   },
   "blocklist": {
