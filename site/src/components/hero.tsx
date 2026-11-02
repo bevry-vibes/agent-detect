@@ -212,14 +212,15 @@ export function Hero() {
                 description="Make a new project with Bevry's conventions."
                 text="Scaffold a new project using github.com/bevry-vibes/skills. The project will ..."
               />
-              <SkillSnippet description="Restrict a skill to a specific model." file="minimax.md" startWith="## MiniMax M3" endBefore="### Never use" />
-              <SkillSnippet description="Instruct your agents to write their plans to a consistent directory." file="plans.md" startWith="## where plans live" endBefore="## provenance companion" />
+              <SkillSnippet description="Restrict a skill to a specific model." file="minimax.md" />
+              <SkillSnippet description="Instruct your agents to write their plans to a consistent directory." file="plans.md" />
               <SkillSnippet
                 description="Instruct the agent to use co-authored-by trailer for commits."
                 file="author.md"
                 startWith="### co-author trailer"
                 endBefore="### assisted-by trailer"
                 anchor="#co-author-trailer--commits"
+                includeHeader
               />
               <SkillSnippet
                 description="Instruct the agent to use assisted-by trailer for posts, plans, and summaries."
@@ -227,6 +228,7 @@ export function Hero() {
                 startWith="### assisted-by trailer"
                 endBefore="## signing"
                 anchor="#assisted-by-trailer--posts-plans-summaries"
+                includeHeader
               />
               <SkillSnippet
                 description="Keep agent-made commits unsigned."
@@ -234,8 +236,9 @@ export function Hero() {
                 startWith="## signing"
                 endBefore="## post-commit verification"
                 anchor="#signing"
+                includeHeader
               />
-              <SkillSnippet description="Restrict your project to reciprocal agents only." file="policy.md" startWith="# AI Policy" />
+              <SkillSnippet description="Restrict your project to reciprocal agents only." file="policy.md" />
             </CardContent>
           </Card>
         </div>
@@ -267,7 +270,21 @@ export function RegistryIntro({ updated }: { updated: number | null }) {
 }
 
 // skill snippets are fetched once per session and shared across renders
-const snippetCache = new Map<string, { full: string[]; start: number; end: number }>();
+type SkillMeta = { full: string[]; start: number; end: number; headerEnd: number };
+type RenderLine = { gap: true } | { text: string; n: number; relevant: boolean };
+const snippetCache = new Map<string, SkillMeta>();
+
+/** the prompt-stage lines: the file's top-level header (when requested), a
+ * `...` gap, then the relevant excerpt with its original line numbers */
+function promptLines(meta: SkillMeta): RenderLine[] {
+  const lines: RenderLine[] = [];
+  if (meta.headerEnd > 0) {
+    for (let i = 0; i < meta.headerEnd; i += 1) lines.push({ text: meta.full[i], n: i + 1, relevant: false });
+    lines.push({ gap: true });
+  }
+  for (let i = meta.start; i < meta.end; i += 1) lines.push({ text: meta.full[i], n: i + 1, relevant: true });
+  return lines;
+}
 
 // the snippet-bar action buttons — the `!` suffixes beat the Button's own
 // `has-[>svg]:px-2.5` (tailwind-merge treats the has-[>svg]-prefixed variant
@@ -286,6 +303,9 @@ interface SnippetSpec {
   lines?: number;
   /** a github anchor on the file url, when the section has one */
   anchor?: string;
+  /** include the file's top-level header (the H1 + intro) before the excerpt,
+   * separated by a `...` marker — the excerpts need the file's own context */
+  includeHeader?: boolean;
 }
 
 // tiny markdown line highlighter — escapes, then colors the common constructs
@@ -395,12 +415,10 @@ function InlinePrompt({ description, text }: { description: string; text: string
  * file scrolled to the relevant lines, and `view file` permalinks there with
  * the range highlighted on GitHub */
 function SkillSnippet(spec: SnippetSpec) {
-  const key = `${spec.file}:${spec.startWith ?? ""}:${spec.lines ?? ""}`;
+  const key = `${spec.file}:${spec.startWith ?? ""}:${spec.lines ?? ""}:${spec.includeHeader ? "header" : ""}`;
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<"prompt" | "file">("prompt");
-  const [meta, setMeta] = useState<{ full: string[]; start: number; end: number } | null>(
-    () => snippetCache.get(key) ?? null,
-  );
+  const [meta, setMeta] = useState<SkillMeta | null>(() => snippetCache.get(key) ?? null);
   const { copied, copy } = useCopied();
   const [failed, setFailed] = useState(false);
   const preRef = useRef<HTMLPreElement>(null);
@@ -420,7 +438,7 @@ function SkillSnippet(spec: SnippetSpec) {
         let end = all.length;
         if (spec.lines) {
           end = Math.min(spec.lines, all.length);
-        } else {
+        } else if (spec.startWith) {
           start = all.findIndex((l) => l.includes(spec.startWith ?? ""));
           if (start === -1) throw new Error("anchor not found");
           const endBefore = spec.endBefore ?? "";
@@ -429,10 +447,18 @@ function SkillSnippet(spec: SnippetSpec) {
             if (stop !== -1) end = stop;
           }
         }
+        // the file's top-level header (H1 + intro) for excerpts that need context
+        let headerEnd = 0;
+        if (spec.includeHeader) {
+          const nextSection = all.findIndex((l, i) => i > 0 && /^##\s/.test(l));
+          headerEnd = nextSection === -1 ? all.length : nextSection;
+          while (headerEnd > 0 && all[headerEnd - 1].trim() === "") headerEnd -= 1;
+          if (headerEnd > start) headerEnd = start;
+        }
         // anchors land loosely — trim empty leading/trailing lines
         while (start < end && all[start].trim() === "") start += 1;
         while (end > start && all[end - 1].trim() === "") end -= 1;
-        const found = { full: all, start, end };
+        const found = { full: all, start, end, headerEnd };
         snippetCache.set(key, found);
         if (alive) setMeta(found);
       })
@@ -443,7 +469,7 @@ function SkillSnippet(spec: SnippetSpec) {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, meta, failed, key, spec.file, spec.startWith, spec.endBefore, spec.lines]);
+  }, [open, meta, failed, key, spec.file, spec.startWith, spec.endBefore, spec.lines, spec.includeHeader]);
 
   // in the file stage the relevant lines are scrolled to the top of the block
   useEffect(() => {
@@ -464,10 +490,17 @@ function SkillSnippet(spec: SnippetSpec) {
     : `https://github.com/bevry-vibes/skills/blob/main/${spec.file}${spec.anchor ?? ""}`;
   const copyText = () => {
     if (!meta) return; // nothing fetched yet — expand first
-    void copy(stage === "file" ? meta.full.join("\n") : meta.full.slice(meta.start, meta.end).join("\n"));
+    const body =
+      stage === "file"
+        ? meta.full.join("\n")
+        : [
+            ...(meta.headerEnd > 0 ? [meta.full.slice(0, meta.headerEnd).join("\n"), "..."] : []),
+            meta.full.slice(meta.start, meta.end).join("\n"),
+          ].join("\n\n");
+    void copy(body);
   };
 
-  const renderLines = (lines: { text: string; n: number; relevant: boolean }[]) => (
+  const renderLines = (lines: RenderLine[]) => (
     <pre
       ref={preRef}
       className={cn(
@@ -477,24 +510,35 @@ function SkillSnippet(spec: SnippetSpec) {
         stage === "file" && "scrollbar-always",
       )}
     >
-      {lines.map(({ text, n, relevant }) => (
-        <div
-          key={n}
-          data-relevant-start={relevant && n === from ? "true" : undefined}
-          className={cn(
-            "flex items-start",
-            relevant
-              ? stage === "file" && "bg-muted/40"
-              : "[content-visibility:auto] [contain-intrinsic-size:auto_20px]",
-          )}
-        >
-          <span className="text-muted-foreground/50 w-12 shrink-0 select-none pr-3 text-right">{n}</span>
-          <span
-            className="min-w-0 flex-1 whitespace-pre-wrap break-all pr-3"
-            dangerouslySetInnerHTML={{ __html: markdownLineHtml(text) || "&nbsp;" }}
-          />
-        </div>
-      ))}
+      {lines.map((line) => {
+        if ("gap" in line) {
+          return (
+            <div key="gap" className="text-muted-foreground/60 flex items-start select-none">
+              <span className="w-12 shrink-0 pr-3 text-right" />
+              <span className="min-w-0 flex-1 pr-3">...</span>
+            </div>
+          );
+        }
+        const { text, n, relevant } = line;
+        return (
+          <div
+            key={n}
+            data-relevant-start={relevant && n === from ? "true" : undefined}
+            className={cn(
+              "flex items-start",
+              relevant
+                ? stage === "file" && "bg-muted/40"
+                : "[content-visibility:auto] [contain-intrinsic-size:auto_20px]",
+            )}
+          >
+            <span className="text-muted-foreground/50 w-12 shrink-0 select-none pr-3 text-right">{n}</span>
+            <span
+              className="min-w-0 flex-1 whitespace-pre-wrap break-all pr-3"
+              dangerouslySetInnerHTML={{ __html: markdownLineHtml(text) || "&nbsp;" }}
+            />
+          </div>
+        );
+      })}
     </pre>
   );
 
@@ -533,9 +577,7 @@ function SkillSnippet(spec: SnippetSpec) {
         ) : stage === "file" ? (
           renderLines(meta.full.map((text, i) => ({ text, n: i + 1, relevant: i >= meta.start && i < meta.end })))
         ) : (
-          renderLines(
-            meta.full.slice(meta.start, meta.end).map((text, i) => ({ text, n: meta.start + 1 + i, relevant: true })),
-          )
+          renderLines(promptLines(meta))
         ))}
     </section>
   );
