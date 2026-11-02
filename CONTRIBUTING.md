@@ -79,7 +79,7 @@ Items still unresolvable or still invocation-less stay in the backlog; run `fixt
 
 To refresh one fixture end-to-end:
 
-1. Start the daemon — the agent launches it detached where the platform allows (Linux one-shot below; macOS via the LaunchAgent), and only asks the user to open a terminal where a detached spawn isn't available (Windows):
+1. Start the daemon — the agent launches it detached where the platform allows: Linux one-shot below, macOS `scripts/launch-daemon-macos.sh start`, and only Windows needs the user to open a terminal.
    ```sh
    ./zig-out/bin/agent-detect-dev fixtures daemon
    ```
@@ -310,8 +310,19 @@ One daemon per host still applies.
 ### daemon launch: macOS LaunchAgent bootstrap (macOS-only, no sudo)
 
 The daemon is user-only in the session sense: it refuses to start when an env marker is set or an ancestor process matches a harness agent, so it must run as a plain user process with a clean ancestry and a marker-free environment (each launch recipe below provides both).
-A terminal run is the universal baseline; on macOS the daemon can instead be registered per-user via `launchctl bootstrap` (no sudo, survives the terminal closing, respawns on crash).
-Save this plist and bootstrap it:
+A terminal run is the universal baseline; on macOS the daemon can instead be registered per-user via `launchctl bootstrap` (no sudo, survives the terminal closing, restarts after a crash).
+The checkout ships the lifecycle wrapper:
+
+```sh
+scripts/launch-daemon-macos.sh start      # write the plist + bootstrap (one daemon per host)
+scripts/launch-daemon-macos.sh status
+scripts/launch-daemon-macos.sh stop       # unload + disable automatic login start
+scripts/launch-daemon-macos.sh restart
+scripts/launch-daemon-macos.sh logs
+scripts/launch-daemon-macos.sh uninstall
+```
+
+It writes `~/Library/LaunchAgents/com.agent-detect.fixtures.plist`, preserves the invoking shell's `PATH` (the harness binaries need it), sets `HOME`, and uses `KeepAlive` `SuccessfulExit=false` so a clean `daemon.ctl stop` stays stopped while a crash restarts. The manual plist below is the same recipe:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -333,7 +344,11 @@ Save this plist and bootstrap it:
   </dict>
   <key>WorkingDirectory</key><string>/abs/path/to/repo</string>
   <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key><false/>
+  </dict>
+  <key>ThrottleInterval</key><integer>10</integer>
 </dict>
 </plist>
 ```
@@ -347,7 +362,8 @@ launchctl bootout  "gui/$(id -u)"/com.agent-detect.fixtures               # stop
 launchctl list | rg com.agent-detect.fixtures                             # status
 ```
 
-Headless `ssh` sessions can't `bootstrap` (not attached to the GUI session — use `tmux`/`screen` there).
+With the `SuccessfulExit=false` `KeepAlive` form, `printf 'stop\n' > fixtures/daemon.ctl` is a clean stop that launchd leaves stopped; `bootout` is the hard stop that also unloads the job.
+If `gui/$(id -u)` is unavailable (no logged-in GUI session — e.g. a truly headless host), use `tmux`/`screen` for the terminal recipe instead.
 The sudo-free equivalents are `systemd --user` on Linux and Task Scheduler / NSSM on Windows.
 ### daemon launch: Linux systemd user unit (no sudo)
 

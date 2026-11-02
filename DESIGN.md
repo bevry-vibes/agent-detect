@@ -177,7 +177,7 @@ Who starts it is a platform question: where the hosting agent can spawn a detach
 The user is asked to open a terminal only on environments where a detached spawn isn't available (Windows).
 In-session runs stay forbidden: an in-tree daemon pollutes every capture's `process_lineage` and its env contaminates the captures — a detached run has neither property (to the guard and to the workers it is a plain user process).
 Linux one-shot: `setsid env -u <each harness rule's marker vars> ./zig-out/bin/agent-detect-dev fixtures daemon --write-log` (the marker set is the union of the rules' `env_markers`; the guard's refusal message names any one the launch missed).
-macOS reaches the same clean context via the per-user LaunchAgent bootstrap; Windows via a per-user scheduled task — CONTRIBUTING.md carries the recipes ("daemon launch: …").
+macOS reaches the same clean context via the per-user LaunchAgent bootstrap (`scripts/launch-daemon-macos.sh` writes the plist and manages `start`/`stop`/`status`/`logs`); Windows via a per-user scheduled task — CONTRIBUTING.md carries the recipes ("daemon launch: …").
 
 ### capture workers: isolated cwd, streamed output, whole-tree kill
 
