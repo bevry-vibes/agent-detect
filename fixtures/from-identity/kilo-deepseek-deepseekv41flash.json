@@ -17,20 +17,20 @@
       "provider_open_training": "never",
       "provider_reciprocity_scandal": false,
       "provider_reciprocity": true,
-      "model_label": "DeepSeek V4 Flash",
+      "model_label": "DeepSeek V4.1 Flash",
       "model_short_title": null,
-      "model_name": "deepseek-v4-flash",
-      "model_id": "deepseekv4flash",
+      "model_name": "deepseek-v4.1-flash",
+      "model_id": "deepseekv41flash",
       "model_openness": "open-weight",
       "model_open_training": null,
       "model_closed_training": null,
       "model_license": "MIT",
       "model_reciprocity": true,
-      "agent_id": "kilo-deepseek-deepseekv4flash",
+      "agent_id": "kilo-deepseek-deepseekv41flash",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: Kilo Code · DeepSeek V4 Flash <kilo-deepseek-deepseekv4flash@local>",
-    "trailer assisted-by": "Assisted-by: Kilo Code · DeepSeek V4 Flash <kilo-deepseek-deepseekv4flash@local>",
+    "trailer co-author": "Co-authored-by: Kilo Code · DeepSeek V4.1 Flash <kilo-deepseek-deepseekv41flash@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · DeepSeek V4.1 Flash <kilo-deepseek-deepseekv41flash@local>",
     "found": {
       "detectable": [
         "harness",
@@ -51,8 +51,9 @@
         "https://platform.deepseek.com"
       ],
       "model-urls": [
-        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
-        "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/LICENSE",
+        "https://api-docs.deepseek.com/quick_start/pricing"
       ],
       "scandal-urls": []
     },
@@ -61,7 +62,7 @@
       "identity": {
         "harness": "kilo",
         "provider": "deepseek",
-        "model": "deepseekv4flash"
+        "model": "deepseekv41flash"
       },
       "reasons": [
         {
@@ -107,6 +108,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1791254385
+    "updated_at": 1794389505
   }
 }

@@ -1,0 +1,149 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "DeepSeek V4.1 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4.1-flash",
+      "model_id": "deepseekv41flash",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "opencode-deepseek-deepseekv41flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · DeepSeek V4.1 Flash <opencode-deepseek-deepseekv41flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · DeepSeek V4.1 Flash <opencode-deepseek-deepseekv41flash@local>",
+    "found": {
+      "platform_id": "windows",
+      "harness_version": "2.2.7",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 676,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 5764,
+          "name": "pwsh.exe"
+        },
+        {
+          "pid": 1700,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 15412,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 15812,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 13632,
+          "name": "pwsh.exe"
+        },
+        {
+          "pid": 13316,
+          "name": "windowsterminal.exe"
+        },
+        {
+          "pid": 7912,
+          "name": "explorer.exe"
+        },
+        {
+          "pid": 1620,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/LICENSE",
+        "https://api-docs.deepseek.com/quick_start/pricing"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "opencode.exe",
+          "value": "opencode"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "deepseek"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "deepseek-flash"
+        }
+      ]
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "deepseek",
+        "model": "deepseekv41flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1794389578,
+    "harness_version": "2.2.7",
+    "capture_kind": "programmatic",
+    "prompt_invocation": [
+      "opencode.exe",
+      "run",
+      "--model",
+      "deepseek/deepseek-flash",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "opencode.exe",
+      "--version"
+    ]
+  }
+}

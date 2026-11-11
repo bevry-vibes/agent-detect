@@ -8585,9 +8585,8 @@
       "platforms": [],
       "reciprocal": false
     },
-    "kilo-deepseek-deepseekv4flash": {
+    "kilo-deepseek-deepseekv41flash": {
       "platforms": [
-        "darwin",
         "windows"
       ],
       "reciprocal": false
@@ -10757,12 +10756,7 @@
       "reciprocal": true
     },
     "opencode-deepseek-deepseekv41flash": {
-      "platforms": [],
-      "reciprocal": true
-    },
-    "opencode-deepseek-deepseekv4flash": {
       "platforms": [
-        "darwin",
         "windows"
       ],
       "reciprocal": true

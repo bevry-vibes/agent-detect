@@ -7,7 +7,7 @@
       "model": "glm52",
       "platform": "windows",
       "mode": "from-capture",
-      "runner": 19080
+      "runner": 10136
     },
     {
       "harness": "opencode",
@@ -15,7 +15,7 @@
       "model": "deepseekv4pro",
       "platform": "windows",
       "mode": "from-capture",
-      "runner": 14404
+      "runner": 14464
     },
     {
       "harness": "opencode",
@@ -23,7 +23,7 @@
       "model": "glm52",
       "platform": "windows",
       "mode": "from-capture",
-      "runner": 21240
+      "runner": 14956
     },
     {
       "harness": "opencode",
@@ -31,7 +31,7 @@
       "model": "kimik27code",
       "platform": "windows",
       "mode": "from-capture",
-      "runner": 20284
+      "runner": 20348
     },
     {
       "harness": "opencode",
@@ -39,7 +39,7 @@
       "model": "minimaxm3",
       "platform": "windows",
       "mode": "from-capture",
-      "runner": 17832
+      "runner": 16728
     }
   ],
   "backlog": {
@@ -80,7 +80,6 @@
       "kilo-anthropic-claudesonnet4-darwin": "post-check mismatch",
       "crush-hyper-qwen38max-darwin": "capture failed (exit 1): stdout \n; stderr           \n   ERROR  \n          \n  Agent processing failed: failed to start agent processing stream: payment required: You're out of credits. Add more \n  at https://hyper.charm.land.                                                                                        \n\n",
       "cursor-cursor-claudeopus5-windows": "capture failed (exit 1); stderr \n⚠ Workspace Trust Required\n\n  Cursor Agent can execute code and access files in this directory.\n  Do you trust the contents of this directory?\n\n    <home>/AppData/Local/Temp/agent-detect-MIJ3Xog1TD6XS4bx\n\n  To proceed, you can either:\n    • Run 'agent' interactively to decide\n    • Pass --trust, --yolo, or -f if you trust this directory\n",
-      "kilo-deepseek-deepseekv4flash-darwin": "post-check mismatch",
       "kilo-deepseek-deepseekv4pro-darwin": "post-check mismatch",
       "kilo-fireworksai-glm52-darwin": "post-check mismatch",
       "kilo-hyper-glm52-darwin": "post-check mismatch",
@@ -359,10 +358,8 @@
       "opencode-opencode-deepseekv41flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n",
       "opencode-opencode-glm53flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n",
       "opencode-opencode-mimov26flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n",
-      "kilo-deepseek-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0m{\n  \"name\": \"UnknownError\",\n  \"data\": {\n    \"message\": \"Unexpected server error. Check server logs for details.\",\n    \"ref\": \"err_dc290a61\"\n  }\n}\r\n\u001b[91m\u001b[1mError: \u001b[0mModel not found: deepseek/deepseek-v4-flash. Did you mean: deepseek-flash, deepseek-v4-pro?\r\n",
       "kilo-ollamacloud-glm52-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> code · glm-5.2\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mAdd usage credits or subscribe and save up to 66%: https://ollama.com/plans (ref: 6b05740f-f353-497b-a3a5-9a445c4a6c7f)\r\n",
-      "opencode-clinepass-deepseekv4pro-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/deepseek-v4-pro\r\n\u001b[91m\u001b[1mError: \u001b[0mError 403: the user is not subscribed to required model plan\r\n",
-      "opencode-deepseek-deepseekv4flash-windows": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mModel unavailable: deepseek/deepseek-v4-flash\r\n"
+      "opencode-clinepass-deepseekv4pro-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/deepseek-v4-pro\r\n\u001b[91m\u001b[1mError: \u001b[0mError 403: the user is not subscribed to required model plan\r\n"
     }
   },
   "invocations": {
@@ -1853,13 +1850,13 @@
         "--version"
       ]
     },
-    "kilo-deepseek-deepseekv4flash-darwin": {
+    "kilo-deepseek-deepseekv41flash-darwin": {
       "prompt_invocation": [
         "kilo",
         "run",
         "--auto",
         "--model",
-        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-flash",
         "<prompt>"
       ],
       "version_invocation": [
@@ -1867,13 +1864,13 @@
         "--version"
       ]
     },
-    "kilo-deepseek-deepseekv4flash-linux": {
+    "kilo-deepseek-deepseekv41flash-linux": {
       "prompt_invocation": [
         "kilo",
         "run",
         "--auto",
         "--model",
-        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-flash",
         "<prompt>"
       ],
       "version_invocation": [
@@ -1881,13 +1878,13 @@
         "--version"
       ]
     },
-    "kilo-deepseek-deepseekv4flash-windows": {
+    "kilo-deepseek-deepseekv41flash-windows": {
       "prompt_invocation": [
         "kilo.cmd",
         "run",
         "--auto",
         "--model",
-        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-flash",
         "<prompt>"
       ],
       "version_invocation": [
@@ -5575,12 +5572,12 @@
         "--version"
       ]
     },
-    "opencode-deepseek-deepseekv4flash-darwin": {
+    "opencode-deepseek-deepseekv41flash-darwin": {
       "prompt_invocation": [
         "opencode",
         "run",
         "--model",
-        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-flash",
         "<prompt>"
       ],
       "version_invocation": [
@@ -5588,12 +5585,12 @@
         "--version"
       ]
     },
-    "opencode-deepseek-deepseekv4flash-linux": {
+    "opencode-deepseek-deepseekv41flash-linux": {
       "prompt_invocation": [
         "opencode",
         "run",
         "--model",
-        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-flash",
         "<prompt>"
       ],
       "version_invocation": [
@@ -5601,12 +5598,12 @@
         "--version"
       ]
     },
-    "opencode-deepseek-deepseekv4flash-windows": {
+    "opencode-deepseek-deepseekv41flash-windows": {
       "prompt_invocation": [
         "opencode.exe",
         "run",
         "--model",
-        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-flash",
         "<prompt>"
       ],
       "version_invocation": [
