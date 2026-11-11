@@ -1,9 +1,6 @@
 # Prompts — companion provenance for `.plans/1790666509289-website-registry-site.md`
 
-Rule: every prompt that shapes a plan is recorded here — verbatim,
-untruncated, timestamped, in order. Agent model: GLM-5.3 Flash (reported
-by the harness). The session crashed once mid-implementation and resumed
-from the same branch; no prompts were lost.
+Rule: every prompt that shapes a plan is recorded here — verbatim, untruncated, timestamped, in order. Agent model: GLM-5.3 Flash (reported by the harness). The session crashed once mid-implementation and resumed from the same branch; no prompts were lost.
 
 ---
 

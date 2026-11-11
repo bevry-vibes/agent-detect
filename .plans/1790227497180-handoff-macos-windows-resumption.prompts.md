@@ -1,8 +1,6 @@
 # Prompts — companion provenance for `.plans/1790227497180-handoff-macos-windows-resumption.md`
 
-Rule: every prompt that shapes a plan/handoff is recorded here — verbatim,
-untruncated, timestamped, in order. Agent model: GLM-5.3 Flash (reported by
-the harness).
+Rule: every prompt that shapes a plan/handoff is recorded here — verbatim, untruncated, timestamped, in order. Agent model: GLM-5.3 Flash (reported by the harness).
 
 ---
 

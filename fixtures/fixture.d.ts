@@ -13,8 +13,7 @@
  * - `outputs` — the saved outputs of the channel;
  * - `meta` — everything else: ledger dates, writer version, and the invocation of record (from-capture only).
  *
- * Channel presence = file existence — no JSON parse needed to know whether a channel ran.
- * See fixtures/index.d.ts for the store and DESIGN.md for the semantics.
+ * Channel presence = file existence — no JSON parse needed to know whether a channel ran. See fixtures/index.d.ts for the store and DESIGN.md for the semantics.
  */
 
 /** Platforms a daemon can capture on — the from-capture channel's stem segment; the from-identity channel carries no platform. */

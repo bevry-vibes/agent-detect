@@ -87,11 +87,7 @@ Below are the **exact** main.zig, build.zig, and build.zig.zon for each candidat
 
 ### Candidate 1: vrischmann/zig-sqlite
 
-**Repo:** `git+https://github.com/vrischmann/zig-sqlite.git`
-**Zig:** requires 0.14.0+, works with 0.16.0
-**Bundles:** SQLite 3.49.2 (`sqlite-amalgamation-3490200.zip`)
-**Module name:** `sqlite`
-**Build.zig options:** none needed for SQLite (always bundled)
+**Repo:** `git+https://github.com/vrischmann/zig-sqlite.git` **Zig:** requires 0.14.0+, works with 0.16.0 **Bundles:** SQLite 3.49.2 (`sqlite-amalgamation-3490200.zip`) **Module name:** `sqlite` **Build.zig options:** none needed for SQLite (always bundled)
 
 #### src/main.zig (verified against actual source)
 ```zig

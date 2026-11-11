@@ -4,8 +4,7 @@
 // and You may not copy or use this file in either source code or executable
 // form, except in compliance with the terms and conditions of the RPL.
 //
-// All software distributed under the RPL is provided strictly on an "AS IS"
-// basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
+// All software distributed under the RPL is provided strictly on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
 // agent-detect core — the detection ladder and policy. In the least-invasive order, detection reads:
 //   1. environment variables        (harness)
@@ -54,8 +53,7 @@ pub const EXIT_REQUIREMENT_FAILED: u8 = 10;
 pub const EXIT_OUT_OF_MEMORY: u8 = 11;
 pub const EXIT_INDEX_STORE: u8 = 12;
 pub const EXIT_IO: u8 = 13;
-/// the entity view resolved, but a filter excluded it — the match report went
-/// to stdout (unless --no-json) and the explanation to stderr.
+/// the entity view resolved, but a filter excluded it — the match report went to stdout (unless --no-json) and the explanation to stderr.
 pub const EXIT_FOUND_FILTERED: u8 = 14;
 
 // Error-message strings = the exit-status registry names, verbatim.
@@ -324,9 +322,7 @@ fn appendScandalUrls(a: std.mem.Allocator, existing: []const []const u8, add: []
     return list.toOwnedSlice(a);
 }
 
-/// set d.provider_label, d.provider_name, and d.provider_id together from a single id.
-/// This is the helper detectors should call instead of the old "label + applyProviderMeta" pair —
-/// it keeps the slug id in lockstep with the name so consumers can always trust the canonical trio.
+/// set d.provider_label, d.provider_name, and d.provider_id together from a single id. This is the helper detectors should call instead of the old "label + applyProviderMeta" pair — it keeps the slug id in lockstep with the name so consumers can always trust the canonical trio.
 fn setProvider(a: std.mem.Allocator, d: *Detection, id: []const u8) !void {
     const display = providerForName(id) orelse try titleCase(a, id);
     d.provider_name = try a.dupe(u8, id);
@@ -763,8 +759,7 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
         }
         d.raw.session_files = try session_files_list.toOwnedSlice(a);
 
-        // step 3 override: the session snapshot carries the live provider/model,
-        // which may differ from the stale config (step 2). Apply when present.
+        // step 3 override: the session snapshot carries the live provider/model, which may differ from the stale config (step 2). Apply when present.
         if (s.provider) |sp| {
             try applyProviderMeta(a, d, sp);
             d.provider_name = sp;
@@ -1005,8 +1000,7 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
 
 // ---------------------------------------------------------------------------- DeepSeek Harness / CodeWhale / MiniMax Code
 
-/// One authored TOML scalar (`key = "value"`), matched only at the line's start so
-/// section tables cannot spoof the top-level key.
+/// One authored TOML scalar (`key = "value"`), matched only at the line's start so section tables cannot spoof the top-level key.
 fn tomlStringValue(line: []const u8, key: []const u8) ?[]const u8 {
     const t = std.mem.trim(u8, line, " \t\r");
     if (!std.mem.startsWith(u8, t, key)) return null;
@@ -1026,8 +1020,7 @@ const CodewhaleSession = struct {
     model: []const u8,
 };
 
-/// newest CodeWhale session with a model — prefer one whose `metadata.workspace`
-/// matches the current cwd, then fall back to the newest session overall.
+/// newest CodeWhale session with a model — prefer one whose `metadata.workspace` matches the current cwd, then fall back to the newest session overall.
 fn codewhaleNewestSession(a: std.mem.Allocator, io: std.Io, sessions_root: []const u8, cwd: []const u8) ?CodewhaleSession {
     const cwd_dir = std.Io.Dir.cwd();
     var dir = cwd_dir.openDir(io, sessions_root, .{ .iterate = true }) catch return null;
@@ -1202,8 +1195,7 @@ fn dshBestInProjectDir(a: std.mem.Allocator, io: std.Io, project_path: []const u
     return best;
 }
 
-/// Resolve the newest dsh session: the cwd-matching project directory first, then
-/// every project directory. Sessions live at `$DSH_HOME/sessions/--<cwd>--/<id>/`.
+/// Resolve the newest dsh session: the cwd-matching project directory first, then every project directory. Sessions live at `$DSH_HOME/sessions/--<cwd>--/<id>/`.
 fn dshNewestSession(a: std.mem.Allocator, io: std.Io, root: []const u8, cwd: []const u8) ?DshSessionFile {
     const sessions_root = std.fmt.allocPrint(a, "{s}/sessions", .{root}) catch return null;
     if (cwd.len > 0) {
@@ -1317,9 +1309,7 @@ fn detectDsh(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.M
     }
 }
 
-/// Read the first `model {providerId/modelId}` or `defaultModel` value out of a
-/// MiniMax Code session record. The record shape is the runtime's LocalSessionRecord;
-/// unknown shapes return null rather than guessing.
+/// Read the first `model {providerId/modelId}` or `defaultModel` value out of a MiniMax Code session record. The record shape is the runtime's LocalSessionRecord; unknown shapes return null rather than guessing.
 fn minimaxRecordModel(record: std.json.Value) ?struct { provider: ?[]const u8, model: []const u8, field: []const u8 } {
     if (record != .object) return null;
     const o = record.object;
@@ -4358,16 +4348,10 @@ pub const indexUsage =
     \\
 ;
 
-/// the registry website's base url — the sole coupling between the CLI's
-/// `registry`/`index` actions and the `site/` deployment (see DESIGN.md "the
-/// website").
+/// the registry website's base url — the sole coupling between the CLI's `registry`/`index` actions and the `site/` deployment (see DESIGN.md "the website").
 pub const siteUrl = "https://agent-detect.bevry.workers.dev";
 
-/// the registry action's canonicalized query — every value as it lands in the
-/// url and the JSON report (empty/unset for absent filters).
-/// the filters both index views carry in their deep links — the site evaluates
-/// the same set (on entity routes they gate: a mismatching entity 422s with the
-/// per-filter match states and a link to the view without the violating ones).
+/// the registry action's canonicalized query — every value as it lands in the url and the JSON report (empty/unset for absent filters). the filters both index views carry in their deep links — the site evaluates the same set (on entity routes they gate: a mismatching entity 422s with the per-filter match states and a link to the view without the violating ones).
 pub const IndexQuery = struct {
     harness: []const u8 = "",
     provider: []const u8 = "",
@@ -4379,9 +4363,7 @@ pub const IndexQuery = struct {
     reciprocal: ?bool = null,
 };
 
-/// compose the search view's url: any filter → the filtered registry at the
-/// `#registry` anchor (it is what scrolls the results into view); none → the
-/// homepage.
+/// compose the search view's url: any filter → the filtered registry at the `#registry` anchor (it is what scrolls the results into view); none → the homepage.
 pub fn buildIndexSearchUrl(a: std.mem.Allocator, q: IndexQuery) ![]u8 {
     var qs: std.ArrayList(u8) = .empty;
     try appendParam(a, &qs, "email", q.email);
@@ -4393,8 +4375,7 @@ pub fn buildIndexSearchUrl(a: std.mem.Allocator, q: IndexQuery) ![]u8 {
     return std.fmt.allocPrint(a, siteUrl ++ "/?{s}#registry", .{qs.items});
 }
 
-/// compose an entity view's url — the site route the view maps onto
-/// (`/{kind}/{id}`), carrying the filters that gate it.
+/// compose an entity view's url — the site route the view maps onto (`/{kind}/{id}`), carrying the filters that gate it.
 pub fn buildEntityUrl(a: std.mem.Allocator, kind: []const u8, id: []const u8, q: IndexQuery) ![]u8 {
     var qs: std.ArrayList(u8) = .empty;
     try appendParam(a, &qs, "harness", q.harness);
@@ -4417,18 +4398,14 @@ fn appendParam(a: std.mem.Allocator, qs: *std.ArrayList(u8), key: []const u8, va
     try qs.appendSlice(a, value);
 }
 
-/// open `url` in the platform's default browser — linux `xdg-open`, macOS
-/// `open`, Windows `cmd /c start`. The child's output is ignored; the caller
-/// maps every failure (the opener absent from PATH, or a failed exit) to the
-/// exit-6 "incomplete environment" case with the `--no-open` hint.
+/// open `url` in the platform's default browser — linux `xdg-open`, macOS `open`, Windows `cmd /c start`. The child's output is ignored; the caller maps every failure (the opener absent from PATH, or a failed exit) to the exit-6 "incomplete environment" case with the `--no-open` hint.
 pub fn openURL(a: std.mem.Allocator, io: std.Io, url: []const u8) !void {
     const url_z = try a.dupeSentinel(u8, url, 0);
     defer a.free(url_z);
     var argv_buf: [5][]const u8 = undefined;
     const argv: []const []const u8 = switch (@import("builtin").os.tag) {
         .windows => blk: {
-            // `start` eats a quoted first argument as the window title — the
-            // empty title arg keeps the url itself out of that slot.
+            // `start` eats a quoted first argument as the window title — the empty title arg keeps the url itself out of that slot.
             argv_buf[0] = "cmd";
             argv_buf[1] = "/c";
             argv_buf[2] = "start";
@@ -4656,9 +4633,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         } else if (std.mem.eql(u8, r.name, "zed")) {
             try detectZed(a, io, env, home, d);
         }
-        // detectors may set provider after model (e.g. a config file whose
-        // default_text_model line precedes its provider line), so compose the
-        // agent id once both dims are known rather than only inside applyModel.
+        // detectors may set provider after model (e.g. a config file whose default_text_model line precedes its provider line), so compose the agent id once both dims are known rather than only inside applyModel.
         try setAgentId(a, d);
         // the rule's static training postures fill each dim only when the per-harness instance read above didn't; the instance read wins because it was written first.
         applyHarnessTraining(d, r);

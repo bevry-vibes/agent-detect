@@ -1,8 +1,6 @@
 # Prompts — companion provenance for `.plans/1790657117071-scandal-doctrine-overhaul.md`
 
-Rule: every prompt that shapes a plan is recorded here — verbatim,
-untruncated, timestamped, in order. Agent model: GLM-5.3 Flash (reported
-by the harness).
+Rule: every prompt that shapes a plan is recorded here — verbatim, untruncated, timestamped, in order. Agent model: GLM-5.3 Flash (reported by the harness).
 
 ---
 

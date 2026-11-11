@@ -2,11 +2,7 @@ name: build
 
 on:
   push:
-    # Calver tags match `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`, `2026.8.6-2`).
-    # Pushing such a tag publishes a release whose body IS the annotated tag's
-    # message (marked `latest`) — a tag carrying no release notes fails the job.
-    # See commits.md "releases" for this project's runbook (calver election, the
-    # pre-tag binary check) and the skills' commits.md "releases" for the flow.
+    # Calver tags match `<year>.<month>.<day>-<revision>` (e.g. `2026.8.6-1`, `2026.8.6-2`). Pushing such a tag publishes a release whose body IS the annotated tag's message (marked `latest`) — a tag carrying no release notes fails the job. See commits.md "releases" for this project's runbook (calver election, the pre-tag binary check) and the skills' commits.md "releases" for the flow.
     tags: ['*.*.*-*']
   pull_request:
   workflow_dispatch:
@@ -107,14 +103,7 @@ jobs:
           test "$OUT" = "not reciprocal"
           test "$RC" -eq 10
 
-      # the annotated tag's message IS the release notes — a naked tag fails
-      # the job instead of publishing a bodyless release. actions/checkout
-      # peels the annotated tag to its target commit and records that as a
-      # lightweight `refs/tags/<name>`, so re-fetch the tag ref itself first
-      # (forced: it replaces checkout's peeled lightweight ref) — otherwise
-      # `git cat-file tag` reports "bad file". git cat-file then emits the raw
-      # tag object: header, then message, then the SSH/PGP signature armor —
-      # the first sed drops the header, the second the armor.
+      # the annotated tag's message IS the release notes — a naked tag fails the job instead of publishing a bodyless release. actions/checkout peels the annotated tag to its target commit and records that as a lightweight `refs/tags/<name>`, so re-fetch the tag ref itself first (forced: it replaces checkout's peeled lightweight ref) — otherwise `git cat-file tag` reports "bad file". git cat-file then emits the raw tag object: header, then message, then the SSH/PGP signature armor — the first sed drops the header, the second the armor.
       - name: the release notes come from the tag — a naked tag fails here
         run: |
           git fetch --force --depth=1 origin "+refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"

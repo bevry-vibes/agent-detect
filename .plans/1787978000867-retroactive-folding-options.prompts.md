@@ -1,15 +1,10 @@
 # prompts — 1787978000867-retroactive-folding-options
 
-Provenance companion for
-[1787978000867-retroactive-folding-options.md](./1787978000867-retroactive-folding-options.md),
-per [plans.md](../plans.md).
+Provenance companion for [1787978000867-retroactive-folding-options.md](./1787978000867-retroactive-folding-options.md), per [plans.md](../plans.md).
 
-Agent model: as reported by the harness at commit time —
-`Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>`
-(live `agent-detect trailer assisted-by`).
+Agent model: as reported by the harness at commit time — `Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>` (live `agent-detect trailer assisted-by`).
 
-Timestamps: this harness does not expose per-message timestamps to
-the agent; ordering below is authoritative, none were fabricated.
+Timestamps: this harness does not expose per-message timestamps to the agent; ordering below is authoritative, none were fabricated.
 
 This document is a decision proposal arising from the implementation
 plan

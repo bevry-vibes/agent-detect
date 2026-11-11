@@ -4,8 +4,7 @@
 // and You may not copy or use this file in either source code or executable
 // form, except in compliance with the terms and conditions of the RPL.
 //
-// All software distributed under the RPL is provided strictly on an "AS IS"
-// basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
+// All software distributed under the RPL is provided strictly on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
 // agent-detect — thin entry point + re-exports.
 // The released CLI surface (identify / trailer / check-reciprocal / help / version) dispatches into lib/core.zig; the dev binary additionally exposes dev/dev.zig's `fixtures` namespace when built with `-Ddev=true`.
@@ -164,9 +163,7 @@ else
 
 // ============================================================================ main entry
 
-/// is `word` one of the known top-level action words? (`registry` and `web`
-/// are not listed — the parser aliases them onto `index`, and as help topics
-/// they resolve to the index usage in the help-topic branch.)
+/// is `word` one of the known top-level action words? (`registry` and `web` are not listed — the parser aliases them onto `index`, and as help topics they resolve to the index usage in the help-topic branch.)
 fn isKnownAction(word: []const u8) bool {
     return std.mem.eql(u8, word, "identify") or
         std.mem.eql(u8, word, "found") or
@@ -332,11 +329,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         } else if (std.mem.eql(u8, arg, "version") or std.mem.eql(u8, arg, "--version") or std.mem.eql(u8, arg, "-V")) {
             version_wanted = true;
         } else if (std.mem.eql(u8, arg, "identify") or std.mem.eql(u8, arg, "found") or std.mem.eql(u8, arg, "explain") or std.mem.eql(u8, arg, "trailer") or std.mem.eql(u8, arg, "check-reciprocal") or std.mem.eql(u8, arg, "index") or std.mem.eql(u8, arg, "registry") or std.mem.eql(u8, arg, "web")) {
-            // an action word. `registry` — and its own retired spelling `web` —
-            // is an alias of `index`: one command, three spellings (born `web`,
-            // renamed `registry`, collapsed into `index`), every spelling
-            // dispatching to the one index implementation. After `help` the
-            // word is the topic (`help trailer`).
+            // an action word. `registry` — and its own retired spelling `web` — is an alias of `index`: one command, three spellings (born `web`, renamed `registry`, collapsed into `index`), every spelling dispatching to the one index implementation. After `help` the word is the topic (`help trailer`).
             if (action.len == 0) {
                 action = if (std.mem.eql(u8, arg, "registry") or std.mem.eql(u8, arg, "web")) "index" else arg;
             } else if (std.mem.eql(u8, action, "help") and help_topic == null) {
@@ -475,9 +468,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_CONFLICTING_ARG;
     }
 
-    // the index flags on any other action (or no action) → conflicting
-    // argument: the filters deep-link the site, the output flags shape the JSON —
-    // neither means anything to identify/trailer/check-reciprocal.
+    // the index flags on any other action (or no action) → conflicting argument: the filters deep-link the site, the output flags shape the JSON — neither means anything to identify/trailer/check-reciprocal.
     const index_action = std.mem.eql(u8, action, "index");
     if ((web_platform.len > 0 or agent_id.len > 0 or email.len > 0 or search_filter.len > 0 or free_filter != null or reciprocal_filter != null or want_web or no_web or want_json or no_json) and !index_action) {
         writeErr(io, MSG_CONFLICTING_ARG);
@@ -485,8 +476,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_CONFLICTING_ARG;
     }
 
-    // --no-open is gone — index opening is opt-in via --web (elsewhere it was
-    // already a conflict, caught above).
+    // --no-open is gone — index opening is opt-in via --web (elsewhere it was already a conflict, caught above).
     if (no_open_gone) {
         writeErr(io, MSG_UNRECOGNISED_ARG);
         writeErr(io, "--no-open' — it is gone: index opens the site only with --web\n");
@@ -494,8 +484,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
         return EXIT_UNRECOGNISED_ARG;
     }
 
-    // `index` — the search view and the entity views (`registry`/`web` dispatch
-    // here as aliases).
+    // `index` — the search view and the entity views (`registry`/`web` dispatch here as aliases).
     if (std.mem.eql(u8, action, "index")) {
         return runIndex(init, .{ .web = want_web, .no_web = no_web, .json = want_json, .no_json = no_json }, entity_kind, entity_id, combo_h, combo_p, combo_m, agent_id, email, search_filter, web_platform, free_filter, reciprocal_filter);
     }
@@ -534,8 +523,7 @@ fn mainInner(init: std.process.Init) anyerror!u8 {
 
 // ============================================================================ web
 
-/// the `--platform=` value → the fixture platform ids the site uses
-/// (darwin / linux / windows); the common shell names alias in.
+/// the `--platform=` value → the fixture platform ids the site uses (darwin / linux / windows); the common shell names alias in.
 fn canonicalWebPlatform(v: []const u8) ?[]const u8 {
     const rows = [_]struct { canon: []const u8, aliases: []const []const u8 }{
         .{ .canon = "darwin", .aliases = &.{ "macos", "mac" } },
@@ -551,8 +539,7 @@ fn canonicalWebPlatform(v: []const u8) ?[]const u8 {
     return null;
 }
 
-/// the shared `--web`/`--json` output options (both sites of the flag family are
-/// accepted so an explicit default reads the same as its absence).
+/// the shared `--web`/`--json` output options (both sites of the flag family are accepted so an explicit default reads the same as its absence).
 const OutputOpts = struct {
     web: bool = false,
     no_web: bool = false,
@@ -560,8 +547,7 @@ const OutputOpts = struct {
     no_json: bool = false,
 };
 
-/// open `url` unless suppressed — the shared --web path. The caller has already
-/// printed its JSON, so a failed opener is just the exit-6 note on stderr.
+/// open `url` unless suppressed — the shared --web path. The caller has already printed its JSON, so a failed opener is just the exit-6 note on stderr.
 fn openIfWanted(io: std.Io, a: std.mem.Allocator, url: []const u8, opts: OutputOpts) !u8 {
     if (!opts.web) return EXIT_OK;
     openURL(a, io, url) catch |err| switch (err) {
@@ -575,15 +561,7 @@ fn openIfWanted(io: std.Io, a: std.mem.Allocator, url: []const u8, opts: OutputO
     return EXIT_OK;
 }
 
-/// the `index` action — the search view and the entity views (D10's collapse):
-/// no entity → the filtered rule index (the embedded fixtures/index-data.json);
-/// `agent|harness|provider|model <id>` → that entity's view, mapping onto the
-/// site's routes. Dim flags address entities (one flag names that entity, all
-/// three name the agent, two conflict); on an entity view every filter is a
-/// PREDICATE, never a slice — the payload is unchanged, and a filter that
-/// excludes the entity fails with exit 14, the per-filter match states on
-/// stderr (the human report) and the structured match report on stdout (unless
-/// --no-json). Unknown agents/dims exit 7.
+/// the `index` action — the search view and the entity views (D10's collapse): no entity → the filtered rule index (the embedded fixtures/index-data.json); `agent|harness|provider|model <id>` → that entity's view, mapping onto the site's routes. Dim flags address entities (one flag names that entity, all three name the agent, two conflict); on an entity view every filter is a PREDICATE, never a slice — the payload is unchanged, and a filter that excludes the entity fails with exit 14, the per-filter match states on stderr (the human report) and the structured match report on stdout (unless --no-json). Unknown agents/dims exit 7.
 fn runIndex(
     init: std.process.Init,
     opts: OutputOpts,
@@ -645,8 +623,7 @@ fn runIndex(
             writeOut(io, indexUsage);
             return EXIT_MISSING_ARG;
         }
-        // double-naming: the positional kind and its own flag are a conflict
-        // (they may disagree); the OTHER dims are predicates on the view.
+        // double-naming: the positional kind and its own flag are a conflict (they may disagree); the OTHER dims are predicates on the view.
         const own_flag = switch (kind) {
             .agent => agent_flag.len > 0,
             .harness => h.len > 0,
@@ -718,9 +695,7 @@ fn runIndex(
         return openIfWanted(io, a, url, opts);
     }
 
-    // ------------------------- the entity views -------------------------
-    // resolve the canonical id — dims resolve like the recipe flags; the agent
-    // id matches exactly after trim + lowercase + the @local strip.
+    // ------------------------- the entity views ------------------------- resolve the canonical id — dims resolve like the recipe flags; the agent id matches exactly after trim + lowercase + the @local strip.
     const kind_name: []const u8 = switch (kind) {
         .agent => "agent",
         .harness => "harness",
@@ -732,8 +707,7 @@ fn runIndex(
     if (kind == .agent) {
         const lowered = try std.ascii.allocLowerString(a, std.mem.trim(u8, id_input, " \t"));
         const stripped = if (std.mem.endsWith(u8, lowered, "@local")) lowered[0 .. lowered.len - "@local".len] else lowered;
-        // shape: exactly 3 dash-separated alphanumeric segments (the 4-part
-        // fixture id is gone with the platform dim)
+        // shape: exactly 3 dash-separated alphanumeric segments (the 4-part fixture id is gone with the platform dim)
         var segs: usize = 0;
         var ok = stripped.len > 0;
         var sit = std.mem.splitScalar(u8, stripped, '-');
@@ -777,8 +751,7 @@ fn runIndex(
         };
     }
 
-    // the dim predicate values resolve up front (an unresolvable dim input is
-    // exit 7 — the registry convention, knowable before any evaluation)
+    // the dim predicate values resolve up front (an unresolvable dim input is exit 7 — the registry convention, knowable before any evaluation)
     const rh: ?[]const u8 = if (h.len > 0) rules.canonicalFilterDim(a, rules.HarnessRule, &rules.rulesForHarnesses, h) else null;
     const rp: ?[]const u8 = if (p.len > 0) rules.canonicalFilterDim(a, rules.ProviderRule, &rules.rulesForProviders, p) else null;
     const rm: ?[]const u8 = if (m.len > 0) rules.canonicalFilterDim(a, rules.ModelRule, &rules.rulesForModels, m) else null;
@@ -794,8 +767,7 @@ fn runIndex(
         matched: bool,
         /// the fact that decided it — printed on the stderr explanation
         fact: []const u8 = "",
-        /// the RESOLVED value the deep link carries (the canonical slug, the
-        /// true/false form) — the violating filters stay out of the link
+        /// the RESOLVED value the deep link carries (the canonical slug, the true/false form) — the violating filters stay out of the link
         qvalue: []const u8 = "",
         qname: []const u8 = "",
     };
@@ -853,8 +825,7 @@ fn runIndex(
             checks.append(a, .{ .flag = "--email", .value = trimmed_email, .matched = std.mem.eql(u8, trimmed_email, record), .fact = try std.fmt.allocPrint(a, "the email of record is {s}", .{record}), .qname = "email", .qvalue = record }) catch return error.OutOfMemory;
         }
     } else {
-        // dim entity views — participation: each filter is matched iff the
-        // entity participates in ≥1 combo (agent) satisfying it
+        // dim entity views — participation: each filter is matched iff the entity participates in ≥1 combo (agent) satisfying it
         if (free_filter) |want| {
             var found = false;
             var it = idx.agents.iterator();
@@ -927,8 +898,7 @@ fn runIndex(
             }
             checks.append(a, .{ .flag = "--model", .value = m, .matched = found, .fact = if (found) "a combo carries it" else "no combo carries it", .qname = "model", .qvalue = rm.? }) catch return error.OutOfMemory;
         }
-        // the view's own dim flag on a positional view is already a conflict —
-        // a matching dim flag here is the flag FORM of the same view, handled above
+        // the view's own dim flag on a positional view is already a conflict — a matching dim flag here is the flag FORM of the same view, handled above
     }
 
     for (checks.items) |c| {
@@ -987,8 +957,7 @@ fn runIndex(
         return EXIT_FOUND_FILTERED;
     }
 
-    // success — the payload: an agent view prints the agent's facts (the
-    // embedded index's projection); a dim view prints the entity's index entry.
+    // success — the payload: an agent view prints the agent's facts (the embedded index's projection); a dim view prints the entity's index entry.
     if (!opts.no_json) {
         switch (kind) {
             .agent => {
@@ -1038,9 +1007,7 @@ fn runIndex(
     return openIfWanted(io, a, q, opts);
 }
 
-/// the entity view's deep link — the site route `/{kind}/{id}` carrying the
-/// MATCHED filters' resolved values (the violating filters stay out: it is the
-/// view without them); on success every given filter matched, so all appear.
+/// the entity view's deep link — the site route `/{kind}/{id}` carrying the MATCHED filters' resolved values (the violating filters stay out: it is the view without them); on success every given filter matched, so all appear.
 fn entityQueryUrl(
     a: std.mem.Allocator,
     kind_name: []const u8,

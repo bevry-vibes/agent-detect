@@ -62,9 +62,7 @@ if ($Harness) { $Harness = @($Harness | ForEach-Object { $_ -split ',' } | ForEa
 $Platform = if ($IsMacOS) { 'Darwin' } elseif ($IsLinux) { 'Linux' } elseif ($IsWindows) { 'Windows' } else { $null }
 if (-not $Platform) { throw 'unsupported platform: install-harnesses.ps1 runs on macOS, Linux, and Windows' }
 
-# npm may sit behind the user's node-env wrapper (a dorothy command that exposes
-# a node.js environment): when plain npm is not on PATH, every npm invocation
-# runs as "node-env -- npm ...". The array form splats into the & call operator.
+# npm may sit behind the user's node-env wrapper (a dorothy command that exposes a node.js environment): when plain npm is not on PATH, every npm invocation runs as "node-env -- npm ...". The array form splats into the & call operator.
 $NpmCommand = if (Get-Command npm -ErrorAction Ignore) {
 	@('npm')
 } elseif (Get-Command node-env -ErrorAction Ignore) {
@@ -73,10 +71,7 @@ $NpmCommand = if (Get-Command npm -ErrorAction Ignore) {
 	$null
 }
 
-# Installers may place binaries in XDG_BIN_HOME (default ~/.local/bin) or the
-# npm global prefix bin (behind node-env when plain npm is off PATH), which is
-# fine — but those directories are not always on PATH in the current session, so
-# the probe resolves all three and reports where the binary is.
+# Installers may place binaries in XDG_BIN_HOME (default ~/.local/bin) or the npm global prefix bin (behind node-env when plain npm is off PATH), which is fine — but those directories are not always on PATH in the current session, so the probe resolves all three and reports where the binary is.
 $XdgBinHome = if ($env:XDG_BIN_HOME) { $env:XDG_BIN_HOME } else { Join-Path $HOME '.local/bin' }
 $NpmGlobalBin = $null
 if ($NpmCommand) {
@@ -90,9 +85,7 @@ if ($NpmCommand) {
 	} catch { $NpmGlobalBin = $null }
 }
 
-# --- registry ----------------------------------------------------------------
-# Probe: the binary agent-detect's invocations table probes with --version.
-# Methods: the ordered install methods per platform (the policy above sets the order).
+# --- registry ---------------------------------------------------------------- Probe: the binary agent-detect's invocations table probes with --version. Methods: the ordered install methods per platform (the policy above sets the order).
 
 $Registry = @(
 	[pscustomobject]@{ Id = 'cline'; Label = 'Cline CLI'; Probe = 'cline'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
@@ -102,12 +95,10 @@ $Registry = @(
 	[pscustomobject]@{ Id = 'qwen'; Label = 'Qwen Code'; Probe = 'qwen'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'kilo'; Label = 'Kilo Code'; Probe = 'kilo'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'omp'; Label = 'oh-my-pi (omp)'; Probe = 'omp'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
-	# reasonix 2.x: the Homebrew cask is unreadable on Homebrew 7.0.11-148
-	# (undefined local variable staged_path), so npm is the only scripted method
+	# reasonix 2.x: the Homebrew cask is unreadable on Homebrew 7.0.11-148 (undefined local variable staged_path), so npm is the only scripted method
 	[pscustomobject]@{ Id = 'reasonix'; Label = 'Reasonix'; Probe = 'reasonix'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('scoop', 'npm') } }
 	[pscustomobject]@{ Id = 'crush'; Label = 'Crush'; Probe = 'crush'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('winget', 'npm') } }
-	# OpenCode is v2-only. The Scoop manifest still ships v1 (1.19.5), so
-	# Windows uses the v2 npm package (@opencode/cli) rather than scoop.
+	# OpenCode is v2-only. The Scoop manifest still ships v1 (1.19.5), so Windows uses the v2 npm package (@opencode/cli) rather than scoop.
 	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'dsh'; Label = 'DeepSeek Harness — dsh (developer preview)'; Probe = 'dsh'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'codewhale'; Label = 'CodeWhale'; Probe = 'codewhale'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('brew', 'npm'); Windows = @('npm') } }
@@ -149,8 +140,7 @@ $BrewCask = @{
 	cursor = $true
 	copilot = $true
 }
-# extra npm args per package: only the native-SQLite harness needs lifecycle
-# scripts, and they stay an explicit two-package allow-list
+# extra npm args per package: only the native-SQLite harness needs lifecycle scripts, and they stay an explicit two-package allow-list
 $NpmExtraArgs = @{
 	'minimax-code' = @('--include=optional', '--ignore-scripts=false', '--allow-scripts=@minimax-ai/code,better-sqlite3')
 }
@@ -163,8 +153,7 @@ $ScoopPackage = @{
 }
 $WingetPackage = @{ crush = 'charmbracelet.crush' }
 $UvPackage = @{ vibe = 'mistral-vibe' }
-# soar and flatpak ids stay empty until verified against the package indexes;
-# the methods are wired so a verified id only needs one entry here.
+# soar and flatpak ids stay empty until verified against the package indexes; the methods are wired so a verified id only needs one entry here.
 $SoarPackage = @{}
 $FlatpakPackage = @{}
 
@@ -181,8 +170,7 @@ function Write-Info { param([string]$Message) Write-Host "$($PSStyle.Foreground.
 function Write-Fail { param([string]$Message) Write-Host "$($PSStyle.Foreground.Red)fail $Message$($PSStyle.Reset)" }
 
 function Resolve-HarnessBinary {
-	# PATH first, then XDG_BIN_HOME, then the npm global prefix bin.
-	# Returns the binary's path (the command name when on PATH), or $null.
+	# PATH first, then XDG_BIN_HOME, then the npm global prefix bin. Returns the binary's path (the command name when on PATH), or $null.
 	param([Parameter(Mandatory)] [string]$Probe)
 	$onPath = Get-Command $Probe -ErrorAction Ignore
 	if ($onPath) { return $onPath.Source }
@@ -331,9 +319,7 @@ function Invoke-Method {
 				'Darwin/cursor' { & bash -c 'curl -fsSL https://cursor.com/install | bash'; return ($LASTEXITCODE -eq 0) }
 				'Linux/cursor' { & bash -c 'curl -fsSL https://cursor.com/install | bash'; return ($LASTEXITCODE -eq 0) }
 				'Windows/cursor' {
-					# The scriptblock form runs the harness's documented "irm | iex"
-					# installer (shown to the user by Get-MethodCommand) without the
-					# Invoke-Expression linter finding.
+					# The scriptblock form runs the harness's documented "irm | iex" installer (shown to the user by Get-MethodCommand) without the Invoke-Expression linter finding.
 					& ([scriptblock]::Create([string](Invoke-RestMethod 'https://cursor.com/install?win32=true')))
 					return ($LASTEXITCODE -eq 0)
 				}
@@ -359,8 +345,7 @@ function Invoke-Entry {
 	)
 	Write-Host ('[{0}]   {1} via {2}: {3}' -f $Action, $Entry.Id, $Method, (Get-MethodCommand -Id $Entry.Id -Method $Method -Action $Action))
 	$result = Invoke-Method -Id $Entry.Id -Method $Method -Action $Action
-	# "$result" forces string comparison: a $true result -eq 'manual' would coerce
-	# the string to bool and mislabel every successful run as a manual step
+	# "$result" forces string comparison: a $true result -eq 'manual' would coerce the string to bool and mislabel every successful run as a manual step
 	if ("$result" -eq 'manual') {
 		Write-Info "[manual]    $($Entry.Id) — needs a manual step (printed above); not counted as a failure"
 	} elseif (-not $result) {
@@ -378,8 +363,7 @@ function Invoke-Entry {
 
 function Get-AvailableMethod {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
-	# the comma stops PowerShell unrolling a single-element array into a scalar -
-	# every caller reads .Count under StrictMode, where a scalar has no Count
+	# the comma stops PowerShell unrolling a single-element array into a scalar - every caller reads .Count under StrictMode, where a scalar has no Count
 	return , @($Entry.Methods[$Platform] | Where-Object { Test-MethodAvailable $Entry.Id $_ })
 }
 
@@ -425,9 +409,7 @@ if ($Check) {
 	exit 0
 }
 
-# --- the shared menu, with a plain-prompt fallback --------------------------------
-# The installer must also run where the shared menu cannot be resolved, so the
-# fallback keeps a numbered Read-Host flow alive.
+# --- the shared menu, with a plain-prompt fallback -------------------------------- The installer must also run where the shared menu cannot be resolved, so the fallback keeps a numbered Read-Host flow alive.
 
 $menuLoaded = $false
 if (-not $Yes) {
@@ -518,8 +500,7 @@ if ($Yes) {
 		}
 	}
 	$installSummary = {
-		# Runs inside the shared menu (dynamic scoping): read only fields the
-		# selection items carry.
+		# Runs inside the shared menu (dynamic scoping): read only fields the selection items carry.
 		param($Chosen)
 		$parts = @($Chosen | Where-Object { $_.PSObject.Properties['Action'] } | ForEach-Object { $_.Action })
 		"$($Chosen.Count) selected$(if ($parts.Count -gt 0) { ': ' + ($parts -join ', ') } else { '' })"
@@ -541,8 +522,7 @@ if ($Yes) {
 		}
 	}
 } else {
-	# numbered-prompt fallback (the shared menu did not resolve; install only —
-	# the menu flow adds upgrade and uninstall)
+	# numbered-prompt fallback (the shared menu did not resolve; install only — the menu flow adds upgrade and uninstall)
 	foreach ($entry in $Selected) {
 		if (Test-HarnessInstalled $entry) {
 			Write-Host ('[installed] {0} — {1} (the menu flow offers upgrade and uninstall)' -f $entry.Id, (Get-HarnessVersion $entry.Probe))

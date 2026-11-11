@@ -210,9 +210,7 @@ The released CLI opens it — one command, `agent-detect index`, mapping onto th
 
 ## scope
 
-- **Multi-harness, multi-OS, multi-arch.**
-  Per-platform native binaries via `zig build dist`.
-  Universal/fat formats rejected — see [README.md](./README.md) for the per-platform binary table.
+- **Multi-harness, multi-OS, multi-arch.** Per-platform native binaries via `zig build dist`. Universal/fat formats rejected — see [README.md](./README.md) for the per-platform binary table.
 - **Zero required runtime dependencies.**
   The *released* binary is one file, no shared libraries, no runtime.
   The two OPTIONAL dependencies are the `sqlite3` CLI, spawned read-only for live session-store reads (kilo/opencode/copilot/crush/hermes inside a real session) — when it is absent, those detections exit 6 (see the exit status registry); and `index`'s platform url opener (`xdg-open`/`open`/`cmd start`), spawned only by `--web`, absent or failed there → exit 6 too. Everything else never spawns either.

@@ -1,14 +1,8 @@
 # Prompts — companion provenance for `.kilo/plans/1786614488977-dedup-sweep-binary-names-dev-split.md`
 
-Rule: every prompt that shapes a plan is recorded here — verbatim,
-untruncated, timestamped, in order. The plan file itself only links to this
-file and never inlines prompts. Agent model: deepseek-v4-pro (reported by
-the harness).
+Rule: every prompt that shapes a plan is recorded here — verbatim, untruncated, timestamped, in order. The plan file itself only links to this file and never inlines prompts. Agent model: deepseek-v4-pro (reported by the harness).
 
-Timestamp note: this file is retroactive for the current session. Per-message
-wall-clock times were not captured in-session except where stated; entries
-carry the session date (2026-08-13, UTC+08:00). From the next plan onward,
-each entry carries its exact capture timestamp.
+Timestamp note: this file is retroactive for the current session. Per-message wall-clock times were not captured in-session except where stated; entries carry the session date (2026-08-13, UTC+08:00). From the next plan onward, each entry carries its exact capture timestamp.
 
 ---
 

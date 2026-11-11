@@ -89,9 +89,7 @@ if (-not $TargetOs) {
 if (-not (Get-Command rsync -ErrorAction Ignore)) { throw 'rsync not found on PATH (the source host needs it)' }
 if (-not (Get-Command ssh -ErrorAction Ignore)) { throw 'ssh not found on PATH' }
 
-# --- what ships: the config-location table, one directory per harness ---------------
-# HOME-relative on linux and macos; the windows overrides follow the harnesses'
-# own platform split (crush lives in LOCALAPPDATA, goose in APPDATA).
+# --- what ships: the config-location table, one directory per harness --------------- HOME-relative on linux and macos; the windows overrides follow the harnesses' own platform split (crush lives in LOCALAPPDATA, goose in APPDATA).
 
 $HarnessPaths = @{
 	cline       = @('.cline/')
@@ -129,8 +127,7 @@ if ($LASTEXITCODE -ne 0) {
 	throw "ssh to $Remote needs a login (BatchMode failed) — authenticate, then re-run"
 }
 
-# windows targets: probe the profile home and the appdata roots, and expand the
-# $LOCALAPPDATA / $APPDATA overrides in the path table with them
+# windows targets: probe the profile home and the appdata roots, and expand the $LOCALAPPDATA / $APPDATA overrides in the path table with them
 $remoteHome = $null
 $remoteLocalAppData = $null
 $remoteAppData = $null
@@ -146,9 +143,7 @@ if ($TargetOs -eq 'windows') {
 }
 
 function Get-SourcePath {
-	# the local directory to ship for one table entry: $LOCALAPPDATA / $APPDATA
-	# entries map from this host's own appdata (a windows source), the rest sit
-	# under HOME on every platform
+	# the local directory to ship for one table entry: $LOCALAPPDATA / $APPDATA entries map from this host's own appdata (a windows source), the rest sit under HOME on every platform
 	param([Parameter(Mandatory)] [string]$Path)
 	if ($Path -like '$LOCALAPPDATA*') {
 		if (-not $env:LOCALAPPDATA) { return $null }
@@ -164,9 +159,7 @@ function Get-SourcePath {
 }
 
 function Get-DestPath {
-	# the destination path on the target: HOME-relative as-is for linux/macos
-	# (rsync resolves it against the remote home), absolute with forward slashes
-	# for windows (the overrides expand, the rest land under the probed home)
+	# the destination path on the target: HOME-relative as-is for linux/macos (rsync resolves it against the remote home), absolute with forward slashes for windows (the overrides expand, the rest land under the probed home)
 	param([Parameter(Mandatory)] [string]$Path)
 	if ($TargetOs -ne 'windows') { return $Path }
 	$expanded = $Path.Replace('$LOCALAPPDATA', $remoteLocalAppData).Replace('$APPDATA', $remoteAppData)
@@ -196,8 +189,7 @@ $excludes = @('.DS_Store', '*.log', 'node_modules/', 'cache/', 'Cache/', 'Cache_
 
 Write-Host "$label — $(hostname) -> $Remote (target $TargetOs)`n"
 foreach ($id in $Selected) {
-	# one table entry per platform: the plain path for linux/macos, the matching
-	# override for windows
+	# one table entry per platform: the plain path for linux/macos, the matching override for windows
 	$path = if ($TargetOs -eq 'windows' -and $HarnessPaths[$id].Count -gt 1) { $HarnessPaths[$id][1] } else { $HarnessPaths[$id][0] }
 	$src = Get-SourcePath $path
 	if (-not $src -or -not (Test-Path $src)) {
@@ -206,9 +198,7 @@ foreach ($id in $Selected) {
 	}
 	Write-Host ('[sync]   {0,-10} {1}' -f $id, $path)
 	$dest = Get-DestPath $path
-	# the destination parent must exist; rsync -a with a trailing slash copies
-	# contents into the destination directory, and never deletes. the mkdir is
-	# a write, so it runs only under -Apply.
+	# the destination parent must exist; rsync -a with a trailing slash copies contents into the destination directory, and never deletes. the mkdir is a write, so it runs only under -Apply.
 	if ($Apply) { Invoke-RemoteMkdir $dest }
 	& rsync @flags @excludes --info=stats1 -e ssh ($src.Replace('\', '/').TrimEnd('/') + '/') ($Remote + ':' + $dest)
 }

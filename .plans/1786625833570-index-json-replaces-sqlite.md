@@ -2,71 +2,35 @@
 
 Assisted-by: Kilo Code · DeepSeek V4 Pro <kilo-opencodego-deepseekv4pro@local>
 
-Plan file: `1786625833570-index-json-replaces-sqlite.md`. Companion prompt log
-(per kilo.md provenance rule): `1786625833570-index-json-replaces-sqlite.prompts.md`
-(written during planning; both files are committed before each `plan_exit` per
-the traceability rule in §2).
+Plan file: `1786625833570-index-json-replaces-sqlite.md`. Companion prompt log (per kilo.md provenance rule): `1786625833570-index-json-replaces-sqlite.prompts.md` (written during planning; both files are committed before each `plan_exit` per the traceability rule in §2).
 
 ## Status
 
 Implementation-ready — all design forks are resolved.
 
 **Resolved decisions:**
-1. Launch/version data live in fixture rows (`prompt_launch` / `version_launch`,
-   concrete per-platform argv); the `recipes` table and the top-level
-   `versions` table are gone.
+1. Launch/version data live in fixture rows (`prompt_launch` / `version_launch`, concrete per-platform argv); the `recipes` table and the top-level `versions` table are gone.
 2. Free table = `free_provider_to_model` (provider id → [canonical model ids]).
-3. Pre-seeding: seed all 177 combos × darwin/linux/windows = 531 rows at
-   conversion time.
+3. Pre-seeding: seed all 177 combos × darwin/linux/windows = 531 rows at conversion time.
 4. Key separator: dash-joined key == filename stem.
-5. Migration: one-off throwaway conversion by the implementing agent; no
-   shipped migrate code; sqlite purge is complete.
-6. Timestamps: the ledger set only — `identity.declared_at`,
-   `capture.captured_at`, `errors.<key>.failed_at`, `queue[].started_at`
-   (§7).
-7. `invalid` is renamed **`errors`** — the failure ledger, purge-on-success.
-   Value = `{ "reason", "failed_at" }`; a successful capture/declaration
-   deletes the entry. The row-level `available`/`successful` markers die.
-8. Queue = array of filter entries — dims, mode, **flat marker fields**,
-   `known`/`valid`/`successful`/`free` nullable affirmatives, `started_at`
-   on the entry — **no `pending`, no `scope` parent object, no
-   `finished_at`**. Fully-satisfied entries are **purged** (deleted on
-   completion — the sweep history is the fixtures/errors ledger, not the
-   queue). The queue never expands; only the daemon expands (§4b, §4e).
-9. CLI: `--known`/`--unknown` → `known: true|false`; `--valid`/`--invalid`
-   → `valid: true|false`; `--successful`/`--unsuccessful` → `successful:
-   true|false`; `--free`/`--paid` → `free: true|false`. Defaults:
-   known=true, valid=true, successful=unset, free=unset.
-   `--recipes`/`--all`/`--available`/`--unavailable` flags die.
+5. Migration: one-off throwaway conversion by the implementing agent; no shipped migrate code; sqlite purge is complete.
+6. Timestamps: the ledger set only — `identity.declared_at`, `capture.captured_at`, `errors.<key>.failed_at`, `queue[].started_at` (§7).
+7. `invalid` is renamed **`errors`** — the failure ledger, purge-on-success. Value = `{ "reason", "failed_at" }`; a successful capture/declaration deletes the entry. The row-level `available`/`successful` markers die.
+8. Queue = array of filter entries — dims, mode, **flat marker fields**, `known`/`valid`/`successful`/`free` nullable affirmatives, `started_at` on the entry — **no `pending`, no `scope` parent object, no `finished_at`**. Fully-satisfied entries are **purged** (deleted on completion — the sweep history is the fixtures/errors ledger, not the queue). The queue never expands; only the daemon expands (§4b, §4e).
+9. CLI: `--known`/`--unknown` → `known: true|false`; `--valid`/`--invalid` → `valid: true|false`; `--successful`/`--unsuccessful` → `successful: true|false`; `--free`/`--paid` → `free: true|false`. Defaults: known=true, valid=true, successful=unset, free=unset. `--recipes`/`--all`/`--available`/`--unavailable` flags die.
 10. Exit code 12 repurposed to "index store error".
-11. Locking = `std.Io.File.lock` on `fixtures/index.json.lock` + temp/rename
-    atomic writes.
+11. Locking = `std.Io.File.lock` on `fixtures/index.json.lock` + temp/rename atomic writes.
 
 ## 1. Goal + hard constraints
 
-Replace the dev-only SQLite store (`fixtures/index.sqlite3`, four tables,
-reached by shelling out to the system `sqlite3` CLI) with a single
-**`fixtures/index.json`** using Zig-native file locks, so that:
+Replace the dev-only SQLite store (`fixtures/index.sqlite3`, four tables, reached by shelling out to the system `sqlite3` CLI) with a single **`fixtures/index.json`** using Zig-native file locks, so that:
 
 1. the store plays well with git (JSON diffs, hand-editable),
-2. curated data moves out of Zig into index.json — the per-combo launch argv
-   (`prompt_launch`), the per-platform version argv (`version_launch`), the
-   free provider+model table — letting dev.zig shed its two biggest
-   data/code blocks (the 177-recipe table, the sqlite layer),
-3. data is self-contained per row: a maintainer (human or dev agent) reviews
-   one fixture row and sees everything about it — what launched it, what
-   version probe it uses, what was captured — without consulting Zig code,
-4. zig code gets dumber, not smarter: launch/version are read verbatim from
-   the row; no argv[0] name cycling, no per-harness version-flag logic.
+2. curated data moves out of Zig into index.json — the per-combo launch argv (`prompt_launch`), the per-platform version argv (`version_launch`), the free provider+model table — letting dev.zig shed its two biggest data/code blocks (the 177-recipe table, the sqlite layer),
+3. data is self-contained per row: a maintainer (human or dev agent) reviews one fixture row and sees everything about it — what launched it, what version probe it uses, what was captured — without consulting Zig code,
+4. zig code gets dumber, not smarter: launch/version are read verbatim from the row; no argv[0] name cycling, no per-harness version-flag logic.
 
-**Hard constraint (user-stated, must never regress):** the released
-`agent-detect` binary must never depend on index.json. The store lives
-entirely inside the comptime-gated `pub const dev = if (build_options.dev) …
-else struct {}` block in `src/dev/dev.zig` — the released binary never links
-it. Validation adds a grep test: `index.json` / the store module must never be
-referenced outside `src/dev/dev.zig`. The released binary's read-only
-kilo/opencode **session** sqlite reads (`core.zig` `kiloSqliteJson`, used by
-live detection) are unrelated and stay.
+**Hard constraint (user-stated, must never regress):** the released `agent-detect` binary must never depend on index.json. The store lives entirely inside the comptime-gated `pub const dev = if (build_options.dev) … else struct {}` block in `src/dev/dev.zig` — the released binary never links it. Validation adds a grep test: `index.json` / the store module must never be referenced outside `src/dev/dev.zig`. The released binary's read-only kilo/opencode **session** sqlite reads (`core.zig` `kiloSqliteJson`, used by live detection) are unrelated and stay.
 
 ## 2. kilo.md rules (user directives — apply with implementation)
 
@@ -89,27 +53,15 @@ Add to the repo-root `kilo.md` three project tweaks:
 
 ## 3. Verified current state
 
-- `src/dev/dev.zig` (3,346 lines): sqlite layer
-  (`ensureSchema`/`sqliteRun`/`sqliteQuery`/`sqlQuote`/`sqlOptStr`/`sqlOptInt`
+- `src/dev/dev.zig` (3,346 lines): sqlite layer (`ensureSchema`/`sqliteRun`/`sqliteQuery`/`sqlQuote`/`sqlOptStr`/`sqlOptInt`
   + ~20 row-accessor functions), the 177-recipe `recipesForFixtures` table +
-  `capture_prompt`, probe helpers (`spawnVersion`/`findBinary`/
-  `harnessVersion`/`scanVersionToken`), queue/dequeue/daemon/capture runners,
-  post-checks, staleness conjunction, guard, timeout worker.
-- Committed `fixtures/index.sqlite3`: 177 `fixtures`, 692 `queue`,
-  0 `pending`, 16 `invalid` rows. 180 committed `fixtures/*.json` files.
-- Seed mechanics today: bare partial dims → seed queue row (null dims);
-  the daemon expands at pop over `recipesForFixtures` (host platform,
-  `INSERT OR IGNORE` pending, no-launch from-capture → invalid).
-  `--recipes`/`--all` materialize concrete rows per candidate at queue time.
-  `popQueueRow`: `platform IS NULL OR = host`, mode-rank then age order.
-- `markCaptureOutcome` stamps the row's `generated_at` + `available`/
-  `successful` on attempt outcomes — this becomes the errors-ledger writer.
-- `harness_version` is not in identify today (raw block only); index.json
-  keeps it nested under `capture`.
+  `capture_prompt`, probe helpers (`spawnVersion`/`findBinary`/ `harnessVersion`/`scanVersionToken`), queue/dequeue/daemon/capture runners, post-checks, staleness conjunction, guard, timeout worker.
+- Committed `fixtures/index.sqlite3`: 177 `fixtures`, 692 `queue`, 0 `pending`, 16 `invalid` rows. 180 committed `fixtures/*.json` files.
+- Seed mechanics today: bare partial dims → seed queue row (null dims); the daemon expands at pop over `recipesForFixtures` (host platform, `INSERT OR IGNORE` pending, no-launch from-capture → invalid). `--recipes`/`--all` materialize concrete rows per candidate at queue time. `popQueueRow`: `platform IS NULL OR = host`, mode-rank then age order.
+- `markCaptureOutcome` stamps the row's `generated_at` + `available`/ `successful` on attempt outcomes — this becomes the errors-ledger writer.
+- `harness_version` is not in identify today (raw block only); index.json keeps it nested under `capture`.
 - Zig 0.16 has `std.Io.File.lock(file, io, .exclusive/.shared)` + `tryLock`.
-- Committed `adb220e`: arena free-list use-after-free fix landed — the store
-  rewrite inherits: **never free an arena slice that a returned value
-  aliases** (zig.md gotcha).
+- Committed `adb220e`: arena free-list use-after-free fix landed — the store rewrite inherits: **never free an arena slice that a returned value aliases** (zig.md gotcha).
 
 ## 4. Target schema
 
@@ -151,16 +103,9 @@ Add to the repo-root `kilo.md` three project tweaks:
 }
 ```
 
-The fixture **files** keep today's envelope contract (unchanged by this
-plan — fixture-file I/O is kept): top-level channels `from-identity` /
-`from-capture` / `from-capture-raw`. The index.json hashes derive from
-them: `fixture_hash` = BLAKE3 of the whole file,
-`identity.channel_hash` = BLAKE3 of the **whole** `from-identity` channel
-object (identify + trailers), `capture.channel_hash` = BLAKE3 of the
-**whole** `from-capture` channel object.
+The fixture **files** keep today's envelope contract (unchanged by this plan — fixture-file I/O is kept): top-level channels `from-identity` / `from-capture` / `from-capture-raw`. The index.json hashes derive from them: `fixture_hash` = BLAKE3 of the whole file, `identity.channel_hash` = BLAKE3 of the **whole** `from-identity` channel object (identify + trailers), `capture.channel_hash` = BLAKE3 of the **whole** `from-capture` channel object.
 
-Proposed/result fixture file, `fixtures/cline-clinepass-kimik3-darwin.json`
-(corresponding to the fixtures-table row above):
+Proposed/result fixture file, `fixtures/cline-clinepass-kimik3-darwin.json` (corresponding to the fixtures-table row above):
 
 ```json
 {
@@ -222,196 +167,76 @@ Proposed/result fixture file, `fixtures/cline-clinepass-kimik3-darwin.json`
 }
 ```
 
-The `from-identity` and `from-capture` `identify` objects are the
-declared and captured identify outputs; `from-capture-raw` is shapeless
-source evidence but carries `harness_version` immediately after
-`platform_id` — the live version snapshot, **null when the agent's
-version is not yet knowable** (the `channel_hash` fields above cover the
-**whole** `from-identity`/`from-capture` channel objects — identify +
-trailers).
+The `from-identity` and `from-capture` `identify` objects are the declared and captured identify outputs; `from-capture-raw` is shapeless source evidence but carries `harness_version` immediately after `platform_id` — the live version snapshot, **null when the agent's version is not yet knowable** (the `channel_hash` fields above cover the **whole** `from-identity`/`from-capture` channel objects — identify + trailers).
 
 ### 4a. fixtures table — the known universe + the state
 
-- Key = the dash-joined 4-part fixture id == the filename stem; dims NOT
-  repeated inside the row (recoverable via `splitFixtureId`). Queue rows keep
-  explicit dims; error entries carry their dims in the key (§4c).
+- Key = the dash-joined 4-part fixture id == the filename stem; dims NOT repeated inside the row (recoverable via `splitFixtureId`). Queue rows keep explicit dims; error entries carry their dims in the key (§4c).
 - Row payload, self-contained by design:
-  - `runner`, `agent_detect_version` — unchanged semantics. **No
-    `available`/`successful` markers** — failures live in `errors` (§4c).
-  - `identity` = `{ declared_at, channel_hash }`; `capture` =
-    `{ captured_at, harness_version, channel_hash }` — harness_version
-    nests under capture because only capture stamps it;
-    `--stale-by-harness-version`
-    reads it there. Absent objects/channels = not yet written.
-  - `channel_hash` (per channel) — the BLAKE3 of that channel's
-    **whole channel object** (identify + trailers, as written into the
-    fixture file), stamped by the channel's writer.
-  - `fixture_hash` — the BLAKE3 of the **whole fixture file**, stamped by
-    every file writer. `--stale-by-fixture-hash` re-hashes the committed
-    file and compares — missing/mismatch → stale (detects any unrecorded
-    file change; hand edits and git merges included).
-  - `--stale-by-channel-hash` (new marker, §4b) — stale iff
-    `identity.channel_hash` and `capture.channel_hash` are **not both
-    present and equal**: divergence (the capture channel no longer
-    matches the declared one) or nulls (channels not yet written) both
-    count stale. The check is cross-channel; the entry's mode picks the
-    work (identity entry re-declares, capture entry re-captures).
-  - `prompt_launch`: the launch argv that (re)captures this fixture —
-    argv[0] = the concrete binary for this platform (`.cmd`/`.ps1` shims
-    written explicitly on Windows rows), args per harness (implied combos
-    like `kimi -p <prompt>` carry no provider/model flags), last element =
-    the capture prompt (inline per row). **Never a placeholder.** Absent ⇒
-    from-identity-only row.
-  - `version_launch`: the version-probe argv. Availability probe = spawn
-    `version_launch`, exit 0 ⇒ installed; `harnessVersion` = spawn +
-    `scanVersionToken`. Absent ⇒ version/availability probes fail closed.
-- **No row-level timestamp.** The age check for `--stale-by-minutes` is
-  **mode-scoped**: a `from-identity` entry is age-stale iff
-  `identity.declared_at` is missing or older than the threshold; a
-  `from-capture` entry iff `capture.captured_at` is missing or older.
-  Both mode flags together still exit 3; omitting them queues both modes'
-  entries (the OR behavior).
-- **Seeding a new rule (harness/provider/model):** add the rule tables
-  entries, then run `fixtures queue --unknown --from-identity` (optionally
-  narrowed by dims) — the daemon generates the new combos from the rules
-  minus fixtures+errors and declares them into `fixtures/`. The maintainer
-  then curates `prompt_launch`/`version_launch` on the rows that should
-  capture (see §4e). CONTRIBUTING.md's "adding a rule" guidance gains this
-  workflow; a schema test enforces every harness rule has ≥1 row per
-  platform and every provider/model rule appears in ≥1 row.
+  - `runner`, `agent_detect_version` — unchanged semantics. **No `available`/`successful` markers** — failures live in `errors` (§4c).
+  - `identity` = `{ declared_at, channel_hash }`; `capture` = `{ captured_at, harness_version, channel_hash }` — harness_version nests under capture because only capture stamps it; `--stale-by-harness-version` reads it there. Absent objects/channels = not yet written.
+  - `channel_hash` (per channel) — the BLAKE3 of that channel's **whole channel object** (identify + trailers, as written into the fixture file), stamped by the channel's writer.
+  - `fixture_hash` — the BLAKE3 of the **whole fixture file**, stamped by every file writer. `--stale-by-fixture-hash` re-hashes the committed file and compares — missing/mismatch → stale (detects any unrecorded file change; hand edits and git merges included).
+  - `--stale-by-channel-hash` (new marker, §4b) — stale iff `identity.channel_hash` and `capture.channel_hash` are **not both present and equal**: divergence (the capture channel no longer matches the declared one) or nulls (channels not yet written) both count stale. The check is cross-channel; the entry's mode picks the work (identity entry re-declares, capture entry re-captures).
+  - `prompt_launch`: the launch argv that (re)captures this fixture — argv[0] = the concrete binary for this platform (`.cmd`/`.ps1` shims written explicitly on Windows rows), args per harness (implied combos like `kimi -p <prompt>` carry no provider/model flags), last element = the capture prompt (inline per row). **Never a placeholder.** Absent ⇒ from-identity-only row.
+  - `version_launch`: the version-probe argv. Availability probe = spawn `version_launch`, exit 0 ⇒ installed; `harnessVersion` = spawn + `scanVersionToken`. Absent ⇒ version/availability probes fail closed.
+- **No row-level timestamp.** The age check for `--stale-by-minutes` is **mode-scoped**: a `from-identity` entry is age-stale iff `identity.declared_at` is missing or older than the threshold; a `from-capture` entry iff `capture.captured_at` is missing or older. Both mode flags together still exit 3; omitting them queues both modes' entries (the OR behavior).
+- **Seeding a new rule (harness/provider/model):** add the rule tables entries, then run `fixtures queue --unknown --from-identity` (optionally narrowed by dims) — the daemon generates the new combos from the rules minus fixtures+errors and declares them into `fixtures/`. The maintainer then curates `prompt_launch`/`version_launch` on the rows that should capture (see §4e). CONTRIBUTING.md's "adding a rule" guidance gains this workflow; a schema test enforces every harness rule has ≥1 row per platform and every provider/model rule appears in ≥1 row.
 
 ### 4b. queue — array of filter entries; only the daemon expands
 
-- Array, one entry per (dims, mode, markers, known, valid, successful,
-  free) tuple. A **queue-command** re-assert of an existing tuple replaces
-  the entry in place and resets `started_at` to null (a fresh sweep); the
-  daemon's own writes preserve it.
+- Array, one entry per (dims, mode, markers, known, valid, successful, free) tuple. A **queue-command** re-assert of an existing tuple replaces the entry in place and resets `started_at` to null (a fresh sweep); the daemon's own writes preserve it.
 - Entry fields:
-  - `harness`/`provider`/`model`/`platform` — optional dim filters (null =
-    any; an all-null entry is a full sweep).
-  - `mode` — `from-identity` | `from-capture` (one entry per mode;
-    omitting both mode flags queues two entries).
-  - **flat marker fields** (at most one set — enforced by the existing
-    `validateQueueRow`, no parent object): `stale_by_missing_entry`
-    (true|null — fixture files with no store entry: the daemon's expansion
-    for it is the registration pass, idempotent, purged when no
-    unregistered files remain), `stale_by_missing_fixture` (true|null —
-    store entries whose fixture file is absent, re-queued for
-    re-capture), `stale_by_minutes` (minutes int|null),
-    `stale_by_harness_version` / `stale_by_detect_version` /
-    `stale_by_fixture_hash` / `stale_by_channel_hash` (true|null) — the
-    channel-hash marker's divergence check is §4a. Marker sweeps
-    require `known: true` (§4e).
-  - `known`/`valid`/`successful`/`free` — nullable affirmative booleans
-    (§4e).
+  - `harness`/`provider`/`model`/`platform` — optional dim filters (null = any; an all-null entry is a full sweep).
+  - `mode` — `from-identity` | `from-capture` (one entry per mode; omitting both mode flags queues two entries).
+  - **flat marker fields** (at most one set — enforced by the existing `validateQueueRow`, no parent object): `stale_by_missing_entry` (true|null — fixture files with no store entry: the daemon's expansion for it is the registration pass, idempotent, purged when no unregistered files remain), `stale_by_missing_fixture` (true|null — store entries whose fixture file is absent, re-queued for re-capture), `stale_by_minutes` (minutes int|null), `stale_by_harness_version` / `stale_by_detect_version` / `stale_by_fixture_hash` / `stale_by_channel_hash` (true|null) — the channel-hash marker's divergence check is §4a. Marker sweeps require `known: true` (§4e).
+  - `known`/`valid`/`successful`/`free` — nullable affirmative booleans (§4e).
   - `runner` — the queueing process pid.
-  - `started_at` — null until the daemon first works the entry; the pop
-    protocol's comparison anchor.
-- **No `pending`.** In-flight per-item bookkeeping is gone — crash-resume
-  derives from the completion ledger: a candidate without a completion
-  timestamp ≥ `started_at` is simply re-attempted (a capture that died with
-  the daemon left no channel write, so it re-runs).
-- **Pop protocol** (replaces `materializeSeedPending`/`popQueueRow`/pending
-  drain):
-  1. Scan entries in mode-rank order (from-identity first), then array
-     order; skip entries whose expansion has no remaining task for THIS
-     host.
-  2. Expand the universe per §4e, filtered by dims, platform (= entry's or
-     host when null), marker evaluations, and the filter axes.
-  3. A candidate's completion timestamp is: from-identity →
-     `identity.declared_at`, from-capture → `capture.captured_at`, either →
-     `errors.<key>.failed_at`. A candidate is done when its timestamp is
-     present AND ≥ the entry's `started_at`; stamp `started_at` on first
-     work of the entry.
-  4. Work ONE remaining host-platform candidate per poll (adaptive pacing
-     unchanged).
-  5. No candidates remaining anywhere (all platforms): **delete the
-     entry** and move on (the fixtures/errors ledger is the sweep record;
-     no `finished_at`). Candidates remain but none for this host: keep the
-     entry, move on (another host's portion).
-- Cross-host: the completion ledger rides git, so an entry finishes on
-  whichever host pops it after the last result lands — one entry, shared
-  ledger, no per-platform splitting.
+  - `started_at` — null until the daemon first works the entry; the pop protocol's comparison anchor.
+- **No `pending`.** In-flight per-item bookkeeping is gone — crash-resume derives from the completion ledger: a candidate without a completion timestamp ≥ `started_at` is simply re-attempted (a capture that died with the daemon left no channel write, so it re-runs).
+- **Pop protocol** (replaces `materializeSeedPending`/`popQueueRow`/pending drain):
+  1. Scan entries in mode-rank order (from-identity first), then array order; skip entries whose expansion has no remaining task for THIS host.
+  2. Expand the universe per §4e, filtered by dims, platform (= entry's or host when null), marker evaluations, and the filter axes.
+  3. A candidate's completion timestamp is: from-identity → `identity.declared_at`, from-capture → `capture.captured_at`, either → `errors.<key>.failed_at`. A candidate is done when its timestamp is present AND ≥ the entry's `started_at`; stamp `started_at` on first work of the entry.
+  4. Work ONE remaining host-platform candidate per poll (adaptive pacing unchanged).
+  5. No candidates remaining anywhere (all platforms): **delete the entry** and move on (the fixtures/errors ledger is the sweep record; no `finished_at`). Candidates remain but none for this host: keep the entry, move on (another host's portion).
+- Cross-host: the completion ledger rides git, so an entry finishes on whichever host pops it after the last result lands — one entry, shared ledger, no per-platform splitting.
 
 ### 4c. errors — the failure ledger (renamed from `invalid`)
 
-- Hash map keyed by the dash-joined dims tuple with `null` for each unknown
-  dim (`"cline-clinepass-kimik3-darwin"`, `"null-null-null-null"`). Entries
-  with no dims share the single `"null-null-null-null"` key (last write
-  wins); a tuple with unknown-but-present dims keys by those slugs and
-  cannot collide with a real combo.
-- Value = `{ "reason": "<closed set>", "failed_at": <unix seconds> }`.
-  **An entry exists only while the combo is failed/broken — a successful
-  capture/declaration purges the entry** (entry presence is the outcome
-  signal; no `outcome` field).
-- The reason set is closed and **partitioned by class** (what the filter
-  axes classify on — "based on the error"):
-  - `unsuccessful` class (combo has a fixture row, last evaluation failed):
-    `"capture failed"`, `"unavailable"`, `"post-check mismatch"` — replaces
-    `markCaptureOutcome`'s `available`/`successful` markers, which die, and
-    the `--available`/`--unavailable` flags die with them.
-  - `invalid` class (structural breakage, error-only):
-    `"no launch spec"`, `"unknown fixture file"`, `"malformed fixture id"`,
-    `"malformed queue row"`.
-- Re-inserts overwrite (map put) with a fresh `failed_at`; success deletes
-  the key. `failed_at` is the completion timestamp the pop protocol (§4b)
-  and the filter axes (§4e) compare against.
+- Hash map keyed by the dash-joined dims tuple with `null` for each unknown dim (`"cline-clinepass-kimik3-darwin"`, `"null-null-null-null"`). Entries with no dims share the single `"null-null-null-null"` key (last write wins); a tuple with unknown-but-present dims keys by those slugs and cannot collide with a real combo.
+- Value = `{ "reason": "<closed set>", "failed_at": <unix seconds> }`. **An entry exists only while the combo is failed/broken — a successful capture/declaration purges the entry** (entry presence is the outcome signal; no `outcome` field).
+- The reason set is closed and **partitioned by class** (what the filter axes classify on — "based on the error"):
+  - `unsuccessful` class (combo has a fixture row, last evaluation failed): `"capture failed"`, `"unavailable"`, `"post-check mismatch"` — replaces `markCaptureOutcome`'s `available`/`successful` markers, which die, and the `--available`/`--unavailable` flags die with them.
+  - `invalid` class (structural breakage, error-only): `"no launch spec"`, `"unknown fixture file"`, `"malformed fixture id"`, `"malformed queue row"`.
+- Re-inserts overwrite (map put) with a fresh `failed_at`; success deletes the key. `failed_at` is the completion timestamp the pop protocol (§4b) and the filter axes (§4e) compare against.
 
 ### 4d. `free_provider_to_model`
 
-- Provider id → [canonical model ids] — the data behind the `free` filter
-  axis (§4e). Landed as data + tests:
+- Provider id → [canonical model ids] — the data behind the `free` filter axis (§4e). Landed as data + tests:
   - every entry resolves to known provider+model rules;
-  - every row whose (provider, model) is listed must carry a free-signal in
-    its `prompt_launch` model spec (`:free`, `-free`, `free/`, `-free`
-    service ids).
+  - every row whose (provider, model) is listed must carry a free-signal in its `prompt_launch` model spec (`:free`, `-free`, `free/`, `-free` service ids).
 
 ### 4e. The four filter axes — `known`, `valid`, `successful`, `free`
 
-Stored on queue entries as nullable affirmative booleans (null = unset);
-the daemon applies defaults at expansion: **known=true, valid=true,
-successful=unset (no filter), free=unset (no filter)**.
+Stored on queue entries as nullable affirmative booleans (null = unset); the daemon applies defaults at expansion: **known=true, valid=true, successful=unset (no filter), free=unset (no filter)**.
 
 - **`known`** selects the expansion universe:
-  - true (default): the `fixtures` map (rows matching dims, platform =
-    entry's or host) — `--known` replaces `--all`/`--recipes`.
-  - false: **rule cross-product minus the known maps** — every
-    harness-rule × provider-rule × model-rule × platform combination with
-    no `fixtures` key and (when `valid` is default/true) no `errors` key.
-    This is the discovery sweep: `--unknown --from-identity` declares
-    generated combos into `fixtures/` (the new-rule seeding workflow);
-    `--unknown --from-capture` routes everything to errors ("no launch
-    spec") — allowed, near-useless, documented.
+  - true (default): the `fixtures` map (rows matching dims, platform = entry's or host) — `--known` replaces `--all`/`--recipes`.
+  - false: **rule cross-product minus the known maps** — every harness-rule × provider-rule × model-rule × platform combination with no `fixtures` key and (when `valid` is default/true) no `errors` key. This is the discovery sweep: `--unknown --from-identity` declares generated combos into `fixtures/` (the new-rule seeding workflow); `--unknown --from-capture` routes everything to errors ("no launch spec") — allowed, near-useless, documented.
 - **`valid`** selects error-entry participation by class:
   - true (default): `invalid`-class entries are excluded from the universe.
-  - false: `invalid`-class error entries become candidates again
-    (re-evaluated): for known they join the fixtures rows; for unknown
-    they stop being subtracted from the generated set. A successful
-    re-attempt deletes the entry (purge-on-success).
+  - false: `invalid`-class error entries become candidates again (re-evaluated): for known they join the fixtures rows; for unknown they stop being subtracted from the generated set. A successful re-attempt deletes the entry (purge-on-success).
 - **`successful`** filters the known universe by entry presence:
-  - null (default): no filter (the bare sweep re-evaluates everything
-    known, mirroring `--all`).
-  - true: only candidates with no error entry (purge-on-success makes
-    "no entry" the successful signal).
-  - false: only candidates with an `unsuccessful`-class error entry
-    (replaces `--unsuccessful`/`--unavailable` sweeps).
+  - null (default): no filter (the bare sweep re-evaluates everything known, mirroring `--all`).
+  - true: only candidates with no error entry (purge-on-success makes "no entry" the successful signal).
+  - false: only candidates with an `unsuccessful`-class error entry (replaces `--unsuccessful`/`--unavailable` sweeps).
 - **`free`** filters candidates by the free table:
   - null (default): no filter.
-  - true (`--free`): only candidates whose (provider, model) is listed in
-    `free_provider_to_model`.
-  - false (`--paid`): only candidates whose (provider, model) is NOT
-    listed. Unlike the marker fields, free-ness is derivable for generated
-    combos too (dims are known from the cross-product), so
-    `--unknown --free` is allowed.
-- XOR/conflicts (exit 3): `--known`+`--unknown`, `--valid`+`--invalid`,
-  `--successful`+`--unsuccessful`, `--free`+`--paid`, `--unknown` + any
-  marker (`--stale-by-*` — incl. `--stale-by-missing-entry` and
-  `--stale-by-missing-fixture`) or a non-default
-  `successful` axis (generated combos have no markers/outcomes to filter
-  on).
-- CLI surface: `--known`/`--unknown`, `--valid`/`--invalid`,
-  `--successful`/`--unsuccessful`, `--free`/`--paid`; `dequeue` accepts
-  the same axes.
+  - true (`--free`): only candidates whose (provider, model) is listed in `free_provider_to_model`.
+  - false (`--paid`): only candidates whose (provider, model) is NOT listed. Unlike the marker fields, free-ness is derivable for generated combos too (dims are known from the cross-product), so `--unknown --free` is allowed.
+- XOR/conflicts (exit 3): `--known`+`--unknown`, `--valid`+`--invalid`, `--successful`+`--unsuccessful`, `--free`+`--paid`, `--unknown` + any marker (`--stale-by-*` — incl. `--stale-by-missing-entry` and `--stale-by-missing-fixture`) or a non-default `successful` axis (generated combos have no markers/outcomes to filter on).
+- CLI surface: `--known`/`--unknown`, `--valid`/`--invalid`, `--successful`/`--unsuccessful`, `--free`/`--paid`; `dequeue` accepts the same axes.
 
 ## 5. Resolved forks (answers recorded in the .prompts.md)
 
@@ -420,173 +245,64 @@ successful=unset (no filter), free=unset (no filter)**.
 - Migration: one-off conversion, no shipped code.
 - Timestamps: the ledger set only (§7).
 - `invalid` → `errors` ledger with purge-on-success; row markers die.
-- Queue shape: flat filter entries with entry-level `started_at`; no
-  `pending`, no `scope` parent object; fully-satisfied entries are purged
-  (deleted — the ledger is the history); expansion daemon-only.
+- Queue shape: flat filter entries with entry-level `started_at`; no `pending`, no `scope` parent object; fully-satisfied entries are purged (deleted — the ledger is the history); expansion daemon-only.
 
 ## 6. One-off conversion (migration decision B)
 
-The implementing agent converts once with a throwaway script (system
-`sqlite3 -json` CLI, pattern already in core's `kiloSqliteJson`):
+The implementing agent converts once with a throwaway script (system `sqlite3 -json` CLI, pattern already in core's `kiloSqliteJson`):
 
-- `fixtures` rows (177) → map entries keyed by their dash-joined fixture_id:
-  channel objects from the four generation columns (`identity.declared_at`,
-  `capture.captured_at`/`harness_version`), `identity.channel_hash`/
-  `capture.channel_hash` computed from the committed fixture file's whole
-  channel objects, and `fixture_hash` = the BLAKE3 of the whole
-  committed fixture file (all three computed at conversion time — the
-  files are committed),
-  `agent_detect_version`/`runner` verbatim. Markers and `generated_at` are
-  not carried; instead an `errors` entry is derived **only for failed
-  rows**: `available=0`/`successful=0` → `{ reason: "unavailable" |
-  "unsuccessful", failed_at: generated_at }`; fully-successful rows carry
-  no error entry (purge-on-success).
-- `queue` rows (692) → entries in rowid order: dims/mode from the columns,
-  the one set marker column → its flat field, `known`/`valid`/`successful`/
-  `free` = null, `started_at` = null. `created_at` is not carried (array
-  order replaces it).
-- `invalid` rows (16) → `errors` entries keyed by the dims tuple;
-  `reason` from the column; `failed_at` from `created_at`.
-- **531 seeded rows** from `recipesForFixtures` (177 combos × 3 platforms):
-  `prompt_launch` from the recipe's `launch` (argv[0] = bare stem on
-  darwin/linux; windows argv[0] per the CONTRIBUTING install table —
-  `.cmd`/`.ps1` for the npm-shimmed harnesses `cline`, `mmx`, `qwen`,
-  `kilo`, `cursor`, `.exe` otherwise); `version_launch` = `[<same binary>,
-  "--version"]`; `free_provider_to_model` curated from the recipe comments'
-  free-tier notes (unverified combos omitted — flagged in the commit body).
-  Seeded rows carry only the launch/version fields (no error entries yet).
+- `fixtures` rows (177) → map entries keyed by their dash-joined fixture_id: channel objects from the four generation columns (`identity.declared_at`, `capture.captured_at`/`harness_version`), `identity.channel_hash`/ `capture.channel_hash` computed from the committed fixture file's whole channel objects, and `fixture_hash` = the BLAKE3 of the whole committed fixture file (all three computed at conversion time — the files are committed), `agent_detect_version`/`runner` verbatim. Markers and `generated_at` are not carried; instead an `errors` entry is derived **only for failed rows**: `available=0`/`successful=0` → `{ reason: "unavailable" | "unsuccessful", failed_at: generated_at }`; fully-successful rows carry no error entry (purge-on-success).
+- `queue` rows (692) → entries in rowid order: dims/mode from the columns, the one set marker column → its flat field, `known`/`valid`/`successful`/ `free` = null, `started_at` = null. `created_at` is not carried (array order replaces it).
+- `invalid` rows (16) → `errors` entries keyed by the dims tuple; `reason` from the column; `failed_at` from `created_at`.
+- **531 seeded rows** from `recipesForFixtures` (177 combos × 3 platforms): `prompt_launch` from the recipe's `launch` (argv[0] = bare stem on darwin/linux; windows argv[0] per the CONTRIBUTING install table — `.cmd`/`.ps1` for the npm-shimmed harnesses `cline`, `mmx`, `qwen`, `kilo`, `cursor`, `.exe` otherwise); `version_launch` = `[<same binary>, "--version"]`; `free_provider_to_model` curated from the recipe comments' free-tier notes (unverified combos omitted — flagged in the commit body). Seeded rows carry only the launch/version fields (no error entries yet).
 - Commit `fixtures/index.json` + `git rm fixtures/index.sqlite3` together.
-- Accepted trade-off: other hosts lose queue rows queued since their last
-  sync.
+- Accepted trade-off: other hosts lose queue rows queued since their last sync.
 
 ## 7. Timestamps — the ledger set
 
 - `identity.declared_at` — the identity channel write.
 - `capture.captured_at` — the capture channel write.
-- `errors.<key>.failed_at` — when the combo last failed (purged on
-  success).
-- `queue[].started_at` — stamped by the daemon on first work of the entry;
-  the pop protocol's comparison anchor. No `finished_at`: fully-satisfied
-  entries are deleted (the ledger is the history).
-- The `--stale-by-minutes` check is mode-scoped (§4a). Everything else is
-  dropped: fixtures row-level `updated_at` (ex-`generated_at`), queue
-  `created_at` (array order), pending item timestamps (pending is gone).
+- `errors.<key>.failed_at` — when the combo last failed (purged on success).
+- `queue[].started_at` — stamped by the daemon on first work of the entry; the pop protocol's comparison anchor. No `finished_at`: fully-satisfied entries are deleted (the ledger is the history).
+- The `--stale-by-minutes` check is mode-scoped (§4a). Everything else is dropped: fixtures row-level `updated_at` (ex-`generated_at`), queue `created_at` (array order), pending item timestamps (pending is gone).
 
 ## 8. Locking + write protocol
 
-- Lock file `fixtures/index.json.lock` (gitignored); lock the lock file, not
-  the data file.
-- Write cycle (every mutation): `.exclusive` via `std.Io.File.lock` (or
-  `tryLock` retry loop, ~5s budget mirroring today's `busy_timeout=5000`,
-  sleep 50ms), read index.json (missing/corrupt → empty state + error),
-  mutate the in-memory object, serialize `whitespace = .indent_2`, write
-  `fixtures/index.json.tmp`, rename over index.json, unlock.
-- Readers take no lock (temp+rename atomic visibility; the daemon re-reads
-  per poll). Kernel-managed locks release on exit/crash — no stale-lock
-  heuristics.
-- Failure modes: lock timeout → exit 13; unparseable index.json → exit 12
-  (repurposed); write/rename failure → exit 13.
+- Lock file `fixtures/index.json.lock` (gitignored); lock the lock file, not the data file.
+- Write cycle (every mutation): `.exclusive` via `std.Io.File.lock` (or `tryLock` retry loop, ~5s budget mirroring today's `busy_timeout=5000`, sleep 50ms), read index.json (missing/corrupt → empty state + error), mutate the in-memory object, serialize `whitespace = .indent_2`, write `fixtures/index.json.tmp`, rename over index.json, unlock.
+- Readers take no lock (temp+rename atomic visibility; the daemon re-reads per poll). Kernel-managed locks release on exit/crash — no stale-lock heuristics.
+- Failure modes: lock timeout → exit 13; unparseable index.json → exit 12 (repurposed); write/rename failure → exit 13.
 
 ## 9. Exit code 12 repurposing
 
-`EXIT_SQLITE_QUERY` (12) → `EXIT_INDEX_STORE` — "index store error"
-(index.json corrupt/unparseable/unknown `store_version`). Same number, new
-meaning; usage text + DESIGN registry row + MSG_ constant updated.
+`EXIT_SQLITE_QUERY` (12) → `EXIT_INDEX_STORE` — "index store error" (index.json corrupt/unparseable/unknown `store_version`). Same number, new meaning; usage text + DESIGN registry row + MSG_ constant updated.
 
 ## 10. Code impact
 
-**Deleted (~1,300 lines):** the sqlite layer (`ensureSchema`, `sqliteRun`,
-`sqliteQuery`, `sqlQuote`, `sqlOptStr`, `sqlOptInt`, all ~20 row accessors,
-`parseJsonCount`, `appendCond`, dev `sj*` accessors — no sqlite remains in
-dev.zig); `recipesForFixtures` + `recipeForAgent` + `capture_prompt`;
-`spawnVersion`'s hardcoded `--version` + `findBinary`; argv[0] cycling in
-`runOneComboCapture` and `harnessVersion`; `derivedAgentId`/
-`derivedFixtureId`; `validateQueueRow`'s scope-count half stays (flat
-markers, "at most one"); `scopeCandidates` recipe/all/available/successful
-enumeration (moves into the daemon expansion + the filter axes);
-`markCaptureOutcome` (replaced by the errors-ledger writer); the entire
-pending protocol (`insertPendingRow`, `nextUnfinishedPending`,
-`markPendingStarted/Finished`, `pendingDrained`, `clearPendingAndQueueRow`,
-`queueRowById`, `deleteQueueRowById`).
+**Deleted (~1,300 lines):** the sqlite layer (`ensureSchema`, `sqliteRun`, `sqliteQuery`, `sqlQuote`, `sqlOptStr`, `sqlOptInt`, all ~20 row accessors, `parseJsonCount`, `appendCond`, dev `sj*` accessors — no sqlite remains in dev.zig); `recipesForFixtures` + `recipeForAgent` + `capture_prompt`; `spawnVersion`'s hardcoded `--version` + `findBinary`; argv[0] cycling in `runOneComboCapture` and `harnessVersion`; `derivedAgentId`/ `derivedFixtureId`; `validateQueueRow`'s scope-count half stays (flat markers, "at most one"); `scopeCandidates` recipe/all/available/successful enumeration (moves into the daemon expansion + the filter axes); `markCaptureOutcome` (replaced by the errors-ledger writer); the entire pending protocol (`insertPendingRow`, `nextUnfinishedPending`, `markPendingStarted/Finished`, `pendingDrained`, `clearPendingAndQueueRow`, `queueRowById`, `deleteQueueRowById`).
 
-**Added (~400 lines):** `IndexStore` (load/save under lock), key builders,
-map/array accessors, the flat-marker + `known`/`valid`/`successful`/`free`
-parse/
-serialize helpers, lock-retry helper, the **rule cross-product generator**
-(`known: false`), the **errors-ledger writer** (purge-on-success upserts
-from the capture/identity/outcome paths), and the **pop protocol** (§4b)
-replacing `materializeSeedPending`/`popQueueRow`.
+**Added (~400 lines):** `IndexStore` (load/save under lock), key builders, map/array accessors, the flat-marker + `known`/`valid`/`successful`/`free` parse/ serialize helpers, lock-retry helper, the **rule cross-product generator** (`known: false`), the **errors-ledger writer** (purge-on-success upserts from the capture/identity/outcome paths), and the **pop protocol** (§4b) replacing `materializeSeedPending`/`popQueueRow`.
 
-**Kept:** daemon loop + phases, `runOneComboCapture`/`runOneComboIdentity`
-(minus cycling), post-checks, staleness conjunction (mode-scoped channel
-dates), `parseFilters`, fixture-file I/O (`mergeWriteFixture`/`channelJson`/
-`generationHash` → the `fixture_hash` + per-channel `channel_hash`
-stamps), `assertNotInAgent`,
-timeout worker, usage texts (updated:
-the three axes, index.json, exit 12).
+**Kept:** daemon loop + phases, `runOneComboCapture`/`runOneComboIdentity` (minus cycling), post-checks, staleness conjunction (mode-scoped channel dates), `parseFilters`, fixture-file I/O (`mergeWriteFixture`/`channelJson`/ `generationHash` → the `fixture_hash` + per-channel `channel_hash` stamps), `assertNotInAgent`, timeout worker, usage texts (updated: the three axes, index.json, exit 12).
 
-**Note:** `binary_names` stays for ancestry detection + the daemon guard
-only.
+**Note:** `binary_names` stays for ancestry detection + the daemon guard only.
 
 ## 11. Tests + docs
 
-- `known_fixtures.test.zig` reads `fixtures/index.json`: fixture keys split
-  4-way and equal their filename stems; every row's dims resolve to rule
-  tables; every harness rule has ≥1 row per platform and every
-  provider/model rule appears in ≥1 row (the seeding guard);
-  `prompt_launch[0]`/`version_launch[0]` ∈ `binary_names` (host platform);
-  `fixture_hash` = the BLAKE3 of the whole fixture file, and each
-  channel's `channel_hash` = the BLAKE3 of its whole channel object in the
-  file; free table entries resolve + free-signal consistency;
-  queue entries
-  match their fields' invariants (mode, at most one flat marker,
-  known/valid/successful/free ∈ null|false|true); error keys are dims tuples or
-  `null-null-null-null` with `{ reason ∈ closed set, failed_at }` values.
-- Unit-shape tests for the pop protocol: expansion (known rows vs unknown
-  cross-product-minus-maps), remaining-task computation against
-  `started_at`/`declared_at`/`captured_at`/`failed_at`, skip/delete/keep
-  decisions, the conflict matrix (§4e), purge-on-success, and the
-  channel-hash divergence check (both null / one null / unequal → stale;
-  equal → fresh).
-- Released-binary isolation grep/compile check (index.json never
-  referenced outside `src/dev/dev.zig`).
-- DESIGN.md — rewrite "SQLite state store" → "index.json state store" (new
-  schema, locking, guarantees, the pop protocol, the timestamp ledger, the
-  errors table, the filter axes), rewrite decision #3, scope section
-  (sqlite3 CLI requirement disappears; `--recipes`/`--all`/
-  `--available`/`--unavailable` die; `--missing-fixture-entry` →
-  `--stale-by-missing-entry` and `--missing-fixture-file` →
-  `--stale-by-missing-fixture`), exit-12 row. CONTRIBUTING.md — store
-  sections, per-platform `prompt_launch`/`version_launch` curation, the
-  new-rule `--unknown` seeding workflow, the one-off conversion note.
-  `.gitignore` — drop sqlite journal lines; ignore
-  `fixtures/index.json.lock`, `fixtures/index.json.tmp`,
-  `fixtures/index.sqlite3*`; index.json is committed. powershell.md/zig.md
-  — index.json editing + lock/atomic-write + arena free-list gotcha.
-  AGENTS.md zig bullet — file list unchanged. kilo.md — the three §2 rules.
+- `known_fixtures.test.zig` reads `fixtures/index.json`: fixture keys split 4-way and equal their filename stems; every row's dims resolve to rule tables; every harness rule has ≥1 row per platform and every provider/model rule appears in ≥1 row (the seeding guard); `prompt_launch[0]`/`version_launch[0]` ∈ `binary_names` (host platform); `fixture_hash` = the BLAKE3 of the whole fixture file, and each channel's `channel_hash` = the BLAKE3 of its whole channel object in the file; free table entries resolve + free-signal consistency; queue entries match their fields' invariants (mode, at most one flat marker, known/valid/successful/free ∈ null|false|true); error keys are dims tuples or `null-null-null-null` with `{ reason ∈ closed set, failed_at }` values.
+- Unit-shape tests for the pop protocol: expansion (known rows vs unknown cross-product-minus-maps), remaining-task computation against `started_at`/`declared_at`/`captured_at`/`failed_at`, skip/delete/keep decisions, the conflict matrix (§4e), purge-on-success, and the channel-hash divergence check (both null / one null / unequal → stale; equal → fresh).
+- Released-binary isolation grep/compile check (index.json never referenced outside `src/dev/dev.zig`).
+- DESIGN.md — rewrite "SQLite state store" → "index.json state store" (new schema, locking, guarantees, the pop protocol, the timestamp ledger, the errors table, the filter axes), rewrite decision #3, scope section (sqlite3 CLI requirement disappears; `--recipes`/`--all`/ `--available`/`--unavailable` die; `--missing-fixture-entry` → `--stale-by-missing-entry` and `--missing-fixture-file` → `--stale-by-missing-fixture`), exit-12 row. CONTRIBUTING.md — store sections, per-platform `prompt_launch`/`version_launch` curation, the new-rule `--unknown` seeding workflow, the one-off conversion note. `.gitignore` — drop sqlite journal lines; ignore `fixtures/index.json.lock`, `fixtures/index.json.tmp`, `fixtures/index.sqlite3*`; index.json is committed. powershell.md/zig.md — index.json editing + lock/atomic-write + arena free-list gotcha. AGENTS.md zig bullet — file list unchanged. kilo.md — the three §2 rules.
 
 ## 12. Ordered task list
 
 1. kilo.md rule additions (§2).
 2. `IndexStore` + lock/atomic-write layer in dev.zig.
-3. Rewire fixtures/queue/errors accessors onto the store; delete the sqlite
-   layer + the pending protocol.
-4. Implement the queue filter axes (`known`/`valid`/`successful`/`free`,
-   flat
-   markers, `started_at`/`finished_at`) + the pop protocol (§4b) + the rule
-   cross-product generator + the errors-ledger writer (purge-on-success);
-   delete `recipesForFixtures`/`recipeForAgent`/`capture_prompt`; rewire
-   launch/version resolution onto rows; retire `markCaptureOutcome`.
-5. CLI: `--known`/`--unknown`/`--valid`/`--invalid`/`--successful`/
-   `--unsuccessful`/`--free`/`--paid` (+ dequeue parity), the conflict
-   matrix, removal of `--recipes`/`--all`/`--available`/`--unavailable`,
-   renames `--missing-fixture-entry` → `--stale-by-missing-entry` and
-   `--missing-fixture-file` → `--stale-by-missing-fixture` (the
-   registration pass moves into the daemon's expansion of the entry
-   marker).
+3. Rewire fixtures/queue/errors accessors onto the store; delete the sqlite layer + the pending protocol.
+4. Implement the queue filter axes (`known`/`valid`/`successful`/`free`, flat markers, `started_at`/`finished_at`) + the pop protocol (§4b) + the rule cross-product generator + the errors-ledger writer (purge-on-success); delete `recipesForFixtures`/`recipeForAgent`/`capture_prompt`; rewire launch/version resolution onto rows; retire `markCaptureOutcome`.
+5. CLI: `--known`/`--unknown`/`--valid`/`--invalid`/`--successful`/ `--unsuccessful`/`--free`/`--paid` (+ dequeue parity), the conflict matrix, removal of `--recipes`/`--all`/`--available`/`--unavailable`, renames `--missing-fixture-entry` → `--stale-by-missing-entry` and `--missing-fixture-file` → `--stale-by-missing-fixture` (the registration pass moves into the daemon's expansion of the entry marker).
 6. Exit-12 repurpose + usage text updates.
-7. One-off conversion + 531 seeded rows → commit `fixtures/index.json`,
-   `git rm fixtures/index.sqlite3`.
+7. One-off conversion + 531 seeded rows → commit `fixtures/index.json`, `git rm fixtures/index.sqlite3`.
 8. Tests (§11) + docs (§11).
 9. Validate (§13).
 
@@ -596,34 +312,13 @@ Suggested commit grouping: (a) code = tasks 2–6; (b) store conversion = 7;
 
 ## 13. Validation
 
-- `zig build`, `zig build dev`, `zig build test` green (the pre-existing
-  `pi-groq-llama318b-darwin` legacy-shape failure is unrelated committed
-  state); `zig build dist` released binary unchanged in size/surface, still
-  rejects `fixtures`; grep: no index.json reference outside
-  `src/dev/dev.zig`; no sqlite references outside core session reads.
-- Converted index.json: 531 fixture rows + 692 queue entries + ~16 error
-  entries; `fixtures queue --stale-by-missing-entry` and dims-filtered
-  sweeps behave identically; the pop protocol covered by unit-shape tests.
-  **Daemon/fixtures execution is user-confirmed only — the implementing
-  agent must not run the daemon or real captures.**
-- Concurrent-write test via shape/unit coverage (lock retry + temp+rename),
-  not a live daemon.
-- `git diff fixtures/index.json` after a command run shows clean,
-  reviewable JSON changes.
+- `zig build`, `zig build dev`, `zig build test` green (the pre-existing `pi-groq-llama318b-darwin` legacy-shape failure is unrelated committed state); `zig build dist` released binary unchanged in size/surface, still rejects `fixtures`; grep: no index.json reference outside `src/dev/dev.zig`; no sqlite references outside core session reads.
+- Converted index.json: 531 fixture rows + 692 queue entries + ~16 error entries; `fixtures queue --stale-by-missing-entry` and dims-filtered sweeps behave identically; the pop protocol covered by unit-shape tests. **Daemon/fixtures execution is user-confirmed only — the implementing agent must not run the daemon or real captures.**
+- Concurrent-write test via shape/unit coverage (lock retry + temp+rename), not a live daemon.
+- `git diff fixtures/index.json` after a command run shows clean, reviewable JSON changes.
 
 ## amendments (post-implementation)
 
-1. **Prompt placeholder in the store.** `fixtures` rows store the
-   literal `"<prompt>"` as the last `prompt_launch` element (not the
-   verbatim capture instruction). At launch the daemon interpolates it
-   with the actual prompt (`capture_prompt` in `src/dev/dev.zig`).
-2. **Dot-prefixed store + daemon files.** `fixtures/index.json` →
-   `fixtures/.index.json` (and `.index.json.lock` / `.index.json.tmp`);
-   the evergreen list and the daemon files also move to dot-names:
-   `.evergreen-models.txt`, `.daemon.log`, `.daemon.ctl`.
-3. **Evergreen list restructured.** Renamed
-   `evergreen-top100-models.txt` → `.evergreen-models.txt`, now three
-   deduplicated sections — top 25 open-weight models, top 25 closed
-   models, then the top 50 overall (deduplicated against the first two,
-   so the total varies): the contract changes from "top 100" to "top 25
-   open / top 25 closed / top 50 overall (deduplicated)".
+1. **Prompt placeholder in the store.** `fixtures` rows store the literal `"<prompt>"` as the last `prompt_launch` element (not the verbatim capture instruction). At launch the daemon interpolates it with the actual prompt (`capture_prompt` in `src/dev/dev.zig`).
+2. **Dot-prefixed store + daemon files.** `fixtures/index.json` → `fixtures/.index.json` (and `.index.json.lock` / `.index.json.tmp`); the evergreen list and the daemon files also move to dot-names: `.evergreen-models.txt`, `.daemon.log`, `.daemon.ctl`.
+3. **Evergreen list restructured.** Renamed `evergreen-top100-models.txt` → `.evergreen-models.txt`, now three deduplicated sections — top 25 open-weight models, top 25 closed models, then the top 50 overall (deduplicated against the first two, so the total varies): the contract changes from "top 100" to "top 25 open / top 25 closed / top 50 overall (deduplicated)".

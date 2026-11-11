@@ -1,10 +1,4 @@
-// Tests for the index (`fixtures/index-data.json`, embedded at build): the
-// cross-array filter rule from the plan (`index --harness=cline` narrows all
-// three arrays to what is available for that harness while association lists
-// stay full), the free/platform/reciprocal scoping, association closures,
-// name-sorting, and the freshness pin — the committed file must equal a
-// regeneration from the rule tables + the from-identity channel (`fixtures
-// index --check`'s exact comparison), so a stale file fails `zig build test`.
+// Tests for the index (`fixtures/index-data.json`, embedded at build): the cross-array filter rule from the plan (`index --harness=cline` narrows all three arrays to what is available for that harness while association lists stay full), the free/platform/reciprocal scoping, association closures, name-sorting, and the freshness pin — the committed file must equal a regeneration from the rule tables + the from-identity channel (`fixtures index --check`'s exact comparison), so a stale file fails `zig build test`.
 
 const std = @import("std");
 const testing = std.testing;
@@ -98,9 +92,7 @@ test "index: the cross-array rule — --harness=cline narrows all three arrays, 
     // every provider and model in the result is available for cline
     for (providers) |p| try testing.expect(hasString(p, "harnesses", "cline"));
     for (models) |m| try testing.expect(hasString(m, "harnesses", "cline"));
-    // association lists stay computed from the FULL data — the filter never
-    // narrows them (a provider exclusive to cline may list just the one, but
-    // the arrays themselves are the file's full facts)
+    // association lists stay computed from the FULL data — the filter never narrows them (a provider exclusive to cline may list just the one, but the arrays themselves are the file's full facts)
     for (providers) |p| try testing.expect(stringsOf(p, "harnesses").len >= 1);
     // cline's own association arrays are its full direct facts
     const cline = filtered.object.get("harnesses").?.array.items[0];
@@ -120,8 +112,7 @@ test "index: the free filter keeps exactly the models with a free cell" {
     const pm = paid_models.object.get("models").?.array.items;
     try testing.expect(fm.len > 0);
     try testing.expect(pm.len > 0);
-    // per-cell semantics: a model with both free and paid cells appears in BOTH lists
-    // every free model has a provider whose free map carries it
+    // per-cell semantics: a model with both free and paid cells appears in BOTH lists every free model has a provider whose free map carries it
     for (fm) |m| {
         var has_free_cell = false;
         for (stringsOf(m, "providers")) |pv| {

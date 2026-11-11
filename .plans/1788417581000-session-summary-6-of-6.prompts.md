@@ -8,13 +8,7 @@ Session provenance for the plan set saved at this handoff.
 - prompts in window: 1
 - post-steering prompts (after this summary): 8
 
-The prompt log below covers this summary's window: user
-messages with at least one text part, in order, verbatim, each
-headed by its observed timestamp, after the prior summary (or
-session start) and through this summary. The post-steering
-section lists the prompts issued after this summary through the
-next one; when the next summary lands, that set becomes its
-window.
+The prompt log below covers this summary's window: user messages with at least one text part, in order, verbatim, each headed by its observed timestamp, after the prior summary (or session start) and through this summary. The post-steering section lists the prompts issued after this summary through the next one; when the next summary lands, that set becomes its window.
 
 ## 2026-09-02 09:13:42 UTC+8 (epoch 1788311622)
 
@@ -22,8 +16,7 @@ continue
 
 ## Post-steering (after this summary)
 
-Prompts issued after the final compaction summary; they initiated
-the handoff itself, so they belong to no summary window yet.
+Prompts issued after the final compaction summary; they initiated the handoff itself, so they belong to no summary window yet.
 
 ### 2026-09-03 14:45:22 UTC+8 (epoch 1788417922)
 

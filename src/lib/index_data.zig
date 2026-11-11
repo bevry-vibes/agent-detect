@@ -4,32 +4,17 @@
 // and You may not copy or use this file in either source code or executable
 // form, except in compliance with the terms and conditions of the RPL.
 //
-// All software distributed under the RPL is provided strictly on an "AS IS"
-// basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
+// All software distributed under the RPL is provided strictly on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
-//! The index — `fixtures/index-data.json`, embedded at build time, is the single
-//! association + property source for the `index` action (and, dev-side, the
-//! feasibility grids and the free axis). One shape everywhere: the committed
-//! file, this action's output, and the website's `data/index.json`.
+//! The index — `fixtures/index-data.json`, embedded at build time, is the single association + property source for the `index` action (and, dev-side, the feasibility grids and the free axis). One shape everywhere: the committed file, this action's output, and the website's `data/index.json`.
 //!
-//! Entry fields are the from-identity fixture's per-entity `identify` slice
-//! (unprefixed), minus the instance state declared fixtures do not carry (the
-//! `*_setting` fields, the per-entity `*_reciprocity` deductions, and the
-//! combo-level `agent_id`/`reciprocal`), plus `variations`. Associations are
-//! plain canonical-id arrays: direct facts are hand-maintained (harness
-//! `providers`, provider `models`), every other direction is derived.
-//! `provider_map_to_free_models` is the free axis;
-//! `agent_map_to_platforms_reciprocal` carries the per-combo fixture facts the
-//! released binary cannot know at runtime (captured platforms from the
-//! from-capture stems + the declared reciprocity of record from the
-//! from-identity channel, refreshed by the dev `fixtures index` action).
+//! Entry fields are the from-identity fixture's per-entity `identify` slice (unprefixed), minus the instance state declared fixtures do not carry (the `*_setting` fields, the per-entity `*_reciprocity` deductions, and the combo-level `agent_id`/`reciprocal`), plus `variations`. Associations are plain canonical-id arrays: direct facts are hand-maintained (harness `providers`, provider `models`), every other direction is derived. `provider_map_to_free_models` is the free axis; `agent_map_to_platforms_reciprocal` carries the per-combo fixture facts the released binary cannot know at runtime (captured platforms from the from-capture stems + the declared reciprocity of record from the from-identity channel, refreshed by the dev `fixtures index` action).
 
 const std = @import("std");
 const build_options = @import("build_options");
 const rules = @import("rules.zig");
 
-/// the filters every index flag maps onto — `null` = unconstrained.
-/// Each filter is a predicate over feasible combos; given filters AND together.
+/// the filters every index flag maps onto — `null` = unconstrained. Each filter is a predicate over feasible combos; given filters AND together.
 pub const Filters = struct {
     harness: ?[]const u8 = null,
     provider: ?[]const u8 = null,
@@ -162,8 +147,7 @@ pub const Index = struct {
         agents: std.json.ObjectMap,
     };
 
-    /// walk the feasible universe (harness pairs × provider cells), collecting the
-    /// combos that satisfy every filter and the entries participating in one.
+    /// walk the feasible universe (harness pairs × provider cells), collecting the combos that satisfy every filter and the entries participating in one.
     fn participation(self: *const Index, a: std.mem.Allocator, f: Filters) !Participation {
         var out: Participation = .{
             .harnesses = std.StringHashMap(void).init(a),
@@ -195,8 +179,7 @@ pub const Index = struct {
                     if (self.agents.get(agent)) |facts| {
                         try out.agents.put(a, try a.dupe(u8, agent), facts);
                     } else {
-                        // a qualifying combo with no recorded facts: impossible under
-                        // platform/reciprocal filters, ordinary without them
+                        // a qualifying combo with no recorded facts: impossible under platform/reciprocal filters, ordinary without them
                         var empty: std.json.ObjectMap = .empty;
                         try empty.put(a, "platforms", .{ .array = std.json.Array.init(a) });
                         try empty.put(a, "reciprocal", .{ .bool = false });
@@ -208,9 +191,7 @@ pub const Index = struct {
         return out;
     }
 
-    /// the filtered index — same `IndexFile` shape; the three arrays keep the
-    /// entries participating in ≥1 qualifying combo, `agent_map_to_platforms_reciprocal`
-    /// keeps the qualifying combos, and the association arrays stay full.
+    /// the filtered index — same `IndexFile` shape; the three arrays keep the entries participating in ≥1 qualifying combo, `agent_map_to_platforms_reciprocal` keeps the qualifying combos, and the association arrays stay full.
     pub fn buildFiltered(self: *const Index, a: std.mem.Allocator, f: Filters) !std.json.Value {
         const part = try self.participation(a, f);
         var root: std.json.ObjectMap = .empty;
@@ -234,8 +215,7 @@ fn filteredArray(a: std.mem.Allocator, items: []const std.json.Value, keep: *con
     return .{ .array = out };
 }
 
-/// deep, order-insensitive-for-objects equality of two parsed JSON values —
-/// `fixtures index --check` compares the committed file against a regeneration.
+/// deep, order-insensitive-for-objects equality of two parsed JSON values — `fixtures index --check` compares the committed file against a regeneration.
 pub fn valueEql(x: std.json.Value, y: std.json.Value) bool {
     switch (x) {
         .null => return y == .null,
@@ -270,18 +250,13 @@ pub fn valueEql(x: std.json.Value, y: std.json.Value) bool {
     }
 }
 
-// ============================================================================
-// regeneration — the dev `fixtures index` action rebuilds the file in place:
-// the hand-maintained direct facts survive (harness `providers`, provider
-// `models`, `provider_map_to_free_models`), everything else derives from the
-// rule tables and the caller's freshly scanned identity facts.
+// ============================================================================ regeneration — the dev `fixtures index` action rebuilds the file in place: the hand-maintained direct facts survive (harness `providers`, provider `models`, `provider_map_to_free_models`), everything else derives from the rule tables and the caller's freshly scanned identity facts.
 
 fn lessThanStr(_: void, x: []const u8, y: []const u8) bool {
     return std.mem.lessThan(u8, x, y);
 }
 
-/// ordered id set — accumulates, then finalizes byte-sorted (the same order the
-/// migration and the website produce, so regeneration reproduces the file)
+/// ordered id set — accumulates, then finalizes byte-sorted (the same order the migration and the website produce, so regeneration reproduces the file)
 const IdSet = struct {
     set: std.StringArrayHashMapUnmanaged(void) = .empty,
 
@@ -305,11 +280,7 @@ fn stringArrayValue(a: std.mem.Allocator, items: []const []const u8) !std.json.V
     return .{ .array = arr };
 }
 
-/// the entity fields for one entry from its rule — the from-identity fixture's
-/// per-entity `identify` slice (unprefixed), minus instance state, plus
-/// `variations`. The contract carries `short_title` for harnesses and models
-/// only (there is no `provider_short_title`), `license` for harnesses and
-/// models only, and `openness` for models only.
+/// the entity fields for one entry from its rule — the from-identity fixture's per-entity `identify` slice (unprefixed), minus instance state, plus `variations`. The contract carries `short_title` for harnesses and models only (there is no `provider_short_title`), `license` for harnesses and models only, and `openness` for models only.
 fn putEntityFields(a: std.mem.Allocator, obj: *std.json.ObjectMap, comptime T: type, rule: T) !void {
     try obj.put(a, "label", .{ .string = rule.label });
     if (T != rules.ProviderRule) {
@@ -331,11 +302,7 @@ fn putEntityFields(a: std.mem.Allocator, obj: *std.json.ObjectMap, comptime T: t
     try obj.put(a, "variations", try stringArrayValue(a, rule.variations));
 }
 
-/// regenerate the full index value from the rule tables + the caller's direct
-/// facts. `current` is the parsed on-disk file (its direct arrays may carry
-/// unresolvable ids — they are preserved verbatim and simply never mirror or
-/// close); `combos` is the freshly scanned `agent_map_to_platforms_reciprocal`
-/// object; `free` is the hand-maintained free axis.
+/// regenerate the full index value from the rule tables + the caller's direct facts. `current` is the parsed on-disk file (its direct arrays may carry unresolvable ids — they are preserved verbatim and simply never mirror or close); `combos` is the freshly scanned `agent_map_to_platforms_reciprocal` object; `free` is the hand-maintained free axis.
 pub fn regenerate(
     a: std.mem.Allocator,
     current: ?std.json.Value,
@@ -425,9 +392,7 @@ pub fn regenerate(
         try models_arr.append(.{ .object = obj });
     }
 
-    // pass 2: the derived directions. Iterating the freshly built entries keeps
-    // the id sources authoritative (the rule tables), while the mirrors collect
-    // every rule-referencing fact.
+    // pass 2: the derived directions. Iterating the freshly built entries keeps the id sources authoritative (the rule tables), while the mirrors collect every rule-referencing fact.
     for (harnesses_arr.items) |*hv| {
         const id = hv.object.get("id").?.string;
         var closure = IdSet{};

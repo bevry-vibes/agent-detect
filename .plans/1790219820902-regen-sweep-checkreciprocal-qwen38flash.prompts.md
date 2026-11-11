@@ -1,9 +1,6 @@
 # Prompts — companion provenance for `.plans/1790219820902-regen-sweep-checkreciprocal-qwen38flash.md`
 
-Rule: every prompt that shapes a plan is recorded here — verbatim,
-untruncated, timestamped, in order. The plan file itself only links to this
-file and never inlines prompts. Agent model: GLM-5.3 (reported by the
-harness).
+Rule: every prompt that shapes a plan is recorded here — verbatim, untruncated, timestamped, in order. The plan file itself only links to this file and never inlines prompts. Agent model: GLM-5.3 (reported by the harness).
 
 ---
 

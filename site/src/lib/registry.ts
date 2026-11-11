@@ -67,9 +67,7 @@ function slugEquals(display: string, slug: string): boolean {
 }
 
 /**
- * resolve a user-provided dim to its canonical rule, mirroring the CLI's
- * `canonicalIdFor`: exact canonical-name equality first, then the normalized
- * alias set (name, label, short_title, variations), first rule in array order.
+ * resolve a user-provided dim to its canonical rule, mirroring the CLI's `canonicalIdFor`: exact canonical-name equality first, then the normalized alias set (name, label, short_title, variations), first rule in array order.
  */
 export function resolveDim(rules: Rule[], input: string): Rule | null {
   const lookup = afterNamespace(input.trim());

@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /** clipboard copy with a transient "copied" flag — the shared pattern behind
- * every copy button on the site. The flag clears itself `resetMs` after the
- * last successful copy (and on unmount); when the clipboard is unavailable
- * (insecure context) `copy` resolves without flipping the flag — the content
+ * every copy button on the site. The flag clears itself `resetMs` after the last successful copy (and on unmount); when the clipboard is unavailable (insecure context) `copy` resolves without flipping the flag — the content
  * stays selectable. */
 export function useCopied(resetMs = 1500): { copied: boolean; copy: (text: string) => Promise<void> } {
   const [copied, setCopied] = useState(false);

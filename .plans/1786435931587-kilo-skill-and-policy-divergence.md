@@ -46,8 +46,7 @@ the same logical unit as the implementation, with the same co-author
 trailer.
 ```
 
-2. `skills/README.md`: after the minimax line (line 18) add
-   `- @./kilo.md our instructions for Kilo plan handling`
+2. `skills/README.md`: after the minimax line (line 18) add `- @./kilo.md our instructions for Kilo plan handling`
 
 ### B. agent-detect repo — kilo plans reference
 

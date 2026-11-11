@@ -115,9 +115,7 @@ test "a record before the tail window cannot win (bounded read, by design)" {
 test "a newest record larger than the tail window widens the window and parses" {
     try setup();
     defer teardown();
-    // zcode 3.16 writes full model-IO records: one record can exceed the 256 KiB starting window,
-    // so the window opens inside the newest record with no separator newline. The scan must widen
-    // rather than discard the only record it needs.
+    // zcode 3.16 writes full model-IO records: one record can exceed the 256 KiB starting window, so the window opens inside the newest record with no separator newline. The scan must widen rather than discard the only record it needs.
     const padding: usize = 300 * 1024;
     var body: std.ArrayList(u8) = .empty;
     defer body.deinit(testing.allocator);

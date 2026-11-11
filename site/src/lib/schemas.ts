@@ -27,8 +27,7 @@ export const Slug = z.string().regex(/^[a-z0-9]+$/);
  * itself (the agent map's record keys are these); each dash-separated segment is one. */
 export const AgentId = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
 /** canonical platform ids only — `macos`/`mac` → `darwin`, `win` → `windows`
- * normalise at the query boundaries (resolvePlatform); stored data is always
- * canonical. On the site and in the index, a platforms array means: platforms
+ * normalise at the query boundaries (resolvePlatform); stored data is always canonical. On the site and in the index, a platforms array means: platforms
  * with captures — the from-capture stems, scanned and never parsed. */
 export const Platform = z.enum(["darwin", "linux", "windows"]);
 /** the training-axis vocabulary — rules.zig and the identify contract share it */
@@ -109,9 +108,7 @@ export const IndexDataFileSchema = z.object({
   /** free axis — the provider×model cells whose model ids are the free tier */
   provider_map_to_free_models: z.record(Slug, z.array(z.string())),
   /** per-agent fixture facts, derived at `fixtures index` time: platforms = the
-   * agent's from-capture stems (platforms with captures — the stems are the
-   * only capture fact the cli ever carries); reciprocal = the agent's
-   * from-identity declaration of record. agents.json must agree (check_data
+   * agent's from-capture stems (platforms with captures — the stems are the only capture fact the cli ever carries); reciprocal = the agent's from-identity declaration of record. agents.json must agree (check_data
    * asserts it). Keyed by agent id — the dash-joined form, not a strict slug. */
   agent_map_to_platforms_reciprocal: z.record(
     AgentId,
@@ -194,9 +191,7 @@ export const FixtureOutputsSchema = z
     raw: z.unknown().optional(),
     explain: z.record(z.string(), z.unknown()).nullable().optional(),
     /** the stderr each recorded action would print for the recorded state, as
-     * line arrays — absent when it printed none. this is the COMPLETE stderr
-     * surface: exactly the three actions that print stderr (core.stderrLinesFor's
-     * enum — identify, explain, check-reciprocal) — the trailers and found print
+     * line arrays — absent when it printed none. this is the COMPLETE stderr surface: exactly the three actions that print stderr (core.stderrLinesFor's enum — identify, explain, check-reciprocal) — the trailers and found print
      * none, so they carry no keys */
     "identify.stderr": StderrLines.optional(),
     "explain.stderr": StderrLines.optional(),

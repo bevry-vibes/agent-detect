@@ -4,14 +4,9 @@ Provenance companion for
 [1788107876077-handoff-chutes-opencodego-state.md](./1788107876077-handoff-chutes-opencodego-state.md),
 per [plans.md](../plans.md).
 
-Agent model: as reported by the harness at commit time —
-`Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>`
-(live `agent-detect trailer assisted-by`; the rules this session
-shipped are what make that identity a real rule hit — backing audit
-still open, see handoff follow-up 1).
+Agent model: as reported by the harness at commit time — `Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>` (live `agent-detect trailer assisted-by`; the rules this session shipped are what make that identity a real rule hit — backing audit still open, see handoff follow-up 1).
 
-Timestamps: not observable by the agent in this harness; ordering is
-authoritative; none fabricated.
+Timestamps: not observable by the agent in this harness; ordering is authoritative; none fabricated.
 
 Full prompt history of the implementation session lives in
 [1787972028734-chutes-opencodego-model-license.prompts.md](./1787972028734-chutes-opencodego-model-license.prompts.md)

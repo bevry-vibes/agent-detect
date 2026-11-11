@@ -4,8 +4,7 @@
 // and You may not copy or use this file in either source code or executable
 // form, except in compliance with the terms and conditions of the RPL.
 //
-// All software distributed under the RPL is provided strictly on an "AS IS"
-// basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
+// All software distributed under the RPL is provided strictly on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
 // agent-detect rules — the curated rule tables (model / provider / harness) and pure name resolution.
 // Data-only: imports std/builtin exclusively and never imports core.zig or dev.zig (the import DAG is rules <- core <- dev <- main, no cycles).
@@ -287,9 +286,7 @@ pub const rulesForModels = [_]ModelRule{
     // nemotron-3.5-lightning: open-weight — NVIDIA Nemotron 3.5 Lightning 30B A3B; the NVIDIA Open Model License is custom (not SPDX) → NOASSERTION (added by the 2026-09-20 free-axis refresh — free on OpenRouter and NIM, clears the evergreen set).
     // variations: the opencode zen free-tier spelling `nemotron-3.5-lightning-free` folds here per DESIGN #13 (tier spellings are variations — same weights as the paid lane it rides).
     .{ .name = "nemotron-3.5-lightning", .label = "Nemotron 3.5 Lightning", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/blob/main/LICENSE" }, .variations = &.{"nemotron-3.5-lightning-30b-a3b", "nemotron-3.5-lightning-free"} },
-    // glm-5: open-weight — Z.ai GLM 5; HF card + MIT LICENSE.
-    // No "Pure Open" claim on the card (like glm-5.1), so the conservative open-weight tier.
-    // Observed on opencode-go (bare id, evergreen z-ai/glm-5) — no serving-variant spellings yet.
+    // glm-5: open-weight — Z.ai GLM 5; HF card + MIT LICENSE. No "Pure Open" claim on the card (like glm-5.1), so the conservative open-weight tier. Observed on opencode-go (bare id, evergreen z-ai/glm-5) — no serving-variant spellings yet.
     .{ .name = "glm-5", .label = "GLM 5", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5", "https://huggingface.co/zai-org/GLM-5/blob/main/LICENSE" } },
     // glm-5.3: open-weight — Z.ai GLM 5.3; LICENSE is a custom "GLM-5.3 License" (© 2026 Z.AI; not plain MIT, not SPDX → NOASSERTION).
     // Observed on opencode-go (bare id).

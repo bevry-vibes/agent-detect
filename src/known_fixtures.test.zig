@@ -14,13 +14,7 @@ const rules = @import("lib/rules.zig");
 const identity_dir = "fixtures/from-identity";
 const capture_dir = "fixtures/from-capture";
 
-/// Whether stderr is a live terminal, i.e. whether the suite's WARNING prints have a watcher.
-/// The warnings are maintainer reminders (see the two fixture-hygiene tests below), so they only
-/// print when someone can see them: under `zig build test` the build runner pipes the test binary's
-/// stderr and — even when every test passes — re-dumps whatever was captured under a red
-/// "failed command:" banner (zig 0.16 prints that banner for any step with captured stderr), so
-/// writing the reminders there only manufactures build noise. Terminal runs (`zig test`, the dev
-/// binary's own checks) keep them.
+/// Whether stderr is a live terminal, i.e. whether the suite's WARNING prints have a watcher. The warnings are maintainer reminders (see the two fixture-hygiene tests below), so they only print when someone can see them: under `zig build test` the build runner pipes the test binary's stderr and — even when every test passes — re-dumps whatever was captured under a red "failed command:" banner (zig 0.16 prints that banner for any step with captured stderr), so writing the reminders there only manufactures build noise. Terminal runs (`zig test`, the dev binary's own checks) keep them.
 fn warningsTerminal() bool {
     return std.Io.File.stderr().supportsAnsiEscapeCodes(testing.io) catch false;
 }

@@ -4,8 +4,7 @@
 // and You may not copy or use this file in either source code or executable
 // form, except in compliance with the terms and conditions of the RPL.
 //
-// All software distributed under the RPL is provided strictly on an "AS IS"
-// basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
+// All software distributed under the RPL is provided strictly on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND. See LICENSE.md (RPL-1.5).
 
 // agent-detect-dev — the maintainer-only fixtures surface: the `fixtures` namespace (daemon, capture, queue, dequeue, status).
 // Compiled into the binary only when built with `-Ddev=true`; `pub const dev` below is the comptime-gated struct, so the released binary never links this surface.
@@ -429,10 +428,7 @@ pub const dev = if (build_options.dev) struct {
         return root;
     }
 
-    /// acquire the exclusive lock on `<root>/index.json.lock` (creating it when missing).
-    /// Retries with `tryLock` on a ~5s budget, sleeping 50ms between attempts.
-    /// Kernel-managed locks release on exit/crash — no stale-lock heuristics.
-    /// Caller owns the returned file; closing it unlocks.
+    /// acquire the exclusive lock on `<root>/index.json.lock` (creating it when missing). Retries with `tryLock` on a ~5s budget, sleeping 50ms between attempts. Kernel-managed locks release on exit/crash — no stale-lock heuristics. Caller owns the returned file; closing it unlocks.
     fn acquireIndexLock(io: std.Io) !std.Io.File {
         std.Io.Dir.cwd().createDirPath(io, fixtures_root) catch |err| switch (err) {
             error.PathAlreadyExists => {},
@@ -718,8 +714,7 @@ pub const dev = if (build_options.dev) struct {
             return self.provider_model.contains(key);
         }
 
-        /// load both grids from the embedded index file's direct association arrays
-        /// (same structures the CSV loaders built — the file is their successor).
+        /// load both grids from the embedded index file's direct association arrays (same structures the CSV loaders built — the file is their successor).
         pub fn load(a: std.mem.Allocator) !FeasibilityGrids {
             var self = empty(a);
             const idx = index_data.Index.load(a) catch return self;
@@ -803,9 +798,7 @@ pub const dev = if (build_options.dev) struct {
         try bl.put(a, set, .{ .array = arr });
     }
 
-    /// remove one item from a backlog set (no-op when absent).
-    /// Mutates through `getPtr` — a by-value copy would dangle (see zig.md).
-    /// `a` should be the store's arena: the replacement array lives as long as the store tree.
+    /// remove one item from a backlog set (no-op when absent). Mutates through `getPtr` — a by-value copy would dangle (see zig.md). `a` should be the store's arena: the replacement array lives as long as the store tree.
     pub fn backlogRemovePure(a: std.mem.Allocator, root: *std.json.Value, set: []const u8, item: []const u8) void {
         if (root.* != .object) return;
         const bl = root.object.getPtr("backlog") orelse return;
@@ -1682,9 +1675,7 @@ pub const dev = if (build_options.dev) struct {
         return list.toOwnedSlice(a);
     }
 
-    /// Compose a `fixture_id` (h-p-m-platform) from the four dims.
-    /// Returns null when any dim is missing (never a fabricated partial id).
-    /// Used for fixture naming and messaging only — never stored.
+    /// Compose a `fixture_id` (h-p-m-platform) from the four dims. Returns null when any dim is missing (never a fabricated partial id). Used for fixture naming and messaging only — never stored.
     fn fixtureIdFrom(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []const u8, plat: []const u8) !?[]u8 {
         if (h.len == 0 or p.len == 0 or m.len == 0 or plat.len == 0) return null;
         return @as(?[]u8, try joinId(a, "-", &.{ h, p, m, plat }));
@@ -1872,11 +1863,7 @@ pub const dev = if (build_options.dev) struct {
             (f.stale_by_minutes orelse 0) < 0) return FilterError.ConflictingFilters;
         if (f.refresh and (f.stale or f.stale_by_output or age_scopes > 0 or
             f.stale_by_harness_version or f.stale_by_invocation)) return FilterError.ConflictingFilters;
-        // the platform dim is capture-only: the from-identity channel carries no
-        // platform at all (identity files are keyed by the 3-part agent id), so a
-        // platform filter can never apply to it. An explicit --from-identity
-        // therefore rejects it — and --fixture=, whose id bakes a platform in;
-        // use --agent=.
+        // the platform dim is capture-only: the from-identity channel carries no platform at all (identity files are keyed by the 3-part agent id), so a platform filter can never apply to it. An explicit --from-identity therefore rejects it — and --fixture=, whose id bakes a platform in; use --agent=.
         if (std.mem.eql(u8, f.mode, "from-identity") and (f.platform.len > 0 or f.fixture != null)) {
             return FilterError.ConflictingFilters;
         }
@@ -2322,8 +2309,7 @@ pub const dev = if (build_options.dev) struct {
                 .harness = if (f.harness.len > 0) f.harness else null,
                 .provider = if (f.provider.len > 0) f.provider else null,
                 .model = if (f.model.len > 0) f.model else null,
-                // the platform dim is capture-only — identity entries never carry it
-                // (the from-identity channel has no platform dim; see parseFilters)
+                // the platform dim is capture-only — identity entries never carry it (the from-identity channel has no platform dim; see parseFilters)
                 .platform = if (f.platform.len > 0 and std.mem.eql(u8, mode, "from-capture")) f.platform else null,
                 .mode = mode,
                 .stale_by_output = crit.output,
@@ -2734,12 +2720,7 @@ pub const dev = if (build_options.dev) struct {
             std.mem.eql(u8, sjstr(cob, "model_id"), m);
     }
 
-    /// scan the fixture channels into the `agent_map_to_platforms_reciprocal`
-    /// object: per agent_id, the captured platforms (the from-capture stems —
-    /// platform presence = a successful capture on that platform; the stems are
-    /// scanned, never parsed) and the reciprocity of record (the agent's single
-    /// from-identity declaration — the filename IS the agent id). Shared by
-    /// `fixtures index` and the freshness test.
+    /// scan the fixture channels into the `agent_map_to_platforms_reciprocal` object: per agent_id, the captured platforms (the from-capture stems — platform presence = a successful capture on that platform; the stems are scanned, never parsed) and the reciprocity of record (the agent's single from-identity declaration — the filename IS the agent id). Shared by `fixtures index` and the freshness test.
     pub fn scanIdentityCombos(a: std.mem.Allocator, io: std.Io) !std.json.ObjectMap {
         const AgentFacts = struct {
             platforms: std.StringArrayHashMapUnmanaged(void) = .empty,
@@ -2824,11 +2805,7 @@ pub const dev = if (build_options.dev) struct {
         \\
     ;
 
-    /// `fixtures index` — regenerate `fixtures/index-data.json` in place (or verify
-    /// it with --check). Reads the store file for the hand-maintained direct facts,
-    /// scans the from-identity channel for the per-combo facts, and derives the rest
-    /// from the rule tables via index_data.regenerate. Written atomically (temp +
-    /// rename) under the index store's exclusive lock.
+    /// `fixtures index` — regenerate `fixtures/index-data.json` in place (or verify it with --check). Reads the store file for the hand-maintained direct facts, scans the from-identity channel for the per-combo facts, and derives the rest from the rule tables via index_data.regenerate. Written atomically (temp + rename) under the index store's exclusive lock.
     pub fn runFixturesIndex(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -2858,8 +2835,7 @@ pub const dev = if (build_options.dev) struct {
             }
         }
 
-        // the on-disk file — the direct facts' home. Absent is fine (a fresh
-        // bootstrap derives everything from the rules); corrupt is an error.
+        // the on-disk file — the direct facts' home. Absent is fine (a fresh bootstrap derives everything from the rules); corrupt is an error.
         var idx_buf: [std.fs.max_path_bytes]u8 = undefined;
         const data_path = fixturesJoin("index-data.json", &idx_buf) orelse return error.IndexStoreError;
         var current: ?std.json.Value = null;
@@ -2936,9 +2912,7 @@ pub const dev = if (build_options.dev) struct {
         \\
     ;
 
-    /// `fixtures identity` — regenerate from-identity declarations directly: the
-    /// daemon-less maintenance path (the daemon refuses to run inside an agent
-    /// session; this action never launches anything, so it needs no guard).
+    /// `fixtures identity` — regenerate from-identity declarations directly: the daemon-less maintenance path (the daemon refuses to run inside an agent session; this action never launches anything, so it needs no guard).
     pub fn runFixturesIdentity(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
@@ -3915,9 +3889,7 @@ pub const dev = if (build_options.dev) struct {
     fn selfPath(io: std.Io, buf: *[std.fs.max_path_bytes]u8) ?[]const u8 {
         var len = std.process.executablePath(io, buf) catch return null;
         if (len == 0) return null;
-        // a replaced-on-disk binary reads "/proc/self/exe" with the kernel's
-        // " (deleted)" suffix — the restart flow's whole point is execing after
-        // `zig build dev` renamed over the running file, so strip it
+        // a replaced-on-disk binary reads "/proc/self/exe" with the kernel's " (deleted)" suffix — the restart flow's whole point is execing after `zig build dev` renamed over the running file, so strip it
         const deleted = " (deleted)";
         if (len >= deleted.len and std.mem.eql(u8, buf[len - deleted.len .. len], deleted)) {
             len -= deleted.len;

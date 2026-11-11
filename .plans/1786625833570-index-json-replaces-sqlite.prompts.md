@@ -1,11 +1,8 @@
 # 1786625833570-index-json-replaces-sqlite.prompts.md
 
-Companion to `.kilo/plans/1786625833570-index-json-replaces-sqlite.md` per the
-kilo.md provenance rule: all planning-session prompts verbatim, untruncated,
-timestamped, in order. The plan file links here and never inlines prompts.
+Companion to `.kilo/plans/1786625833570-index-json-replaces-sqlite.md` per the kilo.md provenance rule: all planning-session prompts verbatim, untruncated, timestamped, in order. The plan file links here and never inlines prompts.
 
-Times are +08:00, 2026-08-13, best-effort to the minute from session anchors
-(first commit attempt ~21:48, current time 22:28); the order is exact.
+Times are +08:00, 2026-08-13, best-effort to the minute from session anchors (first commit attempt ~21:48, current time 22:28); the order is exact.
 
 ---
 

@@ -1,7 +1,6 @@
 # Provenance — 1788146135433-drop-fixture-map-in-file-state
 
-Agent: Pi · GLM 5.3 Flash (provider opencode-go), 2026-08-31.
-Prompts verbatim, in order, untruncated.
+Agent: Pi · GLM 5.3 Flash (provider opencode-go), 2026-08-31. Prompts verbatim, in order, untruncated.
 
 ---
 

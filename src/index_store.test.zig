@@ -459,9 +459,7 @@ test "expandEntry: free axis filters by provider_map_to_free_models membership (
 }
 
 test "validateFilters: the platform dim is capture-only — --from-identity rejects it and --fixture=" {
-    // the from-identity channel carries no platform dim at all (the filename is the agent id),
-    // so a platform filter can never apply to it — an explicit --from-identity rejects the dim
-    // (and --fixture=, whose id bakes a platform in; use --agent=).
+    // the from-identity channel carries no platform dim at all (the filename is the agent id), so a platform filter can never apply to it — an explicit --from-identity rejects the dim (and --fixture=, whose id bakes a platform in; use --agent=).
     try testing.expectError(
         dev.FilterError.ConflictingFilters,
         dev.validateFilters(.{ .mode = "from-identity", .platform = "linux", .any = true }),
@@ -476,9 +474,7 @@ test "validateFilters: the platform dim is capture-only — --from-identity reje
 }
 
 test "expandEntry: a stored platform constrains capture entries only — identity entries ignore it" {
-    // a legacy pre-restriction queue entry may still carry a platform on a from-identity
-    // entry; expansion must treat it as unconstrained (identity candidates are agent ids,
-    // host-agnostic).
+    // a legacy pre-restriction queue entry may still carry a platform on a from-identity entry; expansion must treat it as unconstrained (identity candidates are agent ids, host-agnostic).
     try Universe.setup();
     defer Universe.teardown() catch {};
     const a = testing.allocator;
@@ -493,8 +489,7 @@ test "expandEntry: a stored platform constrains capture entries only — identit
     const identity_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-identity", .platform = "windows" }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 1), identity_result.host_candidates.len);
     try testing.expectEqualStrings("pi-openrouter-nemotron3ultra", identity_result.host_candidates[0].fixture_id);
-    // a capture entry with the same stored platform is constrained as ever — windows has
-    // no invocation universe, so nothing remains on this (darwin) host
+    // a capture entry with the same stored platform is constrained as ever — windows has no invocation universe, so nothing remains on this (darwin) host
     const capture_result = try dev.expandEntry(testing.io, aa, &root, &fg, &grids, .{ .mode = "from-capture", .platform = "windows" }, "darwin", null, null, &.{});
     try testing.expectEqual(@as(usize, 0), capture_result.host_candidates.len);
 }

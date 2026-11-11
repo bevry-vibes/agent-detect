@@ -8,13 +8,7 @@ Session provenance for the plan set saved at this handoff.
 - prompts in window: 7
 - post-steering prompts (after this summary): 1
 
-The prompt log below covers this summary's window: user
-messages with at least one text part, in order, verbatim, each
-headed by its observed timestamp, after the prior summary (or
-session start) and through this summary. The post-steering
-section lists the prompts issued after this summary through the
-next one; when the next summary lands, that set becomes its
-window.
+The prompt log below covers this summary's window: user messages with at least one text part, in order, verbatim, each headed by its observed timestamp, after the prior summary (or session start) and through this summary. The post-steering section lists the prompts issued after this summary through the next one; when the next summary lands, that set becomes its window.
 
 ## 2026-09-02 01:06:41 UTC+8 (epoch 1788282401)
 
@@ -76,8 +70,7 @@ There should also be a log line here to show the the command+argv: [1788290637.+
 
 ## Post-steering (after this summary)
 
-These prompts moved into the next summary's window when that
-summary was generated; they are recorded verbatim there as well.
+These prompts moved into the next summary's window when that summary was generated; they are recorded verbatim there as well.
 
 ### 2026-09-02 03:43:56 UTC+8 (epoch 1788291836)
 

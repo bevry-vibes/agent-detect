@@ -1,14 +1,10 @@
 # The introspection surface — `explain` + `found` — fixture channels, and trailer-selection guidance
 
-Approved 2026-09-24. Supersedes nothing; new surface. Written for the tree as it stands after
-`3f0edea` (the declared-raw regeneration wave) landed.
+Approved 2026-09-24. Supersedes nothing; new surface. Written for the tree as it stands after `3f0edea` (the declared-raw regeneration wave) landed.
 
 ## Provenance
 
-Every prompt that shaped this plan is recorded verbatim (untruncated,
-timestamped, in order) in the companion file
-`.plans/1790216125460-introspection-explain-found.prompts.md` — plans link to
-it; they do not inline prompts. Agent model: GLM-5.3 (reported by harness).
+Every prompt that shaped this plan is recorded verbatim (untruncated, timestamped, in order) in the companion file `.plans/1790216125460-introspection-explain-found.prompts.md` — plans link to it; they do not inline prompts. Agent model: GLM-5.3 (reported by harness).
 
 ## Layer taxonomy (evidence/raw vs reasons — the consolidation verdict)
 
@@ -21,9 +17,7 @@ Two different "why" layers, separate payloads, shared plumbing:
 | audience | debugging detection, rule contributions ("what I saw") | any agent/user hitting exit 8/9/10 who needs to act |
 | level | implementation detail | consumer interpretation |
 
-Payloads do not merge (similar but too different); plumbing consolidates: both
-released, both built from the same `Detection`, both mirror the tri-state in
-exit codes, `explain` points to `found` for the observation trail.
+Payloads do not merge (similar but too different); plumbing consolidates: both released, both built from the same `Detection`, both mirror the tri-state in exit codes, `explain` points to `found` for the observation trail.
 
 ## Workstreams
 
@@ -39,8 +33,7 @@ exit codes, `explain` points to `found` for the observation trail.
    to core.zig; always emits on exit 8 (observations are most wanted exactly then); recipe mode free via
    shared dispatch; fixture `outputs.raw` key becomes `found` **going forward only** (legacy `raw` accepted
    by the validator; no back-edit of existing files).
-4. **stderr — both, layered** — registry first lines stay byte-stable; compact derived lines after
-   (one per failing entity, judged value + explain pointer); single source of truth `reasonsFor`.
+4. **stderr — both, layered** — registry first lines stay byte-stable; compact derived lines after (one per failing entity, judged value + explain pointer); single source of truth `reasonsFor`.
 5. **Fixture channels** — `outputs.explain` (pure from Detection + rules: from-identity via resolveRecipe,
    captures in-process); dotted stderr channels `outputs["<action>.stderr"]` as **newline-split line
    arrays** (never multiline strings); corpus converges via natural regeneration waves.

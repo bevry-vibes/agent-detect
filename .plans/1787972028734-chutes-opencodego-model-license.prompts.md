@@ -4,14 +4,9 @@ Provenance companion for
 [1787972028734-chutes-opencodego-model-license.md](./1787972028734-chutes-opencodego-model-license.md),
 per [plans.md](../plans.md).
 
-Agent model: as reported by the harness at plan commit time —
-`Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>`
-(the live `agent-detect` fallback line; the change being planned
-replaces it with the verified rules).
+Agent model: as reported by the harness at plan commit time — `Kimi Code · Qwen3.8 Flash <kimicode-opencodego-qwen38flash@local>` (the live `agent-detect` fallback line; the change being planned replaces it with the verified rules).
 
-Timestamps: this harness does not expose per-message timestamps to
-the agent, so none are recorded — ordering below is authoritative
-and no timestamps were fabricated.
+Timestamps: this harness does not expose per-message timestamps to the agent, so none are recorded — ordering below is authoritative and no timestamps were fabricated.
 
 ## Original prompt
 

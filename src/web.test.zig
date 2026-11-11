@@ -1,9 +1,4 @@
-// URL-builder tests for the merged `index` action's pure core: the search
-// view's url shapes (homepage / filtered registry with the `#registry` anchor)
-// and the entity views' route urls (/{agent,harness,provider,model}/{id},
-// carrying the filters that gate them — the violating filters stay out, which
-// is runIndex's own logic, not the builders'). The exit-code and gating
-// behavior is pinned by the runIndex wiring and the site's routes.
+// URL-builder tests for the merged `index` action's pure core: the search view's url shapes (homepage / filtered registry with the `#registry` anchor) and the entity views' route urls (/{agent,harness,provider,model}/{id}, carrying the filters that gate them — the violating filters stay out, which is runIndex's own logic, not the builders'). The exit-code and gating behavior is pinned by the runIndex wiring and the site's routes.
 
 const std = @import("std");
 const testing = std.testing;

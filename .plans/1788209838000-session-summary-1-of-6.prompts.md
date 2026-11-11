@@ -8,13 +8,7 @@ Session provenance for the plan set saved at this handoff.
 - prompts in window: 12
 - post-steering prompts (after this summary): 11
 
-The prompt log below covers this summary's window: user
-messages with at least one text part, in order, verbatim, each
-headed by its observed timestamp, after the prior summary (or
-session start) and through this summary. The post-steering
-section lists the prompts issued after this summary through the
-next one; when the next summary lands, that set becomes its
-window.
+The prompt log below covers this summary's window: user messages with at least one text part, in order, verbatim, each headed by its observed timestamp, after the prior summary (or session start) and through this summary. The post-steering section lists the prompts issued after this summary through the next one; when the next summary lands, that set becomes its window.
 
 ## 2026-09-01 01:23:25 UTC+8 (epoch 1788197005)
 
@@ -69,8 +63,7 @@ Actually, I change my mind, make them required. The case where they are optional
 
 ## Post-steering (after this summary)
 
-These prompts moved into the next summary's window when that
-summary was generated; they are recorded verbatim there as well.
+These prompts moved into the next summary's window when that summary was generated; they are recorded verbatim there as well.
 
 ### 2026-09-01 05:04:59 UTC+8 (epoch 1788210299)
 

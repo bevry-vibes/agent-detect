@@ -1,9 +1,6 @@
 # provider training policies: hermes-reachable providers
 
-research pass (2026-09-06) — sources are each provider's own privacy
-policy + terms of service pages (two independent same-provider
-documents per the rule-table contract). vocabulary:
-`enforced | opt-in | opt-out | never | NOASSERTION | null`.
+research pass (2026-09-06) — sources are each provider's own privacy policy + terms of service pages (two independent same-provider documents per the rule-table contract). vocabulary: `enforced | opt-in | opt-out | never | NOASSERTION | null`.
 
 | provider rule id | models.dev id | hermes profile id(s) | closed_training | open_training | sources | notes |
 |---|---|---|---|---|---|---|

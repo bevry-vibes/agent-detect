@@ -8,13 +8,7 @@ Session provenance for the plan set saved at this handoff.
 - prompts in window: 9
 - post-steering prompts (after this summary): 7
 
-The prompt log below covers this summary's window: user
-messages with at least one text part, in order, verbatim, each
-headed by its observed timestamp, after the prior summary (or
-session start) and through this summary. The post-steering
-section lists the prompts issued after this summary through the
-next one; when the next summary lands, that set becomes its
-window.
+The prompt log below covers this summary's window: user messages with at least one text part, in order, verbatim, each headed by its observed timestamp, after the prior summary (or session start) and through this summary. The post-steering section lists the prompts issued after this summary through the next one; when the next summary lands, that set becomes its window.
 
 ## 2026-09-01 17:01:57 UTC+8 (epoch 1788253317)
 
@@ -66,8 +60,7 @@ those runs also failed:     "omp-ollamacloud-minimaxm27-windows": "capture faile
 
 ## Post-steering (after this summary)
 
-These prompts moved into the next summary's window when that
-summary was generated; they are recorded verbatim there as well.
+These prompts moved into the next summary's window when that summary was generated; they are recorded verbatim there as well.
 
 ### 2026-09-02 01:06:41 UTC+8 (epoch 1788282401)
 

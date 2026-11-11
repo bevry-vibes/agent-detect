@@ -1,8 +1,6 @@
 # Prompts — 1788892361000-readme-install-fail-fast
 
-Model: builtin:zai-coding-plan/GLM-5.3 (as reported by the ZCode harness).
-Timestamps of individual prompts were not observable by the agent; they are recorded
-in conversation order only.
+Model: builtin:zai-coding-plan/GLM-5.3 (as reported by the ZCode harness). Timestamps of individual prompts were not observable by the agent; they are recorded in conversation order only.
 
 ## Prompt 1 (initiating)
 
