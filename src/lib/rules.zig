@@ -370,6 +370,8 @@ pub const rulesForModels = [_]ModelRule{
     // The zen docs name it a free-period exception that DOES train ("collected data is retained and used to improve the model") — the training is known, but the axis depends on the unverified openness, so the closed axis records NOASSERTION (the Big Pickle precedent).
     // variations: the served free id `iceman-free` folds here per DESIGN #13 (tier spellings are variations).
     .{ .name = "iceman", .label = "Iceman", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .closed_training = "NOASSERTION", .variations = &.{"iceman-free"} },
+    // glyph-cluster: stealth model served on Kilo Gateway as `stealth/glyph-cluster` (early access, rotating/upstream details undisclosed). Openness, license, and training posture unverified from local evidence alone → never-guess.
+    .{ .name = "glyph-cluster", .label = "Glyph Cluster", .openness = null, .license = null, .sources = &.{"https://kilo.ai/docs"}, .variations = &.{"stealth/glyph-cluster"} },
     // inkling-2-small: closed — Thinking Machines' second-generation Inkling (594B total / 17B active), released 2026-11-05 with closed weights under the Tinker Terms of Use; the lab intends an Apache-2.0 weight release after safety testing, so the tier flips only when the weights actually land.
     // The opencode zen free period retains data and may use it for model training, and the surface exposes no paid spelling to escape it → enforced on the closed axis.
     // variations: the served free id `inkling-2-small-free` folds here per DESIGN #13.
