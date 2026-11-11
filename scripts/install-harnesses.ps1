@@ -89,7 +89,7 @@ if ($NpmCommand) {
 
 $Registry = @(
 	[pscustomobject]@{ Id = 'cline'; Label = 'Cline CLI'; Probe = 'cline'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
-	[pscustomobject]@{ Id = 'kimi-code'; Label = 'Kimi Code'; Probe = 'kimi'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'kimi-code'; Label = 'Kimi Code'; Probe = 'kimi'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('scoop', 'npm') } }
 	[pscustomobject]@{ Id = 'mmx'; Label = 'MMX (MiniMax M3 CLI)'; Probe = 'mmx'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'pi'; Label = 'pi (π coding agent)'; Probe = 'pi'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('scoop', 'npm') } }
 	[pscustomobject]@{ Id = 'qwen'; Label = 'Qwen Code'; Probe = 'qwen'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
@@ -97,14 +97,15 @@ $Registry = @(
 	[pscustomobject]@{ Id = 'omp'; Label = 'oh-my-pi (omp)'; Probe = 'omp'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
 	# reasonix 2.x: the Homebrew cask is unreadable on Homebrew 7.0.11-148 (undefined local variable staged_path), so npm is the only scripted method
 	[pscustomobject]@{ Id = 'reasonix'; Label = 'Reasonix'; Probe = 'reasonix'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('scoop', 'npm') } }
-	[pscustomobject]@{ Id = 'crush'; Label = 'Crush'; Probe = 'crush'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('winget', 'npm') } }
-	# OpenCode is v2-only. The Scoop manifest still ships v1 (1.19.5), so Windows uses the v2 npm package (@opencode/cli) rather than scoop.
-	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'crush'; Label = 'Crush'; Probe = 'crush'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'winget', 'npm') } }
+	# OpenCode is v2-only. The scoop manifest now tracks v2 (opencode2 remains only as a compatibility shim), so Windows prefers scoop and falls back to npm.
+	[pscustomobject]@{ Id = 'opencode'; Label = 'OpenCode'; Probe = 'opencode'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm', 'brew'); Windows = @('scoop', 'npm') } }
 	[pscustomobject]@{ Id = 'dsh'; Label = 'DeepSeek Harness — dsh (developer preview)'; Probe = 'dsh'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
-	[pscustomobject]@{ Id = 'codewhale'; Label = 'CodeWhale'; Probe = 'codewhale'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('brew', 'npm'); Windows = @('npm') } }
+	[pscustomobject]@{ Id = 'codewhale'; Label = 'CodeWhale'; Probe = 'codewhale'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('brew', 'npm'); Windows = @('scoop', 'npm') } }
 	[pscustomobject]@{ Id = 'minimax-code'; Label = 'MiniMax Code (mcode)'; Probe = 'mcode'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
 	[pscustomobject]@{ Id = 'vibe'; Label = 'Mistral Vibe'; Probe = 'vibe'; Methods = @{ Darwin = @('uv'); Linux = @('uv'); Windows = @('uv') } }
-	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @{ Darwin = @('brew', 'custom'); Linux = @('custom'); Windows = @('custom') } }
+	# scoop cursor-cli redirects CURSOR_CONFIG_DIR/DATA_DIR to its persist dir, so migrating an existing custom install needs a fresh login (the auth state stays in the old profile).
+	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @{ Darwin = @('brew', 'custom'); Linux = @('custom'); Windows = @('scoop', 'custom') } }
 	[pscustomobject]@{ Id = 'copilot'; Label = 'GitHub Copilot CLI'; Probe = 'copilot'; Methods = @{ Darwin = @('brew'); Linux = @(); Windows = @('scoop') } }
 	[pscustomobject]@{ Id = 'hermes'; Label = 'Hermes (contributor scope)'; Probe = 'hermes'; Methods = @{ Darwin = @('custom'); Linux = @('custom'); Windows = @('custom') } }
 	[pscustomobject]@{ Id = 'goose'; Label = 'Goose (contributor scope)'; Probe = 'goose'; Methods = @{ Darwin = @(); Linux = @(); Windows = @('scoop') } }
@@ -140,14 +141,20 @@ $BrewCask = @{
 	cursor = $true
 	copilot = $true
 }
-# extra npm args per package: only the native-SQLite harness needs lifecycle scripts, and they stay an explicit two-package allow-list
+# extra npm args per package: only the native-SQLite harness needs lifecycle scripts, and they stay an explicit two-package allow-list.
+# npm reads --allow-scripts as an array: repeat the flag per package (the comma form is ignored by npm 12 and leaves both scripts blocked).
 $NpmExtraArgs = @{
-	'minimax-code' = @('--include=optional', '--ignore-scripts=false', '--allow-scripts=@minimax-ai/code,better-sqlite3')
+	'minimax-code' = @('--include=optional', '--allow-scripts=@minimax-ai/code', '--allow-scripts=better-sqlite3')
 }
 $ScoopPackage = @{
 	pi = 'pi-coding-agent'
 	omp = 'oh-my-pi'
 	reasonix = 'reasonix'
+	crush = 'crush'
+	opencode = 'opencode'
+	codewhale = 'codewhale'
+	'kimi-code' = 'kimi-code'
+	cursor = 'cursor-cli'
 	copilot = 'copilot-cli'
 	goose = 'goose-cli'
 }

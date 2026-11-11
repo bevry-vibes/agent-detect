@@ -6,25 +6,34 @@
       "harness_name": "crush",
       "harness_id": "crush",
       "harness_license": "FSL-1.1-MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
       "provider_label": "DeepSeek",
       "provider_name": "deepseek",
       "provider_id": "deepseek",
       "provider_closed_training": "never",
       "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
       "model_label": "DeepSeek V4 Flash",
       "model_short_title": null,
       "model_name": "deepseek-v4-flash",
       "model_id": "deepseekv4flash",
-      "model_reciprocity": "open-weight",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
       "model_license": "MIT",
+      "model_reciprocity": true,
       "agent_id": "crush-deepseek-deepseekv4flash",
-      "reciprocal": true
+      "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: Crush · DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
     "trailer assisted-by": "Assisted-by: Crush · DeepSeek V4 Flash <crush-deepseek-deepseekv4flash@local>",
-    "raw": {
+    "found": {
       "platform_id": "windows",
-      "harness_version": "0.91.2",
+      "harness_version": "0.100.0",
       "detectable": [
         "harness",
         "provider",
@@ -37,31 +46,31 @@
       ],
       "process_lineage": [
         {
-          "pid": 17740,
+          "pid": 5364,
           "name": "agent-detect-dev.exe"
         },
         {
-          "pid": 21032,
+          "pid": 700,
           "name": "crush.exe"
         },
         {
-          "pid": 20832,
+          "pid": 10748,
           "name": "crush.exe"
         },
         {
-          "pid": 2312,
+          "pid": 9224,
           "name": "agent-detect-dev.exe"
         },
         {
-          "pid": 2176,
+          "pid": 2328,
           "name": "svchost.exe"
         },
         {
-          "pid": 928,
+          "pid": 932,
           "name": "services.exe"
         },
         {
-          "pid": 856,
+          "pid": 848,
           "name": "wininit.exe"
         },
         {
@@ -81,6 +90,7 @@
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
         "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/LICENSE"
       ],
+      "scandal-urls": [],
       "evidence": [
         {
           "dim": "harness",
@@ -91,23 +101,72 @@
         {
           "dim": "provider",
           "source": "session",
-          "name": "C:\\Users\\balup\\Projects\\vibes\\agent-detect\\.crush/crush.db",
+          "name": "<project>/.crush/crush.db",
           "field": "messages.provider",
           "value": "deepseek"
         },
         {
           "dim": "model",
           "source": "session",
-          "name": "C:\\Users\\balup\\Projects\\vibes\\agent-detect\\.crush/crush.db",
+          "name": "<project>/.crush/crush.db",
           "field": "messages.model",
           "value": "deepseek-v4-flash"
         }
       ]
-    }
+    },
+    "explain": {
+      "state": "unknown",
+      "identity": {
+        "harness": "crush",
+        "provider": "deepseek",
+        "model": "deepseekv4flash"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the Crush harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://github.com/charmbracelet/crush"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Crush harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "identify.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the Crush harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ],
+    "explain.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination"
+    ],
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data incomplete to make a determination",
+      "  - harness: the Crush harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1788289923,
-    "harness_version": "0.91.2",
+    "updated_at": 1794387355,
+    "harness_version": "0.100.0",
+    "capture_kind": "programmatic",
     "prompt_invocation": [
       "crush.exe",
       "run",
