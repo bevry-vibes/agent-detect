@@ -22,7 +22,7 @@
       "model_name": "nemotron-3.5-lightning",
       "model_id": "nemotron35lightning",
       "model_openness": "open-weight",
-      "model_open_training": null,
+      "model_open_training": "opt-out",
       "model_closed_training": null,
       "model_license": "NOASSERTION",
       "model_reciprocity": true,
@@ -107,6 +107,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1793239604
+    "updated_at": 1794382606
   }
 }

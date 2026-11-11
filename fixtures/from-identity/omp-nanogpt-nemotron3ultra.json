@@ -22,7 +22,7 @@
       "model_name": "nemotron-3-ultra",
       "model_id": "nemotron3ultra",
       "model_openness": "open-weight",
-      "model_open_training": null,
+      "model_open_training": "opt-out",
       "model_closed_training": null,
       "model_license": null,
       "model_reciprocity": true,
@@ -128,6 +128,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1791254364
+    "updated_at": 1794382606
   }
 }

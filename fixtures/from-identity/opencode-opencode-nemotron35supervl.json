@@ -22,7 +22,7 @@
       "model_name": "nemotron-3-5-super-vl",
       "model_id": "nemotron35supervl",
       "model_openness": "open-weight",
-      "model_open_training": null,
+      "model_open_training": "opt-out",
       "model_closed_training": null,
       "model_license": "NOASSERTION",
       "model_reciprocity": true,
@@ -67,6 +67,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1793595896
+    "updated_at": 1794382606
   }
 }

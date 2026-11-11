@@ -353,6 +353,7 @@
         "zai"
       ],
       "models": [
+        "bigpickle",
         "claudefable5",
         "claudeopus4",
         "claudeopus5",
@@ -394,8 +395,11 @@
         "grok46",
         "hy3",
         "hy4preview",
+        "iceman",
         "inkling",
+        "inkling2small",
         "inklingsmall",
+        "jev113",
         "kimik2",
         "kimik25",
         "kimik26",
@@ -409,6 +413,7 @@
         "llama318b",
         "llama3370b",
         "llama4maverick",
+        "longcat25",
         "mimov25",
         "mimov25pro",
         "mimov26flash",
@@ -826,6 +831,7 @@
         "opencodego"
       ],
       "models": [
+        "bigpickle",
         "claudefable5",
         "claudeopus5",
         "claudesonnet4",
@@ -855,6 +861,9 @@
         "grok46",
         "hy3",
         "hy4preview",
+        "iceman",
+        "inkling2small",
+        "jev113",
         "kimik2",
         "kimik25",
         "kimik26",
@@ -865,6 +874,7 @@
         "llama3370b",
         "llama4",
         "llama4maverick",
+        "longcat25",
         "mimov25",
         "mimov25pro",
         "mimov26flash",
@@ -2167,6 +2177,7 @@
         "opencode-free"
       ],
       "models": [
+        "bigpickle",
         "claudefable5",
         "claudeopus5",
         "claudesonnet4",
@@ -2191,15 +2202,20 @@
         "gpt56sol",
         "grok45",
         "grok46",
+        "iceman",
+        "inkling2small",
+        "jev113",
         "kimik2",
         "kimik25",
         "kimik26",
         "kimik27code",
         "kimik3",
+        "longcat25",
         "mimov26flash",
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "minimaxm31flash",
         "musespark12",
         "nemotron35lightning",
         "nemotron35supervl",
@@ -2626,8 +2642,13 @@
       "open_training": null,
       "closed_training": "NOASSERTION",
       "variations": [],
-      "providers": [],
-      "harnesses": []
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
     },
     {
       "label": "Claude Fable 5",
@@ -4079,6 +4100,26 @@
       ]
     },
     {
+      "label": "Iceman",
+      "short_title": null,
+      "name": "iceman",
+      "id": "iceman",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": "NOASSERTION",
+      "variations": [
+        "iceman-free"
+      ],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
       "label": "Inkling",
       "short_title": null,
       "name": "inkling",
@@ -4101,6 +4142,26 @@
       ]
     },
     {
+      "label": "Inkling 2 Small",
+      "short_title": null,
+      "name": "inkling-2-small",
+      "id": "inkling2small",
+      "openness": "closed",
+      "license": "NOASSERTION",
+      "open_training": null,
+      "closed_training": "enforced",
+      "variations": [
+        "inkling-2-small-free"
+      ],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
       "label": "Inkling Small",
       "short_title": null,
       "name": "inkling-small",
@@ -4120,6 +4181,27 @@
         "kimicode",
         "omp",
         "pi"
+      ]
+    },
+    {
+      "label": "Jev 1.13",
+      "short_title": null,
+      "name": "jev-1.13",
+      "id": "jev113",
+      "openness": "closed",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": "never",
+      "variations": [
+        "jev-1.13.0",
+        "jev-1.13-free"
+      ],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
       ]
     },
     {
@@ -4539,6 +4621,26 @@
       ]
     },
     {
+      "label": "LongCat 2.5",
+      "short_title": null,
+      "name": "longcat-2.5",
+      "id": "longcat25",
+      "openness": "open-weight",
+      "license": "MIT",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "longcat-2.5-free"
+      ],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
       "label": "MiMo V2.5",
       "short_title": null,
       "name": "mimo-v2.5",
@@ -4753,9 +4855,12 @@
       "license": "NOASSERTION",
       "open_training": null,
       "closed_training": null,
-      "variations": [],
+      "variations": [
+        "minimax-m3.1-flash-free"
+      ],
       "providers": [
-        "minimax"
+        "minimax",
+        "opencode"
       ],
       "harnesses": [
         "cline",
@@ -4878,7 +4983,7 @@
       "id": "nemotron35supervl",
       "openness": "open-weight",
       "license": "NOASSERTION",
-      "open_training": null,
+      "open_training": "opt-out",
       "closed_training": null,
       "variations": [
         "nemotron-3.5-super-vl-free"
@@ -4977,9 +5082,11 @@
       "id": "nemotron3ultra",
       "openness": "open-weight",
       "license": null,
-      "open_training": null,
+      "open_training": "opt-out",
       "closed_training": null,
-      "variations": [],
+      "variations": [
+        "nemotron-3-ultra-free"
+      ],
       "providers": [
         "gmicloud",
         "huggingface",
@@ -5006,7 +5113,7 @@
       "id": "nemotron35lightning",
       "openness": "open-weight",
       "license": "NOASSERTION",
-      "open_training": null,
+      "open_training": "opt-out",
       "closed_training": null,
       "variations": [
         "nemotron-3.5-lightning-30b-a3b",
@@ -5630,12 +5737,19 @@
       "qwen3"
     ],
     "opencode": [
+      "bigpickle",
       "deepseekv41flash",
       "flint40b",
       "glm53flash",
+      "iceman",
+      "inkling2small",
+      "jev113",
+      "longcat25",
       "mimov26flash",
+      "minimaxm31flash",
       "nemotron35lightning",
       "nemotron35supervl",
+      "nemotron3ultra",
       "reflectionbeam"
     ],
     "openrouter": [
@@ -7577,6 +7691,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "hermes-opencode-bigpickle": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "hermes-opencode-claudefable5": {
       "platforms": [],
       "reciprocal": false
@@ -7665,6 +7783,18 @@
       "platforms": [],
       "reciprocal": false
     },
+    "hermes-opencode-iceman": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-inkling2small": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-jev113": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "hermes-opencode-kimik2": {
       "platforms": [],
       "reciprocal": true
@@ -7685,6 +7815,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "hermes-opencode-longcat25": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "hermes-opencode-minimaxm25": {
       "platforms": [],
       "reciprocal": true
@@ -7697,9 +7831,21 @@
       "platforms": [],
       "reciprocal": true
     },
+    "hermes-opencode-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "hermes-opencode-musespark12": {
       "platforms": [],
       "reciprocal": false
+    },
+    "hermes-opencode-nemotron35lightning": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "hermes-opencode-nemotron35supervl": {
+      "platforms": [],
+      "reciprocal": true
     },
     "hermes-opencode-nemotron3ultra": {
       "platforms": [],
@@ -10834,6 +10980,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "opencode-opencode-bigpickle": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencode-claudefable5": {
       "platforms": [],
       "reciprocal": false
@@ -10932,6 +11082,18 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencode-iceman": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-inkling2small": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-jev113": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencode-kimik2": {
       "platforms": [],
       "reciprocal": true
@@ -10952,6 +11114,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "opencode-opencode-longcat25": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "opencode-opencode-mimov26flash": {
       "platforms": [],
       "reciprocal": true
@@ -10965,6 +11131,10 @@
       "reciprocal": true
     },
     "opencode-opencode-minimaxm3": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "opencode-opencode-minimaxm31flash": {
       "platforms": [],
       "reciprocal": true
     },
