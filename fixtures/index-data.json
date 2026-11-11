@@ -1133,6 +1133,25 @@
         "qwen3827b",
         "qwen3coder"
       ]
+    },
+    {
+      "label": "Zed",
+      "short_title": null,
+      "name": "zed",
+      "id": "zed",
+      "license": "GPL-3.0-or-later",
+      "open_training": "opt-in",
+      "closed_training": "opt-in",
+      "reciprocity_scandal": false,
+      "variations": [],
+      "providers": [
+        "deepseek"
+      ],
+      "models": [
+        "deepseekv41flash",
+        "deepseekv4flash",
+        "deepseekv4pro"
+      ]
     }
   ],
   "providers": [
@@ -1495,7 +1514,8 @@
         "pi",
         "qwen",
         "reasonix",
-        "zcode"
+        "zcode",
+        "zed"
       ]
     },
     {
@@ -2918,7 +2938,8 @@
         "pi",
         "qwen",
         "reasonix",
-        "zcode"
+        "zcode",
+        "zed"
       ]
     },
     {
@@ -2967,7 +2988,8 @@
         "pi",
         "qwen",
         "reasonix",
-        "zcode"
+        "zcode",
+        "zed"
       ]
     },
     {
@@ -3001,7 +3023,8 @@
         "pi",
         "qwen",
         "reasonix",
-        "zcode"
+        "zcode",
+        "zed"
       ]
     },
     {
@@ -11914,6 +11937,12 @@
     },
     "zcode-zcode-glm53flash": {
       "platforms": [],
+      "reciprocal": false
+    },
+    "zed-deepseek-deepseekv41flash": {
+      "platforms": [
+        "darwin"
+      ],
       "reciprocal": false
     }
   }

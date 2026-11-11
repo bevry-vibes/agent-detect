@@ -580,6 +580,13 @@ pub const rulesForProviders = [_]ProviderRule{
 // the runtime observation story is carried by `raw.env_vars` (matched env-var observations) and `raw.process_lineage` (process tree at detection time).
 // The raw block intentionally does NOT duplicate that static data (see DESIGN.md "20-field canonical fixture contract").
 
+/// How a from-capture is launched.
+/// - `programmatic` — a headless `prompt_invocation` the daemon can run (the normal case).
+/// - `manual` — the harness has no headless agent launcher (a GUI editor/app): the daemon never launches it;
+///   when a from-capture candidate is picked it prints the manual command on stderr, and the live session itself
+///   runs `agent-detect-dev fixtures capture --manual`.
+pub const CaptureMode = enum { programmatic, manual };
+
 pub const HarnessRule = struct {
     name: []const u8,
     label: []const u8,
@@ -621,6 +628,8 @@ pub const HarnessRule = struct {
     binary_names: []const []const u8, // executable names for ancestry matching, the daemon's in-agent guard, and invocation argv[0] validation in the tests (bare stems first, then platform extensions)
     /// extra alias display-strings not covered by `name`/`label`/ `short_title`; joins the normalized alias set — see the field doc on `ModelRule.variations`.
     variations: []const []const u8 = &.{},
+    /// how a real capture is launched — see `CaptureMode`.
+    capture: CaptureMode = .programmatic,
     /// one imperative line naming where the harness's data-sharing/training setting lives — feeds the fix_setting remediation; null → generic fallback text. Never emitted into fixtures.
     closed_setting_hint: ?[]const u8 = null,
 };
@@ -656,6 +665,9 @@ const hermes_env = [_][]const u8{ "HERMES_AGENT", "HERMES_PROFILE" };
 // AutoClaw desktop app — the AUTOCLAW_* product markers are exported by the app's gateway into every child session (env observed 2026-09-06).
 // The embedded gateway's OPENCLAW_* variables are deliberately NOT here: a standalone OpenClaw install sets them too (see the openclaw pending-harness bullet in CONTRIBUTING.md).
 const autoclaw_env = [_][]const u8{ "AUTOCLAW_MODEL_BROKER_OPENAI_BASE_URL", "AUTOCLAW_MODEL_TRACE_ENDPOINT", "AUTOCLAW_SAFETY_DEFAULT_DECISION", "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED", "AUTOCLAW_THINKING_STREAM", "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER", "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS", "AUTOCLAW_ZCODE_PLUGIN_EVENTS" };
+// Zed desktop editor — its integrated terminal exports ZED_TERM (the terminal marker) and ZED_ENVIRONMENT (the shell's environment kind, e.g. `worktree-shell`; observed 2026-11-11).
+// TERM_PROGRAM=zed is deliberately NOT a marker: every terminal emulator sets TERM_PROGRAM, so presence alone cannot identify this harness (the same reasoning as AI_AGENT for hermes).
+const zed_env = [_][]const u8{ "ZED_TERM", "ZED_ENVIRONMENT" };
 
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code / JetBrains agent).
@@ -803,6 +815,18 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "autoclaw", "autoclaw.exe" }
     else
         &[_][]const u8{"autoclaw"} },
+    // zed: GPL-3.0-or-later — https://github.com/zed-industries/zed ships the editor primarily under GPL-3.0-or-later ("Zed source code is licensed primarily under GPL-3.0-or-later, with Apache-2.0 components where marked": LICENSE-GPL + LICENSE-APACHE at the repo root).
+    // training: opt-in/opt-in — Zed's AI Privacy page: "Zed does not retain your prompts or code context by default … Zed only retains AI data when you explicitly share feedback or opt in to training data collection"
+    // (feedback sends a conversation thread for review; edit-prediction training data is collected only when the user opts in); requests made with a provider API key are handled under that provider's terms (the provider dim).
+    // The policy does not distinguish model types, so the value mirrors across both axes (the axis-ambiguity convention).
+    // The instance read is `edit_predictions.allow_data_collection` in settings.json (see detectZed);
+    // `telemetry.anthropic_retention` is a provider-retention control for Anthropic-covered models, not a training signal, so it stays unwired (no retention axis exists).
+    // Declared last (after autoclaw) for the same leak reason as the other desktop apps: ZED_TERM/ZED_ENVIRONMENT reach every child process spawned from Zed's terminal,
+    // so a cline or goose session started inside Zed still matches its own rule first.
+    .{ .name = "zed", .label = "Zed", .capture = .manual, .closed_setting_hint = "set edit_predictions.allow_data_collection to false (Settings → Edit Predictions; persisted in ~/.config/zed/settings.json)", .license = "GPL-3.0-or-later", .license_sources = &.{ "https://github.com/zed-industries/zed", "https://github.com/zed-industries/zed/blob/main/LICENSE-GPL" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://zed.dev/docs/ai/privacy-and-security", "https://zed.dev/docs/ai/edit-prediction" }, .env_markers = &zed_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "zed", "zed.exe" }
+    else
+        &[_][]const u8{"zed"} },
 };
 
 /// env-var names whose values are safe to emit in raw.env_vars.
@@ -836,6 +860,8 @@ const env_value_allowlist = [_][]const u8{
                   "AUTOCLAW_SAFETY_DEFAULT_DECISION",      "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED",
     "AUTOCLAW_THINKING_STREAM",     "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER", "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS",
     "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
+    // Zed markers — fixed non-secret terminal/environment facts.
+    "ZED_TERM", "ZED_ENVIRONMENT",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {

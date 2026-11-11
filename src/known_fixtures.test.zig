@@ -299,19 +299,37 @@ test "fixtures: envelope shape — every channel file is exactly { outputs, meta
                 // meta: updated_at + the required full invocation of record (harness_version, prompt_invocation, version_invocation — from-capture only gets fully programmatically-invokable captures; the writer fails instead of a partial meta).
                 // The legacy stems below predate the rule and lack the fields; each is rewritten by its next re-capture (drop the stem as it lands).
                 const legacy = isLegacyRequiredMeta(stem);
+                const kind = mo.get("capture_kind");
+                if (kind) |kv| {
+                    if (kv != .string or
+                        (!std.mem.eql(u8, kv.string, "programmatic") and !std.mem.eql(u8, kv.string, "manual")))
+                    {
+                        std.debug.print("fixture {s}/{s}.json meta has an invalid capture_kind\n", .{ folder, stem });
+                        return error.InvalidCaptureKind;
+                    }
+                }
+                const manual = kind != null and kind.? == .string and std.mem.eql(u8, kind.?.string, "manual");
                 try testing.expect(mo.get("updated_at") != null);
                 if (!legacy) {
                     if (mo.get("harness_version") == null) {
                         std.debug.print("fixture {s}/{s}.json meta is missing required harness_version\n", .{ folder, stem });
                         return error.MissingRequiredMeta;
                     }
-                    if (mo.get("prompt_invocation") == null) {
-                        std.debug.print("fixture {s}/{s}.json meta is missing required prompt_invocation\n", .{ folder, stem });
-                        return error.MissingRequiredMeta;
-                    }
-                    if (mo.get("version_invocation") == null) {
-                        std.debug.print("fixture {s}/{s}.json meta is missing required version_invocation\n", .{ folder, stem });
-                        return error.MissingRequiredMeta;
+                    if (manual) {
+                        // manual captures have no launch argv (the harness has no headless launcher).
+                        if (mo.get("prompt_invocation") != null) {
+                            std.debug.print("fixture {s}/{s}.json manual capture carries a prompt_invocation\n", .{ folder, stem });
+                            return error.InvalidManualMeta;
+                        }
+                    } else {
+                        if (mo.get("prompt_invocation") == null) {
+                            std.debug.print("fixture {s}/{s}.json meta is missing required prompt_invocation\n", .{ folder, stem });
+                            return error.MissingRequiredMeta;
+                        }
+                        if (mo.get("version_invocation") == null) {
+                            std.debug.print("fixture {s}/{s}.json meta is missing required version_invocation\n", .{ folder, stem });
+                            return error.MissingRequiredMeta;
+                        }
                     }
                 }
             }
@@ -813,6 +831,33 @@ test "fixtures: invocation argv[0] ∈ the harness rule's binary_names (host pla
                 std.debug.print("fixture {s} {s} argv[0] {s} is not in the harness rule's binary_names\n", .{ stem, field, argv0.string });
                 return error.UnknownLaunchBinary;
             }
+        }
+    }
+}
+
+test "fixtures: manual-capture harnesses carry capture_kind manual and no prompt_invocation" {
+    // A harness rule with `capture = .manual` has no headless launcher: every from-capture file for it is a hand-run observation, marked `capture_kind: "manual"`, and never carries a prompt_invocation.
+    const a = testing.allocator;
+    var arena = std.heap.ArenaAllocator.init(a);
+    defer arena.deinit();
+    const aa = arena.allocator();
+    const stems = try discoverFolderStems(aa, capture_dir);
+    for (stems) |stem| {
+        const root = (try readChannelParsed(aa, capture_dir, stem)) orelse continue;
+        const meta = root.object.get("meta") orelse continue;
+        const rule = main.harnessRuleForFixtureId(aa, stem) orelse continue;
+        const kind = meta.object.get("capture_kind");
+        const manual = kind != null and kind.? == .string and std.mem.eql(u8, kind.?.string, "manual");
+        if (rule.capture == .manual) {
+            if (!manual) {
+                std.debug.print("fixture {s} belongs to a manual-capture harness but is not marked manual\n", .{stem});
+                return error.ManualHarnessCaptureNotMarked;
+            }
+            try testing.expect(meta.object.get("prompt_invocation") == null);
+        }
+        if (manual) {
+            try testing.expect(meta.object.get("prompt_invocation") == null);
+            try testing.expect(meta.object.get("harness_version") != null);
         }
     }
 }

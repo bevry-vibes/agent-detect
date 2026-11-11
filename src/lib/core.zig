@@ -2924,6 +2924,352 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model", .value = model_str });
 }
 
+/// Zed desktop-editor detection — the agent panel's active model. Ladder:
+/// 1. the per-thread store (`threads/threads.db`, a zstd-compressed JSON blob per thread): the newest thread whose `folder_paths` name the cwd is the active session, and its `model.provider`/`model.model` are the exact pair the session runs;
+/// 2. the user settings' `agent.default_model` (`~/.config/zed/settings.json`, JSONC — comments and trailing commas are legal), the configured default when no thread record resolves a dim;
+/// 3. the newest thread in the store when neither a cwd match nor the settings default resolved the dim.
+/// The thread store needs the optional `sqlite3` CLI; unlike the other sqlite-backed harnesses, its absence is not fatal here — the settings file alone is a complete source, so the DB read simply yields nothing.
+/// Partial detection is honest: a dim that doesn't resolve stays unset.
+const ZedThreadModel = struct {
+    provider: []const u8,
+    model: []const u8,
+    path: []const u8,
+};
+
+const ZedThreadModels = struct {
+    matched: ?ZedThreadModel = null,
+    newest: ?ZedThreadModel = null,
+};
+
+const ZedSettings = struct {
+    path: []const u8,
+    provider: []const u8 = "",
+    model: []const u8 = "",
+    /// `edit_predictions.allow_data_collection` — the persisted training-data toggle.
+    /// `null` when the key is absent (nothing explicit to cite; the documented opt-in default still resolves the instance state),
+    /// `data_collection_ambiguous` when it is present but not a bool (an artifact whose meaning cannot be mapped).
+    data_collection: ?bool = null,
+    data_collection_present: bool = false,
+    data_collection_ambiguous: bool = false,
+};
+
+/// Zed's config dir: `%APPDATA%\Zed` on Windows, XDG first elsewhere (`~/.config/zed` on macOS/Linux).
+fn zedConfigDir(a: std.mem.Allocator, env: *const std.process.Environ.Map, home: []const u8) !?[]const u8 {
+    if (builtin.os.tag == .windows) {
+        if (env.get("APPDATA")) |ad| {
+            if (ad.len > 0) return try std.fmt.allocPrint(a, "{s}/Zed", .{ad});
+        }
+    }
+    if (env.get("XDG_CONFIG_HOME")) |x| {
+        if (x.len > 0) return try std.fmt.allocPrint(a, "{s}/zed", .{x});
+    }
+    if (home.len > 0) return try std.fmt.allocPrint(a, "{s}/.config/zed", .{home});
+    return null;
+}
+
+/// Zed's data dir's thread store.
+/// macOS uses Application Support even when XDG_DATA_HOME is exported (observed 2026-11-11: XDG_DATA_HOME pointed at ~/.local/share, but Zed wrote only ~/Library/Application Support/Zed),
+/// so the platform-native location is tried before the XDG fallback; Windows uses `%LOCALAPPDATA%\Zed`, Linux the XDG data dir.
+fn zedThreadsDbPath(a: std.mem.Allocator, env: *const std.process.Environ.Map, home: []const u8) !?[]const u8 {
+    if (builtin.os.tag == .windows) {
+        if (env.get("LOCALAPPDATA")) |la| {
+            if (la.len > 0) return try std.fmt.allocPrint(a, "{s}/Zed/threads/threads.db", .{la});
+        }
+    }
+    if (builtin.os.tag == .macos and home.len > 0) return try std.fmt.allocPrint(a, "{s}/Library/Application Support/Zed/threads/threads.db", .{home});
+    if (env.get("XDG_DATA_HOME")) |xd| {
+        if (xd.len > 0) return try std.fmt.allocPrint(a, "{s}/zed/threads/threads.db", .{xd});
+    }
+    if (home.len > 0) return try std.fmt.allocPrint(a, "{s}/.local/share/zed/threads/threads.db", .{home});
+    return null;
+}
+
+/// strip `//` and `/* */` comments outside JSON strings (Zed's settings.json is JSONC).
+fn zedStripComments(a: std.mem.Allocator, data: []const u8) ![]u8 {
+    var out: std.ArrayList(u8) = .empty;
+    var in_string = false;
+    var i: usize = 0;
+    while (i < data.len) : (i += 1) {
+        const c = data[i];
+        if (in_string) {
+            try out.append(a, c);
+            if (c == '\\' and i + 1 < data.len) {
+                i += 1;
+                try out.append(a, data[i]);
+            } else if (c == '"') {
+                in_string = false;
+            }
+            continue;
+        }
+        if (c == '"') {
+            in_string = true;
+            try out.append(a, c);
+            continue;
+        }
+        if (c == '/' and i + 1 < data.len) {
+            if (data[i + 1] == '/') {
+                i += 2;
+                while (i < data.len and data[i] != '\n') : (i += 1) {}
+                try out.append(a, '\n');
+                continue;
+            }
+            if (data[i + 1] == '*') {
+                i += 2;
+                while (i + 1 < data.len and !(data[i] == '*' and data[i + 1] == '/')) : (i += 1) {}
+                i += 1;
+                continue;
+            }
+        }
+        try out.append(a, c);
+    }
+    return out.toOwnedSlice(a);
+}
+
+/// drop trailing commas before `}`/`]` outside JSON strings (the other JSONC extension Zed's settings use).
+fn zedStripTrailingCommas(a: std.mem.Allocator, data: []const u8) ![]u8 {
+    var out: std.ArrayList(u8) = .empty;
+    var in_string = false;
+    var i: usize = 0;
+    while (i < data.len) : (i += 1) {
+        const c = data[i];
+        if (in_string) {
+            try out.append(a, c);
+            if (c == '\\' and i + 1 < data.len) {
+                i += 1;
+                try out.append(a, data[i]);
+            } else if (c == '"') {
+                in_string = false;
+            }
+            continue;
+        }
+        if (c == '"') {
+            in_string = true;
+            try out.append(a, c);
+            continue;
+        }
+        if (c == ',') {
+            var j = i + 1;
+            while (j < data.len and std.ascii.isWhitespace(data[j])) : (j += 1) {}
+            if (j < data.len and (data[j] == '}' or data[j] == ']')) continue;
+        }
+        try out.append(a, c);
+    }
+    return out.toOwnedSlice(a);
+}
+
+fn zedParseJsonc(a: std.mem.Allocator, data: []const u8) ?std.json.Value {
+    const no_comments = zedStripComments(a, data) catch return null;
+    const clean = zedStripTrailingCommas(a, no_comments) catch return null;
+    const parsed = std.json.parseFromSlice(std.json.Value, a, clean, .{}) catch return null;
+    return parsed.value;
+}
+
+/// normalize path separators for comparison (Windows stores `\`, Zed may store either).
+fn zedNormalizeSlashes(a: std.mem.Allocator, s: []const u8) ![]u8 {
+    const out = try a.dupe(u8, s);
+    for (out) |*c| {
+        if (c.* == '\\') c.* = '/';
+    }
+    return out;
+}
+
+/// does `folders` (a bare path or a JSON array of paths) contain `cwd` as a whole path?
+fn zedFolderMatches(a: std.mem.Allocator, cwd: []const u8, folders: []const u8) bool {
+    if (cwd.len == 0 or folders.len == 0) return false;
+    const cwd_n = zedNormalizeSlashes(a, cwd) catch return false;
+    const folders_n = zedNormalizeSlashes(a, folders) catch return false;
+    var from: usize = 0;
+    while (std.mem.findPos(u8, folders_n, from, cwd_n)) |pos| {
+        const end = pos + cwd_n.len;
+        const before_ok = pos == 0 or folders_n[pos - 1] == '"' or folders_n[pos - 1] == '[' or folders_n[pos - 1] == ',' or std.ascii.isWhitespace(folders_n[pos - 1]);
+        const after_ok = end == folders_n.len or folders_n[end] == '"' or folders_n[end] == ']' or folders_n[end] == ',' or std.ascii.isWhitespace(folders_n[end]);
+        if (before_ok and after_ok) return true;
+        from = pos + 1;
+    }
+    return false;
+}
+
+/// the active thread's model pair, plus the newest thread's as a last-resort fallback.
+/// The metadata pass reads only ids + folder paths, so exactly the two candidate rows' data BLOBs are decompressed
+/// (the `data` column is zstd-compressed JSON — `data_type = "zstd"` — read as hex so no binary passes through the text pipe).
+fn zedThreadModels(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8) !ZedThreadModels {
+    var result = ZedThreadModels{};
+    const db = (try zedThreadsDbPath(a, env, home)) orelse return result;
+    if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return result;
+    const meta_sql = "SELECT id, folder_paths FROM threads ORDER BY updated_at DESC LIMIT 64";
+    const meta_out = kiloSqliteJson(a, io, db, meta_sql) catch return result; // sqlite3 absent/unreadable: the settings path still resolves the dims
+    const parsed = std.json.parseFromSlice(std.json.Value, a, meta_out, .{}) catch return result;
+    if (parsed.value != .array) return result;
+    const cwd = std.process.currentPathAlloc(io, a) catch "";
+    var matched_id: []const u8 = "";
+    var newest_id: []const u8 = "";
+    for (parsed.value.array.items) |row| {
+        if (row != .object) continue;
+        const id = jstr(row.object, "id") orelse continue;
+        if (newest_id.len == 0) newest_id = id;
+        if (matched_id.len == 0 and zedFolderMatches(a, cwd, jstr(row.object, "folder_paths") orelse "")) matched_id = id;
+    }
+    if (matched_id.len > 0) result.matched = try zedThreadBlobModel(a, io, db, matched_id);
+    if (newest_id.len > 0 and !std.mem.eql(u8, newest_id, matched_id)) result.newest = try zedThreadBlobModel(a, io, db, newest_id);
+    return result;
+}
+
+/// decode one thread row's model pair (null when the row/blob is absent or unparseable).
+fn zedThreadBlobModel(a: std.mem.Allocator, io: std.Io, db: []const u8, id: []const u8) !?ZedThreadModel {
+    const lit = try sqlStringLit(a, id);
+    const sql = try std.fmt.allocPrint(a, "SELECT data_type, hex(data) FROM threads WHERE id = {s} LIMIT 1", .{lit});
+    const out = kiloSqliteJson(a, io, db, sql) catch return null;
+    const parsed = std.json.parseFromSlice(std.json.Value, a, out, .{}) catch return null;
+    if (parsed.value != .array or parsed.value.array.items.len == 0) return null;
+    const row = parsed.value.array.items[0];
+    if (row != .object) return null;
+    const data_type = jstr(row.object, "data_type") orelse "";
+    const hex_data = jstr(row.object, "hex(data)") orelse return null;
+    const bytes = try a.alloc(u8, hex_data.len / 2);
+    const decoded = std.fmt.hexToBytes(bytes, hex_data) catch return null;
+    const json_bytes: []const u8 = if (std.mem.eql(u8, data_type, "zstd")) blk: {
+        var input: std.Io.Reader = .fixed(decoded);
+        var z = std.compress.zstd.Decompress.init(&input, &.{}, .{});
+        break :blk z.reader.allocRemaining(a, .limited64(64 << 20)) catch return null;
+    } else if (std.mem.eql(u8, data_type, "json")) decoded else return null;
+    const thread = std.json.parseFromSlice(std.json.Value, a, json_bytes, .{}) catch return null;
+    if (thread.value != .object) return null;
+    const model_obj = thread.value.object.get("model") orelse return null;
+    if (model_obj != .object) return null;
+    const model = jstr(model_obj.object, "model") orelse return null;
+    if (model.len == 0) return null;
+    return .{
+        .provider = jstr(model_obj.object, "provider") orelse "",
+        .model = model,
+        .path = db,
+    };
+}
+
+/// Zed's JSONC settings: the configured default agent model plus the edit-prediction training-data toggle.
+/// `null` only when no settings file exists/parses; a file without `agent.default_model` still carries the training setting.
+fn zedReadSettings(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8) !?ZedSettings {
+    const dir = (try zedConfigDir(a, env, home)) orelse return null;
+    const path = try std.fmt.allocPrint(a, "{s}/settings.json", .{dir});
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 22)) catch return null;
+    const root = zedParseJsonc(a, data) orelse return null;
+    if (root != .object) return null;
+    var settings = ZedSettings{ .path = path };
+    if (root.object.get("agent")) |agent| {
+        if (agent == .object) {
+            if (agent.object.get("default_model")) |dm| {
+                if (dm == .object) {
+                    if (jstr(dm.object, "provider")) |provider| settings.provider = provider;
+                    if (jstr(dm.object, "model")) |model| settings.model = model;
+                }
+            }
+        }
+    }
+    if (root.object.get("edit_predictions")) |ep| {
+        if (ep == .object) {
+            if (ep.object.get("allow_data_collection")) |adc| {
+                settings.data_collection_present = true;
+                if (adc == .bool) {
+                    settings.data_collection = adc.bool;
+                } else {
+                    settings.data_collection_ambiguous = true;
+                }
+            }
+        }
+    }
+    return settings;
+}
+
+fn detectZed(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    // 1. the active thread in the session store (a cwd-matched thread).
+    const threads = try zedThreadModels(a, io, env, home);
+    if (threads.matched) |sm| {
+        if (sm.provider.len > 0) {
+            try setProvider(a, d, sm.provider);
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = sm.path, .field = "model.provider", .value = sm.provider });
+        }
+        try applyModel(a, d, sm.model, sm.model);
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = sm.path, .field = "model.model", .value = sm.model });
+        try appendZedFileObservation(a, d, sm.path, sm.provider, sm.model);
+    }
+    // 2. the settings default fills either dim the thread record left unset (and is the whole source when the thread store is unreadable),
+    // plus the edit-prediction training-data toggle (the harness instance read).
+    if (try zedReadSettings(a, io, env, home)) |settings| {
+        var config_fields = std.ArrayList(FieldObservation).empty;
+        if (settings.model.len > 0) {
+            if (settings.provider.len > 0) try config_fields.append(a, .{ .dotted_path = "agent.default_model.provider", .value = settings.provider });
+            try config_fields.append(a, .{ .dotted_path = "agent.default_model.model", .value = settings.model });
+            if (d.provider_name == null and settings.provider.len > 0) {
+                try setProvider(a, d, settings.provider);
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = settings.path, .field = "agent.default_model.provider", .value = settings.provider });
+            }
+            if (d.model_name == null) {
+                try applyModel(a, d, settings.model, settings.model);
+                try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = settings.path, .field = "agent.default_model.model", .value = settings.model });
+            }
+        }
+        if (settings.data_collection) |allowed| {
+            const raw: []const u8 = if (allowed) "true" else "false";
+            // The toggle covers data collection for model training; the policy does not distinguish model types, so it mirrors across both axes.
+            if (allowed) {
+                d.harness_open_setting = "enabled";
+                d.harness_closed_setting = "enabled";
+            } else {
+                d.harness_open_setting = "disabled";
+                d.harness_closed_setting = "disabled";
+            }
+            try config_fields.append(a, .{ .dotted_path = "edit_predictions.allow_data_collection", .value = raw });
+            try addEvidenceClaim(a, d, .{ .dim = "harness", .source = "config", .name = settings.path, .field = "edit_predictions.allow_data_collection", .value = raw });
+        } else if (settings.data_collection_ambiguous) {
+            // present but not a bool: an artifact exists whose meaning cannot be mapped (the zcode NOASSERTION precedent).
+            d.harness_open_setting = "NOASSERTION";
+            d.harness_closed_setting = "NOASSERTION";
+        } else if (!settings.data_collection_present) {
+            // Absent: the documented default is an opt-in toggle that is off, so no training-data collection is configured.
+            // This is a read of the default, not a guess — the AI Privacy page says collection happens only after an explicit opt-in.
+            d.harness_open_setting = "disabled";
+            d.harness_closed_setting = "disabled";
+        }
+        if (config_fields.items.len > 0) try appendZedConfigObservation(a, d, settings.path, try config_fields.toOwnedSlice(a));
+    }
+    // 3. the newest thread overall when neither a cwd match nor the configured default resolved the pair.
+    if (d.provider_name == null or d.model_name == null) {
+        if (threads.newest) |sm| {
+            if (d.provider_name == null and sm.provider.len > 0) {
+                try setProvider(a, d, sm.provider);
+                try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = sm.path, .field = "model.provider", .value = sm.provider });
+            }
+            if (d.model_name == null) {
+                try applyModel(a, d, sm.model, sm.model);
+                try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = sm.path, .field = "model.model", .value = sm.model });
+            }
+            try appendZedFileObservation(a, d, sm.path, sm.provider, sm.model);
+        }
+    }
+}
+
+/// append a thread-store observation to raw.session_files (the copilot/session precedent).
+fn appendZedFileObservation(a: std.mem.Allocator, d: *Detection, path: []const u8, provider: []const u8, model: []const u8) !void {
+    var fields = std.ArrayList(FieldObservation).empty;
+    if (provider.len > 0) try fields.append(a, .{ .dotted_path = "model.provider", .value = provider });
+    try fields.append(a, .{ .dotted_path = "model.model", .value = model });
+    const obs_slice = try a.alloc(FileObservation, 1);
+    obs_slice[0] = .{ .path = path, .fields = try fields.toOwnedSlice(a) };
+    var obs_list = std.ArrayList(FileObservation).empty;
+    try obs_list.appendSlice(a, d.raw.session_files);
+    try obs_list.append(a, obs_slice[0]);
+    d.raw.session_files = try obs_list.toOwnedSlice(a);
+}
+
+/// append a settings-file observation to raw.config_files.
+fn appendZedConfigObservation(a: std.mem.Allocator, d: *Detection, path: []const u8, fields: []const FieldObservation) !void {
+    const obs_slice = try a.alloc(FileObservation, 1);
+    obs_slice[0] = .{ .path = path, .fields = fields };
+    var obs_list = std.ArrayList(FileObservation).empty;
+    try obs_list.appendSlice(a, d.raw.config_files);
+    try obs_list.append(a, obs_slice[0]);
+    d.raw.config_files = try obs_list.toOwnedSlice(a);
+}
+
 /// the ladder: resolve one closed axis from its training value and its setting value.
 /// Returns true (inactive — the conjunct passes), false (active — the conjunct fails), or null (undeterminable → the exit-9 nudge).
 /// The worst case wins (maintainer rulings, 2026-09-09 and 2026-09-10): enforced outranks the setting (a settings artifact may only steer telemetry, so it cannot prove the training stopped); an enabled setting outranks every remaining training value (hard evidence beats a claim, including a false never); disabled passes below enforced; opt-in/opt-out with nothing readable resolve active (assume the toggle sits in the training branch); NOASSERTION or null resolve undeterminable.
@@ -4307,6 +4653,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectHermes(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "autoclaw")) {
             try detectAutoClaw(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "zed")) {
+            try detectZed(a, io, env, home, d);
         }
         // detectors may set provider after model (e.g. a config file whose
         // default_text_model line precedes its provider line), so compose the
@@ -4374,4 +4722,48 @@ test "minimaxRecordModel: model object, string, and defaultModel" {
 
     const unknown = try std.json.parseFromSlice(std.json.Value, a, "{\"foo\":\"bar\"}", .{});
     try std.testing.expect(minimaxRecordModel(unknown.value) == null);
+}
+
+test "zedParseJsonc: comments and trailing commas outside strings" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const src =
+        \\// Zed settings
+        \\{
+        \\  "agent": {
+        \\    "default_model": {
+        \\      "provider": "deepseek",
+        \\      "model": "deepseek-flash", // the current DeepSeek API alias
+        \\    },
+        \\  },
+        \\  "note": "http://example.com // not a comment",
+        \\  /* block comment */
+        \\  "edit_predictions": { "allow_data_collection": false, },
+        \\}
+    ;
+    const root = zedParseJsonc(a, src).?;
+    try std.testing.expect(root == .object);
+    try std.testing.expectEqualStrings("http://example.com // not a comment", jstr(root.object, "note").?);
+    const agent = root.object.get("agent").?;
+    const dm = agent.object.get("default_model").?;
+    try std.testing.expectEqualStrings("deepseek", jstr(dm.object, "provider").?);
+    try std.testing.expectEqualStrings("deepseek-flash", jstr(dm.object, "model").?);
+    const ep = root.object.get("edit_predictions").?;
+    try std.testing.expect(ep.object.get("allow_data_collection").? == .bool);
+    try std.testing.expect(ep.object.get("allow_data_collection").?.bool == false);
+}
+
+test "zedFolderMatches: bare paths and JSON arrays, boundary-aware" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    try std.testing.expect(zedFolderMatches(a, "/Users/me/proj", "/Users/me/proj"));
+    try std.testing.expect(zedFolderMatches(a, "/Users/me/proj", "[\"/Users/me/other\",\"/Users/me/proj\"]"));
+    try std.testing.expect(!zedFolderMatches(a, "/Users/me/proj", "/Users/me/project"));
+    try std.testing.expect(!zedFolderMatches(a, "/Users/me/proj", "[\"/Users/me/proj-2\"]"));
+    // Windows separators normalize before comparison.
+    try std.testing.expect(zedFolderMatches(a, "C:\\Users\\me\\proj", "C:/Users/me/proj"));
 }

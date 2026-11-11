@@ -142,8 +142,9 @@ pub const dev = if (build_options.dev) struct {
         \\and fixtures/from-capture/<fixture_id>.json (live captures — the
         \\4-part <h>-<p>-<m>-<platform> fixture id; written only on success,
         \\so a from-capture file always carries `outputs`; its meta records
-        \\the invocation it ran under), each a `{ outputs, meta }` envelope —
-        \\see fixtures/fixture.d.ts. The free axis lives in
+        \\the invocation it ran under — or `capture_kind: "manual"` for a
+        \\harness with no headless launcher), each a `{ outputs, meta }`
+        \\envelope — see fixtures/fixture.d.ts. The free axis lives in
         \\fixtures/index-data.json — the committed index file (entry
         \\association arrays + provider_map_to_free_models +
         \\agent_map_to_platforms_reciprocal), which the released `index`
@@ -160,7 +161,17 @@ pub const dev = if (build_options.dev) struct {
         \\combos never become daemon candidates (either mode) and
         \\`fixtures capture` refuses them (exit 10); its free-grid combos
         \\stay workable. Entries use the strict provider slugs the
-        \\fixture dims use (`opencode-go` → `opencodego`).
+        \\fixture dims use (`opencode-go` → `opencodego`). Manual captures
+        \\(`capture = .manual` on the harness rule) spend no new tokens and
+        \\are exempt from it.
+        \\
+        \\manual-capture harnesses: a rule with `capture = .manual` has no
+        \\headless launcher. The daemon never launches it — when a
+        \\from-capture candidate is picked it prints
+        \\`manual capture required for <fixture-id>` to stderr, so the
+        \\invoking agent can run `agent-detect-dev fixtures capture
+        \\--manual` itself when it is that harness. The writer then records
+        \\`capture_kind: "manual"` and no prompt_invocation.
         \\
         \\daemon flags:
         \\  --write-log                 tee daemon output to fixtures/daemon.log
@@ -186,9 +197,11 @@ pub const dev = if (build_options.dev) struct {
         \\                              never inside an agent; --write-log also
         \\                              writes all daemon output to
         \\                              fixtures/daemon.log
-        \\  capture                    capture the current session into
+        \\  capture [--manual]         capture the current session into
         \\                              fixtures/from-capture/<id>.json (spawned
-        \\                              by the daemon; fixtures only)
+        \\                              by the daemon; fixtures only). --manual
+        \\                              is the live-session path for harnesses
+        \\                              with no headless launcher
         \\  prompt                     print the capture prompt (what a harness
         \\                              session is asked to run)
         \\  queue                      upsert one queue entry per refresh mode
@@ -565,6 +578,8 @@ pub const dev = if (build_options.dev) struct {
         harness_version: ?[]const u8 = null,
         prompt_invocation: ?[]const []const u8 = null,
         version_invocation: ?[]const []const u8 = null,
+        /// `meta.capture_kind`: "programmatic" (or absent, the legacy default) or "manual".
+        capture_kind: ?[]const u8 = null,
     };
 
     /// load `fixtures/<folder>/<stem>.json` into a `ChannelFile`. Missing or unparseable → the zero file with `exists = false` (no error — absence is a staleness input, not a fault).
@@ -604,9 +619,23 @@ pub const dev = if (build_options.dev) struct {
                 cf.harness_version = jstr(mo, "harness_version");
                 cf.prompt_invocation = stringArrayFromValue(a, mo.get("prompt_invocation"));
                 cf.version_invocation = stringArrayFromValue(a, mo.get("version_invocation"));
+                cf.capture_kind = jstr(mo, "capture_kind");
             }
         }
         return cf;
+    }
+
+    /// the harness rule's capture mode; unknown dims fall back to `.programmatic` (never guess manual).
+    fn harnessCaptureMode(a: std.mem.Allocator, harness: []const u8) rules.CaptureMode {
+        const canon = canonicalIdFor(a, HarnessRule, &rulesForHarnesses, harness) orelse return .programmatic;
+        const rule = rules.harnessRuleForName(canon) orelse return .programmatic;
+        return rule.capture;
+    }
+
+    /// is this capture file a manual observation (`meta.capture_kind = "manual"`)?
+    fn channelFileIsManual(cf: ChannelFile) bool {
+        const kind = cf.capture_kind orelse return false;
+        return std.mem.eql(u8, kind, "manual");
     }
 
     /// write a whole channel file atomically (temp + rename) — the writer owns the file; no merge, no store row.
@@ -1011,8 +1040,10 @@ pub const dev = if (build_options.dev) struct {
                 if (!m_ok) try unk_m.append(a, parts[2]);
                 if (std.mem.eql(u8, folder, CAPTURE_DIR)) {
                     // no invocation of record anywhere → the dev agent still needs to author one for a successful (re-)capture.
+                    // Manual captures are exempt: there is no headless invocation to author, and the daemon emits the manual command instead.
                     const cf = try loadChannelFile(io, a, folder, stem);
-                    if (cf.prompt_invocation == null and !inv_table.contains(stem)) try unk_inv.append(a, stem);
+                    const manual = channelFileIsManual(cf) or harnessCaptureMode(a, parts[0]) == .manual;
+                    if (!manual and cf.prompt_invocation == null and !inv_table.contains(stem)) try unk_inv.append(a, stem);
                 }
             }
         }
@@ -1037,10 +1068,10 @@ pub const dev = if (build_options.dev) struct {
                     1 => canonicalIdFor(a, ProviderRule, &rulesForProviders, item) != null,
                     2 => canonicalIdFor(a, ModelRule, &rulesForModels, item) != null,
                     else => blk: {
-                        // resolved when an invocation of record exists (table or file meta), or the capture file is gone (no file → nothing to act on for the gap); a load error keeps the item (a broken file is still a signal).
+                        // resolved when an invocation of record exists (table or file meta), the capture is manual (no invocation needed), or the capture file is gone (no file → nothing to act on for the gap); a load error keeps the item (a broken file is still a signal).
                         if (inv_table.contains(item)) break :blk true;
                         const cf = loadChannelFile(io, a, CAPTURE_DIR, item) catch break :blk false;
-                        break :blk !cf.exists or cf.prompt_invocation != null;
+                        break :blk !cf.exists or cf.prompt_invocation != null or channelFileIsManual(cf) or harnessCaptureMode(a, cf.harness) == .manual;
                     },
                 };
                 if (resolved) backlogRemovePure(a, root, set, item);
@@ -1304,7 +1335,8 @@ pub const dev = if (build_options.dev) struct {
             if (gop.found_existing) continue;
             if (std.mem.eql(u8, entry.mode, "from-capture")) {
                 const cf = try loadChannelFile(io, a, folder, stem);
-                if (cf.prompt_invocation == null) continue; // backlog unknown_invocations
+                const manual_rule = if (rules.harnessRuleForFixtureId(a, stem)) |r| r.capture == .manual else false;
+                if (cf.prompt_invocation == null and !manual_rule and !channelFileIsManual(cf)) continue; // backlog unknown_invocations
             }
             try ids.append(a, stem);
         }
@@ -1328,11 +1360,15 @@ pub const dev = if (build_options.dev) struct {
                 if (!std.mem.eql(u8, parts[2], v)) continue;
             }
             if (!dimsResolvable(a, parts)) continue;
+            // manual captures never launch a harness (the live session runs the capture), so neither the paid blocklist nor the session-skip hierarchy (which exists to avoid repeated launch failures) applies to them.
+            const manual_capture = harnessCaptureMode(a, parts[0]) == .manual;
             // blocklist gate (paid-only) — the invoking user's never-test providers never become candidates in either mode, EXCEPT their free combos: the paid plan expired, the free models stay testable. So the daemon never launches (and `capture` never validates) a paid session on those providers.
-            if (providerBlocked(blocked, parts[1]) and !free.has(parts[1], parts[2])) continue;
+            if (!manual_capture and providerBlocked(blocked, parts[1]) and !free.has(parts[1], parts[2])) continue;
             // the session-skip hierarchy (capture mode only — identity work never launches a harness binary, so an uninstalled harness cannot fail it): a skipped harness/provider-under-harness/model-combo is not a candidate this session.
-            if (skips) |sk| {
-                if (sk.skipped(parts[0], parts[1], parts[2])) continue;
+            if (!manual_capture) {
+                if (skips) |sk| {
+                    if (sk.skipped(parts[0], parts[1], parts[2])) continue;
+                }
             }
             if (entry.free) |fr| {
                 if (fr != free.has(parts[1], parts[2])) continue;
@@ -1352,7 +1388,8 @@ pub const dev = if (build_options.dev) struct {
             try out.append(a, .{ .fixture_id = id, .harness = parts[0], .provider = parts[1], .model = parts[2], .platform = parts[3] });
         }
         // feasible-unfixtured universe — from-identity only: the grid-filtered cross-product minus the fixtured stems, so impossible combos never become candidates and from-identity can never mint them.
-        // (From-capture candidates come only from the invocation universe — authoring the invocation is the dev agent's signal that a capture is wanted.)
+        // (From-capture candidates come only from the invocation universe — authoring the invocation is the dev agent's signal that a capture is wanted.
+        // Manual-capture harnesses are the exception: they have no invocation to author, so their feasible-unfixtured combos are candidates and the daemon emits the manual command instead of launching.)
         // The stems are agent ids (3-part) — the platform dim is capture-only.
         if (std.mem.eql(u8, entry.mode, "from-identity")) {
             var hit = grids.harness_provider.keyIterator();
@@ -1390,6 +1427,46 @@ pub const dev = if (build_options.dev) struct {
                     }
                     // no file ⇒ absent evidence ⇒ any carried criterion (and a criteria-less --refresh entry) says stale.
                     try out.append(a, .{ .fixture_id = stem, .harness = h, .provider = p, .model = m });
+                }
+            }
+        }
+        // manual-capture harnesses in from-capture mode: no invocation authoring signal exists, so the feasible-unfixtured grid combos are the candidates (the daemon prints the manual command on stderr rather than launching).
+        if (std.mem.eql(u8, entry.mode, "from-capture")) {
+            var hit = grids.harness_provider.keyIterator();
+            while (hit.next()) |hk| {
+                const hp = hk.*;
+                const bar = std.mem.indexOfScalar(u8, hp, '|') orelse continue;
+                const h = hp[0..bar];
+                const p = hp[bar + 1 ..];
+                if (harnessCaptureMode(a, h) != .manual) continue;
+                if (entry.harness) |v| {
+                    if (!std.mem.eql(u8, h, v)) continue;
+                }
+                if (entry.provider) |v| {
+                    if (!std.mem.eql(u8, p, v)) continue;
+                }
+                var mit = grids.provider_model.keyIterator();
+                while (mit.next()) |mk| {
+                    const pm = mk.*;
+                    const bar2 = std.mem.indexOfScalar(u8, pm, '|') orelse continue;
+                    const p2 = pm[0..bar2];
+                    const m = pm[bar2 + 1 ..];
+                    if (!std.mem.eql(u8, p2, p)) continue;
+                    if (entry.model) |v| {
+                        if (!std.mem.eql(u8, m, v)) continue;
+                    }
+                    const agent = (try agentIdFrom(a, h, p, m)) orelse continue;
+                    const stem = try std.fmt.allocPrint(a, "{s}-{s}", .{ agent, plat });
+                    if (fixtured.contains(stem)) continue;
+                    if (seen.contains(stem)) continue;
+                    if (!dimsResolvable(a, .{ h, p, m, plat })) continue;
+                    if (entry.free) |fr| {
+                        if (fr != free.has(p, m)) continue;
+                    }
+                    if (damped) |dm| {
+                        if (dm.contains(stem)) continue;
+                    }
+                    try out.append(a, .{ .fixture_id = stem, .harness = h, .provider = p, .model = m, .platform = plat });
                 }
             }
         }
@@ -1458,9 +1535,12 @@ pub const dev = if (build_options.dev) struct {
         }
         if (entry.stale_by_invocation and std.mem.eql(u8, entry.mode, "from-capture")) {
             // stale iff the file's recorded invocation is missing or differs from the latest one in index.json (from-identity files carry no invocation — nothing to compare).
-            const f_inv = file.prompt_invocation orelse return true;
-            if (tinv) |ti| {
-                if (!argvEqual(f_inv, ti.prompt)) return true;
+            // Manual captures carry no launch invocation by design, so the criterion does not apply to them.
+            if (!channelFileIsManual(file)) {
+                const f_inv = file.prompt_invocation orelse return true;
+                if (tinv) |ti| {
+                    if (!argvEqual(f_inv, ti.prompt)) return true;
+                }
             }
         }
         return false;
@@ -1985,9 +2065,63 @@ pub const dev = if (build_options.dev) struct {
     /// **Writer rule for `meta`** — the meta is **complete**:
     /// the invocation of record (the store's `invocations` table entry first, else the `meta.prompt_invocation` / `meta.version_invocation` in the file being replaced) is always recorded, and `updated_at` / `harness_version` are stamped fresh (the version from a live `version_invocation` probe).
     /// A capture that cannot record all of `harness_version` / `prompt_invocation` / `version_invocation` fails (exit 9) and writes no file: a partial meta is bad data, and from-capture only gets fully programmatically-invokable captures.
+    /// usage for `fixtures capture` — printed by `fixtures capture --help` and on argument errors.
+    pub const fixturesCaptureUsage =
+        \\agent-detect-dev fixtures capture — capture the current real session into fixtures/from-capture/<id>.json
+        \\
+        \\usage: agent-detect-dev fixtures capture [--manual] [--harness-version=V]
+        \\
+        \\The normal mode requires a fully programmatic invocation of record: the daemon launches
+        \\the harness via prompt_invocation, and the meta records that invocation.
+        \\
+        \\--manual
+        \\        Observe the current live session by hand. No prompt_invocation is required or
+        \\        recorded (the harness has no headless launcher); the paid blocklist does not
+        \\        apply (this capture spends no new tokens). meta.capture_kind = "manual".
+        \\--harness-version=V
+        \\        Manual captures only: use V when the harness version cannot be probed.
+        \\
+        \\Exit codes: 0 = ok, 8 = detection incomplete, 9 = agent data incomplete, 10 = blocklisted.
+    ;
+
     pub fn runFixturesCapture(init: std.process.Init) !u8 {
         const a = init.arena.allocator();
         const io = init.io;
+
+        if (subcommandWantsHelp(init)) {
+            writeOut(io, fixturesCaptureUsage);
+            return EXIT_OK;
+        }
+        var manual = false;
+        var version_override: ?[]const u8 = null;
+        var args_it = std.process.Args.Iterator.initAllocator(init.minimal.args, a) catch return error.IndexStoreError;
+        defer args_it.deinit();
+        _ = args_it.skip(); // argv0
+        _ = args_it.skip(); // "fixtures"
+        _ = args_it.skip(); // "capture"
+        while (args_it.next()) |arg| {
+            if (std.mem.eql(u8, arg, "--manual")) {
+                manual = true;
+            } else if (std.mem.startsWith(u8, arg, "--harness-version=")) {
+                const v = arg["--harness-version=".len..];
+                if (v.len == 0) {
+                    writeErr(io, "fixtures capture: --harness-version= requires a value\n");
+                    writeOut(io, fixturesCaptureUsage);
+                    return EXIT_MISSING_ARG;
+                }
+                version_override = v;
+            } else {
+                writeErr(io, "fixtures capture: unrecognised argument: '");
+                writeErr(io, arg);
+                writeErr(io, "'\n");
+                writeOut(io, fixturesCaptureUsage);
+                return EXIT_UNRECOGNISED_ARG;
+            }
+        }
+        if (version_override != null and !manual) {
+            writeErr(io, "fixtures capture: --harness-version= applies to --manual captures only\n");
+            return EXIT_CONFLICTING_ARG;
+        }
 
         var d = Detection{};
         _ = try detect(init, &d);
@@ -2014,9 +2148,11 @@ pub const dev = if (build_options.dev) struct {
         };
 
         const fixture_id = try fixtureId(a, agent_aid);
+        const rule: ?HarnessRule = rules.harnessRuleForFixtureId(a, agent_aid);
 
         // blocklist gate (paid-only, defense in depth — the daemon's expansion already skips the paid combos, so this only fires on direct invocations): the invoking git user's never-test providers are never captured on this host — unless the combo is free (provider_map_to_free_models in the index file), because the paid plan expiring never blocks the free models.
-        {
+        // Manual captures are exempt: they observe the already-running session and spend no new tokens.
+        if (!manual) {
             const username = gitConfigUsername(a, io);
             if (username) |u| {
                 var blocked_root = try indexLoad(io, a);
@@ -2043,7 +2179,7 @@ pub const dev = if (build_options.dev) struct {
         const ab = if (self_path) |sp| try spawnTrailerLine(a, io, sp, "assisted-by", "", "", "") else null;
 
         // invocation of record: the store's `invocations` table first (the latest), else whatever the replaced file recorded.
-        // The from-capture meta is complete: a capture that cannot record all of prompt_invocation / version_invocation / harness_version fails (exit 9) and writes no file.
+        // A programmatic capture requires the complete invocation; a manual capture records no prompt_invocation at all.
         const existing = try loadChannelFile(io, a, CAPTURE_DIR, fixture_id);
         var store_root = try indexLoad(io, a);
         const tinv = try invocationFromTable(a, &store_root, fixture_id);
@@ -2059,25 +2195,57 @@ pub const dev = if (build_options.dev) struct {
             }
             break :blk existing.version_invocation;
         };
-        if (rec_prompt == null or rec_version == null) {
+        if (!manual and (rec_prompt == null or rec_version == null)) {
             writeErr(io, "fixtures capture: no invocation of record for ");
             writeErr(io, fixture_id);
             writeErr(io, " (nothing in the invocations table or the existing file) — no fixture written\n");
             return EXIT_AGENT_DATA_INCOMPLETE;
         }
-        // live harness version snapshot via the recorded `version_invocation` — required, so a probe that yields no version token fails the capture.
-        const hver = blk: {
-            const v = launchVersion(io, a, rec_version.?);
-            if (v == null) {
+
+        // live harness version snapshot. Programmatic: probe the recorded version_invocation (required).
+        // Manual: prefer the recorded/probeable version invocation; fall back to the rule's first binary `--version`,
+        // then to an explicit --harness-version=V. A version cannot be guessed.
+        var version_invocation: ?[]const []const u8 = if (manual) null else rec_version;
+        var hver: ?[]const u8 = null;
+        if (rec_version) |v| {
+            hver = launchVersion(io, a, v);
+            if (hver != null) version_invocation = v;
+        }
+        if (hver == null and manual) {
+            if (version_override) |v| {
+                hver = try a.dupe(u8, v);
+            } else if (rule) |r| {
+                if (r.binary_names.len > 0) {
+                    var bin: []const u8 = r.binary_names[0];
+                    if (builtin.os.tag == .windows) {
+                        for (r.binary_names) |n| {
+                            if (std.mem.endsWith(u8, n, ".exe")) {
+                                bin = n;
+                                break;
+                            }
+                        }
+                    }
+                    const probe = [2][]const u8{ bin, "--version" };
+                    if (launchVersion(io, a, &probe)) |v| {
+                        hver = v;
+                        version_invocation = try a.dupe([]const u8, &probe);
+                    }
+                }
+            }
+        }
+        if (hver == null) {
+            if (manual) {
+                writeErr(io, "fixtures capture: manual capture could not determine the harness version (probe the harness's `--version` manually and pass --harness-version=V) — no fixture written\n");
+            } else {
                 writeErr(io, "fixtures capture: version probe yielded no version for ");
                 writeErr(io, fixture_id);
                 writeErr(io, " — no fixture written\n");
-                return EXIT_AGENT_DATA_INCOMPLETE;
             }
-            break :blk v.?;
-        };
+            return EXIT_AGENT_DATA_INCOMPLETE;
+        }
+        const version = hver.?;
 
-        const raw = try core.buildRaw(a, io, &d, init.environ_map, hver, true);
+        const raw = try core.buildRaw(a, io, &d, init.environ_map, version, true);
 
         var outputs: std.json.Value = .{ .object = .empty };
         try outputs.object.put(a, "identify", cooked);
@@ -2092,12 +2260,13 @@ pub const dev = if (build_options.dev) struct {
         if (core.checkReciprocalVerdict(&d)) |verdict| try outputs.object.put(a, "check-reciprocal", .{ .string = verdict });
         if (try core.stderrLinesFor(a, &d, .check_reciprocal)) |lines| try outputs.object.put(a, "check-reciprocal.stderr", stringListValue(a, lines));
 
-        // meta — complete by construction (all fields required, see fixtures/fixture.d.ts): the invocation of record persists, the ledger stamps fresh.
+        // meta — complete by construction (see fixtures/fixture.d.ts): the ledger stamps fresh, programmatic captures carry their prompt_invocation, manual captures carry capture_kind = "manual" instead.
         var meta: std.json.Value = .{ .object = .empty };
         try meta.object.put(a, "updated_at", .{ .integer = unixNow(io) });
-        try meta.object.put(a, "harness_version", .{ .string = hver });
-        try meta.object.put(a, "prompt_invocation", stringListValue(a, rec_prompt.?));
-        try meta.object.put(a, "version_invocation", stringListValue(a, rec_version.?));
+        try meta.object.put(a, "harness_version", .{ .string = version });
+        try meta.object.put(a, "capture_kind", .{ .string = if (manual) "manual" else "programmatic" });
+        if (!manual) try meta.object.put(a, "prompt_invocation", stringListValue(a, rec_prompt.?));
+        if (version_invocation) |v| try meta.object.put(a, "version_invocation", stringListValue(a, v));
 
         var root: std.json.Value = .{ .object = .empty };
         try root.object.put(a, "outputs", outputs);
@@ -2110,6 +2279,9 @@ pub const dev = if (build_options.dev) struct {
         writeOut(io, "fixtures capture: wrote fixtures/from-capture/");
         writeOut(io, fixture_id);
         writeOut(io, ".json\n");
+        if (manual) {
+            writeErr(io, "fixtures capture: manual capture recorded without a prompt_invocation — the daemon cannot launch this harness; re-run `agent-detect-dev fixtures capture --manual` from inside its session\n");
+        }
         return 0;
     }
 
@@ -3433,6 +3605,8 @@ pub const dev = if (build_options.dev) struct {
 
         // session-scoped failure damping — one attempt per candidate per daemon run (in-memory; the fixture files + known_but_failed are the durable memory).
         var damped = std.StringHashMap(void).init(a);
+        // manual-capture announcements — one stderr instruction per candidate per daemon run (the candidate stays in the queue until the live session captures it).
+        var manual_announced = std.StringHashMap(void).init(a);
         // the session-skip hierarchy (ruling, 2026-09-20): a failure we can reasonably expect to persist for the session skips at the coarsest level that covers it —
         // an uninstalled harness skips every combo; an auth/token provider failure skips that provider under that harness only; a likewise-persistent model failure skips that provider+harness combo only.
         // It evaporates with the session (an install, a top-up, or a login is one restart away), and it gates the capture universe only — identity work never launches a harness binary.
@@ -3639,6 +3813,19 @@ pub const dev = if (build_options.dev) struct {
                             daemonWrite(io, m);
 
                             if (std.mem.eql(u8, p.entry.mode, "from-capture")) {
+                                // manual-capture harnesses have no headless launcher: emit the command to stderr so the invoking harness can run it itself when it is that agent, and leave the queue entry in place (the capture lands later; its updated_at completes the entry).
+                                if (rules.harnessRuleForFixtureId(ia, p.candidate.fixture_id)) |rule| {
+                                    if (rule.capture == .manual) {
+                                        if (!manual_announced.contains(p.candidate.fixture_id)) {
+                                            daemonWriteErr(io, "daemon: manual capture required for ");
+                                            daemonWriteErr(io, p.candidate.fixture_id);
+                                            daemonWriteErr(io, " — if this session is that agent, run: agent-detect-dev fixtures capture --manual\n");
+                                            manual_announced.put(try a.dupe(u8, p.candidate.fixture_id), {}) catch {};
+                                        }
+                                        next_poll = std.Io.Clock.Timestamp.fromNow(io, .{ .raw = .{ .nanoseconds = @as(i96, poll_seconds) * std.time.ns_per_s }, .clock = .boot });
+                                        continue;
+                                    }
+                                }
                                 if (pending_capture != null) {
                                     daemonWrite(io, "daemon: already have a pending from-capture job — skipping\n");
                                     continue;

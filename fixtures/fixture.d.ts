@@ -174,17 +174,25 @@ export interface CaptureFile {
     /** was capture.captured_at. */
     updated_at: number;
     /**
-     * was capture.harness_version — the live version snapshot from the `version_invocation` probe. REQUIRED: a capture that cannot record it fails and writes no file.
+     * was capture.harness_version — the live version snapshot from the `version_invocation` probe (or, for manual captures, the rule-binary probe / `--harness-version`). REQUIRED: a capture that cannot record it fails and writes no file.
      */
     harness_version: string;
+    /**
+     * How the capture was observed.
+     * - `"programmatic"`: the daemon launched the harness via `prompt_invocation` (the default for files that predate this field).
+     * - `"manual"`: the live session ran `fixtures capture --manual` itself — the harness has no headless launcher. `prompt_invocation` is absent; `version_invocation` records the probe when one ran.
+     */
+    capture_kind?: "programmatic" | "manual";
     /**
      * The invocation of record — the launch argv that ran `fixtures capture` inside this live session.
      * argv[0] is the concrete per-platform binary; the last element is the capture prompt placeholder `<prompt>` (see `fixtures prompt`).
      * Minimal invocation: only the arguments necessary to pin harness + provider + model and run the capture prompt (see CONTRIBUTING.md "minimal invocation").
-     * REQUIRED — from-capture only gets fully programmatically-invokable captures: a capture with no invocation of record (store table or replaced file) fails and writes no file, so a committed from-capture file always carries the complete invocation.
+     * REQUIRED when `capture_kind` is `"programmatic"` (or absent, the legacy default); ABSENT for manual captures — there is no launch argv.
      */
-    prompt_invocation: string[];
-    /** e.g. ["kimi", "--version"] — availability probe + version source. REQUIRED (see `prompt_invocation`). */
-    version_invocation: string[];
+    prompt_invocation?: string[];
+    /**
+     * e.g. ["kimi", "--version"] — availability probe + version source. REQUIRED for programmatic captures; optional for manual (present when a probe ran).
+     */
+    version_invocation?: string[];
   };
 }

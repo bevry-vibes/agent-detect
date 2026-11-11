@@ -1,0 +1,120 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Zed",
+      "harness_short_title": null,
+      "harness_name": "zed",
+      "harness_id": "zed",
+      "harness_license": "GPL-3.0-or-later",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
+      "harness_open_setting": "disabled",
+      "harness_closed_setting": "disabled",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "DeepSeek",
+      "provider_name": "deepseek",
+      "provider_id": "deepseek",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "DeepSeek V4.1 Flash",
+      "model_short_title": null,
+      "model_name": "deepseek-v4.1-flash",
+      "model_id": "deepseekv41flash",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "MIT",
+      "model_reciprocity": true,
+      "agent_id": "zed-deepseek-deepseekv41flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Zed · DeepSeek V4.1 Flash <zed-deepseek-deepseekv41flash@local>",
+    "trailer assisted-by": "Assisted-by: Zed · DeepSeek V4.1 Flash <zed-deepseek-deepseekv41flash@local>",
+    "found": {
+      "platform_id": "darwin",
+      "harness_version": "1.27.0",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 52372,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 52368,
+          "name": "bash"
+        },
+        {
+          "pid": 24246,
+          "name": "zed"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/zed-industries/zed",
+        "https://github.com/zed-industries/zed/blob/main/LICENSE-GPL"
+      ],
+      "provider-urls": [
+        "https://api-docs.deepseek.com/quick_start/pricing",
+        "https://platform.deepseek.com"
+      ],
+      "model-urls": [
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+        "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/main/LICENSE",
+        "https://api-docs.deepseek.com/quick_start/pricing"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "ZED_TERM",
+          "value": "zed"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/Library/Application Support/Zed/threads/threads.db",
+          "field": "model.provider",
+          "value": "deepseek"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/Library/Application Support/Zed/threads/threads.db",
+          "field": "model.model",
+          "value": "deepseek-flash"
+        }
+      ]
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "zed",
+        "provider": "deepseek",
+        "model": "deepseekv41flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1794381267,
+    "harness_version": "1.27.0",
+    "capture_kind": "manual",
+    "version_invocation": [
+      "zed",
+      "--version"
+    ]
+  }
+}

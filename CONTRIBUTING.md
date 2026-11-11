@@ -672,7 +672,7 @@ The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11) and sco
 - [ ] **devin / droid / zencoder / kimchi / firebender** — declared-only (from-identity) Tier-2 harnesses; config dirs `~/.config/devin/`, `~/.factory/`, `~/.zencoder/`, `~/.config/kimchi/harness/`, `~/.firebender/`; rules + recipes when a contributor picks them up.
 - [ ] **continue / cody / windsurf** — other VS Code-embedded agents (need a different ladder step to detect extension-host children).
 - [ ] **trae / junie / augment / codebuddy** — IDE-native agents (Trae, JetBrains Junie, Augment Code, Tencent CodeBuddy) from the evergreen harness set; rules + from-identity fixtures when a contributor picks them up.
-- [ ] **aider-desk / antigravity / kiro / zed** — additional evergreen harness set entries (AiderDesk, Google Antigravity, Kiro CLI, Zed); rules + recipes when a contributor picks them up.
+- [ ] **aider-desk / antigravity / kiro** — additional evergreen harness set entries (AiderDesk, Google Antigravity, Kiro CLI); rules + recipes when a contributor picks them up.
 - [ ] **openclaw** — the open-source gateway framework AutoClaw embeds (MIT, https://github.com/openclaw/openclaw;
   standalone installs run `openclaw` with OPENCLAW_* env — OPENCLAW_STATE_DIR (default ~/.openclaw), OPENCLAW_CONFIG_PATH, OPENCLAW_GATEWAY_PORT — and user-configured providers via openclaw.json `models.providers`;
   the per-agent session store (agents/<agentId>/sessions/sessions.json → .jsonl transcripts whose assistant records carry message.provider/message.model) is the same surface the autoclaw detector reads).
@@ -685,6 +685,12 @@ The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11) and sco
 `minimax-code` reads `~/.minimax/config.yaml` `defaultModel` (provider/model) and falls back to the newest `local_runtime_sessions.record_json` in `v2/sqlite/runtime-state.sqlite`; `MINIMAX_DATA_DIR` / `MAVIS_DATA_DIR` select the data dir, and `DO_NOT_TRACK` is deliberately not a marker because it is the cross-tool convention.
 `dsh` and `minimax-code` keep `NOASSERTION` training postures (the docs are silent); `codewhale` is never/never on its content-free telemetry schema.
 Invocations: `dsh --profile headless <prompt>`, `codewhale exec --auto <prompt>`, `mcode exec --mode standard <prompt>`; the desktop clients are install-only (`cline-app`, `minimax-ai/tap/minimax-code --language=en`), and Kilo Desktop has no cask yet.
+
+**zed** (2026-11-11): the rule landed with a live detector, not a default.
+`zed` reads `~/.config/zed/settings.json` (JSONC — comments and trailing commas parse) for `agent.default_model`, then the active thread in the per-thread store — `~/Library/Application Support/Zed/threads/threads.db` on macOS (which keeps Application Support even when `XDG_DATA_HOME` is exported), `$XDG_DATA_HOME/zed/threads/threads.db` on Linux, and `%LOCALAPPDATA%\Zed\threads\threads.db` on Windows — taking the zstd-compressed thread blob's `model.provider`/`model.model` for the newest thread whose `folder_paths` name the cwd.
+The store read uses the optional `sqlite3` CLI (hex-encoded so no binary crosses the text pipe); unlike the other sqlite-backed harnesses, its absence is not fatal — `settings.json` alone resolves the pair, so no exit 6.
+The same settings file carries the training instance read: `edit_predictions.allow_data_collection` (`true` → enabled, `false` → disabled, absent → disabled because the documented default is an opt-in that is off, non-bool → NOASSERTION). `telemetry.anthropic_retention` is a provider-retention control for Anthropic-covered models, not a training signal, and stays unwired.
+Invocations: none — Zed's agent panel is GUI-driven (no headless launcher), so from-captures are manual (`meta.capture_kind = "manual"`, no `prompt_invocation`): the from-identity declaration (`zed-deepseek-deepseekv41flash`) and the live manual capture (`zed-deepseek-deepseekv41flash-darwin`, captured 2026-11-11) are the fixtures of record. The daemon announces `agent-detect-dev fixtures capture --manual` on stderr when a from-capture candidate is picked.
 
 ### catalog-inference verdicts (recorded so they aren't re-litigated)
 
