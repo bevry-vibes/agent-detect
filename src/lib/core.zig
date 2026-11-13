@@ -2862,6 +2862,12 @@ fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
 }
 
+/// GitHub Copilot records its Copilot Fusion selection as the generic selector `auto`.
+/// Fold that spelling to the canonical model rule here — inside Copilot sessions only — because a global `auto` model rule (or variation alias) would claim every other harness's own auto selector as Copilot Fusion.
+fn copilotFusionModelId(name: []const u8) []const u8 {
+    return if (std.ascii.eqlIgnoreCase(name, "auto")) "copilotfusion" else name;
+}
+
 fn detectCopilot(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
     const model_full = env.get("COPILOT_MODEL") orelse {
         return detectCopilotFromDb(a, io, home, d);
@@ -2872,10 +2878,10 @@ fn detectCopilot(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envir
         const prov = model_full[0..i];
         const model_only = model_full[i + 1 ..];
         try setProvider(a, d, prov);
-        try applyModel(a, d, model_only, model_full);
+        try applyModel(a, d, copilotFusionModelId(model_only), model_full);
     } else {
         try setProvider(a, d, "github-copilot");
-        try applyModel(a, d, model_full, model_full);
+        try applyModel(a, d, copilotFusionModelId(model_full), model_full);
     }
     try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "COPILOT_MODEL", .value = model_full });
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "COPILOT_MODEL", .value = model_full });
@@ -2915,7 +2921,7 @@ fn detectCopilotFromDb(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *D
         }
     }
     try setProvider(a, d, provider_id);
-    try applyModel(a, d, model_str, model_str);
+    try applyModel(a, d, copilotFusionModelId(model_str), model_str);
     var fields = std.ArrayList(FieldObservation).empty;
     defer fields.deinit(a);
     try fields.append(a, .{ .dotted_path = "session.model", .value = model_str });
@@ -3614,12 +3620,21 @@ fn providerReasons(a: std.mem.Allocator, d: *const Detection, list: *std.ArrayLi
 fn modelReasons(a: std.mem.Allocator, d: *const Detection, list: *std.ArrayList(Reason)) !void {
     const label = d.model_label orelse return;
     const openness = d.model_openness orelse {
+        const has_rule = if (d.model_name) |name| modelRuleForName(name) != null else false;
+        const summary = if (has_rule)
+            try std.fmt.allocPrint(a, "the {s} model's openness is unknown (its rule does not assert an openness)", .{label})
+        else
+            try std.fmt.allocPrint(a, "the {s} model is absent from the model rules — its openness is unknown", .{label});
+        const contribution = if (has_rule)
+            try std.fmt.allocPrint(a, "the {s} model rule does not assert an openness", .{label})
+        else
+            try std.fmt.allocPrint(a, "the {s} model is absent from the rule tables", .{label});
         try list.append(a, .{
             .entity = .model,
             .code = .model_openness_unknown,
-            .summary = try std.fmt.allocPrint(a, "the {s} model is absent from the model rules — its openness is unknown", .{label}),
+            .summary = summary,
             .sources = d.raw.model_urls,
-            .actions = try twoActions(a, try contributeAction(a, try std.fmt.allocPrint(a, "the {s} model is absent from the rule tables", .{label})), preflightAction()),
+            .actions = try twoActions(a, try contributeAction(a, contribution), preflightAction()),
         });
         return;
     };
@@ -4515,6 +4530,21 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     return d;
 }
 
+fn hasCopilotAppAncestry(names: []const []const u8) bool {
+    var has_runtime = false;
+    var has_app = false;
+    for (names) |name| {
+        if (std.mem.eql(u8, name, "copilot-runtime") or std.mem.eql(u8, name, "copilot-runtime.exe")) {
+            has_runtime = true;
+        }
+        // ancestry names are lowercased and Windows keeps the `.exe` suffix (the app binary is `GitHub.exe`, the mac bundle binary `github`).
+        if (std.mem.eql(u8, name, "github") or std.mem.eql(u8, name, "github.exe") or std.mem.eql(u8, name, "github copilot") or std.mem.eql(u8, name, "github copilot.exe")) {
+            has_app = true;
+        }
+    }
+    return has_runtime and has_app;
+}
+
 pub fn detect(init: std.process.Init, d: *Detection) !bool {
     const a = init.arena.allocator();
     const io = init.io;
@@ -4525,6 +4555,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
     var hsrc: []const u8 = "none";
     var hclaim_name: []const u8 = ""; // the matched env marker / proc name
     scan: for (rulesForHarnesses) |r| {
+        if (std.mem.eql(u8, r.name, "github-copilot") and !hasCopilotAppAncestry(anc.names)) continue;
         for (r.env_markers) |m| {
             if (env.get(m) != null) {
                 rule = r;
@@ -4547,6 +4578,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         // ancestry scan — note the pre-existing "last match wins" overwrite semantics when two rules match the same ancestor: the loops keep assigning `rule` without breaking.
         // Left unchanged by the binary_names rewiring.
         for (rulesForHarnesses) |r| {
+            if (std.mem.eql(u8, r.name, "github-copilot") and !hasCopilotAppAncestry(anc.names)) continue;
             for (r.binary_names) |pn| {
                 for (anc.names) |n| {
                     if (std.mem.eql(u8, n, pn)) {
@@ -4637,7 +4669,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectVibe(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "cursor")) {
             try detectCursor(a, io, env, home, d);
-        } else if (std.mem.eql(u8, r.name, "copilot")) {
+        } else if (std.mem.eql(u8, r.name, "copilot") or std.mem.eql(u8, r.name, "github-copilot")) {
             try detectCopilot(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "hermes")) {
             try detectHermes(a, io, env, home, d);
@@ -4668,6 +4700,14 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
     if (d.model_id != null) try detectable.append(a, "model");
     d.detectable = try detectable.toOwnedSlice(a);
     return d.harness_label != null and d.provider_label != null and d.model_label != null;
+}
+
+test "copilotFusionModelId: folds only Copilot's generic auto selector" {
+    try std.testing.expectEqualStrings("copilotfusion", copilotFusionModelId("auto"));
+    try std.testing.expectEqualStrings("copilotfusion", copilotFusionModelId("AUTO"));
+    // the fold is exact — never a prefix match — so other selectors keep their own identity
+    try std.testing.expectEqualStrings("autopilot", copilotFusionModelId("autopilot"));
+    try std.testing.expectEqualStrings("gpt-5.2", copilotFusionModelId("gpt-5.2"));
 }
 
 test "tomlStringValue: top-level scalar only" {

@@ -383,6 +383,17 @@ test "canonicalIdFor: harness kilo resolves every alias form" {
     }
 }
 
+test "canonicalIdFor: GitHub Copilot and its app alias resolve to its harness" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const forms = [_][]const u8{ "github-copilot", "GitHub Copilot", "GitHub Copilot.app", "Copilot App" };
+    for (forms) |form| {
+        const got = main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, form) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("github-copilot", got);
+    }
+}
+
 test "canonicalIdFor: cline stays cline; cline-pass wins its aliases" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();

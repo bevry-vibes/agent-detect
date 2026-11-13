@@ -309,7 +309,7 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
 4. **Kilo live-DB fallback.**
    Live identity inference falls back env marker → `KILO_MODEL` → a direct read of the live `~/.local/share/kilo/kilo.db`.
    The *active* session is the non-archived session whose newest `message` was written in the cwd (real conversational activity, not the session row's `time_updated`, which background syncs/compaction bump — and not the lazily-written `session.model` column).
-   Opencode uses the same schema/query via `~/.local/share/opencode/opencode.db`; copilot prefers its running non-archived session.
+   Opencode uses the same schema/query via `~/.local/share/opencode/opencode.db`; copilot (CLI and the desktop app) prefers its running non-archived session.
    Crush reads its project-local store the same way: the newest assistant message's `model`/`provider` in `<cwd>/.crush/crush.db` (a `crush run -m <p>/<m>` override lives only in memory, so the DB is the only place the launched run's real model is visible), with `crush.json`'s `models.large` (the picker's last selection, what an unpinned run uses) as the fallback; the data dir follows the platform (`%LOCALAPPDATA%\Crush` on Windows, `~/.local/share/crush` on POSIX).
    `hyper.json`'s `default_large_model_id` is the hyper catalog's default, never a model source: a partial chain ends undetected, not guessed.
    Production stays SQLite-free except for these read-only session-store reads.
@@ -384,7 +384,7 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
 The committed fixture suite doubles as the integration test of the detection ladder.
 This section pins the matrix policy — what gets a rule, a recipe, and a fixture — so contributors extend it without re-litigating scope.
 
-- **Harness scope (coding harnesses only):** `cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`, `cursor`, `copilot`, `dsh`, `codewhale`, `minimax-code`.
+- **Harness scope (coding harnesses only):** `cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`, `cursor`, `copilot`, `github-copilot`, `dsh`, `codewhale`, `minimax-code`.
   OpenCode is v2 only; the retired v1/`opencode2` surface is not part of the matrix.
   Claw / machine-control agents are out of scope.
   The Cline, Kilo, MiniMax Code, and Codex desktop clients are install-only; they join this list only when their own rules, detectors, and fixtures land.
