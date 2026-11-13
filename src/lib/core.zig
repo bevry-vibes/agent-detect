@@ -2829,24 +2829,156 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
 }
 
 fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    _ = io;
-    _ = home;
-    // cursor does not persist the current model in a config file — the CLI takes `--model` per run (default `auto`).
-    // The launcher sets CURSOR_MODEL="<provider>/<model>" (provider is cursor's first-party router); when unset, detection stays unresolved (no real-session on-disk source yet — a cursor session fixture can be added once a live session records its model).
-    const model_full = env.get("CURSOR_MODEL") orelse return;
-    if (model_full.len == 0) return;
+    // Privacy Mode is the harness instance read. It covers Cursor and Grok Bot and does not cover Grok API usage, so it is written on the harness dims only — never copied onto the provider or the model.
+    try detectCursorPrivacy(a, io, env, home, d);
+    // CLI launcher: CURSOR_MODEL="<provider>/<model>" (provider is Cursor's first-party router; a bare id is that router).
+    if (env.get("CURSOR_MODEL")) |model_full| {
+        if (model_full.len == 0) return;
+        try applyCursorModel(a, d, model_full);
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
+        return;
+    }
+    // IDE agent: the extension host exports CURSOR_CONVERSATION_ID, and the app state db stores that composer's modelConfig.
+    // CURSOR_CONVERSATION_ID is not a harness marker (a conversation id cannot identify the harness); it is only the session key.
+    try detectCursorComposer(a, io, env, home, d);
+}
+
+/// a slash-separated id is `<provider>/<model>`; a bare id is Cursor's own router.
+fn applyCursorModel(a: std.mem.Allocator, d: *Detection, model_full: []const u8) !void {
     const slash = std.mem.findScalar(u8, model_full, '/');
     if (slash) |i| {
-        const prov = model_full[0..i];
-        const model_only = model_full[i + 1 ..];
-        try setProvider(a, d, prov);
-        try applyModel(a, d, model_only, model_full);
+        try setProvider(a, d, model_full[0..i]);
+        try applyModel(a, d, model_full[i + 1 ..], model_full);
     } else {
         try setProvider(a, d, "cursor");
         try applyModel(a, d, model_full, model_full);
     }
-    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
-    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
+}
+
+/// Cursor user-data db. macOS keeps Application Support even when XDG is exported (the Zed path precedent).
+fn cursorStateDb(a: std.mem.Allocator, env: *const std.process.Environ.Map, home: []const u8) !?[]const u8 {
+    if (builtin.os.tag == .windows) {
+        const ad = env.get("APPDATA") orelse return null;
+        return try std.fs.path.join(a, &.{ ad, "Cursor", "User", "globalStorage", "state.vscdb" });
+    }
+    if (home.len == 0) return null;
+    if (builtin.os.tag == .macos) {
+        return try std.fs.path.join(a, &.{ home, "Library", "Application Support", "Cursor", "User", "globalStorage", "state.vscdb" });
+    }
+    if (env.get("XDG_CONFIG_HOME")) |xdg| {
+        if (xdg.len > 0) return try std.fs.path.join(a, &.{ xdg, "Cursor", "User", "globalStorage", "state.vscdb" });
+    }
+    return try std.fs.path.join(a, &.{ home, ".config", "Cursor", "User", "globalStorage", "state.vscdb" });
+}
+
+fn cursorFileExists(io: std.Io, path: []const u8) bool {
+    if (std.Io.Dir.cwd().statFile(io, path, .{})) |_| return true else |_| return false;
+}
+
+/// conversation ids are uuids. Reject anything else before it is interpolated into SQL.
+fn cursorConversationIdOk(id: []const u8) bool {
+    if (id.len == 0 or id.len > 64) return false;
+    for (id) |c| {
+        if (!std.ascii.isHex(c) and c != '-') return false;
+    }
+    return true;
+}
+
+/// map one observed Privacy Mode value onto the harness setting pair.
+/// 2 / PRIVACY_MODE_NO_TRAINING = Privacy Mode (no training); 4 = Share Data. Anything else present is an artifact whose meaning is not documented → NOASSERTION.
+fn applyCursorPrivacyValue(d: *Detection, raw: []const u8) void {
+    if (std.mem.eql(u8, raw, "2") or std.mem.eql(u8, raw, "PRIVACY_MODE_NO_TRAINING")) {
+        d.harness_open_setting = "disabled";
+        d.harness_closed_setting = "disabled";
+    } else if (std.mem.eql(u8, raw, "4")) {
+        d.harness_open_setting = "enabled";
+        d.harness_closed_setting = "enabled";
+    } else if (raw.len > 0) {
+        d.harness_open_setting = "NOASSERTION";
+        d.harness_closed_setting = "NOASSERTION";
+    }
+}
+
+fn cursorPrivacyRaw(a: std.mem.Allocator, v: std.json.Value) ?[]const u8 {
+    return switch (v) {
+        .string => |s| if (s.len == 0) null else s,
+        .integer => |i| std.fmt.allocPrint(a, "{d}", .{i}) catch null,
+        else => null,
+    };
+}
+
+fn detectCursorPrivacy(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    // The app state db is the dashboard value (`newPrivacyMode2`). The CLI cache is the fallback when that row is absent.
+    var from_db = false;
+    if (try cursorStateDb(a, env, home)) |db| {
+        if (cursorFileExists(io, db)) {
+            const sql = "SELECT value FROM ItemTable WHERE key = 'cursorai/donotchange/newPrivacyMode2'";
+            if (kiloSqliteJson(a, io, db, sql)) |out| {
+                if (std.json.parseFromSlice(std.json.Value, a, out, .{}) catch null) |parsed| {
+                    if (parsed.value == .array and parsed.value.array.items.len > 0 and parsed.value.array.items[0] == .object) {
+                        if (jstr(parsed.value.array.items[0].object, "value")) |blob| {
+                            if (std.json.parseFromSlice(std.json.Value, a, blob, .{}) catch null) |inner| {
+                                if (inner.value == .object) {
+                                    if (inner.value.object.get("privacyMode")) |pv| {
+                                        if (cursorPrivacyRaw(a, pv)) |raw| {
+                                            applyCursorPrivacyValue(d, raw);
+                                            from_db = d.harness_closed_setting != null;
+                                            var fields = std.ArrayList(FieldObservation).empty;
+                                            try fields.append(a, .{ .dotted_path = "newPrivacyMode2.privacyMode", .value = raw });
+                                            d.raw.config_files = try appendFileObservation(a, d.raw.config_files, .{ .path = db, .fields = try fields.toOwnedSlice(a) });
+                                            try addEvidenceClaim(a, d, .{ .dim = "harness", .source = "config", .name = db, .field = "newPrivacyMode2.privacyMode", .value = raw });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else |_| {}
+        }
+    }
+    if (from_db or home.len == 0) return;
+    const path = try std.fs.path.join(a, &.{ home, ".cursor", "cli-config.json" });
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
+    if (parsed.value != .object) return;
+    const cache = parsed.value.object.get("privacyCache") orelse return;
+    if (cache != .object) return;
+    const pv = cache.object.get("privacyMode") orelse return;
+    const raw = cursorPrivacyRaw(a, pv) orelse return;
+    applyCursorPrivacyValue(d, raw);
+    var fields = std.ArrayList(FieldObservation).empty;
+    try fields.append(a, .{ .dotted_path = "privacyCache.privacyMode", .value = raw });
+    d.raw.config_files = try appendFileObservation(a, d.raw.config_files, .{ .path = path, .fields = try fields.toOwnedSlice(a) });
+    try addEvidenceClaim(a, d, .{ .dim = "harness", .source = "config", .name = path, .field = "privacyCache.privacyMode", .value = raw });
+}
+
+fn detectCursorComposer(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    const id = env.get("CURSOR_CONVERSATION_ID") orelse return;
+    if (!cursorConversationIdOk(id)) return;
+    const db = (try cursorStateDb(a, env, home)) orelse return;
+    if (!cursorFileExists(io, db)) return;
+    const sql = try std.fmt.allocPrint(a, "SELECT json_extract(value, '$.modelConfig.modelName') AS model_name, json_extract(value, '$.modelConfig.selectedModels[0].modelId') AS model_id FROM cursorDiskKV WHERE key = 'composerData:{s}'", .{id});
+    const out = kiloSqliteJson(a, io, db, sql) catch |err| {
+        if (err == error.SqliteUnavailable) return err;
+        return;
+    };
+    if (std.json.parseFromSlice(std.json.Value, a, out, .{}) catch null) |parsed| {
+        if (parsed.value != .array or parsed.value.array.items.len == 0 or parsed.value.array.items[0] != .object) return;
+        const row = parsed.value.array.items[0].object;
+        const name = jstr(row, "model_name") orelse "";
+        const selected = jstr(row, "model_id") orelse "";
+        const model_full = if (name.len > 0) name else selected;
+        if (model_full.len == 0) return;
+        const field: []const u8 = if (name.len > 0) "modelConfig.modelName" else "modelConfig.selectedModels[0].modelId";
+        try applyCursorModel(a, d, model_full);
+        var fields = std.ArrayList(FieldObservation).empty;
+        try fields.append(a, .{ .dotted_path = field, .value = model_full });
+        d.raw.session_files = try appendFileObservation(a, d.raw.session_files, .{ .path = db, .fields = try fields.toOwnedSlice(a) });
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = field, .value = model_full });
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = field, .value = model_full });
+    }
 }
 
 fn detectCopilot(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
@@ -4525,6 +4657,15 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         // pi marker requires an explicit true value
         const v = env.get("PI_CODING_AGENT") orelse "";
         if (!std.mem.eql(u8, v, "true")) {
+            rule = null;
+            hsrc = "none";
+            hclaim_name = "";
+        }
+    }
+    if (rule != null and std.mem.eql(u8, rule.?.name, "cursor") and std.mem.eql(u8, hclaim_name, "CURSOR_AGENT")) {
+        // the IDE agent host sets CURSOR_AGENT=1; any other value is not this harness
+        const v = env.get("CURSOR_AGENT") orelse "";
+        if (!std.mem.eql(u8, v, "1")) {
             rule = null;
             hsrc = "none";
             hclaim_name = "";

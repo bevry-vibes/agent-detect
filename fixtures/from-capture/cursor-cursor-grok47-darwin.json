@@ -1,0 +1,185 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cursor",
+      "harness_short_title": null,
+      "harness_name": "cursor",
+      "harness_id": "cursor",
+      "harness_license": "NONE",
+      "harness_open_training": "opt-in",
+      "harness_closed_training": "opt-in",
+      "harness_open_setting": "disabled",
+      "harness_closed_setting": "disabled",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "Cursor",
+      "provider_name": "cursor",
+      "provider_id": "cursor",
+      "provider_closed_training": null,
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": null,
+      "model_label": "Grok 4.7",
+      "model_short_title": null,
+      "model_name": "grok-4.7",
+      "model_id": "grok47",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "NONE",
+      "model_reciprocity": false,
+      "agent_id": "cursor-cursor-grok47",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Cursor · Grok 4.7 <cursor-cursor-grok47@local>",
+    "trailer assisted-by": "Assisted-by: Cursor · Grok 4.7 <cursor-cursor-grok47@local>",
+    "found": {
+      "platform_id": "darwin",
+      "harness_version": "2026.11.10-731fb78",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 73971,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 73967,
+          "name": "bash"
+        },
+        {
+          "pid": 64596,
+          "name": "cursor helper (plugin)"
+        },
+        {
+          "pid": 22939,
+          "name": "cursor"
+        }
+      ],
+      "harness-urls": [
+        "https://cursor.com/",
+        "https://www.cursor.com/en-US/terms-of-service"
+      ],
+      "provider-urls": [
+        "https://cursor.com/"
+      ],
+      "model-urls": [
+        "https://x.ai/grok",
+        "https://docs.x.ai/docs/models"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "CURSOR_AGENT",
+          "value": "cursor"
+        },
+        {
+          "dim": "harness",
+          "source": "config",
+          "name": "<home>/Library/Application Support/Cursor/User/globalStorage/state.vscdb",
+          "field": "newPrivacyMode2.privacyMode",
+          "value": "PRIVACY_MODE_NO_TRAINING"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/Library/Application Support/Cursor/User/globalStorage/state.vscdb",
+          "field": "modelConfig.modelName",
+          "value": "grok-4.7"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/Library/Application Support/Cursor/User/globalStorage/state.vscdb",
+          "field": "modelConfig.modelName",
+          "value": "grok-4.7"
+        }
+      ]
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "cursor",
+        "provider": "cursor",
+        "model": "grok47"
+      },
+      "reasons": [
+        {
+          "entity": "provider",
+          "code": "provider-training-unsourced",
+          "summary": "the Cursor provider's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://cursor.com/"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Cursor provider rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Grok 4.7 model has closed weights (openness = closed)",
+          "sources": [
+            "https://x.ai/grok",
+            "https://docs.x.ai/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m3.1-flash, minimax-m2.7)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - provider: the Cursor provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - model: the Grok 4.7 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
+  },
+  "meta": {
+    "updated_at": 1794383944,
+    "harness_version": "2026.11.10-731fb78",
+    "capture_kind": "manual",
+    "version_invocation": [
+      "cursor-agent",
+      "--version"
+    ]
+  }
+}

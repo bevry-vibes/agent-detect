@@ -239,6 +239,7 @@
         "gpt56sol",
         "gpt5mini",
         "grok45",
+        "grok47",
         "kimik25"
       ]
     },
@@ -760,6 +761,7 @@
         "grok420",
         "grok45",
         "grok46",
+        "grok47",
         "hunyuant1",
         "hy3",
         "hy4preview",
@@ -1446,6 +1448,7 @@
         "gpt56sol",
         "gpt5mini",
         "grok45",
+        "grok47",
         "kimik25"
       ],
       "harnesses": [
@@ -4025,6 +4028,24 @@
         "opencode",
         "pi",
         "qwen"
+      ]
+    },
+    {
+      "label": "Grok 4.7",
+      "short_title": null,
+      "name": "grok-4.7",
+      "id": "grok47",
+      "openness": "closed",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "cursor"
+      ],
+      "harnesses": [
+        "cursor",
+        "omp"
       ]
     },
     {
@@ -6680,6 +6701,12 @@
       "reciprocal": false
     },
     "cursor-cursor-grok45": {
+      "platforms": [
+        "darwin"
+      ],
+      "reciprocal": false
+    },
+    "cursor-cursor-grok47": {
       "platforms": [
         "darwin"
       ],

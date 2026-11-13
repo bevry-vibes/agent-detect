@@ -317,6 +317,10 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "hy4-preview", .label = "Hy4 Preview", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/tencent/Hy4-preview", "https://huggingface.co/tencent/Hy4-preview/blob/main/LICENSE" } },
     // grok-4.6: closed — xAI Grok 4.6; API-only, no weights → NONE (same source set as the grok-4.5 rule). Observed on opencode-go (bare id).
     .{ .name = "grok-4.6", .label = "Grok 4.6", .openness = "closed", .license = "NONE", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    // grok-4.7: closed — xAI Grok 4.7; API-only, no weights → NONE (same source set as grok-4.6).
+    // Observed 2026-11-11 as the Cursor IDE's locked model (`modelConfig.modelName` = `grok-4.7` in the app state db).
+    // Training stays unset: Cursor's Privacy Mode covers Cursor and Grok Bot and explicitly does not cover Grok API usage, so the harness toggle is not a model-intrinsic training fact. Never guess the API's axis.
+    .{ .name = "grok-4.7", .label = "Grok 4.7", .openness = "closed", .license = "NONE", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
     // qwen3.8-flash: open-weight — the backing audit landed (2026-09-24): the hosted alias IS the Flash-Next line.
     // The Qwen/Qwen3.8-Flash-Next card states "Qwen3.8-Flash is the official version based on Qwen3.8-Flash-Next" (the card links the qwencloud.com/models/qwen3.8-flash overview), and OpenRouter's listing now maps `qwen/qwen3.8-flash` → hugging_face_id `Qwen/Qwen3.8-Flash-Next` — its one endpoint is Alibaba-served (`qwen/qwen3.8-flash-20260826`, an endpoint version stamp, not a surfaced id, so no variation).
     // The weights are downloadable under the "Qwen Community License 1.0" (custom grant: >100M-MAU / $20M-revenue naming clause, MaaS/AI-Work-Assistant commercial carve-out) — not OSI, so open-weight per the card's own term and license NOASSERTION per the custom-license rule.
@@ -524,6 +528,7 @@ pub const rulesForProviders = [_]ProviderRule{
     // HF Inference Providers security docs: "Hugging Face does not store any user data for training purposes. We do not store the request body or response when routing requests through Hugging Face" (30-day debug logs, no content).
     .{ .name = "huggingface", .label = "Hugging Face", .closed_training = "never", .open_training = "never", .sources = &.{ "https://huggingface.co/docs/inference-providers/en/security", "https://huggingface.co/privacy" } },
     // cursor: null/null — Cursor's first-party model routing (flat subscription, no per-call price tracked); policy unverified.
+    // Privacy Mode is a harness instance read (see the cursor harness rule). It covers Cursor and Grok Bot and does not cover Grok API usage, so it is not copied onto this provider — a Grok model served here stays unverified on both axes.
     .{ .name = "cursor", .label = "Cursor", .closed_training = null, .open_training = null, .sources = &.{"https://cursor.com/"} },
     // github-copilot: closed opt-out — the Copilot Trust Center: "GitHub may use Copilot interaction data—including prompts (inputs), suggestions (outputs) … to train and improve AI models" for Individual subscribers, who "can opt out … through your settings";
     // "GitHub does not use Copilot Business or Enterprise customer data to train AI models".
@@ -674,7 +679,9 @@ const codewhale_env = [_][]const u8{ "CODEWHALE_HOME", "CODEWHALE_CONFIG_PATH", 
 // minimax-code: DO_NOT_TRACK is deliberately NOT a marker — it is the cross-tool convention and cannot identify this harness.
 const minimax_code_env = [_][]const u8{ "MINIMAX_DATA_DIR", "MAVIS_DATA_DIR", "MCODE_DISABLE_TELEMETRY" };
 const vibe_env = [_][]const u8{ "VIBE_API_KEY", "VIBE_ACTIVE_MODEL", "VIBE_ACTIVE_PROVIDER" };
-const cursor_env = [_][]const u8{ "CURSOR_API_KEY", "CURSOR_API_ENDPOINT", "CURSOR_MODEL" };
+// CURSOR_AGENT is the IDE agent host (observed value "1" in the extension-host shell). The CLI markers stay first so a launcher that sets CURSOR_MODEL still wins the claim name.
+// The value check (exactly "1") lives in detect — presence alone is not enough, same as PI_CODING_AGENT.
+const cursor_env = [_][]const u8{ "CURSOR_API_KEY", "CURSOR_API_ENDPOINT", "CURSOR_MODEL", "CURSOR_AGENT" };
 const copilot_env = [_][]const u8{ "COPILOT_ALLOW_ALL", "COPILOT_MODEL" };
 // Hermes Agent — exported by every hermes CLI/desktop session (`_advertise_agent_env`, hermes_cli/main.py).
 // HERMES_PROFILE names the active profile (present only when a non-default profile runs); its value is the profile name, not a secret.
@@ -780,12 +787,15 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "vibe", "vibe.exe" }
     else
         &[_][]const u8{"vibe"} },
-    // cursor: NONE — the Cursor Agent CLI (cursor-agent, brew `cursor-cli`) is closed-source;
+    // cursor: NONE — the Cursor Agent CLI (cursor-agent, brew `cursor-cli`) and the Cursor IDE agent are closed-source;
     // verified from the project page and its Terms of Service (no open license), so `license` is `"NONE"` (concluded no-license), not null.
-    // Training postures: opt-in/opt-in — the privacy policy states "We do not use Inputs or Suggestions to train our models, or permit third parties to use them for training, unless … you've explicitly agreed to their use for such training purposes";
-    // Privacy Mode (on by default only for Teams/Enterprise, a toggle for individuals) extends the no-training guarantee to model providers.
-    // The CLI's `~/.cursor/cli-config.json` carries a `privacyCache.privacyMode` value — a candidate instance signal left unwired until the enum mapping is publicly documented (never-guess).
-    .{ .name = "cursor", .label = "Cursor", .license = "NONE", .license_sources = &.{ "https://cursor.com/", "https://www.cursor.com/en-US/terms-of-service" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://cursor.com/privacy", "https://cursor.com/help/security-and-privacy/privacy" }, .env_markers = &cursor_env, .binary_names = if (builtin.os.tag == .windows)
+    // Training postures: opt-in/opt-in — the privacy policy states "We do not use Inputs or Suggestions to train our models, or permit third parties to use them for training, unless … you've explicitly agreed to their use for such training purposes".
+    // The instance read is Privacy Mode, and the policy does not distinguish model types, so a mapped value mirrors across both axes.
+    // Dashboard radios (observed 2026-11-11, cursor.com privacy settings and the grok.com/dashboard mirror): value 2 / PRIVACY_MODE_NO_TRAINING = "Privacy Mode (no training)"; value 4 = "Share Data".
+    // That toggle covers Cursor and Grok Bot only. It does not cover Grok API usage, so detectCursor writes it on the harness dims and never copies it onto the provider or the model.
+    // Persisted as `cursorai/donotchange/newPrivacyMode2` in the app state db, and as `privacyCache.privacyMode` in `~/.cursor/cli-config.json` (the CLI cache; the app db wins when both exist).
+    // The IDE agent host exports CURSOR_AGENT=1 (the value must be exactly "1"). The app binary name is deliberately not a marker: it would match every command launched from the editor.
+    .{ .name = "cursor", .label = "Cursor", .closed_setting_hint = "choose Privacy Mode (no training) in Cursor Settings → Privacy (stored as PRIVACY_MODE_NO_TRAINING / privacyCache.privacyMode=2). This does not cover Grok API usage", .license = "NONE", .license_sources = &.{ "https://cursor.com/", "https://www.cursor.com/en-US/terms-of-service" }, .open_training = "opt-in", .closed_training = "opt-in", .training_sources = &.{ "https://cursor.com/privacy", "https://cursor.com/help/security-and-privacy/privacy", "https://cursor.com/privacy-overview" }, .env_markers = &cursor_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }
     else
         &[_][]const u8{"cursor-agent"} },
@@ -858,6 +868,7 @@ const env_value_allowlist = [_][]const u8{
                           "KILO_MODEL",
     "OPENCODE_MODEL",               "VIBE_ACTIVE_MODEL",                     "VIBE_ACTIVE_PROVIDER",
     "PI_PROVIDER",                  "PI_MODEL",                              "CURSOR_MODEL",
+    "CURSOR_AGENT",
     "COPILOT_MODEL",                "GOOSE_WORKING_DIR",                     "GOOSE_TERMINAL",
     "GOOSE_MODE",                   "USERPROFILE",                           "HOME",
     "APPDATA",
