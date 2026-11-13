@@ -21,10 +21,10 @@
       "model_short_title": null,
       "model_name": "reflection-beam",
       "model_id": "reflectionbeam",
-      "model_openness": null,
+      "model_openness": "open-weight",
       "model_open_training": null,
       "model_closed_training": null,
-      "model_license": null,
+      "model_license": "Apache-2.0",
       "model_reciprocity": true,
       "agent_id": "cline-clinepass-reflectionbeam",
       "reciprocal": true
@@ -51,7 +51,9 @@
         "https://cline.bot/tos"
       ],
       "model-urls": [
-        "https://huggingface.co/reflection/Beam-1.0-501B-A23B"
+        "https://huggingface.co/reflection/Beam-1.0-501B-A23B",
+        "https://huggingface.co/reflection/Beam-1.0-501B-A23B/blob/main/LICENSE",
+        "https://huggingface.co/blog/reflection-beam"
       ],
       "scandal-urls": []
     },
@@ -67,6 +69,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1791254445
+    "updated_at": 1794562643
   }
 }

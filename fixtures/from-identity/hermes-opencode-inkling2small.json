@@ -21,10 +21,10 @@
       "model_short_title": null,
       "model_name": "inkling-2-small",
       "model_id": "inkling2small",
-      "model_openness": "closed",
-      "model_open_training": null,
+      "model_openness": "open-weight",
+      "model_open_training": "never",
       "model_closed_training": "enforced",
-      "model_license": "NOASSERTION",
+      "model_license": "Apache-2.0",
       "model_reciprocity": false,
       "agent_id": "hermes-opencode-inkling2small",
       "reciprocal": false
@@ -52,6 +52,8 @@
       "model-urls": [
         "https://thinkingmachines.ai/news/inkling-2-small/",
         "https://thinkingmachines.ai/model-card/inkling-2-small/",
+        "https://huggingface.co/thinkingmachines/Inkling-2-Small",
+        "https://huggingface.co/thinkingmachines/Inkling-2-Small/blob/main/LICENSE",
         "https://opencode.ai/docs/zen"
       ],
       "scandal-urls": []
@@ -66,17 +68,19 @@
       "reasons": [
         {
           "entity": "model",
-          "code": "model-closed",
+          "code": "model-closed-enforced",
           "values": [
             {
-              "name": "openness",
-              "value": "closed"
+              "name": "closed_training",
+              "value": "enforced"
             }
           ],
-          "summary": "the Inkling 2 Small model has closed weights (openness = closed)",
+          "summary": "the Inkling 2 Small model's arrangement trains on user data by default (closed_training = enforced)",
           "sources": [
             "https://thinkingmachines.ai/news/inkling-2-small/",
             "https://thinkingmachines.ai/model-card/inkling-2-small/",
+            "https://huggingface.co/thinkingmachines/Inkling-2-Small",
+            "https://huggingface.co/thinkingmachines/Inkling-2-Small/blob/main/LICENSE",
             "https://opencode.ai/docs/zen"
           ],
           "actions": [
@@ -99,10 +103,10 @@
     "check-reciprocal": "not reciprocal",
     "check-reciprocal.stderr": [
       "agent (harness, provider, model) data complete and requirement failed",
-      "  - model: the Inkling 2 Small model has closed weights (openness = closed) (see: agent-detect explain)"
+      "  - model: the Inkling 2 Small model's arrangement trains on user data by default (closed_training = enforced) (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1794382618
+    "updated_at": 1794562643
   }
 }

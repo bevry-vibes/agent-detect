@@ -21,10 +21,10 @@
       "model_short_title": null,
       "model_name": "muse-spark-1.2",
       "model_id": "musespark12",
-      "model_openness": null,
-      "model_open_training": null,
+      "model_openness": "open-weight",
+      "model_open_training": "never",
       "model_closed_training": "NOASSERTION",
-      "model_license": null,
+      "model_license": "NOASSERTION",
       "model_reciprocity": null,
       "agent_id": "kilo-openrouter-musespark12",
       "reciprocal": false
@@ -50,7 +50,11 @@
         "https://openrouter.ai/privacy",
         "https://openrouter.ai/terms"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B",
+        "https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B/blob/main/LICENSE",
+        "https://research.meta.ai/blog/muse-spark-open"
+      ],
       "scandal-urls": []
     },
     "explain": {
@@ -91,12 +95,23 @@
         },
         {
           "entity": "model",
-          "code": "model-openness-unknown",
-          "summary": "the Muse Spark 1.2 model is absent from the model rules — its openness is unknown",
+          "code": "model-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the Muse Spark 1.2 model's training arrangement is unsourced — the determination cannot be made",
+          "sources": [
+            "https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B",
+            "https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B/blob/main/LICENSE",
+            "https://research.meta.ai/blog/muse-spark-open"
+          ],
           "actions": [
             {
               "kind": "contribute-data",
-              "instruction": "the Muse Spark 1.2 model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "instruction": "the Muse Spark 1.2 model rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
               "command": "agent-detect found",
               "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
             },
@@ -112,7 +127,7 @@
     "identify.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination",
       "  - harness: the Kilo Code harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - model: the Muse Spark 1.2 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - model: the Muse Spark 1.2 model's training arrangement is unsourced — the determination cannot be made (see: agent-detect explain)"
     ],
     "explain.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination"
@@ -120,10 +135,10 @@
     "check-reciprocal.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination",
       "  - harness: the Kilo Code harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - model: the Muse Spark 1.2 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - model: the Muse Spark 1.2 model's training arrangement is unsourced — the determination cannot be made (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1791254338
+    "updated_at": 1794562645
   }
 }

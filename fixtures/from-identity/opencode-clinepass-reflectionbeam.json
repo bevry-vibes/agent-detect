@@ -21,13 +21,13 @@
       "model_short_title": null,
       "model_name": "reflection-beam",
       "model_id": "reflectionbeam",
-      "model_openness": null,
+      "model_openness": "open-weight",
       "model_open_training": null,
       "model_closed_training": null,
-      "model_license": null,
-      "model_reciprocity": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
       "agent_id": "opencode-clinepass-reflectionbeam",
-      "reciprocal": false
+      "reciprocal": true
     },
     "trailer co-author": "Co-authored-by: OpenCode · Reflection Beam <opencode-clinepass-reflectionbeam@local>",
     "trailer assisted-by": "Assisted-by: OpenCode · Reflection Beam <opencode-clinepass-reflectionbeam@local>",
@@ -51,54 +51,24 @@
         "https://cline.bot/tos"
       ],
       "model-urls": [
-        "https://huggingface.co/reflection/Beam-1.0-501B-A23B"
+        "https://huggingface.co/reflection/Beam-1.0-501B-A23B",
+        "https://huggingface.co/reflection/Beam-1.0-501B-A23B/blob/main/LICENSE",
+        "https://huggingface.co/blog/reflection-beam"
       ],
       "scandal-urls": []
     },
     "explain": {
-      "state": "unknown",
+      "state": "reciprocal",
       "identity": {
         "harness": "opencode",
         "provider": "clinepass",
         "model": "reflectionbeam"
       },
-      "reasons": [
-        {
-          "entity": "model",
-          "code": "model-openness-unknown",
-          "summary": "the Reflection Beam model is absent from the model rules — its openness is unknown",
-          "sources": [
-            "https://huggingface.co/reflection/Beam-1.0-501B-A23B"
-          ],
-          "actions": [
-            {
-              "kind": "contribute-data",
-              "instruction": "the Reflection Beam model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
-              "command": "agent-detect found",
-              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
-            },
-            {
-              "kind": "preflight-combo",
-              "instruction": "verify a candidate combo resolves reciprocal before switching",
-              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
-            }
-          ]
-        }
-      ]
+      "reasons": []
     },
-    "identify.stderr": [
-      "agent (harness, provider, model) data incomplete to make a determination",
-      "  - model: the Reflection Beam model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
-    ],
-    "explain.stderr": [
-      "agent (harness, provider, model) data incomplete to make a determination"
-    ],
-    "check-reciprocal.stderr": [
-      "agent (harness, provider, model) data incomplete to make a determination",
-      "  - model: the Reflection Beam model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
-    ]
+    "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1793236481
+    "updated_at": 1794562643
   }
 }

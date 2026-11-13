@@ -21,11 +21,11 @@
       "model_short_title": null,
       "model_name": "ernie-4.5",
       "model_id": "ernie45",
-      "model_openness": null,
+      "model_openness": "open-weight",
       "model_open_training": null,
       "model_closed_training": null,
-      "model_license": null,
-      "model_reciprocity": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
       "agent_id": "omp-nanogpt-ernie45",
       "reciprocal": false
     },
@@ -49,7 +49,10 @@
       "provider-urls": [
         "https://nanogpt.ai/"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://huggingface.co/baidu/ERNIE-4.5-21B-A3B-PT",
+        "https://huggingface.co/baidu/ERNIE-4.5-21B-A3B-PT/blob/main/LICENSE"
+      ],
       "scandal-urls": []
     },
     "explain": {
@@ -107,32 +110,13 @@
               "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
             }
           ]
-        },
-        {
-          "entity": "model",
-          "code": "model-openness-unknown",
-          "summary": "the ERNIE 4.5 model is absent from the model rules — its openness is unknown",
-          "actions": [
-            {
-              "kind": "contribute-data",
-              "instruction": "the ERNIE 4.5 model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
-              "command": "agent-detect found",
-              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
-            },
-            {
-              "kind": "preflight-combo",
-              "instruction": "verify a candidate combo resolves reciprocal before switching",
-              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
-            }
-          ]
         }
       ]
     },
     "identify.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination",
       "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - provider: the NanoGPT provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - model: the ERNIE 4.5 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - provider: the NanoGPT provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
     ],
     "explain.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination"
@@ -140,11 +124,10 @@
     "check-reciprocal.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination",
       "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - provider: the NanoGPT provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - model: the ERNIE 4.5 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - provider: the NanoGPT provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1791254364
+    "updated_at": 1794562643
   }
 }

@@ -99,6 +99,7 @@
         "minimaxm3",
         "minimaxm31flash",
         "mistrallarge3",
+        "mistrallarge4",
         "mistralnemoinstruct2407",
         "mistralsmall3",
         "musespark12",
@@ -425,6 +426,7 @@
         "mimov25",
         "mimov25pro",
         "mimov26flash",
+        "mimov26pro",
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
@@ -899,6 +901,7 @@
         "minimaxm3",
         "minimaxm31flash",
         "mistrallarge3",
+        "mistrallarge4",
         "mistralnemoinstruct2407",
         "mistralsmall3",
         "musespark12",
@@ -1007,6 +1010,7 @@
         "minimaxm3",
         "minimaxm31flash",
         "mistrallarge3",
+        "mistrallarge4",
         "mistralnemoinstruct2407",
         "mistralsmall3",
         "musespark12",
@@ -1110,6 +1114,7 @@
         "minimaxm3",
         "minimaxm31flash",
         "mistrallarge3",
+        "mistrallarge4",
         "mistralsmall3"
       ]
     },
@@ -1953,6 +1958,7 @@
       "variations": [],
       "models": [
         "mistrallarge3",
+        "mistrallarge4",
         "mistralsmall3"
       ],
       "harnesses": [
@@ -2598,7 +2604,8 @@
       "variations": [],
       "models": [
         "mimov25",
-        "mimov25pro"
+        "mimov25pro",
+        "mimov26pro"
       ],
       "harnesses": [
         "hermes"
@@ -3138,8 +3145,8 @@
       "short_title": null,
       "name": "ernie-4.5",
       "id": "ernie45",
-      "openness": null,
-      "license": null,
+      "openness": "open-weight",
+      "license": "Apache-2.0",
       "open_training": null,
       "closed_training": null,
       "variations": [],
@@ -4218,9 +4225,9 @@
       "short_title": null,
       "name": "inkling-2-small",
       "id": "inkling2small",
-      "openness": "closed",
-      "license": "NOASSERTION",
-      "open_training": null,
+      "openness": "open-weight",
+      "license": "Apache-2.0",
+      "open_training": "never",
       "closed_training": "enforced",
       "variations": [
         "inkling-2-small-free"
@@ -4905,6 +4912,25 @@
       ]
     },
     {
+      "label": "MiMo V2.6 Pro",
+      "short_title": null,
+      "name": "mimo-v2.6-pro",
+      "id": "mimov26pro",
+      "openness": "open-weight",
+      "license": "MIT",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "MiMo-V2.6-Pro-RL"
+      ],
+      "providers": [
+        "xiaomi"
+      ],
+      "harnesses": [
+        "hermes"
+      ]
+    },
+    {
       "label": "MiniMax M2.5",
       "short_title": null,
       "name": "minimax-m2.5",
@@ -5066,11 +5092,32 @@
       "name": "mistral-large-3",
       "id": "mistrallarge3",
       "openness": "open-weight",
-      "license": null,
+      "license": "Apache-2.0",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "mistral"
+      ],
+      "harnesses": [
+        "cline",
+        "opencode",
+        "pi",
+        "vibe"
+      ]
+    },
+    {
+      "label": "Mistral Large 4",
+      "short_title": null,
+      "name": "mistral-large-4",
+      "id": "mistrallarge4",
+      "openness": "open-weight",
+      "license": "NOASSERTION",
       "open_training": null,
       "closed_training": null,
       "variations": [
-        "mistral-large-latest"
+        "mistral-large-latest",
+        "Mistral-Large-4-1T-A52B"
       ],
       "providers": [
         "mistral"
@@ -5133,12 +5180,14 @@
       "short_title": null,
       "name": "muse-spark-1.2",
       "id": "musespark12",
-      "openness": null,
-      "license": null,
-      "open_training": null,
+      "openness": "open-weight",
+      "license": "NOASSERTION",
+      "open_training": "never",
       "closed_training": "NOASSERTION",
       "variations": [
-        "muse-spark-1.2-contributor"
+        "muse-spark-1.2-contributor",
+        "Muse-Spark-Open",
+        "meta-models/Muse-Spark-Open-816B-A42B"
       ],
       "providers": [
         "kilo",
@@ -5837,8 +5886,8 @@
       "short_title": null,
       "name": "reflection-beam",
       "id": "reflectionbeam",
-      "openness": null,
-      "license": null,
+      "openness": "open-weight",
+      "license": "Apache-2.0",
       "open_training": null,
       "closed_training": null,
       "variations": [
@@ -6256,6 +6305,10 @@
       "reciprocal": false
     },
     "cline-mistral-mistrallarge3": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "cline-mistral-mistrallarge4": {
       "platforms": [],
       "reciprocal": false
     },
@@ -8046,6 +8099,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "hermes-opencode-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "hermes-opencodego-deepseekv4flash": {
       "platforms": [],
       "reciprocal": true
@@ -8683,6 +8740,10 @@
       "reciprocal": true
     },
     "hermes-xiaomi-mimov25pro": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "hermes-xiaomi-mimov26pro": {
       "platforms": [],
       "reciprocal": true
     },
@@ -10998,7 +11059,7 @@
     },
     "opencode-clinepass-reflectionbeam": {
       "platforms": [],
-      "reciprocal": false
+      "reciprocal": true
     },
     "opencode-clinepass-solarmini4": {
       "platforms": [],
@@ -11144,6 +11205,10 @@
       "reciprocal": false
     },
     "opencode-mistral-mistrallarge3": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-mistral-mistrallarge4": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11409,7 +11474,7 @@
     },
     "opencode-opencode-reflectionbeam": {
       "platforms": [],
-      "reciprocal": false
+      "reciprocal": true
     },
     "opencode-opencodego-deepseekv4flash": {
       "platforms": [],
@@ -11645,6 +11710,10 @@
       "reciprocal": false
     },
     "pi-mistral-mistrallarge3": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-mistral-mistrallarge4": {
       "platforms": [],
       "reciprocal": false
     },
@@ -12185,6 +12254,10 @@
       "reciprocal": false
     },
     "vibe-mistral-mistrallarge3": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "vibe-mistral-mistrallarge4": {
       "platforms": [],
       "reciprocal": false
     },
