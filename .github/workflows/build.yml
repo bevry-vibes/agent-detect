@@ -16,7 +16,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: step-security/setup-zig@v2
         with:
@@ -64,7 +64,7 @@ jobs:
     permissions:
       contents: write # publish release assets
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: step-security/setup-zig@v2
         with:
