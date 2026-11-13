@@ -42,6 +42,30 @@ function detectPlatform(): Platform {
   return "linux";
 }
 
+/** Intel Macs default to x86_64; Apple Silicon (and the Safari/Firefox case,
+ * where the web platform does not expose the host CPU) defaults to aarch64. */
+function defaultArchForPlatform(platform: Platform): Arch {
+  return platform === "macos" ? "aarch64" : "x86_64";
+}
+
+type UserAgentData = {
+  getHighEntropyValues(hints: string[]): Promise<{ architecture?: string }>;
+};
+
+/** Chromium exposes the host CPU through UA-CH; Safari/Firefox do not. */
+async function detectClientArch(): Promise<Arch | null> {
+  const uaData = (navigator as Navigator & { userAgentData?: UserAgentData }).userAgentData;
+  if (!uaData?.getHighEntropyValues) return null;
+  try {
+    const { architecture } = await uaData.getHighEntropyValues(["architecture"]);
+    if (architecture === "arm") return "aarch64";
+    if (architecture === "x86") return "x86_64";
+  } catch {
+    // the hint is optional and may be denied; fall through to the platform default
+  }
+  return null;
+}
+
 function ToggleRow({
   label,
   options,
@@ -96,8 +120,35 @@ function Feature({ icon: Icon, children }: { icon: typeof Mail; children: ReactN
  * One platform (+arch for the download) selection drives both cards: the
  * snippets are sh on linux/macos and powershell on windows. */
 export function Hero() {
-  const [platform, setPlatform] = useState<Platform>(detectPlatform);
-  const [arch, setArch] = useState<Arch>("x86_64");
+  const [detectedPlatform] = useState<Platform>(detectPlatform);
+  const [platform, setPlatform] = useState<Platform>(detectedPlatform);
+  const [arch, setArch] = useState<Arch>(() => defaultArchForPlatform(detectedPlatform));
+  const [clientArch, setClientArch] = useState<Arch | null>(null);
+  const archTouched = useRef(false);
+  const platformRef = useRef(platform);
+
+  useEffect(() => {
+    platformRef.current = platform;
+  }, [platform]);
+
+  useEffect(() => {
+    let cancelled = false;
+    detectClientArch().then((detected) => {
+      if (cancelled || !detected) return;
+      setClientArch(detected);
+      // only refine the initial recommendation, never a manual arch choice
+      if (!archTouched.current && platformRef.current === detectedPlatform) setArch(detected);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [detectedPlatform]);
+
+  const changePlatform = (next: Platform) => {
+    setPlatform(next);
+    if (!archTouched.current) setArch(next === detectedPlatform && clientArch ? clientArch : defaultArchForPlatform(next));
+  };
+
   const prefix = platform === "windows" ? ".\\agent-detect.exe" : "./agent-detect";
   const asset = `agent-detect-${platform}-${arch}${platform === "windows" ? ".exe" : ""}`;
   const installLines =
@@ -150,9 +201,20 @@ export function Hero() {
 
         {/* one shared platform/arch selection — the cards below never repeat it */}
         <div className="mt-10 flex flex-wrap items-center gap-x-10 gap-y-3">
-          <ToggleRow label="platform" options={PLATFORMS} value={platform} onChange={(v) => setPlatform(v as Platform)} />
-          <ToggleRow label="arch" options={ARCHES} value={arch} onChange={(v) => setArch(v as Arch)} />
+          <ToggleRow label="platform" options={PLATFORMS} value={platform} onChange={(v) => changePlatform(v as Platform)} />
+          <ToggleRow
+            label="arch"
+            options={ARCHES}
+            value={arch}
+            onChange={(v) => {
+              archTouched.current = true;
+              setArch(v as Arch);
+            }}
+          />
         </div>
+        <p className="text-muted-foreground mt-2 text-xs">
+          macOS defaults to Apple Silicon; choose <code className="font-mono">x86_64</code> for an Intel Mac.
+        </p>
 
         <div className="mt-6 flex flex-col gap-4">
           <Card id="install" className="min-w-0 scroll-mt-14">
