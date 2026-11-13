@@ -9,6 +9,7 @@ Local application of the bevry-vibes skills [commits.md](https://github.com/bevr
 - Build first, then generate the co-author trailer from the fresh binary: `zig build && ./zig-out/bin/agent-detect trailer co-author`, attached with `git commit --trailer "$(zig build && ./zig-out/bin/agent-detect trailer co-author)"`.
   Never guess or cache the trailer; if generation fails, fix it rather than commit without it.
   The build-first is not optional: the binary reads local session stores that drift across app updates (the zcode 3.14 rollout rename left stale binaries resolving nothing), so a stale build can report a different agent than the session committing.
+- When live detection succeeds, its generated `Co-authored-by` is the sole co-author trailer. Do not append a second generic harness or GitHub Copilot attribution; if detection fails, resolve that instead of adding a competing identity.
 
 ## releases
 
