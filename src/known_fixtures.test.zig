@@ -380,6 +380,27 @@ test "fixtures: every from-capture stem carries a from-identity channel" {
     }
 }
 
+test "fixtures: Copilot Fusion capture records the auto selection, not an underlying model" {
+    var arena = std.heap.ArenaAllocator.init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const root = (try readChannelParsed(a, capture_dir, "copilotapp-githubcopilot-auto-darwin")) orelse return error.MissingCopilotFusionCapture;
+    const outputs = root.object.get("outputs") orelse return error.InvalidFixtureShape;
+    if (outputs != .object) return error.InvalidFixtureShape;
+    const identify = outputs.object.get("identify") orelse return error.InvalidFixtureShape;
+    if (identify != .object) return error.InvalidFixtureShape;
+    try testing.expectEqualStrings("GitHub Copilot.app", identify.object.get("harness_label").?.string);
+    try testing.expectEqualStrings("auto", identify.object.get("model_id").?.string);
+    try testing.expectEqualStrings("auto", identify.object.get("model_name").?.string);
+    try testing.expectEqualStrings("Copilot Fusion", identify.object.get("model_label").?.string);
+    try testing.expect(identify.object.get("model_openness").? == .null);
+
+    const meta = root.object.get("meta") orelse return error.InvalidFixtureShape;
+    if (meta != .object) return error.InvalidFixtureShape;
+    try testing.expectEqualStrings("manual", meta.object.get("capture_kind").?.string);
+    try testing.expectEqualStrings("1.4.0", meta.object.get("harness_version").?.string);
+}
+
 /// from-capture stems written before the required-meta rule (their meta carries only `updated_at`). Each is rewritten by its next re-capture — drop the stem as it lands.
 fn isLegacyRequiredMeta(stem: []const u8) bool {
     const legacy = [_][]const u8{

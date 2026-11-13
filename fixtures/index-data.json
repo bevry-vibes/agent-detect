@@ -165,6 +165,31 @@
         "githubcopilot"
       ],
       "models": [
+        "auto",
+        "claudesonnet5",
+        "gemini25pro",
+        "gemini3pro",
+        "gpt4o",
+        "gpt52",
+        "gpt5mini",
+        "grok45"
+      ]
+    },
+    {
+      "label": "GitHub Copilot.app",
+      "short_title": null,
+      "name": "copilot-app",
+      "id": "copilotapp",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": "opt-out",
+      "reciprocity_scandal": true,
+      "variations": [],
+      "providers": [
+        "githubcopilot"
+      ],
+      "models": [
+        "auto",
         "claudesonnet5",
         "gemini25pro",
         "gemini3pro",
@@ -354,6 +379,7 @@
         "zai"
       ],
       "models": [
+        "auto",
         "bigpickle",
         "claudefable5",
         "claudeopus4",
@@ -736,6 +762,7 @@
         "zenmux"
       ],
       "models": [
+        "auto",
         "claudefable5",
         "claudeopus4",
         "claudeopus5",
@@ -1594,6 +1621,7 @@
         "copilot-acp"
       ],
       "models": [
+        "auto",
         "claudesonnet5",
         "gemini25pro",
         "gemini3pro",
@@ -1604,6 +1632,7 @@
       ],
       "harnesses": [
         "copilot",
+        "copilotapp",
         "hermes",
         "omp"
       ]
@@ -2668,6 +2697,26 @@
   ],
   "models": [
     {
+      "label": "Copilot Fusion",
+      "short_title": null,
+      "name": "auto",
+      "id": "auto",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "githubcopilot"
+      ],
+      "harnesses": [
+        "copilot",
+        "copilotapp",
+        "hermes",
+        "omp"
+      ]
+    },
+    {
       "label": "Big Pickle",
       "short_title": null,
       "name": "big-pickle",
@@ -2832,6 +2881,7 @@
       "harnesses": [
         "cline",
         "copilot",
+        "copilotapp",
         "cursor",
         "hermes",
         "kilo",
@@ -3236,6 +3286,7 @@
       "harnesses": [
         "cline",
         "copilot",
+        "copilotapp",
         "hermes",
         "kilo",
         "kimicode",
@@ -3282,6 +3333,7 @@
       ],
       "harnesses": [
         "copilot",
+        "copilotapp",
         "hermes",
         "omp",
         "opencode"
@@ -3725,6 +3777,7 @@
       "harnesses": [
         "cline",
         "copilot",
+        "copilotapp",
         "hermes",
         "kilo",
         "kimicode",
@@ -3754,6 +3807,7 @@
       "harnesses": [
         "cline",
         "copilot",
+        "copilotapp",
         "cursor",
         "hermes",
         "kilo",
@@ -3784,6 +3838,7 @@
       "harnesses": [
         "cline",
         "copilot",
+        "copilotapp",
         "cursor",
         "hermes",
         "kilo",
@@ -4064,6 +4119,7 @@
       "harnesses": [
         "cline",
         "copilot",
+        "copilotapp",
         "cursor",
         "goose",
         "hermes",
@@ -6736,6 +6792,16 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "copilotapp-githubcopilot-auto": {
+      "platforms": [
+        "darwin"
+      ],
+      "reciprocal": false
+    },
+    "copilotapp-githubcopilot-gpt52": {
+      "platforms": [],
       "reciprocal": false
     },
     "crush-deepseek-deepseekv4flash": {

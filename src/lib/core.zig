@@ -3614,12 +3614,21 @@ fn providerReasons(a: std.mem.Allocator, d: *const Detection, list: *std.ArrayLi
 fn modelReasons(a: std.mem.Allocator, d: *const Detection, list: *std.ArrayList(Reason)) !void {
     const label = d.model_label orelse return;
     const openness = d.model_openness orelse {
+        const has_rule = if (d.model_name) |name| modelRuleForName(name) != null else false;
+        const summary = if (has_rule)
+            try std.fmt.allocPrint(a, "the {s} model's openness is unknown (its rule does not assert an openness)", .{label})
+        else
+            try std.fmt.allocPrint(a, "the {s} model is absent from the model rules — its openness is unknown", .{label});
+        const contribution = if (has_rule)
+            try std.fmt.allocPrint(a, "the {s} model rule does not assert an openness", .{label})
+        else
+            try std.fmt.allocPrint(a, "the {s} model is absent from the rule tables", .{label});
         try list.append(a, .{
             .entity = .model,
             .code = .model_openness_unknown,
-            .summary = try std.fmt.allocPrint(a, "the {s} model is absent from the model rules — its openness is unknown", .{label}),
+            .summary = summary,
             .sources = d.raw.model_urls,
-            .actions = try twoActions(a, try contributeAction(a, try std.fmt.allocPrint(a, "the {s} model is absent from the rule tables", .{label})), preflightAction()),
+            .actions = try twoActions(a, try contributeAction(a, contribution), preflightAction()),
         });
         return;
     };
@@ -4515,6 +4524,20 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     return d;
 }
 
+fn hasCopilotAppAncestry(names: []const []const u8) bool {
+    var has_runtime = false;
+    var has_app = false;
+    for (names) |name| {
+        if (std.mem.eql(u8, name, "copilot-runtime") or std.mem.eql(u8, name, "copilot-runtime.exe")) {
+            has_runtime = true;
+        }
+        if (std.mem.eql(u8, name, "github") or std.mem.eql(u8, name, "github copilot") or std.mem.eql(u8, name, "github copilot.exe")) {
+            has_app = true;
+        }
+    }
+    return has_runtime and has_app;
+}
+
 pub fn detect(init: std.process.Init, d: *Detection) !bool {
     const a = init.arena.allocator();
     const io = init.io;
@@ -4525,6 +4548,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
     var hsrc: []const u8 = "none";
     var hclaim_name: []const u8 = ""; // the matched env marker / proc name
     scan: for (rulesForHarnesses) |r| {
+        if (std.mem.eql(u8, r.name, "copilot-app") and !hasCopilotAppAncestry(anc.names)) continue;
         for (r.env_markers) |m| {
             if (env.get(m) != null) {
                 rule = r;
@@ -4547,6 +4571,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         // ancestry scan — note the pre-existing "last match wins" overwrite semantics when two rules match the same ancestor: the loops keep assigning `rule` without breaking.
         // Left unchanged by the binary_names rewiring.
         for (rulesForHarnesses) |r| {
+            if (std.mem.eql(u8, r.name, "copilot-app") and !hasCopilotAppAncestry(anc.names)) continue;
             for (r.binary_names) |pn| {
                 for (anc.names) |n| {
                     if (std.mem.eql(u8, n, pn)) {
@@ -4637,7 +4662,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectVibe(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "cursor")) {
             try detectCursor(a, io, env, home, d);
-        } else if (std.mem.eql(u8, r.name, "copilot")) {
+        } else if (std.mem.eql(u8, r.name, "copilot") or std.mem.eql(u8, r.name, "copilot-app")) {
             try detectCopilot(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "hermes")) {
             try detectHermes(a, io, env, home, d);
