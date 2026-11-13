@@ -396,6 +396,17 @@ test "canonicalIdFor: cline stays cline; cline-pass wins its aliases" {
     }
 }
 
+test "canonicalIdFor: kilo auto selector rule names resolve" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const forms = [_][]const u8{ "kilo-auto-free", "kilo-auto-balanced", "kilo-auto-efficient", "kilo-auto-frontier", "kilo-auto-small" };
+    for (forms) |f| {
+        const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, f) orelse return error.TestUnexpectedResult;
+        try testing.expect(std.mem.startsWith(u8, got, "kilo-auto-"));
+    }
+}
+
 test "canonicalIdFor: minimax-m3 aliases; deepseek-v4-flash free tier folds to the model" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();

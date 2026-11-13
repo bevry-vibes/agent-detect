@@ -256,9 +256,18 @@ pub fn applyModel(a: std.mem.Allocator, d: *Detection, name: []const u8, raw_inp
     // shed all of it, not just the first segment, so `provider/org/Model` and `Model` resolve alike.
     var canonical_name = rules.modelIdAfterNamespace(lower);
     defer a.free(lower);
-    // Kilo Gateway's auto selectors are recorded as provider `kilo` + model `kilo-auto/<mode>`; preserve selector identity and map to canonical rule names.
+    // Kilo Gateway's auto selectors are recorded as provider `kilo` + model `kilo-auto/<mode>`; preserve selector identity by resolving the dash form through the model rules (a new selector needs only its rule, not another branch here).
     if (std.mem.startsWith(u8, lower, "kilo-auto/")) {
-        canonical_name = if (std.mem.eql(u8, lower, "kilo-auto/free")) "kilo-auto-free" else if (std.mem.eql(u8, lower, "kilo-auto/balanced")) "kilo-auto-balanced" else if (std.mem.eql(u8, lower, "kilo-auto/efficient")) "kilo-auto-efficient" else if (std.mem.eql(u8, lower, "kilo-auto/frontier")) "kilo-auto-frontier" else if (std.mem.eql(u8, lower, "kilo-auto/small")) "kilo-auto-small" else lower;
+        const alias = try a.dupe(u8, lower);
+        defer a.free(alias);
+        for (alias) |*c| {
+            if (c.* == '/') c.* = '-';
+        }
+        if (canonicalIdFor(a, ModelRule, &rulesForModels, alias)) |canonical| {
+            canonical_name = canonical;
+        } else {
+            canonical_name = lower;
+        }
     }
     // the ollama local/cloud boundary (DESIGN.md decision #15, executed 2026-09-20): a `:cloud`-tagged model serves through ollama.com even under a local-looking provider key (ZCode's custom provider `name: "ollama"` on localhost:11434 was the observed fold flaw) — the suffix is the cloud signal, so the provider re-resolves to the cloud rule.
     // This runs before the variation fold because the fold sheds the suffix (`glm-5.3-flash:cloud` → `glm-5.3-flash`); every caller runs setProvider before applyModel, so the provider dim is already present.
