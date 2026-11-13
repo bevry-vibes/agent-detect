@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Github } from "lucide-react";
 
+import { GithubIcon } from "@/components/github-icon";
 import {
   agentSearchText,
   resolveDimId,
@@ -429,7 +429,7 @@ export default function App() {
       <footer className="text-muted-foreground border-t">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs">
           <span className="flex flex-wrap items-center gap-1.5">
-            <Github className="size-3.5" />
+            <GithubIcon className="size-3.5" />
             <a className="underline underline-offset-4" href="https://github.com/bevry-vibes/agent-detect" target="_blank" rel="noreferrer">
               bevry-vibes/agent-detect
             </a>

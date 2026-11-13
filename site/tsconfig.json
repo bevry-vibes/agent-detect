@@ -19,7 +19,6 @@
       "vite/client",
       "@cloudflare/workers-types"
     ],
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"

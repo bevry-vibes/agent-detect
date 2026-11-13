@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Github, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 
+import { GithubIcon } from "@/components/github-icon";
 import { Button } from "@/components/ui/button";
 
 function ThemeToggle() {
@@ -98,7 +99,7 @@ export function SiteHeader({
             rel="noreferrer"
             className="text-muted-foreground hover:text-foreground inline-flex h-9 items-center gap-1.5 rounded-md px-2"
           >
-            <Github className="size-4" />
+            <GithubIcon className="size-4" />
             <span className="hidden sm:inline">GitHub</span>
           </a>
           <ThemeToggle />
