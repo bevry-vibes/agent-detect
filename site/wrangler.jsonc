@@ -7,11 +7,25 @@
   "compatibility_date": "2026-09-01",
   "assets": {
     "directory": "./dist",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    // every request must reach the worker so the host redirects below cover
+    // static assets too; existing files still fall through to ASSETS.
+    "run_worker_first": true
     // no not_found_handling: the worker owns the fallback (SPA index.html) so
     // its /identify/<id>.json route can tell a missing agent (real 404) from
     // an SPA route.
   },
+  // Custom domains provision DNS + certificates; the host-scoped routes carry
+  // traffic. Explicit hostnames only — never a *.bevry.me/* wildcard, which
+  // would swallow sibling workers on the zone.
+  "routes": [
+    { "pattern": "agent-detect.bevry.me", "custom_domain": true },
+    { "pattern": "agent-detect.bevry.me/*", "zone_name": "bevry.me" },
+    { "pattern": "agentdetect.bevry.me", "custom_domain": true },
+    { "pattern": "agentdetect.bevry.me/*", "zone_name": "bevry.me" }
+  ],
+  // workers.dev stays enabled: the worker redirects it to the custom domain.
+  "workers_dev": true,
   "observability": {
     "enabled": true
   }

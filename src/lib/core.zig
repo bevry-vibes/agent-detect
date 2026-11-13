@@ -4362,7 +4362,7 @@ pub const indexUsage =
 ;
 
 /// the registry website's base url — the sole coupling between the CLI's `registry`/`index` actions and the `site/` deployment (see DESIGN.md "the website").
-pub const siteUrl = "https://agent-detect.bevry.workers.dev";
+pub const siteUrl = "https://agent-detect.bevry.me";
 
 /// the registry action's canonicalized query — every value as it lands in the url and the JSON report (empty/unset for absent filters). the filters both index views carry in their deep links — the site evaluates the same set (on entity routes they gate: a mismatching entity 422s with the per-filter match states and a link to the view without the violating ones).
 pub const IndexQuery = struct {

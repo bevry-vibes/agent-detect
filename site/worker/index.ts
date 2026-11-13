@@ -1,8 +1,9 @@
 // The agent-detect website worker — the JSON routes in front of the static
 // assets (the SPA + generated data files live in dist/, served by the assets
-// system without invoking this worker).
+// system; the worker runs first so host redirects cover every path).
 //
 // Routes:
+//   other hosts                       — 308 → the canonical agent-detect.bevry.me
 //   /index.json                       — the search view as JSON (same filters
 //                                       and name→id resolution as the app's
 //                                       URL params)
@@ -35,6 +36,24 @@ const JSON_HEADERS: Record<string, string> = {
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body, null, 2), { status, headers: JSON_HEADERS });
+}
+
+const CANONICAL_HOST = "agent-detect.bevry.me";
+const REDIRECT_HOSTS = new Set(["agent-detect.bevry.workers.dev", "agentdetect.bevry.me"]);
+
+/** 308 the uncanonical hosts to the canonical domain, preserving path + query.
+ * The worker runs first for every request (assets.run_worker_first), so this
+ * also covers static data files and the SPA fallback. */
+export function hostRedirect(url: URL): Response | null {
+  if (!REDIRECT_HOSTS.has(url.hostname)) return null;
+  const target = new URL(url.pathname + url.search, `https://${CANONICAL_HOST}`);
+  return new Response(null, {
+    status: 308,
+    headers: {
+      location: target.toString(),
+      "cache-control": "public, max-age=3600",
+    },
+  });
 }
 
 // the generated data files are parsed once per isolate and memoized
@@ -401,6 +420,8 @@ async function handleIndex(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const redirect = hostRedirect(url);
+    if (redirect) return redirect;
 
     if (request.method === "OPTIONS") {
       return new Response(null, {

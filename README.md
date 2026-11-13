@@ -140,7 +140,7 @@ git commit --trailer "$(.\agent-detect.exe trailer assisted-by)"
 
 ### the registry website
 
-The browsable registry of every known agent (a harness × provider × model combination) — policy fields, reciprocity verdict, and the exact CLI outputs — lives at [agent-detect.bevry.workers.dev](https://agent-detect.bevry.workers.dev).
+The browsable registry of every known agent (a harness × provider × model combination) — policy fields, reciprocity verdict, and the exact CLI outputs — lives at [agent-detect.bevry.me](https://agent-detect.bevry.me).
 Open it from the CLI (the same command on every platform):
 
 ```sh

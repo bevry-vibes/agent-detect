@@ -10,6 +10,9 @@ The detection tool itself is a prebuilt zig binary (no npm/crates package) with 
 runtime dependencies and no network I/O at detection time:
 https://github.com/bevry-vibes/agent-detect
 
+The browsable registry is at https://agent-detect.bevry.me (the `agent-detect.bevry.workers.dev`
+hostname and the `agentdetect.bevry.me` typo redirect there).
+
 ## how the site is organised
 
 `/` is a single-page app. Three searchable dropdowns (harness, provider, model), a free-text

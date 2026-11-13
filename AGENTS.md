@@ -42,7 +42,7 @@ in a strict no-cycles import DAG.
 
 ## website
 
-The browsable registry lives in `site/` — its own deployment (Cloudflare Worker + static assets, `deno task deploy` from `site/`), never part of the zig binary; it consumes the committed rule tables, the index file (`fixtures/index-data.json`, the same data the released `index` action embeds), and the from-identity channel as data (the site shows declared identifications only).
+The browsable registry lives at `agent-detect.bevry.me` in `site/` — its own deployment (Cloudflare Worker + static assets, `deno task deploy` from `site/`), never part of the zig binary; it consumes the committed rule tables, the index file (`fixtures/index-data.json`, the same data the released `index` action embeds), and the from-identity channel as data (the site shows declared identifications only). The `agent-detect.bevry.workers.dev` hostname and the `agentdetect.bevry.me` typo 308-redirect to the canonical domain.
 Deno is the toolchain: `deno install` (node_modules), `deno task data` (regenerate `site/public/data/` — needs zig on PATH), `deno task build` (data + vite), `deno task check` (tsc + deno check), `deno task dev` (wrangler dev on 127.0.0.1:8787).
 Restart `deno task dev` after every vite build — a stale wrangler asset manifest serves the old bundle as the 942-byte index.html fallback and the page renders blank.
 

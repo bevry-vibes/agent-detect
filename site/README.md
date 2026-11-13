@@ -1,6 +1,6 @@
 # agent-detect website
 
-The browsable registry at `agent-detect.bevry.workers.dev` — a shadcn/ui-style SPA plus a small JSON API. **Its own deployment; not part of the zig binary.** It consumes the repo's committed rule tables, the index file (`fixtures/index-data.json`, copied verbatim), and the from-identity channel as data and never forks them. The site shows declared identifications only — the from-capture channel stays maintainer-side and never renders.
+The browsable registry at `agent-detect.bevry.me` — a shadcn/ui-style SPA plus a small JSON API. The `agent-detect.bevry.workers.dev` hostname and the `agentdetect.bevry.me` typo 308-redirect to the canonical domain. **Its own deployment; not part of the zig binary.** It consumes the repo's committed rule tables, the index file (`fixtures/index-data.json`, copied verbatim), and the from-identity channel as data and never forks them. The site shows declared identifications only — the from-capture channel stays maintainer-side and never renders.
 
 ## stack
 
@@ -25,7 +25,7 @@ deno task build       # data + vite build → dist/
 deno task check       # tsc + deno check
 deno task spa         # vite dev server (proxies the worker routes to :8787)
 deno task dev         # wrangler dev (serves dist/ + worker on :8787)
-deno task deploy      # build + wrangler deploy → agent-detect.bevry.workers.dev
+deno task deploy      # build + wrangler deploy → agent-detect.bevry.me
 ```
 
 ## urls

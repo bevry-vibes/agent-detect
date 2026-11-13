@@ -1,6 +1,7 @@
 {
   "lock": false,
   "nodeModulesDir": "auto",
+  "minimumDependencyAge": "PT18H",
   "allowScripts": [
     "npm:workerd"
   ],
