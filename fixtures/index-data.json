@@ -367,6 +367,7 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "dots3notepreview",
+        "ernie55flashpreview",
         "flint40b",
         "gemini25pro",
         "gemini35flash",
@@ -381,6 +382,7 @@
         "glm52",
         "glm53",
         "glm53flash",
+        "glyphcluster",
         "gpt4o",
         "gpt52",
         "gpt55",
@@ -400,6 +402,11 @@
         "inkling2small",
         "inklingsmall",
         "jev113",
+        "kiloautobalanced",
+        "kiloautoefficient",
+        "kiloautofree",
+        "kiloautofrontier",
+        "kiloautosmall",
         "kimik2",
         "kimik25",
         "kimik26",
@@ -407,6 +414,7 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling261t",
         "ling30flash",
         "ling30flashvl",
@@ -484,6 +492,7 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "dots3notepreview",
+        "ernie55flashpreview",
         "gemini25pro",
         "gemini35flash",
         "gemma431b",
@@ -495,6 +504,7 @@
         "glm52",
         "glm53",
         "glm53flash",
+        "glyphcluster",
         "gpt4o",
         "gpt52",
         "gpt55",
@@ -510,6 +520,11 @@
         "hy4preview",
         "inkling",
         "inklingsmall",
+        "kiloautobalanced",
+        "kiloautoefficient",
+        "kiloautofree",
+        "kiloautofrontier",
+        "kiloautosmall",
         "kimik2",
         "kimik25",
         "kimik26",
@@ -517,6 +532,7 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling30flash",
         "ling30flashvl",
         "llama3370b",
@@ -1779,6 +1795,8 @@
         "deepseekv32",
         "deepseekv4flash",
         "deepseekv4pro",
+        "dots3notepreview",
+        "ernie55flashpreview",
         "gemini25pro",
         "gemini35flash",
         "glm46",
@@ -1789,6 +1807,7 @@
         "glm52",
         "glm53",
         "glm53flash",
+        "glyphcluster",
         "gpt4o",
         "gpt52",
         "gpt55",
@@ -1802,6 +1821,11 @@
         "grok46",
         "hy3",
         "hy4preview",
+        "kiloautobalanced",
+        "kiloautoefficient",
+        "kiloautofree",
+        "kiloautofrontier",
+        "kiloautosmall",
         "kimik2",
         "kimik25",
         "kimik26",
@@ -1809,6 +1833,7 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling30flash",
         "llama4maverick",
         "mimov25",
@@ -1817,6 +1842,9 @@
         "minimaxm27",
         "minimaxm3",
         "musespark12",
+        "nemotron35lightning",
+        "nemotron35supervl",
+        "northminicode",
         "phi4",
         "qwen3235ba22b",
         "qwen332b",
@@ -3068,12 +3096,15 @@
       "id": "dots3notepreview",
       "openness": "open-weight",
       "license": "Apache-2.0",
-      "open_training": null,
-      "closed_training": null,
+      "open_training": "opt-in",
+      "closed_training": "never",
       "variations": [
-        "dots3-note-prev"
+        "dots3-note-prev",
+        "dots-3-note-preview:free",
+        "dots-studio/dots-3-note-preview:free"
       ],
       "providers": [
+        "kilo",
         "openrouter"
       ],
       "harnesses": [
@@ -3117,6 +3148,27 @@
       ],
       "harnesses": [
         "omp"
+      ]
+    },
+    {
+      "label": "ERNIE 5.5 Flash Preview",
+      "short_title": null,
+      "name": "ernie-5.5-flash-preview",
+      "id": "ernie55flashpreview",
+      "openness": "open-weight",
+      "license": "NOASSERTION",
+      "open_training": "opt-in",
+      "closed_training": "never",
+      "variations": [
+        "ernie-5.5-flash-preview:free",
+        "baidu/ernie-5.5-flash-preview:free"
+      ],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
       ]
     },
     {
@@ -3621,6 +3673,26 @@
         "opencode",
         "pi",
         "zcode"
+      ]
+    },
+    {
+      "label": "Glyph Cluster",
+      "short_title": null,
+      "name": "glyph-cluster",
+      "id": "glyphcluster",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "stealth/glyph-cluster"
+      ],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
       ]
     },
     {
@@ -4205,6 +4277,96 @@
       ]
     },
     {
+      "label": "Auto Balanced",
+      "short_title": null,
+      "name": "kilo-auto-balanced",
+      "id": "kiloautobalanced",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": "NOASSERTION",
+      "variations": [],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
+      ]
+    },
+    {
+      "label": "Auto Efficient",
+      "short_title": null,
+      "name": "kilo-auto-efficient",
+      "id": "kiloautoefficient",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": "NOASSERTION",
+      "variations": [],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
+      ]
+    },
+    {
+      "label": "Auto Free",
+      "short_title": null,
+      "name": "kilo-auto-free",
+      "id": "kiloautofree",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": "NOASSERTION",
+      "variations": [],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
+      ]
+    },
+    {
+      "label": "Auto Frontier",
+      "short_title": null,
+      "name": "kilo-auto-frontier",
+      "id": "kiloautofrontier",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": "NOASSERTION",
+      "variations": [],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
+      ]
+    },
+    {
+      "label": "Auto Small",
+      "short_title": null,
+      "name": "kilo-auto-small",
+      "id": "kiloautosmall",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": "NOASSERTION",
+      "variations": [],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
+      ]
+    },
+    {
       "label": "Kimi K2",
       "short_title": null,
       "name": "kimi-k2",
@@ -4451,6 +4613,27 @@
         "kimicode",
         "omp",
         "pi"
+      ]
+    },
+    {
+      "label": "LFM3 1.7B",
+      "short_title": null,
+      "name": "lfm-3-1.7b",
+      "id": "lfm317b",
+      "openness": "open-weight",
+      "license": "NOASSERTION",
+      "open_training": "opt-in",
+      "closed_training": "never",
+      "variations": [
+        "lfm-3-1.7b:free",
+        "liquid/lfm-3-1.7b:free"
+      ],
+      "providers": [
+        "kilo"
+      ],
+      "harnesses": [
+        "hermes",
+        "kilo"
       ]
     },
     {
@@ -4990,6 +5173,7 @@
       ],
       "providers": [
         "clinepass",
+        "kilo",
         "opencode"
       ],
       "harnesses": [
@@ -5036,7 +5220,9 @@
       "closed_training": null,
       "variations": [
         "Nemotron-3-Nano-Omni-30B-TEE",
-        "nemotron-3-nano-omni-30b-a3b-reasoning"
+        "nemotron-3-nano-omni-30b-a3b-reasoning",
+        "nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
       ],
       "providers": [
         "chutes",
@@ -5121,6 +5307,7 @@
       ],
       "providers": [
         "clinepass",
+        "kilo",
         "nvidia",
         "opencode",
         "openrouter"
@@ -5188,8 +5375,12 @@
       "license": "Apache-2.0",
       "open_training": null,
       "closed_training": null,
-      "variations": [],
+      "variations": [
+        "north-mini-code:free",
+        "cohere/north-mini-code:free"
+      ],
       "providers": [
+        "kilo",
         "openrouter"
       ],
       "harnesses": [
@@ -8732,6 +8923,18 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-kilo-dots3notepreview": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": false
+    },
+    "kilo-kilo-ernie55flashpreview": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": false
+    },
     "kilo-kilo-gemini25pro": {
       "platforms": [],
       "reciprocal": false
@@ -8772,6 +8975,12 @@
     },
     "kilo-kilo-glm53flash": {
       "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-glyphcluster": {
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": false
     },
     "kilo-kilo-gpt4o": {
@@ -8828,6 +9037,28 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-kilo-kiloautobalanced": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-kiloautoefficient": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-kiloautofree": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": false
+    },
+    "kilo-kilo-kiloautofrontier": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-kiloautosmall": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-kilo-kimik2": {
       "platforms": [],
       "reciprocal": false
@@ -8856,6 +9087,12 @@
     },
     "kilo-kilo-lagunaxs21": {
       "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-lfm317b": {
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": false
     },
     "kilo-kilo-ling30flash": {
@@ -8887,6 +9124,22 @@
       "reciprocal": false
     },
     "kilo-kilo-musespark12": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-nemotron35lightning": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": false
+    },
+    "kilo-kilo-nemotron35supervl": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": false
+    },
+    "kilo-kilo-northminicode": {
       "platforms": [],
       "reciprocal": false
     },
