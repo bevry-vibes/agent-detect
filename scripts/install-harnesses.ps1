@@ -107,6 +107,18 @@ $Registry = @(
 	# scoop cursor-cli redirects CURSOR_CONFIG_DIR/DATA_DIR to its persist dir, so migrating an existing custom install needs a fresh login (the auth state stays in the old profile).
 	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @{ Darwin = @('brew', 'custom'); Linux = @('custom'); Windows = @('scoop', 'custom') } }
 	[pscustomobject]@{ Id = 'copilot'; Label = 'GitHub Copilot CLI'; Probe = 'copilot'; Methods = @{ Darwin = @('brew'); Linux = @(); Windows = @('scoop') } }
+	# Codex CLI is install-only until its rule lands (CONTRIBUTING pending list). Homebrew ships it as the `codex` cask, not a formula.
+	# The desktop app is retired standalone and now ships in the ChatGPT app; the `chatgpt` row below is install-only with real app detection.
+	# On Windows the CLI is scoop `codex` / winget `OpenAI.Codex`; the app is winget `OpenAI.ChatGPT` — do not swap the two package ids.
+	[pscustomobject]@{ Id = 'codex'; Label = 'OpenAI Codex CLI'; Probe = 'codex'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm'); Windows = @('scoop', 'winget', 'npm') } }
+	# ChatGPT desktop app (Codex now lives inside it): macOS cask, Windows MSIX, Linux preview. App = the real detection surface; Linux has a `chatgpt` binary, macOS/Windows do not.
+	[pscustomobject]@{
+		Id = 'chatgpt'
+		Label = 'ChatGPT desktop app (Codex)'
+		Probe = 'chatgpt'
+		App = @{ Darwin = '/Applications/ChatGPT.app'; Windows = 'OpenAI.Codex'; Linux = 'chatgpt' }
+		Methods = @{ Darwin = @('brew'); Linux = @('manual'); Windows = @('winget') }
+	}
 	[pscustomobject]@{ Id = 'hermes'; Label = 'Hermes (contributor scope)'; Probe = 'hermes'; Methods = @{ Darwin = @('custom'); Linux = @('custom'); Windows = @('custom') } }
 	[pscustomobject]@{ Id = 'goose'; Label = 'Goose (contributor scope)'; Probe = 'goose'; Methods = @{ Darwin = @(); Linux = @(); Windows = @('scoop') } }
 	[pscustomobject]@{ Id = 'autoclaw'; Label = 'AutoClaw (desktop app)'; Probe = 'autoclaw'; Methods = @{ Darwin = @('manual'); Linux = @('manual'); Windows = @('manual') } }
@@ -126,6 +138,7 @@ $NpmPackage = @{
 	dsh = '@deepseek-ai/dsh'
 	codewhale = 'codewhale'
 	'minimax-code' = '@minimax-ai/code'
+	codex = '@openai/codex'
 }
 $BrewPackage = @{
 	qwen = 'qwen-code'
@@ -136,10 +149,14 @@ $BrewPackage = @{
 	codewhale = 'Hmbown/deepseek-tui/codewhale'
 	cursor = 'cursor-cli'
 	copilot = 'copilot-cli'
+	codex = 'codex'
+	chatgpt = 'chatgpt'
 }
 $BrewCask = @{
 	cursor = $true
 	copilot = $true
+	codex = $true
+	chatgpt = $true
 }
 # extra npm args per package: only the native-SQLite harness needs lifecycle scripts, and they stay an explicit two-package allow-list.
 # npm reads --allow-scripts as an array: repeat the flag per package (the comma form is ignored by npm 12 and leaves both scripts blocked).
@@ -156,9 +173,14 @@ $ScoopPackage = @{
 	'kimi-code' = 'kimi-code'
 	cursor = 'cursor-cli'
 	copilot = 'copilot-cli'
+	codex = 'codex'
 	goose = 'goose-cli'
 }
-$WingetPackage = @{ crush = 'charmbracelet.crush' }
+$WingetPackage = @{
+	crush = 'charmbracelet.crush'
+	codex = 'OpenAI.Codex'
+	chatgpt = 'OpenAI.ChatGPT'
+}
 $UvPackage = @{ vibe = 'mistral-vibe' }
 # soar and flatpak ids stay empty until verified against the package indexes; the methods are wired so a verified id only needs one entry here.
 $SoarPackage = @{}
@@ -192,13 +214,65 @@ function Resolve-HarnessBinary {
 	return $null
 }
 
+function Test-AppInstalled {
+	# Desktop apps have no CLI probe on every platform; each entry's App map names the real detection surface.
+	param([Parameter(Mandatory)] [pscustomobject]$Entry)
+	if (-not $Entry.PSObject.Properties['App']) { return $false }
+	$app = $Entry.App[$Platform]
+	if (-not $app) { return $false }
+	if ($IsMacOS) { return (Test-Path $app) }
+	if ($IsWindows) { return [bool](Get-AppxPackage -Name $app -ErrorAction Ignore) }
+	if ($IsLinux) { return [bool](Get-Command $app -ErrorAction Ignore) }
+	return $false
+}
+
+function Get-AppVersion {
+	param([Parameter(Mandatory)] [pscustomobject]$Entry)
+	if (-not $Entry.PSObject.Properties['App']) { return 'unknown' }
+	$app = $Entry.App[$Platform]
+	if (-not $app) { return 'unknown' }
+	if ($IsMacOS) {
+		try {
+			$v = @(& /usr/bin/plutil -extract CFBundleShortVersionString raw -o - (Join-Path $app 'Contents/Info.plist') 2>$null) | Select-Object -First 1
+			if ($LASTEXITCODE -eq 0 -and $v) { return ([string]$v).Trim() }
+		} catch { return 'unknown' }
+		return 'unknown'
+	}
+	if ($IsWindows) {
+		$pkg = @(Get-AppxPackage -Name $app -ErrorAction Ignore) | Select-Object -First 1
+		if ($pkg) { return [string]$pkg.Version }
+		return 'unknown'
+	}
+	if ($IsLinux) {
+		try {
+			if (Get-Command dpkg-query -ErrorAction Ignore) {
+				$v = @(& dpkg-query -W -f='${Version}' $app 2>$null) | Select-Object -First 1
+				if ($LASTEXITCODE -eq 0 -and $v) { return ([string]$v).Trim() }
+			}
+			if (Get-Command rpm -ErrorAction Ignore) {
+				$v = @(& rpm -q --qf '%{VERSION}' $app 2>$null) | Select-Object -First 1
+				if ($LASTEXITCODE -eq 0 -and $v) { return ([string]$v).Trim() }
+			}
+			if (Get-Command pacman -ErrorAction Ignore) {
+				$line = @(& pacman -Q $app 2>$null) | Select-Object -First 1
+				if ($LASTEXITCODE -eq 0 -and $line) { return (([string]$line) -replace "^$([regex]::Escape($app))\s+", '').Trim() }
+			}
+		} catch { return 'unknown' }
+		return 'unknown'
+	}
+	return 'unknown'
+}
+
 function Test-HarnessInstalled {
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
+	# app rows use only their app surface: a stray same-named CLI should not mark the desktop app installed
+	if ($Entry.PSObject.Properties['App']) { return (Test-AppInstalled $Entry) }
 	return ($null -ne (Resolve-HarnessBinary $Entry.Probe))
 }
 
 function Get-HarnessVersion {
-	param([Parameter(Mandatory)] [string]$Probe)
+	param([Parameter(Mandatory)] [string]$Probe, [pscustomobject]$Entry)
+	if ($Entry -and (Test-AppInstalled $Entry)) { return (Get-AppVersion $Entry) }
 	$bin = Resolve-HarnessBinary $Probe
 	if (-not $bin) { return 'unknown' }
 	try { return (@(& $bin --version 2>&1) | Select-Object -First 1) } catch { return 'unknown' }
@@ -260,6 +334,10 @@ function Get-MethodCommand {
 				'Darwin/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
 				'Linux/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash' }
 				'Windows/hermes' { return 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash  (needs a POSIX shell: Git Bash or WSL)' }
+				'Linux/chatgpt' {
+					if ($Action -eq 'uninstall') { return 'manual — remove the distro package: apt remove chatgpt, dnf remove chatgpt, or pacman -R chatgpt' }
+					return 'manual — install the ChatGPT desktop app preview: https://developers.openai.com/codex/linux/linux-app (.deb / .rpm / Arch script)'
+				}
 				default {
 					switch ($Id) {
 						autoclaw { return 'download the desktop installer from https://autoclaw.z.ai' }
@@ -333,6 +411,7 @@ function Invoke-Method {
 				'Darwin/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
 				'Linux/hermes' { & bash -c 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'; return ($LASTEXITCODE -eq 0) }
 				'Windows/hermes' { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
+				'Linux/chatgpt' { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
 				default {
 					switch ($Id) {
 						autoclaw { Write-Info "manual step: $(Get-MethodCommand -Id $Id -Method $Method -Action $Action)"; return 'manual' }
@@ -360,8 +439,10 @@ function Invoke-Entry {
 		$script:failures++
 	} elseif ($Action -eq 'uninstall') {
 		Write-Info "[ok]        $($Entry.Id) — uninstalled"
+	} elseif (Test-AppInstalled $Entry) {
+		Write-Info "[ok]        $($Entry.Id) — $(Get-HarnessVersion -Probe $Entry.Probe -Entry $Entry)"
 	} elseif (Get-Command $Entry.Probe -ErrorAction Ignore) {
-		Write-Info "[ok]        $($Entry.Id) — $(Get-HarnessVersion $Entry.Probe)"
+		Write-Info "[ok]        $($Entry.Id) — $(Get-HarnessVersion -Probe $Entry.Probe -Entry $Entry)"
 	} else {
 		$resolved = Resolve-HarnessBinary $Entry.Probe
 		Write-Info "[ok]        $($Entry.Id) — installed at $resolved, which is not on PATH yet (add it to PATH, or run it through node-env)"
@@ -388,7 +469,8 @@ $Selected = if ($Harness) {
 
 if ($List) {
 	foreach ($entry in $Registry) {
-		'{0,-12} {1,-14} {2}' -f $entry.Id, $entry.Probe, ($entry.Methods[$Platform] -join ',')
+		$probe = if ($entry.PSObject.Properties['App']) { Split-Path -Leaf $entry.App[$Platform] } else { $entry.Probe }
+		'{0,-12} {1,-14} {2}' -f $entry.Id, $probe, ($entry.Methods[$Platform] -join ',')
 	}
 	exit 0
 }
@@ -401,8 +483,10 @@ if ($Check) {
 	foreach ($entry in $Selected) {
 		if (Test-HarnessInstalled $entry) {
 			$installed++
-			if (Get-Command $entry.Probe -ErrorAction Ignore) {
-				Write-Host ('[ok]       {0,-10} {1} ({2})' -f $entry.Id, $entry.Label, (Get-HarnessVersion $entry.Probe))
+			if (Test-AppInstalled $entry) {
+				Write-Host ('[ok]       {0,-10} {1} ({2})' -f $entry.Id, $entry.Label, (Get-HarnessVersion -Probe $entry.Probe -Entry $entry))
+			} elseif (Get-Command $entry.Probe -ErrorAction Ignore) {
+				Write-Host ('[ok]       {0,-10} {1} ({2})' -f $entry.Id, $entry.Label, (Get-HarnessVersion -Probe $entry.Probe -Entry $entry))
 			} else {
 				$resolved = Resolve-HarnessBinary $entry.Probe
 				Write-Host ('[ok]       {0,-10} {1} (at {2} — add it to PATH, or run it through node-env)' -f $entry.Id, $entry.Label, $resolved)
@@ -455,7 +539,7 @@ $failures = 0
 if ($Yes) {
 	foreach ($entry in $Selected) {
 		if (Test-HarnessInstalled $entry) {
-			Write-Host ('[installed] {0} — {1}' -f $entry.Id, (Get-HarnessVersion $entry.Probe))
+			Write-Host ('[installed] {0} — {1}' -f $entry.Id, (Get-HarnessVersion -Probe $entry.Probe -Entry $entry))
 			continue
 		}
 		$methods = Get-AvailableMethod $entry
@@ -532,7 +616,7 @@ if ($Yes) {
 	# numbered-prompt fallback (the shared menu did not resolve; install only — the menu flow adds upgrade and uninstall)
 	foreach ($entry in $Selected) {
 		if (Test-HarnessInstalled $entry) {
-			Write-Host ('[installed] {0} — {1} (the menu flow offers upgrade and uninstall)' -f $entry.Id, (Get-HarnessVersion $entry.Probe))
+			Write-Host ('[installed] {0} — {1} (the menu flow offers upgrade and uninstall)' -f $entry.Id, (Get-HarnessVersion -Probe $entry.Probe -Entry $entry))
 			continue
 		}
 		$methods = Get-AvailableMethod $entry

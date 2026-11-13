@@ -387,7 +387,7 @@ This section pins the matrix policy — what gets a rule, a recipe, and a fixtur
 - **Harness scope (coding harnesses only):** `cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`, `cursor`, `copilot`, `dsh`, `codewhale`, `minimax-code`.
   OpenCode is v2 only; the retired v1/`opencode2` surface is not part of the matrix.
   Claw / machine-control agents are out of scope.
-  The Cline, Kilo, and MiniMax Code desktop clients are install-only; they join this list only when their own rules, detectors, and fixtures land.
+  The Cline, Kilo, MiniMax Code, and Codex desktop clients are install-only; they join this list only when their own rules, detectors, and fixtures land.
   `goose` remains as a contributor-scope example fixture (kept, not extended).
   The remaining maintained CLIs (`claude`, `codex`, `grok`, `gemini`, `amp`, `roo`, `qoder`, `openhands`, `devin`, `droid`, `zencoder`, `kimchi`, `firebender`) are logged follow-ups in CONTRIBUTING.md's pending list, not in-scope until a contributor adds their rules.
 - **Model policy:** open-weight/open-source models are preferred; free closed and popular closed models also get rules (detection must exceed the preferred set).
