@@ -152,6 +152,23 @@
       ]
     },
     {
+      "label": "Codex",
+      "short_title": null,
+      "name": "codex",
+      "id": "codex",
+      "license": "Apache-2.0",
+      "open_training": "opt-out",
+      "closed_training": "opt-out",
+      "reciprocity_scandal": false,
+      "variations": [],
+      "providers": [
+        "openaicodex"
+      ],
+      "models": [
+        "gpt56terra"
+      ]
+    },
+    {
       "label": "GitHub Copilot CLI",
       "short_title": null,
       "name": "copilot",
@@ -389,6 +406,7 @@
         "gpt55",
         "gpt56luna",
         "gpt56sol",
+        "gpt56terra",
         "gpt5mini",
         "gptoss120b",
         "gptoss20b",
@@ -2195,8 +2213,11 @@
       "closed_training": "opt-out",
       "reciprocity_scandal": false,
       "variations": [],
-      "models": [],
+      "models": [
+        "gpt56terra"
+      ],
       "harnesses": [
+        "codex",
         "hermes"
       ]
     },
@@ -3878,6 +3899,24 @@
         "omp",
         "opencode",
         "pi"
+      ]
+    },
+    {
+      "label": "GPT-5.6 Terra",
+      "short_title": null,
+      "name": "gpt-5.6-terra",
+      "id": "gpt56terra",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "openaicodex"
+      ],
+      "harnesses": [
+        "codex",
+        "hermes"
       ]
     },
     {
@@ -6701,6 +6740,12 @@
     "codewhale-deepseek-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "codex-openaicodex-gpt56terra": {
+      "platforms": [
+        "darwin"
+      ],
+      "reciprocal": false
     },
     "copilot-githubcopilot-claudesonnet5": {
       "platforms": [

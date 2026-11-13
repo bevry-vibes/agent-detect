@@ -158,11 +158,11 @@ The method order is policy:
 - Installers may place binaries in `XDG_BIN_HOME` (default `~/.local/bin`) or the npm global prefix bin (behind `node-env` when plain npm is off `PATH`): the probe resolves `PATH`, then both directories, and reports where an off-`PATH` binary lives.
 
 `-Check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
-The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands (the `codex` and `chatgpt` rows are install-only: `codex` ahead of its pending rule, `chatgpt` for the retired Codex app's ChatGPT successor).
+The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands (the `chatgpt` row remains install-only for the ChatGPT desktop host).
 
 The registry is CLI-first. The Cline, Kilo, and MiniMax Code desktop clients are separate products: Cline Desktop is the `cline-app` cask, MiniMax Code Desktop is `minimax-ai/tap/minimax-code` (pass `--language=en` for the overseas build), and Kilo Desktop has no cask (install its official DMG only with an explicit decision).
 
-The Codex desktop app is the exception: its standalone app is retired and now ships inside the ChatGPT desktop app, so the registry carries an install-only `chatgpt` row with real app detection — `/Applications/ChatGPT.app` on macOS (via the `chatgpt` cask), the `OpenAI.Codex` MSIX on Windows (via winget `OpenAI.ChatGPT`), and the `chatgpt` package on Linux (preview; manual `.deb` / `.rpm` / Arch install). The old `codex-app` cask is Homebrew-deprecated (2027-07-12). `OpenAI.Codex` is the CLI, `OpenAI.ChatGPT` is the app, and the CLI remains the separate `codex` row (`codex` cask on macOS, scoop `codex` / winget `OpenAI.Codex` / npm `@openai/codex`). The desktop apps do not join detection until their own rules, detectors, and fixtures land.
+The Codex desktop app is the exception: its standalone app is retired and now ships inside the ChatGPT desktop app, so the registry carries an install-only `chatgpt` row with real app detection — `/Applications/ChatGPT.app` on macOS (via the `chatgpt` cask), the `OpenAI.Codex` MSIX on Windows (via winget `OpenAI.ChatGPT`), and the `chatgpt` package on Linux (preview; manual `.deb` / `.rpm` / Arch install). The old `codex-app` cask is Homebrew-deprecated (2027-07-12). `OpenAI.Codex` is the CLI, `OpenAI.ChatGPT` is the app, and the CLI remains the separate `codex` row (`codex` cask on macOS, scoop `codex` / winget `OpenAI.Codex` / npm `@openai/codex`); the Codex rule recognizes that CLI and the ChatGPT host lineage.
 `minimax-code`'s npm install carries an explicit two-package `--allow-scripts=@minimax-ai/code,better-sqlite3` allow-list because the optional native SQLite dependency needs its build script; no other harness gets lifecycle scripts.
 
 ### per-harness config locations
@@ -667,8 +667,6 @@ The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11) and sco
   config `~/.claude/settings.json` + `~/.claude.json`;
   sessions `~/.claude/projects/`; proc `claude`).
   Native binary broken on the maintainer's machine (npm postinstall) — rules/from-identity land regardless of install.
-- [ ] **codex** — OpenAI Codex CLI (`codex exec <prompt>`; config `~/.codex/config.toml` `model`/`model_provider`; sessions `~/.codex/sessions/`; proc `codex`).
-  The desktop app now ships inside the ChatGPT app (macOS `chatgpt` cask; winget `OpenAI.ChatGPT` / Store `9PLM9XGG6VKS` on Windows; Linux preview; the installer's `chatgpt` row), shares `~/.codex`, and has no headless launcher, so the CLI surface is the capture path.
 - [ ] **grok** — Grok CLI (`grok --always-approve <prompt>`; config `~/.grok/config.toml` + models `~/.grok/models_cache.json`; sessions `~/.grok/sessions/` + `worktrees.db`; proc `grok`).
 - [ ] **gemini** — Gemini CLI (`gemini -p <prompt>`; config `~/.gemini/settings.json`; proc `gemini`).
 - [ ] **amp / roo / qoder / openhands** — maintained CLIs (Replit/Anvil, Roo Code, Alibaba, OpenHands); not installed on the maintainer's machine; rules + from-identity fixtures when a contributor picks them up.

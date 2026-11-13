@@ -573,6 +573,28 @@ fn kimiArgvOverride(a: std.mem.Allocator, pid: i32) !bool {
     return std.mem.indexOf(u8, buf[0..read_size], "kimi-code") != null;
 }
 
+/// The Codex CLI keeps the selected model in its argv (`--model VALUE` / `-m VALUE`).
+/// Read only that non-secret selector from a Codex ancestor; never retain or emit argv.
+fn codexModelFromAncestry(a: std.mem.Allocator, anc: Ancestry) ?[]const u8 {
+    if (builtin.os.tag != .macos) return null;
+    for (anc.pids, 0..) |pid, i| {
+        if (i >= anc.names.len or !std.mem.eql(u8, anc.names[i], "codex")) continue;
+        var mib: [3]c_int = .{ 1, 38, @intCast(pid) }; // CTL_KERN, KERN_PROCARGS
+        var size: usize = 0;
+        if (sysctl(&mib, mib.len, null, &size, null, 0) != 0 or size == 0) continue;
+        const buf = a.alloc(u8, size) catch continue;
+        var read_size: usize = size;
+        if (sysctl(&mib, mib.len, buf.ptr, &read_size, null, 0) != 0) continue;
+        var tokens = std.mem.tokenizeScalar(u8, buf[0..read_size], 0);
+        var want_value = false;
+        while (tokens.next()) |token| {
+            if (want_value) return token;
+            want_value = std.mem.eql(u8, token, "--model") or std.mem.eql(u8, token, "-m");
+        }
+    }
+    return null;
+}
+
 /// `extern "c"` decl for `proc_pidpath` (libproc), declared at file scope above — see the `<libproc.h>` note at the top of the macOS section for why it is an extern rather than a `@cImport`.
 
 // ============================================================================ cline session discovery
@@ -2304,6 +2326,22 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
     d.raw.config_files = obs;
     try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "defaultProvider", .value = provider });
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "defaultModel", .value = model });
+}
+
+/// Codex is hosted by ChatGPT desktop as well as the standalone CLI. Its provider
+/// is intrinsic; a desktop session identifies the harness through `chatgpt` in
+/// lineage, while scriptable captures pass the selected non-secret model id through
+/// `CODEX_MODEL` (the ChatGPT desktop app does not expose its composer selection to
+/// child processes). Never infer a model when that marker is absent.
+fn detectCodex(a: std.mem.Allocator, env: *const std.process.Environ.Map, anc: Ancestry, d: *Detection) !void {
+    try setProvider(a, d, "openai-codex");
+    const env_model = env.get("CODEX_MODEL");
+    const raw_model = env_model orelse codexModelFromAncestry(a, anc) orelse return;
+    const model = std.mem.trim(u8, raw_model, " \t\r\n");
+    if (model.len > 0) {
+        try applyModel(a, d, model, model);
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = if (env_model != null) "env" else "lineage", .name = if (env_model != null) "CODEX_MODEL" else "codex", .value = model });
+    }
 }
 
 /// map ZCode's provider keys onto agent-detect's canonical provider ids.
@@ -4596,6 +4634,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         const home = env.get("USERPROFILE") orelse (env.get("HOME") orelse "");
         if (std.mem.eql(u8, r.name, "cline")) {
             try detectCline(a, io, anc, home, d);
+        } else if (std.mem.eql(u8, r.name, "codex")) {
+            try detectCodex(a, env, anc, d);
         } else if (std.mem.eql(u8, r.name, "goose")) {
             try detectGoose(a, io, env, env.get("APPDATA") orelse "", home, d);
         } else if (std.mem.eql(u8, r.name, "kimi-code")) {

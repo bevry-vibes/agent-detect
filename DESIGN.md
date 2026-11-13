@@ -384,12 +384,12 @@ Recorded so a future maintainer doesn't re-litigate them. Each item names the sh
 The committed fixture suite doubles as the integration test of the detection ladder.
 This section pins the matrix policy — what gets a rule, a recipe, and a fixture — so contributors extend it without re-litigating scope.
 
-- **Harness scope (coding harnesses only):** `cline`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`, `cursor`, `copilot`, `dsh`, `codewhale`, `minimax-code`.
+- **Harness scope (coding harnesses only):** `cline`, `codex`, `kimi`, `mmx`, `pi`, `qwen`, `kilo`, `omp`, `reasonix`, `crush`, `opencode`, `vibe`, `cursor`, `copilot`, `dsh`, `codewhale`, `minimax-code`.
   OpenCode is v2 only; the retired v1/`opencode2` surface is not part of the matrix.
   Claw / machine-control agents are out of scope.
-  The Cline, Kilo, MiniMax Code, and Codex desktop clients are install-only; they join this list only when their own rules, detectors, and fixtures land.
+  The Cline, Kilo, and MiniMax Code desktop clients are install-only; they join this list only when their own rules, detectors, and fixtures land.
   `goose` remains as a contributor-scope example fixture (kept, not extended).
-  The remaining maintained CLIs (`claude`, `codex`, `grok`, `gemini`, `amp`, `roo`, `qoder`, `openhands`, `devin`, `droid`, `zencoder`, `kimchi`, `firebender`) are logged follow-ups in CONTRIBUTING.md's pending list, not in-scope until a contributor adds their rules.
+  The remaining maintained CLIs (`claude`, `grok`, `gemini`, `amp`, `roo`, `qoder`, `openhands`, `devin`, `droid`, `zencoder`, `kimchi`, `firebender`) are logged follow-ups in CONTRIBUTING.md's pending list, not in-scope until a contributor adds their rules.
 - **Model policy:** open-weight/open-source models are preferred; free closed and popular closed models also get rules (detection must exceed the preferred set).
   `model_openness` is `open-source` | `open-weight` | `closed`, sourced from the HF card + LICENSE (or the provider's model page for closed models); the `model_{open,closed}_training` pair records what the model selection trains (model-intrinsic arrangements only, independent of the openness).
 - **Provider policy:** zero-training or reciprocal-training providers are preferred.  Maintainer probing covers free combos of those plus the paid MiniMax subscription; anything beyond that is contributor scope via CONTRIBUTING.md.

@@ -259,6 +259,8 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "gpt-5.6-sol", .label = "GPT-5.6 Sol", .openness = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
     // gpt-5.6-luna: closed — OpenAI GPT-5.6 Luna; API-only, no weights.
     .{ .name = "gpt-5.6-luna", .label = "GPT-5.6 Luna", .openness = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
+    // gpt-5.6-terra: closed — OpenAI GPT-5.6 Terra; API-only, no weights.
+    .{ .name = "gpt-5.6-terra", .label = "GPT-5.6 Terra", .openness = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
     // claude-sonnet-5: closed — Anthropic Claude Sonnet 5; API-only, no weights.
     .{ .name = "claude-sonnet-5", .label = "Claude Sonnet 5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/sonnet", "https://docs.anthropic.com/en/docs/about-claude/models" } },
     // claude-opus-5: closed — Anthropic Claude Opus 5; API-only, no weights.
@@ -709,8 +711,16 @@ const autoclaw_env = [_][]const u8{ "AUTOCLAW_MODEL_BROKER_OPENAI_BASE_URL", "AU
 // Zed desktop editor — its integrated terminal exports ZED_TERM (the terminal marker) and ZED_ENVIRONMENT (the shell's environment kind, e.g. `worktree-shell`; observed 2026-11-11).
 // TERM_PROGRAM=zed is deliberately NOT a marker: every terminal emulator sets TERM_PROGRAM, so presence alone cannot identify this harness (the same reasoning as AI_AGENT for hermes).
 const zed_env = [_][]const u8{ "ZED_TERM", "ZED_ENVIRONMENT" };
-
 pub const rulesForHarnesses = [_]HarnessRule{
+    // codex: Apache-2.0 — OpenAI's Codex agent is open source. The ChatGPT desktop
+    // application hosts its Codex surface; macOS lineage is lowercased to `chatgpt`.
+    // Training: opt-out/opt-out — Codex with ChatGPT sign-in follows OpenAI's
+    // consumer data controls. `CODEX_MODEL` is only the ephemeral automated-capture
+    // selector; the regular desktop surface is recognized through its host lineage.
+    .{ .name = "codex", .label = "Codex", .closed_setting_hint = "turn off ChatGPT's \"Improve the model for everyone\" setting (Settings → Data Controls)", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/openai/codex", "https://github.com/openai/codex/blob/main/LICENSE" }, .open_training = "opt-out", .closed_training = "opt-out", .training_sources = &.{ "https://openai.com/policies/service-terms", "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance" }, .env_markers = &.{}, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "codex", "chatgpt", "codex.exe", "chatgpt.exe" }
+    else
+        &[_][]const u8{ "codex", "chatgpt" } },
     // cline: Apache-2.0 — https://github.com/cline/cline ships an Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code / JetBrains agent).
     // training (the D4 sweep, 2026-09-12): never/never — the telemetry docs list "Your code or file contents / ... / Conversation content" under what is NOT collected, and the maker ships no models; the api.cline.bot gateway is the cline/cline-pass provider dim.
     .{ .name = "cline", .label = "Cline", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/cline/cline", "https://github.com/cline/cline/blob/main/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{ "https://cline.bot/privacy", "https://github.com/cline/cline/blob/main/docs/enterprise-solutions/monitoring/telemetry.mdx" }, .env_markers = &cline_env, .binary_names = if (builtin.os.tag == .windows)
@@ -903,6 +913,8 @@ const env_value_allowlist = [_][]const u8{
     "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
     // Zed markers — fixed non-secret terminal/environment facts.
     "ZED_TERM", "ZED_ENVIRONMENT",
+    // Codex's explicit capture-only model selector is a public model id.
+    "CODEX_MODEL",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {

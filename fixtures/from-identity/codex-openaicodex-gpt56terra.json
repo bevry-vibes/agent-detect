@@ -1,0 +1,161 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Codex",
+      "harness_short_title": null,
+      "harness_name": "codex",
+      "harness_id": "codex",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "opt-out",
+      "harness_closed_training": "opt-out",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": false,
+      "provider_label": "OpenAI Codex",
+      "provider_name": "openai-codex",
+      "provider_id": "openaicodex",
+      "provider_closed_training": "opt-out",
+      "provider_open_training": null,
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": false,
+      "model_label": "GPT-5.6 Terra",
+      "model_short_title": null,
+      "model_name": "gpt-5.6-terra",
+      "model_id": "gpt56terra",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "codex-openaicodex-gpt56terra",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Codex · GPT-5.6 Terra <codex-openaicodex-gpt56terra@local>",
+    "trailer assisted-by": "Assisted-by: Codex · GPT-5.6 Terra <codex-openaicodex-gpt56terra@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/openai/codex",
+        "https://github.com/openai/codex/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openai.com/policies/service-terms",
+        "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance"
+      ],
+      "model-urls": [
+        "https://openai.com/index/gpt-5/",
+        "https://platform.openai.com/docs/models"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "codex",
+        "provider": "openaicodex",
+        "model": "gpt56terra"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-out"
+            }
+          ],
+          "summary": "the Codex harness may train on user data (closed_training = opt-out) with no readable opt-out",
+          "sources": [
+            "https://openai.com/policies/service-terms",
+            "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the harness to a reciprocal one to comply with the policy (e.g. cline, goose, kimi-code, mmx, pi)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-out"
+            }
+          ],
+          "summary": "the OpenAI Codex provider may train on user data (closed_training = opt-out) with no readable opt-out",
+          "sources": [
+            "https://openai.com/policies/service-terms",
+            "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the GPT-5.6 Terra model has closed weights (openness = closed)",
+          "sources": [
+            "https://openai.com/index/gpt-5/",
+            "https://platform.openai.com/docs/models"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m3.1-flash, minimax-m2.7)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the Codex harness may train on user data (closed_training = opt-out) with no readable opt-out (see: agent-detect explain)",
+      "  - provider: the OpenAI Codex provider may train on user data (closed_training = opt-out) with no readable opt-out (see: agent-detect explain)",
+      "  - model: the GPT-5.6 Terra model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
+  },
+  "meta": {
+    "updated_at": 1794563872
+  }
+}
