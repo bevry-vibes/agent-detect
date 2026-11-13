@@ -85,3 +85,11 @@ The user's prompts, verbatim, in order.
 ## prompt 19
 
 > You have also violated plans.md and not committed the prompts and plan
+
+## prompt 20
+
+> There is now a new branch and PR for `GitHub Copilot` support, however it was authored by a model that was stupid.
+>
+> It appears to have set the id of the model to simply `auto`, which is untenable. The model's name should be `Copilot Fusion`, and its id should be `copilotfusion` then, as `auto` is too generic, and be confused with other options. This is all akin to Kilo's Auto options.
+>
+> REview it in general as well.

@@ -384,16 +384,30 @@ test "fixtures: Copilot Fusion capture records the auto selection, not an underl
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = (try readChannelParsed(a, capture_dir, "githubcopilot-githubcopilot-auto-darwin")) orelse return error.MissingCopilotFusionCapture;
+    const root = (try readChannelParsed(a, capture_dir, "githubcopilot-githubcopilot-copilotfusion-darwin")) orelse return error.MissingCopilotFusionCapture;
     const outputs = root.object.get("outputs") orelse return error.InvalidFixtureShape;
     if (outputs != .object) return error.InvalidFixtureShape;
     const identify = outputs.object.get("identify") orelse return error.InvalidFixtureShape;
     if (identify != .object) return error.InvalidFixtureShape;
     try testing.expectEqualStrings("GitHub Copilot", identify.object.get("harness_label").?.string);
-    try testing.expectEqualStrings("auto", identify.object.get("model_id").?.string);
-    try testing.expectEqualStrings("auto", identify.object.get("model_name").?.string);
+    try testing.expectEqualStrings("copilotfusion", identify.object.get("model_name").?.string);
+    try testing.expectEqualStrings("copilotfusion", identify.object.get("model_id").?.string);
     try testing.expectEqualStrings("Copilot Fusion", identify.object.get("model_label").?.string);
     try testing.expect(identify.object.get("model_openness").? == .null);
+
+    // the fold is canonical only: the observation keeps the raw selector the session store recorded.
+    const found = outputs.object.get("found") orelse return error.InvalidFixtureShape;
+    if (found != .object) return error.InvalidFixtureShape;
+    const evidence = found.object.get("evidence") orelse return error.InvalidFixtureShape;
+    if (evidence != .array) return error.InvalidFixtureShape;
+    var saw_raw_auto = false;
+    for (evidence.array.items) |claim| {
+        if (claim != .object) continue;
+        if (!std.mem.eql(u8, claim.object.get("dim").?.string, "model")) continue;
+        try testing.expectEqualStrings("auto", claim.object.get("value").?.string);
+        saw_raw_auto = true;
+    }
+    try testing.expect(saw_raw_auto);
 
     const meta = root.object.get("meta") orelse return error.InvalidFixtureShape;
     if (meta != .object) return error.InvalidFixtureShape;

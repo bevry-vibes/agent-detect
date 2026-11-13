@@ -19,19 +19,21 @@
       "provider_reciprocity": false,
       "model_label": "Copilot Fusion",
       "model_short_title": null,
-      "model_name": "auto",
-      "model_id": "auto",
+      "model_name": "copilotfusion",
+      "model_id": "copilotfusion",
       "model_openness": null,
       "model_open_training": null,
       "model_closed_training": null,
       "model_license": null,
       "model_reciprocity": null,
-      "agent_id": "githubcopilot-githubcopilot-auto",
+      "agent_id": "githubcopilot-githubcopilot-copilotfusion",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: GitHub Copilot · Copilot Fusion <githubcopilot-githubcopilot-auto@local>",
-    "trailer assisted-by": "Assisted-by: GitHub Copilot · Copilot Fusion <githubcopilot-githubcopilot-auto@local>",
+    "trailer co-author": "Co-authored-by: GitHub Copilot · Copilot Fusion <githubcopilot-githubcopilot-copilotfusion@local>",
+    "trailer assisted-by": "Assisted-by: GitHub Copilot · Copilot Fusion <githubcopilot-githubcopilot-copilotfusion@local>",
     "found": {
+      "platform_id": "darwin",
+      "harness_version": "1.4.0",
       "detectable": [
         "harness",
         "provider",
@@ -42,6 +44,24 @@
         "provider",
         "model"
       ],
+      "process_lineage": [
+        {
+          "pid": 51083,
+          "name": "agent-detect-dev"
+        },
+        {
+          "pid": 50845,
+          "name": "bash"
+        },
+        {
+          "pid": 89777,
+          "name": "copilot-runtime"
+        },
+        {
+          "pid": 88550,
+          "name": "github"
+        }
+      ],
       "harness-urls": [
         "https://github.com/features/copilot",
         "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
@@ -50,12 +70,37 @@
         "https://copilot.github.trust.page/faq",
         "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://docs.github.com/en/copilot/concepts/models/copilot-fusion",
+        "https://docs.github.com/en/copilot/concepts/auto-model-selection"
+      ],
       "scandal-urls": [
         "https://news.ycombinator.com/item?id=33468849",
         "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber",
         "https://news.ycombinator.com/item?id=33468849",
         "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
+      ],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "COPILOT_AGENT_SESSION_ID",
+          "value": "<redacted>"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.copilot/data.db",
+          "field": "session.provider_id",
+          "value": "github-copilot"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.copilot/data.db",
+          "field": "session.model",
+          "value": "auto"
+        }
       ]
     },
     "explain": {
@@ -63,7 +108,7 @@
       "identity": {
         "harness": "githubcopilot",
         "provider": "githubcopilot",
-        "model": "auto"
+        "model": "copilotfusion"
       },
       "reasons": [
         {
@@ -112,6 +157,10 @@
           "entity": "model",
           "code": "model-openness-unknown",
           "summary": "the Copilot Fusion model's openness is unknown (its rule does not assert an openness)",
+          "sources": [
+            "https://docs.github.com/en/copilot/concepts/models/copilot-fusion",
+            "https://docs.github.com/en/copilot/concepts/auto-model-selection"
+          ],
           "actions": [
             {
               "kind": "contribute-data",
@@ -140,6 +189,8 @@
     ]
   },
   "meta": {
-    "updated_at": 1794582941
+    "updated_at": 1794582941,
+    "harness_version": "1.4.0",
+    "capture_kind": "manual"
   }
 }

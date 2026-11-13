@@ -165,8 +165,8 @@
         "githubcopilot"
       ],
       "models": [
-        "auto",
         "claudesonnet5",
+        "copilotfusion",
         "gemini25pro",
         "gemini3pro",
         "gpt4o",
@@ -282,8 +282,8 @@
         "githubcopilot"
       ],
       "models": [
-        "auto",
         "claudesonnet5",
+        "copilotfusion",
         "gemini25pro",
         "gemini3pro",
         "gpt4o",
@@ -382,7 +382,6 @@
         "zai"
       ],
       "models": [
-        "auto",
         "bigpickle",
         "claudefable5",
         "claudeopus4",
@@ -391,6 +390,7 @@
         "claudesonnet5",
         "cogito21",
         "commanda",
+        "copilotfusion",
         "deepseekr1",
         "deepseekv32",
         "deepseekv41flash",
@@ -765,7 +765,6 @@
         "zenmux"
       ],
       "models": [
-        "auto",
         "claudefable5",
         "claudeopus4",
         "claudeopus5",
@@ -773,6 +772,7 @@
         "claudesonnet5",
         "cogito21",
         "commanda",
+        "copilotfusion",
         "deepseekr1",
         "deepseekv32",
         "deepseekv41flash",
@@ -1624,8 +1624,8 @@
         "copilot-acp"
       ],
       "models": [
-        "auto",
         "claudesonnet5",
+        "copilotfusion",
         "gemini25pro",
         "gemini3pro",
         "gpt4o",
@@ -2700,26 +2700,6 @@
   ],
   "models": [
     {
-      "label": "Copilot Fusion",
-      "short_title": null,
-      "name": "auto",
-      "id": "auto",
-      "openness": null,
-      "license": null,
-      "open_training": null,
-      "closed_training": null,
-      "variations": [],
-      "providers": [
-        "githubcopilot"
-      ],
-      "harnesses": [
-        "copilot",
-        "githubcopilot",
-        "hermes",
-        "omp"
-      ]
-    },
-    {
       "label": "Big Pickle",
       "short_title": null,
       "name": "big-pickle",
@@ -2930,6 +2910,26 @@
       "harnesses": [
         "hermes",
         "kilo",
+        "omp"
+      ]
+    },
+    {
+      "label": "Copilot Fusion",
+      "short_title": null,
+      "name": "copilotfusion",
+      "id": "copilotfusion",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "githubcopilot"
+      ],
+      "harnesses": [
+        "copilot",
+        "githubcopilot",
+        "hermes",
         "omp"
       ]
     },
@@ -7004,14 +7004,14 @@
       "platforms": [],
       "reciprocal": false
     },
-    "githubcopilot-githubcopilot-auto": {
+    "githubcopilot-githubcopilot-claudesonnet5": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-copilotfusion": {
       "platforms": [
         "darwin"
       ],
-      "reciprocal": false
-    },
-    "githubcopilot-githubcopilot-claudesonnet5": {
-      "platforms": [],
       "reciprocal": false
     },
     "githubcopilot-githubcopilot-gemini25pro": {
