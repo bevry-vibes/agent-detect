@@ -4,10 +4,7 @@
   "backlog": {
     "unknown_harnesses": [],
     "unknown_providers": [],
-    "unknown_models": [
-      "lfm317b",
-      "northminicodefree"
-    ],
+    "unknown_models": [],
     "unknown_invocations": [],
     "known_but_failed": {
       "cline-minimax-minimaxm3-darwin": "capture failed (exit 1); stderr /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
