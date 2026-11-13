@@ -460,8 +460,10 @@ export default {
       return new Response(res.body, { status: 200, headers: JSON_HEADERS });
     }
 
-    // SPA fallback: every path that reaches the worker and is not a route
-    // above renders the app (static assets that exist never reach here).
+    // With run_worker_first every request reaches the worker, so serve a real
+    // asset first; only a miss falls back to the SPA (the app's own routes).
+    const asset = await env.ASSETS.fetch(request);
+    if (asset.status !== 404) return asset;
     return await env.ASSETS.fetch(new URL("/index.html", url.origin));
   },
 } satisfies ExportedHandler<Env>;
