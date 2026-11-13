@@ -7,6 +7,7 @@ this process is documented in the upstream repo's [local tweaks pattern](https:/
 
 - https://github.com/bevry-vibes/skills/blob/main/policy.md — **not applied to this project.**
   agent-detect is the enforcement mechanism that policy.md delegates to, so this project must run on all agents, including those that violate that policy; it cannot apply the policy to itself.
+- https://github.com/bevry-vibes/skills/blob/main/secrets.md — **applies.** Secrets come only from their documented locations; never probe for them, print them, or commit them
 - https://github.com/bevry-vibes/skills/blob/main/author.md — **applies.** Authorship: identities, the co-author and assisted-by trailers, and signing — human commits sign through 1Password, agent-made commits are never signed
 - [commits.md](./commits.md) — **applies**, with this project's tweaks (zig build, generated co-author trailer).
 - https://github.com/bevry-vibes/skills/blob/main/conventions.md — **applies** (the bevry/base config files stay verbatim above their CUSTOM segments, with this repo's overrides underneath;
