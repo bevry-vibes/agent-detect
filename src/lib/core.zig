@@ -4548,7 +4548,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
     var hsrc: []const u8 = "none";
     var hclaim_name: []const u8 = ""; // the matched env marker / proc name
     scan: for (rulesForHarnesses) |r| {
-        if (std.mem.eql(u8, r.name, "copilot-app") and !hasCopilotAppAncestry(anc.names)) continue;
+        if (std.mem.eql(u8, r.name, "github-copilot") and !hasCopilotAppAncestry(anc.names)) continue;
         for (r.env_markers) |m| {
             if (env.get(m) != null) {
                 rule = r;
@@ -4571,7 +4571,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
         // ancestry scan — note the pre-existing "last match wins" overwrite semantics when two rules match the same ancestor: the loops keep assigning `rule` without breaking.
         // Left unchanged by the binary_names rewiring.
         for (rulesForHarnesses) |r| {
-            if (std.mem.eql(u8, r.name, "copilot-app") and !hasCopilotAppAncestry(anc.names)) continue;
+            if (std.mem.eql(u8, r.name, "github-copilot") and !hasCopilotAppAncestry(anc.names)) continue;
             for (r.binary_names) |pn| {
                 for (anc.names) |n| {
                     if (std.mem.eql(u8, n, pn)) {
@@ -4662,7 +4662,7 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectVibe(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "cursor")) {
             try detectCursor(a, io, env, home, d);
-        } else if (std.mem.eql(u8, r.name, "copilot") or std.mem.eql(u8, r.name, "copilot-app")) {
+        } else if (std.mem.eql(u8, r.name, "copilot") or std.mem.eql(u8, r.name, "github-copilot")) {
             try detectCopilot(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "hermes")) {
             try detectHermes(a, io, env, home, d);

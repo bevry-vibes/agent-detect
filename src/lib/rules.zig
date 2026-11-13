@@ -44,7 +44,7 @@ pub const ModelRule = struct {
 };
 pub const rulesForModels = [_]ModelRule{
     // Copilot Fusion's Auto selection is a dynamic route, not a disclosed backend model.
-    // The local Copilot.app session records `auto`; preserve that selected identity without inferring which model served any response.
+    // The local GitHub Copilot session records `auto`; preserve that selected identity without inferring which model served any response.
     .{ .name = "auto", .label = "Copilot Fusion", .openness = null, .sources = &.{} },
     // kimi-k3: open-weight — Moonshot's HF card self-describes "open-weight"; its LICENSE is the custom "Kimi K3 License" (MIT-style with a large-scale commercial carve-out), not OSI → NOASSERTION.
     // variations: Chutes stamps secure-enclave served ids with "-TEE" (observed: chutes/moonshotai/Kimi-K3-TEE).
@@ -816,12 +816,12 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "cursor-agent", "cursor-agent.exe", "cursor-agent.cmd", "cursor-agent.ps1" }
     else
         &[_][]const u8{"cursor-agent"} },
-    // copilot-app: NONE — GitHub Copilot.app is closed-source; the Copilot product page and Terms of Service establish the product and its terms.
+    // github-copilot: NONE — GitHub Copilot is closed-source; the product page and Terms of Service establish the product and its terms.
     // The app session marker is exported to its child sessions; its runtime has no headless launcher, so captures are manual.
-    .{ .name = "copilot-app", .label = "GitHub Copilot.app", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .closed_training = "opt-out", .training_sources = &.{ "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service", "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://news.ycombinator.com/item?id=33468849", "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber" }, .env_markers = &copilot_app_env, .binary_names = if (builtin.os.tag == .windows)
+    .{ .name = "github-copilot", .label = "GitHub Copilot", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .closed_training = "opt-out", .training_sources = &.{ "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service", "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://news.ycombinator.com/item?id=33468849", "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber" }, .env_markers = &copilot_app_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "copilot-runtime", "copilot-runtime.exe" }
     else
-        &[_][]const u8{"copilot-runtime"}, .capture = .manual },
+        &[_][]const u8{"copilot-runtime"}, .variations = &.{ "GitHub Copilot.app", "Copilot App" }, .capture = .manual },
     // copilot: NONE — the GitHub Copilot CLI (brew `copilot-cli`) is closed-source; verified from the feature page and the GitHub Terms of Service (no open license), so `license` is `"NONE"`.
     // Training posture: closed opt-out — ToS Section J.3 (individual licenses) grants GitHub "a license to collect and use your Inputs and Outputs to develop, train and improve artificial intelligence and machine learning models … unless (a) you opt out through your account settings";
     // Customer-Agreement users are governed by the Copilot Product Specific Terms instead.

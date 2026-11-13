@@ -1,10 +1,10 @@
 {
   "outputs": {
     "identify": {
-      "harness_label": "GitHub Copilot.app",
+      "harness_label": "GitHub Copilot",
       "harness_short_title": null,
-      "harness_name": "copilot-app",
-      "harness_id": "copilotapp",
+      "harness_name": "github-copilot",
+      "harness_id": "githubcopilot",
       "harness_license": "NONE",
       "harness_open_training": null,
       "harness_closed_training": "opt-out",
@@ -17,20 +17,20 @@
       "provider_open_training": null,
       "provider_reciprocity_scandal": true,
       "provider_reciprocity": false,
-      "model_label": "Copilot Fusion",
+      "model_label": "GPT-5.2",
       "model_short_title": null,
-      "model_name": "auto",
-      "model_id": "auto",
-      "model_openness": null,
+      "model_name": "gpt-5.2",
+      "model_id": "gpt52",
+      "model_openness": "closed",
       "model_open_training": null,
       "model_closed_training": null,
       "model_license": null,
-      "model_reciprocity": null,
-      "agent_id": "copilotapp-githubcopilot-auto",
+      "model_reciprocity": false,
+      "agent_id": "githubcopilot-githubcopilot-gpt52",
       "reciprocal": false
     },
-    "trailer co-author": "Co-authored-by: GitHub Copilot.app · Copilot Fusion <copilotapp-githubcopilot-auto@local>",
-    "trailer assisted-by": "Assisted-by: GitHub Copilot.app · Copilot Fusion <copilotapp-githubcopilot-auto@local>",
+    "trailer co-author": "Co-authored-by: GitHub Copilot · GPT-5.2 <githubcopilot-githubcopilot-gpt52@local>",
+    "trailer assisted-by": "Assisted-by: GitHub Copilot · GPT-5.2 <githubcopilot-githubcopilot-gpt52@local>",
     "found": {
       "detectable": [
         "harness",
@@ -50,7 +50,10 @@
         "https://copilot.github.trust.page/faq",
         "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
       ],
-      "model-urls": [],
+      "model-urls": [
+        "https://openai.com/index/gpt-5/",
+        "https://platform.openai.com/docs/models"
+      ],
       "scandal-urls": [
         "https://news.ycombinator.com/item?id=33468849",
         "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber",
@@ -61,15 +64,15 @@
     "explain": {
       "state": "not-reciprocal",
       "identity": {
-        "harness": "copilotapp",
+        "harness": "githubcopilot",
         "provider": "githubcopilot",
-        "model": "auto"
+        "model": "gpt52"
       },
       "reasons": [
         {
           "entity": "harness",
           "code": "harness-scandal",
-          "summary": "the GitHub Copilot.app harness is flagged with a reciprocity scandal (verified misconduct)",
+          "summary": "the GitHub Copilot harness is flagged with a reciprocity scandal (verified misconduct)",
           "sources": [
             "https://news.ycombinator.com/item?id=33468849",
             "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber"
@@ -110,14 +113,22 @@
         },
         {
           "entity": "model",
-          "code": "model-openness-unknown",
-          "summary": "the Copilot Fusion model is absent from the model rules — its openness is unknown",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the GPT-5.2 model has closed weights (openness = closed)",
+          "sources": [
+            "https://openai.com/index/gpt-5/",
+            "https://platform.openai.com/docs/models"
+          ],
           "actions": [
             {
-              "kind": "contribute-data",
-              "instruction": "the Copilot Fusion model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
-              "command": "agent-detect found",
-              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m3.1-flash, minimax-m2.7)"
             },
             {
               "kind": "preflight-combo",
@@ -134,12 +145,12 @@
     "check-reciprocal": "not reciprocal",
     "check-reciprocal.stderr": [
       "agent (harness, provider, model) data complete and requirement failed",
-      "  - harness: the GitHub Copilot.app harness is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - harness: the GitHub Copilot harness is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
       "  - provider: the GitHub Copilot provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
-      "  - model: the Copilot Fusion model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - model: the GPT-5.2 model has closed weights (openness = closed) (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1794581769
+    "updated_at": 1794582941
   }
 }

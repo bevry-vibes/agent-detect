@@ -384,12 +384,12 @@ test "fixtures: Copilot Fusion capture records the auto selection, not an underl
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const root = (try readChannelParsed(a, capture_dir, "copilotapp-githubcopilot-auto-darwin")) orelse return error.MissingCopilotFusionCapture;
+    const root = (try readChannelParsed(a, capture_dir, "githubcopilot-githubcopilot-auto-darwin")) orelse return error.MissingCopilotFusionCapture;
     const outputs = root.object.get("outputs") orelse return error.InvalidFixtureShape;
     if (outputs != .object) return error.InvalidFixtureShape;
     const identify = outputs.object.get("identify") orelse return error.InvalidFixtureShape;
     if (identify != .object) return error.InvalidFixtureShape;
-    try testing.expectEqualStrings("GitHub Copilot.app", identify.object.get("harness_label").?.string);
+    try testing.expectEqualStrings("GitHub Copilot", identify.object.get("harness_label").?.string);
     try testing.expectEqualStrings("auto", identify.object.get("model_id").?.string);
     try testing.expectEqualStrings("auto", identify.object.get("model_name").?.string);
     try testing.expectEqualStrings("Copilot Fusion", identify.object.get("model_label").?.string);

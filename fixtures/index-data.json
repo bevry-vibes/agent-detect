@@ -176,30 +176,6 @@
       ]
     },
     {
-      "label": "GitHub Copilot.app",
-      "short_title": null,
-      "name": "copilot-app",
-      "id": "copilotapp",
-      "license": "NONE",
-      "open_training": null,
-      "closed_training": "opt-out",
-      "reciprocity_scandal": true,
-      "variations": [],
-      "providers": [
-        "githubcopilot"
-      ],
-      "models": [
-        "auto",
-        "claudesonnet5",
-        "gemini25pro",
-        "gemini3pro",
-        "gpt4o",
-        "gpt52",
-        "gpt5mini",
-        "grok45"
-      ]
-    },
-    {
       "label": "Crush",
       "short_title": null,
       "name": "crush",
@@ -287,6 +263,33 @@
         "deepseekv41flash",
         "deepseekv4flash",
         "deepseekv4pro"
+      ]
+    },
+    {
+      "label": "GitHub Copilot",
+      "short_title": null,
+      "name": "github-copilot",
+      "id": "githubcopilot",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": "opt-out",
+      "reciprocity_scandal": true,
+      "variations": [
+        "GitHub Copilot.app",
+        "Copilot App"
+      ],
+      "providers": [
+        "githubcopilot"
+      ],
+      "models": [
+        "auto",
+        "claudesonnet5",
+        "gemini25pro",
+        "gemini3pro",
+        "gpt4o",
+        "gpt52",
+        "gpt5mini",
+        "grok45"
       ]
     },
     {
@@ -1632,7 +1635,7 @@
       ],
       "harnesses": [
         "copilot",
-        "copilotapp",
+        "githubcopilot",
         "hermes",
         "omp"
       ]
@@ -2711,7 +2714,7 @@
       ],
       "harnesses": [
         "copilot",
-        "copilotapp",
+        "githubcopilot",
         "hermes",
         "omp"
       ]
@@ -2881,8 +2884,8 @@
       "harnesses": [
         "cline",
         "copilot",
-        "copilotapp",
         "cursor",
+        "githubcopilot",
         "hermes",
         "kilo",
         "kimicode",
@@ -3286,7 +3289,7 @@
       "harnesses": [
         "cline",
         "copilot",
-        "copilotapp",
+        "githubcopilot",
         "hermes",
         "kilo",
         "kimicode",
@@ -3333,7 +3336,7 @@
       ],
       "harnesses": [
         "copilot",
-        "copilotapp",
+        "githubcopilot",
         "hermes",
         "omp",
         "opencode"
@@ -3777,7 +3780,7 @@
       "harnesses": [
         "cline",
         "copilot",
-        "copilotapp",
+        "githubcopilot",
         "hermes",
         "kilo",
         "kimicode",
@@ -3807,8 +3810,8 @@
       "harnesses": [
         "cline",
         "copilot",
-        "copilotapp",
         "cursor",
+        "githubcopilot",
         "hermes",
         "kilo",
         "kimicode",
@@ -3838,8 +3841,8 @@
       "harnesses": [
         "cline",
         "copilot",
-        "copilotapp",
         "cursor",
+        "githubcopilot",
         "hermes",
         "kilo",
         "kimicode",
@@ -4119,8 +4122,8 @@
       "harnesses": [
         "cline",
         "copilot",
-        "copilotapp",
         "cursor",
+        "githubcopilot",
         "goose",
         "hermes",
         "kilo",
@@ -6794,16 +6797,6 @@
       ],
       "reciprocal": false
     },
-    "copilotapp-githubcopilot-auto": {
-      "platforms": [
-        "darwin"
-      ],
-      "reciprocal": false
-    },
-    "copilotapp-githubcopilot-gpt52": {
-      "platforms": [],
-      "reciprocal": false
-    },
     "crush-deepseek-deepseekv4flash": {
       "platforms": [
         "darwin",
@@ -7008,6 +7001,40 @@
       "reciprocal": false
     },
     "dsh-deepseek-deepseekv4pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-auto": {
+      "platforms": [
+        "darwin"
+      ],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-claudesonnet5": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-gemini25pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-gemini3pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-gpt4o": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-gpt52": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-gpt5mini": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "githubcopilot-githubcopilot-grok45": {
       "platforms": [],
       "reciprocal": false
     },
