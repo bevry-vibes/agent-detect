@@ -1,51 +1,13 @@
 {
   "store_version": 5,
-  "queue": [
-    {
-      "harness": "kilo",
-      "provider": "ollamacloud",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "runner": 10136
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "deepseekv4pro",
-      "platform": "windows",
-      "mode": "from-capture",
-      "runner": 14464
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "glm52",
-      "platform": "windows",
-      "mode": "from-capture",
-      "runner": 14956
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "kimik27code",
-      "platform": "windows",
-      "mode": "from-capture",
-      "runner": 20348
-    },
-    {
-      "harness": "opencode",
-      "provider": "clinepass",
-      "model": "minimaxm3",
-      "platform": "windows",
-      "mode": "from-capture",
-      "runner": 16728
-    }
-  ],
+  "queue": [],
   "backlog": {
     "unknown_harnesses": [],
     "unknown_providers": [],
-    "unknown_models": [],
+    "unknown_models": [
+      "lfm317b",
+      "northminicodefree"
+    ],
     "unknown_invocations": [],
     "known_but_failed": {
       "cline-minimax-minimaxm3-darwin": "capture failed (exit 1); stderr /bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n/bin/sh: ioreg: command not found\n\u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\n",
