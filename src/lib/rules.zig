@@ -827,7 +827,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     .{ .name = "copilot", .label = "GitHub Copilot CLI", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .closed_training = "opt-out", .training_sources = &.{ "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service", "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://news.ycombinator.com/item?id=33468849", "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber" }, .env_markers = &copilot_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "copilot", "copilot.exe" }
     else
-        &[_][]const u8{"copilot"} },
+        &[_][]const u8{"copilot"}, .variations = &.{"copilot-cli"} },
     // zcode: Apache-2.0 — https://github.com/zai-org/ZCode (open-sourced: client, backend server, shared UI, and the Agent CLI/runtime source; "Copyright 2026 Z.AI Co., Ltd") ships the Apache License 2.0 text at its root LICENSE, with third-party attribution in NOTICE.md / THIRD-PARTY-NOTICES.md.
     // Supersedes the 2026-09-07 NONE finding — the app shipped compiled installers only back then; the open-sourcing changes the licence but not the training posture (the cloud data terms are a separate surface).
     // Training postures opt-in/opt-in (sourced 2026-09-07 via a reader render of zcode.z.ai/privacy — the pages carry no text for plain crawlers): the "Improve experience" program is the Optimization Program, and "our Optimization Program is not enabled by default, and we will only use such User Content for this purpose after you have actively opted in" —
@@ -881,7 +881,7 @@ pub const rulesForHarnesses = [_]HarnessRule{
     .{ .name = "github-copilot", .label = "GitHub Copilot", .license = "NONE", .license_sources = &.{ "https://github.com/features/copilot", "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service" }, .closed_training = "opt-out", .training_sources = &.{ "https://docs.github.com/en/site-policy/github-terms/github-terms-of-service", "https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://news.ycombinator.com/item?id=33468849", "https://docs.github.com/copilot/how-tos/manage-your-account/managing-copilot-policies-as-an-individual-subscriber" }, .env_markers = &copilot_app_env, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "copilot-runtime", "copilot-runtime.exe" }
     else
-        &[_][]const u8{"copilot-runtime"}, .variations = &.{ "GitHub Copilot.app", "Copilot App" }, .capture = .manual },
+        &[_][]const u8{"copilot-runtime"}, .variations = &.{ "GitHub Copilot.app", "Copilot App", "copilot-desktop", "github-copilot-desktop" }, .capture = .manual },
 };
 
 /// env-var names whose values are safe to emit in raw.env_vars.

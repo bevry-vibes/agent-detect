@@ -160,7 +160,9 @@
       "open_training": null,
       "closed_training": "opt-out",
       "reciprocity_scandal": true,
-      "variations": [],
+      "variations": [
+        "copilot-cli"
+      ],
       "providers": [
         "githubcopilot"
       ],
@@ -276,7 +278,9 @@
       "reciprocity_scandal": true,
       "variations": [
         "GitHub Copilot.app",
-        "Copilot App"
+        "Copilot App",
+        "copilot-desktop",
+        "github-copilot-desktop"
       ],
       "providers": [
         "githubcopilot"
