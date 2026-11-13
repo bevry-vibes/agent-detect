@@ -212,9 +212,6 @@ export function Hero() {
             }}
           />
         </div>
-        <p className="text-muted-foreground mt-2 text-xs">
-          macOS defaults to Apple Silicon; choose <code className="font-mono">x86_64</code> for an Intel Mac.
-        </p>
 
         <div className="mt-6 flex flex-col gap-4">
           <Card id="install" className="min-w-0 scroll-mt-14">
