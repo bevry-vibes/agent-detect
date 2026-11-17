@@ -1151,6 +1151,14 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         // the 2026-10-29 opencode-zen free-period sweep — the new free-period exception rules (flint-40b; mimo-v2.6-flash) land rule-only until the free sweeps fixture them (the free-grid combos are derivable; the sweep is user-run via the daemon).
         "flint-40b",
         "mimo-v2.6-flash",
+        // the 2026-11-17 catalogue refresh — the newly released hosted/open-weight models land rule-only until the free sweeps fixture them.
+        "qwen4-max",
+        "hy4",
+        "hy4-flash",
+        "ling-3.2-flash",
+        "nex-n2.6",
+        "gemma-4-26b-a4b",
+        "particle-1",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

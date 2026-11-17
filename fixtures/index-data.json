@@ -55,8 +55,11 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "dots3notepreview",
+        "ernie55flashpreview",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemma426ba4b",
         "gemma431b",
         "glm46",
         "glm47",
@@ -78,8 +81,11 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "inkling",
+        "inkling2small",
         "inklingsmall",
         "kimik2",
         "kimik25",
@@ -88,8 +94,10 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling30flash",
         "ling30flashvl",
+        "ling32flash",
         "llama3370b",
         "llama4maverick",
         "mimov25",
@@ -111,7 +119,9 @@
         "nemotron3ultra",
         "nexn25mini",
         "nexn25pro",
+        "nexn26",
         "northminicode",
+        "particle1",
         "qwen3",
         "qwen3235ba22b",
         "qwen332b",
@@ -124,6 +134,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "reflectionbeam",
         "solarmini4",
         "step37flash"
@@ -323,6 +334,8 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "kimik25",
         "kimik26",
@@ -336,7 +349,8 @@
         "musespark12",
         "qwen37plus",
         "qwen38flash",
-        "qwen38max"
+        "qwen38max",
+        "qwen4max"
       ]
     },
     {
@@ -407,6 +421,7 @@
         "gemini35flash",
         "gemini3flash",
         "gemini3pro",
+        "gemma426ba4b",
         "gemma431b",
         "glm46",
         "glm47",
@@ -430,6 +445,8 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "iceman",
         "inkling",
@@ -452,6 +469,7 @@
         "ling261t",
         "ling30flash",
         "ling30flashvl",
+        "ling32flash",
         "llama318b",
         "llama3370b",
         "llama4maverick",
@@ -473,7 +491,9 @@
         "nemotron3ultra",
         "nexn25mini",
         "nexn25pro",
+        "nexn26",
         "northminicode",
+        "particle1",
         "phi4",
         "phi4mini",
         "qwen3235ba22b",
@@ -486,6 +506,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "reflectionbeam",
         "step37flash"
       ]
@@ -528,8 +549,10 @@
         "deepseekv4pro",
         "dots3notepreview",
         "ernie55flashpreview",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemma426ba4b",
         "gemma431b",
         "glm46",
         "glm47",
@@ -552,8 +575,11 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "inkling",
+        "inkling2small",
         "inklingsmall",
         "kiloautobalanced",
         "kiloautoefficient",
@@ -570,6 +596,7 @@
         "lfm317b",
         "ling30flash",
         "ling30flashvl",
+        "ling32flash",
         "llama3370b",
         "llama4maverick",
         "mimov25",
@@ -586,7 +613,9 @@
         "nemotron3ultra",
         "nexn25mini",
         "nexn25pro",
+        "nexn26",
         "northminicode",
+        "particle1",
         "phi4",
         "qwen3235ba22b",
         "qwen332b",
@@ -599,6 +628,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "reflectionbeam",
         "solarmini4",
         "step37flash"
@@ -634,8 +664,11 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "dots3notepreview",
+        "ernie55flashpreview",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemma426ba4b",
         "gemma431b",
         "glm46",
         "glm47",
@@ -657,8 +690,11 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "inkling",
+        "inkling2small",
         "inklingsmall",
         "kimik2",
         "kimik25",
@@ -667,8 +703,10 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling30flash",
         "ling30flashvl",
+        "ling32flash",
         "llama4maverick",
         "mimov25",
         "mimov25pro",
@@ -685,7 +723,9 @@
         "nemotron3ultra",
         "nexn25mini",
         "nexn25pro",
+        "nexn26",
         "northminicode",
+        "particle1",
         "qwen3235ba22b",
         "qwen332b",
         "qwen35397ba17b",
@@ -696,6 +736,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "step37flash"
       ]
     },
@@ -785,12 +826,15 @@
         "dots3notepreview",
         "doubaoseed21",
         "ernie45",
+        "ernie55flashpreview",
+        "flint40b",
         "fuguultrav11",
         "gemini25pro",
         "gemini35flash",
         "gemini3flash",
         "gemini3pro",
         "gemma327b",
+        "gemma426ba4b",
         "gemma431b",
         "glm46",
         "glm47",
@@ -814,8 +858,11 @@
         "grok46",
         "hunyuant1",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "inkling",
+        "inkling2small",
         "inklingsmall",
         "kimik2",
         "kimik25",
@@ -824,9 +871,11 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling261t",
         "ling30flash",
         "ling30flashvl",
+        "ling32flash",
         "llama318b",
         "llama4maverick",
         "mimov25",
@@ -842,8 +891,10 @@
         "nemotron3ultra",
         "nexn25mini",
         "nexn25pro",
+        "nexn26",
         "northminicode",
         "olmo332bthink",
+        "particle1",
         "phi4",
         "phi4mini",
         "qwen3235ba22b",
@@ -855,6 +906,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "step37flash"
       ]
     },
@@ -912,6 +964,8 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "iceman",
         "inkling2small",
@@ -956,6 +1010,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "reflectionbeam",
         "solarmini4",
         "step37flash"
@@ -997,8 +1052,11 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "dots3notepreview",
+        "ernie55flashpreview",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemma426ba4b",
         "gemma431b",
         "glm46",
         "glm47",
@@ -1021,8 +1079,11 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "inkling",
+        "inkling2small",
         "inklingsmall",
         "kimik2",
         "kimik25",
@@ -1031,8 +1092,10 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling30flash",
         "ling30flashvl",
+        "ling32flash",
         "llama318b",
         "llama3370b",
         "llama4",
@@ -1055,7 +1118,9 @@
         "nemotron3ultra",
         "nexn25mini",
         "nexn25pro",
+        "nexn26",
         "northminicode",
+        "particle1",
         "qwen3",
         "qwen3235ba22b",
         "qwen332b",
@@ -1067,6 +1132,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "step37flash"
       ]
     },
@@ -1100,7 +1166,8 @@
         "minimaxm27",
         "minimaxm3",
         "minimaxm31flash",
-        "qwen38max"
+        "qwen38max",
+        "qwen4max"
       ]
     },
     {
@@ -1237,7 +1304,8 @@
         "qwen37plus",
         "qwen38flash",
         "qwen38max",
-        "qwen3coder"
+        "qwen3coder",
+        "qwen4max"
       ],
       "harnesses": [
         "hermes",
@@ -1838,8 +1906,10 @@
         "deepseekv4pro",
         "dots3notepreview",
         "ernie55flashpreview",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemma426ba4b",
         "glm46",
         "glm47",
         "glm47flash",
@@ -1861,7 +1931,10 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
+        "inkling2small",
         "kiloautobalanced",
         "kiloautoefficient",
         "kiloautofree",
@@ -1885,7 +1958,9 @@
         "musespark12",
         "nemotron35lightning",
         "nemotron35supervl",
+        "nexn26",
         "northminicode",
+        "particle1",
         "phi4",
         "qwen3235ba22b",
         "qwen332b",
@@ -1896,6 +1971,7 @@
         "qwen3827b",
         "qwen38flash",
         "qwen3coder",
+        "qwen4max",
         "step37flash"
       ],
       "harnesses": [
@@ -2272,6 +2348,7 @@
         "gpt56sol",
         "grok45",
         "grok46",
+        "hy4flash",
         "iceman",
         "inkling2small",
         "jev113",
@@ -2285,7 +2362,6 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
-        "minimaxm31flash",
         "musespark12",
         "nemotron35lightning",
         "nemotron35supervl",
@@ -2318,6 +2394,8 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "kimik25",
         "kimik26",
@@ -2331,7 +2409,8 @@
         "musespark12",
         "qwen37plus",
         "qwen38flash",
-        "qwen38max"
+        "qwen38max",
+        "qwen4max"
       ],
       "harnesses": [
         "cline",
@@ -2361,8 +2440,11 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "dots3notepreview",
+        "ernie55flashpreview",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemma426ba4b",
         "gemma431b",
         "glm46",
         "glm47",
@@ -2384,8 +2466,11 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
         "inkling",
+        "inkling2small",
         "inklingsmall",
         "kimik2",
         "kimik25",
@@ -2394,8 +2479,10 @@
         "kimik3",
         "lagunas21",
         "lagunaxs21",
+        "lfm317b",
         "ling30flash",
         "ling30flashvl",
+        "ling32flash",
         "llama4maverick",
         "mimov25",
         "mimov25pro",
@@ -2409,7 +2496,9 @@
         "nemotron3ultra",
         "nexn25mini",
         "nexn25pro",
+        "nexn26",
         "northminicode",
+        "particle1",
         "qwen3235ba22b",
         "qwen35397ba17b",
         "qwen37flash",
@@ -2418,6 +2507,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "step37flash"
       ],
       "harnesses": [
@@ -2469,7 +2559,8 @@
       ],
       "models": [
         "deepseekv4flash",
-        "qwen38max"
+        "qwen38max",
+        "qwen4max"
       ],
       "harnesses": [
         "hermes",
@@ -2557,9 +2648,11 @@
         "deepseekv32",
         "deepseekv4flash",
         "deepseekv4pro",
+        "flint40b",
         "gemini25pro",
         "gemini35flash",
         "gemini3flash",
+        "gemma426ba4b",
         "glm46",
         "glm47",
         "glm47flash",
@@ -2579,7 +2672,10 @@
         "grok45",
         "grok46",
         "hy3",
+        "hy4",
+        "hy4flash",
         "hy4preview",
+        "inkling2small",
         "kimik2",
         "kimik25",
         "kimik26",
@@ -2596,6 +2692,7 @@
         "minimaxm27",
         "minimaxm3",
         "musespark12",
+        "particle1",
         "qwen332b",
         "qwen3627b",
         "qwen37flash",
@@ -2604,6 +2701,7 @@
         "qwen38flash",
         "qwen38max",
         "qwen3coder",
+        "qwen4max",
         "step37flash"
       ],
       "harnesses": [
@@ -3228,11 +3326,16 @@
         "baidu/ernie-5.5-flash-preview:free"
       ],
       "providers": [
-        "kilo"
+        "kilo",
+        "openrouter"
       ],
       "harnesses": [
+        "cline",
         "hermes",
-        "kilo"
+        "kilo",
+        "kimicode",
+        "omp",
+        "pi"
       ]
     },
     {
@@ -3241,18 +3344,29 @@
       "name": "flint-40b",
       "id": "flint40b",
       "openness": "open-weight",
-      "license": null,
+      "license": "Apache-2.0",
       "open_training": "opt-out",
       "closed_training": null,
       "variations": [
-        "flint-40b-free"
+        "flint-40b-free",
+        "flint-v1.0",
+        "flint-v1.0:free",
+        "recursive/flint-v1.0:free"
       ],
       "providers": [
-        "opencode"
+        "kilo",
+        "opencode",
+        "openrouter",
+        "vercel"
       ],
       "harnesses": [
+        "cline",
         "hermes",
-        "opencode"
+        "kilo",
+        "kimicode",
+        "omp",
+        "opencode",
+        "pi"
       ]
     },
     {
@@ -3403,6 +3517,33 @@
       ],
       "harnesses": [
         "omp"
+      ]
+    },
+    {
+      "label": "Gemma 4 26B A4B",
+      "short_title": null,
+      "name": "gemma-4-26b-a4b",
+      "id": "gemma426ba4b",
+      "openness": "open-weight",
+      "license": "Apache-2.0",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "gemma-4-26b-a4b-it",
+        "gemma-4-26b-a4b-it:free"
+      ],
+      "providers": [
+        "kilo",
+        "openrouter",
+        "vercel"
+      ],
+      "harnesses": [
+        "cline",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "omp",
+        "pi"
       ]
     },
     {
@@ -4215,6 +4356,63 @@
       ]
     },
     {
+      "label": "Hy4",
+      "short_title": null,
+      "name": "hy4",
+      "id": "hy4",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "kilo",
+        "opencodego",
+        "openrouter",
+        "vercel"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "omp",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
+      "label": "Hy4 Flash",
+      "short_title": null,
+      "name": "hy4-flash",
+      "id": "hy4flash",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "hy4-flash-free"
+      ],
+      "providers": [
+        "kilo",
+        "opencode",
+        "opencodego",
+        "openrouter",
+        "vercel"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "omp",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
       "label": "Hy4 Preview",
       "short_title": null,
       "name": "hy4-preview",
@@ -4251,7 +4449,8 @@
       "open_training": null,
       "closed_training": "NOASSERTION",
       "variations": [
-        "iceman-free"
+        "iceman-free",
+        "iceman-contributor-free"
       ],
       "providers": [
         "opencode"
@@ -4296,11 +4495,19 @@
         "inkling-2-small-free"
       ],
       "providers": [
-        "opencode"
+        "kilo",
+        "opencode",
+        "openrouter",
+        "vercel"
       ],
       "harnesses": [
+        "cline",
         "hermes",
-        "opencode"
+        "kilo",
+        "kimicode",
+        "omp",
+        "opencode",
+        "pi"
       ]
     },
     {
@@ -4699,11 +4906,16 @@
         "liquid/lfm-3-1.7b:free"
       ],
       "providers": [
-        "kilo"
+        "kilo",
+        "openrouter"
       ],
       "harnesses": [
+        "cline",
         "hermes",
-        "kilo"
+        "kilo",
+        "kimicode",
+        "omp",
+        "pi"
       ]
     },
     {
@@ -4764,6 +4976,30 @@
       "open_training": null,
       "closed_training": null,
       "variations": [],
+      "providers": [
+        "openrouter"
+      ],
+      "harnesses": [
+        "cline",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "omp",
+        "pi"
+      ]
+    },
+    {
+      "label": "Ling 3.2 Flash",
+      "short_title": null,
+      "name": "ling-3.2-flash",
+      "id": "ling32flash",
+      "openness": "closed",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "ling-3.2-flash:free"
+      ],
       "providers": [
         "openrouter"
       ],
@@ -5131,8 +5367,7 @@
         "minimax-m3.1-flash-free"
       ],
       "providers": [
-        "minimax",
-        "opencode"
+        "minimax"
       ],
       "harnesses": [
         "cline",
@@ -5479,6 +5714,29 @@
       ]
     },
     {
+      "label": "Nex N2.6",
+      "short_title": null,
+      "name": "nex-n2.6",
+      "id": "nexn26",
+      "openness": "open-weight",
+      "license": "Apache-2.0",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "kilo",
+        "openrouter"
+      ],
+      "harnesses": [
+        "cline",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "omp",
+        "pi"
+      ]
+    },
+    {
       "label": "North Mini Code",
       "short_title": null,
       "name": "north-mini-code",
@@ -5519,6 +5777,32 @@
       ],
       "harnesses": [
         "omp"
+      ]
+    },
+    {
+      "label": "Particle-1",
+      "short_title": null,
+      "name": "particle-1",
+      "id": "particle1",
+      "openness": "closed",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "particle-1:free"
+      ],
+      "providers": [
+        "kilo",
+        "openrouter",
+        "vercel"
+      ],
+      "harnesses": [
+        "cline",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "omp",
+        "pi"
       ]
     },
     {
@@ -5945,6 +6229,36 @@
       ]
     },
     {
+      "label": "Qwen4-Max",
+      "short_title": null,
+      "name": "qwen4-max",
+      "id": "qwen4max",
+      "openness": "closed",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "alibaba",
+        "kilo",
+        "opencodego",
+        "openrouter",
+        "qwen",
+        "vercel"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kilo",
+        "kimicode",
+        "omp",
+        "opencode",
+        "pi",
+        "qwen"
+      ]
+    },
+    {
       "label": "Reflection Beam",
       "short_title": null,
       "name": "reflection-beam",
@@ -6044,35 +6358,38 @@
       "deepseekv41flash",
       "flint40b",
       "glm53flash",
+      "hy4flash",
       "iceman",
       "inkling2small",
       "jev113",
       "longcat25",
       "mimov26flash",
-      "minimaxm31flash",
       "nemotron35lightning",
       "nemotron35supervl",
       "nemotron3ultra",
       "reflectionbeam"
     ],
+    "opencodego": [
+      "reflectionbeam",
+      "iceman",
+      "longcat25",
+      "hy4flash"
+    ],
     "openrouter": [
       "dots3notepreview",
+      "ernie55flashpreview",
+      "flint40b",
+      "gemma426ba4b",
       "gemma431b",
-      "glm52",
-      "inkling",
-      "inklingsmall",
-      "lagunas21",
-      "lagunaxs21",
-      "ling30flash",
-      "ling30flashvl",
+      "inkling2small",
+      "lfm317b",
+      "ling32flash",
       "nemotron35lightning",
+      "nemotron35supervl",
       "nemotron3nanoomni",
-      "nemotron3super",
       "nemotron3ultra",
-      "nexn25mini",
-      "nexn25pro",
       "northminicode",
-      "qwen3827b"
+      "particle1"
     ],
     "vercel": [
       "lagunas21",

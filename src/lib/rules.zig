@@ -373,14 +373,14 @@ pub const rulesForModels = [_]ModelRule{
     // The opencode zen free period trains: "MiMo-V2.6-Flash Free: During its free period, collected data may be used to improve the model." (https://opencode.ai/docs/zen) — the billing rule routes the escape (the paid spelling) to opt-out, like the MiMo-V2.5 Free exception (informational — the reciprocity conjunct consumes only the closed axis).
     // The license is unverified (no public weights-license doc sourced for the V2.6 card yet) → null; the openness is sourced from the catalog's open_weights + the zen model page.
     .{ .name = "mimo-v2.6-flash", .label = "MiMo V2.6 Flash", .openness = "open-weight", .sources = &.{"https://opencode.ai/docs/zen"}, .open_training = "opt-out", .variations = &.{"mimo-v2.6-flash-free"} },
-    // flint-40b: open-weight — Recursive's Flint 40B (MoE, ~2.5B active params); the weights are downloadable (open-weight per the conservative hosted-API tier).
+    // flint-40b: open-weight — Recursive's Flint 40B (39.8B total / ~2.5B active); the HF card and Apache-2.0 LICENSE confirm the downloadable weights.
     // The opencode zen free period trains: "Flint 40B Free: During its free period, collected data may be used to improve the model. Data is retained for 30 days." (https://opencode.ai/docs/zen) — the billing rule routes the escape (the paid spelling) to opt-out, like the MiMo-V2.5 Free exception (informational — the reciprocity conjunct consumes only the closed axis).
-    // The license is unverified (no public weights-license doc sourced yet) → null; the openness is sourced from the catalog's open_weights + the zen model page.
-    .{ .name = "flint-40b", .label = "Flint 40B", .openness = "open-weight", .sources = &.{"https://opencode.ai/docs/zen"}, .open_training = "opt-out", .variations = &.{"flint-40b-free"} },
+    // variations: the opencode free id `flint-40b-free`, plus OpenRouter's `flint-v1.0` release spelling (same Flint 40B weights; the tier spelling folds per DESIGN #13).
+    .{ .name = "flint-40b", .label = "Flint 40B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/RecursiveSI/flint", "https://huggingface.co/RecursiveSI/flint/blob/main/LICENSE", "https://opencode.ai/docs/zen" }, .open_training = "opt-out", .variations = &.{ "flint-40b-free", "flint-v1.0", "flint-v1.0:free", "recursive/flint-v1.0:free" } },
     // iceman: OpenCode Zen's stealth model (listed 2026-11-06); openness unverified → null (never-guess).
     // The zen docs name it a free-period exception that DOES train ("collected data is retained and used to improve the model") — the training is known, but the axis depends on the unverified openness, so the closed axis records NOASSERTION (the Big Pickle precedent).
-    // variations: the served free id `iceman-free` folds here per DESIGN #13 (tier spellings are variations).
-    .{ .name = "iceman", .label = "Iceman", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .closed_training = "NOASSERTION", .variations = &.{"iceman-free"} },
+    // variations: the served free ids `iceman-free` (Zen) and `iceman-contributor-free` (Go) fold here per DESIGN #13 (tier spellings are variations).
+    .{ .name = "iceman", .label = "Iceman", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .closed_training = "NOASSERTION", .variations = &.{ "iceman-free", "iceman-contributor-free" } },
     // glyph-cluster: stealth model served on Kilo Gateway as `stealth/glyph-cluster` (early access, rotating/upstream details undisclosed). Openness, license, and training posture unverified from local evidence alone → never-guess.
     .{ .name = "glyph-cluster", .label = "Glyph Cluster", .openness = null, .license = null, .sources = &.{"https://kilo.ai/docs"}, .variations = &.{"stealth/glyph-cluster"} },
     // inkling-2-small: open-weight — Thinking Machines' second-generation Inkling (594B total / 17B active); the Apache-2.0 weights landed 2026-11-12 (the 2026-11-05 launch was hosted-only).
@@ -395,6 +395,27 @@ pub const rulesForModels = [_]ModelRule{
     // The opencode zen free period follows a zero-retention policy and does not train on data, so no model-intrinsic training pair.
     // variations: the served free id `longcat-2.5-free` folds here per DESIGN #13.
     .{ .name = "longcat-2.5", .label = "LongCat 2.5", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/meituan-longcat/LongCat-2.5", "https://huggingface.co/meituan-longcat/LongCat-2.5/blob/main/LICENSE" }, .variations = &.{"longcat-2.5-free"} },
+    // qwen4-max: closed — Alibaba's Qwen4 flagship (2026-11-16, 2.4T total / 71B active, 1M context); API-only on QwenCloud and Alibaba products. Alibaba says smaller Qwen4 models will get open weights, but Qwen4-Max itself will not → NONE.
+    .{ .name = "qwen4-max", .label = "Qwen4-Max", .openness = "closed", .license = "NONE", .sources = &.{ "https://qwen.ai/blog?id=qwen4-max", "https://www.alibabacloud.com/en/press-room/alibaba-unveils-qwen4-max" } },
+    // hy4: weights promised but not released — Tencent's Hy4 full release (2026-11-04, 770B / 49B active, 1M context) ships hosted on Tencent Cloud and OpenRouter.
+    // Tencent says it plans to open-source Hy4's weights and system card "in the coming days", but HF carries only the Hy4 preview (the separate open-weight rule above) → openness/license null (never-guess; not `closed`, since release is announced).
+    .{ .name = "hy4", .label = "Hy4", .openness = null, .license = null, .sources = &.{ "https://hy.tencent.ai/research/hy4", "https://openrouter.ai/tencent/hy4" } },
+    // hy4-flash: weights promised but not released — Tencent's 224B total (64B Engram) / 12B active native-multimodal Flash (2026-11-16, 1M context).
+    // Tencent says it "plans to release Hy4 flash as an open-weight model" but no HF repo exists yet → openness/license null (never-guess).
+    // variations: the opencode zen/go free-tier spelling `hy4-flash-free` folds here per DESIGN #13.
+    .{ .name = "hy4-flash", .label = "Hy4 Flash", .openness = null, .license = null, .sources = &.{ "https://hy.tencent.ai/research/hy4-flash", "https://openrouter.ai/tencent/hy4-flash" }, .variations = &.{"hy4-flash-free"} },
+    // ling-3.2-flash: closed — inclusionAI/Ant Ling's native-multimodal MoE (560B total / 25B active, 1M context, released 2026-11-05); hosted on Ant Ling and OpenRouter.
+    // No weights are published: the inclusionAI HF org lists Ling 3.1 and earlier, and the 3.2 repo endpoints do not resolve → NONE.
+    // variations: the OpenRouter free-tier spelling `ling-3.2-flash:free` folds here per DESIGN #13.
+    .{ .name = "ling-3.2-flash", .label = "Ling 3.2 Flash", .openness = "closed", .license = "NONE", .sources = &.{ "https://developer.ant-ling.com/", "https://openrouter.ai/inclusionai/ling-3.2-flash", "https://huggingface.co/inclusionAI" }, .variations = &.{"ling-3.2-flash:free"} },
+    // nex-n2.6: open-weight — Nex AGI's N2.6 (2026-11-10, image-text-to-text); Apache-2.0 weights on HF.
+    .{ .name = "nex-n2.6", .label = "Nex N2.6", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/nex-agi/Nex-N2.6", "https://huggingface.co/nex-agi/Nex-N2.6/blob/main/LICENSE" } },
+    // gemma-4-26b-a4b: open-weight — Google Gemma 4 26B A4B IT (MoE, ~4B active); Apache-2.0 weights on HF.
+    // variations: the HF `-it` suffix spelling and the OpenRouter free-tier spelling `gemma-4-26b-a4b-it:free` fold here per DESIGN #13.
+    .{ .name = "gemma-4-26b-a4b", .label = "Gemma 4 26B A4B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/google/gemma-4-26B-A4B-it", "https://huggingface.co/google/gemma-4-26B-A4B-it/blob/main/LICENSE" }, .variations = &.{ "gemma-4-26b-a4b-it", "gemma-4-26b-a4b-it:free" } },
+    // particle-1: closed — Particle AI's token-efficient coding model (2026-10-28), a DeepSeek V4.1 Flash post-train served only through the Particle API, OpenRouter, and Vercel AI Gateway; no weights are published → NONE.
+    // variations: the OpenRouter free-tier spelling `particle-1:free` folds here per DESIGN #13.
+    .{ .name = "particle-1", .label = "Particle-1", .openness = "closed", .license = "NONE", .sources = &.{ "https://particle.ai/blog/introducing-particle-1", "https://openrouter.ai/particle-ai/particle-1" }, .variations = &.{"particle-1:free"} },
 };
 
 /// one provider.
