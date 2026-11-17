@@ -1,0 +1,147 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenAI Codex",
+      "harness_short_title": null,
+      "harness_name": "codex",
+      "harness_id": "codex",
+      "harness_license": null,
+      "harness_open_training": null,
+      "harness_closed_training": null,
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "OpenAI",
+      "provider_name": "openai",
+      "provider_id": "openai",
+      "provider_closed_training": "opt-in",
+      "provider_open_training": "opt-in",
+      "provider_reciprocity_scandal": true,
+      "provider_reciprocity": false,
+      "model_label": "GPT-6 Luna",
+      "model_short_title": null,
+      "model_name": "gpt-6-luna",
+      "model_id": "gpt6luna",
+      "model_openness": "closed",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": null,
+      "model_reciprocity": false,
+      "agent_id": "codex-openai-gpt6luna",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: OpenAI Codex · GPT-6 Luna <codex-openai-gpt6luna@local>",
+    "trailer assisted-by": "Assisted-by: OpenAI Codex · GPT-6 Luna <codex-openai-gpt6luna@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [],
+      "provider-urls": [
+        "https://openai.com/policies/data-usage-policy/",
+        "https://openai.com/policies/business-terms/"
+      ],
+      "model-urls": [
+        "https://developers.openai.com/api/docs/models/gpt-6-luna",
+        "https://openai.com/index/introducing-gpt-6-sol-and-luna/"
+      ],
+      "scandal-urls": [
+        "https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/",
+        "https://www.reuters.com/legal/litigation/new-york-times-led-group-asks-court-sanction-openai-us-copyright-dispute-2026-07-09/"
+      ]
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "codex",
+        "provider": "openai",
+        "model": "gpt6luna"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "summary": "the OpenAI Codex harness's training posture is unsourced — the determination cannot be made",
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the OpenAI Codex harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "provider",
+          "code": "provider-scandal",
+          "summary": "the OpenAI provider is flagged with a reciprocity scandal (verified misconduct)",
+          "sources": [
+            "https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/",
+            "https://www.reuters.com/legal/litigation/new-york-times-led-group-asks-court-sanction-openai-us-copyright-dispute-2026-07-09/"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the provider to a reciprocal one to comply with the policy (e.g. cline-pass, cline, goose, deepseek-flash, deepseek)"
+            },
+            {
+              "kind": "read-policy",
+              "instruction": "read the policy for what reciprocity requires",
+              "url": "https://github.com/bevry-vibes/skills/blob/main/policy.md"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the GPT-6 Luna model has closed weights (openness = closed)",
+          "sources": [
+            "https://developers.openai.com/api/docs/models/gpt-6-luna",
+            "https://openai.com/index/introducing-gpt-6-sol-and-luna/"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m3.1-flash, minimax-m2.7)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the OpenAI Codex harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - provider: the OpenAI provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
+      "  - model: the GPT-6 Luna model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
+  },
+  "meta": {
+    "updated_at": 1794923492
+  }
+}

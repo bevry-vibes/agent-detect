@@ -158,7 +158,7 @@ The method order is policy:
 - Installers may place binaries in `XDG_BIN_HOME` (default `~/.local/bin`) or the npm global prefix bin (behind `node-env` when plain npm is off `PATH`): the probe resolves `PATH`, then both directories, and reports where an off-`PATH` binary lives.
 
 `-Check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
-The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands (the `codex` and `chatgpt` rows are install-only: `codex` ahead of its pending rule, `chatgpt` for the retired Codex app's ChatGPT successor).
+The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands (the `chatgpt` row is install-only for the Codex desktop app's ChatGPT successor).
 
 The registry is CLI-first. The Cline, Kilo, and MiniMax Code desktop clients are separate products: Cline Desktop is the `cline-app` cask, MiniMax Code Desktop is `minimax-ai/tap/minimax-code` (pass `--language=en` for the overseas build), and Kilo Desktop has no cask (install its official DMG only with an explicit decision).
 
@@ -173,6 +173,7 @@ Paths are `$HOME`-relative; the Windows variants follow each harness's own platf
 | harness    | config                                                                       | session store / data                                                                 |
 | ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | cline      | `~/.cline/data/settings/providers.json`                                       | —                                                                                     |
+| codex      | `$CODEX_HOME/config.toml` (default `~/.codex/config.toml`)                      | —                                                                                     |
 | codewhale  | `~/.codewhale/config.toml` (`CODEWHALE_CONFIG_PATH` overrides)                 | `~/.codewhale/sessions/<id>.json` (`metadata.model` / `metadata.model_provider`)        |
 | copilot    | —                                                                             | `~/.copilot/data.db`                                                                   |
 | crush      | `~/.local/share/crush/crush.json` (Windows: `%LOCALAPPDATA%\Crush\crush.json`) | `<project>/.crush/crush.db` (project-local)                                            |
@@ -667,8 +668,7 @@ The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11) and sco
   config `~/.claude/settings.json` + `~/.claude.json`;
   sessions `~/.claude/projects/`; proc `claude`).
   Native binary broken on the maintainer's machine (npm postinstall) — rules/from-identity land regardless of install.
-- [ ] **codex** — OpenAI Codex CLI (`codex exec <prompt>`; config `~/.codex/config.toml` `model`/`model_provider`; sessions `~/.codex/sessions/`; proc `codex`).
-  The desktop app now ships inside the ChatGPT app (macOS `chatgpt` cask; winget `OpenAI.ChatGPT` / Store `9PLM9XGG6VKS` on Windows; Linux preview; the installer's `chatgpt` row), shares `~/.codex`, and has no headless launcher, so the CLI surface is the capture path.
+- **codex** — OpenAI Codex CLI and Codex in the ChatGPT desktop app. Reads top-level `model` / `model_provider` from `CODEX_HOME/config.toml` (default `~/.codex/config.toml`); Codex defaults the provider to OpenAI. The desktop app shares `~/.codex` and has no headless launcher, so real captures use the CLI.
 - [ ] **grok** — Grok CLI (`grok --always-approve <prompt>`; config `~/.grok/config.toml` + models `~/.grok/models_cache.json`; sessions `~/.grok/sessions/` + `worktrees.db`; proc `grok`).
 - [ ] **gemini** — Gemini CLI (`gemini -p <prompt>`; config `~/.gemini/settings.json`; proc `gemini`).
 - [ ] **amp / roo / qoder / openhands** — maintained CLIs (Replit/Anvil, Roo Code, Alibaba, OpenHands); not installed on the maintainer's machine; rules + from-identity fixtures when a contributor picks them up.

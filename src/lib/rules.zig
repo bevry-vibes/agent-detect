@@ -121,6 +121,8 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "gpt-5-mini", .label = "GPT-5 mini", .openness = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
     // gpt-5.5: closed — OpenAI API-only; no weights.
     .{ .name = "gpt-5.5", .label = "GPT-5.5", .openness = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
+    // gpt-6-luna: closed — OpenAI GPT-6 Luna; API-only, no weights.
+    .{ .name = "gpt-6-luna", .label = "GPT-6 Luna", .openness = "closed", .sources = &.{ "https://developers.openai.com/api/docs/models/gpt-6-luna", "https://openai.com/index/introducing-gpt-6-sol-and-luna/" } },
     // grok-3-mini: closed — xAI API-only; no weights.
     .{ .name = "grok-3-mini", .label = "Grok 3 mini", .openness = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
     // grok-4: closed — xAI API-only; no weights.
@@ -715,6 +717,7 @@ const autoclaw_env = [_][]const u8{ "AUTOCLAW_MODEL_BROKER_OPENAI_BASE_URL", "AU
 // Zed desktop editor — its integrated terminal exports ZED_TERM (the terminal marker) and ZED_ENVIRONMENT (the shell's environment kind, e.g. `worktree-shell`; observed 2026-11-11).
 // TERM_PROGRAM=zed is deliberately NOT a marker: every terminal emulator sets TERM_PROGRAM, so presence alone cannot identify this harness (the same reasoning as AI_AGENT for hermes).
 const zed_env = [_][]const u8{ "ZED_TERM", "ZED_ENVIRONMENT" };
+const codex_env = [_][]const u8{"CODEX_HOME"};
 
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code / JetBrains agent).
@@ -882,6 +885,12 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "copilot-runtime", "copilot-runtime.exe" }
     else
         &[_][]const u8{"copilot-runtime"}, .variations = &.{ "GitHub Copilot.app", "Copilot App", "copilot-desktop", "github-copilot-desktop" }, .capture = .manual },
+    // Codex CLI and Codex in the ChatGPT desktop app share CODEX_HOME and the same config.toml; the process name covers CLI ancestry.
+    // Model/provider selection is read from the config when available; Codex's documented default provider is OpenAI.
+    .{ .name = "codex", .label = "OpenAI Codex", .license = null, .license_sources = &.{}, .env_markers = &codex_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "codex", "codex.exe" }
+    else
+        &[_][]const u8{"codex"} },
 };
 
 /// env-var names whose values are safe to emit in raw.env_vars.

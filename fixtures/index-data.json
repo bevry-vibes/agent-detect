@@ -152,6 +152,24 @@
       ]
     },
     {
+      "label": "OpenAI Codex",
+      "short_title": null,
+      "name": "codex",
+      "id": "codex",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "reciprocity_scandal": false,
+      "variations": [],
+      "providers": [
+        "openai"
+      ],
+      "models": [
+        "gpt4o",
+        "gpt6luna"
+      ]
+    },
+    {
       "label": "GitHub Copilot CLI",
       "short_title": null,
       "name": "copilot",
@@ -1092,6 +1110,7 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "gpt4o",
+        "gpt6luna",
         "grok4",
         "grok420",
         "grok45",
@@ -2217,9 +2236,11 @@
       "reciprocity_scandal": true,
       "variations": [],
       "models": [
-        "gpt4o"
+        "gpt4o",
+        "gpt6luna"
       ],
       "harnesses": [
+        "codex",
         "qwen"
       ]
     },
@@ -3783,6 +3804,7 @@
       ],
       "harnesses": [
         "cline",
+        "codex",
         "copilot",
         "githubcopilot",
         "hermes",
@@ -3940,6 +3962,24 @@
         "omp",
         "opencode",
         "pi"
+      ]
+    },
+    {
+      "label": "GPT-6 Luna",
+      "short_title": null,
+      "name": "gpt-6-luna",
+      "id": "gpt6luna",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "openai"
+      ],
+      "harnesses": [
+        "codex",
+        "qwen"
       ]
     },
     {
@@ -6764,6 +6804,10 @@
     "codewhale-deepseek-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "codex-openai-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
     },
     "copilot-githubcopilot-claudesonnet5": {
       "platforms": [

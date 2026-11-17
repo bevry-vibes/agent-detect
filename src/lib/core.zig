@@ -2862,6 +2862,58 @@ fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
 }
 
+/// Codex stores its selected model and provider in config.toml. The active provider defaults to OpenAI.
+/// Only top-level values are considered; profile-specific and custom-provider sections are not inferred.
+fn detectCodex(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    var codex_home: []const u8 = "";
+    if (env.get("CODEX_HOME")) |v| {
+        if (v.len > 0) codex_home = v;
+    }
+    if (codex_home.len == 0 and home.len > 0) codex_home = try std.fmt.allocPrint(a, "{s}/.codex", .{home});
+    if (codex_home.len == 0) return;
+    const path = try std.fmt.allocPrint(a, "{s}/config.toml", .{codex_home});
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    defer a.free(data);
+
+    var model: ?[]const u8 = null;
+    var provider: ?[]const u8 = null;
+    var in_top_level = true;
+    var lines = std.mem.splitScalar(u8, data, '\n');
+    while (lines.next()) |raw| {
+        const line = std.mem.trim(u8, raw, " \t\r");
+        if (line.len == 0 or line[0] == '#') continue;
+        if (line[0] == '[') {
+            in_top_level = false;
+            continue;
+        }
+        if (!in_top_level) continue;
+        const eq = std.mem.findScalar(u8, line, '=') orelse continue;
+        const key = std.mem.trim(u8, line[0..eq], " \t");
+        var value = std.mem.trim(u8, line[eq + 1 ..], " \t");
+        if (std.mem.indexOfScalar(u8, value, '#')) |comment| value = std.mem.trimEnd(u8, value[0..comment], " \t");
+        if (value.len >= 2 and ((value[0] == '"' and value[value.len - 1] == '"') or (value[0] == '\'' and value[value.len - 1] == '\''))) {
+            value = value[1 .. value.len - 1];
+        } else continue;
+        if (std.mem.eql(u8, key, "model")) model = value else if (std.mem.eql(u8, key, "model_provider")) provider = value;
+    }
+    const selected_model = model orelse return;
+    if (selected_model.len == 0) return;
+    const selected_provider = provider orelse "openai";
+    try setProvider(a, d, selected_provider);
+    try applyModel(a, d, selected_model, selected_model);
+
+    const fields = try a.alloc(FieldObservation, if (provider == null) 1 else 2);
+    fields[0] = .{ .dotted_path = "model", .value = selected_model };
+    if (provider) |value| fields[1] = .{ .dotted_path = "model_provider", .value = value };
+    const obs = try a.alloc(FileObservation, 1);
+    obs[0] = .{ .path = path, .fields = fields };
+    d.raw.config_files = try appendFileObservation(a, d.raw.config_files, obs[0]);
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "config", .name = path, .field = "model", .value = selected_model });
+    if (provider) |value| {
+        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "config", .name = path, .field = "model_provider", .value = value });
+    }
+}
+
 /// GitHub Copilot records its Copilot Fusion selection as the generic selector `auto`.
 /// Fold that spelling to the canonical model rule here — inside Copilot sessions only — because a global `auto` model rule (or variation alias) would claim every other harness's own auto selector as Copilot Fusion.
 fn copilotFusionModelId(name: []const u8) []const u8 {
@@ -4677,6 +4729,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectAutoClaw(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "zed")) {
             try detectZed(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "codex")) {
+            try detectCodex(a, io, env, home, d);
         }
         // detectors may set provider after model (e.g. a config file whose default_text_model line precedes its provider line), so compose the agent id once both dims are known rather than only inside applyModel.
         try setAgentId(a, d);
