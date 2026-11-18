@@ -14,6 +14,13 @@ We'd rather detect from a single env var than spawn a subprocess to read a harne
 The detection ladder therefore reads in this order: env markers → ancestor process names → per-harness config files → the running session → the last model in the session log.
 The implementation lives in `pub fn detect` in `src/lib/core.zig`, with each step documented inline in its per-harness detector's doc comment (`detectZcode`, `detectHermes`, `detectAutoClaw`, …).
 
+**Known rough edge: IDE extension surfaces need more testing.**
+Unlike a desktop app's children, an IDE extension host, the agent it spawns, and the editor's integrated terminal do not share one environment.
+Extension-hosted chats (Cline, Copilot, …) can run with no marker in the terminal at all, while an editor window — or a tmux server — first launched from inside an agent session inherits that session's markers into every terminal it opens; a bare-shell detection there is then attributed to the outer harness whose marker leaked in.
+The Claude Code VS Code extension is the reference case: it deletes `CLAUDECODE` from the CLI it spawns and sets `CLAUDE_CODE_ENTRYPOINT=claude-vscode`, so the panel's own CLI is clean, but a VS Code window started from a Claude Code shell still carries the markers into its terminals.
+Until this is tested per extension (which markers reach the panel CLI, which reach the integrated terminal, and whether a session artifact can gate the match), treat inherited-marker detections in an IDE terminal as evidence to verify, not proof.
+Do not gate a marker on ancestry or a session artifact without that testing — the tmux/IDE inheritance cases are exactly where the ancestry link is gone.
+
 ### two-binary split (released + dev-only)
 
 The released binary must stay minimal — no raw dump, no subcommands, no fixtures — so it ships as a single static file with no surprises.

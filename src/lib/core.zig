@@ -4553,6 +4553,43 @@ pub fn claudeCodeLastModel(a: std.mem.Allocator, data: []const u8) ?[]const u8 {
     return null;
 }
 
+/// fold the API id a transcript records onto the undated rule name.
+/// Claude Code stores the raw API id: Anthropic dates most ids (`claude-sonnet-4-20250514`), Vertex stamps them (`claude-sonnet-4-5@20250929`),
+/// and Bedrock prepends the vendor/region and appends the model version (`us.anthropic.claude-sonnet-4-20250514-v1:0`).
+/// This is Claude-scoped: other providers' release stamps are folded as rule variations per DESIGN #13.
+fn claudeModelRuleName(a: std.mem.Allocator, raw: []const u8) []const u8 {
+    var name = raw;
+    name = stripClaudeVersionSuffix(name);
+    name = stripClaudeDateSuffix(name);
+    if (std.mem.indexOf(u8, name, "anthropic.")) |i| name = name[i + "anthropic.".len ..];
+    name = stripClaudeDateSuffix(name);
+    return a.dupe(u8, name) catch raw;
+}
+
+/// `-v<digits>:<digits>` (Bedrock's model version suffix).
+fn stripClaudeVersionSuffix(name: []const u8) []const u8 {
+    var end = name.len;
+    while (end > 0 and std.ascii.isDigit(name[end - 1])) end -= 1;
+    if (end == name.len or end == 0 or name[end - 1] != ':') return name;
+    const colon = end - 1;
+    var digits = colon;
+    while (digits > 0 and std.ascii.isDigit(name[digits - 1])) digits -= 1;
+    if (digits == colon or digits < 2) return name;
+    if (name[digits - 2] != '-' or name[digits - 1] != 'v') return name;
+    return name[0 .. digits - 2];
+}
+
+/// a trailing `-YYYYMMDD` (Anthropic) or `@YYYYMMDD` (Vertex) release stamp.
+fn stripClaudeDateSuffix(name: []const u8) []const u8 {
+    if (name.len <= 9) return name;
+    const sep = name[name.len - 9];
+    if (sep != '-' and sep != '@') return name;
+    for (name[name.len - 8 ..]) |c| {
+        if (!std.ascii.isDigit(c)) return name;
+    }
+    return name[0 .. name.len - 9];
+}
+
 /// read a transcript from its tail, widening the window until it holds a model record or the whole file.
 fn claudeCodeTranscriptModel(a: std.mem.Allocator, io: std.Io, path: []const u8) ?[]const u8 {
     var file = std.Io.Dir.cwd().openFile(io, path, .{}) catch return null;
@@ -4671,7 +4708,7 @@ fn detectClaudeCode(a: std.mem.Allocator, io: std.Io, env: *const std.process.En
     const projects = try std.fmt.allocPrint(a, "{s}/projects", .{config});
     const path = claudeCodeTranscript(a, io, env, projects) orelse return;
     const model = claudeCodeTranscriptModel(a, io, path) orelse return;
-    try applyModel(a, d, model, model);
+    try applyModel(a, d, claudeModelRuleName(a, model), model);
     // the folder and file names carry the encoded project path and the session id, so the claim names the layout instead
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = try std.fmt.allocPrint(a, "{s}/<project>/<session>.jsonl", .{projects}), .field = "message.model", .value = model });
     const fields = try a.alloc(FieldObservation, 1);
@@ -4988,4 +5025,18 @@ test "claudeCodeProjectName: slashes and dots become dashes" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     try std.testing.expectEqualStrings("-Users-me--claude", try claudeCodeProjectName(arena.allocator(), "/Users/me/.claude"));
+}
+
+test "claudeModelRuleName: dated, Vertex and Bedrock ids fold to the rule name" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    try std.testing.expectEqualStrings("claude-sonnet-4", claudeModelRuleName(a, "claude-sonnet-4-20250514"));
+    try std.testing.expectEqualStrings("claude-sonnet-4-5", claudeModelRuleName(a, "claude-sonnet-4-5@20250929"));
+    try std.testing.expectEqualStrings("claude-sonnet-4", claudeModelRuleName(a, "anthropic.claude-sonnet-4-20250514-v1:0"));
+    try std.testing.expectEqualStrings("claude-opus-5-5", claudeModelRuleName(a, "us.anthropic.claude-opus-5-5-20260101-v1:0"));
+    // undated ids and ids without a recognizable stamp pass through unchanged
+    try std.testing.expectEqualStrings("claude-opus-5-5", claudeModelRuleName(a, "claude-opus-5-5"));
+    try std.testing.expectEqualStrings("<synthetic>", claudeModelRuleName(a, "<synthetic>"));
 }
