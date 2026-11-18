@@ -4387,8 +4387,8 @@
       "short_title": null,
       "name": "hy4-flash",
       "id": "hy4flash",
-      "openness": null,
-      "license": null,
+      "openness": "open-weight",
+      "license": "NOASSERTION",
       "open_training": null,
       "closed_training": null,
       "variations": [

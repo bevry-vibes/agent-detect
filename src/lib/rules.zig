@@ -400,10 +400,9 @@ pub const rulesForModels = [_]ModelRule{
     // hy4: weights promised but not released — Tencent's Hy4 full release (2026-11-04, 770B / 49B active, 1M context) ships hosted on Tencent Cloud and OpenRouter.
     // Tencent says it plans to open-source Hy4's weights and system card "in the coming days", but HF carries only the Hy4 preview (the separate open-weight rule above) → openness/license null (never-guess; not `closed`, since release is announced).
     .{ .name = "hy4", .label = "Hy4", .openness = null, .license = null, .sources = &.{ "https://hy.tencent.ai/research/hy4", "https://openrouter.ai/tencent/hy4" } },
-    // hy4-flash: weights promised but not released — Tencent's 224B total (64B Engram) / 12B active native-multimodal Flash (2026-11-16, 1M context).
-    // Tencent says it "plans to release Hy4 flash as an open-weight model" but no HF repo exists yet → openness/license null (never-guess).
+    // hy4-flash: open-weight — Tencent published the weights on 2026-11-17 (220B total, 64B Engram, 12B active, 1M context, text+image input) under the Tencent Hy License, a custom non-SPDX licence → NOASSERTION.
     // variations: the opencode zen/go free-tier spelling `hy4-flash-free` folds here per DESIGN #13.
-    .{ .name = "hy4-flash", .label = "Hy4 Flash", .openness = null, .license = null, .sources = &.{ "https://hy.tencent.ai/research/hy4-flash", "https://openrouter.ai/tencent/hy4-flash" }, .variations = &.{"hy4-flash-free"} },
+    .{ .name = "hy4-flash", .label = "Hy4 Flash", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/tencent/Hy4-flash", "https://huggingface.co/tencent/Hy4-flash/blob/main/LICENSE", "https://hy.tencent.ai/research/hy4-flash" }, .variations = &.{"hy4-flash-free"} },
     // ling-3.2-flash: closed — inclusionAI/Ant Ling's native-multimodal MoE (560B total / 25B active, 1M context, released 2026-11-05); hosted on Ant Ling and OpenRouter.
     // No weights are published: the inclusionAI HF org lists Ling 3.1 and earlier, and the 3.2 repo endpoints do not resolve → NONE.
     // variations: the OpenRouter free-tier spelling `ling-3.2-flash:free` folds here per DESIGN #13.
