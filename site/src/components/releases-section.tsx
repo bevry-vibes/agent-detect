@@ -10,20 +10,11 @@ export function releaseDay(date: string): string {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
-/** the note's opening line ("## What's changed since …"), used as the heading
- * beneath the tag; an older tag with only a title keeps the tag as the heading */
-function lead(body: string): string | null {
-  const line = body.split("\n").find((l) => l.trim().length > 0) ?? "";
-  const heading = /^#{1,4}\s+(.*)$/.exec(line.trim());
-  return heading ? heading[1]!.trim() : null;
-}
-
 /** one release, with its permalink on the tag and again on the date. The
  * permalink is the site page (/releases/<tag>) — a stable link that survives
  * the homepage's scroll position, unlike a bare #anchor. */
 export function ReleaseEntry({ release, compact = false }: { release: Release; compact?: boolean }) {
   const href = `/releases/${release.tag}`;
-  const title = lead(release.body);
   return (
     <section id={release.tag} className="scroll-mt-20 border-t pt-6 first:border-t-0 first:pt-0">
       <header className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -53,7 +44,6 @@ export function ReleaseEntry({ release, compact = false }: { release: Release; c
           <ArrowUpRight className="size-3" />
         </a>
       </header>
-      {title && <p className="text-muted-foreground mb-2 text-sm">{title}</p>}
       <Markdown text={release.body} />
       {!compact && (
         <p className="mt-3 text-xs">
