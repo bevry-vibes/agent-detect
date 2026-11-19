@@ -5,12 +5,13 @@ import type { ReactNode } from "react";
 // (and its HTML output) into the site: every node below is built as React,
 // so the notes can never inject markup.
 
-const INLINE = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\)|https?:\/\/[^\s<)]+)/g;
+const INLINE = /(\*\*[^*]+\*\*|\*[^*\s][^*]*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\)|https?:\/\/[^\s<)]+)/g;
 
 function inline(text: string, key: string): ReactNode[] {
   return text.split(INLINE).filter(Boolean).map((part, i) => {
     const id = `${key}-${i}`;
     if (part.startsWith("**") && part.endsWith("**")) return <strong key={id}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) return <em key={id}>{part.slice(1, -1)}</em>;
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
         <code key={id} className="bg-muted rounded px-1 py-0.5 font-mono text-[0.9em]">
