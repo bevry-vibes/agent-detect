@@ -386,21 +386,17 @@ export default function App() {
         onHome={view.kind !== "index" ? () => onHome() : undefined}
         onNavClick={onNavClick}
         centerNav={
-          view.kind === "index"
-            ? [
+          view.kind === "agent" || view.kind === "entity"
+            ? [{ label: view.kind === "agent" ? "agent" : view.dim }]
+            : [
+                // cli and registry stay reachable from the releases pages; a
+                // nav click carries the anchor home. The current page is the
+                // plain label, exactly as it is on an agent or entity page.
                 { label: "cli", href: "#cli" },
                 { label: "registry", href: "#registry" },
-                { label: "releases", href: "/releases" },
-              ]
-            : [
-                {
-                  label:
-                    view.kind === "agent"
-                      ? "agent"
-                      : view.kind === "release" || view.kind === "releases"
-                        ? "releases"
-                        : view.dim,
-                },
+                view.kind === "releases" || view.kind === "release"
+                  ? { label: "releases" }
+                  : { label: "releases", href: "/releases" },
               ]
         }
       />
