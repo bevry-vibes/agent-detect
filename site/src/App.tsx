@@ -318,6 +318,10 @@ export default function App() {
     viewRef.current = viewKey;
     if (viewKey === "/") {
       document.getElementById("registry")?.scrollIntoView({ block: "start", behavior: "instant" });
+    } else if (viewKey === "/releases") {
+      // a new view opens at its own top; the nav's scroll happens before the
+      // list renders, so the effect is what actually lands it there
+      window.scrollTo({ top: 0, behavior: "instant" });
     }
   }, [viewKey]);
 
