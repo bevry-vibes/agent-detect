@@ -8,6 +8,7 @@ import {
   type AgentsFile,
   type IndexDataFile,
   type RegistryFile,
+  type ReleasesFile,
 } from "@/lib/registry";
 import { AgentPage } from "@/components/agent-page";
 import { EntityPage, type EntityDim } from "@/components/entity-page";
@@ -15,6 +16,8 @@ import { FilterBar, NO_FILTERS, type Filters } from "@/components/filter-bar";
 import { Hero, RegistryIntro } from "@/components/hero";
 import { IndexSection } from "@/components/index-section";
 import { ResultsTable } from "@/components/results-table";
+import { ReleasePage } from "@/components/release-page";
+import { ReleasesSection } from "@/components/releases-section";
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -24,7 +27,11 @@ type Dim = (typeof DIMS)[number];
 /** the three views — the index (the default), a combo's result page
  * (/agent/<id>), and an entity's detail page (/<dim>/<id>). The ids ride in
  * the path; the index filters ride in the query. */
-type View = { kind: "index" } | { kind: "agent"; id: string } | { kind: "entity"; dim: EntityDim; id: string };
+type View =
+  | { kind: "index" }
+  | { kind: "agent"; id: string }
+  | { kind: "entity"; dim: EntityDim; id: string }
+  | { kind: "release"; tag: string };
 
 /** a `?free=`/`?reciprocal=` value → its boolean, or null */
 function triBool(raw: string | null): boolean | null {
@@ -39,6 +46,7 @@ function triBool(raw: string | null): boolean | null {
 function viewPath(view: View): string {
   if (view.kind === "agent") return `/agent/${view.id}`;
   if (view.kind === "entity") return `/${view.dim}/${view.id}`;
+  if (view.kind === "release") return `/releases/${view.tag}`;
   return "/";
 }
 
@@ -58,6 +66,9 @@ function viewPath(view: View): string {
  */
 function parseView(pathname: string): View {
   const parts = pathname.split("/").filter((s) => s.length > 0);
+  if (parts[0] === "releases" && parts[1] && /^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(parts[1])) {
+    return { kind: "release", tag: parts[1] };
+  }
   if (parts[0] === "agent" && parts[1]) {
     const id = parts.slice(1).join("-").trim().toLowerCase();
     if (id) return { kind: "agent", id };
@@ -132,6 +143,7 @@ export default function App() {
   const [registry, setRegistry] = useState<RegistryFile | null>(null);
   const [combosFile, setCombosFile] = useState<AgentsFile | null>(null);
   const [indexFile, setIndexFile] = useState<IndexDataFile | null>(null);
+  const [releasesFile, setReleasesFile] = useState<ReleasesFile | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({ ...NO_FILTERS });
   const [view, setView] = useState<View>({ kind: "index" });
@@ -180,11 +192,16 @@ export default function App() {
         if (!r.ok) throw new Error(`index: HTTP ${r.status}`);
         return r.json() as Promise<IndexDataFile>;
       }),
-    ]).then(([reg, cf, ix]) => {
+      fetch("/data/releases.json").then((r) => {
+        if (!r.ok) throw new Error(`releases: HTTP ${r.status}`);
+        return r.json() as Promise<ReleasesFile>;
+      }),
+    ]).then(([reg, cf, ix, rl]) => {
       registryRef.current = reg;
       setRegistry(reg);
       setCombosFile(cf);
       setIndexFile(ix);
+      setReleasesFile(rl);
       const view = parseView(window.location.pathname);
       const agentParam = new URLSearchParams(window.location.search).get("agent")?.trim().toLowerCase() || null;
       const effective: View = view.kind === "index" && agentParam ? { kind: "agent", id: agentParam } : view;
@@ -266,6 +283,15 @@ export default function App() {
     setView({ kind: "index" });
     setNotices([]);
     pushURL(next, { kind: "index" }, "push");
+  };
+
+  /** the releases section lives on the homepage: carry its anchor into the
+   * URL the way a nav click does, then land on the index */
+  const onReleases = () => {
+    const qs = buildSearch(filters);
+    history.replaceState(null, "", `/${qs ? `?${qs}` : ""}#releases`);
+    pendingAnchor.current = "releases";
+    onHome();
   };
 
   // view transitions: a result or detail page opens at scroll 0 (its own
@@ -360,11 +386,19 @@ export default function App() {
             ? [
                 { label: "cli", href: "#cli" },
                 { label: "registry", href: "#registry" },
+                { label: "releases", href: "#releases" },
               ]
-            : [{ label: view.kind === "agent" ? "agent" : view.dim }]
+            : [{ label: view.kind === "agent" ? "agent" : view.kind === "release" ? "releases" : view.dim }]
         }
       />
-      {view.kind === "agent" ? (
+      {view.kind === "release" ? (
+        <ReleasePage
+          tag={view.tag}
+          file={releasesFile}
+          onReleases={onReleases}
+          onHome={() => onHome()}
+        />
+      ) : view.kind === "agent" ? (
         <AgentPage
           row={selectedRow}
           agentId={view.id}
@@ -423,6 +457,7 @@ export default function App() {
               </>
             )}
           </article>
+          {releasesFile && <ReleasesSection file={releasesFile} />}
         </main>
       )}
 
@@ -440,9 +475,7 @@ export default function App() {
                 {" · "}
                 <a
                   className="underline underline-offset-4"
-                  href={`https://github.com/bevry-vibes/agent-detect/releases/tag/${__RELEASE_TAG__}`}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={`/releases/${__RELEASE_TAG__}`}
                   title={`the latest release (${__RELEASE_DATE__})`}
                 >
                   {__RELEASE_TAG__}

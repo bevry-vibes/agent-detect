@@ -20,6 +20,7 @@ import {
   IdentityFileSchema,
   IndexDataFileSchema,
   RegistryFileSchema,
+  ReleasesFileSchema,
   FixtureOutputsSchema,
   type AgentRow,
 } from "../src/lib/schemas.ts";
@@ -48,6 +49,7 @@ const agentsFileRaw = readJson(join(dataDir, "agents.json"));
 const registry = RegistryFileSchema.parse(registryRaw);
 const indexData = IndexDataFileSchema.parse(servedIndexRaw);
 const agentsFile = AgentsFileSchema.parse(agentsFileRaw);
+const releasesFile = ReleasesFileSchema.parse(readJson(join(dataDir, "releases.json")));
 
 // every per-agent document is the from-identity fixture verbatim
 for await (const ent of Deno.readDir(join(dataDir, "agents"))) {
@@ -57,6 +59,32 @@ for await (const ent of Deno.readDir(join(dataDir, "agents"))) {
 
 // the committed index the released cli embeds — the same shape
 IndexDataFileSchema.parse(readJson(join(repoDir, "fixtures/index-data.json")));
+
+// releases.json is generated from the annotated tags: a tag cut after the last
+// data build is the one way the section goes stale, so compare the tag lists.
+const tagRows = new Map<string, string>();
+try {
+  const listing = new TextDecoder().decode(
+    new Deno.Command("git", {
+      args: ["-C", repoDir, "for-each-ref", "--sort=-taggerdate", "--format=%(refname:short)%09%(taggerdate:iso-strict)", "refs/tags"],
+      stdout: "piped",
+      stderr: "piped",
+    }).outputSync().stdout,
+  );
+  for (const line of listing.split("\n")) {
+    const [tag, date] = line.split("\t");
+    if (tag && date && /^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(tag)) tagRows.set(tag, date);
+  }
+} catch {
+  // a tagless checkout (shallow or exported) cannot drift from an empty section
+}
+const servedTags = new Set(releasesFile.releases.map((r) => r.tag));
+for (const tag of tagRows.keys()) {
+  if (!servedTags.has(tag)) fail(`tag ${tag} is missing from releases.json — run \`deno task data\``);
+}
+for (const tag of servedTags) {
+  if (!tagRows.has(tag)) fail(`releases.json holds ${tag}, which is not an annotated calver tag in this checkout`);
+}
 
 // every from-identity fixture validates against the identity contract
 const identityDir = join(repoDir, "fixtures/from-identity");

@@ -17,6 +17,8 @@ import {
   type Platform,
   type ProviderEntry,
   type RegistryFile,
+  type Release,
+  type ReleasesFile,
   type Rule,
 } from "./schemas.ts";
 
@@ -31,6 +33,8 @@ export type {
   Platform,
   ProviderEntry,
   RegistryFile,
+  Release,
+  ReleasesFile,
   Rule,
 };
 

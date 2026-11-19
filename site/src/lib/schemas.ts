@@ -143,6 +143,26 @@ export const AgentsFileSchema = z.object({
   agents: z.array(AgentRowSchema),
 });
 
+// ── releases.json — the annotated calver tags, read from git ───────────────
+
+/** `<year>.<month>.<day>-<revision>` — the calver the repo elects */
+export const ReleaseTag = z.string().regex(/^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/);
+
+export const ReleaseSchema = z.object({
+  /** the tag name, and the release's site permalink (/releases/<tag>) */
+  tag: ReleaseTag,
+  /** the tag's tagger date, ISO 8601 */
+  date: z.string(),
+  /** the annotated tag's message — the GitHub release body, verbatim */
+  body: z.string(),
+  /** the GitHub release page */
+  url: z.string(),
+});
+export const ReleasesFileSchema = z.object({
+  generated_at: Epoch,
+  releases: z.array(ReleaseSchema),
+});
+
 // ── 4+8. agents/<agent_id>.json ≡ /identify/<agent_id>.json —
 //         the from-identity fixture, verbatim (the filename IS the agent id;
 //         no site envelope — the dims stay in the filename) ─────────────────
@@ -277,6 +297,8 @@ export type ModelEntry = z.infer<typeof ModelEntrySchema>;
 export type IndexDataFile = z.infer<typeof IndexDataFileSchema>;
 export type AgentRow = z.infer<typeof AgentRowSchema>;
 export type AgentsFile = z.infer<typeof AgentsFileSchema>;
+export type Release = z.infer<typeof ReleaseSchema>;
+export type ReleasesFile = z.infer<typeof ReleasesFileSchema>;
 export type Identify = z.infer<typeof IdentifySchema>;
 export type FixtureOutputs = z.infer<typeof FixtureOutputsSchema>;
 export type IdentityFile = z.infer<typeof IdentityFileSchema>;

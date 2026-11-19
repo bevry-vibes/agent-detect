@@ -23,6 +23,8 @@
 //   index.json              — the committed index file, verbatim
 //   agents.json             — one row per agent
 //   agents/<agent_id>.json  — the agent's from-identity fixture, verbatim
+//   releases.json           — the annotated calver tags, read from git (the
+//                             tag message IS the published release body)
 
 import { slugId, trailerEmail } from "../src/lib/registry.ts";
 import {
@@ -30,6 +32,7 @@ import {
   IdentityFileSchema,
   IndexDataFileSchema,
   RegistryFileSchema,
+  ReleasesFileSchema,
   type AgentRow,
   type Platform,
 } from "../src/lib/schemas.ts";
@@ -156,6 +159,48 @@ async function readCapturePlatforms(warnings: string[]): Promise<Map<string, Pla
   return platforms;
 }
 
+async function readReleases(warnings: string[]): Promise<{ tag: string; date: string; body: string; url: string }[]> {
+  const git = async (args: string[]): Promise<string> => {
+    const out = await new Deno.Command("git", {
+      args: ["-C", path(repoDir), ...args],
+      stdout: "piped",
+      stderr: "piped",
+    }).output();
+    if (!out.success) throw new Error(new TextDecoder().decode(out.stderr).trim());
+    return new TextDecoder().decode(out.stdout);
+  };
+  // a shallow clone or an exported tree carries no tags: the site still builds, and the section is simply empty.
+  let listing: string;
+  try {
+    listing = await git(["for-each-ref", "--sort=-taggerdate", "--format=%(refname:short)%09%(taggerdate:iso-strict)", "refs/tags"]);
+  } catch (err) {
+    warnings.push(`skipping releases: git tags unavailable (${err})`);
+    return [];
+  }
+  const releases: { tag: string; date: string; body: string; url: string }[] = [];
+  for (const line of listing.split("\n")) {
+    const [tag, date] = line.split("\t");
+    if (!tag || !date) continue;
+    if (!/^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(tag)) continue;
+    let object: string;
+    try {
+      object = await git(["cat-file", "tag", tag]);
+    } catch {
+      warnings.push(`skipping releases/${tag}: not an annotated tag, so it carries no release notes`);
+      continue;
+    }
+    // the tag object's header ends at the first blank line; the signature armor follows the message.
+    const message = object.slice(object.indexOf("\n\n") + 2);
+    const body = message.split(/^-----BEGIN [A-Z ]*SIGNATURE-----$/m)[0]!.trim();
+    if (body.length === 0) {
+      warnings.push(`skipping releases/${tag}: the tag carries no release notes`);
+      continue;
+    }
+    releases.push({ tag, date, body, url: `https://github.com/bevry-vibes/agent-detect/releases/tag/${tag}` });
+  }
+  return releases;
+}
+
 async function main() {
   const warnings: string[] = [];
   const generated_at = Math.floor(Date.now() / 1000);
@@ -180,6 +225,9 @@ async function main() {
 
   console.log("reading the committed index…");
   const indexData = JSON.parse(await Deno.readTextFile(path(repoDir) + "fixtures/index-data.json"));
+
+  console.log("reading the release tags…");
+  const releases = await readReleases(warnings);
 
   await Deno.mkdir(path(siteDir) + "public/data/agents", { recursive: true });
   const rows: AgentRow[] = [];
@@ -214,15 +262,18 @@ async function main() {
 
   const registry = { generated_at, harnesses, providers, models };
   const agentsFile = { generated_at, agents: rows };
+  const releasesFile = { generated_at, releases };
 
   // pre-write validation — the schemas are the boundary
   RegistryFileSchema.parse(registry);
   AgentsFileSchema.parse(agentsFile);
   IndexDataFileSchema.parse(indexData);
+  ReleasesFileSchema.parse(releasesFile);
 
   await Deno.writeTextFile(path(siteDir) + "public/data/index.json", JSON.stringify(indexData));
   await Deno.writeTextFile(path(siteDir) + "public/data/registry.json", JSON.stringify(registry));
   await Deno.writeTextFile(path(siteDir) + "public/data/agents.json", JSON.stringify(agentsFile));
+  await Deno.writeTextFile(path(siteDir) + "public/data/releases.json", JSON.stringify(releasesFile));
 
   for (const w of warnings) console.warn("warn:", w);
   const domains = new Set([...emails].map((e) => e.split("@")[1] ?? ""));
