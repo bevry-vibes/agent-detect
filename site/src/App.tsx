@@ -16,7 +16,6 @@ import { FilterBar, NO_FILTERS, type Filters } from "@/components/filter-bar";
 import { Hero, RegistryIntro } from "@/components/hero";
 import { IndexSection } from "@/components/index-section";
 import { ResultsTable } from "@/components/results-table";
-import { ReleasePage } from "@/components/release-page";
 import { ReleasesPage } from "@/components/releases-page";
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,8 +30,7 @@ type View =
   | { kind: "index" }
   | { kind: "agent"; id: string }
   | { kind: "entity"; dim: EntityDim; id: string }
-  | { kind: "releases" }
-  | { kind: "release"; tag: string };
+  | { kind: "releases" };
 
 /** a `?free=`/`?reciprocal=` value → its boolean, or null */
 function triBool(raw: string | null): boolean | null {
@@ -48,7 +46,6 @@ function viewPath(view: View): string {
   if (view.kind === "agent") return `/agent/${view.id}`;
   if (view.kind === "entity") return `/${view.dim}/${view.id}`;
   if (view.kind === "releases") return "/releases";
-  if (view.kind === "release") return `/releases/${view.tag}`;
   return "/";
 }
 
@@ -66,12 +63,19 @@ function viewPath(view: View): string {
  * `/harness/<input>` are entity detail pages — any input that resolves to a
  * rule (name, label, alias) canonicalises to the strict-slug id.
  */
+/** The pre-anchor permalinks: `/releases/<tag>` and `/releases/<yyyy-mm-dd>`
+ * are the anchored list. The worker 308s them in production; this keeps a
+ * static preview (and a back/forward entry) working too. */
+function legacyReleaseAnchor(pathname: string): string | null {
+  const match = /^\/releases\/([^/]+)\/?$/.exec(pathname);
+  if (!match) return null;
+  const id = match[1]!;
+  return /^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(id) || /^\d{4}-\d{2}-\d{2}$/.test(id) ? id : null;
+}
+
 function parseView(pathname: string): View {
   const parts = pathname.split("/").filter((s) => s.length > 0);
-  if (parts[0] === "releases") {
-    if (parts[1] && /^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(parts[1])) return { kind: "release", tag: parts[1] };
-    if (!parts[1]) return { kind: "releases" };
-  }
+  if (parts[0] === "releases") return { kind: "releases" };
   if (parts[0] === "agent" && parts[1]) {
     const id = parts.slice(1).join("-").trim().toLowerCase();
     if (id) return { kind: "agent", id };
@@ -173,6 +177,8 @@ export default function App() {
   const reparse = useCallback(() => {
     const reg = registryRef.current;
     if (!reg) return;
+    const legacy = legacyReleaseAnchor(window.location.pathname);
+    if (legacy) history.replaceState(null, "", `/releases#${legacy}`);
     const view = parseView(window.location.pathname);
     // the legacy ?agent= param canonicalises to the /agent/<id> path
     const agentParam = new URLSearchParams(window.location.search).get("agent")?.trim().toLowerCase() || null;
@@ -205,6 +211,8 @@ export default function App() {
       setCombosFile(cf);
       setIndexFile(ix);
       setReleasesFile(rl);
+      const legacy = legacyReleaseAnchor(window.location.pathname);
+      if (legacy) history.replaceState(null, "", `/releases#${legacy}`);
       const view = parseView(window.location.pathname);
       const agentParam = new URLSearchParams(window.location.search).get("agent")?.trim().toLowerCase() || null;
       const effective: View = view.kind === "index" && agentParam ? { kind: "agent", id: agentParam } : view;
@@ -237,7 +245,9 @@ export default function App() {
    * page pushes. */
   const pushURL = (nextFilters: Filters, nextView: View, mode: "push" | "replace" = "push") => {
     const qs = buildSearch(nextFilters);
-    const url = `${viewPath(nextView)}${qs ? `?${qs}` : ""}${window.location.hash}`;
+    // the anchor belongs to the index sections; another view must not inherit it
+    const hash = nextView.kind === "index" ? window.location.hash : "";
+    const url = `${viewPath(nextView)}${qs ? `?${qs}` : ""}${hash}`;
     if (mode === "push") history.pushState(null, "", url);
     else history.replaceState(null, "", url);
   };
@@ -288,10 +298,13 @@ export default function App() {
     pushURL(next, { kind: "index" }, "push");
   };
 
-  /** the releases page is its own route; the homepage carries no section */
+  /** the releases page is its own route; the homepage carries no section.
+   * The nav link stays live on the page itself, so it also clears any anchor
+   * and returns to the top of the list. */
   const onReleases = () => {
     setView({ kind: "releases" });
     pushURL({ ...NO_FILTERS }, { kind: "releases" });
+    window.scrollTo({ top: 0, behavior: "instant" });
   };
 
   // view transitions: a result or detail page opens at scroll 0 (its own
@@ -389,26 +402,17 @@ export default function App() {
           view.kind === "agent" || view.kind === "entity"
             ? [{ label: view.kind === "agent" ? "agent" : view.dim }]
             : [
-                // cli and registry stay reachable from the releases pages; a
-                // nav click carries the anchor home. The current page is the
-                // plain label, exactly as it is on an agent or entity page.
+                // cli and registry stay reachable from the releases page, and a
+                // nav click carries the anchor home. Releases stays a link even
+                // on its own page, so the reader can reset to the top of it.
                 { label: "cli", href: "#cli" },
                 { label: "registry", href: "#registry" },
-                view.kind === "releases" || view.kind === "release"
-                  ? { label: "releases" }
-                  : { label: "releases", href: "/releases" },
+                { label: "releases", href: "/releases" },
               ]
         }
       />
       {view.kind === "releases" ? (
         <ReleasesPage file={releasesFile} />
-      ) : view.kind === "release" ? (
-        <ReleasePage
-          tag={view.tag}
-          file={releasesFile}
-          onReleases={onReleases}
-          onHome={() => onHome()}
-        />
       ) : view.kind === "agent" ? (
         <AgentPage
           row={selectedRow}

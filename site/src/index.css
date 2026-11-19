@@ -94,6 +94,12 @@
   .anchor-flash {
     animation: target-flash 1.8s ease-out 1;
   }
+  /* the releases list flashes every entry a hash names: one release by its
+     tag, or every release of a day. The class is added by the page, because
+     one date can cover several entries and :target only covers one. */
+  .release-flash {
+    animation: target-flash 2.4s ease-out 1;
+  }
 }
 
 /* a permanently visible scrollbar for long snippet views — styling it also

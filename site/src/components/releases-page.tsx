@@ -1,4 +1,5 @@
-import { ArrowUpRight, Link2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 
 import { Markdown } from "@/lib/markdown";
 import type { Release, ReleasesFile } from "@/lib/schemas";
@@ -10,28 +11,30 @@ export function releaseDay(date: string): string {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
-/** one release, with its permalink on the tag and again on the date. The
- * permalink is the site page (/releases/<tag>) — a stable link that survives
- * the list's scroll position, unlike a bare #anchor. */
-export function ReleaseEntry({ release }: { release: Release }) {
-  const href = `/releases/${release.tag}`;
+/** the `yyyy-mm-dd` date anchor — several releases can share one day */
+function releaseDateAnchor(date: string): string {
+  return date.slice(0, 10);
+}
+
+function ReleaseEntry({ release, flash }: { release: Release; flash: boolean }) {
+  const day = releaseDateAnchor(release.date);
   return (
-    <section id={release.tag} className="scroll-mt-20 border-t pt-6 first:border-t-0 first:pt-0">
+    <section
+      id={release.tag}
+      data-date={day}
+      className={`scroll-mt-20 border-t pt-6 ${flash ? "release-flash" : ""}`}
+    >
       <header className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h3 className="text-lg font-semibold tracking-tight">
-          <a href={href} className="hover:underline underline-offset-4">
+          {/* the tag is the permalink: /releases/#<tag> */}
+          <a href={`#${release.tag}`} className="hover:underline underline-offset-4">
             {release.tag}
           </a>
         </h3>
         <a
-          href={href}
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs"
-          title={`permalink to ${release.tag}`}
+          href={`#${day}`}
+          className="text-muted-foreground hover:text-foreground text-sm hover:underline underline-offset-4"
         >
-          <Link2 className="size-3" />
-          permalink
-        </a>
-        <a href={href} className="text-muted-foreground hover:text-foreground text-sm hover:underline underline-offset-4">
           <time dateTime={release.date}>{releaseDay(release.date)}</time>
         </a>
         <a
@@ -50,10 +53,48 @@ export function ReleaseEntry({ release }: { release: Release }) {
 }
 
 /** the releases page — the public changelog, newest first, the way the
- * democratic-ai journal reads. GitHub releases carry the notes; the site reads
- * the annotated tags (and their `releases/<tag>.md` overlays) directly in
- * `tools/build_data.ts`, so the two cannot drift. */
+ * democratic-ai journal reads.
+ *
+ * Permalinks are anchors, not pages: `#<tag>` points at one release and
+ * `#<yyyy-mm-dd>` at every release cut that day. Both flash the target for a
+ * moment. The old `/releases/<tag>` and `/releases/<date>` paths 308 to these
+ * anchors (worker/index.ts), so a published link keeps working. */
 export function ReleasesPage({ file }: { file: ReleasesFile | null }) {
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const timer = useRef<number | null>(null);
+
+  const groups = useMemo(() => {
+    const byDay = new Map<string, Release[]>();
+    for (const release of file?.releases ?? []) {
+      const day = releaseDateAnchor(release.date);
+      const list = byDay.get(day) ?? [];
+      list.push(release);
+      byDay.set(day, list);
+    }
+    return [...byDay.entries()];
+  }, [file]);
+
+  // the hash is the permalink: flash the named release, or every release of the
+  // named day. Re-runs on hash change so a second click still flashes.
+  useEffect(() => {
+    const apply = () => {
+      const id = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+      if (!id) return;
+      const target = document.getElementById(id);
+      if (!target) return;
+      setFlashId(id);
+      target.scrollIntoView({ block: "start" });
+      if (timer.current) window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setFlashId(null), 2400);
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => {
+      window.removeEventListener("hashchange", apply);
+      if (timer.current) window.clearTimeout(timer.current);
+    };
+  }, [file]);
+
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-10">
       <header className="flex flex-col gap-2">
@@ -61,8 +102,9 @@ export function ReleasesPage({ file }: { file: ReleasesFile | null }) {
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Releases</h1>
         <p className="text-muted-foreground max-w-3xl text-sm">
           Dated notes for each published version, newest first. The notes are the annotated tag's message — the same text
-          the GitHub release carries — and every release keeps a permalink at{" "}
-          <code className="bg-muted rounded px-1 py-0.5 font-mono text-[0.9em]">/releases/&lt;tag&gt;</code>.
+          the GitHub release carries. Every release is its own permalink at{" "}
+          <code className="bg-muted rounded px-1 py-0.5 font-mono text-[0.9em]">/releases/#&lt;tag&gt;</code>, and every
+          day at <code className="bg-muted rounded px-1 py-0.5 font-mono text-[0.9em]">/releases/#&lt;yyyy-mm-dd&gt;</code>.
         </p>
       </header>
       {!file ? (
@@ -70,9 +112,13 @@ export function ReleasesPage({ file }: { file: ReleasesFile | null }) {
       ) : file.releases.length === 0 ? (
         <p className="text-muted-foreground text-sm">No releases in this checkout.</p>
       ) : (
-        <div className="flex flex-col gap-6">
-          {file.releases.map((release) => (
-            <ReleaseEntry key={release.tag} release={release} />
+        <div className="flex flex-col gap-8">
+          {groups.map(([day, releases]) => (
+            <div key={day} id={day} className="date-group flex scroll-mt-20 flex-col gap-6">
+              {releases.map((release) => (
+                <ReleaseEntry key={release.tag} release={release} flash={flashId === release.tag || flashId === day} />
+              ))}
+            </div>
           ))}
         </div>
       )}

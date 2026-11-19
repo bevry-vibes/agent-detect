@@ -11,6 +11,8 @@
 //   /agent|/harness|/provider|/model/<id>.json  — and the data; the query
 //                                       filters GATE the entity (422 + the
 //                                       match report on a mismatch)
+//   /releases/<tag>|/<yyyy-mm-dd>     — 308 → /releases/#<tag>|#<date> (the
+//                                       anchored list; the pre-anchor permalinks)
 //   /identify/<agent_id>.json         — 308 → /agent/<agent_id>.json (retired)
 //   /registry.json                    — the rule registry (alias to /data/registry.json)
 //   everything else                   — SPA fallback (index.html)
@@ -458,6 +460,21 @@ export default {
       const res = await env.ASSETS.fetch(new URL("/data/registry.json", url.origin));
       if (!res.ok) return json({ error: "registry unavailable" }, 500);
       return new Response(res.body, { status: 200, headers: JSON_HEADERS });
+    }
+
+    // The releases list keeps its permalinks as anchors. The old paths are
+    // still in the wild (announcements, feeds, search results), so they 308 to
+    // the anchor instead of dead-ending.
+    const releasePath = url.pathname.match(/^\/releases\/([^/]+)\/?$/);
+    const releaseId = releasePath?.[1] ?? "";
+    if (/^(\d{4}\.\d{1,2}\.\d{1,2}-\d+|\d{4}-\d{2}-\d{2})$/.test(releaseId)) {
+      return new Response(null, {
+        status: 308,
+        headers: {
+          location: `/releases/#${releaseId}`,
+          "cache-control": "public, max-age=3600",
+        },
+      });
     }
 
     // With run_worker_first every request reaches the worker, so serve a real
