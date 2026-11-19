@@ -1117,15 +1117,15 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     // Rule-only entries — detection-coverage rules no fixture combo uses yet (a provider alias/mirror, or a model registered for detection without a curated launch).
     // The guard still fires for any NEW rule that lands without stems; these are the pre-existing exemptions.
     // chutes: the pi-chutes invocations live in the store's invocations table (their captures are pending), so no fixture stem covers it yet.
-    // hermes-facing provider surfaces (2026-09-06): alibaba-coding-plan, openai-codex, google-vertex, amazon-bedrock, azure-foundry, novita-ai, deepinfra, nebius, nvidia, upstage, xiaomi, stepfun, arcee, vercel, nous — ruled for detection coverage;
-    // the maintainer uninstalled hermes, so their fixture sweeps are contributor scope.
+    // hermes-facing provider surfaces (2026-09-06): alibaba-coding-plan, google-vertex, amazon-bedrock, azure-foundry, novita-ai, deepinfra, nebius, nvidia, upstage, xiaomi, stepfun, arcee, vercel, nous — ruled for detection coverage;
+    // the maintainer uninstalled hermes, so their fixture sweeps are contributor scope. openai-codex folded into the openai rule (variation).
     // autoclaw: the app is uninstalled (contributor scope, same as the harness exemption above).
     // phala: the zcode-phala-glm53 from-identity entry is staged — resolves when the user-run daemon drains it.
     // ollama: resolved 2026-09-21 — the local runtime's first stems landed (zcode-ollama-{granite332b,nemotron3nano,qwen3}-linux, .plans/1789895398's local sweep).
     // (The 2026-09-07 folds — moonshotai, kimi-coding, opencode — carry stems from the renamed fixtures, so they need no exemptions.)
     const rule_only_providers = [_][]const u8{
         "cline",               "chutes",        "google",
-        "alibaba-coding-plan", "openai-codex",  "google-vertex",
+        "alibaba-coding-plan", "google-vertex",
         "amazon-bedrock",      "azure-foundry", "novita-ai",
         "deepinfra",           "nebius",        "nvidia",
         "upstage",             "xiaomi",        "stepfun",

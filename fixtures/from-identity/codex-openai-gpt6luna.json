@@ -5,11 +5,11 @@
       "harness_short_title": null,
       "harness_name": "codex",
       "harness_id": "codex",
-      "harness_license": null,
+      "harness_license": "Apache-2.0",
       "harness_open_training": null,
-      "harness_closed_training": null,
+      "harness_closed_training": "opt-out",
       "harness_reciprocity_scandal": false,
-      "harness_reciprocity": null,
+      "harness_reciprocity": false,
       "provider_label": "OpenAI",
       "provider_name": "openai",
       "provider_id": "openai",
@@ -42,7 +42,10 @@
         "provider",
         "model"
       ],
-      "harness-urls": [],
+      "harness-urls": [
+        "https://github.com/openai/codex",
+        "https://github.com/openai/codex/blob/main/LICENSE"
+      ],
       "provider-urls": [
         "https://openai.com/policies/data-usage-policy/",
         "https://openai.com/policies/business-terms/"
@@ -66,14 +69,22 @@
       "reasons": [
         {
           "entity": "harness",
-          "code": "harness-training-unsourced",
-          "summary": "the OpenAI Codex harness's training posture is unsourced — the determination cannot be made",
+          "code": "harness-closed-opt",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "opt-out"
+            }
+          ],
+          "summary": "the OpenAI Codex harness may train on user data (closed_training = opt-out) with no readable opt-out",
+          "sources": [
+            "https://openai.com/policies/service-terms",
+            "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance"
+          ],
           "actions": [
             {
-              "kind": "contribute-data",
-              "instruction": "the OpenAI Codex harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
-              "command": "agent-detect found",
-              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+              "kind": "switch-entity",
+              "instruction": "switch the harness to a reciprocal one to comply with the policy (e.g. cline, goose, kimi-code, mmx, pi)"
             },
             {
               "kind": "preflight-combo",
@@ -136,12 +147,12 @@
     "check-reciprocal": "not reciprocal",
     "check-reciprocal.stderr": [
       "agent (harness, provider, model) data complete and requirement failed",
-      "  - harness: the OpenAI Codex harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - harness: the OpenAI Codex harness may train on user data (closed_training = opt-out) with no readable opt-out (see: agent-detect explain)",
       "  - provider: the OpenAI provider is flagged with a reciprocity scandal (verified misconduct) (see: agent-detect explain)",
       "  - model: the GPT-6 Luna model has closed weights (openness = closed) (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1794923492
+    "updated_at": 1795046370
   }
 }

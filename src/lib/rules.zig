@@ -123,6 +123,8 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "gpt-5.5", .label = "GPT-5.5", .openness = "closed", .sources = &.{ "https://openai.com/index/gpt-5/", "https://platform.openai.com/docs/models" } },
     // gpt-6-luna: closed — OpenAI GPT-6 Luna; API-only, no weights.
     .{ .name = "gpt-6-luna", .label = "GPT-6 Luna", .openness = "closed", .sources = &.{ "https://developers.openai.com/api/docs/models/gpt-6-luna", "https://openai.com/index/introducing-gpt-6-sol-and-luna/" } },
+    // gpt-5.6-terra: closed — OpenAI GPT-5.6 Terra; API-only, no weights. Codex's own model catalog offers it as a selectable model.
+    .{ .name = "gpt-5.6-terra", .label = "GPT-5.6 Terra", .openness = "closed", .sources = &.{ "https://openai.com/index/gpt-5-6/", "https://platform.openai.com/docs/models" } },
     // grok-3-mini: closed — xAI API-only; no weights.
     .{ .name = "grok-3-mini", .label = "Grok 3 mini", .openness = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
     // grok-4: closed — xAI API-only; no weights.
@@ -534,14 +536,16 @@ pub const rulesForProviders = [_]ProviderRule{
     // — kimi-coding (hermes profile alias `kimi`; models.dev `kimi-for-coding`) mirrors `moonshot`/`kimi`.
     // — kimi-coding-cn / minimax-cn: the -cn surfaces mirror the same upstream policies (unverified, null).
     // — alibaba-coding-plan mirrors `alibaba`/`qwen` (same DashScope upstream, unverified).
-    // — opencode-free / opencode-zen / openai-codex: first-party router/subscription surfaces, policy unverified (null).
+    // — opencode-free / opencode-zen: first-party router surfaces, policy unverified (null).
+    // — openai-codex is deliberately not a rule: the Hermes profile key names the Codex/ChatGPT sign-in surface, which is the same
+    //   provider as `openai` (the maintainer's provider-training research folds it: "codex surface shares the policy"). It folds into
+    //   `openai` via the variation there; the consumer-tier training posture belongs to the `codex` harness.
     // kimi-coding: NOASSERTION/NOASSERTION (mirrors `moonshotai`'s inconclusive evidence — the conflicting-docs story lives on that rule) — the Kimi for Coding subscription (api.kimi.com/coding/v1; models.dev key `kimi-for-coding`), the product Moonshot ships the kimi-code CLI's subscription key and hermes's `kimi-coding` profile against.
     // Individuated from the Moonshot API surface by every index (different endpoint, different auth, short-alias model dialect: `k3`, `kimi-for-coding(-highspeed)`), and by the coding-plan precedent (cline-pass, minimax-code, alibaba-coding-plan).
     // variations fold the retired `kimi-code` rule (the CLI's subscription key, serving `k3`) and hermes's `kimi-coding-cn` CN mirror; the models.dev key `kimi-for-coding` resolves natively through the label.
     // Folded 2026-09-07 per .plans/1788716755355 (D2).
     .{ .name = "kimi-coding", .label = "Kimi for Coding", .closed_training = "NOASSERTION", .open_training = "NOASSERTION", .sources = &.{ "https://platform.kimi.ai/docs/agreement/modeluse", "https://www.kimi.ai/help/kimi-api/api-data-security" }, .variations = &.{ "kimi-code", "kimi-coding-cn" } },
     .{ .name = "alibaba-coding-plan", .label = "Alibaba Coding Plan", .closed_training = "never", .open_training = "never", .sources = &.{ "https://help.aliyun.com/en/model-studio/privacy-notice", "https://www.alibabacloud.com/help/en/model-studio/faq-about-alibaba-cloud-model-studio" } },
-    .{ .name = "openai-codex", .label = "OpenAI Codex", .closed_training = "opt-out", .open_training = null, .sources = &.{ "https://openai.com/policies/service-terms", "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance" } },
     // meta: null/null — Meta's hosted tier for its open-weight families (Llama, Muse); policy unverified, stays null.
     .{ .name = "meta", .label = "Meta", .closed_training = null, .open_training = null, .sources = &.{"https://ai.meta.com/"}, .variations = &.{"meta-ai"} },
     // google-antigravity: null/null — Google Antigravity's hosted tier; policy unverified, stays null.
@@ -565,8 +569,10 @@ pub const rulesForProviders = [_]ProviderRule{
     .{ .name = "alibaba", .label = "Alibaba", .closed_training = "never", .open_training = "never", .sources = &.{ "https://help.aliyun.com/en/model-studio/privacy-notice", "https://www.alibabacloud.com/help/en/model-studio/faq-about-alibaba-cloud-model-studio" }, .variations = &.{"dashscope"} },
     // openai: opt-in/opt-in — OpenAI's platform tier (also the provider id for requesty-routed openai-compatible combos, e.g. qwen's `router.requesty.ai` upstream).
     // API inputs/outputs are not used for training by default; customers may opt in for their API data to be used (per OpenAI's data-usage policy).
+    // variations: `openai-codex` is Hermes's profile key for the Codex/ChatGPT sign-in surface — the same provider (the maintainer's research folds it into this rule: "codex surface shares the policy").
+    // The consumer-tier training posture rides the `codex` harness, not a second provider rule.
     // reciprocity_scandal (D10, the fair-use purpose test — the takings fed closed GPT): (a) the Books1/Books2 pirated-book corpora behind the NYT, Authors Guild, Britannica, and ~400-newspaper suits; (d) the Jul 2026 sanctions motion (alleged chat and dataset deletions against a preservation order). The compilation: research/scandals.md.
-    .{ .name = "openai", .label = "OpenAI", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://openai.com/policies/data-usage-policy/", "https://openai.com/policies/business-terms/" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/", "https://www.reuters.com/legal/litigation/new-york-times-led-group-asks-court-sanction-openai-us-copyright-dispute-2026-07-09/" } },
+    .{ .name = "openai", .label = "OpenAI", .closed_training = "opt-in", .open_training = "opt-in", .sources = &.{ "https://openai.com/policies/data-usage-policy/", "https://openai.com/policies/business-terms/" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/", "https://www.reuters.com/legal/litigation/new-york-times-led-group-asks-court-sanction-openai-us-copyright-dispute-2026-07-09/" }, .variations = &.{"openai-codex"} },
     // fireworks-ai: never/never — Fireworks AI's hosted tier (the `fireworks-ai/...` provider key kilo catalogs).
     // Fireworks is an inference-only cloud; its terms/privacy state customer prompts are not used to train models.
     .{ .name = "fireworks-ai", .label = "Fireworks AI", .closed_training = "never", .open_training = "never", .sources = &.{ "https://fireworks.ai/privacy", "https://fireworks.ai/terms" }, .variations = &.{"fireworks"} },
@@ -717,7 +723,8 @@ const autoclaw_env = [_][]const u8{ "AUTOCLAW_MODEL_BROKER_OPENAI_BASE_URL", "AU
 // Zed desktop editor — its integrated terminal exports ZED_TERM (the terminal marker) and ZED_ENVIRONMENT (the shell's environment kind, e.g. `worktree-shell`; observed 2026-11-11).
 // TERM_PROGRAM=zed is deliberately NOT a marker: every terminal emulator sets TERM_PROGRAM, so presence alone cannot identify this harness (the same reasoning as AI_AGENT for hermes).
 const zed_env = [_][]const u8{ "ZED_TERM", "ZED_ENVIRONMENT" };
-const codex_env = [_][]const u8{"CODEX_HOME"};
+// Codex — CODEX_THREAD_ID is injected into every command the runtime spawns (the CLI, the app-server behind the ChatGPT app, and the IDE extension's bundled copy), and it names the rollout file; CODEX_HOME is only the user-set config-dir override, so it cannot identify the harness.
+const codex_env = [_][]const u8{"CODEX_THREAD_ID"};
 
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code / JetBrains agent).
@@ -831,6 +838,19 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "copilot", "copilot.exe" }
     else
         &[_][]const u8{"copilot"}, .variations = &.{"copilot-cli"} },
+    // codex: Apache-2.0 — https://github.com/openai/codex ships the Apache License 2.0.
+    // One rule covers the CLI and the proprietary wrappers that host the same runtime: the ChatGPT desktop app's bundled `codex app-server` and the Codex IDE extension's bundled copy.
+    // Their closed licences are superficial, superfluous wrapper deviations, not detection surfaces (DESIGN #18); the rollout's `session_meta.originator` records which wrapper hosted the run (`Codex Desktop` / `codex_vscode` / `codex_cli_rs`).
+    // Training: closed opt-out — Codex with ChatGPT sign-in follows OpenAI's consumer data controls (on by default, with the ChatGPT "Improve the model for everyone" opt-out); an API-key session follows the platform/business terms (never).
+    // The static fallback is the strictest reachable surface; the detector narrows it from auth.json's auth_mode when readable.
+    // Open-model training stays null: OpenAI serves no open models on this surface.
+    // CODEX_THREAD_ID is the marker and names the rollout file, so the session read is exact.
+    // CODEX_HOME is only the user-set config-dir override (users export it), so it is not a marker.
+    // Declared with the CLI harnesses (before zcode/hermes/autoclaw/zed/github-copilot): the env scan is first-match, so a codex session started in a desktop app's terminal beats the app's leaked markers; the desktop apps stay last for the same reason.
+    .{ .name = "codex", .label = "OpenAI Codex", .closed_setting_hint = "turn off ChatGPT's \"Improve the model for everyone\" setting (Settings → Data Controls)", .license = "Apache-2.0", .license_sources = &.{ "https://github.com/openai/codex", "https://github.com/openai/codex/blob/main/LICENSE" }, .closed_training = "opt-out", .training_sources = &.{ "https://openai.com/policies/service-terms", "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance" }, .env_markers = &codex_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "codex", "codex.exe" }
+    else
+        &[_][]const u8{"codex"} },
     // zcode: Apache-2.0 — https://github.com/zai-org/ZCode (open-sourced: client, backend server, shared UI, and the Agent CLI/runtime source; "Copyright 2026 Z.AI Co., Ltd") ships the Apache License 2.0 text at its root LICENSE, with third-party attribution in NOTICE.md / THIRD-PARTY-NOTICES.md.
     // Supersedes the 2026-09-07 NONE finding — the app shipped compiled installers only back then; the open-sourcing changes the licence but not the training posture (the cloud data terms are a separate surface).
     // Training postures opt-in/opt-in (sourced 2026-09-07 via a reader render of zcode.z.ai/privacy — the pages carry no text for plain crawlers): the "Improve experience" program is the Optimization Program, and "our Optimization Program is not enabled by default, and we will only use such User Content for this purpose after you have actively opted in" —
@@ -885,12 +905,6 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "copilot-runtime", "copilot-runtime.exe" }
     else
         &[_][]const u8{"copilot-runtime"}, .variations = &.{ "GitHub Copilot.app", "Copilot App", "copilot-desktop", "github-copilot-desktop" }, .capture = .manual },
-    // Codex CLI and Codex in the ChatGPT desktop app share CODEX_HOME and the same config.toml; the process name covers CLI ancestry.
-    // Model/provider selection is read from the config when available; Codex's documented default provider is OpenAI.
-    .{ .name = "codex", .label = "OpenAI Codex", .license = null, .license_sources = &.{}, .env_markers = &codex_env, .binary_names = if (builtin.os.tag == .windows)
-        &[_][]const u8{ "codex", "codex.exe" }
-    else
-        &[_][]const u8{"codex"} },
 };
 
 /// env-var names whose values are safe to emit in raw.env_vars.
@@ -926,6 +940,8 @@ const env_value_allowlist = [_][]const u8{
     "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
     // Zed markers — fixed non-secret terminal/environment facts.
     "ZED_TERM", "ZED_ENVIRONMENT",
+    // Codex thread id — a per-session UUID, non-secret, and the rollout filename suffix.
+    "CODEX_THREAD_ID",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {
