@@ -2862,6 +2862,460 @@ fn detectCursor(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "CURSOR_MODEL", .value = model_full });
 }
 
+const CodexProviderConfig = struct { id: []const u8, base_url: []const u8 };
+const CodexConfig = struct {
+    model: ?[]const u8 = null,
+    provider: ?[]const u8 = null,
+    providers: []const CodexProviderConfig = &.{},
+};
+const CodexSessionMeta = struct {
+    cwd: ?[]const u8 = null,
+    provider: ?[]const u8 = null,
+    originator: ?[]const u8 = null,
+    thread_source: ?[]const u8 = null,
+    subagent: bool = false,
+};
+const CodexIndexEntry = struct { id: []const u8, updated_at: []const u8 };
+
+fn codexIndexNewerFirst(_: void, x: CodexIndexEntry, y: CodexIndexEntry) bool {
+    return std.mem.order(u8, x.updated_at, y.updated_at) == .gt;
+}
+
+/// the config dir: CODEX_HOME when the user set it, else `~/.codex`.
+fn codexHome(a: std.mem.Allocator, env: *const std.process.Environ.Map, home: []const u8) []const u8 {
+    if (env.get("CODEX_HOME")) |v| {
+        if (v.len > 0) return v;
+    }
+    if (home.len == 0) return "";
+    return std.fmt.allocPrint(a, "{s}/.codex", .{home}) catch "";
+}
+
+/// the quoted-string value of a TOML key, ignoring any trailing comment. Codex's model/provider/base_url values are plain strings.
+fn codexTomlString(raw: []const u8) ?[]const u8 {
+    const value = std.mem.trim(u8, raw, " \t\r");
+    if (value.len < 2) return null;
+    const quote = value[0];
+    if (quote != '"' and quote != '\'') return null;
+    var i: usize = 1;
+    while (i < value.len) : (i += 1) {
+        if (quote == '"' and value[i] == '\\') {
+            i += 1;
+            continue;
+        }
+        if (value[i] == quote) return value[1..i];
+    }
+    return null;
+}
+
+/// config.toml's top-level `model` / `model_provider` plus each `[model_providers.<id>]` base_url.
+/// Root keys precede tables in TOML, so the table state is all the parser needs; nested header tables are ignored.
+fn codexConfigParse(a: std.mem.Allocator, data: []const u8) !CodexConfig {
+    var cfg = CodexConfig{};
+    var providers: std.ArrayList(CodexProviderConfig) = .empty;
+    var table: []const u8 = "";
+    var provider_index: ?usize = null;
+    var lines = std.mem.splitScalar(u8, data, '\n');
+    while (lines.next()) |raw| {
+        const line = std.mem.trim(u8, raw, " \t\r");
+        if (line.len == 0 or line[0] == '#') continue;
+        if (line[0] == '[') {
+            provider_index = null;
+            table = "";
+            if (line.len >= 2 and line[1] == '[') continue; // array of tables
+            const close = std.mem.indexOfScalar(u8, line, ']') orelse continue;
+            table = std.mem.trim(u8, line[1..close], " \t");
+            if (std.mem.startsWith(u8, table, "model_providers.")) {
+                var id = table["model_providers.".len..];
+                if (id.len >= 2 and (id[0] == '"' or id[0] == '\'')) id = id[1 .. id.len - 1];
+                try providers.append(a, .{ .id = id, .base_url = "" });
+                provider_index = providers.items.len - 1;
+            }
+            continue;
+        }
+        const eq = std.mem.indexOfScalar(u8, line, '=') orelse continue;
+        const key = std.mem.trim(u8, line[0..eq], " \t");
+        const value = codexTomlString(line[eq + 1 ..]) orelse continue;
+        if (table.len == 0) {
+            if (std.mem.eql(u8, key, "model")) {
+                cfg.model = value;
+            } else if (std.mem.eql(u8, key, "model_provider")) {
+                cfg.provider = value;
+            }
+        } else if (provider_index) |i| {
+            if (std.mem.eql(u8, key, "base_url")) providers.items[i].base_url = value;
+        }
+    }
+    cfg.providers = try providers.toOwnedSlice(a);
+    return cfg;
+}
+
+/// map a Codex provider id onto the ruled provider surface.
+/// The id is arbitrary for custom providers, so the configured `base_url` is the real signal (a table may also override a built-in id with a relay); the reserved ids fall back to their documented surfaces.
+/// Unknown hosts/ids stay unresolved (never-guess).
+fn codexProviderFor(provider: []const u8, cfg: *const CodexConfig) ?[]const u8 {
+    if (provider.len == 0) return null;
+    for (cfg.providers) |p| {
+        if (!std.mem.eql(u8, p.id, provider)) continue;
+        if (p.base_url.len == 0) break;
+        return providerForBaseUrl(p.base_url);
+    }
+    if (std.mem.eql(u8, provider, "openai")) return "openai";
+    if (std.mem.eql(u8, provider, "ollama") or std.mem.eql(u8, provider, "ollama-chat")) return "ollama";
+    // lmstudio has no provider rule yet; an unknown custom id is unresolved.
+    return null;
+}
+
+fn codexSessionMetaFromData(a: std.mem.Allocator, data: []const u8) ?CodexSessionMeta {
+    const nl = std.mem.indexOfScalar(u8, data, '\n') orelse data.len;
+    const line = std.mem.trim(u8, data[0..nl], " \t\r");
+    if (line.len == 0) return null;
+    const parsed = std.json.parseFromSliceLeaky(std.json.Value, a, line, .{}) catch return null;
+    if (parsed != .object) return null;
+    const o = parsed.object;
+    if (!std.mem.eql(u8, jstr(o, "type") orelse "", "session_meta")) return null;
+    const payload = o.get("payload") orelse return null;
+    if (payload != .object) return null;
+    const po = payload.object;
+    var meta = CodexSessionMeta{
+        .cwd = jstr(po, "cwd"),
+        .provider = jstr(po, "model_provider"),
+        .originator = jstr(po, "originator"),
+        .thread_source = jstr(po, "thread_source"),
+    };
+    if (meta.thread_source) |ts| {
+        if (std.mem.eql(u8, ts, "guardian_review")) meta.subagent = true;
+    }
+    if (po.get("source")) |src| {
+        if (src == .object and src.object.get("subagent") != null) meta.subagent = true;
+    }
+    if (jstr(po, "parent_thread_id")) |pid| {
+        if (pid.len > 0) meta.subagent = true;
+    }
+    return meta;
+}
+
+/// the model of the newest user turn in a rollout.
+/// `codex-auto-review` is the automatic-approval reviewer's model, not the coding agent's, so it is skipped; subagent threads are excluded before this is called.
+fn codexTurnModelFromData(a: std.mem.Allocator, data: []const u8) ?[]const u8 {
+    var lines = std.mem.splitBackwardsScalar(u8, data, '\n');
+    while (lines.next()) |raw| {
+        const line = std.mem.trim(u8, raw, " \t\r");
+        if (std.mem.indexOf(u8, line, "\"turn_context\"") == null) continue;
+        const parsed = std.json.parseFromSliceLeaky(std.json.Value, a, line, .{}) catch continue;
+        if (parsed != .object) continue;
+        const o = parsed.object;
+        if (!std.mem.eql(u8, jstr(o, "type") orelse "", "turn_context")) continue;
+        const payload = o.get("payload") orelse continue;
+        if (payload != .object) continue;
+        const model = jstr(payload.object, "model") orelse continue;
+        if (model.len == 0 or std.mem.eql(u8, model, "codex-auto-review")) continue;
+        return a.dupe(u8, model) catch null;
+    }
+    return null;
+}
+
+fn codexSessionMeta(a: std.mem.Allocator, io: std.Io, path: []const u8) ?CodexSessionMeta {
+    var file = std.Io.Dir.cwd().openFile(io, path, .{}) catch return null;
+    defer file.close(io);
+    var read_buf: [4096]u8 = undefined;
+    var reader = file.reader(io, &read_buf);
+    const data = reader.interface.allocRemaining(a, .limited64(1 << 20)) catch return null;
+    return codexSessionMetaFromData(a, data);
+}
+
+fn codexTurnModel(a: std.mem.Allocator, io: std.Io, path: []const u8) ?[]const u8 {
+    var file = std.Io.Dir.cwd().openFile(io, path, .{}) catch return null;
+    defer file.close(io);
+    var read_buf: [4096]u8 = undefined;
+    var reader = file.reader(io, &read_buf);
+    const size = reader.getSize() catch return null;
+    var window: u64 = @min(size, 1 << 18);
+    while (true) {
+        reader.seekTo(size - window) catch return null;
+        const data = reader.interface.allocRemaining(a, .limited64(window + 1)) catch return null;
+        const view = if (window >= size) data else if (std.mem.indexOfScalar(u8, data, '\n')) |nl| data[nl + 1 ..] else data[data.len..];
+        if (codexTurnModelFromData(a, view)) |m| return m;
+        if (window >= size or window >= (1 << 23)) return null;
+        window = @min(size, window * 2);
+    }
+}
+
+fn codexThreadIdValid(id: []const u8) bool {
+    if (id.len == 0) return false;
+    for (id) |c| {
+        if (!std.ascii.isAlphanumeric(c) and c != '-') return false;
+    }
+    return true;
+}
+
+fn codexReadIndex(a: std.mem.Allocator, io: std.Io, codex_home: []const u8) []const CodexIndexEntry {
+    const path = std.fmt.allocPrint(a, "{s}/session_index.jsonl", .{codex_home}) catch return &.{};
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 24)) catch return &.{};
+    var entries: std.ArrayList(CodexIndexEntry) = .empty;
+    var lines = std.mem.splitScalar(u8, data, '\n');
+    while (lines.next()) |raw| {
+        const line = std.mem.trim(u8, raw, " \t\r");
+        if (line.len == 0) continue;
+        const parsed = std.json.parseFromSliceLeaky(std.json.Value, a, line, .{}) catch continue;
+        if (parsed != .object) continue;
+        const id = jstr(parsed.object, "id") orelse continue;
+        const updated = jstr(parsed.object, "updated_at") orelse continue;
+        if (id.len == 0 or updated.len < 10) continue;
+        entries.append(a, .{ .id = id, .updated_at = updated }) catch return entries.items;
+    }
+    std.mem.sort(CodexIndexEntry, entries.items, {}, codexIndexNewerFirst);
+    return entries.items;
+}
+
+/// `YYYY/MM/DD` from an index `updated_at` (the rollout dir is the UTC date of the thread).
+fn codexDatePath(a: std.mem.Allocator, updated_at: []const u8) ?[]const u8 {
+    if (updated_at.len < 10 or updated_at[4] != '-' or updated_at[7] != '-') return null;
+    return std.fmt.allocPrint(a, "{s}/{s}/{s}", .{ updated_at[0..4], updated_at[5..7], updated_at[8..10] }) catch null;
+}
+
+fn codexFindRollout(a: std.mem.Allocator, io: std.Io, dir_path: []const u8, thread: []const u8) ?[]const u8 {
+    const suffix = std.fmt.allocPrint(a, "-{s}.jsonl", .{thread}) catch return null;
+    var dir = std.Io.Dir.cwd().openDir(io, dir_path, .{ .iterate = true }) catch return null;
+    defer dir.close(io);
+    var it = dir.iterate();
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .file) continue;
+        if (!std.mem.endsWith(u8, ent.name, suffix)) continue;
+        return std.fmt.allocPrint(a, "{s}/{s}", .{ dir_path, ent.name }) catch null;
+    }
+    return null;
+}
+
+fn codexScanForThread(a: std.mem.Allocator, io: std.Io, codex_home: []const u8, thread: []const u8) ?[]const u8 {
+    const sessions = std.fmt.allocPrint(a, "{s}/sessions", .{codex_home}) catch return null;
+    var year_dir = std.Io.Dir.cwd().openDir(io, sessions, .{ .iterate = true }) catch return null;
+    defer year_dir.close(io);
+    var years = year_dir.iterate();
+    while (years.next(io) catch null) |y| {
+        if (y.kind != .directory) continue;
+        const ypath = std.fmt.allocPrint(a, "{s}/{s}", .{ sessions, y.name }) catch continue;
+        var month_dir = std.Io.Dir.cwd().openDir(io, ypath, .{ .iterate = true }) catch continue;
+        defer month_dir.close(io);
+        var months = month_dir.iterate();
+        while (months.next(io) catch null) |m| {
+            if (m.kind != .directory) continue;
+            const mpath = std.fmt.allocPrint(a, "{s}/{s}", .{ ypath, m.name }) catch continue;
+            var day_dir = std.Io.Dir.cwd().openDir(io, mpath, .{ .iterate = true }) catch continue;
+            defer day_dir.close(io);
+            var days = day_dir.iterate();
+            while (days.next(io) catch null) |d| {
+                if (d.kind != .directory) continue;
+                const dpath = std.fmt.allocPrint(a, "{s}/{s}", .{ mpath, d.name }) catch continue;
+                if (codexFindRollout(a, io, dpath, thread)) |p| return p;
+            }
+        }
+    }
+    return null;
+}
+
+fn codexRolloutForThread(a: std.mem.Allocator, io: std.Io, codex_home: []const u8, thread: []const u8) ?[]const u8 {
+    for (codexReadIndex(a, io, codex_home)) |e| {
+        if (!std.mem.eql(u8, e.id, thread)) continue;
+        if (codexDatePath(a, e.updated_at)) |rel| {
+            const dir_path = std.fmt.allocPrint(a, "{s}/sessions/{s}", .{ codex_home, rel }) catch return null;
+            if (codexFindRollout(a, io, dir_path, thread)) |p| return p;
+        }
+        break;
+    }
+    return codexScanForThread(a, io, codex_home, thread);
+}
+
+fn codexScanForCwd(a: std.mem.Allocator, io: std.Io, codex_home: []const u8, cwd: []const u8) ?[]const u8 {
+    var best: ?[]const u8 = null;
+    var best_mtime: i96 = 0;
+    const sessions = std.fmt.allocPrint(a, "{s}/sessions", .{codex_home}) catch return null;
+    var year_dir = std.Io.Dir.cwd().openDir(io, sessions, .{ .iterate = true }) catch return null;
+    defer year_dir.close(io);
+    var years = year_dir.iterate();
+    while (years.next(io) catch null) |y| {
+        if (y.kind != .directory) continue;
+        const ypath = std.fmt.allocPrint(a, "{s}/{s}", .{ sessions, y.name }) catch continue;
+        var month_dir = std.Io.Dir.cwd().openDir(io, ypath, .{ .iterate = true }) catch continue;
+        defer month_dir.close(io);
+        var months = month_dir.iterate();
+        while (months.next(io) catch null) |m| {
+            if (m.kind != .directory) continue;
+            const mpath = std.fmt.allocPrint(a, "{s}/{s}", .{ ypath, m.name }) catch continue;
+            var day_dir = std.Io.Dir.cwd().openDir(io, mpath, .{ .iterate = true }) catch continue;
+            defer day_dir.close(io);
+            var days = day_dir.iterate();
+            while (days.next(io) catch null) |d| {
+                if (d.kind != .directory) continue;
+                const dpath = std.fmt.allocPrint(a, "{s}/{s}", .{ mpath, d.name }) catch continue;
+                var files = std.Io.Dir.cwd().openDir(io, dpath, .{ .iterate = true }) catch continue;
+                defer files.close(io);
+                var it = files.iterate();
+                while (it.next(io) catch null) |ent| {
+                    if (ent.kind != .file or !std.mem.endsWith(u8, ent.name, ".jsonl")) continue;
+                    const path = std.fmt.allocPrint(a, "{s}/{s}", .{ dpath, ent.name }) catch continue;
+                    const meta = codexSessionMeta(a, io, path) orelse continue;
+                    if (meta.subagent) continue;
+                    const mc = meta.cwd orelse continue;
+                    if (!std.mem.eql(u8, mc, cwd)) continue;
+                    const st = std.Io.Dir.cwd().statFile(io, path, .{}) catch continue;
+                    if (best == null or st.mtime.nanoseconds > best_mtime) {
+                        best = path;
+                        best_mtime = st.mtime.nanoseconds;
+                    }
+                }
+            }
+        }
+    }
+    return best;
+}
+
+fn codexRolloutForCwd(a: std.mem.Allocator, io: std.Io, codex_home: []const u8, cwd: []const u8) ?[]const u8 {
+    for (codexReadIndex(a, io, codex_home)) |e| {
+        const rel = codexDatePath(a, e.updated_at) orelse continue;
+        const dir_path = std.fmt.allocPrint(a, "{s}/sessions/{s}", .{ codex_home, rel }) catch continue;
+        const path = codexFindRollout(a, io, dir_path, e.id) orelse continue;
+        const meta = codexSessionMeta(a, io, path) orelse continue;
+        if (meta.subagent) continue;
+        if (meta.cwd) |mc| {
+            if (std.mem.eql(u8, mc, cwd)) return path;
+        }
+    }
+    return codexScanForCwd(a, io, codex_home, cwd);
+}
+
+/// the training posture the auth artifact supports: an API key reaches the platform/business terms (never trained), a ChatGPT sign-in reaches the consumer data controls (opt-out).
+/// No readable artifact leaves the rule's static fallback.
+fn codexAuthPostureFromData(a: std.mem.Allocator, data: []const u8) ?[]const u8 {
+    const parsed = std.json.parseFromSliceLeaky(std.json.Value, a, data, .{}) catch return null;
+    if (parsed != .object) return null;
+    const o = parsed.object;
+    if (o.get("OPENAI_API_KEY")) |v| {
+        if (v == .string and v.string.len > 0) return "never";
+    }
+    if (o.get("tokens")) |t| {
+        if (t == .object) return "opt-out";
+    }
+    return null;
+}
+
+fn codexAuthPosture(a: std.mem.Allocator, io: std.Io, codex_home: []const u8) ?[]const u8 {
+    const path = std.fmt.allocPrint(a, "{s}/auth.json", .{codex_home}) catch return null;
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return null;
+    return codexAuthPostureFromData(a, data);
+}
+
+/// Codex — the CLI, the IDE extension and the ChatGPT desktop app all run the same `codex` runtime.
+/// The rollout session is the source of truth for the provider and model; config.toml supplies defaults only.
+/// CODEX_THREAD_ID names the active rollout; otherwise the newest user-thread rollout whose cwd matches is used.
+fn detectCodex(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    const codex_home = codexHome(a, env, home);
+    if (codex_home.len == 0) return;
+
+    var cfg = CodexConfig{};
+    var config_path: ?[]const u8 = null;
+    const cfg_path = try std.fmt.allocPrint(a, "{s}/config.toml", .{codex_home});
+    if (std.Io.Dir.cwd().readFileAlloc(io, cfg_path, a, @enumFromInt(1 << 20))) |data| {
+        cfg = try codexConfigParse(a, data);
+        config_path = cfg_path;
+    } else |_| {}
+
+    // the auth artifact narrows the harness posture: API key = platform terms, ChatGPT sign-in = consumer controls.
+    if (codexAuthPosture(a, io, codex_home)) |posture| d.harness_closed_training = posture;
+
+    const cwd = currentDir(a, io, env) orelse "";
+    const thread = env.get("CODEX_THREAD_ID") orelse "";
+    var path: ?[]const u8 = null;
+    var meta: ?CodexSessionMeta = null;
+    if (codexThreadIdValid(thread)) {
+        if (codexRolloutForThread(a, io, codex_home, thread)) |p| {
+            if (codexSessionMeta(a, io, p)) |m| {
+                if (!m.subagent) {
+                    path = p;
+                    meta = m;
+                }
+            }
+        }
+    }
+    if (path == null and cwd.len > 0) {
+        if (codexRolloutForCwd(a, io, codex_home, cwd)) |p| {
+            if (codexSessionMeta(a, io, p)) |m| {
+                if (!m.subagent) {
+                    path = p;
+                    meta = m;
+                }
+            }
+        }
+    }
+
+    var session_provider: ?[]const u8 = null;
+    if (meta) |m| {
+        if (m.provider) |p| {
+            if (p.len > 0) session_provider = p;
+        }
+    }
+    var session_model: ?[]const u8 = null;
+    if (path) |p| {
+        if (codexTurnModel(a, io, p)) |m| session_model = m;
+    }
+
+    var provider_raw = session_provider;
+    var provider_source: []const u8 = "session";
+    var provider_artifact: []const u8 = path orelse "";
+    if (provider_raw == null) {
+        if (cfg.provider) |p| {
+            if (p.len > 0) {
+                provider_raw = p;
+                provider_source = "config";
+                provider_artifact = config_path orelse "";
+            }
+        }
+    }
+    const provider_id = if (provider_raw) |p| codexProviderFor(p, &cfg) else codexProviderFor("openai", &cfg);
+    if (provider_id) |pid| {
+        try setProvider(a, d, pid);
+        if (provider_raw) |p| {
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = provider_source, .name = provider_artifact, .field = "model_provider", .value = p });
+        }
+    }
+
+    var model = session_model;
+    var model_source: []const u8 = "session";
+    var model_artifact: []const u8 = path orelse "";
+    if (model == null) {
+        if (cfg.model) |m| {
+            if (m.len > 0) {
+                model = m;
+                model_source = "config";
+                model_artifact = config_path orelse "";
+            }
+        }
+    }
+    if (model) |m| {
+        try applyModel(a, d, m, m);
+        try addEvidenceClaim(a, d, .{ .dim = "model", .source = model_source, .name = model_artifact, .field = if (std.mem.eql(u8, model_source, "session")) "turn_context.model" else "model", .value = m });
+    }
+
+    if (path) |p| {
+        var fields: std.ArrayList(FieldObservation) = .empty;
+        if (session_provider) |v| try fields.append(a, .{ .dotted_path = "session_meta.model_provider", .value = v });
+        if (session_model) |v| try fields.append(a, .{ .dotted_path = "turn_context.model", .value = v });
+        if (meta) |m| {
+            if (m.originator) |v| try fields.append(a, .{ .dotted_path = "session_meta.originator", .value = v });
+        }
+        if (fields.items.len > 0) {
+            d.raw.session_files = try appendFileObservation(a, d.raw.session_files, .{ .path = p, .fields = try fields.toOwnedSlice(a) });
+        }
+    }
+    if (config_path) |p| {
+        var fields: std.ArrayList(FieldObservation) = .empty;
+        if (cfg.model) |v| try fields.append(a, .{ .dotted_path = "model", .value = v });
+        if (cfg.provider) |v| try fields.append(a, .{ .dotted_path = "model_provider", .value = v });
+        if (fields.items.len > 0) {
+            d.raw.config_files = try appendFileObservation(a, d.raw.config_files, .{ .path = p, .fields = try fields.toOwnedSlice(a) });
+        }
+    }
+}
+
 /// GitHub Copilot records its Copilot Fusion selection as the generic selector `auto`.
 /// Fold that spelling to the canonical model rule here — inside Copilot sessions only — because a global `auto` model rule (or variation alias) would claim every other harness's own auto selector as Copilot Fusion.
 fn copilotFusionModelId(name: []const u8) []const u8 {
@@ -4677,6 +5131,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectAutoClaw(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "zed")) {
             try detectZed(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "codex")) {
+            try detectCodex(a, io, env, home, d);
         }
         // detectors may set provider after model (e.g. a config file whose default_text_model line precedes its provider line), so compose the agent id once both dims are known rather than only inside applyModel.
         try setAgentId(a, d);
@@ -4794,4 +5250,90 @@ test "zedFolderMatches: bare paths and JSON arrays, boundary-aware" {
     try std.testing.expect(!zedFolderMatches(a, "/Users/me/proj", "[\"/Users/me/proj-2\"]"));
     // Windows separators normalize before comparison.
     try std.testing.expect(zedFolderMatches(a, "C:\\Users\\me\\proj", "C:/Users/me/proj"));
+}
+
+test "codexConfigParse: top-level model/provider and a custom base_url" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const cfg = try codexConfigParse(a,
+        \\model = "gpt-6-luna" # the default
+        \\model_provider = 'myrelay'
+        \\
+        \\[model_providers.myrelay]
+        \\name = "My Relay"
+        \\base_url = "https://api.deepseek.com/v1"
+    );
+    try std.testing.expectEqualStrings("gpt-6-luna", cfg.model.?);
+    try std.testing.expectEqualStrings("myrelay", cfg.provider.?);
+    try std.testing.expectEqualStrings("myrelay", cfg.providers[0].id);
+    try std.testing.expectEqualStrings("https://api.deepseek.com/v1", cfg.providers[0].base_url);
+    try std.testing.expectEqualStrings("deepseek", codexProviderFor("myrelay", &cfg).?);
+}
+
+test "codexProviderFor: reserved ids resolve, unknown hosts and ids stay unresolved" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    _ = a;
+
+    var cfg = CodexConfig{};
+    try std.testing.expectEqualStrings("openai", codexProviderFor("openai", &cfg).?);
+    try std.testing.expectEqualStrings("ollama", codexProviderFor("ollama", &cfg).?);
+    try std.testing.expect(codexProviderFor("lmstudio", &cfg) == null);
+    try std.testing.expect(codexProviderFor("myrelay", &cfg) == null);
+
+    const providers = [_]CodexProviderConfig{.{ .id = "myrelay", .base_url = "https://llm.internal/v1" }};
+    cfg.providers = &providers;
+    try std.testing.expect(codexProviderFor("myrelay", &cfg) == null);
+}
+
+test "codexSessionMetaFromData: guardian and subagent threads are flagged" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const user =
+        \\{"type":"session_meta","payload":{"cwd":"/x","model_provider":"openai","originator":"Codex Desktop","thread_source":"user"}}
+    ;
+    const meta = codexSessionMetaFromData(a, user).?;
+    try std.testing.expectEqualStrings("/x", meta.cwd.?);
+    try std.testing.expectEqualStrings("openai", meta.provider.?);
+    try std.testing.expectEqualStrings("Codex Desktop", meta.originator.?);
+    try std.testing.expect(!meta.subagent);
+
+    const guardian =
+        \\{"type":"session_meta","payload":{"source":{"subagent":{"other":"guardian"}},"thread_source":"guardian_review","parent_thread_id":"01a1"}}
+    ;
+    try std.testing.expect(codexSessionMetaFromData(a, guardian).?.subagent);
+}
+
+test "codexTurnModelFromData: the newest user turn wins and the reviewer model is skipped" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const data =
+        \\{"type":"turn_context","payload":{"model":"gpt-5.6-terra"}}
+        \\{"type":"response_item"}
+        \\{"type":"turn_context","payload":{"model":"gpt-6-luna"}}
+        \\{"type":"turn_context","payload":{"model":"codex-auto-review"}}
+    ;
+    try std.testing.expectEqualStrings("gpt-6-luna", codexTurnModelFromData(a, data).?);
+
+    const reviewer_only =
+        \\{"type":"turn_context","payload":{"model":"codex-auto-review"}}
+    ;
+    try std.testing.expect(codexTurnModelFromData(a, reviewer_only) == null);
+}
+
+test "codexAuthPostureFromData: API key vs ChatGPT sign-in" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    try std.testing.expectEqualStrings("never", codexAuthPostureFromData(a, "{\"auth_mode\":\"apikey\",\"OPENAI_API_KEY\":\"sk-test\"}").?);
+    try std.testing.expectEqualStrings("opt-out", codexAuthPostureFromData(a, "{\"auth_mode\":\"chatgpt\",\"OPENAI_API_KEY\":null,\"tokens\":{}}").?);
+    try std.testing.expect(codexAuthPostureFromData(a, "{}") == null);
 }

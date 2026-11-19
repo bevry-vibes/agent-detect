@@ -109,9 +109,9 @@ fn daemonWriteErr(io: std.Io, bytes: []const u8) void {
 /// executable names for harnesses that don't have a rule yet — the daemon guard also refuses to run inside their sessions.
 /// Same inline platform-ternary style as the rule values (`+ .exe` on Windows).
 const pending_binary_names = if (builtin.os.tag == .windows)
-    [_][]const u8{ "claude", "claude.exe", "codex", "codex.exe", "grok", "grok.exe", "gemini", "gemini.exe", "openclaw", "openclaw.exe" }
+    [_][]const u8{ "claude", "claude.exe", "grok", "grok.exe", "gemini", "gemini.exe", "openclaw", "openclaw.exe" }
 else
-    [_][]const u8{ "claude", "codex", "grok", "gemini", "openclaw" };
+    [_][]const u8{ "claude", "grok", "gemini", "openclaw" };
 
 /// the capture prompt — interpolated into an invocation's `"<prompt>"` placeholder at spawn time, and printed verbatim by `fixtures prompt` (the invocation saves the placeholder, never the verbatim instruction, so the instruction can evolve without rewriting every invocation).
 const capture_prompt = "run `agent-detect-dev fixtures capture` in the current working directory and report the result";

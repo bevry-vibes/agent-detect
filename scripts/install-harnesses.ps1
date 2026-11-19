@@ -107,7 +107,7 @@ $Registry = @(
 	# scoop cursor-cli redirects CURSOR_CONFIG_DIR/DATA_DIR to its persist dir, so migrating an existing custom install needs a fresh login (the auth state stays in the old profile).
 	[pscustomobject]@{ Id = 'cursor'; Label = 'Cursor CLI (cursor-agent)'; Probe = 'cursor-agent'; Methods = @{ Darwin = @('brew', 'custom'); Linux = @('custom'); Windows = @('scoop', 'custom') } }
 	[pscustomobject]@{ Id = 'copilot'; Label = 'GitHub Copilot CLI'; Probe = 'copilot'; Methods = @{ Darwin = @('brew'); Linux = @(); Windows = @('scoop') } }
-	# Codex CLI is install-only until its rule lands (CONTRIBUTING pending list). Homebrew ships it as the `codex` cask, not a formula.
+	# Homebrew ships Codex CLI as the `codex` cask, not a formula.
 	# The desktop app is retired standalone and now ships in the ChatGPT app; the `chatgpt` row below is install-only with real app detection.
 	# On Windows the CLI is scoop `codex` / winget `OpenAI.Codex`; the app is winget `OpenAI.ChatGPT` — do not swap the two package ids.
 	[pscustomobject]@{ Id = 'codex'; Label = 'OpenAI Codex CLI'; Probe = 'codex'; Methods = @{ Darwin = @('brew', 'npm'); Linux = @('npm'); Windows = @('scoop', 'winget', 'npm') } }

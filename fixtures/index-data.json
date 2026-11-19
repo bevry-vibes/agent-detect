@@ -163,6 +163,26 @@
       ]
     },
     {
+      "label": "OpenAI Codex",
+      "short_title": null,
+      "name": "codex",
+      "id": "codex",
+      "license": "Apache-2.0",
+      "open_training": null,
+      "closed_training": "opt-out",
+      "reciprocity_scandal": false,
+      "variations": [],
+      "providers": [
+        "openai"
+      ],
+      "models": [
+        "gpt4o",
+        "gpt56luna",
+        "gpt56terra",
+        "gpt6luna"
+      ]
+    },
+    {
       "label": "GitHub Copilot CLI",
       "short_title": null,
       "name": "copilot",
@@ -387,7 +407,7 @@
         "novitaai",
         "nvidia",
         "ollamacloud",
-        "openaicodex",
+        "openai",
         "opencode",
         "opencodego",
         "openrouter",
@@ -437,7 +457,9 @@
         "gpt55",
         "gpt56luna",
         "gpt56sol",
+        "gpt56terra",
         "gpt5mini",
+        "gpt6luna",
         "gptoss120b",
         "gptoss20b",
         "grok4",
@@ -1158,6 +1180,9 @@
         "deepseekv4flash",
         "deepseekv4pro",
         "gpt4o",
+        "gpt56luna",
+        "gpt56terra",
+        "gpt6luna",
         "grok4",
         "grok420",
         "grok45",
@@ -2291,25 +2316,19 @@
       "open_training": "opt-in",
       "closed_training": "opt-in",
       "reciprocity_scandal": true,
-      "variations": [],
+      "variations": [
+        "openai-codex"
+      ],
       "models": [
-        "gpt4o"
+        "gpt4o",
+        "gpt56luna",
+        "gpt56terra",
+        "gpt6luna"
       ],
       "harnesses": [
+        "codex",
+        "hermes",
         "qwen"
-      ]
-    },
-    {
-      "label": "OpenAI Codex",
-      "name": "openai-codex",
-      "id": "openaicodex",
-      "open_training": null,
-      "closed_training": "opt-out",
-      "reciprocity_scandal": false,
-      "variations": [],
-      "models": [],
-      "harnesses": [
-        "hermes"
       ]
     },
     {
@@ -3924,6 +3943,7 @@
       ],
       "harnesses": [
         "cline",
+        "codex",
         "copilot",
         "githubcopilot",
         "hermes",
@@ -4037,6 +4057,7 @@
         "azurefoundry",
         "cursor",
         "kilo",
+        "openai",
         "opencode",
         "opencodego",
         "openrouter",
@@ -4044,6 +4065,7 @@
       ],
       "harnesses": [
         "cline",
+        "codex",
         "cursor",
         "goose",
         "hermes",
@@ -4051,7 +4073,8 @@
         "kimicode",
         "omp",
         "opencode",
-        "pi"
+        "pi",
+        "qwen"
       ]
     },
     {
@@ -4081,6 +4104,44 @@
         "omp",
         "opencode",
         "pi"
+      ]
+    },
+    {
+      "label": "GPT-5.6 Terra",
+      "short_title": null,
+      "name": "gpt-5.6-terra",
+      "id": "gpt56terra",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "openai"
+      ],
+      "harnesses": [
+        "codex",
+        "hermes",
+        "qwen"
+      ]
+    },
+    {
+      "label": "GPT-6 Luna",
+      "short_title": null,
+      "name": "gpt-6-luna",
+      "id": "gpt6luna",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "openai"
+      ],
+      "harnesses": [
+        "codex",
+        "hermes",
+        "qwen"
       ]
     },
     {
@@ -7081,6 +7142,22 @@
     "codewhale-deepseek-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "codex-openai-gpt4o": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "codex-openai-gpt56luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "codex-openai-gpt56terra": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "codex-openai-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
     },
     "copilot-githubcopilot-claudesonnet5": {
       "platforms": [

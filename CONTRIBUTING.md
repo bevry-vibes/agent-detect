@@ -158,11 +158,11 @@ The method order is policy:
 - Installers may place binaries in `XDG_BIN_HOME` (default `~/.local/bin`) or the npm global prefix bin (behind `node-env` when plain npm is off `PATH`): the probe resolves `PATH`, then both directories, and reports where an off-`PATH` binary lives.
 
 `-Check` probes every harness binary (`<probe> --version`) and prints the installed/missing state without installing anything — the first thing to run on a new host when the daemon records "harness unavailable".
-The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands (the `codex` and `chatgpt` rows are install-only: `codex` ahead of its pending rule, `chatgpt` for the retired Codex app's ChatGPT successor).
+The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands (the `chatgpt` row is install-only for the Codex desktop app's ChatGPT successor).
 
 The registry is CLI-first. The Cline, Kilo, and MiniMax Code desktop clients are separate products: Cline Desktop is the `cline-app` cask, MiniMax Code Desktop is `minimax-ai/tap/minimax-code` (pass `--language=en` for the overseas build), and Kilo Desktop has no cask (install its official DMG only with an explicit decision).
 
-The Codex desktop app is the exception: its standalone app is retired and now ships inside the ChatGPT desktop app, so the registry carries an install-only `chatgpt` row with real app detection — `/Applications/ChatGPT.app` on macOS (via the `chatgpt` cask), the `OpenAI.Codex` MSIX on Windows (via winget `OpenAI.ChatGPT`), and the `chatgpt` package on Linux (preview; manual `.deb` / `.rpm` / Arch install). The old `codex-app` cask is Homebrew-deprecated (2027-07-12). `OpenAI.Codex` is the CLI, `OpenAI.ChatGPT` is the app, and the CLI remains the separate `codex` row (`codex` cask on macOS, scoop `codex` / winget `OpenAI.Codex` / npm `@openai/codex`). The desktop apps do not join detection until their own rules, detectors, and fixtures land.
+The Codex desktop app is the exception: its standalone app is retired and now ships inside the ChatGPT desktop app, so the registry carries an install-only `chatgpt` row with real app detection — `/Applications/ChatGPT.app` on macOS (via the `chatgpt` cask), the `OpenAI.Codex` MSIX on Windows (via winget `OpenAI.ChatGPT`), and the `chatgpt` package on Linux (preview; manual `.deb` / `.rpm` / Arch install). The old `codex-app` cask is Homebrew-deprecated (2027-07-12). `OpenAI.Codex` is the CLI, `OpenAI.ChatGPT` is the app, and the CLI remains the separate `codex` row (`codex` cask on macOS, scoop `codex` / winget `OpenAI.Codex` / npm `@openai/codex`). The app does not get a separate harness: it runs the same bundled `codex` runtime, so the `codex` rule covers it and the `chatgpt` row stays install-only.
 `minimax-code`'s npm install carries an explicit two-package `--allow-scripts=@minimax-ai/code,better-sqlite3` allow-list because the optional native SQLite dependency needs its build script; no other harness gets lifecycle scripts.
 
 ### per-harness config locations
@@ -173,6 +173,7 @@ Paths are `$HOME`-relative; the Windows variants follow each harness's own platf
 | harness    | config                                                                       | session store / data                                                                 |
 | ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | cline      | `~/.cline/data/settings/providers.json`                                       | —                                                                                     |
+| codex      | `$CODEX_HOME/config.toml` (default `~/.codex/config.toml`)                      | `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` (`session_meta.model_provider` / `session_meta.originator`, newest user-turn `turn_context.model`) |
 | codewhale  | `~/.codewhale/config.toml` (`CODEWHALE_CONFIG_PATH` overrides)                 | `~/.codewhale/sessions/<id>.json` (`metadata.model` / `metadata.model_provider`)        |
 | copilot    | —                                                                             | `~/.copilot/data.db`                                                                   |
 | crush      | `~/.local/share/crush/crush.json` (Windows: `%LOCALAPPDATA%\Crush\crush.json`) | `<project>/.crush/crush.db` (project-local)                                            |
@@ -607,7 +608,7 @@ When cataloging a new provider, audit its `map-provider-model-providermodel.csv`
 **Axis semantics (convention).** How a policy maps onto the two training axes when the wording does not state (or states ambiguously) which model types it covers:
 
 - A policy that does not distinguish which model types it trains applies its value to BOTH axes — mirrored values are the default, not an accident.
-- An exclusively closed-model company (serves no open-weight models) keeps the open axis `null` (not applicable). Precedent: `anthropic`, `github-copilot`, `xai`, `openai-codex`.
+- An exclusively closed-model company (serves no open-weight models) keeps the open axis `null` (not applicable). Precedent: `anthropic`, `github-copilot`, `xai`.
 - An exclusively open-model company (serves no closed models) cannot use `null` on the closed axis — `provider_closed_training` is load-bearing for exit 9 and would break `check-reciprocal` for open-model sessions — so the closed axis is `never` with a comment noting the vacuous case (no closed models are served to train).
   Precedent: `xiaomi`, `phala`.
 - Tiered policies (free tier trains / paid doesn't; unpaid instances train / paid don't) resolve to the strictest REACHABLE surface — the opt-in-by-model rule above, restated.
@@ -667,8 +668,15 @@ The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11) and sco
   config `~/.claude/settings.json` + `~/.claude.json`;
   sessions `~/.claude/projects/`; proc `claude`).
   Native binary broken on the maintainer's machine (npm postinstall) — rules/from-identity land regardless of install.
-- [ ] **codex** — OpenAI Codex CLI (`codex exec <prompt>`; config `~/.codex/config.toml` `model`/`model_provider`; sessions `~/.codex/sessions/`; proc `codex`).
-  The desktop app now ships inside the ChatGPT app (macOS `chatgpt` cask; winget `OpenAI.ChatGPT` / Store `9PLM9XGG6VKS` on Windows; Linux preview; the installer's `chatgpt` row), shares `~/.codex`, and has no headless launcher, so the CLI surface is the capture path.
+**codex** / **OpenAI Codex** (2026-11-17, revised 2026-11-19): one rule covers the CLI and the proprietary wrappers that host the same open-source runtime — the ChatGPT desktop app's bundled `codex app-server` and the Codex IDE extension's bundled copy.
+Their closed licences are superficial, superfluous wrapper deviations, not detection surfaces (DESIGN #18); the rollout's `session_meta.originator` records which wrapper hosted the run (`Codex Desktop` / `codex_vscode` / `codex_cli_rs`).
+Detection uses `CODEX_THREAD_ID` (injected into every command the runtime spawns, and the rollout filename suffix) and `codex` binary ancestry; `CODEX_HOME` is only the user-set config-dir override, so it is not a marker.
+Provider/model come from the rollout at `$CODEX_HOME/sessions/YYYY/MM/DD/rollout-*.jsonl` — `session_meta.model_provider` and the newest user-turn `turn_context.model` — skipping subagent/guardian threads (`source.subagent`, `thread_source: "guardian_review"`, `parent_thread_id`), whose `codex-auto-review` model is the automatic-approval reviewer, not the coding agent.
+`config.toml` is the fallback (top-level `model`/`model_provider`), never the primary: `-m`, `--profile` (which layers `$CODEX_HOME/<name>.config.toml`), a trusted project's `.codex/config.toml`, and `--oss` all override it.
+The provider id is resolved, not passed through: the reserved `openai`/`ollama`/`ollama-chat` ids map to their rules, a custom `[model_providers.<id>]` resolves its `base_url` host through `providerForBaseUrl`, and an unknown host/id leaves the provider unresolved (never-guess).
+The former `openai-codex` provider rule folds into `openai` via a variation (the same provider; the consumer-tier posture rides this harness).
+Training is closed opt-out: a ChatGPT sign-in follows OpenAI's consumer data controls (with the ChatGPT "Improve the model for everyone" opt-out); an API-key session narrows to `never` from `auth.json`'s shape. Open-model training stays null, and the static fallback is the strictest reachable surface.
+Models: `gpt-6-luna` and `gpt-5.6-terra` added; `gpt-6-sol` follows when an account offers it. The app and the IDE extension have no headless launcher separate from the CLI, so the CLI is the capture path.
 - [ ] **grok** — Grok CLI (`grok --always-approve <prompt>`; config `~/.grok/config.toml` + models `~/.grok/models_cache.json`; sessions `~/.grok/sessions/` + `worktrees.db`; proc `grok`).
 - [ ] **gemini** — Gemini CLI (`gemini -p <prompt>`; config `~/.gemini/settings.json`; proc `gemini`).
 - [ ] **amp / roo / qoder / openhands** — maintained CLIs (Replit/Anvil, Roo Code, Alibaba, OpenHands); not installed on the maintainer's machine; rules + from-identity fixtures when a contributor picks them up.
@@ -719,7 +727,7 @@ the Moonshot/Kimi family folded to two rules — `moonshotai` (the api.moonshot.
 `opencode-free`/`opencode-zen` folded into `opencode` ("OpenCode Zen" — hermes's keyless and subscribed profiles are two tiers of the one zen relay);
 hermes's `kilocode` profile folded onto the `kilo` rule (models.dev `kilo`, "Kilo Gateway") and `nebius-token-factory` onto `nebius` via its label.
 Training-policy research refreshed the provider rules from primary docs and was re-verified by the review (see the corrections on `zai`, `qwen`, `nvidia`, `nebius`, `xiaomi` in `.plans/1788716755355` D8);
-`nous` and `openai-codex` keep harnessprovider cells but await a ruled-model catalog (hermes's caches never enumerated them — no providermodel row, so the cells are inert until a contributor lands one).
+`nous` keeps a harnessprovider cell but awaits a ruled-model catalog (hermes's caches never enumerated it — no providermodel row, so the cell is inert until a contributor lands one); the former `openai-codex` cell folded into `openai` (the codex surface is the same provider).
 
 **autoclaw** (2026-09-06, authored by the maintainer's AutoClaw auto-coder session; revised 2026-09-07 by the fold review): the harness rule landed with the provider surface individuated as `autoclaw` (the bundled Z.ai channel — autoglm-api.autoglm.ai/autoclaw-proxy, X-Product: autoclaw, X-Channel: zai — mirroring the `zai` policy, re-verified opt-in/opt-in by the review; a user-configured direct api.z.ai baseUrl resolves to `zai`).
 The maintainer has since uninstalled autoclaw — the rule and grids stand for whoever picks it up (contributor scope); the staged queue entry was dropped.
