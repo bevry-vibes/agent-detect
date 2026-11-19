@@ -17,7 +17,7 @@ import { Hero, RegistryIntro } from "@/components/hero";
 import { IndexSection } from "@/components/index-section";
 import { ResultsTable } from "@/components/results-table";
 import { ReleasePage } from "@/components/release-page";
-import { ReleasesSection } from "@/components/releases-section";
+import { ReleasesPage } from "@/components/releases-page";
 import { SiteHeader } from "@/components/site-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -31,6 +31,7 @@ type View =
   | { kind: "index" }
   | { kind: "agent"; id: string }
   | { kind: "entity"; dim: EntityDim; id: string }
+  | { kind: "releases" }
   | { kind: "release"; tag: string };
 
 /** a `?free=`/`?reciprocal=` value → its boolean, or null */
@@ -46,6 +47,7 @@ function triBool(raw: string | null): boolean | null {
 function viewPath(view: View): string {
   if (view.kind === "agent") return `/agent/${view.id}`;
   if (view.kind === "entity") return `/${view.dim}/${view.id}`;
+  if (view.kind === "releases") return "/releases";
   if (view.kind === "release") return `/releases/${view.tag}`;
   return "/";
 }
@@ -66,8 +68,9 @@ function viewPath(view: View): string {
  */
 function parseView(pathname: string): View {
   const parts = pathname.split("/").filter((s) => s.length > 0);
-  if (parts[0] === "releases" && parts[1] && /^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(parts[1])) {
-    return { kind: "release", tag: parts[1] };
+  if (parts[0] === "releases") {
+    if (parts[1] && /^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(parts[1])) return { kind: "release", tag: parts[1] };
+    if (!parts[1]) return { kind: "releases" };
   }
   if (parts[0] === "agent" && parts[1]) {
     const id = parts.slice(1).join("-").trim().toLowerCase();
@@ -285,13 +288,10 @@ export default function App() {
     pushURL(next, { kind: "index" }, "push");
   };
 
-  /** the releases section lives on the homepage: carry its anchor into the
-   * URL the way a nav click does, then land on the index */
+  /** the releases page is its own route; the homepage carries no section */
   const onReleases = () => {
-    const qs = buildSearch(filters);
-    history.replaceState(null, "", `/${qs ? `?${qs}` : ""}#releases`);
-    pendingAnchor.current = "releases";
-    onHome();
+    setView({ kind: "releases" });
+    pushURL({ ...NO_FILTERS }, { kind: "releases" });
   };
 
   // view transitions: a result or detail page opens at scroll 0 (its own
@@ -309,6 +309,10 @@ export default function App() {
   }, [viewKey]);
 
   const onNavClick = (href: string): boolean => {
+    if (href === "/releases") {
+      onReleases();
+      return true;
+    }
     if (view.kind === "index") return false;
     // carry the anchor into the index url so the onHome push keeps it
     const qs = buildSearch(filters);
@@ -386,12 +390,23 @@ export default function App() {
             ? [
                 { label: "cli", href: "#cli" },
                 { label: "registry", href: "#registry" },
-                { label: "releases", href: "#releases" },
+                { label: "releases", href: "/releases" },
               ]
-            : [{ label: view.kind === "agent" ? "agent" : view.kind === "release" ? "releases" : view.dim }]
+            : [
+                {
+                  label:
+                    view.kind === "agent"
+                      ? "agent"
+                      : view.kind === "release" || view.kind === "releases"
+                        ? "releases"
+                        : view.dim,
+                },
+              ]
         }
       />
-      {view.kind === "release" ? (
+      {view.kind === "releases" ? (
+        <ReleasesPage file={releasesFile} />
+      ) : view.kind === "release" ? (
         <ReleasePage
           tag={view.tag}
           file={releasesFile}
@@ -457,7 +472,6 @@ export default function App() {
               </>
             )}
           </article>
-          {releasesFile && <ReleasesSection file={releasesFile} />}
         </main>
       )}
 

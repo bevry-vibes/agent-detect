@@ -12,8 +12,8 @@ export function releaseDay(date: string): string {
 
 /** one release, with its permalink on the tag and again on the date. The
  * permalink is the site page (/releases/<tag>) — a stable link that survives
- * the homepage's scroll position, unlike a bare #anchor. */
-export function ReleaseEntry({ release, compact = false }: { release: Release; compact?: boolean }) {
+ * the list's scroll position, unlike a bare #anchor. */
+export function ReleaseEntry({ release }: { release: Release }) {
   const href = `/releases/${release.tag}`;
   return (
     <section id={release.tag} className="scroll-mt-20 border-t pt-6 first:border-t-0 first:pt-0">
@@ -45,36 +45,37 @@ export function ReleaseEntry({ release, compact = false }: { release: Release; c
         </a>
       </header>
       <Markdown text={release.body} />
-      {!compact && (
-        <p className="mt-3 text-xs">
-          <a href="#releases" className="text-muted-foreground hover:text-foreground">
-            all releases
-          </a>
-        </p>
-      )}
     </section>
   );
 }
 
-/** the homepage section — the release notes, newest first, the way the
+/** the releases page — the public changelog, newest first, the way the
  * democratic-ai journal reads. GitHub releases carry the notes; the site reads
- * the annotated tags directly (tools/build_data.ts), so the two cannot drift. */
-export function ReleasesSection({ file }: { file: ReleasesFile }) {
+ * the annotated tags (and their `releases/<tag>.md` overlays) directly in
+ * `tools/build_data.ts`, so the two cannot drift. */
+export function ReleasesPage({ file }: { file: ReleasesFile | null }) {
   return (
-    <article id="releases" className="mx-auto flex w-full max-w-7xl flex-col gap-6 scroll-mt-14 border-t px-4 py-10">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Releases</h2>
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 px-4 py-10">
+      <header className="flex flex-col gap-2">
+        <p className="text-muted-foreground text-xs tracking-wide uppercase">the record</p>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Releases</h1>
         <p className="text-muted-foreground max-w-3xl text-sm">
           Dated notes for each published version, newest first. The notes are the annotated tag's message — the same text
           the GitHub release carries — and every release keeps a permalink at{" "}
           <code className="bg-muted rounded px-1 py-0.5 font-mono text-[0.9em]">/releases/&lt;tag&gt;</code>.
         </p>
-      </div>
-      {file.releases.length === 0 ? (
+      </header>
+      {!file ? (
+        <p className="text-muted-foreground text-sm">loading the releases…</p>
+      ) : file.releases.length === 0 ? (
         <p className="text-muted-foreground text-sm">No releases in this checkout.</p>
       ) : (
-        file.releases.map((release) => <ReleaseEntry key={release.tag} release={release} />)
+        <div className="flex flex-col gap-6">
+          {file.releases.map((release) => (
+            <ReleaseEntry key={release.tag} release={release} />
+          ))}
+        </div>
       )}
-    </article>
+    </main>
   );
 }

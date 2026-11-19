@@ -227,7 +227,7 @@ export function Hero() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  releases page
+                  GitHub releases
                 </a>{" "}
                 — no npm/crates package exists. The optional <code className="font-mono">sqlite3</code> CLI is only
                 needed for live detection inside some harnesses.

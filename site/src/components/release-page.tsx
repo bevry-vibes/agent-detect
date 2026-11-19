@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowUpRight, Link2 } from "lucide-react";
 
 import { Markdown } from "@/lib/markdown";
 import type { ReleasesFile } from "@/lib/schemas";
-import { releaseDay } from "@/components/releases-section";
+import { releaseDay } from "@/components/releases-page";
 
 /** one release at its own URL — /releases/<tag> is the permalink the release
  * notes, the journal, and the announcements point at. */
@@ -35,9 +35,9 @@ export function ReleasePage({
           No annotated tag <code className="bg-muted rounded px-1 py-0.5 font-mono">{tag}</code> exists in this checkout.
         </p>
         <p className="text-sm">
-          <button type="button" onClick={onReleases} className="underline underline-offset-4">
+          <a href="/releases" className="underline underline-offset-4" onClick={(e) => { e.preventDefault(); onReleases(); }}>
             all releases
-          </button>
+          </a>
         </p>
       </main>
     );
@@ -46,10 +46,17 @@ export function ReleasePage({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-10">
       <nav aria-label="breadcrumb" className="text-muted-foreground text-sm">
-        <button type="button" onClick={onReleases} className="hover:text-foreground inline-flex items-center gap-1">
+        <a
+          href="/releases"
+          className="hover:text-foreground inline-flex items-center gap-1"
+          onClick={(e) => {
+            e.preventDefault();
+            onReleases();
+          }}
+        >
           <ArrowLeft className="size-3" />
           releases
-        </button>
+        </a>
       </nav>
       <header className="flex flex-col gap-2 border-b pb-5">
         <p className="text-muted-foreground text-xs tracking-wide uppercase">release</p>

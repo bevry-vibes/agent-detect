@@ -182,16 +182,28 @@ async function readReleases(warnings: string[]): Promise<{ tag: string; date: st
     const [tag, date] = line.split("\t");
     if (!tag || !date) continue;
     if (!/^\d{4}\.\d{1,2}\.\d{1,2}-\d+$/.test(tag)) continue;
-    let object: string;
+    // the tag's message is the canonical note. Tags cut before that rule carry
+    // only a title, so a `releases/<tag>.md` overlay writes the notes after the
+    // fact — the tag stays immutable, and the file is what the site and the
+    // GitHub release body both show.
+    let body = "";
     try {
-      object = await git(["cat-file", "tag", tag]);
+      body = (await Deno.readTextFile(`${path(repoDir)}releases/${tag}.md`)).trim();
     } catch {
-      warnings.push(`skipping releases/${tag}: not an annotated tag, so it carries no release notes`);
-      continue;
+      // no overlay for this tag
     }
-    // the tag object's header ends at the first blank line; the signature armor follows the message.
-    const message = object.slice(object.indexOf("\n\n") + 2);
-    const body = message.split(/^-----BEGIN [A-Z ]*SIGNATURE-----$/m)[0]!.trim();
+    if (body.length === 0) {
+      let object: string;
+      try {
+        object = await git(["cat-file", "tag", tag]);
+      } catch {
+        warnings.push(`skipping releases/${tag}: not an annotated tag, so it carries no release notes`);
+        continue;
+      }
+      // the tag object's header ends at the first blank line; the signature armor follows the message.
+      const message = object.slice(object.indexOf("\n\n") + 2);
+      body = message.split(/^-----BEGIN [A-Z ]*SIGNATURE-----$/m)[0]!.trim();
+    }
     if (body.length === 0) {
       warnings.push(`skipping releases/${tag}: the tag carries no release notes`);
       continue;
