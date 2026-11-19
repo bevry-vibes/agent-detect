@@ -483,19 +483,10 @@ export default function App() {
               bevry-vibes/agent-detect
             </a>
             {combosFile ? "·" : ""} RPL-1.5
-            {/* the latest calver release, baked in at vite build time from git */}
-            {__RELEASE_TAG__ && (
-              <>
-                {" · "}
-                <a
-                  className="underline underline-offset-4"
-                  href={`/releases/${__RELEASE_TAG__}`}
-                  title={`the latest release (${__RELEASE_DATE__})`}
-                >
-                  {__RELEASE_TAG__}
-                </a>
-              </>
-            )}
+            {/* the version you are looking at, baked in at vite build time from
+                git. Not a link: the menubar's releases entry is the homepage's
+                only route to the changelog. */}
+            {__RELEASE_TAG__ && <> · <span title={`this build is ${__RELEASE_TAG__} (${__RELEASE_DATE__})`}>{__RELEASE_TAG__}</span></>}
           </span>
           <span className="flex gap-3">
             <a className="underline underline-offset-4" href="/registry.json">registry.json</a>

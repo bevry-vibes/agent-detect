@@ -220,16 +220,16 @@ export function Hero() {
                 <Terminal className="size-4" /> Install
               </CardTitle>
               <CardDescription>
-                Prebuilt static binaries on the{" "}
+                Prebuilt static binaries live on{" "}
                 <a
                   className="underline underline-offset-4"
                   href="https://github.com/bevry-vibes/agent-detect/releases/latest"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  GitHub releases
-                </a>{" "}
-                — no npm/crates package exists. The optional <code className="font-mono">sqlite3</code> CLI is only
+                  GitHub
+                </a>
+                ; no npm/crates package exists. The optional <code className="font-mono">sqlite3</code> CLI is only
                 needed for live detection inside some harnesses.
               </CardDescription>
             </CardHeader>
