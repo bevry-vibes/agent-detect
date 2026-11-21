@@ -10,7 +10,7 @@
       "harness_closed_training": "never",
       "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
-      "provider_label": "OpenCode Zen",
+      "provider_label": "OpenCode Console",
       "provider_name": "opencode",
       "provider_id": "opencode",
       "provider_closed_training": "never",
@@ -80,7 +80,7 @@
           "actions": [
             {
               "kind": "switch-entity",
-              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m2.7, qwen3.8-27b)"
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m3.1-flash, minimax-m2.7)"
             },
             {
               "kind": "preflight-combo",
@@ -101,6 +101,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1791254347
+    "updated_at": 1795262906
   }
 }

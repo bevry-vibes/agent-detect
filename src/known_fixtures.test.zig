@@ -1154,6 +1154,16 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "qwen4-max",              "hy4",                        "hy4-flash",
         "ling-3.2-flash",         "nex-n2.6",                   "gemma-4-26b-a4b",
         "particle-1",
+        // the 2026-11-21 OpenCode Go / Console catalogue refresh — the newly observed models land rule-only until their sweeps fixture them; the paid tiers (Kimi K3.1 Pro, Gemini 4 Argon, …) are deliberately not from-captured yet.
+        "kimi-k3.1-pro",          "gemini-4-argon",             "gemini-4-neon",
+        "gemini-4-carbon",        "gemini-4-hydrogen",          "claude-haiku-5-5",
+        "claude-sonnet-5-5",      "claude-opus-5-5",            "claude-fable-5-2",
+        "gpt-6-luna",             "gpt-6-sol",                  "gpt-6-astra",
+        "gpt-6.1-sol",            "gpt-6.2-sol",                "gpt-6.2-astra",
+        "grok-4.7",               "grok-build-0.1",             "qwen3.5-plus",
+        "qwen3.6-plus",           "muse-spark-1.3",             "muse-ember-1.0",
+        "muse-wonder-1.0",        "step-5-preview",             "longcat-2.0",
+        "tidepool-alpha",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

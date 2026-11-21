@@ -542,6 +542,44 @@ test "canonicalIdFor: providers chutes and opencode-go resolve" {
     try testing.expectEqualStrings("opencode", oc);
 }
 
+test "canonicalIdFor: OpenCode Console/Zen spellings and the console-connected DeepSeek provider fold to their canonical rules" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    // Console is the Nov-2025 rename of Zen; the label slug resolves `opencode-console`, while `opencode-zen` / `opencode-free` stay as variations.
+    for ([_][]const u8{ "opencode", "OpenCode Console", "opencode-console", "OpenCode Zen", "opencode-zen", "opencode-free" }) |f| {
+        const got = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("opencode", got);
+    }
+    // OpenCode Console's connected DeepSeek provider (the workspace's own DeepSeek API key) is the same upstream surface.
+    for ([_][]const u8{ "console-deepseek", "deepseek-official", "DeepSeek" }) |f| {
+        const got = main.canonicalIdFor(a, ProviderRule, &main.rulesForProviders, f) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("deepseek", got);
+    }
+}
+
+test "canonicalIdFor: the 2026-11-21 OpenCode catalogue refresh folds tier spellings, never merges distinct models" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const folds = [_][2][]const u8{
+        .{ "tidepool-alpha-free", "tidepool-alpha" },
+        .{ "muse-spark-1.3-contributor", "muse-spark-1.3" },
+        .{ "hy4-flash-free", "hy4-flash" },
+        .{ "kimi-k3.1-pro", "kimi-k3.1-pro" },
+        .{ "gemini-4-argon", "gemini-4-argon" },
+        .{ "claude-haiku-5-5", "claude-haiku-5-5" },
+        .{ "gpt-6-luna", "gpt-6-luna" },
+    };
+    for (folds) |pair| {
+        const got = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, pair[0]) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings(pair[1], got);
+    }
+    // the paid K3.1 Pro tier stays distinct from the open-weight K3 rule
+    const k3 = main.canonicalIdFor(a, ModelRule, &main.rulesForModels, "kimi-k3") orelse return error.TestUnexpectedResult;
+    try testing.expectEqualStrings("kimi-k3", k3);
+}
+
 test "canonicalIdFor: the ollama individuation — ollama-cloud spellings resolve the cloud rule, never the local one" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();

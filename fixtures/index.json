@@ -7344,6 +7344,84 @@
         "opencode.exe",
         "--version"
       ]
+    },
+    "opencode-opencode-tidepoolalpha-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/tidepool-alpha-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-tidepoolalpha-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode/tidepool-alpha-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencode-tidepoolalpha-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/tidepool-alpha-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencodego-reflectionbeam-darwin": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode-go/beam-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencodego-reflectionbeam-linux": {
+      "prompt_invocation": [
+        "opencode",
+        "run",
+        "--model",
+        "opencode-go/beam-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode",
+        "--version"
+      ]
+    },
+    "opencode-opencodego-reflectionbeam-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode-go/beam-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
     }
   },
   "blocklist": {

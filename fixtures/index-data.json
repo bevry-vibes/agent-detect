@@ -45,6 +45,7 @@
       ],
       "models": [
         "claudefable5",
+        "claudehaiku55",
         "claudeopus4",
         "claudeopus5",
         "claudesonnet4",
@@ -59,6 +60,7 @@
         "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemini4argon",
         "gemma426ba4b",
         "gemma431b",
         "glm46",
@@ -75,11 +77,13 @@
         "gpt56luna",
         "gpt56sol",
         "gpt5mini",
+        "gpt6luna",
         "gptoss120b",
         "gptoss20b",
         "grok420",
         "grok45",
         "grok46",
+        "grok47",
         "hy3",
         "hy4",
         "hy4flash",
@@ -92,6 +96,7 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "kimik31pro",
         "lagunas21",
         "lagunaxs21",
         "lfm317b",
@@ -100,6 +105,7 @@
         "ling32flash",
         "llama3370b",
         "llama4maverick",
+        "longcat20",
         "mimov25",
         "mimov25pro",
         "minimaxm25",
@@ -111,6 +117,7 @@
         "mistralnemoinstruct2407",
         "mistralsmall3",
         "musespark12",
+        "musespark13",
         "nemotron35lightning",
         "nemotron35supervl",
         "nemotron3nano",
@@ -137,7 +144,8 @@
         "qwen4max",
         "reflectionbeam",
         "solarmini4",
-        "step37flash"
+        "step37flash",
+        "step5preview"
       ]
     },
     {
@@ -322,17 +330,21 @@
         "opencodego"
       ],
       "models": [
+        "claudehaiku55",
         "claudesonnet4",
         "deepseekv4flash",
         "deepseekv4pro",
+        "gemini4argon",
         "glm5",
         "glm51",
         "glm52",
         "glm53",
         "glm53flash",
         "gpt56luna",
+        "gpt6luna",
         "grok45",
         "grok46",
+        "grok47",
         "hy3",
         "hy4",
         "hy4flash",
@@ -341,16 +353,21 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "kimik31pro",
+        "longcat20",
         "mimov25",
         "mimov25pro",
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
         "musespark12",
+        "musespark13",
         "qwen37plus",
         "qwen38flash",
         "qwen38max",
-        "qwen4max"
+        "qwen4max",
+        "reflectionbeam",
+        "step5preview"
       ]
     },
     {
@@ -402,10 +419,14 @@
       "models": [
         "bigpickle",
         "claudefable5",
+        "claudefable52",
+        "claudehaiku55",
         "claudeopus4",
         "claudeopus5",
+        "claudeopus55",
         "claudesonnet4",
         "claudesonnet5",
+        "claudesonnet55",
         "cogito21",
         "commanda",
         "copilotfusion",
@@ -421,6 +442,10 @@
         "gemini35flash",
         "gemini3flash",
         "gemini3pro",
+        "gemini4argon",
+        "gemini4carbon",
+        "gemini4hydrogen",
+        "gemini4neon",
         "gemma426ba4b",
         "gemma431b",
         "glm46",
@@ -438,12 +463,20 @@
         "gpt56luna",
         "gpt56sol",
         "gpt5mini",
+        "gpt61sol",
+        "gpt62astra",
+        "gpt62sol",
+        "gpt6astra",
+        "gpt6luna",
+        "gpt6sol",
         "gptoss120b",
         "gptoss20b",
         "grok4",
         "grok420",
         "grok45",
         "grok46",
+        "grok47",
+        "grokbuild01",
         "hy3",
         "hy4",
         "hy4flash",
@@ -463,6 +496,7 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "kimik31pro",
         "lagunas21",
         "lagunaxs21",
         "lfm317b",
@@ -473,6 +507,7 @@
         "llama318b",
         "llama3370b",
         "llama4maverick",
+        "longcat20",
         "longcat25",
         "mimov25",
         "mimov25pro",
@@ -482,7 +517,10 @@
         "minimaxm27",
         "minimaxm3",
         "minimaxm31flash",
+        "museember10",
         "musespark12",
+        "musespark13",
+        "musewonder10",
         "nemotron35lightning",
         "nemotron35supervl",
         "nemotron3nano",
@@ -499,7 +537,9 @@
         "qwen3235ba22b",
         "qwen332b",
         "qwen35397ba17b",
+        "qwen35plus",
         "qwen3627b",
+        "qwen36plus",
         "qwen37flash",
         "qwen37plus",
         "qwen3827b",
@@ -508,7 +548,9 @@
         "qwen3coder",
         "qwen4max",
         "reflectionbeam",
-        "step37flash"
+        "step37flash",
+        "step5preview",
+        "tidepoolalpha"
       ]
     },
     {
@@ -654,6 +696,7 @@
       ],
       "models": [
         "claudefable5",
+        "claudehaiku55",
         "claudeopus4",
         "claudeopus5",
         "claudesonnet4",
@@ -668,6 +711,7 @@
         "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemini4argon",
         "gemma426ba4b",
         "gemma431b",
         "glm46",
@@ -684,11 +728,13 @@
         "gpt56luna",
         "gpt56sol",
         "gpt5mini",
+        "gpt6luna",
         "gptoss120b",
         "gptoss20b",
         "grok420",
         "grok45",
         "grok46",
+        "grok47",
         "hy3",
         "hy4",
         "hy4flash",
@@ -701,6 +747,7 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "kimik31pro",
         "lagunas21",
         "lagunaxs21",
         "lfm317b",
@@ -708,6 +755,7 @@
         "ling30flashvl",
         "ling32flash",
         "llama4maverick",
+        "longcat20",
         "mimov25",
         "mimov25pro",
         "minimaxm25",
@@ -716,6 +764,7 @@
         "minimaxm31flash",
         "mistralnemoinstruct2407",
         "musespark12",
+        "musespark13",
         "nemotron35lightning",
         "nemotron3nano",
         "nemotron3nanoomni",
@@ -737,7 +786,9 @@
         "qwen38max",
         "qwen3coder",
         "qwen4max",
-        "step37flash"
+        "reflectionbeam",
+        "step37flash",
+        "step5preview"
       ]
     },
     {
@@ -937,9 +988,13 @@
       "models": [
         "bigpickle",
         "claudefable5",
+        "claudefable52",
+        "claudehaiku55",
         "claudeopus5",
+        "claudeopus55",
         "claudesonnet4",
         "claudesonnet5",
+        "claudesonnet55",
         "deepseekv32",
         "deepseekv41flash",
         "deepseekv4flash",
@@ -948,6 +1003,10 @@
         "gemini35flash",
         "gemini3flash",
         "gemini3pro",
+        "gemini4argon",
+        "gemini4carbon",
+        "gemini4hydrogen",
+        "gemini4neon",
         "gemma431b",
         "glm46",
         "glm47",
@@ -960,9 +1019,17 @@
         "gpt55",
         "gpt56luna",
         "gpt56sol",
+        "gpt61sol",
+        "gpt62astra",
+        "gpt62sol",
+        "gpt6astra",
+        "gpt6luna",
+        "gpt6sol",
         "gptoss120b",
         "grok45",
         "grok46",
+        "grok47",
+        "grokbuild01",
         "hy3",
         "hy4",
         "hy4flash",
@@ -975,11 +1042,13 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "kimik31pro",
         "lagunas21",
         "llama318b",
         "llama3370b",
         "llama4",
         "llama4maverick",
+        "longcat20",
         "longcat25",
         "mimov25",
         "mimov25pro",
@@ -992,7 +1061,10 @@
         "mistrallarge4",
         "mistralnemoinstruct2407",
         "mistralsmall3",
+        "museember10",
         "musespark12",
+        "musespark13",
+        "musewonder10",
         "nemotron35lightning",
         "nemotron35supervl",
         "nemotron3nanoomni",
@@ -1002,8 +1074,10 @@
         "qwen3235ba22b",
         "qwen332b",
         "qwen35397ba17b",
+        "qwen35plus",
         "qwen3627b",
         "qwen36max",
+        "qwen36plus",
         "qwen37flash",
         "qwen37plus",
         "qwen3827b",
@@ -1013,7 +1087,9 @@
         "qwen4max",
         "reflectionbeam",
         "solarmini4",
-        "step37flash"
+        "step37flash",
+        "step5preview",
+        "tidepoolalpha"
       ]
     },
     {
@@ -1042,6 +1118,7 @@
       ],
       "models": [
         "claudefable5",
+        "claudehaiku55",
         "claudeopus4",
         "claudeopus5",
         "claudesonnet4",
@@ -1056,6 +1133,7 @@
         "flint40b",
         "gemini25pro",
         "gemini35flash",
+        "gemini4argon",
         "gemma426ba4b",
         "gemma431b",
         "glm46",
@@ -1072,12 +1150,14 @@
         "gpt56luna",
         "gpt56sol",
         "gpt5mini",
+        "gpt6luna",
         "gptoss120b",
         "gptoss20b",
         "grok4",
         "grok420",
         "grok45",
         "grok46",
+        "grok47",
         "hy3",
         "hy4",
         "hy4flash",
@@ -1090,6 +1170,7 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "kimik31pro",
         "lagunas21",
         "lagunaxs21",
         "lfm317b",
@@ -1100,6 +1181,7 @@
         "llama3370b",
         "llama4",
         "llama4maverick",
+        "longcat20",
         "mimov25",
         "mimov25pro",
         "minimaxm25",
@@ -1111,6 +1193,7 @@
         "mistralnemoinstruct2407",
         "mistralsmall3",
         "musespark12",
+        "musespark13",
         "nemotron35lightning",
         "nemotron3nano",
         "nemotron3nanoomni",
@@ -1133,7 +1216,9 @@
         "qwen38max",
         "qwen3coder",
         "qwen4max",
-        "step37flash"
+        "reflectionbeam",
+        "step37flash",
+        "step5preview"
       ]
     },
     {
@@ -1627,7 +1712,8 @@
       "closed_training": "never",
       "reciprocity_scandal": false,
       "variations": [
-        "deepseek-official"
+        "deepseek-official",
+        "console-deepseek"
       ],
       "models": [
         "deepseekv41flash",
@@ -2313,21 +2399,26 @@
       ]
     },
     {
-      "label": "OpenCode Zen",
+      "label": "OpenCode Console",
       "name": "opencode",
       "id": "opencode",
       "open_training": "never",
       "closed_training": "never",
       "reciprocity_scandal": false,
       "variations": [
-        "opencode-free"
+        "opencode-free",
+        "opencode-zen"
       ],
       "models": [
         "bigpickle",
         "claudefable5",
+        "claudefable52",
+        "claudehaiku55",
         "claudeopus5",
+        "claudeopus55",
         "claudesonnet4",
         "claudesonnet5",
+        "claudesonnet55",
         "deepseekv41flash",
         "deepseekv4flash",
         "deepseekv4pro",
@@ -2335,6 +2426,10 @@
         "gemini35flash",
         "gemini3flash",
         "gemini3pro",
+        "gemini4argon",
+        "gemini4carbon",
+        "gemini4hydrogen",
+        "gemini4neon",
         "glm46",
         "glm47",
         "glm5",
@@ -2346,8 +2441,16 @@
         "gpt55",
         "gpt56luna",
         "gpt56sol",
+        "gpt61sol",
+        "gpt62astra",
+        "gpt62sol",
+        "gpt6astra",
+        "gpt6luna",
+        "gpt6sol",
         "grok45",
         "grok46",
+        "grok47",
+        "grokbuild01",
         "hy4flash",
         "iceman",
         "inkling2small",
@@ -2362,12 +2465,18 @@
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
+        "museember10",
         "musespark12",
+        "musespark13",
+        "musewonder10",
         "nemotron35lightning",
         "nemotron35supervl",
         "nemotron3ultra",
+        "qwen35plus",
+        "qwen36plus",
         "qwen3coder",
-        "reflectionbeam"
+        "reflectionbeam",
+        "tidepoolalpha"
       ],
       "harnesses": [
         "hermes",
@@ -2383,16 +2492,20 @@
       "reciprocity_scandal": false,
       "variations": [],
       "models": [
+        "claudehaiku55",
         "deepseekv4flash",
         "deepseekv4pro",
+        "gemini4argon",
         "glm5",
         "glm51",
         "glm52",
         "glm53",
         "glm53flash",
         "gpt56luna",
+        "gpt6luna",
         "grok45",
         "grok46",
+        "grok47",
         "hy3",
         "hy4",
         "hy4flash",
@@ -2401,16 +2514,21 @@
         "kimik26",
         "kimik27code",
         "kimik3",
+        "kimik31pro",
+        "longcat20",
         "mimov25",
         "mimov25pro",
         "minimaxm25",
         "minimaxm27",
         "minimaxm3",
         "musespark12",
+        "musespark13",
         "qwen37plus",
         "qwen38flash",
         "qwen38max",
-        "qwen4max"
+        "qwen4max",
+        "reflectionbeam",
+        "step5preview"
       ],
       "harnesses": [
         "cline",
@@ -2850,6 +2968,24 @@
       ]
     },
     {
+      "label": "Claude Fable 5.2",
+      "short_title": null,
+      "name": "claude-fable-5-2",
+      "id": "claudefable52",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
       "label": "Claude Haiku 4",
       "short_title": null,
       "name": "claude-haiku-4",
@@ -2861,6 +2997,29 @@
       "variations": [],
       "providers": [],
       "harnesses": []
+    },
+    {
+      "label": "Claude Haiku 5.5",
+      "short_title": null,
+      "name": "claude-haiku-5-5",
+      "id": "claudehaiku55",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode",
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
+        "opencode",
+        "pi"
+      ]
     },
     {
       "label": "Claude Opus 4",
@@ -2913,6 +3072,24 @@
         "omp",
         "opencode",
         "pi"
+      ]
+    },
+    {
+      "label": "Claude Opus 5.5",
+      "short_title": null,
+      "name": "claude-opus-5-5",
+      "id": "claudeopus55",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
       ]
     },
     {
@@ -2974,6 +3151,24 @@
         "omp",
         "opencode",
         "pi"
+      ]
+    },
+    {
+      "label": "Claude Sonnet 5.5",
+      "short_title": null,
+      "name": "claude-sonnet-5-5",
+      "id": "claudesonnet55",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
       ]
     },
     {
@@ -3500,6 +3695,83 @@
         "omp",
         "opencode",
         "pi"
+      ]
+    },
+    {
+      "label": "Gemini 4 Argon",
+      "short_title": null,
+      "name": "gemini-4-argon",
+      "id": "gemini4argon",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode",
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
+      "label": "Gemini 4 Carbon",
+      "short_title": null,
+      "name": "gemini-4-carbon",
+      "id": "gemini4carbon",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
+      "label": "Gemini 4 Hydrogen",
+      "short_title": null,
+      "name": "gemini-4-hydrogen",
+      "id": "gemini4hydrogen",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
+      "label": "Gemini 4 Neon",
+      "short_title": null,
+      "name": "gemini-4-neon",
+      "id": "gemini4neon",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
       ]
     },
     {
@@ -4084,6 +4356,119 @@
       ]
     },
     {
+      "label": "GPT-6 Astra",
+      "short_title": null,
+      "name": "gpt-6-astra",
+      "id": "gpt6astra",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
+      "label": "GPT-6 Luna",
+      "short_title": null,
+      "name": "gpt-6-luna",
+      "id": "gpt6luna",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode",
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
+      "label": "GPT-6 Sol",
+      "short_title": null,
+      "name": "gpt-6-sol",
+      "id": "gpt6sol",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
+      "label": "GPT-6.1 Sol",
+      "short_title": null,
+      "name": "gpt-6.1-sol",
+      "id": "gpt61sol",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
+      "label": "GPT-6.2 Astra",
+      "short_title": null,
+      "name": "gpt-6.2-astra",
+      "id": "gpt62astra",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
+      "label": "GPT-6.2 Sol",
+      "short_title": null,
+      "name": "gpt-6.2-sol",
+      "id": "gpt62sol",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
       "label": "GPT-OSS 120B",
       "short_title": null,
       "name": "gpt-oss-120b",
@@ -4308,6 +4693,47 @@
         "opencode",
         "pi",
         "qwen"
+      ]
+    },
+    {
+      "label": "Grok 4.7",
+      "short_title": null,
+      "name": "grok-4.7",
+      "id": "grok47",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode",
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
+      "label": "Grok Build 0.1",
+      "short_title": null,
+      "name": "grok-build-0.1",
+      "id": "grokbuild01",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
       ]
     },
     {
@@ -4839,6 +5265,28 @@
       ]
     },
     {
+      "label": "Kimi K3.1 Pro",
+      "short_title": null,
+      "name": "kimi-k3.1-pro",
+      "id": "kimik31pro",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
       "label": "Laguna S 2.1",
       "short_title": null,
       "name": "laguna-s-2.1",
@@ -5105,6 +5553,28 @@
         "kilo",
         "kimicode",
         "omp",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
+      "label": "LongCat-2.0",
+      "short_title": null,
+      "name": "longcat-2.0",
+      "id": "longcat20",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
         "opencode",
         "pi"
       ]
@@ -5474,6 +5944,24 @@
       ]
     },
     {
+      "label": "Muse Ember 1.0",
+      "short_title": null,
+      "name": "muse-ember-1.0",
+      "id": "museember10",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
       "label": "Muse Spark 1.2",
       "short_title": null,
       "name": "muse-spark-1.2",
@@ -5504,6 +5992,49 @@
         "omp",
         "opencode",
         "pi"
+      ]
+    },
+    {
+      "label": "Muse Spark 1.3",
+      "short_title": null,
+      "name": "muse-spark-1.3",
+      "id": "musespark13",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "muse-spark-1.3-contributor"
+      ],
+      "providers": [
+        "opencode",
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
+      "label": "Muse Wonder",
+      "short_title": null,
+      "name": "muse-wonder-1.0",
+      "id": "musewonder10",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
       ]
     },
     {
@@ -6008,6 +6539,24 @@
       ]
     },
     {
+      "label": "Qwen3.5-Plus",
+      "short_title": null,
+      "name": "qwen3.5-plus",
+      "id": "qwen35plus",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
+    },
+    {
       "label": "Qwen3.6",
       "short_title": null,
       "name": "qwen3.6",
@@ -6068,6 +6617,24 @@
         "cline",
         "crush",
         "kilo",
+        "opencode"
+      ]
+    },
+    {
+      "label": "Qwen3.6-Plus",
+      "short_title": null,
+      "name": "qwen3.6-plus",
+      "id": "qwen36plus",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
         "opencode"
       ]
     },
@@ -6273,13 +6840,17 @@
       ],
       "providers": [
         "clinepass",
-        "opencode"
+        "opencode",
+        "opencodego"
       ],
       "harnesses": [
         "cline",
+        "goose",
         "hermes",
         "kilo",
-        "opencode"
+        "kimicode",
+        "opencode",
+        "pi"
       ]
     },
     {
@@ -6330,6 +6901,48 @@
         "opencode",
         "pi"
       ]
+    },
+    {
+      "label": "Step 5 Preview",
+      "short_title": null,
+      "name": "step-5-preview",
+      "id": "step5preview",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "opencodego"
+      ],
+      "harnesses": [
+        "cline",
+        "goose",
+        "hermes",
+        "kimicode",
+        "opencode",
+        "pi"
+      ]
+    },
+    {
+      "label": "Tidepool Alpha",
+      "short_title": null,
+      "name": "tidepool-alpha",
+      "id": "tidepoolalpha",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [
+        "tidepool-alpha-free"
+      ],
+      "providers": [
+        "opencode"
+      ],
+      "harnesses": [
+        "hermes",
+        "opencode"
+      ]
     }
   ],
   "provider_map_to_free_models": {
@@ -6367,7 +6980,8 @@
       "nemotron35lightning",
       "nemotron35supervl",
       "nemotron3ultra",
-      "reflectionbeam"
+      "reflectionbeam",
+      "tidepoolalpha"
     ],
     "opencodego": [
       "reflectionbeam",
@@ -8357,7 +8971,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "hermes-opencode-claudefable52": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-claudehaiku55": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "hermes-opencode-claudeopus5": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-claudeopus55": {
       "platforms": [],
       "reciprocal": false
     },
@@ -8369,11 +8995,23 @@
       "platforms": [],
       "reciprocal": false
     },
+    "hermes-opencode-claudesonnet55": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "hermes-opencode-deepseekv4flash": {
       "platforms": [],
       "reciprocal": true
     },
     "hermes-opencode-deepseekv4pro": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "hermes-opencode-flint40b": {
       "platforms": [],
       "reciprocal": true
     },
@@ -8386,6 +9024,22 @@
       "reciprocal": false
     },
     "hermes-opencode-gemini3pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gemini4argon": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gemini4carbon": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gemini4hydrogen": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gemini4neon": {
       "platforms": [],
       "reciprocal": false
     },
@@ -8433,6 +9087,30 @@
       "platforms": [],
       "reciprocal": false
     },
+    "hermes-opencode-gpt61sol": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gpt62astra": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gpt62sol": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gpt6astra": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-gpt6sol": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "hermes-opencode-grok45": {
       "platforms": [],
       "reciprocal": false
@@ -8440,6 +9118,18 @@
     "hermes-opencode-grok46": {
       "platforms": [],
       "reciprocal": false
+    },
+    "hermes-opencode-grok47": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-grokbuild01": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-hy4flash": {
+      "platforms": [],
+      "reciprocal": true
     },
     "hermes-opencode-iceman": {
       "platforms": [],
@@ -8477,6 +9167,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "hermes-opencode-mimov26flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "hermes-opencode-minimaxm25": {
       "platforms": [],
       "reciprocal": true
@@ -8493,7 +9187,19 @@
       "platforms": [],
       "reciprocal": true
     },
+    "hermes-opencode-museember10": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "hermes-opencode-musespark12": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-musespark13": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-musewonder10": {
       "platforms": [],
       "reciprocal": false
     },
@@ -8509,6 +9215,14 @@
       "platforms": [],
       "reciprocal": true
     },
+    "hermes-opencode-qwen35plus": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "hermes-opencode-qwen36plus": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "hermes-opencode-qwen3coder": {
       "platforms": [],
       "reciprocal": true
@@ -8516,6 +9230,10 @@
     "hermes-opencode-reflectionbeam": {
       "platforms": [],
       "reciprocal": true
+    },
+    "hermes-opencode-tidepoolalpha": {
+      "platforms": [],
+      "reciprocal": false
     },
     "hermes-opencodego-deepseekv4flash": {
       "platforms": [],
@@ -11714,7 +12432,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencode-claudefable52": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-claudehaiku55": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencode-claudeopus5": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-claudeopus55": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11723,6 +12453,10 @@
       "reciprocal": false
     },
     "opencode-opencode-claudesonnet5": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-claudesonnet55": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11753,6 +12487,22 @@
       "reciprocal": false
     },
     "opencode-opencode-gemini3pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gemini4argon": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gemini4carbon": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gemini4hydrogen": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gemini4neon": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11800,6 +12550,30 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencode-gpt61sol": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gpt62astra": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gpt62sol": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gpt6astra": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-gpt6sol": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencode-grok45": {
       "platforms": [],
       "reciprocal": false
@@ -11807,6 +12581,18 @@
     "opencode-opencode-grok46": {
       "platforms": [],
       "reciprocal": false
+    },
+    "opencode-opencode-grok47": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-grokbuild01": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-hy4flash": {
+      "platforms": [],
+      "reciprocal": true
     },
     "opencode-opencode-iceman": {
       "platforms": [],
@@ -11864,7 +12650,19 @@
       "platforms": [],
       "reciprocal": true
     },
+    "opencode-opencode-museember10": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencode-musespark12": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-musespark13": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-musewonder10": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11882,13 +12680,33 @@
       ],
       "reciprocal": true
     },
+    "opencode-opencode-qwen35plus": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencode-qwen36plus": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencode-qwen3coder": {
       "platforms": [],
       "reciprocal": true
     },
     "opencode-opencode-reflectionbeam": {
-      "platforms": [],
+      "platforms": [
+        "linux"
+      ],
       "reciprocal": true
+    },
+    "opencode-opencode-tidepoolalpha": {
+      "platforms": [
+        "linux"
+      ],
+      "reciprocal": false
+    },
+    "opencode-opencodego-claudehaiku55": {
+      "platforms": [],
+      "reciprocal": false
     },
     "opencode-opencodego-deepseekv4flash": {
       "platforms": [],
@@ -11897,6 +12715,10 @@
     "opencode-opencodego-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "opencode-opencodego-gemini4argon": {
+      "platforms": [],
+      "reciprocal": false
     },
     "opencode-opencodego-glm5": {
       "platforms": [],
@@ -11922,6 +12744,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencodego-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencodego-grok45": {
       "platforms": [],
       "reciprocal": false
@@ -11930,8 +12756,22 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencodego-grok47": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencodego-hy3": {
       "platforms": [],
+      "reciprocal": true
+    },
+    "opencode-opencodego-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencodego-hy4flash": {
+      "platforms": [
+        "linux"
+      ],
       "reciprocal": true
     },
     "opencode-opencodego-hy4preview": {
@@ -11953,6 +12793,14 @@
     "opencode-opencodego-kimik3": {
       "platforms": [],
       "reciprocal": true
+    },
+    "opencode-opencodego-kimik31pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencodego-longcat20": {
+      "platforms": [],
+      "reciprocal": false
     },
     "opencode-opencodego-mimov25": {
       "platforms": [],
@@ -11978,6 +12826,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "opencode-opencodego-musespark13": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-opencodego-qwen37plus": {
       "platforms": [],
       "reciprocal": false
@@ -11987,6 +12839,20 @@
       "reciprocal": true
     },
     "opencode-opencodego-qwen38max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencodego-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "opencode-opencodego-reflectionbeam": {
+      "platforms": [
+        "linux"
+      ],
+      "reciprocal": true
+    },
+    "opencode-opencodego-step5preview": {
       "platforms": [],
       "reciprocal": false
     },

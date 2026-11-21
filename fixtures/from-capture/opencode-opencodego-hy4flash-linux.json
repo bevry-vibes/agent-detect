@@ -1,0 +1,137 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "OpenCode",
+      "harness_short_title": null,
+      "harness_name": "opencode",
+      "harness_id": "opencode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenCode Go",
+      "provider_name": "opencode-go",
+      "provider_id": "opencodego",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Hy4 Flash",
+      "model_short_title": null,
+      "model_name": "hy4-flash",
+      "model_id": "hy4flash",
+      "model_openness": "open-weight",
+      "model_open_training": null,
+      "model_closed_training": null,
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
+      "agent_id": "opencode-opencodego-hy4flash",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: OpenCode · Hy4 Flash <opencode-opencodego-hy4flash@local>",
+    "trailer assisted-by": "Assisted-by: OpenCode · Hy4 Flash <opencode-opencodego-hy4flash@local>",
+    "found": {
+      "platform_id": "linux",
+      "harness_version": "2.3.2",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 1719840,
+          "name": "agent-detect-de"
+        },
+        {
+          "pid": 1719836,
+          "name": "bash"
+        },
+        {
+          "pid": 1716619,
+          "name": "opencode-pty"
+        },
+        {
+          "pid": 1716089,
+          "name": "opencode.exe"
+        },
+        {
+          "pid": 1711058,
+          "name": "opencode"
+        },
+        {
+          "pid": 1702188,
+          "name": "bash"
+        },
+        {
+          "pid": 6507,
+          "name": "ghostty"
+        },
+        {
+          "pid": 4027,
+          "name": "systemd"
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/anomalyco/opencode",
+        "https://github.com/anomalyco/opencode/blob/dev/LICENSE"
+      ],
+      "provider-urls": [
+        "https://opencode.ai/docs/zen"
+      ],
+      "model-urls": [
+        "https://huggingface.co/tencent/Hy4-flash",
+        "https://huggingface.co/tencent/Hy4-flash/blob/main/LICENSE",
+        "https://hy.tencent.ai/research/hy4-flash"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "lineage",
+          "name": "opencode",
+          "value": "opencode"
+        },
+        {
+          "dim": "provider",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.providerID",
+          "value": "opencode-go"
+        },
+        {
+          "dim": "model",
+          "source": "session",
+          "name": "<home>/.local/share/opencode/opencode.db",
+          "field": "session.model.id",
+          "value": "hy4-flash-free"
+        }
+      ]
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "opencode",
+        "provider": "opencodego",
+        "model": "hy4flash"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1795262563,
+    "harness_version": "2.3.2",
+    "capture_kind": "manual",
+    "version_invocation": [
+      "opencode",
+      "--version"
+    ]
+  }
+}

@@ -708,8 +708,9 @@ Per-harness result of Part-1 catalog inference (2026-08-11): **pi**, **opencode*
 
 Provider catalog verdicts (2026-08-29, kimi-code host): **chutes** is inferable from all three sources (provider API unauthenticated = 14 TEE-stamped ids, agreeing with the kimi-code config surface and OpenRouter's `…/endpoints` listing);
 the two non-evergreen ids (`Qwen/Qwen3-32B-TEE`, `Qwen/Qwen3.6-27B-TEE`) are grid-recorded, not ruled.
-**opencode-go** (OpenCode Zen's Go subscription, `https://opencode.ai/zen/go/v1`) is inferable from its unauthenticated `/v1/models` (33 ids);
-the evergreen subset got rules, the non-evergreen remainder (`longcat-2.0`, `qwen3.7-max`, `qwen3.6-plus`, `qwen3.5-plus`, `mimo-v2-pro`, `mimo-v2-omni`, `hy3-preview`) is grid-recorded.
+**opencode-go** (OpenCode Go's flat-rate subscription, `https://opencode.ai/zen/go/v1`) is inferable from its unauthenticated `/v1/models` (33 ids);
+the evergreen subset got rules, the remaining non-evergreen ids (`qwen3.7-max`, `mimo-v2-pro`, `mimo-v2-omni`, `hy3-preview`) are grid-recorded. The 2026-11-21 refresh also ruled `longcat-2.0`, `qwen3.5-plus`, `qwen3.6-plus`, `step-5-preview`, `muse-spark-1.3`, `gpt-6-luna`, `grok-4.7`, `claude-haiku-5-5`, `kimi-k3.1-pro` and `gemini-4-argon`.
+**opencode** is **OpenCode Console** (renamed from Zen in Nov 2025) — the pay-as-you-go inference gateway with a much larger catalog; the `opencode` rule keeps the `opencode-zen` / `opencode-free` aliases, and OpenCode Console's connected DeepSeek provider (`console-deepseek`, the workspace's own DeepSeek API key) folds onto `deepseek`.
 The live-combo alias `qwen3.8-flash` was audited 2026-09-24 (`.plans/1790219820902`): it IS the Flash-Next line — the `Qwen/Qwen3.8-Flash-Next` card states "Qwen3.8-Flash is the official version based on Qwen3.8-Flash-Next", OpenRouter's listing maps the id to that repo, and the weights carry the custom Qwen Community License 1.0 (open-weight, license NOASSERTION).
 
 **hermes** (2026-09-06, authored by the maintainer's Hermes session; revised 2026-09-07 by the fold review — `.plans/1788716755355`): the harness rule landed with a live from-capture on `hermes-ollamacloud-glm53flash-darwin` (the ollama-cloud fold renamed it, and the 2026-09-20 individuation renamed it again;
@@ -719,7 +720,7 @@ Provider/model discovery source: the harness's own `plugins/model-providers/` ca
 The maintainer has since uninstalled hermes — the rule, the fixture, and the invocations stand for whoever picks the harness up (contributor scope); the staged queue entries were dropped.
 The review's folds re-shaped the provider surfaces it had ruled: `ollama-cloud` folded into `ollama` (DESIGN decision #15 — the `:cloud`/baseUrl individuation is the recorded follow-up), and the individuation landed 2026-09-20 (`.plans/1789895398`): the fold-era stems renamed to `ollamacloud` and the local rule awaits its first local-runtime fixture;
 the Moonshot/Kimi family folded to two rules — `moonshotai` (the api.moonshot.ai surface; pi's and the kimi-code CLI's keys) and `kimi-coding` (the api.kimi.com/coding subscription; hermes's `kimi-coding`/`kimi-coding-cn` profiles and the CLI's `kimi-code` key) — matching models.dev's `moonshotai`/`kimi-for-coding` individuation;
-`opencode-free`/`opencode-zen` folded into `opencode` ("OpenCode Zen" — hermes's keyless and subscribed profiles are two tiers of the one zen relay);
+`opencode-free`/`opencode-zen` folded into `opencode` ("OpenCode Console" since the Nov-2025 rebrand — hermes's keyless and subscribed profiles are two tiers of the one relay);
 hermes's `kilocode` profile folded onto the `kilo` rule (models.dev `kilo`, "Kilo Gateway") and `nebius-token-factory` onto `nebius` via its label.
 Training-policy research refreshed the provider rules from primary docs and was re-verified by the review (see the corrections on `zai`, `qwen`, `nvidia`, `nebius`, `xiaomi` in `.plans/1788716755355` D8);
 `nous` and `openai-codex` keep harnessprovider cells but await a ruled-model catalog (hermes's caches never enumerated them — no providermodel row, so the cells are inert until a contributor lands one).

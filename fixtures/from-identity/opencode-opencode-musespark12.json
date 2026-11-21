@@ -10,7 +10,7 @@
       "harness_closed_training": "never",
       "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
-      "provider_label": "OpenCode Zen",
+      "provider_label": "OpenCode Console",
       "provider_name": "opencode",
       "provider_id": "opencode",
       "provider_closed_training": "never",
@@ -108,6 +108,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1794562645
+    "updated_at": 1795262905
   }
 }

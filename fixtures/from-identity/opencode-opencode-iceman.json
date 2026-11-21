@@ -10,7 +10,7 @@
       "harness_closed_training": "never",
       "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
-      "provider_label": "OpenCode Zen",
+      "provider_label": "OpenCode Console",
       "provider_name": "opencode",
       "provider_id": "opencode",
       "provider_closed_training": "never",
@@ -65,14 +65,14 @@
         {
           "entity": "model",
           "code": "model-openness-unknown",
-          "summary": "the Iceman model is absent from the model rules — its openness is unknown",
+          "summary": "the Iceman model's openness is unknown (its rule does not assert an openness)",
           "sources": [
             "https://opencode.ai/docs/zen"
           ],
           "actions": [
             {
               "kind": "contribute-data",
-              "instruction": "the Iceman model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "instruction": "the Iceman model rule does not assert an openness — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
               "command": "agent-detect found",
               "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
             },
@@ -87,17 +87,17 @@
     },
     "identify.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination",
-      "  - model: the Iceman model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - model: the Iceman model's openness is unknown (its rule does not assert an openness) (see: agent-detect explain)"
     ],
     "explain.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination"
     ],
     "check-reciprocal.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination",
-      "  - model: the Iceman model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - model: the Iceman model's openness is unknown (its rule does not assert an openness) (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1794382523
+    "updated_at": 1795262905
   }
 }

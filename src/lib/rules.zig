@@ -415,6 +415,48 @@ pub const rulesForModels = [_]ModelRule{
     // particle-1: closed — Particle AI's token-efficient coding model (2026-10-28), a DeepSeek V4.1 Flash post-train served only through the Particle API, OpenRouter, and Vercel AI Gateway; no weights are published → NONE.
     // variations: the OpenRouter free-tier spelling `particle-1:free` folds here per DESIGN #13.
     .{ .name = "particle-1", .label = "Particle-1", .openness = "closed", .license = "NONE", .sources = &.{ "https://particle.ai/blog/introducing-particle-1", "https://openrouter.ai/particle-ai/particle-1" }, .variations = &.{"particle-1:free"} },
+    // 2026-11-21 OpenCode Go / OpenCode Console catalogue refresh.
+    // The Console gateway (formerly Zen, renamed Nov 2025) is a pay-as-you-go surface with a much larger catalog than the flat-rate Go subscription; both are routed by OpenCode and documented at docs/zen. Every rule below was observed in the live CLI catalog (opencode-go / opencode).
+    // Rule-only unless noted: the paid tiers are deliberately not from-captured yet (no tokens spent on Kimi K3.1 Pro / Gemini 4 Argon and friends).
+    // kimi-k3.1-pro: Moonshot's K3.1 Pro tier; no weights-license doc sourced for this spelling → null (never-guess), not folded into kimi-k3 (a distinct paid tier).
+    .{ .name = "kimi-k3.1-pro", .label = "Kimi K3.1 Pro", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    // gemini-4-argon: closed — Google Gemini API-only, no weights (same source set as gemini-3-pro).
+    .{ .name = "gemini-4-argon", .label = "Gemini 4 Argon", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
+    // gemini-4-neon / -carbon / -hydrogen: closed — the rest of the Gemini 4 API-only line.
+    .{ .name = "gemini-4-neon", .label = "Gemini 4 Neon", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
+    .{ .name = "gemini-4-carbon", .label = "Gemini 4 Carbon", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
+    .{ .name = "gemini-4-hydrogen", .label = "Gemini 4 Hydrogen", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
+    // claude-* 5.5 refresh: closed — Anthropic API-only, no weights (same source set as claude-sonnet-5).
+    .{ .name = "claude-haiku-5-5", .label = "Claude Haiku 5.5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/haiku", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    .{ .name = "claude-sonnet-5-5", .label = "Claude Sonnet 5.5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/sonnet", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    .{ .name = "claude-opus-5-5", .label = "Claude Opus 5.5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/opus", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    .{ .name = "claude-fable-5-2", .label = "Claude Fable 5.2", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    // gpt-6 / 6.1 / 6.2 line: closed — OpenAI API-only, no weights (same source set as gpt-4o).
+    .{ .name = "gpt-6-luna", .label = "GPT-6 Luna", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    .{ .name = "gpt-6-sol", .label = "GPT-6 Sol", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    .{ .name = "gpt-6-astra", .label = "GPT-6 Astra", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    .{ .name = "gpt-6.1-sol", .label = "GPT-6.1 Sol", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    .{ .name = "gpt-6.2-sol", .label = "GPT-6.2 Sol", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    .{ .name = "gpt-6.2-astra", .label = "GPT-6.2 Astra", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    // grok-4.7 / grok-build-0.1: closed — xAI API-only, no weights (same source set as grok-3).
+    .{ .name = "grok-4.7", .label = "Grok 4.7", .openness = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    .{ .name = "grok-build-0.1", .label = "Grok Build 0.1", .openness = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
+    // qwen3.5-plus / qwen3.6-plus: closed — API-only Plus tiers (Qwen publishes open weights for base sizes, not Plus), same qwen.ai linkage as qwen3.7-plus.
+    .{ .name = "qwen3.5-plus", .label = "Qwen3.5-Plus", .openness = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.5-plus" } },
+    .{ .name = "qwen3.6-plus", .label = "Qwen3.6-Plus", .openness = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.6-plus" } },
+    // muse-spark-1.3: openness/license unverified for this generation → null (never-guess).
+    // variations: the Go catalog's `muse-spark-1.3-contributor` (the contributor-tier spelling, same fold as the 1.2 rule).
+    .{ .name = "muse-spark-1.3", .label = "Muse Spark 1.3", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"muse-spark-1.3-contributor"} },
+    // muse-ember-1.0 / muse-wonder-1.0: newer Muse families; openness/license unverified → null (never-guess).
+    .{ .name = "muse-ember-1.0", .label = "Muse Ember 1.0", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    .{ .name = "muse-wonder-1.0", .label = "Muse Wonder", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    // step-5-preview: StepFun's preview tier; no public weights-license doc sourced → null (never-guess), not folded into step-3.7-flash.
+    .{ .name = "step-5-preview", .label = "Step 5 Preview", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    // longcat-2.0: Meituan's previous-generation LongCat; no weights-license doc sourced for this spelling → null (never-guess), distinct from longcat-2.5.
+    .{ .name = "longcat-2.0", .label = "LongCat-2.0", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    // tidepool-alpha: Console's newest free-tier stealth model; openness/license unverified → null (never-guess). The zen zero-retention policy applies (it is not one of the named training free periods), so no model-intrinsic training pair.
+    // variations: the served free id `tidepool-alpha-free` folds here per DESIGN #13.
+    .{ .name = "tidepool-alpha", .label = "Tidepool Alpha", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"tidepool-alpha-free"} },
 };
 
 /// one provider.
@@ -458,7 +500,8 @@ pub const rulesForProviders = [_]ProviderRule{
     // Same data-handling policy as `deepseek-flash`; mirrors it so the direct provider id resolves the same policies.
     // Unflagged 2026-09-28 (the scandal doctrine overhaul, research/scandals.md): the flag's legs all dissolved under the matrix — the PIPC Korea transfer fed no model (a serving-layer flow, out of scope) and was redeemed (PIPC noted lack of intent; transfers blocked, the Korea annex shipped, the app restored); the Garante ban attaches to the same lane; the disclosure misdirection redeemed with it; and the distillation findings were always liberation (R1/V3 ship MIT).
     // deepseek-official is dsh's route key for the first-party DeepSeek API (observed in its request/header events); it is the `deepseek` surface, not a separate provider.
-    .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" }, .variations = &.{"deepseek-official"} },
+    // console-deepseek is OpenCode Console's connected DeepSeek provider (the workspace's own DeepSeek API key; models `deepseek-flash` / `deepseek-v4-pro`) — the same upstream DeepSeek surface, so the config-key spelling folds here.
+    .{ .name = "deepseek", .label = "DeepSeek", .closed_training = "never", .open_training = "never", .sources = &.{ "https://api-docs.deepseek.com/quick_start/pricing", "https://platform.deepseek.com" }, .variations = &.{ "deepseek-official", "console-deepseek" } },
     // anthropic: never/null — Anthropic's Commercial Terms state "Anthropic may not train models on Customer Content from the Services" (API tier); no open-weight Anthropic models exist, so open_training stays null.
     // reciprocity_scandal (D10, the fair-use purpose test — every taking fed closed Claude, not weights that ship back): (a) the LibGen/PiLiMi ~7M pirated books behind the $1.5B settlement (approved Jul 2026); (b) the Reddit scrape suit; (b) the 2025 consumer default-training window; (b) the Bedrock `provider_data_share` 30-day mandatory-retention episode (Aug–Sep 2026, walked back Sep 1). The compilation: research/scandals.md.
     .{ .name = "anthropic", .label = "Anthropic", .closed_training = "never", .open_training = null, .sources = &.{ "https://www.anthropic.com/legal/commercial-terms", "https://trust.anthropic.com/" }, .reciprocity_scandal = true, .reciprocity_scandal_sources = &.{ "https://authorsguild.org/advocacy/artificial-intelligence/what-authors-need-to-know-about-the-anthropic-settlement/", "https://www.reuters.com/world/us/judge-approves-anthropics-15-billion-settlement-copyright-lawsuit-2026-07-20/", "https://www.cnbc.com/2026/09/01/anthropic-data-retention.html" } },
@@ -478,13 +521,13 @@ pub const rulesForProviders = [_]ProviderRule{
     // "the opt-in-by-model successor"): `muse-spark-1.2` carries closed_training NOASSERTION + the `-contributor` variation. The provider
     // axes record the default surface: never on both (the observed contributor tiers serve open-weight labs' models; no documented closed trainer).
     .{ .name = "openrouter", .label = "OpenRouter", .closed_training = "never", .open_training = "never", .sources = &.{ "https://openrouter.ai/privacy", "https://openrouter.ai/terms" } },
-    // opencode: never/never — OpenCode Zen (models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), one rule for the keyless free tier and the subscribed tier — the tiers differ only in auth, share the catalog, and free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13.
+    // opencode: never/never — OpenCode Console (renamed from Zen in Nov 2025; models.dev key `opencode`, the name every index uses; https://opencode.ai/zen/v1), the pay-as-you-go inference gateway with a large multi-provider catalog — one rule for the keyless free tier and the credited tier, which differ only in auth and share the catalog; free-vs-paid rides model-id spellings (`opencode/nemotron-3-ultra-free`) per DESIGN #13.
     // The zen docs carry the same data statement the Go subscription cites: "Our providers follow a zero-retention policy and do not use your data for model training" — the provider default surface is zero-training. The named free-period exceptions that DO train (Big Pickle; Iceman Free; Inkling 2 Small Free; MiMo-V2.5 Free; MiMo-V2.6-Flash Free; Flint 40B Free; the Nemotron 3 Ultra / 3.5 Lightning / 3.5 Super VL free endpoints) are model-intrinsic (a model's own free period), so they live on the model rules' training pairs per the model-intrinsic rule (CONTRIBUTING, "the opt-in-by-model successor"): `big-pickle` / `iceman` closed NOASSERTION (openness unverified), `inkling-2-small` open enforced (the free hosted route trains; the self-hosted open weights do not), `mimo-v2.5` / `mimo-v2.6-flash` / `flint-40b` / `nemotron-3-ultra` / `nemotron-3.5-lightning` / `nemotron-3-5-super-vl` open opt-out (the billing rule — escaping the free period's training takes the paid spelling).
-    // variation folds the retired `opencode-free` rule (hermes's keyless-tier profile key; the zen spelling also resolves natively through the label).
-    // Folded 2026-09-07 per .plans/1788716755355 (D4); values sourced 2026-09-07 (previously null/null — the same docs/zen page already carried the statement).
+    // variations: `opencode-free` folds the retired hermes keyless-tier rule; `opencode-zen` keeps the pre-rename spelling resolving after the label became "OpenCode Console" (the label slug now resolves `opencode-console`).
+    // Folded 2026-09-07 per .plans/1788716755355 (D4); values sourced 2026-09-07 (previously null/null — the same docs/zen page already carried the statement). Renamed 2026-11-21 to match the Console rebrand.
     // The Go subscription is individuated as `opencode-go`.
-    .{ .name = "opencode", .label = "OpenCode Zen", .closed_training = "never", .open_training = "never", .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"opencode-free"} },
-    // opencode-go: never/never — OpenCode Zen's "Go" subscription tier (base https://opencode.ai/zen/go/v1).
+    .{ .name = "opencode", .label = "OpenCode Console", .closed_training = "never", .open_training = "never", .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{ "opencode-free", "opencode-zen" } },
+    // opencode-go: never/never — OpenCode's flat-rate "Go" subscription tier (base https://opencode.ai/zen/go/v1), with a curated open-weight roster and rolling usage limits (the hy4-flash-free tier is the unlimited flagship).
     // Zen docs: "Our providers follow a zero-retention policy and do not use your data for model training" — the tier's default surface is zero-training. The named free-period exceptions that DO train (Big Pickle; Iceman Free; Inkling 2 Small Free; MiMo-V2.5 Free; the Nemotron 3 Ultra / 3.5 Lightning / 3.5 Super VL free endpoints) are model-intrinsic and live on the model rules' training pairs per the model-intrinsic rule (CONTRIBUTING, "the opt-in-by-model successor"): `big-pickle` / `iceman` closed NOASSERTION (openness unverified), `inkling-2-small` open enforced (the free hosted route trains; the self-hosted open weights do not), `mimo-v2.5` / `nemotron-3-ultra` / `nemotron-3.5-lightning` / `nemotron-3-5-super-vl` open opt-out.
     // opencode.ai/privacy and /terms return 404, so docs/zen is the only policy doc.
     // catalog (unauth, 33 ids, 2026-08-29) recorded in the former map CSV (deleted 2026-09-30 — the pair lives on in fixtures/index-data.json; the cells' provider-side spellings only in git history).

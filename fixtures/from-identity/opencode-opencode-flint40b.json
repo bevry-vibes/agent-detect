@@ -10,7 +10,7 @@
       "harness_closed_training": "never",
       "harness_reciprocity_scandal": false,
       "harness_reciprocity": true,
-      "provider_label": "OpenCode Zen",
+      "provider_label": "OpenCode Console",
       "provider_name": "opencode",
       "provider_id": "opencode",
       "provider_closed_training": "never",
@@ -24,7 +24,7 @@
       "model_openness": "open-weight",
       "model_open_training": "opt-out",
       "model_closed_training": null,
-      "model_license": null,
+      "model_license": "Apache-2.0",
       "model_reciprocity": true,
       "agent_id": "opencode-opencode-flint40b",
       "reciprocal": true
@@ -50,6 +50,8 @@
         "https://opencode.ai/docs/zen"
       ],
       "model-urls": [
+        "https://huggingface.co/RecursiveSI/flint",
+        "https://huggingface.co/RecursiveSI/flint/blob/main/LICENSE",
         "https://opencode.ai/docs/zen"
       ],
       "scandal-urls": []
@@ -66,6 +68,6 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1793595896
+    "updated_at": 1795262905
   }
 }
