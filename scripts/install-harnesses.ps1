@@ -140,6 +140,11 @@ $NpmPackage = @{
 	'minimax-code' = '@minimax-ai/code'
 	codex = '@openai/codex'
 }
+# npm install/upgrade specs that must name a dist-tag: dsh publishes prereleases only, and npm resolves a bare name as "*",
+# which semver excludes (ETARGET). Uninstall keeps the bare package name.
+$NpmTag = @{
+	dsh = '@latest'
+}
 $BrewPackage = @{
 	qwen = 'qwen-code'
 	kilo = 'Kilo-Org/tap/kilo'
@@ -197,6 +202,13 @@ $ActionColors = @{
 
 function Write-Info { param([string]$Message) Write-Host "$($PSStyle.Foreground.BrightBlue)info $Message$($PSStyle.Reset)" }
 function Write-Fail { param([string]$Message) Write-Host "$($PSStyle.Foreground.Red)fail $Message$($PSStyle.Reset)" }
+
+function Get-NpmSpec {
+	# install/upgrade need the dist-tag when a package publishes prereleases only; uninstall always uses the bare NpmPackage name.
+	param([Parameter(Mandatory)] [string]$Id)
+	if ($NpmTag.ContainsKey($Id)) { return "$($NpmPackage[$Id])$($NpmTag[$Id])" }
+	return $NpmPackage[$Id]
+}
 
 function Resolve-HarnessBinary {
 	# PATH first, then XDG_BIN_HOME, then the npm global prefix bin. Returns the binary's path (the command name when on PATH), or $null.
@@ -299,10 +311,11 @@ function Get-MethodCommand {
 		[ValidateSet('install', 'upgrade', 'uninstall')] [string]$Action = 'install'
 	)
 	$npmExtra = if ($NpmExtraArgs.ContainsKey($Id)) { ' ' + ($NpmExtraArgs[$Id] -join ' ') } else { '' }
+	$npmSpec = Get-NpmSpec $Id
 	$brewCask = if ($BrewCask.ContainsKey($Id)) { '--cask ' } else { '' }
 	switch ("$Method/$Action") {
-		'npm/install' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])$npmExtra" }
-		'npm/upgrade' { return "$($NpmCommand -join ' ') i -g $($NpmPackage[$Id])$npmExtra" }
+		'npm/install' { return "$($NpmCommand -join ' ') i -g $npmSpec$npmExtra" }
+		'npm/upgrade' { return "$($NpmCommand -join ' ') i -g $npmSpec$npmExtra" }
 		'npm/uninstall' { return "$($NpmCommand -join ' ') rm -g $($NpmPackage[$Id])" }
 		'brew/install' { return "brew install $brewCask$($BrewPackage[$Id])" }
 		'brew/upgrade' { return "brew upgrade $brewCask$($BrewPackage[$Id])" }
@@ -358,12 +371,12 @@ function Invoke-Method {
 	switch ("$Method/$Action") {
 		'npm/install' {
 			$extra = if ($NpmExtraArgs.ContainsKey($Id)) { @($NpmExtraArgs[$Id]) } else { @() }
-			& $NpmCommand i -g $NpmPackage[$Id] @extra
+			& $NpmCommand i -g (Get-NpmSpec $Id) @extra
 			return ($LASTEXITCODE -eq 0)
 		}
 		'npm/upgrade' {
 			$extra = if ($NpmExtraArgs.ContainsKey($Id)) { @($NpmExtraArgs[$Id]) } else { @() }
-			& $NpmCommand i -g $NpmPackage[$Id] @extra
+			& $NpmCommand i -g (Get-NpmSpec $Id) @extra
 			return ($LASTEXITCODE -eq 0)
 		}
 		'npm/uninstall' { & $NpmCommand rm -g $NpmPackage[$Id]; return ($LASTEXITCODE -eq 0) }
