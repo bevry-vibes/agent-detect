@@ -154,6 +154,7 @@ The method order is policy:
 - Windows: scoop before winget before the app store; npm before custom installers.
 - macOS: homebrew before npm for the harnesses with a native tap; custom installers last.
 - Linux: npm before anything; soar appimages before flatpak (both wait for verified package ids in the registry); custom installers last.
+- A method whose tool is missing prompts before installing that tool (`soar`, `brew`, `uv` have scripted bootstraps); declining or failing to add it falls through to the row's next method. Non-interactive runs bootstrap without a prompt.
 - npm itself may sit behind the maintainer's `node-env` wrapper (a dorothy command exposing a node.js environment): when plain `npm` is not on `PATH`, the script routes every npm invocation through `node-env -- npm ...`.
 - Installers may place binaries in `XDG_BIN_HOME` (default `~/.local/bin`) or the npm global prefix bin (behind `node-env` when plain npm is off `PATH`): the probe resolves `PATH`, then both directories, and reports where an off-`PATH` binary lives.
 
@@ -161,6 +162,8 @@ The method order is policy:
 The registry (probe binary, per-platform methods, package names, custom installers) lives in the script; add a harness when its rule lands (the `codex` and `chatgpt` rows are install-only: `codex` ahead of its pending rule, `chatgpt` for the retired Codex app's ChatGPT successor).
 
 The registry is CLI-first. The Cline, Kilo, and MiniMax Code desktop clients are separate products: Cline Desktop is the `cline-app` cask, MiniMax Code Desktop is `minimax-ai/tap/minimax-code` (pass `--language=en` for the overseas build), and Kilo Desktop has no cask (install its official DMG only with an explicit decision).
+
+`opencode-desktop` is an install-only row (its detection rule has not landed) covering macOS (`opencode-desktop` cask), Windows (official NSIS installer, `/S`), and Linux. Linux installs the official rolling AppImage URL through `soar` (bootstrapping soar on prompt when absent) and falls back to the official `.rpm` when soar cannot be added; a direct URL has no soar update feed, so upgrades re-install from the rolling alias with `--force` and the app's own updater keeps the AppImage current in place. The Linux probes are `opencode-desktop-linux` (soar symlink) and `ai.opencode` (rpm alternative).
 
 The Codex desktop app is the exception: its standalone app is retired and now ships inside the ChatGPT desktop app, so the registry carries an install-only `chatgpt` row with real app detection — `/Applications/ChatGPT.app` on macOS (via the `chatgpt` cask), the `OpenAI.Codex` MSIX on Windows (via winget `OpenAI.ChatGPT`), and the `chatgpt` package on Linux (preview; manual `.deb` / `.rpm` / Arch install). The old `codex-app` cask is Homebrew-deprecated (2027-07-12). `OpenAI.Codex` is the CLI, `OpenAI.ChatGPT` is the app, and the CLI remains the separate `codex` row (`codex` cask on macOS, scoop `codex` / winget `OpenAI.Codex` / npm `@openai/codex`). The desktop apps do not join detection until their own rules, detectors, and fixtures land.
 `minimax-code`'s npm install carries an explicit two-package `--allow-scripts=@minimax-ai/code,better-sqlite3` allow-list because the optional native SQLite dependency needs its build script; no other harness gets lifecycle scripts.
