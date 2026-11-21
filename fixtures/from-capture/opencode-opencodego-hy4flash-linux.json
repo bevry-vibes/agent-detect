@@ -46,35 +46,23 @@
       ],
       "process_lineage": [
         {
-          "pid": 1719840,
+          "pid": 28632,
           "name": "agent-detect-de"
         },
         {
-          "pid": 1719836,
+          "pid": 28628,
           "name": "bash"
         },
         {
-          "pid": 1716619,
+          "pid": 7845,
           "name": "opencode-pty"
         },
         {
-          "pid": 1716089,
+          "pid": 7453,
           "name": "opencode.exe"
         },
         {
-          "pid": 1711058,
-          "name": "opencode"
-        },
-        {
-          "pid": 1702188,
-          "name": "bash"
-        },
-        {
-          "pid": 6507,
-          "name": "ghostty"
-        },
-        {
-          "pid": 4027,
+          "pid": 3986,
           "name": "systemd"
         }
       ],
@@ -94,9 +82,9 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "lineage",
-          "name": "opencode",
-          "value": "opencode"
+          "source": "env",
+          "name": "OPENCODE",
+          "value": "<redacted>"
         },
         {
           "dim": "provider",
@@ -126,7 +114,7 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1795262563,
+    "updated_at": 1795277234,
     "harness_version": "2.3.2",
     "capture_kind": "manual",
     "version_invocation": [

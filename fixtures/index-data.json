@@ -970,7 +970,9 @@
       "open_training": "never",
       "closed_training": "never",
       "reciprocity_scandal": false,
-      "variations": [],
+      "variations": [
+        "opencode-desktop"
+      ],
       "providers": [
         "alibaba",
         "cerebras",

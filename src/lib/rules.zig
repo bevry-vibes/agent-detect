@@ -757,7 +757,13 @@ const kilo_env = [_][]const u8{ "KILO_API_KEY", "KILO", "KILO_MODEL" };
 const omp_env = [_][]const u8{"OMP_API_KEY"};
 const reasonix_env = [_][]const u8{"REASONIX_API_KEY"};
 const crush_env = [_][]const u8{"CRUSH_API_KEY"};
-const opencode_env = [_][]const u8{ "OPENCODE_API_KEY", "OPENCODE_MODEL" };
+// opencode: OPENCODE_API_KEY / OPENCODE_MODEL are the launcher's own markers (the latter is also allowlisted as the model answer).
+// The desktop app runs the same CLI service and exports no launcher markers to its tool shells; what both surfaces always carry are the
+// env vars opencode core itself sets for every shell command (AGENT=1, OPENCODE=1, AI_AGENT=opencode, OPENCODE_SESSION_ID=<id>) and
+// every PTY (OPENCODE_TERMINAL=1). Those fold the desktop surface onto this one harness rule (DESIGN #18: detection does not differ,
+// so no second `<product>-desktop` rule); AI_AGENT stays excluded because pi and other agents set it too.
+// New markers are appended so existing captures keep their first-match evidence claim.
+const opencode_env = [_][]const u8{ "OPENCODE_API_KEY", "OPENCODE_MODEL", "OPENCODE", "OPENCODE_SESSION_ID", "OPENCODE_TERMINAL" };
 // dsh: DSH_HOME/DSH_PROFILE are the profile-aware home selectors; DSH_API_KEY is a marker only (never allowlisted, so its value stays redacted).
 const dsh_env = [_][]const u8{ "DSH_HOME", "DSH_PROFILE", "DSH_API_KEY" };
 // codewhale: the documented runtime overrides (docs/CONFIGURATION.md "Environment variables").
@@ -844,10 +850,13 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{"crush"} },
     // opencode: MIT — https://github.com/anomalyco/opencode (formerly sst/opencode) ships a MIT LICENSE; default branch is `dev`, so the LICENSE blob URL is branch-qualified.
     // training (the D4 sweep, 2026-09-12): never/never — the CLI stores no code or context data ("OpenCode does not store any of your code or context data"; sharing is manual-only); the zen provider training is the opencode/opencode-go provider dims.
-    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/dev/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{"https://opencode.ai/legal/privacy-policy"}, .env_markers = &opencode_env, .binary_names = if (builtin.os.tag == .windows)
+    // binary_names: the npm-distilled CLI is named `opencode.exe` even on linux/macos (seen in the CLI fixtures' lineage), so the POSIX
+    // branch needs it too; `opencode-pty` is its shell daemon. The desktop names are the observed linux app/wrapper process basenames —
+    // they let a shell launched from the desktop app match by lineage even when opencode's tool-shell env wasn't inherited.
+    .{ .name = "opencode", .label = "OpenCode", .license = "MIT", .license_sources = &.{ "https://github.com/anomalyco/opencode", "https://github.com/anomalyco/opencode/blob/dev/LICENSE" }, .open_training = "never", .closed_training = "never", .training_sources = &.{"https://opencode.ai/legal/privacy-policy"}, .env_markers = &opencode_env, .variations = &.{"opencode-desktop"}, .binary_names = if (builtin.os.tag == .windows)
         &[_][]const u8{ "opencode", "opencode.exe" }
     else
-        &[_][]const u8{"opencode"} },
+        &[_][]const u8{ "opencode", "opencode.exe", "opencode-pty", "opencode-desktop-linux", "opencode-desktop", "ai.opencode" } },
     // dsh: MIT — https://github.com/deepseek-ai/deepseek-harness (default branch `master`) ships a MIT LICENSE (Copyright 2026 DeepSeek).
     // training: NOASSERTION/NOASSERTION — the repo ships SAFETY.md but no statement about training on user conversations; never guess. DeepSeek's API policy is the provider dim.
     .{ .name = "dsh", .label = "DeepSeek Harness", .license = "MIT", .license_sources = &.{ "https://github.com/deepseek-ai/deepseek-harness", "https://github.com/deepseek-ai/deepseek-harness/blob/master/LICENSE" }, .open_training = "NOASSERTION", .closed_training = "NOASSERTION", .training_sources = &.{ "https://github.com/deepseek-ai/deepseek-harness", "https://github.com/deepseek-ai/deepseek-harness/blob/master/SAFETY.md" }, .env_markers = &dsh_env, .binary_names = if (builtin.os.tag == .windows)

@@ -2,6 +2,7 @@
 // The licence does not gate (the 2026-09-10 ruling): training, setting, and licence do not relate to each other — Grok Build is open licensed and still uploaded whole repositories.
 
 const std = @import("std");
+const builtin = @import("builtin");
 const testing = std.testing;
 const main = @import("main.zig");
 const core = @import("lib/core.zig");
@@ -391,6 +392,45 @@ test "canonicalIdFor: GitHub Copilot and its app alias resolve to its harness" {
     for (forms) |form| {
         const got = main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, form) orelse return error.TestUnexpectedResult;
         try testing.expectEqualStrings("github-copilot", got);
+    }
+}
+
+test "canonicalIdFor: opencode desktop and CLI spellings fold onto the opencode harness" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const forms = [_][]const u8{ "opencode", "OpenCode", "opencode-desktop", "OpenCode Desktop" };
+    for (forms) |form| {
+        const got = main.canonicalIdFor(a, HarnessRule, &main.rulesForHarnesses, form) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("opencode", got);
+    }
+    // the desktop app runs the CLI's service, so one rule covers both: pin the runtime markers opencode core exports to every
+    // tool shell/PTY and the desktop process names that let a non-tool shell match by lineage.
+    var opencode_rule: ?HarnessRule = null;
+    for (main.rulesForHarnesses) |r| {
+        if (std.mem.eql(u8, r.name, "opencode")) {
+            opencode_rule = r;
+            break;
+        }
+    }
+    const rule = opencode_rule orelse return error.TestUnexpectedResult;
+    const expected_markers = [_][]const u8{ "OPENCODE_API_KEY", "OPENCODE_MODEL", "OPENCODE", "OPENCODE_SESSION_ID", "OPENCODE_TERMINAL" };
+    for (expected_markers) |m| {
+        var found = false;
+        for (rule.env_markers) |actual| {
+            if (std.mem.eql(u8, actual, m)) found = true;
+        }
+        try testing.expect(found);
+    }
+    const windows_procs = [_][]const u8{ "opencode", "opencode.exe" };
+    const posix_procs = [_][]const u8{ "opencode", "opencode.exe", "opencode-pty", "opencode-desktop-linux", "opencode-desktop", "ai.opencode" };
+    const procs: []const []const u8 = if (builtin.os.tag == .windows) &windows_procs else &posix_procs;
+    for (procs) |p| {
+        var found = false;
+        for (rule.binary_names) |actual| {
+            if (std.mem.eql(u8, actual, p)) found = true;
+        }
+        try testing.expect(found);
     }
 }
 
