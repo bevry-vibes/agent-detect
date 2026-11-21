@@ -1,6 +1,6 @@
 .{
     .name = .agent_detect,
-    .version = "2026.11.19-3",
+    .version = "2026.11.21-1",
     .minimum_zig_version = "0.17.0",
     .dependencies = .{},
     .paths = .{""},
