@@ -263,7 +263,7 @@ test "freshness: the committed index file equals a regeneration (the --check com
     const free = current.object.get("provider_map_to_free_models").?.object;
     const regenerated = try index_data.regenerate(a, current, free, combos);
     if (!index_data.valueEql(current, regenerated)) {
-        std.debug.print("fixtures/index-data.json is stale — run `zig build dev && ./zig-out/bin/agent-detect-dev fixtures index`\n", .{});
+        std.debug.print("fixtures/index-data.json is stale — run `./scripts/zig build dev && ./zig-out/bin/agent-detect-dev fixtures index`\n", .{});
         return error.TestUnexpectedResult;
     }
 }

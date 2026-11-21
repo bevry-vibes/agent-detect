@@ -1,9 +1,10 @@
 // tools/build_data.ts — generates the website's data files from the repo's
 // own sources; the website is a consumer of the committed state, never a
 // fork of it:
-//   1. the rule tables are dumped from src/lib/rules.zig via `zig run` on a
-//      temp copy (the tables are data-only and compile standalone), so alias
-//      sets + policy fields can never drift from the CLI's;
+//   1. the rule tables are dumped from src/lib/rules.zig via the repo's pinned
+//      toolchain (`scripts/zig`) on a temp copy (the tables are data-only and
+//      compile standalone), so alias sets + policy fields can never drift from
+//      the CLI's;
 //   2. fixtures/index-data.json — the committed index — is copied verbatim to
 //      data/index.json (the site's rule index / #index section);
 //   3. the from-identity channel (fixtures/from-identity, one 3-part
@@ -26,6 +27,7 @@
 //   releases.json           — the annotated calver tags, read from git (the
 //                             tag message IS the published release body)
 
+import { fromFileUrl } from "@std/path";
 import { slugId, trailerEmail } from "../src/lib/registry.ts";
 import {
   AgentsFileSchema,
@@ -68,6 +70,27 @@ function path(url: URL): string {
   return url.pathname;
 }
 
+async function resolveZig(): Promise<string> {
+  const wrapper = fromFileUrl(new URL("../../scripts/zig.ps1", import.meta.url));
+  const cmd = new Deno.Command("pwsh", {
+    args: ["-NoProfile", "-File", wrapper, "--toolchain-path"],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  let out: Deno.CommandOutput;
+  try {
+    out = await cmd.output();
+  } catch (error) {
+    throw new Error(
+      `could not run pwsh (required by scripts/zig.ps1): ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!out.success) {
+    throw new Error(`could not resolve the pinned zig toolchain:\n${new TextDecoder().decode(out.stderr)}`);
+  }
+  return new TextDecoder().decode(out.stdout).trim();
+}
+
 async function dumpRules(): Promise<
   { harnesses: Record<string, unknown>[]; providers: Record<string, unknown>[]; models: Record<string, unknown>[] }
 > {
@@ -75,7 +98,8 @@ async function dumpRules(): Promise<
   try {
     await Deno.copyFile(path(repoDir) + "src/lib/rules.zig", tmp + "/rules.zig");
     await Deno.writeTextFile(tmp + "/dump.zig", ZIG_DUMP);
-    const cmd = new Deno.Command("zig", {
+    const zig = await resolveZig();
+    const cmd = new Deno.Command(zig, {
       args: ["run", "dump.zig"],
       cwd: tmp,
       stdout: "piped",

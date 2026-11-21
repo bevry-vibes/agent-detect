@@ -12,7 +12,7 @@ The browsable registry at `agent-detect.bevry.me` — a shadcn/ui-style SPA plus
 
 `deno task data` generates `public/data/` (gitignored — regenerate before any build/deploy):
 
-1. `src/lib/rules.zig` is compiled standalone via `zig run` on a temp copy with a generated dump program, so the registry's alias sets and policy fields can never drift from the CLI's name resolution (`canonicalIdFor`/`canonicalFilterDim` semantics live in `src/lib/registry.ts`, shared by the SPA and the worker).
+1. `src/lib/rules.zig` is compiled standalone via the repo's pinned toolchain (`scripts/zig run`) on a temp copy with a generated dump program, so the registry's alias sets and policy fields can never drift from the CLI's name resolution (`canonicalIdFor`/`canonicalFilterDim` semantics live in `src/lib/registry.ts`, shared by the SPA and the worker).
 2. `fixtures/index-data.json` — the committed index the released `index` action embeds — is copied verbatim to `index.json` (the `#index` section's data).
 3. `fixtures/from-identity/*.json` are grouped per combo and emitted verbatim as `registry.json`, `combos.json` (rows gain `free` from the index's `provider_map_to_free_models`), and `agents/<agent_id>.json`.
 
@@ -20,7 +20,7 @@ The browsable registry at `agent-detect.bevry.me` — a shadcn/ui-style SPA plus
 
 ```sh
 deno install          # node_modules (npm deps via deno)
-deno task data        # generate public/data (needs zig on PATH)
+deno task data        # generate public/data (uses the pinned Zig via scripts/zig)
 deno task build       # data + vite build → dist/
 deno task check       # tsc + deno check
 deno task spa         # vite dev server (proxies the worker routes to :8787)

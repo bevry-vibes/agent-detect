@@ -6,9 +6,10 @@ Local application of the bevry-vibes skills [zig.md](https://github.com/bevry-vi
 
 ### Build / test loop
 
-- `zig build` — released binary (`zig-out/bin/agent-detect`, `dev=false`).
-- `zig build dev` — maintainer binary (`zig-out/bin/agent-detect-dev`, `dev=true`, `fixtures` namespace + `raw` action).
-- `zig build test` — runs every `src/*_test.zig` / `src/*test*.zig` file listed in `build.zig`.
+- `./scripts/zig build` — released binary (`zig-out/bin/agent-detect`, `dev=false`).
+- `./scripts/zig build dev` — maintainer binary (`zig-out/bin/agent-detect-dev`, `dev=true`, `fixtures` namespace + `raw` action).
+- `./scripts/zig build test` — runs every `src/*_test.zig` / `src/*test*.zig` file listed in `build.zig`.
+- The wrapper reads `minimum_zig_version` from `build.zig.zon`, installs that exact compiler into the gitignored `vendor/zig/<version>/<platform>/` on first use, and reuses it on every run. Never call the host `zig` directly; `./scripts/zig --check` prints the resolved version and path. Windows uses `pwsh scripts/zig.ps1` or `scripts\zig.cmd`.
 - The released binary still shells out to `sqlite3 -json -batch` for its read-only session-store reads (`core.kiloSqliteJson`, kilo/opencode/copilot session DBs only); the CLI behavior patterns live in the upstream powershell skill.
   The dev fixtures store is the local `fixtures/index.json` — no sqlite.
 

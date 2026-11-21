@@ -117,7 +117,7 @@ The store and the fixture files sync across hosts via git.
 Only the matching platform's daemon expands a candidate (`platform = the entry's or the host's`), so a `platform='darwin'` entry is never worked on Windows — the entry simply stays queued there until a darwin daemon finishes it:
 
 1. On host A (e.g. macOS): run the daemon, let the platform's work drain, then commit index.json + fixture files (single-writer workflow — pull before daemon, commit after).
-2. On host B (e.g. Windows): `git pull`, `zig build dev`, run the daemon — it works only the host-platform candidates that remain.
+2. On host B (e.g. Windows): `git pull`, `pwsh scripts/zig.ps1 build dev`, run the daemon — it works only the host-platform candidates that remain.
 3. Failed candidates retry on the host that can reach the harness (re-assert the entry or use `--repair`).
 
 Bring a new host's harnesses up once before its first daemon run: `pwsh scripts/install-harnesses.ps1 -Check` shows what is missing, the same script installs it, and `scripts/sync-harness-configs.ps1` (run from any host; it prompts for the target) ships the config/auth state across — see "per-harness install" and "per-harness config locations" above.
@@ -223,10 +223,13 @@ Both probes are zero-token local work:
 
 Harness catalog commands drift between versions — verify each harness's discovery surface against `--help` before trusting a scripted probe, and prefer the harness's own output over web catalogs.
 
+Build commands below use `./scripts/zig` on Unix; on Windows use `pwsh scripts/zig.ps1` (or `scripts\zig.cmd`) with the same arguments.
+The wrapper installs the `minimum_zig_version` toolchain into the gitignored `vendor/zig/` on first use and always runs that copy, so local builds and CI share one compiler.
+
 The maintainer probes the free combos + the MiniMax subscription:
 
 ```sh
-zig build dev
+./scripts/zig build dev
 ./zig-out/bin/agent-detect-dev fixtures queue   # both modes, the whole default universe; pure enqueue, zero tokens
 ./zig-out/bin/agent-detect-dev fixtures daemon --write-log
 ```
@@ -291,7 +294,7 @@ printf 'restart\n'  > fixtures/daemon.ctl   # finish in-flight, then reboot onto
 ```
 
 The daemon checks the file every ~1s and clears it after acting; Ctrl+C in the daemon terminal is the graceful-stop shortcut.
-`restart` is the new-build pickup: run `zig build dev`, then write `restart` — the daemon finishes its in-flight work and re-executes its own binary path with the same flags (POSIX keeps the pid, fds, and terminal; Windows spawns a copy with inherited stdio and exits).
+`restart` is the new-build pickup: run `./scripts/zig build dev`, then write `restart` — the daemon finishes its in-flight work and re-executes its own binary path with the same flags (POSIX keeps the pid, fds, and terminal; Windows spawns a copy with inherited stdio and exits).
 
 ### daemon launch: agent-started detached run (Linux one-shot)
 
@@ -425,7 +428,7 @@ journalctl --user -u agent-detect-daemon       # its stdout; fixtures/daemon.log
 `--collect` removes the unit once it exits, so the name is reusable for the next drain.
 One daemon per host still applies: stop any terminal-run instance before starting the transient one. The `MemoryMax` guard is belt-and-braces: the daemon resets its per-iteration arena (a drain OOM taught it that, 2026-09-21), and the cap degrades any future leak into a clean unit kill instead of a machine-wide OOM.
 - On headless (ssh-only) hosts, `loginctl enable-linger "$USER"` keeps the user manager (and the daemon) alive after logout; otherwise the unit stops at end-of-session.
-- While the unit holds `agent-detect-dev` open, `zig build` (whose default step installs the dev binary) fails with `AccessDenied` / `ETXTBSY` — stop the daemon before rebuilding.
+- While the unit holds `agent-detect-dev` open, `./scripts/zig build` (whose default step installs the dev binary) fails with `AccessDenied` / `ETXTBSY` — stop the daemon before rebuilding.
 
 ### daemon launch: Windows scheduled task (no admin)
 
@@ -452,7 +455,7 @@ Start-ScheduledTask -TaskName "agent-detect-drain-windows"
 - Stop: `Stop-ScheduledTask -TaskName agent-detect-drain-windows`, or the graceful path (finishes the in-flight capture): `printf 'stop\n' > fixtures/daemon.ctl`.
 - The control file is a **sticky flag**: after a graceful stop, clear it (`Set-Content fixtures/daemon.ctl "" -NoNewline`) before the next `Start-ScheduledTask`, or the fresh daemon reads the stale `stop` and exits immediately.
 - When the drain is done: `Unregister-ScheduledTask -TaskName agent-detect-drain-windows -Confirm:$false`.
-- While the daemon holds `agent-detect-dev.exe` open, `zig build` (whose default step installs the dev binary) fails with AccessDenied — stop the daemon before rebuilding.
+- While the daemon holds `agent-detect-dev.exe` open, `./scripts/zig build` (whose default step installs the dev binary) fails with AccessDenied — stop the daemon before rebuilding.
 
 ### global-settings rule
 
@@ -540,7 +543,7 @@ Revisit once live captures exercise the merged fields.
 
 After adding the rule:
 
-1. Build the dev binary: `zig build dev`.
+1. Build the dev binary: `./scripts/zig build dev`.
 2. Declare the rule's combos — the feasible-unfixtured universe (the grid-filtered cross-product minus the fixtured stems) expands automatically once the harness/provider/model pairs are feasible per the reference grids (`map-harness-provider-harnessprovider.csv` / `map-provider-model-providermodel.csv` — add the cells if the pairs are new):
    ```sh
    ./zig-out/bin/agent-detect-dev fixtures queue --harness=<harness_id> --from-identity

@@ -74,7 +74,7 @@ PLIST
 
 start() {
 	if [[ ! -x "$bin" ]]; then
-		echo "missing $bin — run \`zig build dev\` first" >&2
+		echo "missing $bin — run \`./scripts/zig build dev\` first" >&2
 		exit 1
 	fi
 	# one daemon per host: replace any prior registration before bootstrapping

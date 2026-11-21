@@ -183,7 +183,7 @@ pub const dev = if (build_options.dev) struct {
         \\control: write pause/resume/stop/restart to fixtures/daemon.ctl
         \\(checked every ~1s; the daemon clears it after acting). restart
         \\finishes in-flight work, then reboots onto the current build —
-        \\write it after `zig build dev` replaced the executable. Ctrl+C
+        \\write it after `./scripts/zig build dev` replaced the executable. Ctrl+C
         \\is the graceful stop.
         \\
         \\subcommands (see each subcommand's `--help` for its flags — modes,
@@ -3671,7 +3671,7 @@ pub const dev = if (build_options.dev) struct {
                     stop_requested = true;
                     daemonWrite(io, "daemon: stop requested — finishing in-flight work then exiting\n");
                 } else if (std.mem.eql(u8, c, "restart")) {
-                    // drains exactly like stop, then reboots instead of exiting — the pick-up-the-new-build path (write restart after `zig build dev` replaced the executable).
+                    // drains exactly like stop, then reboots instead of exiting — the pick-up-the-new-build path (write restart after `./scripts/zig build dev` replaced the executable).
                     stop_requested = true;
                     restart_requested = true;
                     daemonWrite(io, "daemon: restart requested — finishing in-flight work, then rebooting onto the current build\n");
@@ -3889,7 +3889,7 @@ pub const dev = if (build_options.dev) struct {
     fn selfPath(io: std.Io, buf: *[std.fs.max_path_bytes]u8) ?[]const u8 {
         var len = std.process.executablePath(io, buf) catch return null;
         if (len == 0) return null;
-        // a replaced-on-disk binary reads "/proc/self/exe" with the kernel's " (deleted)" suffix — the restart flow's whole point is execing after `zig build dev` renamed over the running file, so strip it
+        // a replaced-on-disk binary reads "/proc/self/exe" with the kernel's " (deleted)" suffix — the restart flow's whole point is execing after `./scripts/zig build dev` renamed over the running file, so strip it
         const deleted = " (deleted)";
         if (len >= deleted.len and std.mem.eql(u8, buf[len - deleted.len .. len], deleted)) {
             len -= deleted.len;
@@ -3932,7 +3932,7 @@ pub const dev = if (build_options.dev) struct {
         return null;
     }
 
-    /// reboot the daemon onto the current build — the `restart` control action. The typical use: `zig build dev` replaced the executable while the daemon runs, and the daemon must pick the new build up.
+    /// reboot the daemon onto the current build — the `restart` control action. The typical use: `./scripts/zig build dev` replaced the executable while the daemon runs, and the daemon must pick the new build up.
     /// POSIX execs itself with the original argv (same pid, same fds, same terminal — the foreground relationship and Ctrl+C survive the reboot);
     /// Windows has no exec, so it spawns a copy with inherited stdio and exits (the copy is independent — stop it via `fixtures/daemon.ctl` or its printed pid).
     /// Returns only on failure.

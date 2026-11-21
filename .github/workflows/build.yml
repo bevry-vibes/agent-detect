@@ -18,9 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # no explicit version: setup-zig reads minimum_zig_version from build.zig.zon
       - uses: step-security/setup-zig@v2
-        with:
-          version: 0.17.0
+
+      - name: verify the pinned Zig
+        run: test "$(zig version)" = "$(sed -n 's/.*minimum_zig_version = "\([^"]*\)".*/\1/p' build.zig.zon)"
 
       - name: cross-compile all targets
         run: zig build dist --prefix .
@@ -66,9 +68,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # no explicit version: setup-zig reads minimum_zig_version from build.zig.zon
       - uses: step-security/setup-zig@v2
-        with:
-          version: 0.17.0
+
+      - name: verify the pinned Zig
+        run: test "$(zig version)" = "$(sed -n 's/.*minimum_zig_version = "\([^"]*\)".*/\1/p' build.zig.zon)"
 
       - name: cross-compile all targets
         run: zig build dist --prefix .

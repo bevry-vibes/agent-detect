@@ -30,9 +30,10 @@ Never round-trip a bulk rewrite through `Set-Content`.
 
 ## zig
 
-Build with `zig build` (released), `zig build dev` (maintainer `fixtures` binary), and `zig build test`.
+Build with `./scripts/zig build` (released), `./scripts/zig build dev` (maintainer `fixtures` binary), and `./scripts/zig build test`.
+`scripts/zig` reads `minimum_zig_version` from `build.zig.zon`, installs that exact compiler into the gitignored `vendor/zig/` on first use, and always runs that copy — never the host `zig` (Windows: `pwsh scripts/zig.ps1` or `scripts\zig.cmd`; `--check` prints the resolved version and path).
 The bevry-vibes [zig.md](https://github.com/bevry-vibes/skills/blob/main/zig.md) skill carries the Zig API notes and general gotchas; this repo's patterns and gotchas live in [zig.md](./zig.md).
-The project tracks the latest Zig release (currently 0.17.x); CI pins the same version.
+The project tracks the latest Zig release (currently 0.17.x); CI reads the same `minimum_zig_version` pin.
 The source is split across five files
 — `src/lib/rules.zig` (rule tables + pure name resolution)
 - `src/lib/index_data.zig` (the embedded index file: parse, filters, regeneration)
@@ -44,7 +45,7 @@ in a strict no-cycles import DAG.
 ## website
 
 The browsable registry lives at `agent-detect.bevry.me` in `site/` — its own deployment (Cloudflare Worker + static assets, `deno task deploy` from `site/`), never part of the zig binary; it consumes the committed rule tables, the index file (`fixtures/index-data.json`, the same data the released `index` action embeds), and the from-identity channel as data (the site shows declared identifications only). The `agent-detect.bevry.workers.dev` hostname and the `agentdetect.bevry.me` typo 308-redirect to the canonical domain.
-Deno is the toolchain: `deno install` (node_modules), `deno task data` (regenerate `site/public/data/` — needs zig and git on PATH; it also reads the annotated tags for the releases section), `deno task build` (data + vite), `deno task check` (tsc + deno check), `deno task dev` (wrangler dev on 127.0.0.1:8787).
+Deno is the toolchain: `deno install` (node_modules), `deno task data` (regenerate `site/public/data/` — needs `pwsh` and git on PATH, and resolves the pinned Zig through `scripts/zig`; it also reads the annotated tags for the releases section), `deno task build` (data + vite), `deno task check` (tsc + deno check), `deno task dev` (wrangler dev on 127.0.0.1:8787).
 Restart `deno task dev` after every vite build — a stale wrangler asset manifest serves the old bundle as the 942-byte index.html fallback and the page renders blank.
 
 ## harness configuration
