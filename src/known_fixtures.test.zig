@@ -65,14 +65,14 @@ fn discoverStems(a: std.mem.Allocator) ![][]u8 {
 /// Load a channel file as a parsed JSON value, or null if the file is missing/unparseable (callers iterate the features a file may not carry — the envelope test is what flags unparseable files).
 fn readChannelParsed(a: std.mem.Allocator, folder: []const u8, stem: []const u8) !?std.json.Value {
     const path = try std.fmt.allocPrint(a, "{s}/{s}.json", .{ folder, stem });
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, path, a, @enumFromInt(1 << 20)) catch return null;
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, path, a, @fromBackingInt(@intCast(1 << 20))) catch return null;
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
     return parsed.value;
 }
 
 /// Load the committed `fixtures/index.json` store. The store is committed — absent or unparseable is a broken tree, not a skip.
 fn readIndexParsed(a: std.mem.Allocator) !std.json.Value {
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index.json", a, @enumFromInt(1 << 26)) catch return error.MissingStore;
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index.json", a, @fromBackingInt(@intCast(1 << 26))) catch return error.MissingStore;
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return error.InvalidStore;
     if (parsed.value != .object) return error.InvalidStore;
     return parsed.value;
@@ -674,7 +674,7 @@ test "fixtures: fixture JSON is pretty-printed (outputs/meta envelope, identify 
     const stems = try discoverFolderStems(aa, identity_dir);
     for (stems) |stem| {
         const path = try std.fmt.allocPrint(aa, "{s}/{s}.json", .{ identity_dir, stem });
-        const data = std.Io.Dir.cwd().readFileAlloc(testing.io, path, aa, @enumFromInt(1 << 20)) catch continue;
+        const data = std.Io.Dir.cwd().readFileAlloc(testing.io, path, aa, @fromBackingInt(@intCast(1 << 20))) catch continue;
 
         // 1. the envelope objects; identify field per line.
         try testing.expect(std.mem.indexOf(u8, data, "\"outputs\":") != null);
@@ -1149,15 +1149,10 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "nex-n2.5-pro",           "inkling",                    "inkling-small",
         "nemotron-3.5-lightning",
         // the 2026-10-29 opencode-zen free-period sweep — the new free-period exception rules (flint-40b; mimo-v2.6-flash) land rule-only until the free sweeps fixture them (the free-grid combos are derivable; the sweep is user-run via the daemon).
-        "flint-40b",
-        "mimo-v2.6-flash",
+        "flint-40b",                  "mimo-v2.6-flash",
         // the 2026-11-17 catalogue refresh — the newly released hosted/open-weight models land rule-only until the free sweeps fixture them.
-        "qwen4-max",
-        "hy4",
-        "hy4-flash",
-        "ling-3.2-flash",
-        "nex-n2.6",
-        "gemma-4-26b-a4b",
+        "qwen4-max",              "hy4",                        "hy4-flash",
+        "ling-3.2-flash",         "nex-n2.6",                   "gemma-4-26b-a4b",
         "particle-1",
     };
     for (main.rulesForProviders) |rr| {
@@ -1200,7 +1195,7 @@ test "the index file's provider_map_to_free_models: free entries resolve to know
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index-data.json", a, @enumFromInt(1 << 26)) catch {
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index-data.json", a, @fromBackingInt(@intCast(1 << 26))) catch {
         std.debug.print("fixtures/index-data.json is missing — it is the index's source of truth\n", .{});
         return error.MissingIndexData;
     };

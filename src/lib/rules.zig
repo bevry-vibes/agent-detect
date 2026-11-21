@@ -210,7 +210,7 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "ling-3.0-flash-vl", .label = "Ling 3.0 Flash VL", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/inclusionAI/Ling-3.0-flash-VL", "https://huggingface.co/inclusionAI/Ling-3.0-flash-VL/blob/main/LICENSE" } },
     // dots-3-note-preview: open-weight — dots-studio Dots3 Note (preview); Apache-2.0 (added by the 2026-09-20 free-axis refresh — free on OpenRouter and ZenMux, clears the evergreen set).
     // The free model may train on prompts/responses per Kilo's free-tier policy opt-in; the paid model does not train (never).
-    .{ .name = "dots-3-note-preview", .label = "Dots 3 Note Preview", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/dots-studio/dots3-note-prev", "https://huggingface.co/dots-studio/dots3-note-prev/blob/main/LICENSE" }, .open_training = "opt-in", .closed_training = "never", .variations = &.{"dots3-note-prev", "dots-3-note-preview:free", "dots-studio/dots-3-note-preview:free"} },
+    .{ .name = "dots-3-note-preview", .label = "Dots 3 Note Preview", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/dots-studio/dots3-note-prev", "https://huggingface.co/dots-studio/dots3-note-prev/blob/main/LICENSE" }, .open_training = "opt-in", .closed_training = "never", .variations = &.{ "dots3-note-prev", "dots-3-note-preview:free", "dots-studio/dots-3-note-preview:free" } },
     // nex-n2.5-mini / nex-n2.5-pro: open-weight — Nex AGI N2.5; Apache-2.0 (added by the 2026-09-20 free-axis refresh — free on OpenRouter, clear the evergreen set).
     .{ .name = "nex-n2.5-mini", .label = "Nex N2.5 Mini", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/nex-agi/Nex-N2.5-mini", "https://huggingface.co/nex-agi/Nex-N2.5-mini/blob/main/LICENSE" } },
     .{ .name = "nex-n2.5-pro", .label = "Nex N2.5 Pro", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/nex-agi/Nex-N2.5-Pro", "https://huggingface.co/nex-agi/Nex-N2.5-Pro/blob/main/LICENSE" } },
@@ -297,7 +297,7 @@ pub const rulesForModels = [_]ModelRule{
     // nemotron-3.5-lightning: open-weight — NVIDIA Nemotron 3.5 Lightning 30B A3B; the NVIDIA Open Model License is custom (not SPDX) → NOASSERTION (added by the 2026-09-20 free-axis refresh — free on OpenRouter and NIM, clears the evergreen set).
     // variations: the opencode zen free-tier spelling `nemotron-3.5-lightning-free` folds here per DESIGN #13 (tier spellings are variations — same weights as the paid lane it rides).
     // open_training: the zen free period names the NVIDIA free endpoints as training ("your use is logged ... to improve NVIDIA products and services"); the paid spelling escapes it, so opt-out (informational — the reciprocity conjunct consumes only the closed axis).
-    .{ .name = "nemotron-3.5-lightning", .label = "Nemotron 3.5 Lightning", .openness = "open-weight", .license = "NOASSERTION", .open_training = "opt-out", .sources = &.{ "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/blob/main/LICENSE" }, .variations = &.{"nemotron-3.5-lightning-30b-a3b", "nemotron-3.5-lightning-free"} },
+    .{ .name = "nemotron-3.5-lightning", .label = "Nemotron 3.5 Lightning", .openness = "open-weight", .license = "NOASSERTION", .open_training = "opt-out", .sources = &.{ "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16", "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/blob/main/LICENSE" }, .variations = &.{ "nemotron-3.5-lightning-30b-a3b", "nemotron-3.5-lightning-free" } },
     // glm-5: open-weight — Z.ai GLM 5; HF card + MIT LICENSE. No "Pure Open" claim on the card (like glm-5.1), so the conservative open-weight tier. Observed on opencode-go (bare id, evergreen z-ai/glm-5) — no serving-variant spellings yet.
     .{ .name = "glm-5", .label = "GLM 5", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5", "https://huggingface.co/zai-org/GLM-5/blob/main/LICENSE" } },
     // glm-5.3: open-weight — Z.ai GLM 5.3; LICENSE is a custom "GLM-5.3 License" (© 2026 Z.AI; not plain MIT, not SPDX → NOASSERTION).
@@ -356,7 +356,7 @@ pub const rulesForModels = [_]ModelRule{
     // kilo-auto-small: Kilo Gateway's "Auto Small" rotating selector. Routes requests to small models; the concrete upstream model is not fixed by the selection.
     .{ .name = "kilo-auto-small", .label = "Auto Small", .openness = null, .license = null, .closed_training = "NOASSERTION", .sources = &.{"https://kilo.ai/docs/code-with-ai/agents/auto-model"} },
     // ernie-5.5-flash-preview: Baidu ERNIE 5.5 Flash Preview; open weights under the Baidu PaddlePaddle License (custom, not SPDX → NOASSERTION). The free model may train on prompts/responses per Baidu's policy opt-in; the paid ERNIE 5.5 Flash Preview does not train (never).
-    .{ .name = "ernie-5.5-flash-preview", .label = "ERNIE 5.5 Flash Preview", .openness = "open-weight", .license = "NOASSERTION", .open_training = "opt-in", .closed_training = "never", .sources = &.{"https://ernie.baidu.com/privacy/en"}, .variations = &.{"ernie-5.5-flash-preview:free", "baidu/ernie-5.5-flash-preview:free"} },
+    .{ .name = "ernie-5.5-flash-preview", .label = "ERNIE 5.5 Flash Preview", .openness = "open-weight", .license = "NOASSERTION", .open_training = "opt-in", .closed_training = "never", .sources = &.{"https://ernie.baidu.com/privacy/en"}, .variations = &.{ "ernie-5.5-flash-preview:free", "baidu/ernie-5.5-flash-preview:free" } },
     // lfm-3-1.7b: open-weight — LiquidAI LFM3-1.7B; the LFM Open License v1.0 is custom (not SPDX → NOASSERTION). The free Kilo tier may train on prompts/responses (opt-in); the paid spelling does not (never).
     .{ .name = "lfm-3-1.7b", .label = "LFM3 1.7B", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/LiquidAI/LFM3-1.7B", "https://huggingface.co/LiquidAI/LFM3-1.7B/blob/main/LICENSE" }, .open_training = "opt-in", .closed_training = "never", .variations = &.{ "lfm-3-1.7b:free", "liquid/lfm-3-1.7b:free" } },
     // nemotron-3-5-super-vl: open-weight — NVIDIA Nemotron 3.5 Super VL (120B A12B); vision-language model; HF card + LICENSE under NVIDIA Open Model License (custom, not SPDX → NOASSERTION). Free on Cline Pass (2026-10).
@@ -366,7 +366,7 @@ pub const rulesForModels = [_]ModelRule{
     // reflection-beam: open-weight — Reflection AI Beam (501B A23B); weights released 2026-10-16 under Apache-2.0. Free on Cline Pass (2026-10).
     .{ .name = "reflection-beam", .label = "Reflection Beam", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/reflection/Beam-1.0-501B-A23B", "https://huggingface.co/reflection/Beam-1.0-501B-A23B/blob/main/LICENSE", "https://huggingface.co/blog/reflection-beam" }, .variations = &.{ "beam-free", "reflection-beam-free" } },
     // solar-mini-4: closed — Upstage Solar Mini 4 (35B/3B active); API-only, no public weights → NONE. Free on Cline Pass (2026-10).
-    .{ .name = "solar-mini-4", .label = "Solar Mini 4", .openness = "closed", .license = "NONE", .sources = &.{ "https://console.upstage.ai/docs/models/solar-mini-4" } },
+    .{ .name = "solar-mini-4", .label = "Solar Mini 4", .openness = "closed", .license = "NONE", .sources = &.{"https://console.upstage.ai/docs/models/solar-mini-4"} },
     // mimo-v2.6-pro: open-weight — Xiaomi MiMo V2.6 Pro (the larger sibling of the Flash); MIT weights on HF, released 2026-10-28.
     .{ .name = "mimo-v2.6-pro", .label = "MiMo V2.6 Pro", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL", "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL/blob/main/LICENSE", "https://mimo.xiaomi.com/mimo-v2-6" }, .variations = &.{"MiMo-V2.6-Pro-RL"} },
     // mimo-v2.6-flash: open-weight — Xiaomi MiMo V2.6 Flash; the weights are downloadable (open-weight per the conservative hosted-API tier).
@@ -908,35 +908,35 @@ pub const rulesForHarnesses = [_]HarnessRule{
 /// Names NOT on this list emit an empty string for the value slot — secrets like `KIMI_API_KEY` and `MINIMAX_API_KEY` are redacted by default.
 /// Maintainers add names here when they have decided the value is safe to write to disk.
 const env_value_allowlist = [_][]const u8{
-    "CLINE_BUILD_ENV",              "CLINE_NO_INTERACTIVE",                  "CLINE_WRAPPER_PATH",
-    "CLINE_RUN_AS_HUB_DAEMON",      "CLINE_CONNECTOR_CLI_LAUNCH",            "KIMI_CODE_HOME",
-    "MMX_CONFIG_DIR",               "PI_CODING_AGENT",
+    "CLINE_BUILD_ENV",                          "CLINE_NO_INTERACTIVE",         "CLINE_WRAPPER_PATH",
+    "CLINE_RUN_AS_HUB_DAEMON",                  "CLINE_CONNECTOR_CLI_LAUNCH",   "KIMI_CODE_HOME",
+    "MMX_CONFIG_DIR",                           "PI_CODING_AGENT",
     // launcher-provided model selectors — the values are model ids / provider ids, not secrets, so fixtures can carry the exact value the detector read (evidence-claim value matching needs it).
-                          "KILO_MODEL",
-    "OPENCODE_MODEL",               "VIBE_ACTIVE_MODEL",                     "VIBE_ACTIVE_PROVIDER",
-    "PI_PROVIDER",                  "PI_MODEL",                              "CURSOR_MODEL",
-    "COPILOT_MODEL",                "GOOSE_WORKING_DIR",                     "GOOSE_TERMINAL",
-    "GOOSE_MODE",                   "USERPROFILE",                           "HOME",
+                 "KILO_MODEL",
+    "OPENCODE_MODEL",                           "VIBE_ACTIVE_MODEL",            "VIBE_ACTIVE_PROVIDER",
+    "PI_PROVIDER",                              "PI_MODEL",                     "CURSOR_MODEL",
+    "COPILOT_MODEL",                            "GOOSE_WORKING_DIR",            "GOOSE_TERMINAL",
+    "GOOSE_MODE",                               "USERPROFILE",                  "HOME",
     "APPDATA",
     // dsh / CodeWhale / MiniMax Code — home selectors, model selectors, and telemetry switches;
     // the API-key markers (DSH_API_KEY, CODEWHALE_API_KEY) stay off this list, so their values are redacted.
-    "DSH_HOME", "DSH_PROFILE",
-    "CODEWHALE_HOME", "CODEWHALE_CONFIG_PATH", "CODEWHALE_PROVIDER",
-    "CODEWHALE_MODEL", "CODEWHALE_TELEMETRY",
-    "MINIMAX_DATA_DIR", "MAVIS_DATA_DIR", "MCODE_DISABLE_TELEMETRY",
+                                     "DSH_HOME",                     "DSH_PROFILE",
+    "CODEWHALE_HOME",                           "CODEWHALE_CONFIG_PATH",        "CODEWHALE_PROVIDER",
+    "CODEWHALE_MODEL",                          "CODEWHALE_TELEMETRY",          "MINIMAX_DATA_DIR",
+    "MAVIS_DATA_DIR",                           "MCODE_DISABLE_TELEMETRY",
     // ZCode desktop-app markers — app version/env/label and service URLs only; the values are non-secret operational facts.
-                         "ZCODE_APP_VERSION",                     "ZCODE_BASE_URL",
-    "ZCODE_ENV",                    "ZCODE_PROCESS_LABEL",                   "ZCODE_RUNTIME_ENV",
-    "ZAI_BUSINESS_BASE_URL",        "ZAI_OAUTH_ORIGIN",
+         "ZCODE_APP_VERSION",
+    "ZCODE_BASE_URL",                           "ZCODE_ENV",                    "ZCODE_PROCESS_LABEL",
+    "ZCODE_RUNTIME_ENV",                        "ZAI_BUSINESS_BASE_URL",        "ZAI_OAUTH_ORIGIN",
     // Hermes markers — the values are "true"/profile names, non-secret.
-                         "HERMES_AGENT",
-    "HERMES_PROFILE",
+    "HERMES_AGENT",                             "HERMES_PROFILE",
     // AutoClaw markers — fixed non-secret operational facts (enum-ish decision knobs / feature flags); the URL/endpoint markers (AUTOCLAW_MODEL_BROKER_*_BASE_URL, AUTOCLAW_MODEL_TRACE_ENDPOINT) stay off this list.
-                  "AUTOCLAW_SAFETY_DEFAULT_DECISION",      "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED",
-    "AUTOCLAW_THINKING_STREAM",     "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER", "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS",
-    "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
+                  "AUTOCLAW_SAFETY_DEFAULT_DECISION",
+    "AUTOCLAW_LEGAL_RUNTIME_MANIFEST_DISABLED", "AUTOCLAW_THINKING_STREAM",     "AUTOCLAW_AUTO_LEGAL_FLOATING_REMINDER",
+    "AUTOCLAW_DISABLE_LEGACY_EXEC_APPROVALS",   "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
     // Zed markers — fixed non-secret terminal/environment facts.
-    "ZED_TERM", "ZED_ENVIRONMENT",
+    "ZED_TERM",
+    "ZED_ENVIRONMENT",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {

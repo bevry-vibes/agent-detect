@@ -455,7 +455,7 @@ pub const dev = if (build_options.dev) struct {
     fn indexLoad(io: std.Io, a: std.mem.Allocator) !std.json.Value {
         var idx_buf: [std.fs.max_path_bytes]u8 = undefined;
         const index_path = fixturesJoin("index.json", &idx_buf) orelse return error.IndexStoreError;
-        const data = std.Io.Dir.cwd().readFileAlloc(io, index_path, a, @enumFromInt(1 << 26)) catch |err| switch (err) {
+        const data = std.Io.Dir.cwd().readFileAlloc(io, index_path, a, @fromBackingInt(@intCast(1 << 26))) catch |err| switch (err) {
             error.FileNotFound => return emptyRoot(a),
             else => return error.IndexStoreError,
         };
@@ -597,7 +597,7 @@ pub const dev = if (build_options.dev) struct {
             cf.valid_stem = true;
         } else |_| {}
         const path = try channelPath(a, folder, stem);
-        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 24)) catch return cf;
+        const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 24))) catch return cf;
         // no `a.free(data)` — the returned Value aliases the parsed buffer (see zig.md: freeing an aliased arena slice clobbers it).
         const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return cf;
         if (parsed.value != .object) return cf;
@@ -2839,7 +2839,7 @@ pub const dev = if (build_options.dev) struct {
         var idx_buf: [std.fs.max_path_bytes]u8 = undefined;
         const data_path = fixturesJoin("index-data.json", &idx_buf) orelse return error.IndexStoreError;
         var current: ?std.json.Value = null;
-        if (std.Io.Dir.cwd().readFileAlloc(io, data_path, a, @enumFromInt(1 << 26)) catch |err| switch (err) {
+        if (std.Io.Dir.cwd().readFileAlloc(io, data_path, a, @fromBackingInt(@intCast(1 << 26))) catch |err| switch (err) {
             error.FileNotFound => null,
             else => return error.IndexStoreError,
         }) |data| {
@@ -3923,7 +3923,7 @@ pub const dev = if (build_options.dev) struct {
 
     /// read `fixtures/daemon.ctl`, clear it, and return the action word (`pause` / `resume` / `stop` / `restart`) or null when absent/empty. The daemon clears the file after acting (decision #12).
     fn readControlAction(a: std.mem.Allocator, io: std.Io) ?[]const u8 {
-        const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/daemon.ctl", a, @enumFromInt(4096)) catch return null;
+        const data = std.Io.Dir.cwd().readFileAlloc(io, "fixtures/daemon.ctl", a, @fromBackingInt(@intCast(4096))) catch return null;
         // no `a.free(data)` — the returned word aliases `data` (Zig 0.16 arena free-list would reclaim it into the daemon's next allocations, clobbering the action word mid-use).
         std.Io.Dir.cwd().deleteFile(io, "fixtures/daemon.ctl") catch {};
         const t = std.mem.trim(u8, data, " \t\r\n");

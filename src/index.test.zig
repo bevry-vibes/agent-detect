@@ -254,7 +254,7 @@ test "freshness: the committed index file equals a regeneration (the --check com
     var arena = arenaFor();
     defer arena.deinit();
     const a = arena.allocator();
-    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index-data.json", a, @enumFromInt(1 << 26)) catch {
+    const data = std.Io.Dir.cwd().readFileAlloc(testing.io, "fixtures/index-data.json", a, @fromBackingInt(@intCast(1 << 26))) catch {
         std.debug.print("fixtures/index-data.json is missing — it is the index's source of truth\n", .{});
         return error.TestUnexpectedResult;
     };

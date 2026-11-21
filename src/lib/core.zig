@@ -606,7 +606,7 @@ fn loadSessions(a: std.mem.Allocator, io: std.Io, sessions_root: []const u8) []S
     while (it.next(io) catch null) |ent| {
         if (ent.kind != .directory) continue;
         const path = std.fmt.allocPrint(a, "{s}/{s}/{s}.json", .{ sessions_root, ent.name, ent.name }) catch continue;
-        const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch continue;
+        const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch continue;
         const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch continue;
         if (parsed.value != .object) continue;
         const o = parsed.value.object;
@@ -661,7 +661,7 @@ const LastMsg = struct { id: ?[]const u8, provider: ?[]const u8 };
 
 fn lastModelInfo(a: std.mem.Allocator, io: std.Io, messages_path: []const u8) LastMsg {
     const none = LastMsg{ .id = null, .provider = null };
-    const data = std.Io.Dir.cwd().readFileAlloc(io, messages_path, a, @enumFromInt(512 << 20)) catch return none;
+    const data = std.Io.Dir.cwd().readFileAlloc(io, messages_path, a, @fromBackingInt(@intCast(512 << 20))) catch return none;
     const p = std.mem.findLast(u8, data, "\"modelInfo\"") orelse return none;
     return .{
         .id = extractAfter(data, p, "\"id\""),
@@ -678,7 +678,7 @@ fn detectCline(a: std.mem.Allocator, io: std.Io, anc: Ancestry, home: []const u8
     const prov_path = try std.fmt.allocPrint(a, "{s}/.cline/data/settings/providers.json", .{home});
     var config_fields = std.ArrayList(FieldObservation).empty;
     defer config_fields.deinit(a);
-    if (cwd_dir.readFileAlloc(io, prov_path, a, @enumFromInt(1 << 20)) catch null) |pdata| {
+    if (cwd_dir.readFileAlloc(io, prov_path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |pdata| {
         if (std.json.parseFromSlice(std.json.Value, a, pdata, .{}) catch null) |parsed| {
             if (parsed.value == .object) {
                 const root = parsed.value.object;
@@ -822,7 +822,7 @@ fn detectGoose(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     else
         return;
     var active: ?[]const u8 = null;
-    if (cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch null) |ydata| {
+    if (cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |ydata| {
         // pass 1: active_provider (top-level key)
         var lines = std.mem.splitScalar(u8, ydata, '\n');
         while (lines.next()) |raw| {
@@ -921,7 +921,7 @@ fn detectKimi(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection)
     if (home.len == 0) return;
     const cwd_dir = std.Io.Dir.cwd();
     const path = try std.fmt.allocPrint(a, "{s}/.kimi-code/config.toml", .{home});
-    if (cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch null) |data| {
+    if (cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |data| {
         var lines = std.mem.splitScalar(u8, data, '\n');
         while (lines.next()) |raw| {
             const t = std.mem.trim(u8, raw, " \t\r");
@@ -963,7 +963,7 @@ fn detectMmx(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     if (home.len > 0) {
         const cwd_dir = std.Io.Dir.cwd();
         const path = try std.fmt.allocPrint(a, "{s}/.mmx/config.json", .{home});
-        if (cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch null) |cdata| {
+        if (cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |cdata| {
             if (std.json.parseFromSlice(std.json.Value, a, cdata, .{}) catch null) |parsed| {
                 if (parsed.value == .object) {
                     const o = parsed.value.object;
@@ -1046,7 +1046,7 @@ fn codewhaleNewestSession(a: std.mem.Allocator, io: std.Io, sessions_root: []con
         if (!std.mem.endsWith(u8, ent.name, ".json")) continue;
         if (std.mem.eql(u8, ent.name, "session_boot_owners.json")) continue;
         const path = std.fmt.allocPrint(a, "{s}/{s}", .{ sessions_root, ent.name }) catch continue;
-        const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch continue;
+        const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch continue;
         const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch continue;
         if (parsed.value != .object) continue;
         const meta = parsed.value.object.get("metadata") orelse continue;
@@ -1122,7 +1122,7 @@ fn detectCodewhale(a: std.mem.Allocator, io: std.Io, env: *const std.process.Env
     if (d.provider_name == null or d.model_name == null) {
         const config_path = if (env.get("CODEWHALE_CONFIG_PATH")) |p| p else try std.fmt.allocPrint(a, "{s}/config.toml", .{root});
         const cwd_dir = std.Io.Dir.cwd();
-        if (cwd_dir.readFileAlloc(io, config_path, a, @enumFromInt(1 << 20)) catch null) |data| {
+        if (cwd_dir.readFileAlloc(io, config_path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |data| {
             var fields = std.ArrayList(FieldObservation).empty;
             defer fields.deinit(a);
             var lines = std.mem.splitScalar(u8, data, '\n');
@@ -1237,7 +1237,7 @@ fn dshNewestSession(a: std.mem.Allocator, io: std.Io, root: []const u8, cwd: []c
 }
 
 fn dshReadSession(a: std.mem.Allocator, io: std.Io, path: []const u8) ![]u8 {
-    const data = try std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(64 << 20));
+    const data = try std.Io.Dir.cwd().readFileAlloc(io, path, a, @fromBackingInt(@intCast(64 << 20)));
     if (!std.mem.endsWith(u8, path, ".zstd")) return data;
     var in: std.Io.Reader = .fixed(data);
     var z = std.compress.zstd.Decompress.init(&in, &.{}, .{});
@@ -1365,7 +1365,7 @@ fn detectMinimaxCode(a: std.mem.Allocator, io: std.Io, env: *const std.process.E
 
     const config_path = try std.fmt.allocPrint(a, "{s}/config.yaml", .{data_dir});
     const cwd_dir = std.Io.Dir.cwd();
-    if (cwd_dir.readFileAlloc(io, config_path, a, @enumFromInt(1 << 20)) catch null) |data| {
+    if (cwd_dir.readFileAlloc(io, config_path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |data| {
         var fields = std.ArrayList(FieldObservation).empty;
         defer fields.deinit(a);
         var lines = std.mem.splitScalar(u8, data, '\n');
@@ -1448,7 +1448,7 @@ fn detectQwen(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.
     if (home.len == 0) return;
     const cwd_dir = std.Io.Dir.cwd();
     const path = try std.fmt.allocPrint(a, "{s}/.qwen/settings.json", .{home});
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch return;
     defer a.free(data);
 
     // parse top-level JSON: { "model": { "name": "MiniMax-M3" }, "security": { "auth": { "selectedType": "openai" } } }
@@ -1522,7 +1522,7 @@ fn detectOmp(a: std.mem.Allocator, io: std.Io, home: []const u8, d: *Detection) 
     if (home.len == 0) return;
     const cwd_dir = std.Io.Dir.cwd();
     const path = try std.fs.path.join(a, &.{ home, ".omp/agent/config.yml" });
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch return;
     defer a.free(data);
 
     // omp's config is YAML where parent + child key can be on separate lines: modelRoles: default: minimax-code/MiniMax-M3
@@ -1587,7 +1587,7 @@ fn detectReasonix(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     if (home.len == 0) return;
     const cwd_dir = std.Io.Dir.cwd();
     const path = try std.fs.path.join(a, &.{ home, ".reasonix/config.toml" });
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch return;
     defer a.free(data);
 
     // Naive parser: scan top-level lines for `default_model = "<value>"`.
@@ -1734,7 +1734,7 @@ fn detectCrushFromDb(a: std.mem.Allocator, io: std.Io, env: *const std.process.E
 fn detectCrushFromCrushJson(a: std.mem.Allocator, io: std.Io, base: []const u8, d: *Detection) !bool {
     const cwd_dir = std.Io.Dir.cwd();
     const path = try std.fs.path.join(a, &.{ base, "crush.json" });
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return false;
+    const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch return false;
     defer a.free(data);
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return false;
     defer parsed.deinit();
@@ -2181,7 +2181,7 @@ fn detectHermes(a: std.mem.Allocator, io: std.Io, env: *const std.process.Enviro
     if (home.len == 0) return;
     const cfg_home = env.get("HERMES_HOME") orelse try std.fmt.allocPrint(a, "{s}/.hermes", .{home});
     const path = try std.fmt.allocPrint(a, "{s}/config.yaml", .{cfg_home});
-    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch return;
     var in_model_block = false;
     var model_default: ?[]const u8 = null;
     var model_provider: ?[]const u8 = null;
@@ -2282,7 +2282,7 @@ fn detectPi(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Ma
     if (home.len == 0) return;
     const cwd_dir = std.Io.Dir.cwd();
     const path = try std.fmt.allocPrint(a, "{s}/.pi/agent/settings.json", .{home});
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 20)) catch return;
+    const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 20))) catch return;
     defer a.free(data);
 
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return;
@@ -2335,7 +2335,7 @@ fn zcodeCustomProviderFromConfig(a: std.mem.Allocator, io: std.Io, home: []const
     if (key.len == 0) return null;
     const cwd_dir = std.Io.Dir.cwd();
     const path = std.fmt.allocPrint(a, "{s}/.zcode/v2/config.json", .{home}) catch return null;
-    const data = cwd_dir.readFileAlloc(io, path, a, @enumFromInt(1 << 22)) catch return null;
+    const data = cwd_dir.readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 22))) catch return null;
     const parsed = std.json.parseFromSlice(std.json.Value, a, data, .{}) catch return null;
     defer parsed.deinit();
     if (parsed.value != .object) return null;
@@ -2542,7 +2542,7 @@ fn detectZcode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ
     const settings_path = try std.fmt.allocPrint(a, "{s}/.zcode/v2/setting.json", .{home});
     var config_fields = std.ArrayList(FieldObservation).empty;
     defer config_fields.deinit(a);
-    if (cwd_dir.readFileAlloc(io, settings_path, a, @enumFromInt(1 << 20)) catch null) |sdata| {
+    if (cwd_dir.readFileAlloc(io, settings_path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |sdata| {
         if (std.json.parseFromSlice(std.json.Value, a, sdata, .{}) catch null) |parsed| {
             defer parsed.deinit();
             if (parsed.value == .object) {
@@ -2641,7 +2641,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
         agent_id = if (std.mem.findScalar(u8, rest, ':')) |i| rest[0..i] else rest;
         if (full_key.len > 0 and agent_id.len > 0) {
             const store_path = try std.fmt.allocPrint(a, "{s}/agents/{s}/sessions/sessions.json", .{ state, agent_id });
-            if (cwd_dir.readFileAlloc(io, store_path, a, @enumFromInt(1 << 20)) catch null) |sdata| {
+            if (cwd_dir.readFileAlloc(io, store_path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |sdata| {
                 defer a.free(sdata);
                 if (std.json.parseFromSlice(std.json.Value, a, sdata, .{}) catch null) |parsed| {
                     defer parsed.deinit();
@@ -2659,7 +2659,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
         }
     }
     if (session_file) |sf| {
-        if (cwd_dir.readFileAlloc(io, sf, a, @enumFromInt(1 << 25)) catch null) |data| {
+        if (cwd_dir.readFileAlloc(io, sf, a, @fromBackingInt(@intCast(1 << 25))) catch null) |data| {
             defer a.free(data);
             // scan BACKWARDS — the newest assistant record sits at the tail of the append-only transcript (the detectZcode idiom).
             var lines = std.mem.splitBackwardsScalar(u8, data, '\n');
@@ -2718,7 +2718,7 @@ fn detectAutoClaw(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     var base_url_field: ?[]const u8 = null;
     var config_fields = std.ArrayList(FieldObservation).empty;
     defer config_fields.deinit(a);
-    if (cwd_dir.readFileAlloc(io, cfg_path, a, @enumFromInt(1 << 20)) catch null) |cdata| {
+    if (cwd_dir.readFileAlloc(io, cfg_path, a, @fromBackingInt(@intCast(1 << 20))) catch null) |cdata| {
         defer a.free(cdata);
         if (std.json.parseFromSlice(std.json.Value, a, cdata, .{}) catch null) |parsed| {
             defer parsed.deinit();
@@ -3159,7 +3159,7 @@ fn zedThreadBlobModel(a: std.mem.Allocator, io: std.Io, db: []const u8, id: []co
 fn zedReadSettings(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8) !?ZedSettings {
     const dir = (try zedConfigDir(a, env, home)) orelse return null;
     const path = try std.fmt.allocPrint(a, "{s}/settings.json", .{dir});
-    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @enumFromInt(1 << 22)) catch return null;
+    const data = std.Io.Dir.cwd().readFileAlloc(io, path, a, @fromBackingInt(@intCast(1 << 22))) catch return null;
     const root = zedParseJsonc(a, data) orelse return null;
     if (root != .object) return null;
     var settings = ZedSettings{ .path = path };
