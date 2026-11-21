@@ -4530,6 +4530,192 @@ pub fn resolveRecipe(a: std.mem.Allocator, h: []const u8, p: []const u8, m: []co
     return d;
 }
 
+/// the model of the newest main-thread reply in a Claude Code transcript.
+/// Subagent replies carry `isSidechain: true`, and `<synthetic>` marks records Claude Code writes itself, so both are skipped.
+pub fn claudeCodeLastModel(a: std.mem.Allocator, data: []const u8) ?[]const u8 {
+    var lines = std.mem.splitBackwardsScalar(u8, data, '\n');
+    while (lines.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (std.mem.indexOf(u8, trimmed, "\"assistant\"") == null) continue;
+        const parsed = std.json.parseFromSliceLeaky(std.json.Value, a, trimmed, .{}) catch continue;
+        if (parsed != .object) continue;
+        const o = parsed.object;
+        if (!std.mem.eql(u8, jstr(o, "type") orelse "", "assistant")) continue;
+        if (o.get("isSidechain")) |s| {
+            if (s == .bool and s.bool) continue;
+        }
+        const msg = o.get("message") orelse continue;
+        if (msg != .object) continue;
+        const model = jstr(msg.object, "model") orelse continue;
+        if (model.len == 0 or std.mem.eql(u8, model, "<synthetic>")) continue;
+        return a.dupe(u8, model) catch null;
+    }
+    return null;
+}
+
+/// fold the API id a transcript records onto the undated rule name.
+/// Claude Code stores the raw API id: Anthropic dates most ids (`claude-sonnet-4-20250514`), Vertex stamps them (`claude-sonnet-4-5@20250929`),
+/// and Bedrock prepends the vendor/region and appends the model version (`us.anthropic.claude-sonnet-4-20250514-v1:0`).
+/// This is Claude-scoped: other providers' release stamps are folded as rule variations per DESIGN #13.
+fn claudeModelRuleName(a: std.mem.Allocator, raw: []const u8) []const u8 {
+    var name = raw;
+    name = stripClaudeVersionSuffix(name);
+    name = stripClaudeDateSuffix(name);
+    if (std.mem.indexOf(u8, name, "anthropic.")) |i| name = name[i + "anthropic.".len ..];
+    name = stripClaudeDateSuffix(name);
+    return a.dupe(u8, name) catch raw;
+}
+
+/// `-v<digits>:<digits>` (Bedrock's model version suffix).
+fn stripClaudeVersionSuffix(name: []const u8) []const u8 {
+    var end = name.len;
+    while (end > 0 and std.ascii.isDigit(name[end - 1])) end -= 1;
+    if (end == name.len or end == 0 or name[end - 1] != ':') return name;
+    const colon = end - 1;
+    var digits = colon;
+    while (digits > 0 and std.ascii.isDigit(name[digits - 1])) digits -= 1;
+    if (digits == colon or digits < 2) return name;
+    if (name[digits - 2] != '-' or name[digits - 1] != 'v') return name;
+    return name[0 .. digits - 2];
+}
+
+/// a trailing `-YYYYMMDD` (Anthropic) or `@YYYYMMDD` (Vertex) release stamp.
+fn stripClaudeDateSuffix(name: []const u8) []const u8 {
+    if (name.len <= 9) return name;
+    const sep = name[name.len - 9];
+    if (sep != '-' and sep != '@') return name;
+    for (name[name.len - 8 ..]) |c| {
+        if (!std.ascii.isDigit(c)) return name;
+    }
+    return name[0 .. name.len - 9];
+}
+
+/// read a transcript from its tail, widening the window until it holds a model record or the whole file.
+fn claudeCodeTranscriptModel(a: std.mem.Allocator, io: std.Io, path: []const u8) ?[]const u8 {
+    var file = std.Io.Dir.cwd().openFile(io, path, .{}) catch return null;
+    defer file.close(io);
+    var read_buf: [4096]u8 = undefined;
+    var file_reader = file.reader(io, &read_buf);
+    const size = file_reader.getSize() catch return null;
+    var window: u64 = @min(size, 1 << 18);
+    while (true) {
+        file_reader.seekTo(size - window) catch return null;
+        // the limit must exceed the bytes that remain, or the read fails with StreamTooLong
+        const data = file_reader.interface.allocRemaining(a, .limited64(window + 1)) catch return null;
+        const view = if (window >= size) data else if (std.mem.indexOfScalar(u8, data, '\n')) |nl| data[nl + 1 ..] else data[data.len..];
+        if (claudeCodeLastModel(a, view)) |m| return m;
+        if (window >= size or window >= (1 << 26)) return null;
+        window = @min(size, window * 2);
+    }
+}
+
+/// Claude Code's project folder name for a directory. Observed: `/` and `.` become `-`. This maps every other non-alphanumeric byte the same way.
+fn claudeCodeProjectName(a: std.mem.Allocator, dir: []const u8) ![]const u8 {
+    const out = try a.dupe(u8, dir);
+    for (out) |*c| {
+        if (!std.ascii.isAlphanumeric(c.*)) c.* = '-';
+    }
+    return out;
+}
+
+/// the host of a URL, without scheme, credentials, port, or path.
+fn urlHost(url: []const u8) []const u8 {
+    var rest = url;
+    if (std.mem.indexOf(u8, rest, "://")) |i| rest = rest[i + 3 ..];
+    if (std.mem.indexOfAny(u8, rest, "/?#")) |i| rest = rest[0..i];
+    if (std.mem.lastIndexOfScalar(u8, rest, '@')) |i| rest = rest[i + 1 ..];
+    if (std.mem.indexOfScalar(u8, rest, ':')) |i| rest = rest[0..i];
+    return rest;
+}
+
+fn claudeCodeFlagOn(env: *const std.process.Environ.Map, name: []const u8) bool {
+    const v = env.get(name) orelse return false;
+    return v.len > 0 and !std.mem.eql(u8, v, "0") and !std.ascii.eqlIgnoreCase(v, "false");
+}
+
+/// the session transcript: `<config>/projects/<project>/<session id>.jsonl`, found by the session id because the agent's cwd may have left the session's project.
+/// Without a session id, the newest transcript in the cwd's project folder.
+fn claudeCodeTranscript(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, projects: []const u8) ?[]const u8 {
+    const cwd_dir = std.Io.Dir.cwd();
+    if (env.get("CLAUDE_CODE_SESSION_ID")) |sid| {
+        const valid = sid.len > 0 and for (sid) |c| {
+            if (!std.ascii.isAlphanumeric(c) and c != '-') break false;
+        } else true;
+        if (valid) {
+            var dir = cwd_dir.openDir(io, projects, .{ .iterate = true }) catch return null;
+            defer dir.close(io);
+            var it = dir.iterate();
+            while (it.next(io) catch null) |ent| {
+                if (ent.kind != .directory) continue;
+                const path = std.fmt.allocPrint(a, "{s}/{s}/{s}.jsonl", .{ projects, ent.name, sid }) catch continue;
+                if (cwd_dir.statFile(io, path, .{})) |_| return path else |_| {}
+            }
+        }
+    }
+    const cwd = std.process.currentPathAlloc(io, a) catch return null;
+    const name = claudeCodeProjectName(a, cwd) catch return null;
+    const project_path = std.fmt.allocPrint(a, "{s}/{s}", .{ projects, name }) catch return null;
+    var dir = cwd_dir.openDir(io, project_path, .{ .iterate = true }) catch return null;
+    defer dir.close(io);
+    var it = dir.iterate();
+    var best: ?[]const u8 = null;
+    var best_mtime: i96 = 0;
+    while (it.next(io) catch null) |ent| {
+        if (ent.kind != .file or !std.mem.endsWith(u8, ent.name, ".jsonl")) continue;
+        const path = std.fmt.allocPrint(a, "{s}/{s}", .{ project_path, ent.name }) catch continue;
+        const st = cwd_dir.statFile(io, path, .{}) catch continue;
+        if (best == null or st.mtime.nanoseconds > best_mtime) {
+            best = path;
+            best_mtime = st.mtime.nanoseconds;
+        }
+    }
+    return best;
+}
+
+/// Claude Code, CLI and desktop app. The provider follows Claude Code's own switches: a cloud flag, else the ANTHROPIC_BASE_URL host, else the Anthropic API it defaults to.
+/// The model is the one the session transcript recorded for the newest reply.
+fn detectClaudeCode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    // Claude Platform on AWS has no provider rule, so its flag leaves the provider unresolved.
+    const cloud_flags = [_][2][]const u8{
+        .{ "CLAUDE_CODE_USE_BEDROCK", "amazon-bedrock" },
+        .{ "CLAUDE_CODE_USE_VERTEX", "google-vertex" },
+        .{ "CLAUDE_CODE_USE_FOUNDRY", "azure-foundry" },
+        .{ "CLAUDE_CODE_USE_ANTHROPIC_AWS", "" },
+    };
+    var cloud = false;
+    for (cloud_flags) |f| {
+        if (!claudeCodeFlagOn(env, f[0])) continue;
+        cloud = true;
+        if (f[1].len > 0) {
+            try setProvider(a, d, f[1]);
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = f[0], .value = env.get(f[0]) });
+        }
+        break;
+    }
+    if (!cloud) {
+        const base_url = env.get("ANTHROPIC_BASE_URL") orelse "";
+        if (base_url.len == 0) {
+            try setProvider(a, d, "anthropic");
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "ANTHROPIC_BASE_URL" });
+        } else if (providerForBaseUrl(urlHost(base_url))) |p| {
+            try setProvider(a, d, p);
+            try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "ANTHROPIC_BASE_URL", .value = base_url });
+        }
+    }
+
+    const config = if (env.get("CLAUDE_CONFIG_DIR")) |c| c else if (home.len > 0) try std.fmt.allocPrint(a, "{s}/.claude", .{home}) else return;
+    if (config.len == 0) return;
+    const projects = try std.fmt.allocPrint(a, "{s}/projects", .{config});
+    const path = claudeCodeTranscript(a, io, env, projects) orelse return;
+    const model = claudeCodeTranscriptModel(a, io, path) orelse return;
+    try applyModel(a, d, claudeModelRuleName(a, model), model);
+    // the folder and file names carry the encoded project path and the session id, so the claim names the layout instead
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = try std.fmt.allocPrint(a, "{s}/<project>/<session>.jsonl", .{projects}), .field = "message.model", .value = model });
+    const fields = try a.alloc(FieldObservation, 1);
+    fields[0] = .{ .dotted_path = "message.model", .value = model };
+    d.raw.session_files = try appendFileObservation(a, d.raw.session_files, .{ .path = path, .fields = fields });
+}
+
 fn hasCopilotAppAncestry(names: []const []const u8) bool {
     var has_runtime = false;
     var has_app = false;
@@ -4677,6 +4863,8 @@ pub fn detect(init: std.process.Init, d: *Detection) !bool {
             try detectAutoClaw(a, io, env, home, d);
         } else if (std.mem.eql(u8, r.name, "zed")) {
             try detectZed(a, io, env, home, d);
+        } else if (std.mem.eql(u8, r.name, "claude-code")) {
+            try detectClaudeCode(a, io, env, home, d);
         }
         // detectors may set provider after model (e.g. a config file whose default_text_model line precedes its provider line), so compose the agent id once both dims are known rather than only inside applyModel.
         try setAgentId(a, d);
@@ -4794,4 +4982,61 @@ test "zedFolderMatches: bare paths and JSON arrays, boundary-aware" {
     try std.testing.expect(!zedFolderMatches(a, "/Users/me/proj", "[\"/Users/me/proj-2\"]"));
     // Windows separators normalize before comparison.
     try std.testing.expect(zedFolderMatches(a, "C:\\Users\\me\\proj", "C:/Users/me/proj"));
+}
+
+test "claudeCodeLastModel: newest main-thread reply wins" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    const switched =
+        \\{"type":"assistant","message":{"model":"claude-opus-5"}}
+        \\{"type":"user","message":{"role":"user"}}
+        \\{"type":"assistant","message":{"model":"claude-opus-5-5"}}
+        \\{"type":"user","message":{"role":"user","content":"tool result"}}
+        \\
+    ;
+    try std.testing.expectEqualStrings("claude-opus-5-5", claudeCodeLastModel(a, switched).?);
+
+    const sidechain =
+        \\{"type":"assistant","message":{"model":"claude-opus-5-5"}}
+        \\{"type":"assistant","isSidechain":true,"message":{"model":"claude-sonnet-5"}}
+    ;
+    try std.testing.expectEqualStrings("claude-opus-5-5", claudeCodeLastModel(a, sidechain).?);
+
+    const synthetic =
+        \\{"type":"assistant","message":{"model":"claude-opus-5-5"}}
+        \\{"type":"assistant","message":{"model":"<synthetic>"}}
+    ;
+    try std.testing.expectEqualStrings("claude-opus-5-5", claudeCodeLastModel(a, synthetic).?);
+
+    try std.testing.expect(claudeCodeLastModel(a, "{\"type\":\"user\",\"message\":{\"content\":\"assistant\"}}") == null);
+    try std.testing.expect(claudeCodeLastModel(a, "") == null);
+}
+
+test "urlHost: scheme, credentials, port, and path stripped" {
+    try std.testing.expectEqualStrings("api.anthropic.com", urlHost("https://api.anthropic.com"));
+    try std.testing.expectEqualStrings("api.z.ai", urlHost("https://api.z.ai/api/anthropic"));
+    try std.testing.expectEqualStrings("proxy.local", urlHost("http://user:pw@proxy.local:8080/v1?x=anthropic.com"));
+    try std.testing.expectEqualStrings("api.deepseek.com", urlHost("api.deepseek.com/anthropic"));
+}
+
+test "claudeCodeProjectName: slashes and dots become dashes" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    try std.testing.expectEqualStrings("-Users-me--claude", try claudeCodeProjectName(arena.allocator(), "/Users/me/.claude"));
+}
+
+test "claudeModelRuleName: dated, Vertex and Bedrock ids fold to the rule name" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+
+    try std.testing.expectEqualStrings("claude-sonnet-4", claudeModelRuleName(a, "claude-sonnet-4-20250514"));
+    try std.testing.expectEqualStrings("claude-sonnet-4-5", claudeModelRuleName(a, "claude-sonnet-4-5@20250929"));
+    try std.testing.expectEqualStrings("claude-sonnet-4", claudeModelRuleName(a, "anthropic.claude-sonnet-4-20250514-v1:0"));
+    try std.testing.expectEqualStrings("claude-opus-5-5", claudeModelRuleName(a, "us.anthropic.claude-opus-5-5-20260101-v1:0"));
+    // undated ids and ids without a recognizable stamp pass through unchanged
+    try std.testing.expectEqualStrings("claude-opus-5-5", claudeModelRuleName(a, "claude-opus-5-5"));
+    try std.testing.expectEqualStrings("<synthetic>", claudeModelRuleName(a, "<synthetic>"));
 }

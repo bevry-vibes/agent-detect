@@ -22,6 +22,24 @@
       ]
     },
     {
+      "label": "Claude Code",
+      "short_title": null,
+      "name": "claude-code",
+      "id": "claudecode",
+      "license": "NONE",
+      "open_training": null,
+      "closed_training": "opt-out",
+      "reciprocity_scandal": false,
+      "variations": [],
+      "providers": [
+        "anthropic"
+      ],
+      "models": [
+        "claudeopus55",
+        "claudesonnet4"
+      ]
+    },
+    {
       "label": "Cline",
       "short_title": null,
       "name": "cline",
@@ -404,6 +422,7 @@
         "claudefable5",
         "claudeopus4",
         "claudeopus5",
+        "claudeopus55",
         "claudesonnet4",
         "claudesonnet5",
         "cogito21",
@@ -539,6 +558,7 @@
         "claudefable5",
         "claudeopus4",
         "claudeopus5",
+        "claudeopus55",
         "claudesonnet4",
         "claudesonnet5",
         "commanda",
@@ -1044,6 +1064,7 @@
         "claudefable5",
         "claudeopus4",
         "claudeopus5",
+        "claudeopus55",
         "claudesonnet4",
         "claudesonnet5",
         "deepseekr1",
@@ -1358,9 +1379,11 @@
       "reciprocity_scandal": true,
       "variations": [],
       "models": [
+        "claudeopus55",
         "claudesonnet4"
       ],
       "harnesses": [
+        "claudecode",
         "hermes",
         "kilo",
         "pi"
@@ -2916,6 +2939,26 @@
       ]
     },
     {
+      "label": "Claude Opus 5.5",
+      "short_title": null,
+      "name": "claude-opus-5.5",
+      "id": "claudeopus55",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [
+        "anthropic"
+      ],
+      "harnesses": [
+        "claudecode",
+        "hermes",
+        "kilo",
+        "pi"
+      ]
+    },
+    {
       "label": "Claude Sonnet 4",
       "short_title": null,
       "name": "claude-sonnet-4",
@@ -2934,6 +2977,7 @@
         "vercel"
       ],
       "harnesses": [
+        "claudecode",
         "cline",
         "goose",
         "hermes",
@@ -6425,6 +6469,16 @@
       "platforms": [],
       "reciprocal": false
     },
+    "claudecode-anthropic-claudeopus55": {
+      "platforms": [
+        "darwin"
+      ],
+      "reciprocal": false
+    },
+    "claudecode-anthropic-claudesonnet4": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "cline-cerebras-gemma431b": {
       "platforms": [],
       "reciprocal": true
@@ -7518,6 +7572,10 @@
     "hermes-amazonbedrock-deepseekv32": {
       "platforms": [],
       "reciprocal": true
+    },
+    "hermes-anthropic-claudeopus55": {
+      "platforms": [],
+      "reciprocal": false
     },
     "hermes-anthropic-claudesonnet4": {
       "platforms": [],
@@ -9162,6 +9220,10 @@
       "reciprocal": true
     },
     "hermes-zai-glm52": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-anthropic-claudeopus55": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11987,6 +12049,10 @@
       "reciprocal": true
     },
     "opencode-opencodego-qwen38max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-anthropic-claudeopus55": {
       "platforms": [],
       "reciprocal": false
     },

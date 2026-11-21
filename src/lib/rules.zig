@@ -268,6 +268,8 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "claude-sonnet-5", .label = "Claude Sonnet 5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/sonnet", "https://docs.anthropic.com/en/docs/about-claude/models" } },
     // claude-opus-5: closed — Anthropic Claude Opus 5; API-only, no weights.
     .{ .name = "claude-opus-5", .label = "Claude Opus 5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/opus", "https://docs.anthropic.com/en/docs/about-claude/models" } },
+    // claude-opus-5.5: closed. API-only, no weights. Claude Code records the API id `claude-opus-5-5`, which slugs to this rule.
+    .{ .name = "claude-opus-5.5", .label = "Claude Opus 5.5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/opus", "https://docs.anthropic.com/en/docs/about-claude/models" } },
     // gemini-2.5-pro: closed — Google Gemini 2.5 Pro; API-only, no weights.
     .{ .name = "gemini-2.5-pro", .label = "Gemini 2.5 Pro", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
     // qwen3.5-397b-a17b: open-weight — the MoE flagship of the Qwen3.5 open line (Apache-2.0 per HF tag);
@@ -735,6 +737,8 @@ const autoclaw_env = [_][]const u8{ "AUTOCLAW_MODEL_BROKER_OPENAI_BASE_URL", "AU
 // Zed desktop editor — its integrated terminal exports ZED_TERM (the terminal marker) and ZED_ENVIRONMENT (the shell's environment kind, e.g. `worktree-shell`; observed 2026-11-11).
 // TERM_PROGRAM=zed is deliberately NOT a marker: every terminal emulator sets TERM_PROGRAM, so presence alone cannot identify this harness (the same reasoning as AI_AGENT for hermes).
 const zed_env = [_][]const u8{ "ZED_TERM", "ZED_ENVIRONMENT" };
+// Claude Code exports both to every child process (observed in a desktop session: CLAUDECODE=1, CLAUDE_CODE_ENTRYPOINT=claude-desktop).
+const claude_code_env = [_][]const u8{ "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT" };
 
 pub const rulesForHarnesses = [_]HarnessRule{
     // cline: Apache-2.0 — https://github.com/cline/cline ships an Apache-2.0 LICENSE (Cline Bot Inc.'s open-source VS Code / JetBrains agent).
@@ -882,6 +886,14 @@ pub const rulesForHarnesses = [_]HarnessRule{
         &[_][]const u8{ "autoclaw", "autoclaw.exe" }
     else
         &[_][]const u8{"autoclaw"} },
+    // claude-code: NONE. The repo's LICENSE.md is "All rights reserved", with use under Anthropic's Commercial Terms.
+    // Training: closed opt-out. Consumer accounts (Free, Pro, Max, Ultra) train their Claude Code sessions while the privacy setting is on; commercial accounts never train. Anthropic serves no open models, so the open axis stays null.
+    // Not scandal-flagged: research/scandals.md attaches Anthropic's findings to the model maker, and the anthropic provider rule carries them.
+    // Declared after the CLI harnesses, because CLAUDECODE reaches every agent started from Claude Code, and before zed and github-copilot, because their markers reach a claude started in their terminals.
+    .{ .name = "claude-code", .label = "Claude Code", .license = "NONE", .license_sources = &.{ "https://github.com/anthropics/claude-code", "https://github.com/anthropics/claude-code/blob/main/LICENSE.md" }, .closed_training = "opt-out", .training_sources = &.{ "https://code.claude.com/docs/en/data-usage", "https://www.anthropic.com/news/updates-to-our-consumer-terms" }, .closed_setting_hint = "turn off model training at claude.ai/settings/data-privacy-controls (consumer plans; commercial plans never train)", .env_markers = &claude_code_env, .binary_names = if (builtin.os.tag == .windows)
+        &[_][]const u8{ "claude", "claude.exe" }
+    else
+        &[_][]const u8{"claude"} },
     // zed: GPL-3.0-or-later — https://github.com/zed-industries/zed ships the editor primarily under GPL-3.0-or-later ("Zed source code is licensed primarily under GPL-3.0-or-later, with Apache-2.0 components where marked": LICENSE-GPL + LICENSE-APACHE at the repo root).
     // training: opt-in/opt-in — Zed's AI Privacy page: "Zed does not retain your prompts or code context by default … Zed only retains AI data when you explicitly share feedback or opt in to training data collection"
     // (feedback sends a conversation thread for review; edit-prediction training data is collected only when the user opts in); requests made with a provider API key are handled under that provider's terms (the provider dim).
@@ -937,6 +949,9 @@ const env_value_allowlist = [_][]const u8{
     "AUTOCLAW_ZCODE_PLUGIN_EVENTS",
     // Zed markers — fixed non-secret terminal/environment facts.
     "ZED_TERM", "ZED_ENVIRONMENT",
+    // Claude Code markers and provider switches: flags and the entrypoint name. ANTHROPIC_BASE_URL stays redacted.
+    "CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT",
+    "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY",
 };
 
 pub fn envValueAllowed(name: []const u8) bool {

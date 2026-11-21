@@ -662,11 +662,6 @@ When a pending harness gets its rule added, queue its from-identity pass (`fixtu
 
 The maintainer (Benjamin Lupton) added `cursor` + `copilot` (2026-08-11) and scoped the rest below as follow-ups for other contributors to pick up — he won't use them, so their rules land only when someone else maintains them.
 
-- [ ] **claude** — Claude Code CLI (`claude -p <prompt>` headless;
-  env `ANTHROPIC_MODEL`/`ANTHROPIC_BASE_URL`/`ANTHROPIC_AUTH_TOKEN` + `CLAUDE_CODE_*`;
-  config `~/.claude/settings.json` + `~/.claude.json`;
-  sessions `~/.claude/projects/`; proc `claude`).
-  Native binary broken on the maintainer's machine (npm postinstall) — rules/from-identity land regardless of install.
 - [ ] **codex** — OpenAI Codex CLI (`codex exec <prompt>`; config `~/.codex/config.toml` `model`/`model_provider`; sessions `~/.codex/sessions/`; proc `codex`).
   The desktop app now ships inside the ChatGPT app (macOS `chatgpt` cask; winget `OpenAI.ChatGPT` / Store `9PLM9XGG6VKS` on Windows; Linux preview; the installer's `chatgpt` row), shares `~/.codex`, and has no headless launcher, so the CLI surface is the capture path.
 - [ ] **grok** — Grok CLI (`grok --always-approve <prompt>`; config `~/.grok/config.toml` + models `~/.grok/models_cache.json`; sessions `~/.grok/sessions/` + `worktrees.db`; proc `grok`).
@@ -696,6 +691,17 @@ The same settings file carries the training instance read: `edit_predictions.all
 Invocations: none — Zed's agent panel is GUI-driven (no headless launcher), so from-captures are manual (`meta.capture_kind = "manual"`, no `prompt_invocation`): the from-identity declaration (`zed-deepseek-deepseekv41flash`) and the live manual capture (`zed-deepseek-deepseekv41flash-darwin`, captured 2026-11-11) are the fixtures of record. The daemon announces `agent-detect-dev fixtures capture --manual` on stderr when a from-capture candidate is picked.
 
 **github-copilot** / **GitHub Copilot** (2026-11-13): detected by the app session marker together with its `copilot-runtime` → `github` process ancestry. The stable harness ID is `githubcopilot`; **GitHub Copilot.app** and **Copilot App** are accepted aliases. Provider/model use `COPILOT_MODEL` when set; otherwise they come from the newest non-archived `~/.copilot/data.db` session, preferring a running one. The app has no headless launcher, so each model selection's from-capture must be run manually from its live session (`fixtures capture --manual --harness-version=1.4.0`). The session store records the **Copilot Fusion** selection as the generic selector `auto`; the detector folds that spelling to `model_id: copilotfusion` inside Copilot sessions only (a global `auto` rule would claim every harness's own auto selector). It records this selected dynamic route, not the underlying model used for a response (`from-capture/githubcopilot-githubcopilot-copilotfusion-darwin.json`).
+
+**claude-code** / **Claude Code** (2026-11-17): one rule covers the CLI and the Claude desktop app, because the app runs the same `claude` binary with the same markers and transcripts (decision #18: the detection does not differ).
+The `CLAUDECODE` and `CLAUDE_CODE_ENTRYPOINT` markers reach every child process, so the rule sits after the CLI harnesses and before `zed` and `github-copilot`.
+The provider follows Claude Code's own switches: `CLAUDE_CODE_USE_BEDROCK` / `_VERTEX` / `_FOUNDRY` give `amazon-bedrock` / `google-vertex` / `azure-foundry`, `CLAUDE_CODE_USE_ANTHROPIC_AWS` leaves it unresolved (no rule), an `ANTHROPIC_BASE_URL` host folds through `providerForBaseUrl` (an unknown host stays unresolved), and no base URL means `anthropic`.
+The model comes from the session transcript `<CLAUDE_CONFIG_DIR or ~/.claude>/projects/<project>/<CLAUDE_CODE_SESSION_ID>.jsonl`, found by the session id because the shell may have left the session's project: the newest `assistant` record that is neither a sidechain nor `<synthetic>`, read from the file's tail. Without a session id, the newest transcript in the cwd's project folder.
+The recorded API id folds to the undated rule name: a trailing `-YYYYMMDD` (Anthropic) or `@YYYYMMDD` (Vertex) release stamp is stripped, along with Bedrock's `anthropic.`/region prefix and `-vN:M` version suffix, so dated and provider-hosted spellings resolve (`claude-sonnet-4-20250514` → `claude-sonnet-4`). An id that still matches no rule stays unsourced (never guessed).
+Inside a subagent, detection therefore reports the main thread's model.
+The evidence claim names that layout, not the real path, because the folder and file names carry the encoded project path and the session id.
+The VS Code extension is an IDE surface, so DESIGN.md's IDE-extension rough-edge note applies: an editor window or tmux server that inherited `CLAUDECODE` from a parent agent session leaks the marker into every terminal it opens, and extension-hosted chats may carry no marker at all — per-extension testing is still outstanding.
+Training is closed opt-out: consumer accounts train while the claude.ai privacy setting is on, commercial accounts never do, and no local copy of the setting exists to read. The harness is not scandal-flagged: Anthropic's findings ride the `anthropic` provider rule.
+Fixtures of record: the live manual capture `claudecode-anthropic-claudeopus55-darwin` (Claude Code 2.1.325 in the desktop app) and the declarations for the new `anthropic` → `claude-opus-5.5` cell. `claude -p <prompt>` is the headless launcher; no invocation is authored yet.
 
 ### catalog-inference verdicts (recorded so they aren't re-litigated)
 
