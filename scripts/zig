@@ -2,7 +2,7 @@
 # scripts/zig — Unix entrypoint for the vendored Zig toolchain.
 # The implementation is scripts/zig.ps1; Windows runs it directly with pwsh.
 set -eu
-here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 if ! command -v pwsh >/dev/null 2>&1; then
 	printf 'scripts/zig: pwsh (PowerShell 7.6+) is required\n' >&2
 	exit 1
