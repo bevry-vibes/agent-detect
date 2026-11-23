@@ -97,6 +97,8 @@ pub const rulesForModels = [_]ModelRule{
     // mistral-large-4: open-weight — Mistral Large 4 (Le Chonk), 1T total / 52B active; the final weights landed 2026-10-29 under the Mistral Ecosystem Open-Weight License (modified MIT, not SPDX → NOASSERTION).
     // variations: `mistral-large-latest` moved here when Mistral repointed the floating alias from Large 3.
     .{ .name = "mistral-large-4", .label = "Mistral Large 4", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B", "https://huggingface.co/mistralai/Mistral-Large-4-1T-A52B/blob/main/LICENSE", "https://mistral.ai/news/mistral-large-4-oss/" }, .variations = &.{ "mistral-large-latest", "Mistral-Large-4-1T-A52B" } },
+    // pixtral-large-2502: unverified — the February 2025 refresh of Pixtral Large, served on OpenRouter. The 2411 weights are MRL (non-commercial, not SPDX); no HF repository for 2502 was found → openness/license null (never-guess).
+    .{ .name = "pixtral-large-2502", .label = "Pixtral Large 2502", .openness = null, .license = null, .sources = &.{ "https://openrouter.ai/mistralai/pixtral-large-2502", "https://mistral.ai/licenses/MRL-0.1.md" } },
     // qwen3.7-plus: closed — API-only; no official weights. Same qwen.ai linkage as qwen3.8-max above.
     .{ .name = "qwen3.7-plus", .label = "Qwen3.7-Plus", .openness = "closed", .sources = &.{ "https://qwen.ai/", "https://qwen.ai/blog?id=qwen3.7-plus" } },
     // deepseek-v4-pro: open-weight — the larger sibling of deepseek-v4-flash; HF card + MIT LICENSE.
@@ -308,7 +310,9 @@ pub const rulesForModels = [_]ModelRule{
     // Observed on opencode-go (bare id).
     // variations: AutoClaw's channel spelling (also the app's configured imageModel; observed 2026-09-06).
     // variations: the opencode zen free-tier spelling `glm-5.3-flash-free` folds here per DESIGN #13 (tier spellings are variations — same weights as the paid alias it rides).
-    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" }, .variations = &.{ "glm-5.3-flash:cloud", "zai_glm-5.3-flash", "glm-5.3-flash-free" } },
+    .{ .name = "glm-5.3-flash", .label = "GLM 5.3 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/zai-org/GLM-5.3-Flash", "https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/LICENSE" }, .variations = &.{ "glm-5.3-flash:cloud", "zai_glm-5.3-flash", "glm-5.3-flash-free", "glm-5.3-flashx", "glm-5.3-flashx-legal" } },
+    // glm-5.4: weights promised — Z.ai's first Loop Transformer flagship (2026-11-23); the API is "coming soon" after safety evaluation, and the blog says the weights will be open-sourced responsibly after completion, so no HF repo exists yet → openness/license null (never-guess; not `closed`, since open weights are announced).
+    .{ .name = "glm-5.4", .label = "GLM 5.4", .openness = null, .license = null, .sources = &.{ "https://z.ai/blog/glm-5.4", "https://x.com/Zai_org/status/2124811995912286352" } },
     // glm-5-turbo: closed — Z.ai's "Faster GLM-5 lane" (released 2026-03-16); a distinct official API id (docs.z.ai model page, OpenRouter z-ai/glm-5-turbo) with no public weights (HF zai-org/GLM-5-Turbo does not exist; models.dev records open_weights: false) → closed, license NONE.
     // variations: AutoClaw's channel spelling (observed in the runtime config catalog, 2026-09-06).
     .{ .name = "glm-5-turbo", .label = "GLM-5-Turbo", .openness = "closed", .license = "NONE", .sources = &.{ "https://docs.z.ai/guides/llm/glm-5-turbo", "https://openrouter.ai/z-ai/glm-5-turbo" }, .variations = &.{"zai_glm-5-turbo"} },
@@ -357,6 +361,8 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "kilo-auto-small", .label = "Auto Small", .openness = null, .license = null, .closed_training = "NOASSERTION", .sources = &.{"https://kilo.ai/docs/code-with-ai/agents/auto-model"} },
     // ernie-5.5-flash-preview: Baidu ERNIE 5.5 Flash Preview; open weights under the Baidu PaddlePaddle License (custom, not SPDX → NOASSERTION). The free model may train on prompts/responses per Baidu's policy opt-in; the paid ERNIE 5.5 Flash Preview does not train (never).
     .{ .name = "ernie-5.5-flash-preview", .label = "ERNIE 5.5 Flash Preview", .openness = "open-weight", .license = "NOASSERTION", .open_training = "opt-in", .closed_training = "never", .sources = &.{"https://ernie.baidu.com/privacy/en"}, .variations = &.{ "ernie-5.5-flash-preview:free", "baidu/ernie-5.5-flash-preview:free" } },
+    // ernie-light-dt-1.0: unverified — Baidu's ERNIE-Light-DT 1.0 (the decision-transformer line) served on OpenRouter; no public weight repository was found → openness/license null (never-guess).
+    .{ .name = "ernie-light-dt-1.0", .label = "ERNIE-Light-DT 1.0", .openness = null, .license = null, .sources = &.{"https://openrouter.ai/baidu/ernie-light-dt-1.0-intl"} },
     // lfm-3-1.7b: open-weight — LiquidAI LFM3-1.7B; the LFM Open License v1.0 is custom (not SPDX → NOASSERTION). The free Kilo tier may train on prompts/responses (opt-in); the paid spelling does not (never).
     .{ .name = "lfm-3-1.7b", .label = "LFM3 1.7B", .openness = "open-weight", .license = "NOASSERTION", .sources = &.{ "https://huggingface.co/LiquidAI/LFM3-1.7B", "https://huggingface.co/LiquidAI/LFM3-1.7B/blob/main/LICENSE" }, .open_training = "opt-in", .closed_training = "never", .variations = &.{ "lfm-3-1.7b:free", "liquid/lfm-3-1.7b:free" } },
     // nemotron-3-5-super-vl: open-weight — NVIDIA Nemotron 3.5 Super VL (120B A12B); vision-language model; HF card + LICENSE under NVIDIA Open Model License (custom, not SPDX → NOASSERTION). Free on Cline Pass (2026-10).
@@ -387,6 +393,8 @@ pub const rulesForModels = [_]ModelRule{
     // The opencode zen free period retains data and may use it for model training, and the surface exposes no paid spelling to escape it → enforced on the closed axis; the self-hosted open weights train nothing.
     // variations: the served free id `inkling-2-small-free` folds here per DESIGN #13.
     .{ .name = "inkling-2-small", .label = "Inkling 2 Small", .openness = "open-weight", .license = "Apache-2.0", .open_training = "never", .closed_training = "enforced", .sources = &.{ "https://thinkingmachines.ai/news/inkling-2-small/", "https://thinkingmachines.ai/model-card/inkling-2-small/", "https://huggingface.co/thinkingmachines/Inkling-2-Small", "https://huggingface.co/thinkingmachines/Inkling-2-Small/blob/main/LICENSE", "https://opencode.ai/docs/zen" }, .variations = &.{"inkling-2-small-free"} },
+    // inkling-2-mini: open-weight — Thinking Machines' compact Inkling 2 (a looped transformer); Apache-2.0 weights landed 2026-11-17 and OpenRouter began serving it 2026-11-21.
+    .{ .name = "inkling-2-mini", .label = "Inkling 2 Mini", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/thinkingmachines/Inkling-2-Mini", "https://openrouter.ai/thinkingmachines/inkling-2-mini" } },
     // jev-1.13: closed — TypeSafe AI's System One decision model (API-only, no public weights) → NONE.
     // TypeSafe's docs state Jev is not trained on customer requests or responses (and not fine-tuned on customer data), so the closed axis is never; TypeSafe serves no open models, so the open axis stays null (the exclusively-closed convention).
     // variations: the opencode zen free spelling `jev-1.13-free`, and the official versioned id `jev-1.13.0`.
@@ -407,6 +415,10 @@ pub const rulesForModels = [_]ModelRule{
     // No weights are published: the inclusionAI HF org lists Ling 3.1 and earlier, and the 3.2 repo endpoints do not resolve → NONE.
     // variations: the OpenRouter free-tier spelling `ling-3.2-flash:free` folds here per DESIGN #13.
     .{ .name = "ling-3.2-flash", .label = "Ling 3.2 Flash", .openness = "closed", .license = "NONE", .sources = &.{ "https://developer.ant-ling.com/", "https://openrouter.ai/inclusionai/ling-3.2-flash", "https://huggingface.co/inclusionAI" }, .variations = &.{"ling-3.2-flash:free"} },
+    // lingsante-3.1-flash / -air-vl / pulse-1.0: open-weight — Ant Ling's LingSante 3.1 medical family (InclusionAI), MIT weights on HF (2026-11-19/20). The flash ships an MXFP4 build; the air-VL is a 124B/5.5B multimodal model; Pulse 1.0 is the embedding model.
+    .{ .name = "lingsante-3.1-flash", .label = "LingSante 3.1 Flash", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/inclusionAI/LingSante-3.1-flash", "https://huggingface.co/inclusionAI/LingSante-3.1-flash-MXFP4", "https://x.com/AntLingAGI" } },
+    .{ .name = "lingsante-3.1-air-vl", .label = "LingSante 3.1 Air VL", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/inclusionAI/LingSante-3.1-air-VL", "https://x.com/AntLingAGI" } },
+    .{ .name = "lingsante-pulse-1.0", .label = "LingSante Pulse 1.0", .openness = "open-weight", .license = "MIT", .sources = &.{"https://huggingface.co/inclusionAI/LingSante-Pulse-1.0"} },
     // nex-n2.6: open-weight — Nex AGI's N2.6 (2026-11-10, image-text-to-text); Apache-2.0 weights on HF.
     .{ .name = "nex-n2.6", .label = "Nex N2.6", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/nex-agi/Nex-N2.6", "https://huggingface.co/nex-agi/Nex-N2.6/blob/main/LICENSE" } },
     // gemma-4-26b-a4b: open-weight — Google Gemma 4 26B A4B IT (MoE, ~4B active); Apache-2.0 weights on HF.
@@ -426,6 +438,8 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "gemini-4-neon", .label = "Gemini 4 Neon", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
     .{ .name = "gemini-4-carbon", .label = "Gemini 4 Carbon", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
     .{ .name = "gemini-4-hydrogen", .label = "Gemini 4 Hydrogen", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
+    // gemini-omni-1.2-flash: closed — Google's omni-modal Flash line, served on OpenRouter; no weights (the Gemini API family).
+    .{ .name = "gemini-omni-1.2-flash", .label = "Gemini Omni 1.2 Flash", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
     // claude-* 5.5 refresh: closed — Anthropic API-only, no weights (same source set as claude-sonnet-5).
     .{ .name = "claude-haiku-5-5", .label = "Claude Haiku 5.5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/haiku", "https://docs.anthropic.com/en/docs/about-claude/models" } },
     .{ .name = "claude-sonnet-5-5", .label = "Claude Sonnet 5.5", .openness = "closed", .sources = &.{ "https://www.anthropic.com/claude/sonnet", "https://docs.anthropic.com/en/docs/about-claude/models" } },
@@ -437,7 +451,7 @@ pub const rulesForModels = [_]ModelRule{
     .{ .name = "gpt-6-astra", .label = "GPT-6 Astra", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
     .{ .name = "gpt-6.1-sol", .label = "GPT-6.1 Sol", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
     .{ .name = "gpt-6.2-sol", .label = "GPT-6.2 Sol", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
-    .{ .name = "gpt-6.2-astra", .label = "GPT-6.2 Astra", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" } },
+    .{ .name = "gpt-6.2-astra", .label = "GPT-6.2 Astra", .openness = "closed", .sources = &.{ "https://openai.com/api/pricing/", "https://platform.openai.com/docs/models" }, .variations = &.{"gpt-6.2-astra-pro"} },
     // grok-4.7 / grok-build-0.1: closed — xAI API-only, no weights (same source set as grok-3).
     .{ .name = "grok-4.7", .label = "Grok 4.7", .openness = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
     .{ .name = "grok-build-0.1", .label = "Grok Build 0.1", .openness = "closed", .sources = &.{ "https://x.ai/grok", "https://docs.x.ai/docs/models" } },
@@ -448,7 +462,7 @@ pub const rulesForModels = [_]ModelRule{
     // variations: the Go catalog's `muse-spark-1.3-contributor` (the contributor-tier spelling, same fold as the 1.2 rule).
     .{ .name = "muse-spark-1.3", .label = "Muse Spark 1.3", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"muse-spark-1.3-contributor"} },
     // muse-ember-1.0 / muse-wonder-1.0: newer Muse families; openness/license unverified → null (never-guess).
-    .{ .name = "muse-ember-1.0", .label = "Muse Ember 1.0", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
+    .{ .name = "muse-ember-1.0", .label = "Muse Ember 1.0", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"muse-ember"} },
     .{ .name = "muse-wonder-1.0", .label = "Muse Wonder", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
     // step-5-preview: StepFun's preview tier; no public weights-license doc sourced → null (never-guess), not folded into step-3.7-flash.
     .{ .name = "step-5-preview", .label = "Step 5 Preview", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"} },
@@ -457,6 +471,14 @@ pub const rulesForModels = [_]ModelRule{
     // tidepool-alpha: Console's newest free-tier stealth model; openness/license unverified → null (never-guess). The zen zero-retention policy applies (it is not one of the named training free periods), so no model-intrinsic training pair.
     // variations: the served free id `tidepool-alpha-free` folds here per DESIGN #13.
     .{ .name = "tidepool-alpha", .label = "Tidepool Alpha", .openness = null, .sources = &.{"https://opencode.ai/docs/zen"}, .variations = &.{"tidepool-alpha-free"} },
+    // daisyrose-27b: open-weight — RadixArk's DaisyRose 27B (a Qwen3.5/3.8-derived RL-tuned multimodal model); Apache-2.0 weights on HF (2026-11-18) and served on OpenRouter from 2026-11-21.
+    .{ .name = "daisyrose-27b", .label = "DaisyRose 27B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/RadixArk/DaisyRose-27B", "https://huggingface.co/RadixArk/DaisyRose-27B/blob/main/LICENSE", "https://openrouter.ai/radixark/daisyrose-27b" } },
+    // ripple-65b-preview: open-weight — Ricursive AI's Ripple 65B Preview; Apache-2.0 weights on HF (2026-11-04) and served on OpenRouter.
+    .{ .name = "ripple-65b-preview", .label = "Ripple 65B Preview", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/ricursiveAI/Ripple-65B-Preview", "https://openrouter.ai/ricursiveai/ripple-65b-preview" } },
+    // motif-3: open-weight — Motif Technologies' Motif 3; MIT weights on HF and served on OpenRouter.
+    .{ .name = "motif-3", .label = "Motif 3", .openness = "open-weight", .license = "MIT", .sources = &.{ "https://huggingface.co/Motif-Technologies/Motif-3", "https://openrouter.ai/motif-technologies/motif-3" } },
+    // midm-k-3.0-pro: unverified — KT's Mi:dm K 3.0 Pro, served on OpenRouter; no public weight repository was found → openness/license null (never-guess).
+    .{ .name = "midm-k-3.0-pro", .label = "Mi:dm K 3.0 Pro", .openness = null, .license = null, .sources = &.{"https://openrouter.ai/kt/midm-k-3.0-pro"} },
 };
 
 /// one provider.

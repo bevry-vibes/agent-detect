@@ -1164,6 +1164,11 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
         "qwen3.6-plus",           "muse-spark-1.3",             "muse-ember-1.0",
         "muse-wonder-1.0",        "step-5-preview",             "longcat-2.0",
         "tidepool-alpha",
+        // the 2026-11-23 source sweep — the newly observed models (open weights on HF, or served on OpenRouter) land rule-only until their sweeps fixture them.
+        "glm-5.4",                "inkling-2-mini",             "daisyrose-27b",
+        "ripple-65b-preview",     "motif-3",                    "midm-k-3.0-pro",
+        "pixtral-large-2502",     "gemini-omni-1.2-flash",      "ernie-light-dt-1.0",
+        "lingsante-3.1-flash",    "lingsante-3.1-air-vl",       "lingsante-pulse-1.0",
     };
     for (main.rulesForProviders) |rr| {
         var exempt = false;

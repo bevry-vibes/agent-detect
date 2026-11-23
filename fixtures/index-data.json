@@ -3233,6 +3233,19 @@
       ]
     },
     {
+      "label": "DaisyRose 27B",
+      "short_title": null,
+      "name": "daisyrose-27b",
+      "id": "daisyrose27b",
+      "openness": "open-weight",
+      "license": "Apache-2.0",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
+    },
+    {
       "label": "DeepSeek R1",
       "short_title": null,
       "name": "deepseek-r1",
@@ -3536,6 +3549,19 @@
       ]
     },
     {
+      "label": "ERNIE-Light-DT 1.0",
+      "short_title": null,
+      "name": "ernie-light-dt-1.0",
+      "id": "ernielightdt10",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
+    },
+    {
       "label": "Flint 40B",
       "short_title": null,
       "name": "flint-40b",
@@ -3775,6 +3801,19 @@
         "hermes",
         "opencode"
       ]
+    },
+    {
+      "label": "Gemini Omni 1.2 Flash",
+      "short_title": null,
+      "name": "gemini-omni-1.2-flash",
+      "id": "geminiomni12flash",
+      "openness": "closed",
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
     },
     {
       "label": "Gemma 3 27B",
@@ -4126,7 +4165,9 @@
       "variations": [
         "glm-5.3-flash:cloud",
         "zai_glm-5.3-flash",
-        "glm-5.3-flash-free"
+        "glm-5.3-flash-free",
+        "glm-5.3-flashx",
+        "glm-5.3-flashx-legal"
       ],
       "providers": [
         "autoclaw",
@@ -4155,6 +4196,19 @@
         "pi",
         "zcode"
       ]
+    },
+    {
+      "label": "GLM 5.4",
+      "short_title": null,
+      "name": "glm-5.4",
+      "id": "glm54",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
     },
     {
       "label": "Glyph Cluster",
@@ -4443,7 +4497,9 @@
       "license": null,
       "open_training": null,
       "closed_training": null,
-      "variations": [],
+      "variations": [
+        "gpt-6.2-astra-pro"
+      ],
       "providers": [
         "opencode"
       ],
@@ -4909,6 +4965,19 @@
         "omp",
         "pi"
       ]
+    },
+    {
+      "label": "Inkling 2 Mini",
+      "short_title": null,
+      "name": "inkling-2-mini",
+      "id": "inkling2mini",
+      "openness": "open-weight",
+      "license": "Apache-2.0",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
     },
     {
       "label": "Inkling 2 Small",
@@ -5463,6 +5532,45 @@
       ]
     },
     {
+      "label": "LingSante 3.1 Air VL",
+      "short_title": null,
+      "name": "lingsante-3.1-air-vl",
+      "id": "lingsante31airvl",
+      "openness": "open-weight",
+      "license": "MIT",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
+    },
+    {
+      "label": "LingSante 3.1 Flash",
+      "short_title": null,
+      "name": "lingsante-3.1-flash",
+      "id": "lingsante31flash",
+      "openness": "open-weight",
+      "license": "MIT",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
+    },
+    {
+      "label": "LingSante Pulse 1.0",
+      "short_title": null,
+      "name": "lingsante-pulse-1.0",
+      "id": "lingsantepulse10",
+      "openness": "open-weight",
+      "license": "MIT",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
+    },
+    {
       "label": "Llama 3.1 8B",
       "short_title": null,
       "name": "llama-3.1-8b",
@@ -5600,6 +5708,19 @@
         "hermes",
         "opencode"
       ]
+    },
+    {
+      "label": "Mi:dm K 3.0 Pro",
+      "short_title": null,
+      "name": "midm-k-3.0-pro",
+      "id": "midmk30pro",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
     },
     {
       "label": "MiMo V2.5",
@@ -5946,6 +6067,19 @@
       ]
     },
     {
+      "label": "Motif 3",
+      "short_title": null,
+      "name": "motif-3",
+      "id": "motif3",
+      "openness": "open-weight",
+      "license": "MIT",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
+    },
+    {
       "label": "Muse Ember 1.0",
       "short_title": null,
       "name": "muse-ember-1.0",
@@ -5954,7 +6088,9 @@
       "license": null,
       "open_training": null,
       "closed_training": null,
-      "variations": [],
+      "variations": [
+        "muse-ember"
+      ],
       "providers": [
         "opencode"
       ],
@@ -6377,6 +6513,19 @@
         "hermes",
         "omp"
       ]
+    },
+    {
+      "label": "Pixtral Large 2502",
+      "short_title": null,
+      "name": "pixtral-large-2502",
+      "id": "pixtrallarge2502",
+      "openness": null,
+      "license": null,
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
     },
     {
       "label": "Qwen3",
@@ -6854,6 +7003,19 @@
         "opencode",
         "pi"
       ]
+    },
+    {
+      "label": "Ripple 65B Preview",
+      "short_title": null,
+      "name": "ripple-65b-preview",
+      "id": "ripple65bpreview",
+      "openness": "open-weight",
+      "license": "Apache-2.0",
+      "open_training": null,
+      "closed_training": null,
+      "variations": [],
+      "providers": [],
+      "harnesses": []
     },
     {
       "label": "Solar Mini 4",
