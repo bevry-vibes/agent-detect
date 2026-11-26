@@ -25,9 +25,9 @@
       "model_open_training": null,
       "model_closed_training": null,
       "model_license": "NONE",
-      "model_reciprocity": true,
+      "model_reciprocity": false,
       "agent_id": "cline-clinepass-solarmini4",
-      "reciprocal": true
+      "reciprocal": false
     },
     "trailer co-author": "Co-authored-by: Cline · Solar Mini 4 <cline-clinepass-solarmini4@local>",
     "trailer assisted-by": "Assisted-by: Cline · Solar Mini 4 <cline-clinepass-solarmini4@local>",
@@ -56,17 +56,50 @@
       "scandal-urls": []
     },
     "explain": {
-      "state": "reciprocal",
+      "state": "not-reciprocal",
       "identity": {
         "harness": "cline",
         "provider": "clinepass",
         "model": "solarmini4"
       },
-      "reasons": []
+      "reasons": [
+        {
+          "entity": "model",
+          "code": "model-closed",
+          "values": [
+            {
+              "name": "openness",
+              "value": "closed"
+            }
+          ],
+          "summary": "the Solar Mini 4 model has closed weights (openness = closed)",
+          "sources": [
+            "https://console.upstage.ai/docs/models/solar-mini-4"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m3.1-flash, minimax-m2.7)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
     },
-    "check-reciprocal": "is reciprocal"
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - model: the Solar Mini 4 model has closed weights (openness = closed) (see: agent-detect explain)"
+    ]
   },
   "meta": {
-    "updated_at": 1791254446
+    "updated_at": 1795677342
   }
 }

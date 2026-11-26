@@ -1,0 +1,142 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kilo Code",
+      "harness_short_title": "Kilo",
+      "harness_name": "kilo",
+      "harness_id": "kilo",
+      "harness_license": "MIT",
+      "harness_open_training": "NOASSERTION",
+      "harness_closed_training": "NOASSERTION",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": null,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Inkling 2 Small",
+      "model_short_title": null,
+      "model_name": "inkling-2-small",
+      "model_id": "inkling2small",
+      "model_openness": "open-weight",
+      "model_open_training": "never",
+      "model_closed_training": "enforced",
+      "model_license": "Apache-2.0",
+      "model_reciprocity": false,
+      "agent_id": "kilo-openrouter-inkling2small",
+      "reciprocal": false
+    },
+    "trailer co-author": "Co-authored-by: Kilo Code · Inkling 2 Small <kilo-openrouter-inkling2small@local>",
+    "trailer assisted-by": "Assisted-by: Kilo Code · Inkling 2 Small <kilo-openrouter-inkling2small@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/Kilo-Org/kilocode",
+        "https://github.com/Kilo-Org/kilocode/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://thinkingmachines.ai/news/inkling-2-small/",
+        "https://thinkingmachines.ai/model-card/inkling-2-small/",
+        "https://huggingface.co/thinkingmachines/Inkling-2-Small",
+        "https://huggingface.co/thinkingmachines/Inkling-2-Small/blob/main/LICENSE",
+        "https://opencode.ai/docs/zen"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "not-reciprocal",
+      "identity": {
+        "harness": "kilo",
+        "provider": "openrouter",
+        "model": "inkling2small"
+      },
+      "reasons": [
+        {
+          "entity": "harness",
+          "code": "harness-training-unsourced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "NOASSERTION"
+            }
+          ],
+          "summary": "the Kilo Code harness's training posture is unsourced — the determination cannot be made",
+          "sources": [
+            "https://kilo.ai/privacy",
+            "https://github.com/Kilo-Org/kilocode/blob/main/PRIVACY.md"
+          ],
+          "actions": [
+            {
+              "kind": "contribute-data",
+              "instruction": "the Kilo Code harness rule lacks a sourced training posture — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "command": "agent-detect found",
+              "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        },
+        {
+          "entity": "model",
+          "code": "model-closed-enforced",
+          "values": [
+            {
+              "name": "closed_training",
+              "value": "enforced"
+            }
+          ],
+          "summary": "the Inkling 2 Small model's arrangement trains on user data by default (closed_training = enforced)",
+          "sources": [
+            "https://thinkingmachines.ai/news/inkling-2-small/",
+            "https://thinkingmachines.ai/model-card/inkling-2-small/",
+            "https://huggingface.co/thinkingmachines/Inkling-2-Small",
+            "https://huggingface.co/thinkingmachines/Inkling-2-Small/blob/main/LICENSE",
+            "https://opencode.ai/docs/zen"
+          ],
+          "actions": [
+            {
+              "kind": "switch-entity",
+              "instruction": "switch the model to a reciprocal one to comply with the policy (e.g. kimi-k3, glm-5.2, minimax-m3, minimax-m3.1-flash, minimax-m2.7)"
+            },
+            {
+              "kind": "preflight-combo",
+              "instruction": "verify a candidate combo resolves reciprocal before switching",
+              "command": "agent-detect check-reciprocal --harness=<id> --provider=<id> --model=<id>"
+            }
+          ]
+        }
+      ]
+    },
+    "explain.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed"
+    ],
+    "check-reciprocal": "not reciprocal",
+    "check-reciprocal.stderr": [
+      "agent (harness, provider, model) data complete and requirement failed",
+      "  - harness: the Kilo Code harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
+      "  - model: the Inkling 2 Small model's arrangement trains on user data by default (closed_training = enforced) (see: agent-detect explain)"
+    ]
+  },
+  "meta": {
+    "updated_at": 1795677362
+  }
+}

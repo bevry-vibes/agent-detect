@@ -1,0 +1,157 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Pi",
+      "harness_short_title": null,
+      "harness_name": "pi",
+      "harness_id": "pi",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "Flint 40B",
+      "model_short_title": null,
+      "model_name": "flint-40b",
+      "model_id": "flint40b",
+      "model_openness": "open-weight",
+      "model_open_training": "opt-out",
+      "model_closed_training": null,
+      "model_license": "Apache-2.0",
+      "model_reciprocity": true,
+      "agent_id": "pi-openrouter-flint40b",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Pi · Flint 40B <pi-openrouter-flint40b@local>",
+    "trailer assisted-by": "Assisted-by: Pi · Flint 40B <pi-openrouter-flint40b@local>",
+    "found": {
+      "platform_id": "windows",
+      "harness_version": "1.6.1",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 18312,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 10976,
+          "name": "bash.exe"
+        },
+        {
+          "pid": 15480,
+          "name": "bash.exe"
+        },
+        {
+          "pid": 584,
+          "name": "bash.exe"
+        },
+        {
+          "pid": 10924,
+          "name": "pi.exe"
+        },
+        {
+          "pid": 19108,
+          "name": "pi.exe"
+        },
+        {
+          "pid": 16032,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 1908,
+          "name": "svchost.exe"
+        },
+        {
+          "pid": 944,
+          "name": "services.exe"
+        },
+        {
+          "pid": 872,
+          "name": "wininit.exe"
+        },
+        {
+          "pid": 648,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/earendil-works/pi",
+        "https://github.com/earendil-works/pi/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://huggingface.co/RecursiveSI/flint",
+        "https://huggingface.co/RecursiveSI/flint/blob/main/LICENSE",
+        "https://opencode.ai/docs/zen"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "PI_CODING_AGENT",
+          "value": "pi"
+        },
+        {
+          "dim": "provider",
+          "source": "env",
+          "name": "PI_PROVIDER",
+          "value": "openrouter"
+        },
+        {
+          "dim": "model",
+          "source": "env",
+          "name": "PI_MODEL",
+          "value": "recursive/flint-v1.0:free"
+        }
+      ]
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "pi",
+        "provider": "openrouter",
+        "model": "flint40b"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1795678604,
+    "harness_version": "1.6.1",
+    "capture_kind": "programmatic",
+    "prompt_invocation": [
+      "pi.exe",
+      "--provider",
+      "openrouter",
+      "--model",
+      "recursive/flint-v1.0:free",
+      "-p",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "pi.exe",
+      "--version"
+    ]
+  }
+}

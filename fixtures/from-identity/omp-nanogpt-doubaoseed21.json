@@ -111,11 +111,11 @@
         {
           "entity": "model",
           "code": "model-openness-unknown",
-          "summary": "the Doubao Seed 2.1 model is absent from the model rules — its openness is unknown",
+          "summary": "the Doubao Seed 2.1 model's openness is unknown (its rule does not assert an openness)",
           "actions": [
             {
               "kind": "contribute-data",
-              "instruction": "the Doubao Seed 2.1 model is absent from the rule tables — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
+              "instruction": "the Doubao Seed 2.1 model rule does not assert an openness — gather evidence with `agent-detect found`, then open an issue or PR adding the sourced value",
               "command": "agent-detect found",
               "url": "https://github.com/bevry-vibes/agent-detect/blob/main/CONTRIBUTING.md"
             },
@@ -132,7 +132,7 @@
       "agent (harness, provider, model) data incomplete to make a determination",
       "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
       "  - provider: the NanoGPT provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - model: the Doubao Seed 2.1 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - model: the Doubao Seed 2.1 model's openness is unknown (its rule does not assert an openness) (see: agent-detect explain)"
     ],
     "explain.stderr": [
       "agent (harness, provider, model) data incomplete to make a determination"
@@ -141,10 +141,10 @@
       "agent (harness, provider, model) data incomplete to make a determination",
       "  - harness: the omp harness's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
       "  - provider: the NanoGPT provider's training posture is unsourced — the determination cannot be made (see: agent-detect explain)",
-      "  - model: the Doubao Seed 2.1 model is absent from the model rules — its openness is unknown (see: agent-detect explain)"
+      "  - model: the Doubao Seed 2.1 model's openness is unknown (its rule does not assert an openness) (see: agent-detect explain)"
     ]
   },
   "meta": {
-    "updated_at": 1791254365
+    "updated_at": 1795677372
   }
 }

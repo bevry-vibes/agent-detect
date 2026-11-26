@@ -22,8 +22,8 @@
       "model_name": "dots-3-note-preview",
       "model_id": "dots3notepreview",
       "model_openness": "open-weight",
-      "model_open_training": null,
-      "model_closed_training": null,
+      "model_open_training": "opt-in",
+      "model_closed_training": "never",
       "model_license": "Apache-2.0",
       "model_reciprocity": true,
       "agent_id": "omp-openrouter-dots3notepreview",
@@ -106,6 +106,6 @@
     ]
   },
   "meta": {
-    "updated_at": 1791254344
+    "updated_at": 1795677371
   }
 }

@@ -1,0 +1,72 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Kimi Code",
+      "harness_short_title": null,
+      "harness_name": "kimi-code",
+      "harness_id": "kimicode",
+      "harness_license": "MIT",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "ERNIE 5.5 Flash Preview",
+      "model_short_title": null,
+      "model_name": "ernie-5.5-flash-preview",
+      "model_id": "ernie55flashpreview",
+      "model_openness": "open-weight",
+      "model_open_training": "opt-in",
+      "model_closed_training": "never",
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
+      "agent_id": "kimicode-openrouter-ernie55flashpreview",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Kimi Code · ERNIE 5.5 Flash Preview <kimicode-openrouter-ernie55flashpreview@local>",
+    "trailer assisted-by": "Assisted-by: Kimi Code · ERNIE 5.5 Flash Preview <kimicode-openrouter-ernie55flashpreview@local>",
+    "found": {
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "harness-urls": [
+        "https://github.com/MoonshotAI/kimi-code",
+        "https://github.com/MoonshotAI/kimi-code/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://ernie.baidu.com/privacy/en"
+      ],
+      "scandal-urls": []
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "kimicode",
+        "provider": "openrouter",
+        "model": "ernie55flashpreview"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1795677346
+  }
+}

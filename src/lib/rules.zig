@@ -139,7 +139,7 @@ pub const rulesForModels = [_]ModelRule{
     // gemma-4-31b: open-weight — Google Gemma 4 family; HF card + LICENSE (Apache-2.0 per the HF tag).
     // variations: Chutes serves this as a "-turbo" TEE spelling (observed: chutes/google/gemma-4-31B-turbo-TEE);
     // no `turbo` repo exists on HF — the official 31B is `gemma-4-31B-it`, so the spelling is a serving variant, folded per DESIGN #13.
-    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/google/gemma-4-31b-it", "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE" }, .variations = &.{ "gemma-4-31B-turbo-TEE", "gemma-4-31b-it" } },
+    .{ .name = "gemma-4-31b", .label = "Gemma 4 31B", .openness = "open-weight", .license = "Apache-2.0", .sources = &.{ "https://huggingface.co/google/gemma-4-31b-it", "https://huggingface.co/google/gemma-4-31b-it/blob/main/LICENSE" }, .variations = &.{ "gemma-4-31B-turbo-TEE", "gemma-4-31b-it", "gemma-4-31b-it:free" } },
     // gemini-3.5-flash: closed — Google Gemini 3.5 Flash; API-only, no weights.
     .{ .name = "gemini-3.5-flash", .label = "Gemini 3.5 Flash", .openness = "closed", .sources = &.{ "https://deepmind.google/models/", "https://ai.google.dev/gemini-api/docs/models" } },
     // grok-4.5: closed — xAI Grok 4.5; API-only, no weights.
@@ -162,7 +162,7 @@ pub const rulesForModels = [_]ModelRule{
     // + LICENSE.
     // variations: the opencode zen free-tier spelling `nemotron-3-ultra-free` folds here per DESIGN #13 (tier spellings are variations).
     // open_training: the zen free period names the NVIDIA free endpoints as training ("your use is logged ... to improve NVIDIA products and services"); the paid spelling escapes it, so opt-out (informational — the reciprocity conjunct consumes only the closed axis).
-    .{ .name = "nemotron-3-ultra", .label = "Nemotron 3 Ultra", .openness = "open-weight", .open_training = "opt-out", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B", "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE" }, .variations = &.{"nemotron-3-ultra-free"} },
+    .{ .name = "nemotron-3-ultra", .label = "Nemotron 3 Ultra", .openness = "open-weight", .open_training = "opt-out", .sources = &.{ "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B", "https://huggingface.co/nvidia/Nemotron-3-Ultra-550B-A55B/blob/main/LICENSE" }, .variations = &.{ "nemotron-3-ultra-free", "nemotron-3-ultra-550b-a55b:free" } },
     // qwen3-coder: open-weight — Alibaba Qwen3 Coder; HF card + LICENSE.
     // variations: hyper's serving id spelling (observed: the hyper catalog's `qwen3-coder-480b-a35b-instruct-int4-mixed-ar`), and the opencode `alibaba/` catalog's 480b serving id.
     .{ .name = "qwen3-coder", .label = "Qwen3 Coder", .openness = "open-weight", .sources = &.{ "https://huggingface.co/Qwen/Qwen3-Coder", "https://huggingface.co/Qwen/Qwen3-Coder/blob/main/LICENSE" }, .variations = &.{ "qwen3-coder-480b-a35b-instruct-int4-mixed-ar", "qwen3-coder-480b-a35b-instruct" } },

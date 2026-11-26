@@ -1204,6 +1204,19 @@ test "coverage: every harness/provider/model rule appears in ≥1 fixture stem" 
     }
 }
 
+/// Free-listed models whose served id carries no tier marker: the provider grants the free
+/// period on the plain model id (OpenCode Console's `big-pickle`), so the free map is the
+/// authoritative signal and the argv heuristic does not apply.
+fn freeSignalExempt(provider: []const u8, model: []const u8) bool {
+    const exempt = [_][]const u8{"opencode|bigpickle"};
+    var buf: [128]u8 = undefined;
+    const key = std.fmt.bufPrint(&buf, "{s}|{s}", .{ provider, model }) catch return false;
+    for (exempt) |e| {
+        if (std.mem.eql(u8, e, key)) return true;
+    }
+    return false;
+}
+
 test "the index file's provider_map_to_free_models: free entries resolve to known rules, and curated capture files carry a free-signal in their launch model spec" {
     // The free map is the free-axis source of truth (the free-grid CSV's successor): one row per provider with ≥1 free model, values the free model slugs.
     // Every fixtured (provider, model) row that is free-listed must carry a free signal (`:free`, `-free`, `free/`) in its meta.prompt_invocation model spec — files whose launch implies the model via harness config are exempt.
@@ -1274,7 +1287,7 @@ test "the index file's provider_map_to_free_models: free entries resolve to know
                         has_free_signal = true;
                     }
                 }
-                if (has_model_spec and !has_free_signal) {
+                if (has_model_spec and !has_free_signal and !freeSignalExempt(provider, mv.string)) {
                     std.debug.print("fixture {s} is free-listed but its meta.prompt_invocation carries no free signal\n", .{stem});
                     return error.MissingFreeSignal;
                 }

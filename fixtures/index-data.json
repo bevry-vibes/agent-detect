@@ -332,6 +332,7 @@
       "models": [
         "claudehaiku55",
         "claudesonnet4",
+        "deepseekv41flash",
         "deepseekv4flash",
         "deepseekv4pro",
         "gemini4argon",
@@ -2495,6 +2496,7 @@
       "variations": [],
       "models": [
         "claudehaiku55",
+        "deepseekv41flash",
         "deepseekv4flash",
         "deepseekv4pro",
         "gemini4argon",
@@ -3429,13 +3431,15 @@
       ],
       "providers": [
         "deepseek",
-        "opencode"
+        "opencode",
+        "opencodego"
       ],
       "harnesses": [
         "cline",
         "codewhale",
         "crush",
         "dsh",
+        "goose",
         "hermes",
         "kilo",
         "kimicode",
@@ -3870,7 +3874,8 @@
       "closed_training": null,
       "variations": [
         "gemma-4-31B-turbo-TEE",
-        "gemma-4-31b-it"
+        "gemma-4-31b-it",
+        "gemma-4-31b-it:free"
       ],
       "providers": [
         "cerebras",
@@ -6287,7 +6292,8 @@
       "open_training": "opt-out",
       "closed_training": null,
       "variations": [
-        "nemotron-3-ultra-free"
+        "nemotron-3-ultra-free",
+        "nemotron-3-ultra-550b-a55b:free"
       ],
       "providers": [
         "gmicloud",
@@ -7134,23 +7140,19 @@
       "bigpickle",
       "deepseekv41flash",
       "flint40b",
-      "glm53flash",
       "hy4flash",
       "iceman",
       "inkling2small",
       "jev113",
-      "longcat25",
       "mimov26flash",
       "nemotron35lightning",
       "nemotron35supervl",
       "nemotron3ultra",
-      "reflectionbeam",
-      "tidepoolalpha"
+      "reflectionbeam"
     ],
     "opencodego": [
       "reflectionbeam",
       "iceman",
-      "longcat25",
       "hy4flash"
     ],
     "openrouter": [
@@ -7346,12 +7348,16 @@
     },
     "cline-clinepass-solarmini4": {
       "platforms": [],
-      "reciprocal": true
+      "reciprocal": false
     },
     "cline-clinepass-step37flash": {
       "platforms": [
         "darwin"
       ],
+      "reciprocal": true
+    },
+    "cline-deepseek-deepseekv41flash": {
+      "platforms": [],
       "reciprocal": true
     },
     "cline-deepseek-deepseekv4flash": {
@@ -7462,6 +7468,10 @@
       ],
       "reciprocal": false
     },
+    "cline-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "cline-mistral-mistrallarge3": {
       "platforms": [],
       "reciprocal": false
@@ -7474,6 +7484,14 @@
       "platforms": [],
       "reciprocal": false
     },
+    "cline-opencodego-claudehaiku55": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "cline-opencodego-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "cline-opencodego-deepseekv4flash": {
       "platforms": [],
       "reciprocal": true
@@ -7481,6 +7499,10 @@
     "cline-opencodego-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "cline-opencodego-gemini4argon": {
+      "platforms": [],
+      "reciprocal": false
     },
     "cline-opencodego-glm5": {
       "platforms": [],
@@ -7506,6 +7528,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "cline-opencodego-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "cline-opencodego-grok45": {
       "platforms": [],
       "reciprocal": false
@@ -7514,7 +7540,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "cline-opencodego-grok47": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "cline-opencodego-hy3": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "cline-opencodego-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "cline-opencodego-hy4flash": {
       "platforms": [],
       "reciprocal": true
     },
@@ -7537,6 +7575,14 @@
     "cline-opencodego-kimik3": {
       "platforms": [],
       "reciprocal": true
+    },
+    "cline-opencodego-kimik31pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "cline-opencodego-longcat20": {
+      "platforms": [],
+      "reciprocal": false
     },
     "cline-opencodego-mimov25": {
       "platforms": [],
@@ -7562,6 +7608,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "cline-opencodego-musespark13": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "cline-opencodego-qwen37plus": {
       "platforms": [],
       "reciprocal": false
@@ -7571,6 +7621,18 @@
       "reciprocal": true
     },
     "cline-opencodego-qwen38max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "cline-opencodego-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "cline-opencodego-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "cline-opencodego-step5preview": {
       "platforms": [],
       "reciprocal": false
     },
@@ -7616,6 +7678,18 @@
       "platforms": [],
       "reciprocal": true
     },
+    "cline-openrouter-ernie55flashpreview": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": true
+    },
+    "cline-openrouter-flint40b": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": true
+    },
     "cline-openrouter-gemini25pro": {
       "platforms": [],
       "reciprocal": false
@@ -7623,6 +7697,10 @@
     "cline-openrouter-gemini35flash": {
       "platforms": [],
       "reciprocal": false
+    },
+    "cline-openrouter-gemma426ba4b": {
+      "platforms": [],
+      "reciprocal": true
     },
     "cline-openrouter-gemma431b": {
       "platforms": [],
@@ -7708,6 +7786,14 @@
       "platforms": [],
       "reciprocal": true
     },
+    "cline-openrouter-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "cline-openrouter-hy4flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "cline-openrouter-hy4preview": {
       "platforms": [],
       "reciprocal": true
@@ -7715,6 +7801,10 @@
     "cline-openrouter-inkling": {
       "platforms": [],
       "reciprocal": true
+    },
+    "cline-openrouter-inkling2small": {
+      "platforms": [],
+      "reciprocal": false
     },
     "cline-openrouter-inklingsmall": {
       "platforms": [],
@@ -7748,6 +7838,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "cline-openrouter-lfm317b": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "cline-openrouter-ling30flash": {
       "platforms": [],
       "reciprocal": true
@@ -7755,6 +7849,10 @@
     "cline-openrouter-ling30flashvl": {
       "platforms": [],
       "reciprocal": true
+    },
+    "cline-openrouter-ling32flash": {
+      "platforms": [],
+      "reciprocal": false
     },
     "cline-openrouter-llama4maverick": {
       "platforms": [],
@@ -7808,9 +7906,17 @@
       "platforms": [],
       "reciprocal": true
     },
+    "cline-openrouter-nexn26": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "cline-openrouter-northminicode": {
       "platforms": [],
       "reciprocal": true
+    },
+    "cline-openrouter-particle1": {
+      "platforms": [],
+      "reciprocal": false
     },
     "cline-openrouter-qwen3235ba22b": {
       "platforms": [],
@@ -7844,6 +7950,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "cline-openrouter-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "cline-openrouter-step37flash": {
       "platforms": [],
       "reciprocal": true
@@ -7864,6 +7974,10 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "copilot-githubcopilot-copilotfusion": {
+      "platforms": [],
       "reciprocal": false
     },
     "copilot-githubcopilot-gemini25pro": {
@@ -7894,6 +8008,10 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "crush-deepseek-deepseekv41flash": {
+      "platforms": [],
       "reciprocal": false
     },
     "crush-deepseek-deepseekv4flash": {
@@ -8033,6 +8151,10 @@
       ],
       "reciprocal": false
     },
+    "crush-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "cursor-cursor-claudefable5": {
       "platforms": [
         "darwin"
@@ -8143,6 +8265,14 @@
       ],
       "reciprocal": false
     },
+    "goose-opencodego-claudehaiku55": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "goose-opencodego-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "goose-opencodego-deepseekv4flash": {
       "platforms": [
         "darwin"
@@ -8152,6 +8282,10 @@
     "goose-opencodego-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "goose-opencodego-gemini4argon": {
+      "platforms": [],
+      "reciprocal": false
     },
     "goose-opencodego-glm5": {
       "platforms": [],
@@ -8177,6 +8311,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "goose-opencodego-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "goose-opencodego-grok45": {
       "platforms": [],
       "reciprocal": false
@@ -8185,7 +8323,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "goose-opencodego-grok47": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "goose-opencodego-hy3": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "goose-opencodego-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "goose-opencodego-hy4flash": {
       "platforms": [],
       "reciprocal": true
     },
@@ -8208,6 +8358,14 @@
     "goose-opencodego-kimik3": {
       "platforms": [],
       "reciprocal": true
+    },
+    "goose-opencodego-kimik31pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "goose-opencodego-longcat20": {
+      "platforms": [],
+      "reciprocal": false
     },
     "goose-opencodego-mimov25": {
       "platforms": [],
@@ -8233,6 +8391,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "goose-opencodego-musespark13": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "goose-opencodego-qwen37plus": {
       "platforms": [],
       "reciprocal": false
@@ -8242,6 +8404,18 @@
       "reciprocal": true
     },
     "goose-opencodego-qwen38max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "goose-opencodego-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "goose-opencodego-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "goose-opencodego-step5preview": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10139,6 +10313,10 @@
       ],
       "reciprocal": false
     },
+    "kilo-deepseek-deepseekv4flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-deepseek-deepseekv4pro": {
       "platforms": [
         "darwin",
@@ -10292,6 +10470,10 @@
       ],
       "reciprocal": false
     },
+    "kilo-kilo-flint40b": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-kilo-gemini25pro": {
       "platforms": [],
       "reciprocal": false
@@ -10300,6 +10482,10 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "kilo-kilo-gemma426ba4b": {
+      "platforms": [],
       "reciprocal": false
     },
     "kilo-kilo-glm46": {
@@ -10390,7 +10576,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-kilo-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-hy4flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-kilo-hy4preview": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-inkling2small": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10496,7 +10694,15 @@
       ],
       "reciprocal": false
     },
+    "kilo-kilo-nexn26": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-kilo-northminicode": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-kilo-particle1": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10540,6 +10746,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-kilo-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-kilo-step37flash": {
       "platforms": [],
       "reciprocal": false
@@ -10558,6 +10768,10 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "kilo-minimax-minimaxm31flash": {
+      "platforms": [],
       "reciprocal": false
     },
     "kilo-ollamacloud-deepseekv32": {
@@ -10685,11 +10899,23 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-openrouter-ernie55flashpreview": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-openrouter-flint40b": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-openrouter-gemini25pro": {
       "platforms": [],
       "reciprocal": false
     },
     "kilo-openrouter-gemini35flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-openrouter-gemma426ba4b": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10777,11 +11003,23 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-openrouter-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-openrouter-hy4flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-openrouter-hy4preview": {
       "platforms": [],
       "reciprocal": false
     },
     "kilo-openrouter-inkling": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-openrouter-inkling2small": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10817,11 +11055,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-openrouter-lfm317b": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-openrouter-ling30flash": {
       "platforms": [],
       "reciprocal": false
     },
     "kilo-openrouter-ling30flashvl": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-openrouter-ling32flash": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10877,7 +11123,15 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kilo-openrouter-nexn26": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kilo-openrouter-northminicode": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-openrouter-particle1": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10910,6 +11164,10 @@
       "reciprocal": false
     },
     "kilo-openrouter-qwen3coder": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kilo-openrouter-qwen4max": {
       "platforms": [],
       "reciprocal": false
     },
@@ -10979,6 +11237,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "kimicode-deepseek-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "kimicode-deepseek-deepseekv4flash": {
       "platforms": [
         "darwin"
@@ -11007,6 +11269,10 @@
       ],
       "reciprocal": false
     },
+    "kimicode-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kimicode-moonshotai-kimik25": {
       "platforms": [],
       "reciprocal": false
@@ -11025,6 +11291,14 @@
       ],
       "reciprocal": false
     },
+    "kimicode-opencodego-claudehaiku55": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kimicode-opencodego-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "kimicode-opencodego-deepseekv4flash": {
       "platforms": [],
       "reciprocal": true
@@ -11032,6 +11306,10 @@
     "kimicode-opencodego-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "kimicode-opencodego-gemini4argon": {
+      "platforms": [],
+      "reciprocal": false
     },
     "kimicode-opencodego-glm5": {
       "platforms": [],
@@ -11057,6 +11335,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kimicode-opencodego-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kimicode-opencodego-grok45": {
       "platforms": [],
       "reciprocal": false
@@ -11065,7 +11347,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kimicode-opencodego-grok47": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kimicode-opencodego-hy3": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "kimicode-opencodego-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kimicode-opencodego-hy4flash": {
       "platforms": [],
       "reciprocal": true
     },
@@ -11088,6 +11382,14 @@
     "kimicode-opencodego-kimik3": {
       "platforms": [],
       "reciprocal": true
+    },
+    "kimicode-opencodego-kimik31pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kimicode-opencodego-longcat20": {
+      "platforms": [],
+      "reciprocal": false
     },
     "kimicode-opencodego-mimov25": {
       "platforms": [],
@@ -11113,6 +11415,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "kimicode-opencodego-musespark13": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "kimicode-opencodego-qwen37plus": {
       "platforms": [],
       "reciprocal": false
@@ -11124,6 +11430,18 @@
       "reciprocal": true
     },
     "kimicode-opencodego-qwen38max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kimicode-opencodego-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kimicode-opencodego-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "kimicode-opencodego-step5preview": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11167,6 +11485,14 @@
       "platforms": [],
       "reciprocal": true
     },
+    "kimicode-openrouter-ernie55flashpreview": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "kimicode-openrouter-flint40b": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "kimicode-openrouter-gemini25pro": {
       "platforms": [],
       "reciprocal": false
@@ -11174,6 +11500,10 @@
     "kimicode-openrouter-gemini35flash": {
       "platforms": [],
       "reciprocal": false
+    },
+    "kimicode-openrouter-gemma426ba4b": {
+      "platforms": [],
+      "reciprocal": true
     },
     "kimicode-openrouter-gemma431b": {
       "platforms": [
@@ -11261,6 +11591,14 @@
       "platforms": [],
       "reciprocal": true
     },
+    "kimicode-openrouter-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "kimicode-openrouter-hy4flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "kimicode-openrouter-hy4preview": {
       "platforms": [],
       "reciprocal": true
@@ -11268,6 +11606,10 @@
     "kimicode-openrouter-inkling": {
       "platforms": [],
       "reciprocal": true
+    },
+    "kimicode-openrouter-inkling2small": {
+      "platforms": [],
+      "reciprocal": false
     },
     "kimicode-openrouter-inklingsmall": {
       "platforms": [],
@@ -11301,6 +11643,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "kimicode-openrouter-lfm317b": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "kimicode-openrouter-ling30flash": {
       "platforms": [],
       "reciprocal": true
@@ -11308,6 +11654,10 @@
     "kimicode-openrouter-ling30flashvl": {
       "platforms": [],
       "reciprocal": true
+    },
+    "kimicode-openrouter-ling32flash": {
+      "platforms": [],
+      "reciprocal": false
     },
     "kimicode-openrouter-llama4maverick": {
       "platforms": [],
@@ -11367,9 +11717,17 @@
       "platforms": [],
       "reciprocal": true
     },
+    "kimicode-openrouter-nexn26": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "kimicode-openrouter-northminicode": {
       "platforms": [],
       "reciprocal": true
+    },
+    "kimicode-openrouter-particle1": {
+      "platforms": [],
+      "reciprocal": false
     },
     "kimicode-openrouter-qwen3235ba22b": {
       "platforms": [],
@@ -11402,6 +11760,10 @@
     "kimicode-openrouter-qwen3coder": {
       "platforms": [],
       "reciprocal": true
+    },
+    "kimicode-openrouter-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
     },
     "kimicode-openrouter-step37flash": {
       "platforms": [],
@@ -11437,6 +11799,10 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "mmx-minimax-minimaxm31flash": {
+      "platforms": [],
       "reciprocal": false
     },
     "omp-cursor-claudefable5": {
@@ -11493,6 +11859,10 @@
       ],
       "reciprocal": false
     },
+    "omp-deepseek-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "omp-deepseek-deepseekv4flash": {
       "platforms": [
         "darwin"
@@ -11504,6 +11874,10 @@
       "reciprocal": false
     },
     "omp-githubcopilot-claudesonnet5": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-githubcopilot-copilotfusion": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11881,11 +12255,23 @@
       "platforms": [],
       "reciprocal": false
     },
+    "omp-openrouter-ernie55flashpreview": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-openrouter-flint40b": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "omp-openrouter-gemini25pro": {
       "platforms": [],
       "reciprocal": false
     },
     "omp-openrouter-gemini35flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-openrouter-gemma426ba4b": {
       "platforms": [],
       "reciprocal": false
     },
@@ -11973,11 +12359,23 @@
       "platforms": [],
       "reciprocal": false
     },
+    "omp-openrouter-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-openrouter-hy4flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "omp-openrouter-hy4preview": {
       "platforms": [],
       "reciprocal": false
     },
     "omp-openrouter-inkling": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-openrouter-inkling2small": {
       "platforms": [],
       "reciprocal": false
     },
@@ -12013,11 +12411,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "omp-openrouter-lfm317b": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "omp-openrouter-ling30flash": {
       "platforms": [],
       "reciprocal": false
     },
     "omp-openrouter-ling30flashvl": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-openrouter-ling32flash": {
       "platforms": [],
       "reciprocal": false
     },
@@ -12073,7 +12479,15 @@
       "platforms": [],
       "reciprocal": false
     },
+    "omp-openrouter-nexn26": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "omp-openrouter-northminicode": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-openrouter-particle1": {
       "platforms": [],
       "reciprocal": false
     },
@@ -12106,6 +12520,10 @@
       "reciprocal": false
     },
     "omp-openrouter-qwen3coder": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "omp-openrouter-qwen4max": {
       "platforms": [],
       "reciprocal": false
     },
@@ -12206,6 +12624,10 @@
         "darwin"
       ],
       "reciprocal": true
+    },
+    "opencode-alibaba-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
     },
     "opencode-cerebras-gemma431b": {
       "platforms": [],
@@ -12371,6 +12793,10 @@
       ],
       "reciprocal": true
     },
+    "opencode-deepseek-deepseekv4flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "opencode-deepseek-deepseekv4pro": {
       "platforms": [
         "darwin",
@@ -12500,6 +12926,10 @@
       ],
       "reciprocal": false
     },
+    "opencode-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "opencode-mistral-mistrallarge3": {
       "platforms": [],
       "reciprocal": false
@@ -12589,7 +13019,9 @@
       "reciprocal": true
     },
     "opencode-opencode-bigpickle": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": false
     },
     "opencode-opencode-claudefable5": {
@@ -12625,7 +13057,9 @@
       "reciprocal": false
     },
     "opencode-opencode-deepseekv41flash": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": true
     },
     "opencode-opencode-deepseekv4flash": {
@@ -12638,7 +13072,8 @@
     },
     "opencode-opencode-flint40b": {
       "platforms": [
-        "darwin"
+        "darwin",
+        "windows"
       ],
       "reciprocal": true
     },
@@ -12755,11 +13190,15 @@
       "reciprocal": false
     },
     "opencode-opencode-hy4flash": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": true
     },
     "opencode-opencode-iceman": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": false
     },
     "opencode-opencode-inkling2small": {
@@ -12795,7 +13234,9 @@
       "reciprocal": true
     },
     "opencode-opencode-mimov26flash": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": true
     },
     "opencode-opencode-minimaxm25": {
@@ -12831,11 +13272,15 @@
       "reciprocal": false
     },
     "opencode-opencode-nemotron35lightning": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": true
     },
     "opencode-opencode-nemotron35supervl": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": true
     },
     "opencode-opencode-nemotron3ultra": {
@@ -12858,7 +13303,8 @@
     },
     "opencode-opencode-reflectionbeam": {
       "platforms": [
-        "linux"
+        "linux",
+        "windows"
       ],
       "reciprocal": true
     },
@@ -12871,6 +13317,10 @@
     "opencode-opencodego-claudehaiku55": {
       "platforms": [],
       "reciprocal": false
+    },
+    "opencode-opencodego-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
     },
     "opencode-opencodego-deepseekv4flash": {
       "platforms": [],
@@ -12934,7 +13384,8 @@
     },
     "opencode-opencodego-hy4flash": {
       "platforms": [
-        "linux"
+        "linux",
+        "windows"
       ],
       "reciprocal": true
     },
@@ -13012,7 +13463,8 @@
     },
     "opencode-opencodego-reflectionbeam": {
       "platforms": [
-        "linux"
+        "linux",
+        "windows"
       ],
       "reciprocal": true
     },
@@ -13102,6 +13554,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "pi-deepseek-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "pi-deepseek-deepseekv4flash": {
       "platforms": [
         "darwin",
@@ -13153,6 +13609,10 @@
       ],
       "reciprocal": false
     },
+    "pi-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "pi-mistral-mistrallarge3": {
       "platforms": [],
       "reciprocal": false
@@ -13183,6 +13643,14 @@
       ],
       "reciprocal": false
     },
+    "pi-opencodego-claudehaiku55": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-opencodego-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "pi-opencodego-deepseekv4flash": {
       "platforms": [],
       "reciprocal": true
@@ -13190,6 +13658,10 @@
     "pi-opencodego-deepseekv4pro": {
       "platforms": [],
       "reciprocal": true
+    },
+    "pi-opencodego-gemini4argon": {
+      "platforms": [],
+      "reciprocal": false
     },
     "pi-opencodego-glm5": {
       "platforms": [],
@@ -13217,6 +13689,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "pi-opencodego-gpt6luna": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "pi-opencodego-grok45": {
       "platforms": [],
       "reciprocal": false
@@ -13225,7 +13701,19 @@
       "platforms": [],
       "reciprocal": false
     },
+    "pi-opencodego-grok47": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "pi-opencodego-hy3": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "pi-opencodego-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-opencodego-hy4flash": {
       "platforms": [],
       "reciprocal": true
     },
@@ -13248,6 +13736,14 @@
     "pi-opencodego-kimik3": {
       "platforms": [],
       "reciprocal": true
+    },
+    "pi-opencodego-kimik31pro": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-opencodego-longcat20": {
+      "platforms": [],
+      "reciprocal": false
     },
     "pi-opencodego-mimov25": {
       "platforms": [],
@@ -13273,6 +13769,10 @@
       "platforms": [],
       "reciprocal": false
     },
+    "pi-opencodego-musespark13": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "pi-opencodego-qwen37plus": {
       "platforms": [],
       "reciprocal": false
@@ -13282,6 +13782,18 @@
       "reciprocal": true
     },
     "pi-opencodego-qwen38max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-opencodego-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-opencodego-reflectionbeam": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "pi-opencodego-step5preview": {
       "platforms": [],
       "reciprocal": false
     },
@@ -13327,6 +13839,16 @@
       "platforms": [],
       "reciprocal": true
     },
+    "pi-openrouter-ernie55flashpreview": {
+      "platforms": [],
+      "reciprocal": true
+    },
+    "pi-openrouter-flint40b": {
+      "platforms": [
+        "windows"
+      ],
+      "reciprocal": true
+    },
     "pi-openrouter-gemini25pro": {
       "platforms": [],
       "reciprocal": false
@@ -13334,6 +13856,10 @@
     "pi-openrouter-gemini35flash": {
       "platforms": [],
       "reciprocal": false
+    },
+    "pi-openrouter-gemma426ba4b": {
+      "platforms": [],
+      "reciprocal": true
     },
     "pi-openrouter-gemma431b": {
       "platforms": [
@@ -13421,6 +13947,14 @@
       "platforms": [],
       "reciprocal": true
     },
+    "pi-openrouter-hy4": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "pi-openrouter-hy4flash": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "pi-openrouter-hy4preview": {
       "platforms": [],
       "reciprocal": true
@@ -13428,6 +13962,10 @@
     "pi-openrouter-inkling": {
       "platforms": [],
       "reciprocal": true
+    },
+    "pi-openrouter-inkling2small": {
+      "platforms": [],
+      "reciprocal": false
     },
     "pi-openrouter-inklingsmall": {
       "platforms": [],
@@ -13461,6 +13999,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "pi-openrouter-lfm317b": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "pi-openrouter-ling30flash": {
       "platforms": [],
       "reciprocal": true
@@ -13468,6 +14010,10 @@
     "pi-openrouter-ling30flashvl": {
       "platforms": [],
       "reciprocal": true
+    },
+    "pi-openrouter-ling32flash": {
+      "platforms": [],
+      "reciprocal": false
     },
     "pi-openrouter-llama4maverick": {
       "platforms": [],
@@ -13498,7 +14044,9 @@
       "reciprocal": false
     },
     "pi-openrouter-nemotron35lightning": {
-      "platforms": [],
+      "platforms": [
+        "windows"
+      ],
       "reciprocal": true
     },
     "pi-openrouter-nemotron3nano": {
@@ -13515,7 +14063,8 @@
     },
     "pi-openrouter-nemotron3ultra": {
       "platforms": [
-        "darwin"
+        "darwin",
+        "windows"
       ],
       "reciprocal": true
     },
@@ -13527,9 +14076,17 @@
       "platforms": [],
       "reciprocal": true
     },
+    "pi-openrouter-nexn26": {
+      "platforms": [],
+      "reciprocal": true
+    },
     "pi-openrouter-northminicode": {
       "platforms": [],
       "reciprocal": true
+    },
+    "pi-openrouter-particle1": {
+      "platforms": [],
+      "reciprocal": false
     },
     "pi-openrouter-qwen3235ba22b": {
       "platforms": [],
@@ -13563,6 +14120,10 @@
       "platforms": [],
       "reciprocal": true
     },
+    "pi-openrouter-qwen4max": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "pi-openrouter-step37flash": {
       "platforms": [],
       "reciprocal": true
@@ -13584,6 +14145,10 @@
     "pi-xai-grok46": {
       "platforms": [],
       "reciprocal": false
+    },
+    "qwen-deepseek-deepseekv41flash": {
+      "platforms": [],
+      "reciprocal": true
     },
     "qwen-deepseek-deepseekv4flash": {
       "platforms": [
@@ -13615,6 +14180,10 @@
       ],
       "reciprocal": false
     },
+    "qwen-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "qwen-openai-gpt4o": {
       "platforms": [
         "darwin"
@@ -13631,6 +14200,10 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "qwen-qwen-qwen4max": {
+      "platforms": [],
       "reciprocal": false
     },
     "qwen-xai-grok4": {
@@ -13650,6 +14223,10 @@
       "reciprocal": false
     },
     "qwen-xai-grok46": {
+      "platforms": [],
+      "reciprocal": false
+    },
+    "reasonix-deepseek-deepseekv41flash": {
       "platforms": [],
       "reciprocal": false
     },
@@ -13683,6 +14260,10 @@
       ],
       "reciprocal": false
     },
+    "reasonix-minimax-minimaxm31flash": {
+      "platforms": [],
+      "reciprocal": false
+    },
     "vibe-minimax-minimaxm25": {
       "platforms": [],
       "reciprocal": false
@@ -13695,6 +14276,10 @@
       "platforms": [
         "darwin"
       ],
+      "reciprocal": false
+    },
+    "vibe-minimax-minimaxm31flash": {
+      "platforms": [],
       "reciprocal": false
     },
     "vibe-mistral-mistrallarge3": {

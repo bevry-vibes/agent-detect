@@ -1,0 +1,127 @@
+{
+  "outputs": {
+    "identify": {
+      "harness_label": "Cline",
+      "harness_short_title": null,
+      "harness_name": "cline",
+      "harness_id": "cline",
+      "harness_license": "Apache-2.0",
+      "harness_open_training": "never",
+      "harness_closed_training": "never",
+      "harness_reciprocity_scandal": false,
+      "harness_reciprocity": true,
+      "provider_label": "OpenRouter",
+      "provider_name": "openrouter",
+      "provider_id": "openrouter",
+      "provider_closed_training": "never",
+      "provider_open_training": "never",
+      "provider_reciprocity_scandal": false,
+      "provider_reciprocity": true,
+      "model_label": "ERNIE 5.5 Flash Preview",
+      "model_short_title": null,
+      "model_name": "ernie-5.5-flash-preview",
+      "model_id": "ernie55flashpreview",
+      "model_openness": "open-weight",
+      "model_open_training": "opt-in",
+      "model_closed_training": "never",
+      "model_license": "NOASSERTION",
+      "model_reciprocity": true,
+      "agent_id": "cline-openrouter-ernie55flashpreview",
+      "reciprocal": true
+    },
+    "trailer co-author": "Co-authored-by: Cline · ERNIE 5.5 Flash Preview <cline-openrouter-ernie55flashpreview@local>",
+    "trailer assisted-by": "Assisted-by: Cline · ERNIE 5.5 Flash Preview <cline-openrouter-ernie55flashpreview@local>",
+    "found": {
+      "platform_id": "windows",
+      "harness_version": "3.0.75",
+      "detectable": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "detected": [
+        "harness",
+        "provider",
+        "model"
+      ],
+      "process_lineage": [
+        {
+          "pid": 3832,
+          "name": "agent-detect-dev.exe"
+        },
+        {
+          "pid": 16480,
+          "name": "powershell.exe"
+        },
+        {
+          "pid": 19324,
+          "name": "cline.exe"
+        },
+        {
+          "pid": 10064,
+          "name": ""
+        }
+      ],
+      "harness-urls": [
+        "https://github.com/cline/cline",
+        "https://github.com/cline/cline/blob/main/LICENSE"
+      ],
+      "provider-urls": [
+        "https://openrouter.ai/privacy",
+        "https://openrouter.ai/terms"
+      ],
+      "model-urls": [
+        "https://ernie.baidu.com/privacy/en"
+      ],
+      "scandal-urls": [],
+      "evidence": [
+        {
+          "dim": "harness",
+          "source": "env",
+          "name": "CLINE_WRAPPER_PATH",
+          "value": "cline"
+        },
+        {
+          "dim": "provider",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "lastUsedProvider",
+          "value": "openrouter"
+        },
+        {
+          "dim": "model",
+          "source": "config",
+          "name": "<home>/.cline/data/settings/providers.json",
+          "field": "providers.openrouter.settings.model",
+          "value": "baidu/ernie-5.5-flash-preview:free"
+        }
+      ]
+    },
+    "explain": {
+      "state": "reciprocal",
+      "identity": {
+        "harness": "cline",
+        "provider": "openrouter",
+        "model": "ernie55flashpreview"
+      },
+      "reasons": []
+    },
+    "check-reciprocal": "is reciprocal"
+  },
+  "meta": {
+    "updated_at": 1795677658,
+    "harness_version": "3.0.75",
+    "capture_kind": "programmatic",
+    "prompt_invocation": [
+      "cline.cmd",
+      "--auto-approve",
+      "--provider=openrouter",
+      "--model=baidu/ernie-5.5-flash-preview:free",
+      "<prompt>"
+    ],
+    "version_invocation": [
+      "cline.cmd",
+      "--version"
+    ]
+  }
+}

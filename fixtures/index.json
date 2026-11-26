@@ -88,7 +88,7 @@
       "kimicode-moonshotai-kimik3-windows": "post-check mismatch",
       "kimicode-minimax-minimaxm27-windows": "post-check mismatch",
       "kimicode-minimax-minimaxm3-windows": "post-check mismatch",
-      "kimicode-openrouter-gemma431b-windows": "post-check mismatch",
+      "kimicode-openrouter-gemma431b-windows": "capture failed (exit 1); stderr kimi version 2.6.3\nerror: failed to run prompt: provider.rate_limit: Provider returned error\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
       "kimicode-openrouter-nemotron3nano-windows": "post-check mismatch",
       "kimicode-openrouter-nemotron3super-windows": "post-check mismatch",
       "kimicode-openrouter-nemotron3ultra-windows": "post-check mismatch",
@@ -108,7 +108,7 @@
       "omp-siliconflow-minimaxm3-windows": "capture failed (exit 1); stderr Model \"siliconflow/MiniMaxAI/MiniMax-M3\" not found\n\nSet an API key environment variable:\n  ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, etc.\n\nOr create <home>/.omp/agent/models.yml\n",
       "omp-zenmux-deepseekv4flash-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n404 Requested model is not valid (request_id: dc6d6707c7fc43949e09131555b28050)\nRequested model is not valid (request_id: dc6d6707c7fc43949e09131555b28050) (type=invalid_model param=404)\n",
       "omp-zenmux-gemini35flash-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n404 Requested model is not valid (request_id: bd6f7b2d2624409391d5f431926bf031)\nRequested model is not valid (request_id: bd6f7b2d2624409391d5f431926bf031) (type=invalid_model param=404)\n",
-      "omp-zenmux-glm47flash-windows": "post-check mismatch",
+      "omp-zenmux-glm47flash-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n403 You have no permission to access this resource (api_key_source: payg) (request_id: 04baa66140584c63bce072874bcccf5f) (type=access_denied param=403)\n",
       "omp-zenmux-grok45-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n404 Requested model is not valid (request_id: 3465817008bb45d2af0072e94e4222f9)\nRequested model is not valid (request_id: 3465817008bb45d2af0072e94e4222f9) (type=invalid_model param=404)\n",
       "omp-zenmux-kimik3-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n404 Requested model is not valid (request_id: aab790ee336b4afc8e80f08d967234c0)\nRequested model is not valid (request_id: aab790ee336b4afc8e80f08d967234c0) (type=invalid_model param=404)\n",
       "omp-zenmux-step37flash-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n404 Requested model is not valid (request_id: aab790ee336b4afc8e80f08d967234c0)\nRequested model is not valid (request_id: aab790ee336b4afc8e80f08d967234c0) (type=invalid_model param=404)\n",
@@ -120,10 +120,10 @@
       "pi-minimax-minimaxm3-windows": "capture failed (exit 1); stderr 429 {\"type\":\"error\",\"error\":{\"type\":\"rate_limit_error\",\"message\":\"Token Plan usage limit reached: Upgrade your Token Plan or purchase Credits for more usage. (2056)\"},\"request_id\":\"06e6ee6daf632da5f6db14fa84e55dac\"}\n",
       "pi-mistral-mistrallargelatest-windows": "capture failed (exit 1); stderr Mistral API error (403): {\"object\":\"error\",\"message\":\"This model is not available in your subscription tier\",\"type\":\"tier_not_allowed\",\"param\":null,\"code\":\"1910\",\"raw_status_code\":403}\n",
       "pi-openrouter-deepseekv4flash-windows": "capture failed (exit 1); stderr  max_tokens. You requested up to 384000 tokens, but can only afford 69613. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account\"},{\"code\":402,\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 384000 tokens, but can only afford 87016. To increase, visit https://openrouter.ai/settings/credits and…",
-      "pi-openrouter-gemma431b-windows": "capture failed (exit 1); stderr 404: {\"message\":\"No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy\",\"code\":404}\n",
+      "pi-openrouter-gemma431b-windows": "capture failed (exit 1); stderr enrouter.ai/workspaces/default/byok\",\"provider_name\":\"Google AI Studio\",\"is_byok\":false,\"provider_error_code\":\"429\",\"limit_source\":\"upstream_provider_shared_pool\",\"remedy_hint\":\"Retry shortly, add your own provider key to use your own limits (https://openrouter.ai/workspaces/default/byok), or route to another provider with provider routing: https://openrouter.ai/doc…",
       "pi-openrouter-nemotron3nano-windows": "capture failed (exit 1); stderr Warning: Model \"nvidia/nemotron-3-nano-30b-a3b:free\" not found for provider \"openrouter\". Using custom model id.\n404: {\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: nvidia/nemotron-3-nano-30b-a3b\",\"code\":404}\n",
       "pi-openrouter-nemotron3super-windows": "capture failed (exit 1); stderr 404: {\"message\":\"No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy\",\"code\":404}\n",
-      "pi-openrouter-nemotron3ultra-windows": "capture failed (exit 1); stderr 404: {\"message\":\"No endpoints available matching your guardrail restrictions and data policy. Configure: https://openrouter.ai/settings/privacy\",\"code\":404}\n",
+      "pi-openrouter-lfm317b-windows": "capture failed (exit 1); stderr https://openrouter.ai/settings/credits?utm_source=api&utm_campaign=free_daily_limit\",\"code\":429,\"metadata\":{\"headers\":{\"X-RateLimit-Limit\":\"50\",\"X-RateLimit-Remaining\":\"0\",\"X-RateLimit-Reset\":\"1795737600000\"},\"limit_source\":\"openrouter_free_tier_daily\",\"remedy_hint\":\"Wait for the daily reset (see X-RateLimit-Reset), or purchase credits to raise your free-model daily…",
       "qwen-deepseek-deepseekv4flash-windows": "capture failed (exit 1)",
       "qwen-deepseek-deepseekv4pro-windows": "post-check mismatch",
       "qwen-minimax-minimaxm25-windows": "post-check mismatch",
@@ -318,7 +318,20 @@
       "opencode-opencode-glm53flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n",
       "opencode-opencode-mimov26flash-darwin": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mFree usage limit reached. Connect a provider or subscribe to OpenCode Go to keep going, or switch models.\n",
       "kilo-ollamacloud-glm52-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> code · glm-5.2\r\n\u001b[0m\r\n\u001b[91m\u001b[1mError: \u001b[0mAdd usage credits or subscribe and save up to 66%: https://ollama.com/plans (ref: 6b05740f-f353-497b-a3a5-9a445c4a6c7f)\r\n",
-      "opencode-clinepass-deepseekv4pro-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/deepseek-v4-pro\r\n\u001b[91m\u001b[1mError: \u001b[0mError 403: the user is not subscribed to required model plan\r\n"
+      "opencode-clinepass-deepseekv4pro-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · cline-pass/deepseek-v4-pro\r\n\u001b[91m\u001b[1mError: \u001b[0mError 403: the user is not subscribed to required model plan\r\n",
+      "kimicode-openrouter-gemma426ba4b-windows": "capture failed (exit 1); stderr kimi version 2.6.3\nerror: failed to run prompt: provider.rate_limit: Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day: https://openrouter.ai/settings/credits?utm_source=api&utm_campaign=free_daily_limit\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "opencode-opencode-glm53flash-windows": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mModel unavailable: opencode/glm-5.3-flash-free\r\n",
+      "opencode-opencode-longcat25-windows": "capture failed (exit 1); stderr \u001b[91m\u001b[1mError: \u001b[0mModel unavailable: opencode/longcat-2.5\r\n",
+      "opencode-opencode-tidepoolalpha-windows": "capture failed (exit 1); stderr \u001b[0m\r\n> build · tidepool-alpha-free\r\n\u001b[91m\u001b[1mError: \u001b[0mUpstream request failed: Model is unavailable.\r\n",
+      "pi-opencodego-hy4flash-windows": "capture failed (exit 1); stderr 401: {\"type\":\"authentication_error\",\"code\":\"api_key_expired\",\"message\":\"This API key has expired. Create a new API key in OpenCode Console and replace it in your client or secret store. Signing in again will not renew this key. Manage your API keys at https://opencode.ai/console/account#api-keys.\"}\n",
+      "cline-openrouter-gemma426ba4b-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Provider returned error\n",
+      "cline-openrouter-gemma431b-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m Provider returned error\n",
+      "cline-openrouter-inkling2small-windows": "capture failed (exit 1); stderr \u001b[31merror:\u001b[0m hook dispatch failed: session.hook requires a valid hook event payload\n\u001b[31merror:\u001b[0m This request requires more credits, or fewer max_tokens. You requested up to 283115 tokens, but can only afford 2926. To increase, visit https://openrouter.ai/settings/credits and upgrade to a paid account\n",
+      "kimicode-openrouter-northminicode-windows": "capture failed (exit 1); stderr kimi version 2.6.3\nerror: failed to run prompt: provider.api_error: cohere/north-mini-code:free is no longer available on OpenRouter: no provider serves this model anymore. See available models at https://openrouter.ai/models\nSee log: <home>/.kimi-code/logs/kimi-code.log\n",
+      "pi-openrouter-dots3notepreview-windows": "capture failed (exit 1); stderr 404: {\"message\":\"dots-studio/dots-3-note-preview:free is no longer available on OpenRouter: no provider serves this model anymore. See available models at https://openrouter.ai/models\",\"code\":404}\n",
+      "pi-openrouter-gemma426ba4b-windows": "capture failed (exit 1); stderr enrouter.ai/workspaces/default/byok\",\"provider_name\":\"Google AI Studio\",\"is_byok\":false,\"provider_error_code\":\"429\",\"limit_source\":\"upstream_provider_shared_pool\",\"remedy_hint\":\"Retry shortly, add your own provider key to use your own limits (https://openrouter.ai/workspaces/default/byok), or route to another provider with provider routing: https://openrouter.ai/doc…",
+      "omp-openrouter-dots3notepreview-windows": "capture failed (exit 1); stderr Model \"openrouter/dots-studio/dots-3-note-preview:free\" not found. Run \"omp models\" to see available models.\n",
+      "omp-openrouter-gemma426ba4b-windows": "capture failed (exit 1); stderr Note: plan.defaultOnStartup is ignored in print mode (no interactive surface to review the plan). Use --plan-yolo for a headless plan flow.\nWorking...\n429 Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day: https://openrouter.ai/settings/credits?utm_source=api&utm_campaign=free_daily_limit retry-after-ms=56820921\n"
     }
   },
   "invocations": {
@@ -2571,6 +2584,8 @@
     "kimicode-openrouter-gemma431b-windows": {
       "prompt_invocation": [
         "kimi.exe",
+        "-m",
+        "openrouter/google/gemma-4-31b-it:free",
         "-p",
         "<prompt>"
       ],
@@ -2670,6 +2685,8 @@
     "kimicode-openrouter-nemotron3ultra-windows": {
       "prompt_invocation": [
         "kimi.exe",
+        "-m",
+        "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
         "-p",
         "<prompt>"
       ],
@@ -7420,6 +7437,440 @@
       ],
       "version_invocation": [
         "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-bigpickle-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/big-pickle",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-iceman-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/iceman-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-longcat25-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/longcat-2.5",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencode-hy4flash-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode/hy4-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "opencode-opencodego-hy4flash-windows": {
+      "prompt_invocation": [
+        "opencode.exe",
+        "run",
+        "--model",
+        "opencode-go/hy4-flash-free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "opencode.exe",
+        "--version"
+      ]
+    },
+    "pi-opencodego-reflectionbeam-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "opencode-go",
+        "--model",
+        "beam-free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-opencodego-hy4flash-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "opencode-go",
+        "--model",
+        "hy4-flash-free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-dots3notepreview-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "dots-studio/dots-3-note-preview:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-flint40b-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "recursive/flint-v1.0:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-gemma426ba4b-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "google/gemma-4-26b-a4b-it:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-lfm317b-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "liquid/lfm-3-1.7b:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-nemotron35lightning-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "nvidia/nemotron-3.5-lightning:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-northminicode-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "cohere/north-mini-code:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "pi-openrouter-particle1-windows": {
+      "prompt_invocation": [
+        "pi.exe",
+        "--provider",
+        "openrouter",
+        "--model",
+        "particle-ai/particle-1:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "pi.exe",
+        "--version"
+      ]
+    },
+    "omp-openrouter-dots3notepreview-windows": {
+      "prompt_invocation": [
+        "omp.exe",
+        "-p",
+        "--model",
+        "openrouter/dots-studio/dots-3-note-preview:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-openrouter-gemma426ba4b-windows": {
+      "prompt_invocation": [
+        "omp.exe",
+        "-p",
+        "--model",
+        "openrouter/google/gemma-4-26b-a4b-it:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-openrouter-gemma431b-windows": {
+      "prompt_invocation": [
+        "omp.exe",
+        "-p",
+        "--model",
+        "openrouter/google/gemma-4-31b-it:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-openrouter-nemotron35lightning-windows": {
+      "prompt_invocation": [
+        "omp.exe",
+        "-p",
+        "--model",
+        "openrouter/nvidia/nemotron-3.5-lightning:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-openrouter-nemotron3ultra-windows": {
+      "prompt_invocation": [
+        "omp.exe",
+        "-p",
+        "--model",
+        "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp.exe",
+        "--version"
+      ]
+    },
+    "omp-openrouter-northminicode-windows": {
+      "prompt_invocation": [
+        "omp.exe",
+        "-p",
+        "--model",
+        "openrouter/cohere/north-mini-code:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "omp.exe",
+        "--version"
+      ]
+    },
+    "kimicode-openrouter-gemma426ba4b-windows": {
+      "prompt_invocation": [
+        "kimi.exe",
+        "-m",
+        "openrouter/google/gemma-4-26b-a4b-it:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi.exe",
+        "--version"
+      ]
+    },
+    "kimicode-openrouter-northminicode-windows": {
+      "prompt_invocation": [
+        "kimi.exe",
+        "-m",
+        "openrouter/cohere/north-mini-code:free",
+        "-p",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "kimi.exe",
+        "--version"
+      ]
+    },
+    "cline-openrouter-ernie55flashpreview-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=baidu/ernie-5.5-flash-preview:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-flint40b-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=recursive/flint-v1.0:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-gemma426ba4b-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=google/gemma-4-26b-a4b-it:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-gemma431b-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=google/gemma-4-31b-it:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-inkling2small-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=thinkingmachines/inkling-2-small",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-lfm317b-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=liquid/lfm-3-1.7b:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-ling32flash-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=inclusionai/ling-3.2-flash:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-nemotron35lightning-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=nvidia/nemotron-3.5-lightning:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-nemotron3ultra-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=nvidia/nemotron-3-ultra-550b-a55b:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
+        "--version"
+      ]
+    },
+    "cline-openrouter-particle1-windows": {
+      "prompt_invocation": [
+        "cline.cmd",
+        "--auto-approve",
+        "--provider=openrouter",
+        "--model=particle-ai/particle-1:free",
+        "<prompt>"
+      ],
+      "version_invocation": [
+        "cline.cmd",
         "--version"
       ]
     }
