@@ -13058,6 +13058,7 @@
     },
     "opencode-opencode-deepseekv41flash": {
       "platforms": [
+        "linux",
         "windows"
       ],
       "reciprocal": true
@@ -13073,6 +13074,7 @@
     "opencode-opencode-flint40b": {
       "platforms": [
         "darwin",
+        "linux",
         "windows"
       ],
       "reciprocal": true
@@ -13235,6 +13237,7 @@
     },
     "opencode-opencode-mimov26flash": {
       "platforms": [
+        "linux",
         "windows"
       ],
       "reciprocal": true
@@ -13273,12 +13276,14 @@
     },
     "opencode-opencode-nemotron35lightning": {
       "platforms": [
+        "linux",
         "windows"
       ],
       "reciprocal": true
     },
     "opencode-opencode-nemotron35supervl": {
       "platforms": [
+        "linux",
         "windows"
       ],
       "reciprocal": true

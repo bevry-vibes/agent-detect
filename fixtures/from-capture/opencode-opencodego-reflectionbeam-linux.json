@@ -33,7 +33,7 @@
     "trailer assisted-by": "Assisted-by: OpenCode · Reflection Beam <opencode-opencodego-reflectionbeam@local>",
     "found": {
       "platform_id": "linux",
-      "harness_version": "2.3.2",
+      "harness_version": "2.4.2",
       "detectable": [
         "harness",
         "provider",
@@ -46,31 +46,15 @@
       ],
       "process_lineage": [
         {
-          "pid": 1722217,
+          "pid": 47236,
           "name": "agent-detect-de"
         },
         {
-          "pid": 1716619,
+          "pid": 41784,
           "name": "opencode-pty"
         },
         {
-          "pid": 1716089,
-          "name": "opencode.exe"
-        },
-        {
-          "pid": 1711058,
-          "name": "opencode"
-        },
-        {
-          "pid": 1702188,
-          "name": "bash"
-        },
-        {
-          "pid": 6507,
-          "name": "ghostty"
-        },
-        {
-          "pid": 4027,
+          "pid": 4571,
           "name": "systemd"
         }
       ],
@@ -90,9 +74,9 @@
       "evidence": [
         {
           "dim": "harness",
-          "source": "lineage",
-          "name": "opencode",
-          "value": "opencode"
+          "source": "env",
+          "name": "OPENCODE",
+          "value": "<redacted>"
         },
         {
           "dim": "provider",
@@ -122,8 +106,8 @@
     "check-reciprocal": "is reciprocal"
   },
   "meta": {
-    "updated_at": 1795262787,
-    "harness_version": "2.3.2",
+    "updated_at": 1795687619,
+    "harness_version": "2.4.2",
     "capture_kind": "programmatic",
     "prompt_invocation": [
       "opencode",
