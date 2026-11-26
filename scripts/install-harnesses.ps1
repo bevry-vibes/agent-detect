@@ -111,7 +111,8 @@ $Registry = @(
 		Id = 'opencode-desktop'
 		Label = 'OpenCode desktop app'
 		Probe = @('opencode-desktop-linux', 'ai.opencode')
-		App = @{ Darwin = '/Applications/OpenCode.app' }
+		# Windows is the official per-user NSIS install (no Appx identity, no PATH shim), so its App value is a path.
+		App = @{ Darwin = '/Applications/OpenCode.app'; Windows = "$env:LOCALAPPDATA\Programs\ai.opencode.desktop\OpenCode.exe" }
 		Methods = @{ Darwin = @('brew'); Linux = @('soar', 'rpm'); Windows = @('exe') }
 	}
 	[pscustomobject]@{ Id = 'dsh'; Label = 'DeepSeek Harness — dsh (developer preview)'; Probe = 'dsh'; Methods = @{ Darwin = @('npm'); Linux = @('npm'); Windows = @('npm') } }
@@ -262,14 +263,45 @@ function Resolve-HarnessBinary {
 	return $null
 }
 
+function Test-WindowsAppxPackage {
+	# PowerShell 7 cannot load the Appx module on Windows 10 (0x80131539); Windows PowerShell 5.1 can.
+	param([Parameter(Mandatory)] [string]$Name)
+	try {
+		return [bool](Get-AppxPackage -Name $Name -ErrorAction Stop)
+	} catch {
+		try {
+			$count = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "@(Get-AppxPackage -Name '$Name' -ErrorAction SilentlyContinue).Count" 2>$null
+			return ("$count".Trim() -match '^[1-9]')
+		} catch { return $false }
+	}
+}
+
+function Get-WindowsAppxVersion {
+	param([Parameter(Mandatory)] [string]$Name)
+	try {
+		$pkg = @(Get-AppxPackage -Name $Name -ErrorAction Stop) | Select-Object -First 1
+		if ($pkg) { return [string]$pkg.Version }
+	} catch {
+		try {
+			$v = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -Command "Get-AppxPackage -Name '$Name' | Select-Object -First 1 -ExpandProperty Version" 2>$null
+			if ($v) { return ([string]$v).Trim() }
+		} catch {}
+	}
+	return 'unknown'
+}
+
 function Test-AppInstalled {
 	# Desktop apps have no CLI probe on every platform; each entry's App map names the real detection surface.
+	# On Windows the value is either an Appx package name or a filesystem path (the official NSIS installers).
 	param([Parameter(Mandatory)] [pscustomobject]$Entry)
 	if (-not $Entry.PSObject.Properties['App']) { return $false }
 	$app = $Entry.App[$Platform]
 	if (-not $app) { return $false }
 	if ($IsMacOS) { return (Test-Path $app) }
-	if ($IsWindows) { return [bool](Get-AppxPackage -Name $app -ErrorAction Ignore) }
+	if ($IsWindows) {
+		if ($app -match '[\\/]' -or $app -like '*.exe') { return (Test-Path -LiteralPath $app) }
+		return (Test-WindowsAppxPackage -Name $app)
+	}
 	if ($IsLinux) { return [bool](Get-Command $app -ErrorAction Ignore) }
 	return $false
 }
@@ -287,9 +319,13 @@ function Get-AppVersion {
 		return 'unknown'
 	}
 	if ($IsWindows) {
-		$pkg = @(Get-AppxPackage -Name $app -ErrorAction Ignore) | Select-Object -First 1
-		if ($pkg) { return [string]$pkg.Version }
-		return 'unknown'
+		if ($app -match '[\\/]' -or $app -like '*.exe') {
+			if (-not (Test-Path -LiteralPath $app)) { return 'unknown' }
+			$vi = (Get-Item -LiteralPath $app).VersionInfo
+			if ($vi.FileVersion) { return ([string]$vi.FileVersion).Trim() }
+			return ([string]$vi.ProductVersion).Trim()
+		}
+		return (Get-WindowsAppxVersion -Name $app)
 	}
 	if ($IsLinux) {
 		try {

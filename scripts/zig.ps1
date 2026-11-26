@@ -69,11 +69,16 @@ $zigBin = Join-Path $installDir $zigName
 function Test-ZigInstall {
 	if (-not (Test-Path -LiteralPath $zigBin)) { return $false }
 	try {
-		$installed = (& $zigBin version 2>$null | Select-Object -First 1)
+		# capture the native exit code before any pipeline stage: `Select-Object -First 1`
+		# stops the upstream command and clears $LASTEXITCODE, which would make every
+		# later run think the exact pinned compiler is missing and re-download it.
+		$output = @(& $zigBin version 2>$null)
+		$code = $LASTEXITCODE
 	} catch {
 		return $false
 	}
-	return ($LASTEXITCODE -eq 0 -and "$installed".Trim() -eq $version)
+	$installed = @($output) | Select-Object -First 1
+	return ($code -eq 0 -and "$installed".Trim() -eq $version)
 }
 
 function Install-Zig {

@@ -67,7 +67,10 @@ pub fn main(init: std.process.Init) u8 {
 const PLATFORMS: Platform[] = ["darwin", "linux", "windows"];
 
 function path(url: URL): string {
-  return url.pathname;
+  // `URL.pathname` is `/C:/...` on Windows (a leading slash and forward slashes),
+  // which Deno's fs APIs reject; `fromFileUrl` yields the native path and keeps
+  // the trailing separator these callers rely on.
+  return fromFileUrl(url);
 }
 
 async function resolveZig(): Promise<string> {
