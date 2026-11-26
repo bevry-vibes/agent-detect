@@ -1883,11 +1883,35 @@ fn detectActiveSessionModel(a: std.mem.Allocator, io: std.Io, db: []const u8, di
 /// newest message in a non-archived session for the quoted `dir_lit`, reading the message `data` JSON and the session row's `model` JSON in one row.
 /// `msg_table` / `sess_table` select the store shape (`session_message`/`session_v2` or `message`/`session`) — both share the `session_id` join and column names.
 fn activeSessionModelFrom(a: std.mem.Allocator, io: std.Io, db: []const u8, dir_lit: []const u8, msg_table: []const u8, sess_table: []const u8) !?ActiveSessionModel {
+    const where = try std.fmt.allocPrint(a, "s.directory={s} AND s.time_archived IS NULL", .{dir_lit});
+    defer a.free(where);
+    return activeSessionModelWhere(a, io, db, msg_table, sess_table, where);
+}
+
+/// Resolve the model for an exact session id, regardless of the current directory.
+/// The shell's `OPENCODE_SESSION_ID` names the session the command belongs to; the cwd
+/// is only a fallback because several sessions can share one directory.
+fn activeSessionModelByID(a: std.mem.Allocator, io: std.Io, db: []const u8, session_id: []const u8) !?ActiveSessionModel {
+    if (db.len == 0 or session_id.len == 0) return null;
+    if (std.Io.Dir.cwd().statFile(io, db, .{})) |_| {} else |_| return null;
+    const id_lit = try sqlStringLit(a, session_id);
+    defer a.free(id_lit);
+    const where = try std.fmt.allocPrint(a, "m.session_id={s} AND s.time_archived IS NULL", .{id_lit});
+    defer a.free(where);
+    // v2 store first (opencode ≥ 2.2), then the legacy pair (kilo; the same file keeps the empty legacy tables).
+    if (try activeSessionModelWhere(a, io, db, "session_message", "session_v2", where)) |mm| return mm;
+    if (try activeSessionModelWhere(a, io, db, "message", "session", where)) |mm| return mm;
+    return null;
+}
+
+/// read the newest row matching `where`, preferring the message `data` JSON over the session row's `model` JSON.
+/// `msg_table` / `sess_table` select the store shape; `where` is the complete SQL predicate (caller owns it).
+fn activeSessionModelWhere(a: std.mem.Allocator, io: std.Io, db: []const u8, msg_table: []const u8, sess_table: []const u8, where: []const u8) !?ActiveSessionModel {
     const sql = try std.fmt.allocPrint(a,
         \\SELECT m.data, s.model FROM {s} m JOIN {s} s ON s.id = m.session_id
-        \\WHERE s.directory={s} AND s.time_archived IS NULL
+        \\WHERE {s}
         \\ORDER BY m.time_created DESC LIMIT 1
-    , .{ msg_table, sess_table, dir_lit });
+    , .{ msg_table, sess_table, where });
     defer a.free(sql);
 
     const out = kiloSqliteJson(a, io, db, sql) catch |err| {
@@ -2011,39 +2035,29 @@ fn stripBuildStamp(a: std.mem.Allocator, name: []const u8) []const u8 {
     return a.dupe(u8, name[0..dash]) catch name;
 }
 
-fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
-    // opencode doesn't persist current-model in a config file.
-    // The launcher sets OPENCODE_MODEL="<provider>/<model>"; in a real session opencode stores the model in sqlite (`opencode.db`, `session.model` JSON with `providerID`/`id`), so fall back to the latest session when the env var is absent.
-    if (env.get("OPENCODE_MODEL")) |model_full| {
-        if (model_full.len == 0) return;
-        const slash = std.mem.findScalar(u8, model_full, '/');
-        if (slash) |i| {
-            const prov = model_full[0..i];
-            const model_only = model_full[i + 1 ..];
-            d.provider_name = prov;
-            d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
-            try applyProviderMeta(a, d, prov);
-            try applyModel(a, d, model_only, model_full);
-        } else {
-            d.provider_name = "anthropic";
-            d.provider_label = "Anthropic";
-            try applyProviderMeta(a, d, "anthropic");
-            try applyModel(a, d, model_full, model_full);
-        }
-        // opencode has no config file — the OPENCODE_MODEL value lives in raw.env_vars, not in a fake config_file entry.
-        try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
-        try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
-        return;
+/// apply an OPENCODE_MODEL="<provider>/<model>" marker (the launcher's requested model).
+fn applyOpencodeEnvModel(a: std.mem.Allocator, d: *Detection, model_full: []const u8) !void {
+    const slash = std.mem.findScalar(u8, model_full, '/');
+    if (slash) |i| {
+        const prov = model_full[0..i];
+        const model_only = model_full[i + 1 ..];
+        d.provider_name = prov;
+        d.provider_label = providerForName(prov) orelse try titleCase(a, prov);
+        try applyProviderMeta(a, d, prov);
+        try applyModel(a, d, model_only, model_full);
+    } else {
+        d.provider_name = "anthropic";
+        d.provider_label = "Anthropic";
+        try applyProviderMeta(a, d, "anthropic");
+        try applyModel(a, d, model_full, model_full);
     }
+    // opencode has no config file — the OPENCODE_MODEL value lives in raw.env_vars, not in a fake config_file entry.
+    try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
+    try addEvidenceClaim(a, d, .{ .dim = "model", .source = "env", .name = "OPENCODE_MODEL", .value = model_full });
+}
 
-    // real opencode session: the active session's model in the sqlite store (`~/.local/share/opencode/opencode.db`).
-    // Same schema as kilo's — active = non-archived session for the cwd with the newest message;
-    // model read from that message's data (written at creation time), not the lazily-written session.model column.
-    if (home.len == 0) return;
-    const dir = currentDir(a, io, env) orelse return;
-    const db = try std.fs.path.join(a, &.{ home, ".local/share/opencode/opencode.db" });
-    defer a.free(db);
-    const mm = (try detectActiveSessionModel(a, io, db, dir)) orelse return;
+/// apply a provider + model read from the live opencode session store.
+fn applyOpencodeSessionModel(a: std.mem.Allocator, d: *Detection, db: []const u8, mm: ActiveSessionModel) !void {
     try setProvider(a, d, mm.provider_id);
     try applyModel(a, d, stripBuildStamp(a, mm.model_full), mm.model_full);
     // decision #11: the live session store is the source for both dims.
@@ -2056,6 +2070,39 @@ fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Envi
     d.raw.session_files = obs;
     try addEvidenceClaim(a, d, .{ .dim = "provider", .source = "session", .name = db, .field = "session.model.providerID", .value = mm.provider_id });
     try addEvidenceClaim(a, d, .{ .dim = "model", .source = "session", .name = db, .field = "session.model.id", .value = mm.model_full });
+}
+
+fn detectOpencode(a: std.mem.Allocator, io: std.Io, env: *const std.process.Environ.Map, home: []const u8, d: *Detection) !void {
+    // opencode doesn't persist current-model in a config file.
+    // The exact session named by the shell is authoritative. The cwd is only a
+    // fallback: several sessions can share a directory, and the newest message
+    // there may belong to a different model.
+    if (home.len > 0) {
+        const db = try std.fs.path.join(a, &.{ home, ".local/share/opencode/opencode.db" });
+        defer a.free(db);
+        if (env.get("OPENCODE_SESSION_ID")) |session_id| {
+            if (session_id.len > 0) {
+                if (try activeSessionModelByID(a, io, db, session_id)) |mm| {
+                    try applyOpencodeSessionModel(a, d, db, mm);
+                    return;
+                }
+            }
+        }
+        // The launcher's requested model is the next-best marker when the
+        // session store is absent or has not recorded the session yet.
+        if (env.get("OPENCODE_MODEL")) |model_full| {
+            if (model_full.len > 0) try applyOpencodeEnvModel(a, d, model_full);
+            return;
+        }
+        // Last resort: the newest message in a non-archived session for the cwd.
+        const dir = currentDir(a, io, env) orelse return;
+        const mm = (try detectActiveSessionModel(a, io, db, dir)) orelse return;
+        try applyOpencodeSessionModel(a, d, db, mm);
+        return;
+    }
+    if (env.get("OPENCODE_MODEL")) |model_full| {
+        if (model_full.len > 0) try applyOpencodeEnvModel(a, d, model_full);
+    }
 }
 
 /// quote a path into a SQL string literal (single-quote doubling; backslashes normalized to forward slashes on Windows, mirroring detectActiveSessionModel). Caller frees.
