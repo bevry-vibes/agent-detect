@@ -3532,7 +3532,7 @@
       "name": "ernie-5.5-flash-preview",
       "id": "ernie55flashpreview",
       "openness": "open-weight",
-      "license": "NOASSERTION",
+      "license": "Apache-2.0",
       "open_training": "opt-in",
       "closed_training": "never",
       "variations": [
@@ -4211,7 +4211,9 @@
       "license": null,
       "open_training": null,
       "closed_training": null,
-      "variations": [],
+      "variations": [
+        "glm-5.4[1m]"
+      ],
       "providers": [],
       "harnesses": []
     },
