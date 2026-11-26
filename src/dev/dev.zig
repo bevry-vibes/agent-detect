@@ -3710,7 +3710,10 @@ pub const dev = if (build_options.dev) struct {
                         daemonWrite(io, "daemon: starting capture for ");
                         daemonWrite(io, job.candidate.fixture_id);
                         daemonWrite(io, "\n");
-                        const outcome = runOneComboCapture(a, io, init, &damped, job.candidate.fixture_id, capture_timeout_seconds) catch |err| blk: {
+                        // the damped set lives on the outer arena; dupe the iteration-arena fixture id
+                        // before the worker stores it as a key (the next idle tick resets the iteration arena).
+                        const fid_outer = try a.dupe(u8, job.candidate.fixture_id);
+                        const outcome = runOneComboCapture(a, io, init, &damped, fid_outer, capture_timeout_seconds) catch |err| blk: {
                             daemonWriteErr(io, "daemon: capture worker error: ");
                             daemonWriteErr(io, @errorName(err));
                             daemonWriteErr(io, "\n");
